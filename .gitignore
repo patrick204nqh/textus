@@ -1,0 +1,11 @@
+.env
+.envrc
+.claude/settings.json
+.claude/settings.local.json
+
+# Ruby
+/.bundle/
+/pkg/
+/tmp/
+*.gem
+.ruby-lsp/
