@@ -126,7 +126,7 @@ module Textus
       @manifest.validate_key!(key)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
-      raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
+      raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
 
       frontmatter ||= {}
       strategy = Entry.for_format(mentry.format)
@@ -164,7 +164,7 @@ module Textus
     def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
-      raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
+      raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
       raise UnknownKey.new(key) unless File.exist?(path)
 
       etag_before = Etag.for_file(path)
@@ -353,7 +353,7 @@ module Textus
       end
 
       writers = @manifest.zone_writers(old_mentry.zone)
-      raise WriteForbidden.new(old_key, old_mentry.zone) unless writers.include?(as)
+      raise WriteForbidden.new(old_key, old_mentry.zone, writers: writers) unless writers.include?(as)
 
       raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)
 

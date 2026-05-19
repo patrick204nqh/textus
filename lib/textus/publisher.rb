@@ -25,7 +25,7 @@ module Textus
       return unless File.exist?(target) || File.symlink?(target)
       return if managed?(target, store_root)
 
-      raise PublishError.new("refusing to clobber unmanaged file at #{target}")
+      raise PublishError.new("refusing to clobber unmanaged file at #{target}", target: target)
     end
 
     def self.managed?(target, store_root)

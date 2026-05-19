@@ -1,22 +1,25 @@
 module Textus
   class Error < StandardError
-    attr_reader :code, :details, :exit_code
+    attr_reader :code, :details, :exit_code, :hint
 
-    def initialize(code, message, details: {}, exit_code: 1)
+    def initialize(code, message, details: {}, exit_code: 1, hint: nil)
       super(message)
       @code = code
       @details = details
       @exit_code = exit_code
+      @hint = hint
     end
 
     def to_envelope
-      {
+      env = {
         "protocol" => Textus::PROTOCOL,
         "ok" => false,
         "code" => @code,
         "message" => message,
         "details" => @details,
       }
+      env["hint"] = @hint if @hint
+      env
     end
   end
 
@@ -29,44 +32,137 @@ module Textus
       details["suggestions"] = @suggestions unless @suggestions.empty?
       msg = "key '#{key}' does not resolve"
       msg += "; did you mean: #{@suggestions.join(", ")}" unless @suggestions.empty?
-      super("unknown_key", msg, details: details)
+      hint =
+        if @suggestions.empty?
+          "run 'textus list --format=json' to see all keys"
+        else
+          "did you mean: #{@suggestions.join(", ")}"
+        end
+      super("unknown_key", msg, details: details, hint: hint)
     end
   end
 
   class BadFrontmatter < Error
-    def initialize(path, m) = super("bad_frontmatter", m, details: { "path" => path })
+    def initialize(path, m, hint: nil)
+      hint ||= default_hint_for(path, m)
+      super("bad_frontmatter", m, details: { "path" => path }, hint: hint)
+    end
+
+    private
+
+    def default_hint_for(path, m)
+      if m.is_a?(String) && (match = m.match(/frontmatter name '([^']+)' does not match basename '([^']+)'/))
+        name, basename = match.captures
+        ext = File.extname(path)
+        "rename the file to '#{name}#{ext}' or change frontmatter name: to '#{basename}'"
+      else
+        "open #{path} and check the YAML frontmatter for syntax errors"
+      end
+    end
   end
 
   class BadContent < Error
-    def initialize(path, m) = super("bad_content", m, details: { "path" => path })
+    def initialize(path, m)
+      super(
+        "bad_content", m,
+        details: { "path" => path },
+        hint: "JSON/YAML parse failed; run the file through 'jq .' or 'yq .' to find the syntax error",
+      )
+    end
   end
 
-  class SchemaViolation < Error; def initialize(d) = super("schema_violation", "schema violation", details: d); end
+  class SchemaViolation < Error
+    def initialize(d)
+      hint =
+        if d.is_a?(Hash) && d["missing"]
+          "add the missing field(s) to the entry's frontmatter: #{Array(d["missing"]).join(", ")}"
+        elsif d.is_a?(Hash) && d["field"]
+          "fix the field '#{d["field"]}' in the entry's frontmatter (#{d["reason"]})"
+        end
+      super("schema_violation", "schema violation", details: d, hint: hint)
+    end
+  end
 
-  class WriteForbidden  < Error
-    def initialize(k,
-                   z)
-      super("write_forbidden", "zone '#{z}' is not agent-writable for key '#{k}'", details: { "key" => k, "zone" => z })
+  class WriteForbidden < Error
+    def initialize(k, z, writers: nil)
+      writers_str =
+        if writers && !writers.empty?
+          writers.join(", ")
+        else
+          "the role(s) listed in the manifest 'writable_by:'"
+        end
+      details = { "key" => k, "zone" => z }
+      details["writers"] = writers if writers
+      super(
+        "write_forbidden",
+        "zone '#{z}' is not agent-writable for key '#{k}'",
+        details: details,
+        hint: "this zone is writable by #{writers_str}; pass --as=<role>",
+      )
     end
   end
 
   class EtagMismatch < Error
-    def initialize(k, w, g) = super("etag_mismatch", "etag mismatch on '#{k}'", details: { "key" => k, "wanted" => w, "got" => g })
+    def initialize(k, w, g)
+      super(
+        "etag_mismatch", "etag mismatch on '#{k}'",
+        details: { "key" => k, "wanted" => w, "got" => g },
+        hint: "another writer changed this key; run 'textus get #{k}' to fetch the latest etag",
+      )
+    end
   end
 
   class IoError < Error
-    def initialize(m) = super("io_error",          m,                              exit_code: 64)
+    def initialize(m) = super("io_error", m, exit_code: 64)
   end
 
-  class UsageError < Error; def initialize(m) = super("usage", m, exit_code: 2); end
+  class UsageError < Error
+    def initialize(m, hint: nil) = super("usage", m, exit_code: 2, hint: hint)
+  end
 
   class InvalidRole < Error
-    def initialize(r) = super("invalid_role",      "role '#{r}' is not declared in any zone", details: { "role" => r })
+    def initialize(r)
+      super(
+        "invalid_role", "role '#{r}' is not declared in any zone",
+        details: { "role" => r },
+        hint: "valid roles are declared in .textus/manifest.yaml under zones[].writable_by",
+      )
+    end
   end
 
-  class InvalidProjection < Error; def initialize(m) = super("invalid_projection", m); end
-  class TemplateError     < Error; def initialize(m) = super("template_error",    m); end
-  class BadRender         < Error; def initialize(m) = super("bad_render",        m); end
-  class PublishError      < Error; def initialize(m) = super("publish_error",     m); end
-  class ProposalError     < Error; def initialize(m) = super("proposal_error",    m); end
+  class InvalidProjection < Error
+    def initialize(m) = super("invalid_projection", m)
+  end
+
+  class TemplateError < Error
+    def initialize(m, template_name: nil)
+      hint =
+        ("expected at .textus/templates/#{template_name}; add the file or update the entry's template: field" if template_name)
+      super("template_error", m, hint: hint)
+    end
+  end
+
+  class BadRender < Error
+    def initialize(m, format: nil)
+      hint =
+        if format
+          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running build"
+        else
+          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running build"
+        end
+      super("bad_render", m, hint: hint)
+    end
+  end
+
+  class PublishError < Error
+    def initialize(m, target: nil)
+      hint =
+        ("file at #{target} wasn't published by textus; back it up and delete it, or move it under .textus/zones/" if target)
+      super("publish_error", m, details: target ? { "target" => target } : {}, hint: hint)
+    end
+  end
+
+  class ProposalError < Error
+    def initialize(m) = super("proposal_error", m)
+  end
 end

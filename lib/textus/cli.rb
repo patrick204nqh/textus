@@ -45,6 +45,7 @@ module Textus
       when "migrate-keys"   then verb_migrate_keys(argv)
       when "mv"             then verb_mv(argv)
       when "uid"            then verb_uid(argv)
+      when "doctor"         then verb_doctor(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -343,6 +344,15 @@ module Textus
       emit({ "protocol" => PROTOCOL, "key" => key, "uid" => store.uid(key) })
     end
 
+    def verb_doctor(argv)
+      OptionParser.new do |o|
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      res = Textus::Doctor.run(store)
+      @stdout.puts(JSON.generate(res))
+      res["ok"] ? 0 : 1
+    end
+
     def verb_published(argv)
       parse_format!(argv)
       emit({ "protocol" => Textus::PROTOCOL, "published" => store.published })
@@ -355,6 +365,8 @@ module Textus
 
     def emit_error(err)
       @stdout.puts(JSON.generate(err.to_envelope))
+      @stderr.puts("#{err.code}: #{err.message}")
+      @stderr.puts("  → #{err.hint}") if err.hint
       err.exit_code
     end
 

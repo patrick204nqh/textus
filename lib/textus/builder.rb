@@ -132,14 +132,14 @@ module Textus
       raise TemplateError.new("entry '#{mentry.key}': #{mentry.format} build requires a template") unless mentry.template
 
       tpl_path = File.join(@root, "templates", mentry.template)
-      raise TemplateError.new("template not found: #{tpl_path}") unless File.exist?(tpl_path)
+      raise TemplateError.new("template not found: #{tpl_path}", template_name: mentry.template) unless File.exist?(tpl_path)
 
       Mustache.render(File.read(tpl_path), data)
     end
 
     def parse_rendered_template!(mentry, data, format)
       tpl_path = File.join(@root, "templates", mentry.template)
-      raise TemplateError.new("template not found: #{tpl_path}") unless File.exist?(tpl_path)
+      raise TemplateError.new("template not found: #{tpl_path}", template_name: mentry.template) unless File.exist?(tpl_path)
 
       rendered = Mustache.render(File.read(tpl_path), data)
       begin
@@ -149,9 +149,12 @@ module Textus
           when "yaml" then ::YAML.safe_load(rendered, permitted_classes: [Date, Time], aliases: false)
           end
       rescue ::JSON::ParserError, Psych::SyntaxError, Psych::DisallowedClass, Psych::AliasesNotEnabled => e
-        raise BadRender.new("entry '#{mentry.key}': template did not render valid #{format}: #{e.message}")
+        raise BadRender.new("entry '#{mentry.key}': template did not render valid #{format}: #{e.message}", format: format)
       end
-      raise BadRender.new("entry '#{mentry.key}': template must render a top-level object/mapping") unless parsed.is_a?(Hash)
+      unless parsed.is_a?(Hash)
+        raise BadRender.new("entry '#{mentry.key}': template must render a top-level object/mapping",
+                            format: format)
+      end
 
       parsed
     end
