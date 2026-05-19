@@ -1,7 +1,11 @@
 namespace :textus do
+  desc "Refresh intake from declared sources"
+  task :refresh do
+    sh "scripts/refresh-intake.sh"
+  end
+
   desc "Refresh intake + rebuild derived"
-  task :update do
-    sh "textus stale --zone=intake --format=json | jq -r '.[].key' | while read k; do echo refreshing $k; done"
-    sh "textus build --format=json"
+  task update: %i[refresh] do
+    sh "textus build --format=json | jq -c '{built: (.built | length)}'"
   end
 end
