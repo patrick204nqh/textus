@@ -27,6 +27,7 @@ module Textus
       when "stale"  then verb_stale(argv)
       when "delete"       then verb_delete(argv)
       when "validate-all" then verb_validate_all(argv)
+      when "build"        then verb_build(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -138,6 +139,17 @@ module Textus
       res = store.validate_all
       @stdout.puts(JSON.generate(res))
       res["ok"] ? 0 : 1
+    end
+
+    def verb_build(argv)
+      prefix = nil
+      OptionParser.new do |o|
+        o.on("--prefix=K") { |v| prefix = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      res = Textus::Builder.new(store).build(prefix: prefix)
+      @stdout.puts(JSON.generate(res))
+      0
     end
 
     def emit(obj)

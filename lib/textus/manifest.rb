@@ -109,7 +109,8 @@ module Textus
   end
 
   class ManifestEntry
-    attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw
+    attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw,
+                :projection, :template, :publish_to, :source
     def initialize(manifest, raw)
       @raw = raw
       @key = raw["key"] or raise UsageError.new("manifest entry missing key")
@@ -119,6 +120,10 @@ module Textus
       @owner = raw["owner"]
       @nested = raw["nested"] == true
       @generator = raw["generator"]
+      @projection = raw["projection"]
+      @template = raw["template"]
+      @publish_to = Array(raw["publish_to"])
+      @source = raw["source"]
     end
 
     def agent_writable?
