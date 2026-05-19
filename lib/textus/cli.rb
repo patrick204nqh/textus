@@ -135,6 +135,8 @@ module Textus
       raw = @stdin.read
       payload =
         if parser_name
+          # Bridge: --parse=NAME is renamed to --fetcher=NAME and gains a 2s
+          # timeout in Task 14. Until then this path is unbounded.
           fetched = store.registry.fetcher(parser_name).call(
             config: { "bytes" => raw }, store: store,
           )
