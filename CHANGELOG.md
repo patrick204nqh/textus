@@ -10,34 +10,99 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
-## [0.2.0] — 2026-05-19 — Extension surface rewrite (BREAKING)
+## [0.2.0] — 2026-05-20 — Storage rewrite, agent surface, extension DSL (BREAKING)
+
+This release reshapes textus from a markdown-only frontmatter store into a
+multi-format, agent-introspectable context layer.
 
 ### Breaking changes
-- `.textus/parsers/` and `.textus/calculators/` directories removed. Replace with
-  `.textus/extensions/*.rb`.
-- `Textus::Parsers` and `Textus::Calculators` modules removed.
-- Manifest: `source.parse` and `source.from` removed — use `source.fetcher` and
-  `source.config` (URL moves into `source.config.url`).
-- Manifest: projection `transform:` → `reducer:`.
-- Manifest: `hooks:` → `events:`; event names drop the `on_` prefix (`on_put` →
-  `put`, etc.).
-- Event `on_stale` removed entirely (staleness is observed via `textus stale`).
-- CLI: `--parse=NAME` flag removed — use `--fetcher=NAME` on `textus put`.
-- CLI: `textus hooks list` removed — use `textus extensions list --kind=hook`.
+- **Per-entry formats.** Markdown is no longer the only storage shape. Manifest
+  entries declare `format: markdown|json|yaml|text`; format is inferred from
+  the path extension when omitted. JSON/YAML entries store `_meta` at the top
+  level (`generated_at`, `from`, `template`, `reducer`).
+- **Strict key grammar.** Segments must match `/^[a-z0-9][a-z0-9-]*$/`. No
+  underscores, no uppercase, no dots-in-segments. Max 8 segments × 64 chars.
+  Enforced at manifest load, `put`, and `mv`. Existing stores with illegal
+  segments migrate via `textus migrate-keys --dry-run|--write`.
+- **Publisher rename.** `Textus::Symlink` is now `Textus::Publisher`. Symlink
+  mode is gone; publish is `FileUtils.cp` + sentinel.
+- **Sentinels relocated.** `.textus-managed.json` files move from beside the
+  published file to `<store_root>/sentinels/<target_rel>.textus-managed.json`.
+  Legacy sibling sentinels are auto-migrated on next publish.
+- **Init profiles removed.** `textus init --profile=…` and
+  `lib/textus/profiles/*.yaml` are gone. `textus init` writes a single default
+  manifest declaring all five SPEC zones and pre-creates `zones/<name>/`
+  subdirectories.
+- **Extension surface (carried over from earlier 0.2 work).** `.textus/parsers/`
+  and `.textus/calculators/` are gone — drop `.rb` files into
+  `.textus/extensions/`. `Textus::Parsers` and `Textus::Calculators` modules
+  removed. Manifest `source.parse`/`source.from` → `source.fetcher` +
+  `source.config`; projection `transform:` → `reducer:`; `hooks:` → `events:`
+  (no `on_` prefix; `on_stale` removed entirely). CLI: `--parse=NAME` removed;
+  `textus hooks list` removed (use `textus extensions list --kind=hook`).
 
 ### Added
-- `Textus.fetcher`, `Textus.reducer`, `Textus.hook` DSL verbs.
-- Per-Store `Textus::ExtensionRegistry` (no global state).
-- CLI: `textus refresh KEY --as=script` invokes a registered fetcher in-process.
-- CLI: `textus extensions list [--kind=fetcher|reducer|hook]`.
-- Lifecycle events fire in-process: `:put`, `:delete`, `:refresh`, `:build`,
-  `:accept`.
-- `Textus::Refresh.call(store, key, as:)` driver with 2s timeout and exception
-  wrapping.
-- `Textus::StoreView` — read-only store proxy passed to fetchers/reducers/hooks.
-- Audit log gains an optional 7th column for JSON-encoded event extras (e.g.,
-  `event_error` rows when a hook fails).
-- `Init.run` scaffolds `.textus/extensions/` with a README stub.
+- **`textus intro`** — single-call orientation envelope (`zones`, `entries`,
+  `extensions`, `write_flows`, `cli_verbs`) for agents landing in a textus-
+  managed project.
+- **`inject_intro: true`** flag on derived markdown/text entries — merges the
+  intro envelope into the template data so `CLAUDE.md` (or any boot doc) can
+  render an orientation preamble.
+- **`textus doctor`** — health check with 8 categories (missing schemas /
+  templates / extensions, illegal nested keys, sentinel orphan/drift, audit log
+  readability, unowned schema fields). `ok: true` only when zero error-level
+  issues; warnings/info don't flip the bit.
+- **`textus mv <old> <new>`** — same-zone, same-format rename. Preserves uid,
+  writes an `mv` audit row with `from_key`, `to_key`, `from_path`, `to_path`,
+  `uid`. `--dry-run` plans without writing.
+- **`uid:`** field — 16-char hex stable identity (`SecureRandom.hex(8)`),
+  auto-minted on first `Store#put`, preserved across writes and moves. Lives
+  in frontmatter for markdown, `_meta.uid` for json/yaml. Surfaced on the
+  envelope.
+- **`publish_each:`** template on nested entries — each leaf byte-copies to a
+  per-leaf target derived from `{leaf}`, `{basename}`, `{key}`, `{ext}`. Closes
+  the per-file publish loop for plugins that mirror `working.*` into
+  `agents/`, `skills/<name>/SKILL.md`, `commands/`.
+- **`textus migrate-keys`** — run-once helper renaming files whose basenames
+  violate the new strict key grammar. `--dry-run` reports proposed renames and
+  collisions; `--write` applies them bottom-up and writes `migrate-keys` audit
+  rows.
+- **Per-format strategies** under `lib/textus/entry/{markdown,json,yaml,text}.rb`
+  with a uniform parse/serialize contract. `Entry.for_format(name)` dispatcher.
+- **`textus.intro` + CLAUDE.md preamble** — the example's CLAUDE.md now opens
+  with auto-generated zone-and-write-flow orientation for the agent.
+- **Actionable error hints.** Every `Textus::Error` exposes `code`, `message`,
+  and `hint`. `UnknownKey` carries up to 5 ranked "did you mean" suggestions
+  (shared-prefix + bounded Levenshtein). The CLI prints
+  `code: msg\n  → hint` to stderr alongside the JSON envelope on stdout.
+- **Extension surface (carried over from earlier 0.2 work).**
+  `Textus.fetcher`, `Textus.reducer`, `Textus.hook` DSL verbs. Per-`Store`
+  `ExtensionRegistry` (no global state). `textus refresh KEY --as=script`.
+  `textus extensions list [--kind=fetcher|reducer|hook]`. In-process lifecycle
+  events (`:put`, `:delete`, `:refresh`, `:build`, `:accept`). `Textus::Refresh`
+  driver with 2 s timeout. `Textus::StoreView` read-only proxy. Audit log gains
+  a 7th JSON-extras column. `Init.run` scaffolds `.textus/extensions/` with a
+  README stub.
+
+### Fixed
+- `Projection#run` no longer stamps `generated_at` onto Hash reducer results —
+  `_meta.generated_at` is the single source of truth for structured outputs
+  (avoids duplicate timestamps in `marketplace.json`-style files).
+- `UnknownKey` raised from `Store#get`/`put`/`mv` (nested-tree file misses) now
+  carries suggestions, matching `Manifest#resolve`.
+
+### Example
+- `examples/claude-plugin/` rewritten as a real Claude Code plugin
+  (`voice-tools`) entirely managed by textus: `.claude-plugin/{plugin,
+  marketplace}.json` and `CLAUDE.md` derived; `agents/`, `skills/<name>/
+  SKILL.md`, `commands/` mirrored via `publish_each:`; pending-zone walkthrough
+  exercising the AI propose → human accept loop; intake fetcher, in-process
+  reducer / hook, deep-nested key demos.
+
+### SPEC
+- Rewritten for §1–§5 (layers, manifest, formats, publish), §10 (envelope adds
+  `format`, `content`, `uid`), audit verb table (`mv`, `migrate-keys`), CLI
+  verb table, Fixture G.
 
 ## [0.1.0] — 2026-05-19
 

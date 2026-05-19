@@ -1,0 +1,60 @@
+name: Release
+
+# Triggered on `v*` tag push. Maintainer's release ritual:
+#   bump VERSION → update CHANGELOG → commit → `git tag vX.Y.Z` → push --tags
+#
+# Publishes to RubyGems via a long-lived API key stored in
+# secrets.RUBYGEMS_API_KEY. Trusted publishing (OIDC) is the longer-term
+# direction (see https://guides.rubygems.org/trusted-publishing/) but the
+# API-key path is fine for v0.x.x.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Test
+        run: bundle exec rspec
+
+      - name: Build gem
+        run: gem build textus.gemspec
+
+      - name: Assert gem size <5MB
+        run: |
+          size=$(stat -c%s textus-*.gem)
+          echo "gem size: ${size} bytes"
+          test "$size" -lt 5242880
+
+      - name: Push to RubyGems
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: gem push textus-*.gem
+
+      - name: Extract CHANGELOG section for this tag
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { flag=1; next }
+            flag && /^## \[/ { exit }
+            flag { print }
+          ' CHANGELOG.md > /tmp/release_notes.md
+          test -s /tmp/release_notes.md || echo "Release ${GITHUB_REF_NAME}" > /tmp/release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: /tmp/release_notes.md
+          files: textus-*.gem

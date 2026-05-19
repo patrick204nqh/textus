@@ -13,7 +13,6 @@ Gem::Specification.new do |s|
 
   s.files = Dir[
     "lib/**/*.rb",
-    "lib/textus/profiles/*.yaml",
     "exe/*",
     "README.md",
     "SPEC.md",
