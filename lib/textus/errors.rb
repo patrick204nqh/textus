@@ -57,6 +57,7 @@ module Textus
 
   class InvalidProjection < Error; def initialize(m) = super("invalid_projection", m); end
   class TemplateError     < Error; def initialize(m) = super("template_error",    m); end
+  class BadRender         < Error; def initialize(m) = super("bad_render",        m); end
   class PublishError      < Error; def initialize(m) = super("publish_error",     m); end
   class ProposalError     < Error; def initialize(m) = super("proposal_error",    m); end
 end

@@ -21,9 +21,16 @@ module Textus
         row = pluck(env["frontmatter"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end
-      rows = apply_reducer(rows)
+      reduced = apply_reducer(rows)
+      # Reducers may return either an Array of rows (legacy / templated builds)
+      # or a Hash that becomes the structured-format payload base. In the Hash
+      # case, downstream sort/limit/position markers don't apply.
+      return reduced.merge("generated_at" => Time.now.utc.iso8601) if reduced.is_a?(Hash)
+
+      rows = reduced
       rows = sort(rows)
       rows = rows.first(@limit)
+      mark_positions(rows)
       { "entries" => rows, "count" => rows.length, "generated_at" => Time.now.utc.iso8601 }
     end
 
@@ -50,6 +57,17 @@ module Textus
         frontmatter
       else
         Array(fields).each_with_object({}) { |f, h| h[f] = frontmatter[f] if frontmatter.key?(f) }
+      end
+    end
+
+    # Adds `_first`, `_last`, and `_index` markers so templates can emit
+    # delimiters (e.g. JSON commas) via {{^_last}},{{/_last}}.
+    def mark_positions(rows)
+      last_idx = rows.length - 1
+      rows.each_with_index do |row, i|
+        row["_index"] = i
+        row["_first"] = i.zero?
+        row["_last"]  = (i == last_idx)
       end
     end
 
