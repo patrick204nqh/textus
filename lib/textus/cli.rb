@@ -25,6 +25,8 @@ module Textus
       when "put"    then verb_put(argv)
       when "schema" then verb_schema(argv)
       when "stale"  then verb_stale(argv)
+      when "delete"       then verb_delete(argv)
+      when "validate-all" then verb_validate_all(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -89,15 +91,41 @@ module Textus
 
     def verb_put(argv)
       key = argv.shift or raise UsageError.new("put requires a key")
-      use_stdin = argv.delete("--stdin")
-      parse_format!(argv)
+      as_flag = nil
+      use_stdin = false
+      OptionParser.new do |o|
+        o.on("--stdin") { use_stdin = true }
+        o.on("--as=ROLE") { |v| as_flag = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
       raise UsageError.new("put requires --stdin in v1") unless use_stdin
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
       payload = JSON.parse(@stdin.read)
       fm = payload["frontmatter"] || {}
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
-      emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag))
+      emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
+    end
+
+    def verb_delete(argv)
+      key = argv.shift or raise UsageError.new("delete requires a key")
+      as_flag = nil
+      if_etag = nil
+      OptionParser.new do |o|
+        o.on("--as=ROLE") { |v| as_flag = v }
+        o.on("--if-etag=E") { |v| if_etag = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+      emit(store.delete(key, if_etag: if_etag, as: role))
+    end
+
+    def verb_validate_all(argv)
+      parse_format!(argv)
+      res = store.validate_all
+      @stdout.puts(JSON.generate(res))
+      res["ok"] ? 0 : 1
     end
 
     def emit(obj)

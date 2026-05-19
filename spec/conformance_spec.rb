@@ -199,6 +199,28 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
+  describe "CLI delete + validate-all" do
+    it "deletes via CLI with --as=human" do
+      out = StringIO.new
+      rc = Textus::CLI.run(
+        ["delete", "working.network.org.jane", "--as=human", "--format=json"],
+        stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
+      )
+      expect(rc).to eq(0)
+      expect(JSON.parse(out.string.lines.last)["deleted"]).to be true
+    end
+
+    it "validate-all returns ok in a clean tree" do
+      out = StringIO.new
+      rc = Textus::CLI.run(
+        ["validate-all", "--format=json"],
+        stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
+      )
+      expect(rc).to eq(0)
+      expect(JSON.parse(out.string.lines.last)["ok"]).to be true
+    end
+  end
+
   describe "validate-all" do
     it "returns ok when every entry conforms" do
       res = store.validate_all
