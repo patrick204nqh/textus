@@ -1,5 +1,6 @@
 module Textus
   THREAD_REGISTRY_KEY = :__textus_active_registry__
+  private_constant :THREAD_REGISTRY_KEY
 
   def self.with_registry(registry)
     prev = Thread.current[THREAD_REGISTRY_KEY]
