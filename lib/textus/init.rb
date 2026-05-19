@@ -2,11 +2,14 @@ require "fileutils"
 
 module Textus
   module Init
+    ZONES = %w[canon working intake pending derived].freeze
+
     DEFAULT_MANIFEST = <<~YAML
       version: textus/1
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: working, writable_by: [human, ai, script] }
+        - { name: intake,  writable_by: [script] }
         - { name: pending, writable_by: [ai, human] }
         - { name: derived, writable_by: [build] }
       entries:
@@ -20,6 +23,11 @@ module Textus
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
       FileUtils.mkdir_p(File.join(target_root, "extensions"))
+      ZONES.each do |z|
+        dir = File.join(target_root, "zones", z)
+        FileUtils.mkdir_p(dir)
+        File.write(File.join(dir, ".gitkeep"), "")
+      end
       File.write(File.join(target_root, "extensions", "README.md"), <<~MD)
         # Extensions
 

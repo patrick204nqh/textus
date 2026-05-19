@@ -32,4 +32,18 @@ RSpec.describe Textus::Init do
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
+
+  it "declares all five zones and pre-creates their directories" do
+    tmp = Dir.mktmpdir
+    target = File.join(tmp, ".textus")
+    Textus::Init.run(target)
+    manifest = File.read(File.join(target, "manifest.yaml"))
+    %w[canon working intake pending derived].each do |z|
+      expect(manifest).to include("name: #{z}"), "manifest should declare zone #{z}"
+      expect(File.directory?(File.join(target, "zones", z))).to be(true), "zones/#{z}/ should exist"
+      expect(File.exist?(File.join(target, "zones", z, ".gitkeep"))).to be true
+    end
+  ensure
+    FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
+  end
 end
