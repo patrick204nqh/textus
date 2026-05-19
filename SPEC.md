@@ -226,6 +226,8 @@ External runners (cron jobs, agent harnesses, CI tasks) drive refresh:
 
 This separation keeps textus deterministic and offline-safe: the gem has no network code path.
 
+Implementations MAY auto-load project-local parsers from `.textus/parsers/<name>.<ext>` using their native language conventions. Parser identity is the **name string**; parser code is language-native and not part of the wire protocol. Built-in parsers (`json`, `csv`, `markdown-links`, `ical-events`, `rss`) MUST be available without filesystem extension. Implementations SHOULD bound user-supplied parser execution (the reference implementation enforces a 2s timeout).
+
 ### 5.5 Pending / accept workflow
 
 Pending entries are full proposal patches authored into the `pending` zone, typically by agents or scripts. A pending entry's frontmatter describes the patch it proposes against another zone:

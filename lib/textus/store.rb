@@ -20,7 +20,14 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
+      load_project_parsers
       @schemas = {}
+    end
+
+    def load_project_parsers
+      dir = File.join(@root, "parsers")
+      return unless File.directory?(dir)
+      Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) }
     end
 
     def schema_for(name)

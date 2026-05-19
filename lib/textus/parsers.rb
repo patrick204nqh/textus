@@ -1,3 +1,5 @@
+require "timeout"
+
 module Textus
   module Parsers
     REGISTRY = {}
@@ -8,7 +10,9 @@ module Textus
 
     def self.parse(name, content)
       callable = REGISTRY[name] or raise UsageError.new("unknown parser: #{name}")
-      callable.call(content)
+      Timeout.timeout(2) { callable.call(content) }
+    rescue Timeout::Error
+      raise UsageError.new("parser '#{name}' exceeded 2s timeout")
     end
   end
 end
