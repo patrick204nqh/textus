@@ -99,9 +99,28 @@ RSpec.describe "Refresh event" do
       Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v2" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
+    # Re-instantiate to reload extension file from disk (fresh registry)
     store2 = Textus::Store.new(root)
     Textus::Refresh.call(store2, "intake.x", as: "script")
     expect($log.last).to eq(["intake.x", :updated])
+  end
+
+  it "does NOT fire :refresh when the fetched bytes are identical to the previous bytes" do
+    store = Textus::Store.new(root)
+    Textus::Refresh.call(store, "intake.x", as: "script")
+    # Rewrite extension with same fetcher body so the log is preserved
+    # across reload (using ||=) instead of being reset to [].
+    File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
+      $log ||= []
+      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+    RUBY
+    # Re-instantiate to reload extension file from disk
+    store2 = Textus::Store.new(root)
+    Textus::Refresh.call(store2, "intake.x", as: "script")
+    # Two refreshes with identical fetcher body (both "v1") — only the first
+    # should fire :refresh (with :created). The second matches, so no fire.
+    expect($log).to eq([["intake.x", :created]])
   end
 
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
