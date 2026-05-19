@@ -1,5 +1,10 @@
 # textus
 
+[![CI](https://github.com/patrick204nqh/textus/actions/workflows/ci.yml/badge.svg)](https://github.com/patrick204nqh/textus/actions/workflows/ci.yml)
+[![Gem Version](https://img.shields.io/gem/v/textus.svg)](https://rubygems.org/gems/textus)
+[![Ruby](https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg)](https://www.ruby-lang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A context store for codebases that humans and AI agents both have to read and write. Dotted keys, schema-validated entries, role-gated writes, byte-copy publish, an audit log of every change. Built so an agent landing in your repo can run one command (`textus intro`) and know what to read, what to write, and what's off-limits.
 
 Reference implementation in Ruby. Wire format `textus/1`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
