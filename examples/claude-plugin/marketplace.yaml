@@ -1,0 +1,11 @@
+_meta:
+  generated_at: '2026-05-19T15:36:28Z'
+  from:
+  - working.skills
+  reducer: marketplace-envelope
+protocol: textus/1
+skills:
+- name: voice-writer
+  description: Rewrites prose in the author's canonical voice.
+  version: 0.1.0
+generated_at: '2026-05-19T15:36:28Z'

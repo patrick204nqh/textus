@@ -27,6 +27,16 @@ entries:
     owner: human:self
     nested: true
 
+  # Deep-nested directory tree (≥4 segments below the entry path).
+  # Demonstrates that the nested-tree resolver handles arbitrary depth.
+  - key: working.network
+    path: working/network
+    zone: working
+    format: markdown
+    schema: person
+    owner: human:self
+    nested: true
+
   # ---- intake: script-fed, TTL-bound ----
   - key: intake.upstream.releases
     path: intake/upstream/releases.md
@@ -71,14 +81,31 @@ entries:
       build:
         - { exec: bin/notify-build, as: script }
 
+  # Templateless JSON output. The reducer shapes the final object;
+  # the builder injects _meta as the first top-level key.
   - key: derived.marketplace
-    path: derived/marketplace.md
+    path: derived/marketplace.json
     zone: derived
+    format: json
     schema: null
     owner: build:auto
     projection:
       select: [working.skills]
       pluck: [name, description, version]
       sort_by: name
-    template: marketplace.mustache
+      reducer: marketplace-envelope
     publish_to: [marketplace.json]
+
+  # YAML sibling — same reducer, different serializer.
+  - key: derived.marketplace-yaml
+    path: derived/marketplace.yaml
+    zone: derived
+    format: yaml
+    schema: null
+    owner: build:auto
+    projection:
+      select: [working.skills]
+      pluck: [name, description, version]
+      sort_by: name
+      reducer: marketplace-envelope
+    publish_to: [marketplace.yaml]

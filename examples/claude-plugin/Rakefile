@@ -4,7 +4,7 @@ require "open3"
 namespace :textus do
   desc "Refresh every stale intake entry"
   task :refresh do
-    stale_json, _ = Open3.capture2("textus", "stale", "--zone=intake", "--format=json")
+    stale_json, = Open3.capture2("textus", "stale", "--zone=intake", "--format=json")
     keys = JSON.parse(stale_json).map { |row| row["key"] }
     if keys.empty?
       puts "no stale intake entries"
@@ -23,10 +23,11 @@ namespace :textus do
     # Manifest-declared `events: { build: [{ exec: ... }] }` rows are
     # advertised by textus but never invoked by it. An external runner
     # (this Rakefile, in this example) reads the listing and dispatches.
-    ext_json, _ = Open3.capture2("textus", "extensions", "list", "--kind=hook", "--format=json")
+    ext_json, = Open3.capture2("textus", "extensions", "list", "--kind=hook", "--format=json")
     JSON.parse(ext_json)["extensions"].each do |row|
       next unless row["exec"] && row["event"] == "build"
-      puts "dispatching #{row['exec']} for #{row['key']} (as=#{row['as']})"
+
+      puts "dispatching #{row["exec"]} for #{row["key"]} (as=#{row["as"]})"
       sh row["exec"], row["key"]
     end
   end

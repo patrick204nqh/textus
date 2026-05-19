@@ -8,25 +8,31 @@ A minimal but real `.textus/` tree that compiles a Claude Code plugin's
 ```
 .textus/
   manifest.yaml              # declares zones + entries
-  templates/                 # Mustache templates used by derived entries
-    claude-root.mustache
-    marketplace.mustache
+  templates/                 # Mustache templates used by markdown derived entries
+    claude-root.mustache       # used by derived.claude.root
   extensions/                # project-local DSL code (auto-loaded)
     local-file.rb              # Textus.fetcher — for intake refresh
-    rank-by-recency.rb         # Textus.reducer — for projection ordering
+    rank-by-recency.rb         # Textus.reducer — orders projects by updated_at
+    marketplace-envelope.rb    # Textus.reducer — wraps skill rows into { protocol, skills }
     build-stamp.rb             # Textus.hook   — :build event observer
   schemas/
     project.yaml             # field validation + maintained_by
+    person.yaml              # used by the nested working.network tree
   zones/
     canon/voice.md           # author identity (slow-changing)
     working/
       projects/*.md          # one file per project
       skills/*.md            # one file per skill
+      network/org/.../*.md   # deep-nested directory tree, schema: person
     derived/                 # build output (do not hand-edit)
+      claude/root.md         # markdown (templated)
+      marketplace.json       # json (templateless, reducer-shaped)
+      marketplace.yaml       # yaml sibling, same reducer
   audit.log                  # append-only writer log
 bin/notify-build             # external-runner stub for the :build event
-CLAUDE.md                    # symlink into .textus/zones/derived/claude/root.md
-marketplace.json             # symlink into .textus/zones/derived/marketplace.md
+CLAUDE.md                    # byte-copy of .textus/zones/derived/claude/root.md
+marketplace.json             # byte-copy of .textus/zones/derived/marketplace.json
+marketplace.yaml             # byte-copy of .textus/zones/derived/marketplace.yaml
 Rakefile                     # `rake textus:refresh` / `rake textus:update`
 ```
 
@@ -89,10 +95,12 @@ cat CLAUDE.md
 tail .textus/last-build.log    # :build hook recorded each one
 ```
 
-The `derived/` zone is owned by `build:auto` — humans never write to it. The
-manifest's `publish_to` instructs textus to symlink the rendered output to a
-repo-root path so external consumers (Claude Code, marketplace tools) see a
-plain file.
+The `derived/` zone is owned by `build:auto` — humans never write to it.
+`publish_to` instructs textus to copy the rendered output byte-for-byte to a
+repo-root path (with a `.textus-managed.json` sentinel next to it) so external
+consumers (Claude Code, marketplace tools) see a plain file in the format the
+entry was authored in — markdown for `CLAUDE.md`, JSON for `marketplace.json`,
+YAML for `marketplace.yaml`.
 
 ## How intake refresh works
 
@@ -101,9 +109,10 @@ plain file.
 2. `textus stale --zone=intake --format=json` lists entries past their TTL.
 3. `textus refresh KEY --as=script` calls KEY's registered fetcher
    (built-in or project-local) with `(config:, store:)` where `store` is a
-   read-only `StoreView`. The fetcher returns `{ frontmatter:, body: }`,
-   which textus writes via `put` — audit, events, and schema validation all
-   apply. The fetcher is bounded by a 2 s timeout.
+   read-only `StoreView`. The fetcher returns one of `{ frontmatter:, body: }`,
+   `{ content: }` (for `format: json|yaml` entries), or `{ body: }` (raw bytes);
+   the store normalizes all three and writes via `put` — audit, events, and
+   schema validation all apply. The fetcher is bounded by a 2 s timeout.
 4. There is no bulk-refresh CLI verb. `rake textus:refresh` walks the stale
    list and calls `textus refresh` per key (see `Rakefile`).
 5. Promotion from intake to working is a human/PR decision (or another
