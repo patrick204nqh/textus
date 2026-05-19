@@ -26,4 +26,9 @@ module Textus
   class EtagMismatch    < Error; def initialize(k, w, g); super("etag_mismatch",     "etag mismatch on '#{k}'",      details: { "key" => k, "wanted" => w, "got" => g }); end; end
   class IoError         < Error; def initialize(m);       super("io_error",          m,                              exit_code: 64); end; end
   class UsageError      < Error; def initialize(m);       super("usage",             m,                              exit_code: 2); end; end
+  class InvalidRole       < Error; def initialize(r);    super("invalid_role",      "role '#{r}' is not declared in any zone",       details: { "role" => r }); end; end
+  class InvalidProjection < Error; def initialize(m);    super("invalid_projection", m); end; end
+  class TemplateError     < Error; def initialize(m);    super("template_error",    m); end; end
+  class PublishError      < Error; def initialize(m);    super("publish_error",     m); end; end
+  class ProposalError     < Error; def initialize(m);    super("proposal_error",    m); end; end
 end
