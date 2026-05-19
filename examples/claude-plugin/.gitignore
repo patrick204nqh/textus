@@ -1,0 +1,6 @@
+# Build outputs — regenerate with `textus build`.
+/CLAUDE.md
+/marketplace.json
+/.textus/zones/derived/claude/
+/.textus/zones/derived/marketplace.md
+/.textus/.last-build.json

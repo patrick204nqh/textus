@@ -1,0 +1,7 @@
+namespace :textus do
+  desc "Refresh intake + rebuild derived"
+  task :update do
+    sh "textus stale --zone=intake --format=json | jq -r '.[].key' | while read k; do echo refreshing $k; done"
+    sh "textus build --format=json"
+  end
+end

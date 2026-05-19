@@ -1,0 +1,52 @@
+version: textus/1
+zones:
+  - { name: canon,   writable_by: [human] }
+  - { name: working, writable_by: [human, ai, script] }
+  - { name: derived, writable_by: [build] }
+entries:
+  # ---- canon: author-curated, slow-changing identity ----
+  - key: canon.voice
+    path: canon/voice.md
+    zone: canon
+    schema: null
+    owner: human:self
+
+  # ---- working: day-to-day editable surface ----
+  - key: working.projects
+    path: working/projects
+    zone: working
+    schema: null
+    owner: human:self
+    nested: true
+
+  - key: working.skills
+    path: working/skills
+    zone: working
+    schema: null
+    owner: human:self
+    nested: true
+
+  # ---- derived: machine-built, never hand-edited ----
+  - key: derived.claude.root
+    path: derived/claude/root.md
+    zone: derived
+    schema: null
+    owner: build:auto
+    projection:
+      select: [working.projects]
+      pluck: [name, status, summary]
+      sort_by: name
+    template: claude-root.mustache
+    publish_to: [CLAUDE.md]
+
+  - key: derived.marketplace
+    path: derived/marketplace.md
+    zone: derived
+    schema: null
+    owner: build:auto
+    projection:
+      select: [working.skills]
+      pluck: [name, description, version]
+      sort_by: name
+    template: marketplace.mustache
+    publish_to: [marketplace.json]
