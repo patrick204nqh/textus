@@ -1,0 +1,16 @@
+version: textus/1
+zones:
+  - { name: canon,   writable_by: [human] }
+  - { name: working, writable_by: [human, ai, script] }
+  - { name: derived, writable_by: [build] }
+entries:
+  - { key: canon.voice, path: canon/voice.md, zone: canon, schema: null, owner: human:self }
+  - { key: working.projects, path: working/projects, zone: working, schema: null, owner: human:self, nested: true }
+  - key: derived.claude.root
+    path: derived/claude/root.md
+    zone: derived
+    schema: null
+    owner: build:auto
+    projection: { select: [canon.voice, working.projects], pluck: [name, status] }
+    template: claude-root.mustache
+    publish_to: [CLAUDE.md]
