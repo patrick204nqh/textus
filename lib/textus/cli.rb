@@ -135,15 +135,17 @@ module Textus
       raw = @stdin.read
       payload =
         if parser_name
-          parsed = Textus::Parsers.parse(parser_name, raw)
+          fetched = store.registry.fetcher(parser_name).call(
+            config: { "bytes" => raw }, store: store,
+          )
           basename = key.split(".").last
           {
             "frontmatter" => {
               "name" => basename,
               "last_refreshed_at" => Time.now.utc.iso8601,
               "parsed_with" => parser_name,
-            },
-            "body" => YAML.dump(parsed),
+            }.merge(fetched[:frontmatter] || {}),
+            "body" => fetched[:body],
           }
         else
           JSON.parse(raw)

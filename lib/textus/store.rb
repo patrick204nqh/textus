@@ -29,6 +29,7 @@ module Textus
 
     def load_extensions
       Textus.with_registry(@registry) do
+        BuiltinFetchers.register_all
         dir = File.join(@root, "extensions")
         return unless File.directory?(dir)
 
