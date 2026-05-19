@@ -17,6 +17,7 @@ entries:
     schema: agent
     owner: human:self
     nested: true
+    publish_each: "agents/{basename}.md"
 
   - key: working.skills
     path: working/skills
@@ -24,6 +25,7 @@ entries:
     schema: skill
     owner: human:self
     nested: true     # supports working.skills.writing.voice-writer (≥4 segments)
+    publish_each: "skills/{basename}/SKILL.md"
 
   - key: working.commands
     path: working/commands
@@ -31,6 +33,7 @@ entries:
     schema: command
     owner: human:self
     nested: true
+    publish_each: "commands/{basename}.md"
 
   # ---- intake: fetcher-fed (textus capability demo) ----
   - key: intake.upstream.notes

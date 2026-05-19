@@ -10,8 +10,11 @@ authoring surface lives entirely under `.textus/`. The plugin ships:
 - a marketplace listing at `.claude-plugin/marketplace.json`
 - a `CLAUDE.md` loaded on session start
 
-All five build outputs are projections of structured content under
-`.textus/zones/`.
+Every consumer-facing file in this plugin — the three derived envelopes
+*and* every agent/skill/command leaf under `agents/`, `skills/`, `commands/`
+— is byte-copied from `.textus/zones/...` by `textus build`. The entire
+plugin layout is end-to-end textus-managed; no file under `agents/`,
+`skills/`, or `commands/` is hand-mirrored.
 
 ## Layout
 
@@ -23,13 +26,13 @@ voice-tools/
   CLAUDE.md                  # ← published from .textus/zones/derived/claude-root.md
 
   agents/
-    voice-writer.md          # plugin-consumer copy (Claude Code reads this)
-    fact-checker.md
+    voice-writer.md          # ← publish_each from working.agents.voice-writer
+    fact-checker.md          # ← publish_each from working.agents.fact-checker
   skills/
-    voice-writer/SKILL.md
-    fact-checker/SKILL.md
+    voice-writer/SKILL.md    # ← publish_each from working.skills.writing.voice-writer
+    fact-checker/SKILL.md    # ← publish_each from working.skills.research.fact-checker
   commands/
-    rewrite.md
+    rewrite.md               # ← publish_each from working.commands.rewrite
 
   .textus/
     manifest.yaml
@@ -105,14 +108,34 @@ generated files in `.textus/zones/derived/`, each accompanied by a
 `<file>.textus-managed.json` sentinel recording the source path, sha256, and
 publish mode.
 
-## A note on the consumer-side mirrors
+## Per-leaf publishing (`publish_each:`)
 
 The files under `agents/`, `skills/`, and `commands/` are what Claude Code
-loads on session start. In this example they are hand-mirrored from the
-authoritative `.textus/zones/working/...` versions for clarity. Per-leaf
-publishing of nested entries (so each agent/skill/command file is byte-copied
-by textus the way `CLAUDE.md` is) is a planned future extension; until then,
-keeping the two in sync is on you (or a small custom build step).
+loads on session start. They are not hand-mirrored — each one is byte-copied
+by `textus build` from its source under `.textus/zones/working/...`. The
+`working.agents`, `working.skills`, and `working.commands` entries declare
+`publish_each:` templates:
+
+```yaml
+- key: working.agents
+  publish_each: "agents/{basename}.md"
+
+- key: working.skills
+  publish_each: "skills/{basename}/SKILL.md"
+
+- key: working.commands
+  publish_each: "commands/{basename}.md"
+```
+
+Each leaf under those nested entries (e.g. `working.skills.writing.voice-writer`)
+is published to its templated target. `{basename}` is the final dotted segment,
+so deep authoring layouts (`skills/writing/voice-writer.md`) flatten to the
+consumer's expected layout (`skills/voice-writer/SKILL.md`). Sentinels appear
+under `.textus/sentinels/agents/...`, `.textus/sentinels/skills/...`, and so
+on, mirroring the consumer paths.
+
+Re-run `textus build` (or the `ruby -I../../lib` invocation above) after
+editing any working-zone file and the consumer mirrors update automatically.
 
 ## Intake refresh
 

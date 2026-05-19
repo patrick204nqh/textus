@@ -142,6 +142,28 @@ Old manifests written against textus/1 draft v0.1 therefore parse without modifi
 
 For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema.
 
+**Per-leaf publishing (`publish_each:`, v1.2).** A nested manifest entry MAY declare `publish_each:` to byte-copy every leaf to a templated repo-relative path. `publish_each:` and `publish_to:` are mutually exclusive on the same entry, and `publish_each:` requires `nested: true`. The template substitutes these variables (using `{name}` syntax):
+
+| Variable     | Value                                                                                  |
+|--------------|----------------------------------------------------------------------------------------|
+| `{leaf}`     | Remaining key segments after the entry prefix, joined with `/`.                        |
+| `{basename}` | Last segment only.                                                                     |
+| `{key}`      | Full dotted key.                                                                       |
+| `{ext}`      | Primary extension for the entry's format, without the leading dot (`md`/`json`/`yaml`/`txt`). |
+
+Validation at manifest load: any unknown variable raises `UsageError`; the template MUST reference at least one of `{leaf}`, `{basename}`, `{key}` (otherwise every leaf would clobber the same target). A computed target outside the repo root is refused at build time with `PublishError`. Example:
+
+```yaml
+- key: working.skills
+  path: working/skills
+  zone: working
+  schema: skill
+  nested: true
+  publish_each: "skills/{basename}/SKILL.md"
+```
+
+A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/working/skills/writing/voice-writer.md`) publishes to `skills/voice-writer/SKILL.md`.
+
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
 ## 5. Zones and role-based write gates
@@ -213,6 +235,8 @@ publish_to:
 When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/derived/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
 
 A sentinel is written for each published file at `<store_root>/sentinels/<target-relative-to-repo>.textus-managed.json`, recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store rather than beside the consumer file so target directories stay clean. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing or marked as managed. Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
+
+**Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is byte-copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The build envelope grows a `published_leaves` array — one row per leaf, with `key`, `source`, and `target` — alongside the existing `built` array. Targets that would resolve outside the repo root are refused.
 
 ### 5.4 Intake (declared, refreshed via registered fetcher)
 

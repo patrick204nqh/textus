@@ -195,8 +195,11 @@ module Textus
   end
 
   class ManifestEntry
+    PUBLISH_EACH_VARS = %w[leaf basename key ext].freeze
+    PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
+
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
-                :projection, :template, :publish_to, :fetcher, :fetcher_config, :ttl, :events
+                :projection, :template, :publish_to, :publish_each, :fetcher, :fetcher_config, :ttl, :events
 
     def initialize(manifest, raw)
       @manifest = manifest
@@ -211,12 +214,33 @@ module Textus
       @projection = raw["projection"]
       @template = raw["template"]
       @publish_to = Array(raw["publish_to"])
+      @publish_each = raw["publish_each"]
       @events = raw["events"] || {}
       @format = resolve_format!(raw["format"])
 
       reject_legacy!(raw)
       parse_source!(raw["source"])
       validate_format_matrix!
+      validate_publish_each!
+    end
+
+    # Resolves the per-leaf target path (relative to repo root) for a full
+    # dotted key under this entry's prefix. Returns nil if this entry has no
+    # publish_each template.
+    def publish_target_for(full_key)
+      return nil if @publish_each.nil?
+
+      entry_segs = @key.split(".")
+      key_segs = full_key.split(".")
+      raise UsageError.new("key '#{full_key}' is not under entry '#{@key}'") unless key_segs[0, entry_segs.length] == entry_segs
+
+      remaining = key_segs[entry_segs.length..] || []
+      leaf = remaining.join("/")
+      basename = remaining.last || ""
+      ext = Entry.for_format(@format).extensions.first.to_s.sub(/^\./, "")
+
+      vars = { "leaf" => leaf, "basename" => basename, "key" => full_key, "ext" => ext }
+      @publish_each.gsub(PUBLISH_EACH_VAR_RE) { vars.fetch(::Regexp.last_match(1)) }
     end
 
     def derived?
@@ -227,6 +251,31 @@ module Textus
     end
 
     private
+
+    def validate_publish_each!
+      return if @publish_each.nil?
+
+      raise UsageError.new("entry '#{@key}': publish_each requires nested: true") unless @nested
+      raise UsageError.new("entry '#{@key}': publish_to and publish_each are mutually exclusive") unless @publish_to.empty?
+      raise UsageError.new("entry '#{@key}': publish_each must be a string") unless @publish_each.is_a?(String)
+
+      used_vars = @publish_each.scan(PUBLISH_EACH_VAR_RE).flatten
+      unknown = used_vars - PUBLISH_EACH_VARS
+      unless unknown.empty?
+        raise UsageError.new(
+          "entry '#{@key}': publish_each uses unknown template variable(s) " \
+          "#{unknown.map { |v| "{#{v}}" }.join(", ")}. Known: #{PUBLISH_EACH_VARS.map { |v| "{#{v}}" }.join(", ")}.",
+        )
+      end
+
+      required = %w[leaf basename key]
+      return if used_vars.any? { |v| required.include?(v) }
+
+      raise UsageError.new(
+        "entry '#{@key}': publish_each must reference at least one of {leaf}, {basename}, or {key} " \
+        "(else every leaf would clobber the same target).",
+      )
+    end
 
     def resolve_format!(declared)
       ext = File.extname(@path)
