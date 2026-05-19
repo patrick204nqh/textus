@@ -1,0 +1,97 @@
+version: textus/1
+zones:
+  - { name: canon,   writable_by: [human] }
+  - { name: working, writable_by: [human, ai, script] }
+  - { name: intake,  writable_by: [script] }
+  - { name: pending, writable_by: [ai, human] }
+  - { name: derived, writable_by: [build] }
+
+entries:
+  # ---- canon: plugin + marketplace identity (slow-changing, human-authored) ----
+  - { key: canon.plugin,       path: canon/voice-tools.md,           zone: canon, schema: plugin, owner: human:self }
+  - { key: canon.marketplace,  path: canon/example-marketplace.md,   zone: canon, schema: null,   owner: human:self }
+
+  # ---- working: catalogued plugin content ----
+  - key: working.agents
+    path: working/agents
+    zone: working
+    schema: agent
+    owner: human:self
+    nested: true
+    publish_each: "agents/{basename}.md"
+
+  - key: working.skills
+    path: working/skills
+    zone: working
+    schema: skill
+    owner: human:self
+    nested: true     # supports working.skills.writing.voice-writer (≥4 segments)
+    publish_each: "skills/{basename}/SKILL.md"
+
+  - key: working.commands
+    path: working/commands
+    zone: working
+    schema: command
+    owner: human:self
+    nested: true
+    publish_each: "commands/{basename}.md"
+
+  # ---- pending: AI proposals awaiting human accept ----
+  # An AI agent writes a proposal here with --as=ai. A human reviews it and
+  # runs `textus accept pending.<id> --as=human`, which (a) writes the
+  # proposal's `target_key` to its real home and (b) deletes the pending
+  # entry. See examples/claude-plugin/README.md → "AI proposals (pending)".
+  - key: pending.suggestion
+    path: pending/suggestion
+    zone: pending
+    schema: null
+    owner: ai:catalog
+    nested: true
+
+  # ---- intake: fetcher-fed (textus capability demo) ----
+  - key: intake.upstream.notes
+    path: intake/upstream/notes.md
+    zone: intake
+    owner: script:local
+    source:
+      fetcher: local-file
+      config: { path: .textus/zones/canon/voice-tools.md }
+      ttl: 12h
+
+  # ---- derived: machine-built ----
+  - key: derived.plugin
+    path: derived/plugin.json
+    zone: derived
+    format: json
+    owner: build:auto
+    projection:
+      select: [canon.plugin]
+      pluck: "*"
+      reducer: plugin-envelope
+    publish_to: [.claude-plugin/plugin.json]
+
+  - key: derived.marketplace
+    path: derived/marketplace.json
+    zone: derived
+    format: json
+    owner: build:auto
+    projection:
+      select: [canon.marketplace, canon.plugin, working.skills]
+      pluck: "*"
+      reducer: marketplace-envelope
+    publish_to: [.claude-plugin/marketplace.json]
+
+  - key: derived.claude-root
+    path: derived/claude-root.md
+    zone: derived
+    owner: build:auto
+    projection:
+      select: [canon.plugin, working.agents, working.skills, working.commands]
+      pluck: "*"
+      reducer: claude-root
+    template: claude-root.mustache
+    inject_intro: true
+    publish_to: [CLAUDE.md]
+    events:
+      build:
+        - { exec: bin/notify-build, as: script }

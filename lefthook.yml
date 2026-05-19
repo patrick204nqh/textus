@@ -1,0 +1,17 @@
+# Git hooks for textus — install with `bundle exec lefthook install`.
+# Runs locally before commits and pushes; bypass with `LEFTHOOK=0`.
+
+pre-commit:
+  parallel: true
+  commands:
+    rubocop:
+      glob: "*.{rb,rake,gemspec}"
+      run: bundle exec rubocop --force-exclusion {staged_files}
+      stage_fixed: false
+
+pre-push:
+  commands:
+    rspec:
+      run: bundle exec rspec
+    rubocop:
+      run: bundle exec rubocop

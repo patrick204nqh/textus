@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "generated_at": "2026-05-19T17:05:03Z",
+    "from": [
+      "canon.plugin"
+    ],
+    "reducer": "plugin-envelope"
+  },
+  "$schema": "https://code.claude.com/schemas/plugin.json",
+  "name": "voice-tools",
+  "version": "0.1.0",
+  "description": "Helpers for keeping prose in a consistent voice.",
+  "author": {
+    "name": "Example Author"
+  },
+  "repository": "example-org/voice-tools"
+}

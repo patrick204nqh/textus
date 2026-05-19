@@ -1,0 +1,27 @@
+{
+  "_meta": {
+    "generated_at": "2026-05-19T17:05:03Z",
+    "from": [
+      "canon.marketplace",
+      "canon.plugin",
+      "working.skills"
+    ],
+    "reducer": "marketplace-envelope"
+  },
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "example-marketplace",
+  "owner": {
+    "name": "Example Org"
+  },
+  "plugins": [
+    {
+      "name": "voice-tools",
+      "source": "./",
+      "description": "Helpers for keeping prose in a consistent voice.",
+      "skills": [
+        "./skills/fact-checker",
+        "./skills/voice-writer"
+      ]
+    }
+  ]
+}
