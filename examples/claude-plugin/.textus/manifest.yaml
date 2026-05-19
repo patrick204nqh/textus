@@ -16,7 +16,7 @@ entries:
   - key: working.projects
     path: working/projects
     zone: working
-    schema: null
+    schema: project
     owner: human:self
     nested: true
 
