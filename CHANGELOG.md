@@ -10,6 +10,35 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-19 — Extension surface rewrite (BREAKING)
+
+### Breaking changes
+- `.textus/parsers/` and `.textus/calculators/` directories removed. Replace with
+  `.textus/extensions/*.rb`.
+- `Textus::Parsers` and `Textus::Calculators` modules removed.
+- Manifest: `source.parse` and `source.from` removed — use `source.fetcher` and
+  `source.config` (URL moves into `source.config.url`).
+- Manifest: projection `transform:` → `reducer:`.
+- Manifest: `hooks:` → `events:`; event names drop the `on_` prefix (`on_put` →
+  `put`, etc.).
+- Event `on_stale` removed entirely (staleness is observed via `textus stale`).
+- CLI: `--parse=NAME` flag removed — use `--fetcher=NAME` on `textus put`.
+- CLI: `textus hooks list` removed — use `textus extensions list --kind=hook`.
+
+### Added
+- `Textus.fetcher`, `Textus.reducer`, `Textus.hook` DSL verbs.
+- Per-Store `Textus::ExtensionRegistry` (no global state).
+- CLI: `textus refresh KEY --as=script` invokes a registered fetcher in-process.
+- CLI: `textus extensions list [--kind=fetcher|reducer|hook]`.
+- Lifecycle events fire in-process: `:put`, `:delete`, `:refresh`, `:build`,
+  `:accept`.
+- `Textus::Refresh.call(store, key, as:)` driver with 2s timeout and exception
+  wrapping.
+- `Textus::StoreView` — read-only store proxy passed to fetchers/reducers/hooks.
+- Audit log gains an optional 7th column for JSON-encoded event extras (e.g.,
+  `event_error` rows when a hook fails).
+- `Init.run` scaffolds `.textus/extensions/` with a README stub.
+
 ## [0.1.0] — 2026-05-19
 
 First public release. Implements protocol `textus/1`.

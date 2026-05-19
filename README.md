@@ -43,7 +43,7 @@ This scaffolds `.textus/` with a starter manifest, the five zone directories, ba
   role
   schemas/
   templates/
-  parsers/
+  extensions/
   zones/
     canon/       # human-only
     working/     # human, ai, script
@@ -106,14 +106,15 @@ All verbs accept `--format=json` and emit the envelope defined in SPEC §8. Writ
 | `deps K` / `rdeps K` | Forward/reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `validate-all` | Validate every entry against its schema (incl. `maintained_by`) |
-| `hooks list [--event=E]` | Enumerate declared lifecycle hooks |
+| `extensions list [--kind=K]` | Enumerate registered fetchers, reducers, and declared hooks |
 
 **Write verbs (role-gated per zone):**
 
 | Verb | Role |
 |---|---|
-| `put K --stdin --as=R [--parse=NAME]` | per zone |
+| `put K --stdin --as=R [--fetcher=NAME]` | per zone |
 | `delete K --if-etag=E --as=R` | per zone |
+| `refresh K --as=script` | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | `build` |
 | `accept K --as=human` | `human` only |
 
@@ -146,17 +147,21 @@ A derived entry MAY declare `publish_to:` listing repo-relative destinations. On
 
 ## Extension points
 
-Three named hooks where user code may run. Each is registry-shaped and bounded by a 2-second timeout where applicable.
+Three DSL verbs:
 
-- **Parsers** (`.textus/parsers/*.rb`) — translate raw bytes to entries during intake refresh. Built-ins: `json`, `csv`, `markdown-links`, `ical-events`, `rss`. Project-local parsers auto-load at `Store#initialize`. SPEC §5.4.
-- **Calculators** (`.textus/calculators/*.rb`) — pure row-to-row transforms used by projections via `transform: NAME`. Run between pluck and sort. Must not perform I/O. SPEC §5.9.
-- **Hooks** — declarative entries under a manifest entry's `hooks:` block, keyed by event (`on_put`, `on_delete`, `on_refresh`, `on_stale`, `on_accept`, `on_build`). textus enumerates; external runners (lefthook, cron, CI) invoke. SPEC §5.10.
+- **`Textus.fetcher(:name) do |config:, store:|`** — pulls data into an intake entry. Return `{ frontmatter:, body: }`. Configured via `source.fetcher` in the manifest. Five built-ins ship out of the box: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
+- **`Textus.reducer(:name) do |rows:, config:|`** — shapes rows in a derived projection. Pure function. Configured via `projection.reducer`.
+- **`Textus.hook(:event, :name) do |kwargs|`** — reacts to a lifecycle event. Five events: `:put`, `:delete`, `:refresh`, `:build`, `:accept`.
+
+Extension files live in `.textus/extensions/*.rb` (one per registration, by convention). Each Store instance gets its own registry; no global state.
+
+See SPEC.md §5.11 for the full contract.
 
 Schema fields may also declare `maintained_by:` and a top-level `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). SPEC §5.8.
 
 ## Examples
 
-- [`examples/claude-plugin/`](examples/claude-plugin/) — full tour: parser, calculator, lifecycle hooks, schema ownership, and a `derived.claude.root` entry published to `CLAUDE.md`.
+- [`examples/claude-plugin/`](examples/claude-plugin/) — full tour: fetcher, reducer, lifecycle events, schema ownership, and a `derived.claude.root` entry published to `CLAUDE.md`.
 - [`examples/mcp-server/`](examples/mcp-server/) — 50-line MCP server wrapping `textus get/put` as tools.
 
 ## Tests
