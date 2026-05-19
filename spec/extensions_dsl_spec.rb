@@ -82,4 +82,10 @@ RSpec.describe "Store-scoped extension loading" do
     expect(s1.registry).not_to be(s2.registry)
     expect(s1.registry.fetcher_names).to eq(s2.registry.fetcher_names)
   end
+
+  it "wraps extension load failures with filename context" do
+    File.write(File.join(root, "extensions/boom.rb"), "raise 'broken'")
+    expect { Textus::Store.new(root) }
+      .to raise_error(Textus::UsageError, /failed loading extension boom\.rb.*broken/)
+  end
 end

@@ -30,7 +30,15 @@ module Textus
     def load_extensions
       Textus.with_registry(@registry) do
         dir = File.join(@root, "extensions")
-        Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) } if File.directory?(dir) # rubocop:disable Lint/RedundantDirGlobSort
+        return unless File.directory?(dir)
+
+        Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
+          begin
+            load(f)
+          rescue StandardError, ScriptError => e
+            raise UsageError.new("failed loading extension #{File.basename(f)}: #{e.class}: #{e.message}")
+          end
+        end
       end
     end
 
