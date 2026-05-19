@@ -1,4 +1,4 @@
-# rubocop:disable Style/GlobalVars
+# rubocop:disable Style/GlobalVars, RSpec/MultipleDescribes
 require "spec_helper"
 require "fileutils"
 require "tmpdir"
@@ -55,4 +55,67 @@ RSpec.describe "Lifecycle events" do
     expect(extras["error"]).to match(/bang/)
   end
 end
-# rubocop:enable Style/GlobalVars
+
+RSpec.describe "Refresh event" do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/intake"))
+    FileUtils.mkdir_p(File.join(root, "extensions"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/1
+      zones: [{ name: intake, writable_by: [script] }]
+      entries:
+        - key: intake.x
+          path: intake/x.md
+          zone: intake
+          source: { fetcher: f }
+    YAML
+    File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
+      $log = []
+      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+    RUBY
+    $log = []
+  end
+
+  after do
+    FileUtils.remove_entry(tmp)
+    $log = nil
+  end
+
+  it "fires :refresh with change=:created on first refresh" do
+    store = Textus::Store.new(root)
+    Textus::Refresh.call(store, "intake.x", as: "script")
+    expect($log).to eq([["intake.x", :created]])
+  end
+
+  it "fires :refresh with change=:updated when body differs from previous" do
+    store = Textus::Store.new(root)
+    Textus::Refresh.call(store, "intake.x", as: "script")
+    File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
+      $log ||= []
+      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v2" } }
+      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+    RUBY
+    store2 = Textus::Store.new(root)
+    Textus::Refresh.call(store2, "intake.x", as: "script")
+    expect($log.last).to eq(["intake.x", :updated])
+  end
+
+  it "does NOT double-fire :put when refresh writes (suppress_events:)" do
+    File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
+      $log = []
+      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v" } }
+      Textus.hook(:put,     :p) { |key:, envelope:, store:| $log << [:put, key] }
+      Textus.hook(:refresh, :r) { |key:, envelope:, store:, change:| $log << [:refresh, key, change] }
+    RUBY
+    $log = []
+    store = Textus::Store.new(root)
+    Textus::Refresh.call(store, "intake.x", as: "script")
+    expect($log.count { |e| e[0] == :put }).to eq(0)
+    expect($log.count { |e| e[0] == :refresh }).to eq(1)
+  end
+end
+# rubocop:enable Style/GlobalVars, RSpec/MultipleDescribes

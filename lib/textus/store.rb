@@ -104,7 +104,7 @@ module Textus
       }
     end
 
-    def put(key, frontmatter:, body:, if_etag: nil, as: Role::DEFAULT)
+    def put(key, frontmatter:, body:, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
@@ -126,11 +126,11 @@ module Textus
       etag_after = Etag.for_bytes(bytes)
       audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
       envelope = build_envelope(key, mentry, path, frontmatter, body, etag_after)
-      fire_event(:put, key: key, envelope: envelope)
+      fire_event(:put, key: key, envelope: envelope) unless suppress_events
       envelope
     end
 
-    def delete(key, if_etag: nil, as: Role::DEFAULT)
+    def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
@@ -141,7 +141,7 @@ module Textus
 
       File.delete(path)
       audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
-      fire_event(:delete, key: key)
+      fire_event(:delete, key: key) unless suppress_events
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 

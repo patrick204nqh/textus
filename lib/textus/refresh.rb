@@ -5,9 +5,10 @@ module Textus
     FETCHER_TIMEOUT_SECONDS = 2
 
     def self.call(store, key, as:)
-      mentry, = store.manifest.resolve(key)
+      mentry, path, = store.manifest.resolve(key)
       raise UsageError.new("no fetcher declared for '#{key}'") unless mentry.fetcher
 
+      before_etag = File.exist?(path) ? Etag.for_file(path) : nil
       callable = store.registry.fetcher(mentry.fetcher)
       view = StoreView.new(store)
       result =
@@ -23,7 +24,17 @@ module Textus
 
       fm = result[:frontmatter] || result["frontmatter"] || {}
       body = result[:body] || result["body"] || ""
-      store.put(key, frontmatter: fm, body: body, as: as)
+      envelope = store.put(key, frontmatter: fm, body: body, as: as, suppress_events: true)
+
+      change = if before_etag.nil?
+                 :created
+               elsif envelope["etag"] == before_etag
+                 :unchanged
+               else
+                 :updated
+               end
+      store.fire_event(:refresh, key: key, envelope: envelope, change: change) unless change == :unchanged
+      envelope
     end
   end
 end
