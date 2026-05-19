@@ -5,7 +5,7 @@ module Textus
     def initialize
       @fetchers = {}
       @reducers = {}
-      @hooks = Hash.new { |h, k| h[k] = [] }
+      @hooks = {}
     end
 
     def register_fetcher(name, &blk)
@@ -26,7 +26,7 @@ module Textus
       event = event.to_sym
       raise UsageError.new("unknown event: #{event}") unless EVENTS.include?(event)
 
-      @hooks[event] << { name: name.to_sym, callable: blk }
+      (@hooks[event] ||= []) << { name: name.to_sym, callable: blk }
     end
 
     def fetcher(name)
@@ -38,7 +38,7 @@ module Textus
     end
 
     def hooks(event)
-      @hooks[event.to_sym]
+      @hooks[event.to_sym] || []
     end
 
     def fetcher_names = @fetchers.keys

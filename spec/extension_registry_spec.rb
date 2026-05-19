@@ -49,6 +49,12 @@ RSpec.describe Textus::ExtensionRegistry do
       expect { reg.register_hook(:nonsense, :h, &noop) }
         .to raise_error(Textus::UsageError, /unknown event: nonsense/)
     end
+
+    it "does not auto-register events merely by being queried" do
+      reg.hooks(:build)
+      reg.hooks(:put)
+      expect(reg.hook_events).to be_empty
+    end
   end
 
   describe "duplicate registration" do
