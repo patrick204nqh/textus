@@ -4,6 +4,7 @@ require "timeout"
 module Textus
   class Projection
     MAX_LIMIT = 1000
+    REDUCER_TIMEOUT_SECONDS = 2
 
     def initialize(store, spec)
       @store = store
@@ -31,9 +32,11 @@ module Textus
     def apply_reducer(rows)
       name = @spec["reducer"] or return rows
       callable = @store.registry.reducer(name)
-      Timeout.timeout(2) { callable.call(rows: rows, config: @spec["reducer_config"]) }
+      Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
+        callable.call(rows: rows, config: @spec["reducer_config"] || {})
+      end
     rescue Timeout::Error
-      raise UsageError.new("reducer '#{name}' exceeded 2s timeout")
+      raise UsageError.new("reducer '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
     end
 
     def collect_keys
