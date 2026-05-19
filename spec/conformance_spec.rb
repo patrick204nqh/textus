@@ -16,6 +16,7 @@ RSpec.describe "textus/1 conformance" do
     FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/derived/catalogs"))
     FileUtils.mkdir_p(File.join(root, "zones/canon"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/1
@@ -23,11 +24,21 @@ RSpec.describe "textus/1 conformance" do
         - { name: canon,   writable_by: [human] }
         - { name: working, writable_by: [human, ai, script] }
         - { name: derived, writable_by: [build] }
+        - { name: intake,  writable_by: [script] }
       entries:
         - { key: canon.identity,        path: canon/identity,        zone: canon,   schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working, schema: person, owner: human:patrick, nested: true }
         - { key: working.projects,      path: working/projects,      zone: working, schema: null,   owner: human:patrick, nested: true }
         - { key: derived.catalogs.skills, path: derived/catalogs/skills, zone: derived, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
+        - key: intake.calendar.events
+          path: intake/calendar/events
+          zone: intake
+          schema: null
+          owner: script:cron
+          source:
+            from: "https://example.com/calendar.ics"
+            parse: ical-events
+            ttl: 1s
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -130,12 +141,50 @@ RSpec.describe "textus/1 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = store.stale
+      rows = store.stale(zone: "derived")
       expect(rows.length).to eq(1)
       row = rows.first
       expect(row["key"]).to eq("derived.catalogs.skills")
       expect(row["generator"]["command"]).to eq("rake catalog:skills")
       expect(row["reason"]).to match(/working\.projects/)
+    end
+  end
+
+  describe "intake staleness via TTL" do
+    it "flags intake entries that were never refreshed" do
+      rows = store.stale(zone: "intake")
+      expect(rows.length).to eq(1)
+      expect(rows.first["key"]).to eq("intake.calendar.events")
+      expect(rows.first["reason"]).to match(/never refreshed/)
+    end
+
+    it "flags intake entries past their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
+      stale_time = (Time.now - 10).utc.iso8601
+      File.write(intake_path, <<~MD)
+        ---
+        name: events
+        last_refreshed_at: "#{stale_time}"
+        ---
+        body
+      MD
+      rows = store.stale(zone: "intake")
+      expect(rows.length).to eq(1)
+      expect(rows.first["reason"]).to match(/ttl exceeded/i)
+    end
+
+    it "does not flag intake entries within their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
+      fresh_time = Time.now.utc.iso8601
+      File.write(intake_path, <<~MD)
+        ---
+        name: events
+        last_refreshed_at: "#{fresh_time}"
+        ---
+        body
+      MD
+      rows = store.stale(zone: "intake")
+      expect(rows).to be_empty
     end
   end
 

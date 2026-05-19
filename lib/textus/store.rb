@@ -175,6 +175,34 @@ module Textus
         offender = newest_source_after(gen, gen_time)
         out << stale_row(mentry, path, "source '#{offender}' modified after generated.at") if offender
       end
+
+      @manifest.entries.each do |mentry|
+        next unless mentry.source
+        next if zone && mentry.zone != zone
+        next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
+        ttl = parse_ttl(mentry.source["ttl"])
+        next unless ttl
+
+        path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
+
+        if !File.exist?(path)
+          out << intake_stale_row(mentry, path, "never refreshed")
+          next
+        end
+
+        fm = Entry.parse(File.binread(path), path: path)["frontmatter"]
+        last_str = fm["last_refreshed_at"]
+        if last_str.nil?
+          out << intake_stale_row(mentry, path, "never refreshed (no last_refreshed_at)")
+          next
+        end
+
+        last = Time.parse(last_str.to_s) rescue nil
+        if last.nil? || (Time.now - last) > ttl
+          out << intake_stale_row(mentry, path, "ttl exceeded (#{ttl}s)")
+        end
+      end
+
       out
     end
 
@@ -203,6 +231,22 @@ module Textus
         end
       end
       nil
+    end
+
+    def parse_ttl(s)
+      return nil unless s
+      m = s.to_s.match(/\A(\d+)([smhd])\z/) or return nil
+      n = m[1].to_i
+      case m[2]
+      when "s" then n
+      when "m" then n * 60
+      when "h" then n * 3600
+      when "d" then n * 86400
+      end
+    end
+
+    def intake_stale_row(mentry, path, reason)
+      { "key" => mentry.key, "path" => path, "source" => mentry.source, "reason" => reason }
     end
 
     def stale_row(mentry, path, reason)
