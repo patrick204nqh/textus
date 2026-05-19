@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/patrick204nqh/textus"
   s.required_ruby_version = ">= 3.1"
 
-  s.files = Dir["lib/**/*.rb", "lib/textus/profiles/*.yaml", "exe/*", "README.md", "SPEC.md", "docs/**/*.md"]
+  s.files = Dir["lib/**/*.rb", "lib/textus/profiles/*.yaml", "exe/*", "README.md", "SPEC.md", "docs/architecture.md", "docs/conventions.md"]
   s.bindir = "exe"
   s.executables = ["textus"]
 
