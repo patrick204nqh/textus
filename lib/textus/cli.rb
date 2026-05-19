@@ -38,6 +38,7 @@ module Textus
       when "schema-init"    then verb_schema_init(argv)
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
+      when "hooks"          then verb_hooks(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -241,6 +242,18 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.accept(key, as: role))
+    end
+
+    def verb_hooks(argv)
+      subcommand = argv.shift
+      raise UsageError.new("hooks requires 'list'") unless subcommand == "list"
+      event = nil
+      OptionParser.new do |o|
+        o.on("--event=E") { |v| event = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      rows = Textus::Hooks.list(store.manifest, event: event)
+      emit({ "protocol" => Textus::PROTOCOL, "hooks" => rows })
     end
 
     def verb_published(argv)

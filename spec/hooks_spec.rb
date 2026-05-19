@@ -35,4 +35,15 @@ RSpec.describe "Manifest hooks block" do
     e = manifest.entries.find { |x| x.key == "intake.releases" }
     expect(e.hooks["on_stale"].first["run"]).to eq("scripts/x.sh")
   end
+
+  it "lists hooks filtered by event via CLI" do
+    out = StringIO.new
+    rc = Textus::CLI.run(
+      ["hooks", "list", "--event=on_stale", "--format=json"],
+      stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
+    )
+    expect(rc).to eq(0)
+    env = JSON.parse(out.string.lines.last)
+    expect(env["hooks"].first["event"]).to eq("on_stale")
+  end
 end
