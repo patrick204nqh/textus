@@ -40,6 +40,18 @@ entries:
     hooks:
       on_stale: [{ run: scripts/refresh-intake.sh, as: script }]
 
+  - key: intake.upstream.notes
+    path: intake/upstream/notes.md
+    zone: intake
+    schema: null
+    owner: script:cron
+    source:
+      from: https://example.com/notes.txt
+      parse: lowercase
+      ttl: 12h
+    hooks:
+      on_stale: [{ run: scripts/refresh-intake.sh, as: script }]
+
   # ---- derived: machine-built, never hand-edited ----
   - key: derived.claude.root
     path: derived/claude/root.md
