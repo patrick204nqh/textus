@@ -55,30 +55,23 @@ The root is `.textus/` at the project working directory. A typical v1.0 tree:
 
 ```
 .textus/
-  manifest.yaml              # key → subtree mapping + zones declarations
-  role                       # optional: default role for this checkout (one line, e.g. "human")
-  audit.log                  # append-only NDJSON log of every successful write
-  schemas/                   # YAML schema files
-    identity.yaml
-    person.yaml
-    project.yaml
-  templates/                 # Mustache templates referenced by derived entries
-    people.mustache
-  zones/
-    canon/                   # zone: canon (human-only)
-      identity.md
-    working/                 # zone: working (human, ai, script)
-      network/org/jane.md
-      projects/acme/dashboard.md
-    intake/                  # zone: intake (script — declared external inputs)
-      calendar/events.md
-    pending/                 # zone: pending (ai proposals awaiting accept)
-      proposal-2026-05-19-bob.md
-    derived/                 # zone: derived (build only — computed outputs)
-      catalogs/people.md
+  manifest.yaml          # internal: key → subtree mapping + zones declarations
+  audit.log              # internal, append-only NDJSON log of every successful write
+  role                   # internal, role token (one line, e.g. "human")
+  schemas/               # internal: YAML schema files
+  templates/             # internal: Mustache templates referenced by derived entries
+  parsers/               # internal: project-local parser extensions
+  zones/                 # ALL user content lives here
+    canon/               # zone: canon (human-only)
+    working/             # zone: working (human, ai, script)
+    intake/              # zone: intake (script — declared external inputs)
+    pending/             # zone: pending (ai proposals awaiting accept)
+    derived/             # zone: derived (build only — computed outputs)
 ```
 
-Zone directories are conventional; their write semantics are declared in the manifest, not the directory name. The reference implementation defaults to `.textus/zones/<zone>/...` but alternative layouts are allowed if the manifest reflects them.
+Textus internals (`manifest.yaml`, `audit.log`, `role`, `schemas/`, `templates/`, `parsers/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
+
+Zone directories under `zones/` are conventional; their write semantics are declared in the manifest, not the directory name.
 
 `.textus/audit.log` is an append-only NDJSON file written under a file lock by every successful `put`, `delete`, `accept`, and `build`. `.textus/role` (one line containing a role name) is optional and participates in the role-resolution order (§5).
 
@@ -138,7 +131,7 @@ Old manifests written against textus/1 draft v0.1 therefore parse without modifi
 
 **Key grammar:** dotted segments matching `/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/`. Segments joined by `.`. Example: `working.projects.acme.dashboard`.
 
-**Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly.
+**Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
 ## 5. Zones and role-based write gates
 

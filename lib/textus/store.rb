@@ -109,7 +109,7 @@ module Textus
         next unless gen
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-        path = mentry.path.end_with?(".md") ? File.join(@root, mentry.path) : File.join(@root, mentry.path + ".md")
+        path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
 
         if !File.exist?(path)
           out << stale_row(mentry, path, "derived entry has never been generated")

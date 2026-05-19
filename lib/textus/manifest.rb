@@ -34,14 +34,14 @@ module Textus
       remaining = segments[esegs.length..]
       if remaining.empty?
         path = if entry.path.end_with?(".md")
-                 File.join(@root, entry.path)
+                 File.join(@root, "zones", entry.path)
                else
-                 File.join(@root, entry.path + ".md")
+                 File.join(@root, "zones", entry.path + ".md")
                end
         [entry, path, []]
       else
         raise UnknownKey, key unless entry.nested
-        path = File.join(@root, entry.path, *remaining) + ".md"
+        path = File.join(@root, "zones", entry.path, *remaining) + ".md"
         [entry, path, remaining]
       end
     end
@@ -52,7 +52,7 @@ module Textus
       out = []
       @entries.each do |entry|
         if entry.nested
-          base = File.join(@root, entry.path)
+          base = File.join(@root, "zones", entry.path)
           next unless File.directory?(base)
           Dir.glob(File.join(base, "**", "*.md")).each do |fp|
             rel = fp.sub(/\A#{Regexp.escape(base)}\/?/, "").sub(/\.md\z/, "")
@@ -63,10 +63,10 @@ module Textus
           end
         else
           if entry.path.end_with?(".md")
-            fp = File.join(@root, entry.path)
+            fp = File.join(@root, "zones", entry.path)
             out << { key: entry.key, path: fp, manifest_entry: entry } if File.exist?(fp)
           else
-            fp = File.join(@root, entry.path + ".md")
+            fp = File.join(@root, "zones", entry.path + ".md")
             out << { key: entry.key, path: fp, manifest_entry: entry } if File.exist?(fp)
           end
         end

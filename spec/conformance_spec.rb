@@ -12,10 +12,10 @@ RSpec.describe "textus/1 conformance" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "state/network/org"))
-    FileUtils.mkdir_p(File.join(root, "state/projects"))
-    FileUtils.mkdir_p(File.join(root, "derived/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "fixed"))
+    FileUtils.mkdir_p(File.join(root, "zones/state/network/org"))
+    FileUtils.mkdir_p(File.join(root, "zones/state/projects"))
+    FileUtils.mkdir_p(File.join(root, "zones/derived/catalogs"))
+    FileUtils.mkdir_p(File.join(root, "zones/fixed"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/1
@@ -68,7 +68,7 @@ RSpec.describe "textus/1 conformance" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "state/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "zones/state/network/org/jane.md"), <<~MD)
       ---
       name: jane
       relationship: peer
@@ -135,7 +135,7 @@ RSpec.describe "textus/1 conformance" do
 
   describe "Fixture D — staleness detection" do
     it "flags derived entries with sources newer than generated.at without executing" do
-      derived_path = File.join(root, "derived/catalogs/skills.md")
+      derived_path = File.join(root, "zones/derived/catalogs/skills.md")
       File.write(derived_path, <<~MD)
         ---
         generated:
@@ -147,7 +147,7 @@ RSpec.describe "textus/1 conformance" do
         catalog body
       MD
 
-      project_path = File.join(root, "state/projects/acme.md")
+      project_path = File.join(root, "zones/state/projects/acme.md")
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
