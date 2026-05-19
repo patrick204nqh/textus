@@ -36,8 +36,8 @@ RSpec.describe "textus/1 conformance" do
           schema: null
           owner: script:cron
           source:
-            from: "https://example.com/calendar.ics"
-            parse: ical-events
+            fetcher: http_json
+            config: { url: "https://example.com/calendar.ics" }
             ttl: 1s
     YAML
 

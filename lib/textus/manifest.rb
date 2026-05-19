@@ -114,7 +114,7 @@ module Textus
 
   class ManifestEntry
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw,
-                :projection, :template, :publish_to, :source, :hooks
+                :projection, :template, :publish_to, :fetcher, :fetcher_config, :ttl, :events
 
     def initialize(_manifest, raw)
       @raw = raw
@@ -128,12 +128,36 @@ module Textus
       @projection = raw["projection"]
       @template = raw["template"]
       @publish_to = Array(raw["publish_to"])
-      @source = raw["source"]
-      @hooks = raw["hooks"] || {}
+      @events = raw["events"] || {}
+
+      reject_legacy!(raw)
+      parse_source!(raw["source"])
     end
 
-    def agent_writable?
-      @zone == "state"
+    private
+
+    def parse_source!(src)
+      return @fetcher = @fetcher_config = @ttl = nil unless src
+
+      @fetcher = src["fetcher"]
+      @fetcher_config = src["config"] || {}
+      @ttl = src["ttl"]
+    end
+
+    def reject_legacy!(raw)
+      src = raw["source"] || {}
+      if src.key?("parse") || src.key?("from")
+        raise UsageError.new(
+          "entry '#{@key}': source.parse/source.from removed in 0.2; " \
+          "use source.fetcher (+ source.config). See SPEC §5.4.",
+        )
+      end
+      return unless raw.key?("hooks")
+
+      raise UsageError.new(
+        "entry '#{@key}': 'hooks:' renamed to 'events:' in 0.2; " \
+        "remove on_ prefix from event names. See SPEC §5.10.",
+      )
     end
   end
 end

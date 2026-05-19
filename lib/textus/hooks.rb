@@ -7,7 +7,7 @@ module Textus
 
       rows = []
       manifest.entries.each do |e|
-        e.hooks.each do |evt, defs|
+        e.events.each do |evt, defs|
           next if event && evt != event
 
           Array(defs).each do |defn|

@@ -3,7 +3,7 @@ require "fileutils"
 require "tmpdir"
 require "json"
 
-RSpec.describe "Manifest hooks block" do
+RSpec.describe "Manifest hooks block", pending: "legacy hooks: removed in Task 5; spec deletion in Task 14" do
   let(:tmp) { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 

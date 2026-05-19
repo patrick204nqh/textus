@@ -231,11 +231,11 @@ module Textus
       end
 
       @manifest.entries.each do |mentry|
-        next unless mentry.source
+        next unless mentry.fetcher
         next if zone && mentry.zone != zone
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-        ttl = parse_ttl(mentry.source["ttl"])
+        ttl = parse_ttl(mentry.ttl)
         next unless ttl
 
         path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
@@ -305,7 +305,7 @@ module Textus
     end
 
     def intake_stale_row(mentry, path, reason)
-      { "key" => mentry.key, "path" => path, "source" => mentry.source, "reason" => reason }
+      { "key" => mentry.key, "path" => path, "fetcher" => mentry.fetcher, "reason" => reason }
     end
 
     def stale_row(mentry, path, reason)
