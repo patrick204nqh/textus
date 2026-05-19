@@ -88,6 +88,7 @@ module Textus
     # `_meta` ordering applies to structured formats only; markdown keeps existing shape
     # for backward compat with consumers reading frontmatter["generated"]["at"].
     def build_markdown(mentry, data)
+      data = data.merge("intro" => Intro.run(@store)) if mentry.inject_intro
       body = render_template!(mentry, data)
       frontmatter = {
         "generated" => {
@@ -100,6 +101,7 @@ module Textus
 
     # Text: projection -> template -> text.serialize(body). No frontmatter, no _meta.
     def build_text(mentry, data)
+      data = data.merge("intro" => Intro.run(@store)) if mentry.inject_intro
       body = render_template!(mentry, data)
       Entry.for_format("text").serialize(frontmatter: {}, body: body)
     end

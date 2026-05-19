@@ -164,6 +164,8 @@ Validation at manifest load: any unknown variable raises `UsageError`; the templ
 
 A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/working/skills/writing/voice-writer.md`) publishes to `skills/voice-writer/SKILL.md`.
 
+**`inject_intro:` (v1.1).** A derived entry with a `template:` MAY declare `inject_intro: true`. When the builder materializes the entry, it merges the `textus intro` envelope (§9) into the projection data under the key `intro`, so the template can render orientation content (zones, write flows, CLI catalog) alongside its projected rows. The flag is rejected at manifest load on (a) non-derived entries or (b) derived entries without a `template:` — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus intro` exposes.
+
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
 ## 5. Zones and role-based write gates
@@ -585,6 +587,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `uid K` | read | any |
 | `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
 | `doctor [--format=json]` | read | any |
+| `intro [--format=json]` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):
 

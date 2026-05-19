@@ -68,7 +68,7 @@ module Textus
 
       case value
       when Array
-        value.map { |v| render(section, merge(context, v), strict: strict, depth: depth + 1) }.join
+        value.map { |v| render(section, scope_for(context, v), strict: strict, depth: depth + 1) }.join
       when Hash
         render(section, merge(context, value), strict: strict, depth: depth + 1)
       when true
@@ -84,6 +84,9 @@ module Textus
     end
 
     def self.lookup(context, name)
+      # Implicit iterator: {{.}} refers to the current scope itself (used when
+      # iterating arrays of primitive values).
+      return context["."] if name == "." && context.is_a?(Hash) && context.key?(".")
       return context[name] if context.is_a?(Hash) && context.key?(name)
 
       name.split(".").reduce(context) do |acc, seg|
@@ -91,6 +94,16 @@ module Textus
 
         acc[seg]
       end
+    end
+
+    # Build the rendering scope for one iteration of a section. Hash items
+    # merge into the outer context; primitive items (strings, numbers) bind
+    # to the implicit iterator under key ".".
+    def self.scope_for(context, item)
+      return merge(context, item) if item.is_a?(Hash)
+
+      base = context.is_a?(Hash) ? context : {}
+      base.merge("." => item)
     end
 
     def self.merge(base, override)

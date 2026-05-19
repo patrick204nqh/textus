@@ -46,6 +46,7 @@ module Textus
       when "mv"             then verb_mv(argv)
       when "uid"            then verb_uid(argv)
       when "doctor"         then verb_doctor(argv)
+      when "intro"          then verb_intro(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -342,6 +343,11 @@ module Textus
       key = argv.shift or raise UsageError.new("uid requires a key")
       parse_format!(argv)
       emit({ "protocol" => PROTOCOL, "key" => key, "uid" => store.uid(key) })
+    end
+
+    def verb_intro(argv)
+      parse_format!(argv)
+      emit(Textus::Intro.run(store))
     end
 
     def verb_doctor(argv)

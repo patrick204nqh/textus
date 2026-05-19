@@ -199,7 +199,8 @@ module Textus
     PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
 
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
-                :projection, :template, :publish_to, :publish_each, :fetcher, :fetcher_config, :ttl, :events
+                :projection, :template, :publish_to, :publish_each, :fetcher, :fetcher_config, :ttl, :events,
+                :inject_intro
 
     def initialize(manifest, raw)
       @manifest = manifest
@@ -216,12 +217,14 @@ module Textus
       @publish_to = Array(raw["publish_to"])
       @publish_each = raw["publish_each"]
       @events = raw["events"] || {}
+      @inject_intro = raw["inject_intro"] == true
       @format = resolve_format!(raw["format"])
 
       reject_legacy!(raw)
       parse_source!(raw["source"])
       validate_format_matrix!
       validate_publish_each!
+      validate_inject_intro!
     end
 
     # Resolves the per-leaf target path (relative to repo root) for a full
@@ -251,6 +254,21 @@ module Textus
     end
 
     private
+
+    def validate_inject_intro!
+      return unless @inject_intro
+
+      unless derived?
+        raise UsageError.new(
+          "entry '#{@key}': inject_intro: is only valid on derived entries",
+        )
+      end
+      return unless @template.nil?
+
+      raise UsageError.new(
+        "entry '#{@key}': inject_intro: requires a template:",
+      )
+    end
 
     def validate_publish_each!
       return if @publish_each.nil?

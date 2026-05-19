@@ -1,12 +1,31 @@
 ---
 generated:
-  at: '2026-05-19T16:46:23Z'
+  at: '2026-05-19T17:05:03Z'
   from:
   - canon.plugin
   - working.agents
   - working.skills
   - working.commands
 ---
+<!--
+This file is the orientation Claude Code (and any agent) reads on session
+start. It is the projection of textus over `.textus/zones/...`. Do not
+edit by hand — edit the source under `.textus/zones/working/...` and run
+`textus build`.
+
+→ Context store: `.textus/` (textus, protocol textus/1).
+→ Run `textus intro --format=json` for the full catalog shape and write flows.
+→ Write authority by zone:
+    - **canon** (human ) — slow-changing identity; human-only writes
+    - **working** (human ai script ) — active project state; humans, AI, and scripts share this surface
+    - **intake** (script ) — declared external inputs; script-refreshed via fetchers
+    - **pending** (ai human ) — AI proposals awaiting human accept
+    - **derived** (build ) — build-computed outputs; never hand-edited
+
+→ AI proposals go to `pending.*` with `--as=ai` carrying a `proposal:` block;
+   a human runs `textus accept <key>` to apply.
+-->
+
 # voice-tools
 
 > Helpers for keeping prose in a consistent voice.
@@ -33,4 +52,4 @@ generated:
 
 
 ---
-_Built at 2026-05-19T16:46:23Z._
+_Built at 2026-05-19T17:05:03Z._

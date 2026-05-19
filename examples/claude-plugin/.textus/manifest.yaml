@@ -90,6 +90,7 @@ entries:
       pluck: "*"
       reducer: claude-root
     template: claude-root.mustache
+    inject_intro: true
     publish_to: [CLAUDE.md]
     events:
       build:
