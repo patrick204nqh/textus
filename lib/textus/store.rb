@@ -1,8 +1,11 @@
 require "fileutils"
 require "time"
+require "timeout"
 
 module Textus
   class Store
+    HOOK_TIMEOUT_SECONDS = 2
+
     attr_reader :root, :manifest, :registry
 
     def self.discover(start_dir = Dir.pwd)
@@ -122,7 +125,9 @@ module Textus
       File.binwrite(path, bytes)
       etag_after = Etag.for_bytes(bytes)
       audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
-      build_envelope(key, mentry, path, frontmatter, body, etag_after)
+      envelope = build_envelope(key, mentry, path, frontmatter, body, etag_after)
+      fire_event(:put, key: key, envelope: envelope)
+      envelope
     end
 
     def delete(key, if_etag: nil, as: Role::DEFAULT)
@@ -136,7 +141,19 @@ module Textus
 
       File.delete(path)
       audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
+      fire_event(:delete, key: key)
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
+    end
+
+    def fire_event(event, **kwargs)
+      view = StoreView.new(self)
+      @registry.hooks(event).each do |entry|
+        Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
+      rescue StandardError => _e
+        # Will be properly audited in Task 12 once AuditLog supports extras:.
+        # For now: hook errors are silently swallowed (write/delete already committed).
+        # Timeout::Error inherits from StandardError, so it's covered here.
+      end
     end
 
     def accept(key, as:)
