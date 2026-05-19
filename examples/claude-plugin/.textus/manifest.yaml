@@ -2,6 +2,7 @@ version: textus/1
 zones:
   - { name: canon,   writable_by: [human] }
   - { name: working, writable_by: [human, ai, script] }
+  - { name: intake,  writable_by: [script] }
   - { name: derived, writable_by: [build] }
 entries:
   # ---- canon: author-curated, slow-changing identity ----
@@ -25,6 +26,19 @@ entries:
     schema: null
     owner: human:self
     nested: true
+
+  # ---- intake: script-fed, TTL-bound ----
+  - key: intake.upstream.releases
+    path: intake/upstream/releases.md
+    zone: intake
+    schema: null
+    owner: script:cron
+    source:
+      from: https://example.com/releases.rss
+      parse: rss
+      ttl: 6h
+    hooks:
+      on_stale: [{ run: scripts/refresh-intake.sh, as: script }]
 
   # ---- derived: machine-built, never hand-edited ----
   - key: derived.claude.root
