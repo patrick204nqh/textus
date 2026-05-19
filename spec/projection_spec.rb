@@ -44,4 +44,24 @@ RSpec.describe Textus::Projection do
       Textus::Projection.new(store, { "select" => "working.people", "limit" => 5000 })
     }.to raise_error(Textus::InvalidProjection)
   end
+
+  it "applies a transform calculator before sort/limit" do
+    snapshot = Textus::Calculators::REGISTRY.dup
+    begin
+      Textus::Calculators.register("score", ->(rows) {
+        rows.map { |r| r.merge("score" => r["name"].length) }
+      })
+      proj = Textus::Projection.new(store, {
+        "select" => "working.people",
+        "pluck"  => ["name"],
+        "transform" => "score",
+        "sort_by" => "score",
+      })
+      out = proj.run
+      expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
+    ensure
+      Textus::Calculators::REGISTRY.clear
+      Textus::Calculators::REGISTRY.merge!(snapshot)
+    end
+  end
 end

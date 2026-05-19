@@ -19,12 +19,18 @@ module Textus
         row = pluck(env["frontmatter"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end
+      rows = apply_transform(rows)
       rows = sort(rows)
       rows = rows.first(@limit)
       { "entries" => rows, "count" => rows.length, "generated_at" => Time.now.utc.iso8601 }
     end
 
     private
+
+    def apply_transform(rows)
+      name = @spec["transform"] or return rows
+      Calculators.apply(name, rows)
+    end
 
     def collect_keys
       prefixes = Array(@spec["select"])
