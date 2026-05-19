@@ -58,12 +58,19 @@ module Textus
       bytes = Entry.serialize(frontmatter: frontmatter, body: body)
       File.binwrite(target_path, bytes)
 
+      publish_and_fire(mentry, target_path)
+      { "key" => mentry.key, "path" => target_path, "published_to" => mentry.publish_to }
+    end
+
+    def publish_and_fire(mentry, target_path)
       mentry.publish_to.each do |rel|
         repo_root = File.dirname(@root)
         Symlink.publish(source: target_path, target: File.join(repo_root, rel))
       end
 
-      { "key" => mentry.key, "path" => target_path, "published_to" => mentry.publish_to }
+      envelope = @store.get(mentry.key)
+      @store.fire_event(:build, key: mentry.key, envelope: envelope,
+                                sources: Array(mentry.projection&.fetch("select", nil)).compact)
     end
 
     def format_default(data)

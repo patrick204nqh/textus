@@ -137,4 +137,97 @@ RSpec.describe "Refresh event" do
     expect($log.count { |e| e[0] == :refresh }).to eq(1)
   end
 end
+
+RSpec.describe "Build and accept events" do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "extensions"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/1
+      zones:
+        - { name: working, writable_by: [human] }
+        - { name: derived, writable_by: [build] }
+      entries:
+        - { key: working.x, path: working/x.md, zone: working }
+        - key: derived.summary
+          path: derived/summary.md
+          zone: derived
+          projection:
+            select: [working]
+            pluck: [name]
+    YAML
+    File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
+    File.write(File.join(root, "extensions/log.rb"), <<~RUBY)
+      $log = []
+      Textus.hook(:build, :t) do |key:, envelope:, store:, sources:|
+        $log << [:build, key, sources]
+      end
+    RUBY
+    $log = []
+  end
+
+  after do
+    FileUtils.remove_entry(tmp)
+    $log = nil
+  end
+
+  it "fires :build after Builder materializes a derived entry" do
+    store = Textus::Store.new(root)
+    Textus::Builder.new(store).build
+    expect($log).to include([:build, "derived.summary", ["working"]])
+  end
+end
+
+RSpec.describe "Accept event" do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/pending"))
+    FileUtils.mkdir_p(File.join(root, "extensions"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/1
+      zones:
+        - { name: working, writable_by: [human] }
+        - { name: pending, writable_by: [ai, human] }
+      entries:
+        - { key: working.bob, path: working/bob.md, zone: working }
+        - { key: pending.bob, path: pending/bob.md, zone: pending }
+    YAML
+    File.write(File.join(root, "zones/pending/bob.md"), <<~MD)
+      ---
+      name: bob
+      proposal:
+        target_key: working.bob
+        action: put
+      frontmatter:
+        name: bob
+      ---
+      proposed body
+    MD
+    File.write(File.join(root, "extensions/log.rb"), <<~RUBY)
+      $log = []
+      Textus.hook(:accept, :t) do |pending_key:, target_key:, store:|
+        $log << [:accept, pending_key, target_key]
+      end
+    RUBY
+    $log = []
+  end
+
+  after do
+    FileUtils.remove_entry(tmp)
+    $log = nil
+  end
+
+  it "fires :accept after Proposal.accept completes" do
+    store = Textus::Store.new(root)
+    store.accept("pending.bob", as: "human")
+    expect($log).to include([:accept, "pending.bob", "working.bob"])
+  end
+end
 # rubocop:enable Style/GlobalVars, RSpec/MultipleDescribes
