@@ -28,6 +28,10 @@ module Textus
     def initialize(path, m) = super("bad_frontmatter", m, details: { "path" => path })
   end
 
+  class BadContent < Error
+    def initialize(path, m) = super("bad_content", m, details: { "path" => path })
+  end
+
   class SchemaViolation < Error; def initialize(d) = super("schema_violation", "schema violation", details: d); end
 
   class WriteForbidden  < Error

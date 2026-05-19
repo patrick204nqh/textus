@@ -3,6 +3,7 @@ require "time"
 require "timeout"
 
 module Textus
+  # rubocop:disable Metrics/ClassLength
   class Store
     HOOK_TIMEOUT_SECONDS = 2
 
@@ -62,12 +63,19 @@ module Textus
       raise UnknownKey.new(key) unless File.exist?(path)
 
       raw = File.binread(path)
-      parsed = Entry.parse(raw, path: path)
+      parsed = Entry.for_format(mentry.format).parse(raw, path: path)
       fm = parsed["frontmatter"]
-      enforce_name_match!(path, fm)
+      content = parsed["content"]
+      enforce_name_match!(path, fm, mentry.format)
       schema = schema_for(mentry.schema)
-      schema&.validate!(fm)
-      build_envelope(key, mentry, path, fm, parsed["body"], Etag.for_bytes(raw))
+      if schema
+        case mentry.format
+        when "markdown" then schema.validate!(fm)
+        when "json", "yaml" then schema.validate!(content || {})
+          # text: schema forbidden by manifest validation
+        end
+      end
+      build_envelope(key, mentry, path, fm, parsed["body"], Etag.for_bytes(raw), content: content)
     end
 
     def where(key)
@@ -104,28 +112,40 @@ module Textus
       }
     end
 
-    def put(key, frontmatter:, body:, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+    # rubocop:disable Metrics/ParameterLists
+    def put(key, frontmatter: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+      # rubocop:enable Metrics/ParameterLists
+      @manifest.validate_key!(key)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
 
-      basename = File.basename(path, ".md")
-      if frontmatter["name"] && frontmatter["name"] != basename
-        raise BadFrontmatter.new(path, "frontmatter name '#{frontmatter["name"]}' does not match basename '#{basename}'")
-      end
+      frontmatter ||= {}
+      strategy = Entry.for_format(mentry.format)
+
+      bytes, eff_fm, eff_body, eff_content = serialize_for_put(
+        mentry: mentry, path: path, strategy: strategy,
+        frontmatter: frontmatter, body: body, content: content
+      )
+
+      enforce_name_match!(path, eff_fm, mentry.format)
 
       schema = schema_for(mentry.schema)
-      schema&.validate!(frontmatter)
+      if schema
+        case mentry.format
+        when "markdown" then schema.validate!(eff_fm)
+        when "json", "yaml" then schema.validate!(eff_content || {})
+        end
+      end
 
       etag_before = File.exist?(path) ? Etag.for_file(path) : nil
       raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && (etag_before != if_etag)
 
       FileUtils.mkdir_p(File.dirname(path))
-      bytes = Entry.serialize(frontmatter: frontmatter, body: body)
       File.binwrite(path, bytes)
       etag_after = Etag.for_bytes(bytes)
       audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
-      envelope = build_envelope(key, mentry, path, frontmatter, body, etag_after)
+      envelope = build_envelope(key, mentry, path, eff_fm, eff_body, etag_after, content: eff_content)
       fire_event(:put, key: key, envelope: envelope) unless suppress_events
       envelope
     end
@@ -226,7 +246,7 @@ module Textus
         next unless gen
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-        path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
+        path = path_for_entry(mentry)
 
         unless File.exist?(path)
           out << stale_row(mentry, path, "derived entry has never been generated")
@@ -234,7 +254,7 @@ module Textus
         end
 
         raw = File.binread(path)
-        parsed = Entry.parse(raw, path: path)
+        parsed = Entry.for_format(mentry.format).parse(raw, path: path)
         generated_at = parsed["frontmatter"].dig("generated", "at")
         unless generated_at
           out << stale_row(mentry, path, "missing generated.at frontmatter")
@@ -262,14 +282,14 @@ module Textus
         ttl = parse_ttl(mentry.ttl)
         next unless ttl
 
-        path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
+        path = path_for_entry(mentry)
 
         unless File.exist?(path)
           out << intake_stale_row(mentry, path, "never refreshed")
           next
         end
 
-        fm = Entry.parse(File.binread(path), path: path)["frontmatter"]
+        fm = Entry.for_format(mentry.format).parse(File.binread(path), path: path)["frontmatter"]
         last_str = fm["last_refreshed_at"]
         if last_str.nil?
           out << intake_stale_row(mentry, path, "never refreshed (no last_refreshed_at)")
@@ -292,6 +312,15 @@ module Textus
 
     def audit_log
       @audit_log ||= AuditLog.new(@root)
+    end
+
+    def path_for_entry(mentry)
+      primary_ext = Entry.for_format(mentry.format).extensions.first
+      if File.extname(mentry.path) == ""
+        File.join(@root, "zones", mentry.path + primary_ext)
+      else
+        File.join(@root, "zones", mentry.path)
+      end
     end
 
     def newest_source_after(gen, gen_time)
@@ -341,25 +370,62 @@ module Textus
       }
     end
 
-    def enforce_name_match!(path, fm)
+    def enforce_name_match!(path, fm, format)
+      # Name<->basename check only meaningful for markdown frontmatter.
+      return unless format == "markdown"
+
       basename = File.basename(path, ".md")
-      return unless fm["name"] && fm["name"] != basename
+      return unless fm.is_a?(Hash) && fm["name"] && fm["name"] != basename
 
       raise BadFrontmatter.new(path, "frontmatter name '#{fm["name"]}' does not match basename '#{basename}'")
     end
 
-    def build_envelope(key, mentry, path, fm, body, etag)
-      {
+    def serialize_for_put(mentry:, path:, strategy:, frontmatter:, body:, content:)
+      case mentry.format
+      when "markdown", "text"
+        bytes = strategy.serialize(frontmatter: frontmatter, body: body.to_s)
+        [bytes, frontmatter, body.to_s, nil]
+      when "json", "yaml"
+        raise UsageError.new("put for #{mentry.format} requires content: or body:") if content.nil? && (body.nil? || body.to_s.empty?)
+
+        if content.nil?
+          # Caller passed raw body; validate by parsing.
+          begin
+            parsed = strategy.parse(body.to_s, path: path)
+          rescue BadFrontmatter => e
+            raise BadContent.new(path, "bad_content: #{e.message}")
+          end
+          eff_content = parsed["content"]
+          eff_fm = eff_content.is_a?(Hash) && eff_content["_meta"].is_a?(Hash) ? eff_content["_meta"] : {}
+          [body.to_s, eff_fm, body.to_s, eff_content]
+        else
+          bytes = strategy.serialize(frontmatter: {}, body: "", content: content)
+          eff_fm = content.is_a?(Hash) && content["_meta"].is_a?(Hash) ? content["_meta"] : (frontmatter || {})
+          [bytes, eff_fm, bytes, content]
+        end
+      else
+        raise UsageError.new("unknown format #{mentry.format.inspect}")
+      end
+    end
+
+    # rubocop:disable Metrics/ParameterLists
+    def build_envelope(key, mentry, path, fm, body, etag, content: nil)
+      # rubocop:enable Metrics/ParameterLists
+      env = {
         "protocol" => PROTOCOL,
         "key" => key,
         "zone" => mentry.zone,
         "owner" => mentry.owner,
         "path" => path,
+        "format" => mentry.format,
         "frontmatter" => fm,
         "body" => body,
         "etag" => etag,
         "schema_ref" => mentry.schema,
       }
+      env["content"] = content unless content.nil?
+      env
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

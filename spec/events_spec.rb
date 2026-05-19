@@ -156,10 +156,13 @@ RSpec.describe "Build and accept events" do
         - key: derived.summary
           path: derived/summary.md
           zone: derived
+          template: summary.mustache
           projection:
             select: [working]
             pluck: [name]
     YAML
+    FileUtils.mkdir_p(File.join(root, "templates"))
+    File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")
     File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
     File.write(File.join(root, "extensions/log.rb"), <<~RUBY)
       $log = []
