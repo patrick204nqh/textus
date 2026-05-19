@@ -11,17 +11,22 @@ A minimal but real `.textus/` tree that compiles a Claude Code plugin's
   templates/                 # Mustache templates used by derived entries
     claude-root.mustache
     marketplace.mustache
-  extensions/                # project-local fetchers + reducers (auto-loaded)
-    lowercase.rb
-    rank-by-recency.rb
+  extensions/                # project-local DSL code (auto-loaded)
+    local-file.rb              # Textus.fetcher — for intake refresh
+    rank-by-recency.rb         # Textus.reducer — for projection ordering
+    build-stamp.rb             # Textus.hook   — :build event observer
+  schemas/
+    project.yaml             # field validation + maintained_by
   zones/
     canon/voice.md           # author identity (slow-changing)
     working/
       projects/*.md          # one file per project
       skills/*.md            # one file per skill
     derived/                 # build output (do not hand-edit)
+  audit.log                  # append-only writer log
 CLAUDE.md                    # symlink into .textus/zones/derived/claude/root.md
 marketplace.json             # symlink into .textus/zones/derived/marketplace.md
+Rakefile                     # `rake textus:refresh` / `rake textus:update`
 ```
 
 ## Tour — every extension point in one repo
@@ -34,20 +39,30 @@ This example exercises the full 0.2 surface end-to-end:
    `canon` zone is `writable_by: [human]` — AI and scripts cannot touch it.
 3. **AI-assisted updates via pending.** AI proposes a patch:
    `textus put pending.suggestion.001 --as=ai` and a human accepts it with
-   `textus accept pending.suggestion.001 --to=working.projects.textus`.
-4. **Intake refresh via TTL + fetchers.** `textus stale --zone=intake`
-   reports entries past their `source.ttl`. `textus refresh` then calls the
-   registered fetcher for each stale entry and writes the result back through
-   `put`. Textus owns the fetch — extensions just describe how.
-5. **Project-local fetcher.** `.textus/extensions/lowercase.rb` calls
-   `Textus.fetcher(:lowercase) { |config:, store:| ... }` and is auto-loaded
-   on store boot. Used when an intake entry declares `source.fetcher: lowercase`.
-6. **Project-local reducer.** `.textus/extensions/rank-by-recency.rb`
+   `textus accept pending.suggestion.001`.
+4. **Intake refresh via in-process fetcher.**
+   `.textus/extensions/local-file.rb` registers `Textus.fetcher(:"local-file")`.
+   Manifest entry `intake.upstream.notes` declares
+   `source: { fetcher: local-file, config: { path: ... }, ttl: 12h }`.
+   `textus refresh intake.upstream.notes --as=script` calls the fetcher,
+   validates the result, and writes it back through `put` — audit + events
+   apply automatically.
+5. **Project-local reducer.** `.textus/extensions/rank-by-recency.rb`
    registers a pure `rows -> rows` transform via `Textus.reducer(...)`. The
    `derived.claude.root` projection declares `reducer: rank-by-recency`, so
-   `textus build` orders projects by `updated_at` before rendering `CLAUDE.md`
-   via Mustache.
-7. **Schema-as-contract.** `.textus/schemas/project.yaml` declares each field's
+   `textus build` orders projects by `updated_at` before rendering `CLAUDE.md`.
+6. **In-process hook.** `.textus/extensions/build-stamp.rb` subscribes to the
+   `:build` event via `Textus.hook(:build, :stamp_log)`. Every time
+   `textus build` materializes a derived entry, the hook appends a line to
+   `.textus/last-build.log` showing the key, sources, and short etag. Hook
+   failures land in `audit.log` as `event_error` rows — they never abort
+   the build.
+7. **External-runner hook (declarative).** `derived.claude.root` also
+   declares `events: { build: [{ exec: bin/notify-build, as: script }] }`.
+   Textus does NOT invoke this — it surfaces it via
+   `textus extensions list --kind=hook --format=json` so external runners
+   (cron, lefthook, CI) can dispatch.
+8. **Schema-as-contract.** `.textus/schemas/project.yaml` declares each field's
    `maintained_by` (human / ai / script). `textus validate-all` cross-checks
    that the last writer of every field had authority — humans always override.
 
@@ -66,6 +81,7 @@ textus build --format=json
 
 # 4. CLAUDE.md and marketplace.json now point at the freshly-rendered files.
 cat CLAUDE.md
+tail .textus/last-build.log    # :build hook recorded each one
 ```
 
 The `derived/` zone is owned by `build:auto` — humans never write to it. The
@@ -76,23 +92,34 @@ plain file.
 ## How intake refresh works
 
 1. You declare intake entries in `.textus/manifest.yaml` with
-   `source: { fetcher: NAME, config: { ... }, ttl: 6h }`.
-2. `textus stale --zone=intake` reports entries past their TTL.
-3. `textus refresh` calls each entry's registered fetcher (with `config:` and
-   a read-only `store:` view), validates the result, and writes it through
-   the normal `put` path so audit + events + schema all apply.
-4. Promotion from intake to working is a human/PR decision (or another
+   `source: { fetcher: NAME, config: { ... }, ttl: 12h }`.
+2. `textus stale --zone=intake --format=json` lists entries past their TTL.
+3. `textus refresh KEY --as=script` calls KEY's registered fetcher
+   (built-in or project-local) with `(config:, store:)` where `store` is a
+   read-only `StoreView`. The fetcher returns `{ frontmatter:, body: }`,
+   which textus writes via `put` — audit, events, and schema validation all
+   apply. The fetcher is bounded by a 2 s timeout.
+4. There is no bulk-refresh CLI verb. `rake textus:refresh` walks the stale
+   list and calls `textus refresh` per key (see `Rakefile`).
+5. Promotion from intake to working is a human/PR decision (or another
    script that calls `textus accept`).
 
 ## Project-local extensions
 
-Drop a Ruby file into `.textus/extensions/` to register a named fetcher or
-reducer. The store auto-loads every `.rb` in that directory on boot.
+Drop a Ruby file into `.textus/extensions/` to register a fetcher, reducer,
+or hook. The store auto-loads every `.rb` in that directory on boot, in
+lexical order, with each store getting its own isolated registry.
 
 ```ruby
-# .textus/extensions/lowercase.rb
-Textus.fetcher(:lowercase) do |config:, store:|
-  { frontmatter: {}, body: config["bytes"].to_s.downcase }
+# .textus/extensions/local-file.rb
+Textus.fetcher(:"local-file") do |config:, store:|
+  path = config["path"] or raise "local-file fetcher requires source.config.path"
+  abs  = File.absolute_path?(path) ? path : File.expand_path(path)
+  raise "local-file: not found: #{abs}" unless File.exist?(abs)
+  {
+    frontmatter: { "fetched_at" => Time.now.utc.iso8601, "source_path" => path },
+    body: File.read(abs),
+  }
 end
 ```
 
@@ -103,14 +130,23 @@ Textus.reducer(:"rank-by-recency") do |rows:, config:|
 end
 ```
 
-Inspect what's loaded with `textus extensions list --format=json`. Each
-fetcher / reducer call is bounded by a 2s timeout so a hung extension cannot
-stall the store.
+```ruby
+# .textus/extensions/build-stamp.rb
+Textus.hook(:build, :stamp_log) do |key:, envelope:, store:, sources:|
+  line = "#{Time.now.utc.iso8601} #{key} from=#{sources.join(',')} etag=#{envelope['etag'][0..11]}\n"
+  File.write(File.expand_path(".textus/last-build.log"), line, mode: "a")
+end
+```
 
-## Hooks
+Inspect what's loaded with `textus extensions list --format=json`. Every
+fetcher/reducer/hook invocation is bounded by a 2 s timeout so a hung
+extension cannot stall the store.
 
-`lefthook.yml` rebuilds derived on every commit so `CLAUDE.md` is never stale
-relative to the working entries it summarises.
+## Git hooks
 
-`Rakefile` exposes `rake textus:refresh` (intake refresh) and
+`lefthook.yml` runs `rubocop` pre-commit and the test suite pre-push. The
+`textus`-side build hook (point 6 above) is unrelated — it's the
+`Textus.hook(:build, ...)` Ruby DSL, fired in-process by `textus build`.
+
+`Rakefile` exposes `rake textus:refresh` (walk stale + refresh each key) and
 `rake textus:update` (refresh + build).

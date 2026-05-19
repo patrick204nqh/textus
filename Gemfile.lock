@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    textus (0.1.0)
+    textus (0.2.0)
       csv (>= 3.0)
       psych (>= 5.0)
       rexml (>= 3.2)
@@ -103,7 +103,7 @@ CHECKSUMS
   rubocop-rspec (3.9.0)
   ruby-progressbar (1.13.0)
   stringio (3.2.0) sha256=c37cb2e58b4ffbd33fe5cd948c05934af997b36e0b6ca6fdf43afa234cf222e1
-  textus (0.1.0)
+  textus (0.2.0)
   unicode-display_width (3.2.0)
   unicode-emoji (4.2.0)
 

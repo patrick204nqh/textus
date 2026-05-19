@@ -39,15 +39,17 @@ entries:
         url: https://example.com/releases.rss
       ttl: 6h
 
+  # Reads from a local file via the project-local :local-file fetcher.
+  # Run `textus refresh intake.upstream.notes --as=script` to materialize.
   - key: intake.upstream.notes
     path: intake/upstream/notes.md
     zone: intake
     schema: null
-    owner: script:cron
+    owner: script:local
     source:
-      fetcher: lowercase
+      fetcher: local-file
       config:
-        url: https://example.com/notes.txt
+        path: .textus/zones/canon/voice.md
       ttl: 12h
 
   # ---- derived: machine-built, never hand-edited ----
@@ -62,6 +64,12 @@ entries:
       reducer: rank-by-recency
     template: claude-root.mustache
     publish_to: [CLAUDE.md]
+    # External-runner hook: textus surfaces this via `extensions list`
+    # but does NOT invoke it. A wrapper (cron, lefthook, CI) reads
+    # `textus extensions list --kind=hook --format=json` and dispatches.
+    events:
+      build:
+        - { exec: bin/notify-build, as: script }
 
   - key: derived.marketplace
     path: derived/marketplace.md

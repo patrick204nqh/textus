@@ -1,7 +1,19 @@
+require "json"
+require "open3"
+
 namespace :textus do
-  desc "Refresh intake from declared sources"
+  desc "Refresh every stale intake entry"
   task :refresh do
-    sh "scripts/refresh-intake.sh"
+    stale_json, _ = Open3.capture2("textus", "stale", "--zone=intake", "--format=json")
+    keys = JSON.parse(stale_json).map { |row| row["key"] }
+    if keys.empty?
+      puts "no stale intake entries"
+      next
+    end
+    keys.each do |key|
+      puts "refreshing #{key}"
+      sh "textus", "refresh", key, "--as=script", "--format=json"
+    end
   end
 
   desc "Refresh intake + rebuild derived"

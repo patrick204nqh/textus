@@ -4,3 +4,6 @@
 /.textus/zones/derived/claude/
 /.textus/zones/derived/marketplace.md
 /.textus/.last-build.json
+/.textus/last-build.log
+/.textus/audit.log
+/.textus/zones/intake/upstream/

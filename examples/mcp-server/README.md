@@ -1,7 +1,7 @@
 # mcp-server example
 
-A ~30-line MCP server that exposes textus `get`/`list`/`put` to any MCP client
-(Claude Code, Claude Desktop, etc.).
+A ~40-line MCP server that exposes textus to any MCP client (Claude Code,
+Claude Desktop, etc.).
 
 ## Wire it up
 
@@ -17,8 +17,15 @@ Drop into your `~/.claude/mcp_servers/textus.json`:
 }
 ```
 
-Restart Claude. `textus_get`, `textus_list`, and `textus_put` are now
-available as tools.
+Restart Claude. Five tools become available:
+
+| Tool | Effect |
+|---|---|
+| `textus_get`        | Read an entry by key |
+| `textus_list`       | List entries under a prefix |
+| `textus_put`        | Write to a working entry (role: `ai`) |
+| `textus_refresh`    | Refresh an intake entry via its registered fetcher (role: `script`) |
+| `textus_extensions` | List registered fetchers, reducers, and hooks |
 
 ## How it works
 
@@ -28,4 +35,9 @@ The server reads newline-delimited JSON-RPC from stdin, calls into
 zones the agent can actually touch — `derived` stays locked, `canon` stays
 locked, `working` is open.
 
-That's the whole boundary: MCP is dumb transport, textus is policy.
+`textus_refresh` routes through `Textus::Refresh.call`, so the registered
+fetcher receives a read-only `StoreView` — even if the agent invokes it, it
+cannot escape the role gate or use the fetcher to write to a forbidden zone.
+
+That's the whole boundary: MCP is dumb transport, textus is policy. Every
+call lands in `audit.log` with the resolved role and etag.
