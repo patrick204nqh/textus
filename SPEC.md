@@ -271,6 +271,35 @@ textus enforces fixed bounds to keep behavior predictable under hostile or buggy
 - **Entry size:** 1 MB.
 - **Audit log:** unbounded; rotation is the user's problem.
 
+### 5.8 Schema evolution (v1.1)
+
+Schemas may declare per-field ownership and version history. These keys are additive: a schema may omit both `fields:` and `evolution:` and still parse as in v1.0.
+
+**`fields:` block** — keyed by field name. Each entry is an object with at least `type`, plus optional `maintained_by` and any vendor extensions:
+
+```yaml
+fields:
+  full_name: { type: string, maintained_by: human }
+  embedding: { type: array,  maintained_by: ai }
+  updated_at: { type: time,  maintained_by: script }
+```
+
+`maintained_by` values are free-form strings. The recognized set is `human | ai | script | build | derived`. Unrecognized values do not affect role-authority validation; they pass through unchanged.
+
+**`evolution:` block** — top-level, declares the schema's history and migration intent:
+
+```yaml
+evolution:
+  added_in: 2026-05-19
+  deprecated_at: null
+  migrate_from:
+    OLD_FIELD: NEW_FIELD
+```
+
+`textus schema-migrate NAME` consults `evolution.migrate_from` when invoked without `--rename=OLD:NEW`, applying every declared rename across affected entries in one pass. An explicit `--rename` flag overrides the schema-declared map for that invocation.
+
+**Backwards compat:** v1.0 schemas (no `fields:`, no `evolution:`) continue to parse and behave identically. `schema.maintained_by(field)` returns `nil` for every field; `schema.evolution` returns `{}`.
+
 > **Note:** The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
 
 ## 6. Schemas
