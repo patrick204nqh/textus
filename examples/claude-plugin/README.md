@@ -56,6 +56,27 @@ plain file.
    HTTP.
 5. Promotion from intake to working is a human/PR decision (or another script).
 
+## Project-local parsers
+
+Drop a Ruby file into `.textus/parsers/` to register a named parser. The store
+auto-loads every `.rb` in that directory on boot.
+
+```ruby
+# .textus/parsers/lowercase.rb
+Textus::Parsers.register("lowercase", ->(content) { content.downcase })
+```
+
+Parsers are invoked whenever an intake entry declares `source.parse: NAME` (or
+when a CLI caller passes `--parse=NAME`). Each call is bounded by a 2s timeout
+so a hung parser cannot stall the store.
+
+## Project-local calculators
+
+`.textus/calculators/*.rb` works the same way, but for projection transforms.
+Calculators take `rows -> rows` and run inside a 2s timeout. Wire one into a
+projection via `transform: NAME`. See `.textus/calculators/rank-by-recency.rb`
+for the example used by `derived.claude.root`.
+
 ## Hooks
 
 `lefthook.yml` rebuilds derived on every commit so `CLAUDE.md` is never stale
