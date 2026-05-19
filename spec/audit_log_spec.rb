@@ -20,6 +20,15 @@ RSpec.describe Textus::AuditLog do
     expect(fields[1..]).to eq(["human", "put", "working.x", "NULL", "sha256:abc"])
   end
 
+  it "returns the most recent role that wrote a key" do
+    log.append(role: "ai",    verb: "put", key: "working.x", etag_before: nil, etag_after: "a")
+    log.append(role: "human", verb: "put", key: "working.x", etag_before: "a", etag_after: "b")
+    log.append(role: "ai",    verb: "put", key: "working.y", etag_before: nil, etag_after: "c")
+    expect(log.last_writer_for("working.x")).to eq("human")
+    expect(log.last_writer_for("working.y")).to eq("ai")
+    expect(log.last_writer_for("missing")).to be_nil
+  end
+
   it "is safe under concurrent writes (smoke test)" do
     threads = 20.times.map do |i|
       Thread.new { log.append(role: "ai", verb: "put", key: "working.k#{i}",

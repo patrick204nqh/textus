@@ -6,6 +6,13 @@ module Textus
       @path = File.join(root, "audit.log")
     end
 
+    def last_writer_for(key)
+      return nil unless File.exist?(@path)
+      File.foreach(@path).map { |l| l.chomp.split("\t") }
+                          .select { |row| row[3] == key && %w[put delete].include?(row[2]) }
+                          .last&.fetch(1)
+    end
+
     def append(role:, verb:, key:, etag_before:, etag_after:)
       line = [
         Time.now.utc.iso8601,
