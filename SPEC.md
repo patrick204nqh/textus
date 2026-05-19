@@ -167,7 +167,116 @@ Recognized roles in v1.0: `human`, `ai`, `script`, `build`. Unknown roles are re
 
 Every successful write records the resolved role and a wall-clock timestamp in `.textus/audit.log`, so reviewers can later distinguish a human edit from an agent edit even though both live in the same file.
 
-> **Note:** §5.2 (compute layer), §5.3 (publish), §5.4 (intake), and §5.5 (pending / accept workflow) are added by a follow-up task. The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
+### 5.2 Compute layer (derived entries)
+
+Derived entries live in the `derived` zone. They are not authored by hand; their body is produced by projecting over other entries. A derived entry's frontmatter declares a `projection` block:
+
+```yaml
+- key: derived.catalogs.people
+  zone: derived
+  projection:
+    select: working.network.org    # prefix OR [list of prefixes]
+    pluck:  [name, relationship, org]
+    sort_by: name                  # optional
+    limit: 1000                    # default 1000, max 1000
+    format: yaml-list-in-md        # one of: list, hash, yaml-list-in-md, json, markdown-table
+  template: people.mustache        # optional; if absent, format determines body
+```
+
+`select` is either a single dotted-key prefix or a list of prefixes. Every entry whose key starts with one of those prefixes is included. `pluck` names the frontmatter fields to retain in the projection result. `sort_by` is optional; when absent, entries are sorted by key. `limit` is bounded at 1000 entries (hard cap); requests above 1000 are rejected.
+
+`format` controls the body serialization when no template is supplied. Permitted values: `list`, `hash`, `yaml-list-in-md`, `json`, `markdown-table`.
+
+If `template` is given, it names a Mustache template under `.textus/templates/`. textus implements a deliberately restricted Mustache subset:
+
+- `{{var}}` — variable interpolation.
+- `{{#section}}...{{/section}}` — section (iteration / truthy block).
+- `{{^inverted}}...{{/inverted}}` — inverted section.
+- `{{!comment}}` — comment.
+
+No partials. No lambdas. No HTML escaping (output is raw text, intended for Markdown). Template recursion depth is bounded at 8; exceeding the limit is an error.
+
+### 5.3 Publish layer (`publish_to:`)
+
+A derived entry MAY declare `publish_to:` in its frontmatter, listing one or more destination paths relative to the project root:
+
+```yaml
+publish_to:
+  - CLAUDE.md
+  - .ai/instructions.md
+```
+
+When the entry is recomputed, textus publishes the rendered body to each destination using an atomic symlink swap: the new content is written to a temp file, then `rename(2)`d into place via a symlink under `.textus/published/`, so readers never observe a partial file.
+
+On filesystems where symlinks are unavailable (some Windows configurations, some CI scratch volumes), textus falls back to copy mode. In copy mode the destination file is overwritten atomically, and a sentinel `.textus-managed.json` is written alongside it recording the source key, etag, and timestamp. The sentinel exists so out-of-band edits can be detected on the next publish.
+
+### 5.4 Intake (declared, never fetched)
+
+Intake entries declare an external source. textus itself never makes network calls; the declaration is data only:
+
+```yaml
+- key: intake.calendar.events
+  zone: intake
+  source:
+    from: "https://calendar.google.com/.../basic.ics"
+    parse: ical-events
+    ttl: 6h
+```
+
+`from` is an opaque URI; `parse` names a parser the runner is expected to apply; `ttl` is the staleness budget. The intake zone is read-only from textus's perspective for fetching.
+
+External runners (cron jobs, agent harnesses, CI tasks) drive refresh:
+
+1. Read `textus list --zone=intake --stale --format=json` to find entries past their TTL.
+2. Fetch the source out of band, applying the declared parser.
+3. Pipe the result back through `textus put --as=script`, which performs the write under the `script` role.
+
+This separation keeps textus deterministic and offline-safe: the gem has no network code path.
+
+### 5.5 Pending / accept workflow
+
+Pending entries are full proposal patches authored into the `pending` zone, typically by agents or scripts. A pending entry's frontmatter describes the patch it proposes against another zone:
+
+```yaml
+---
+proposal:
+  target_key: working.network.org.bob
+  action: put
+frontmatter:
+  name: bob
+  relationship: peer
+  org: envato
+---
+Proposed body content.
+```
+
+`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content.
+
+`textus accept <pending-key>` is **human-only**: the resolved role must be `human`. It copies the patch into the target zone, records provenance (originating pending key, original role, original timestamp) in the audit log, and removes the pending entry. Agents and scripts can propose but cannot accept.
+
+### 5.6 Audit log
+
+Every successful write appends one line to an append-only TSV file at `.textus/audit.log`. The file is opened with `flock(LOCK_EX)` for the duration of each append so concurrent writers serialize cleanly.
+
+Schema (tab-separated, one record per line):
+
+```
+<iso8601-utc>\t<role>\t<verb>\t<key>\t<etag-before-or-NULL>\t<etag-after-or-NULL>
+```
+
+`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, ...). `<key>` is the affected entry key. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag).
+
+### 5.7 Security bounds
+
+textus enforces fixed bounds to keep behavior predictable under hostile or buggy input:
+
+- **Projection result:** 1000 entries (hard cap).
+- **Template recursion:** depth 8.
+- **Manifest size:** 256 KB.
+- **Entry size:** 1 MB.
+- **Audit log:** unbounded; rotation is the user's problem.
+
+> **Note:** The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
 
 ## 6. Schemas
 
