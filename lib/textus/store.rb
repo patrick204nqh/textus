@@ -21,11 +21,18 @@ module Textus
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
       load_project_parsers
+      load_project_calculators
       @schemas = {}
     end
 
     def load_project_parsers
       dir = File.join(@root, "parsers")
+      return unless File.directory?(dir)
+      Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) }
+    end
+
+    def load_project_calculators
+      dir = File.join(@root, "calculators")
       return unless File.directory?(dir)
       Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) }
     end
