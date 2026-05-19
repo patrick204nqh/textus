@@ -129,7 +129,18 @@ zones:
 
 Old manifests written against textus/1 draft v0.1 therefore parse without modification, and any tooling expecting `fixed`/`state`/`derived` continues to work.
 
-**Key grammar:** dotted segments matching `/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/`. Segments joined by `.`. Example: `working.projects.acme.dashboard`.
+**Key grammar (enforced from v1.2):** dotted segments matching `/^[a-z0-9][a-z0-9-]*$/`. Segments are joined by `.`. A key has at most 8 segments; each segment is at most 64 characters. Segments MUST NOT contain dots, slashes, uppercase letters, or underscores. Example: `working.projects.acme.dashboard`. Enforcement points: manifest load (rejects illegal `key:` declarations and illegal nested file/directory names), `put` (rejects illegal keys before any write), `enumerate` (filters and warns on illegal filenames so existing trees still load with a clear migration message). Run-once migration: `textus migrate-keys --dry-run` then `--write` (see §audit).
+
+**Per-entry `format:` (enforced from v1.2):** an entry MAY declare `format:` to be one of `markdown` (default), `json`, `yaml`, or `text`. The `format` controls the on-disk shape and which path extension is required:
+
+| `format`   | Path extension              | `template:`           | `schema:` |
+|------------|-----------------------------|------------------------|-----------|
+| `markdown` | `.md` (or appended if absent) | required for derived | optional  |
+| `json`     | `.json` required            | optional (escape hatch) | optional (top-level keys) |
+| `yaml`     | `.yaml` or `.yml` required  | optional (escape hatch) | optional (top-level keys) |
+| `text`     | `.txt` or no extension      | required for derived | MUST be null |
+
+For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema.
 
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
@@ -219,7 +230,13 @@ Intake entries declare an external source by naming a **fetcher** — a register
 
 `fetcher` names a registered fetcher; `config` is an opaque hash handed to the fetcher; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from` and `source.parse` with a clear usage error.
 
-**Fetcher contract.** A fetcher is registered via `Textus.fetcher(:name) do |config:, store:| ... end` and MUST return `{ frontmatter:, body: }`. The `store:` argument is a read-only `Textus::StoreView` (§5.11). Every fetcher call is wrapped in `Timeout.timeout(2)`; exceptions and timeouts surface as `usage` errors that abort the refresh.
+**Fetcher contract.** A fetcher is registered via `Textus.fetcher(:name) do |config:, store:| ... end` and MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
+
+- `{ frontmatter:, body: }` — markdown-friendly (current shape).
+- `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
+- `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
+
+The `store:` argument is a read-only `Textus::StoreView` (§5.11). Every fetcher call is wrapped in `Timeout.timeout(2)`; exceptions and timeouts surface as `usage` errors that abort the refresh.
 
 **Built-in fetchers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer fetcher) is responsible for supplying bytes.
 
@@ -261,7 +278,7 @@ Schema (tab-separated, one record per line):
 <iso8601-utc>\t<role>\t<verb>\t<key>\t<etag-before-or-NULL>\t<etag-after-or-NULL>
 ```
 
-`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, ...). `<key>` is the affected entry key. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag).
+`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, ...). `<key>` is the affected entry key. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `<key>` and the file's pre- and post-rename etags.
 
 ### 5.7 Security bounds
 
@@ -371,7 +388,7 @@ Textus does NOT invoke these — they surface only through `textus extensions li
 Three DSL verbs cover all user-supplied code:
 
 ```
-Textus.fetcher(:name)       do |config:, store:|   ... end   # returns {frontmatter:, body:}
+Textus.fetcher(:name)       do |config:, store:|   ... end   # returns {frontmatter:, body:} | {content:} | {body:}
 Textus.reducer(:name)       do |rows:, config:|    ... end   # returns rows
 Textus.hook(:event, :name)  do |**kwargs|          ... end   # side effects; return ignored
 ```
@@ -389,6 +406,25 @@ Failure modes:
 Fetchers and reducers are pure transforms; return values flow into the store. Hooks are side effects; return values are discarded.
 
 The `store:` argument is always a `Textus::StoreView` — a read-only proxy exposing `get`, `list`, `where`, `schema_envelope`, `deps`, `rdeps`, `published`, `stale`, `validate_all`. Write attempts raise `Textus::UsageError`.
+
+### 5.12 Storage formats (v1.2)
+
+An entry's `format:` selects a storage strategy. All strategies expose the same `parse(bytes) → {frontmatter, body, content}` and `serialize(frontmatter:, body:, content:) → bytes` contract. The store, audit, etag, and projection layers operate on the parsed shape; only (de)serialization differs.
+
+- **markdown** — YAML frontmatter between `---` fences, free-form body. Parse: Psych `safe_load` on the front matter; body is the remainder. Serialize: emit `---\n<yaml>\n---\n<body>`. `content` is always `nil`.
+- **json** — entire file is a JSON document. Parse: `JSON.parse`. Serialize: `JSON.pretty_generate(content)` + trailing newline. `frontmatter` is populated from a top-level `_meta` hash (if present, else `{}`); `body` is the raw bytes; `content` is the parsed object.
+- **yaml** — entire file is a YAML mapping. Parse: `YAML.safe_load(bytes, permitted_classes: [Date, Time], aliases: false)`; anchors/aliases rejected. Serialize: `YAML.dump(content).sub(/\A---\n/, "")`. Same `_meta` / `frontmatter` / `body` / `content` rules as JSON.
+- **text** — raw UTF-8 bytes. Parse: body is the file verbatim, `frontmatter` is `{}`, `content` is `nil`. Serialize: write `body` bytes (with trailing newline if missing).
+
+**Envelope shape.** Every envelope carries `format:` (always present, defaults to `markdown` for back-compat). For `json|yaml`, the envelope additionally carries `content:` (parsed object). `body` is always the raw on-disk bytes. `frontmatter` always exists, and for `json|yaml` mirrors the `_meta` block (`{}` if absent). `text` always has `frontmatter: {}` and no `content`.
+
+**`_meta` convention.** Derived structured entries (json, yaml) embed a `_meta` hash as the first top-level key. Builder-injected keys appear in a fixed order for etag stability:
+
+```
+generated_at, from, template, reducer
+```
+
+Keys with `nil` values are omitted. User-shaped content (or the reducer's hash) follows `_meta`. The etag (§10) is the sha256 of the on-disk bytes regardless of format; key ordering MUST therefore be deterministic, which Ruby's `Hash` and `JSON.generate` / `YAML.dump` honor via insertion order.
 
 ## 6. Schemas
 
@@ -444,6 +480,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
   "zone": "working",
   "owner": "textus:network",
   "path": "/absolute/path/to/.textus/zones/working/network/org/jane.md",
+  "format": "markdown",
   "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
@@ -456,7 +493,10 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 - `key` MUST be the canonical resolved key.
 - `zone` MUST be one of the zones declared in the manifest (`canon`, `working`, `intake`, `pending`, `derived` for the default v1.0 model; legacy v0.1 manifests synthesize `fixed`, `state`, `derived` per §4).
 - `path` MUST be an absolute filesystem path.
-- `etag` MUST be `sha256:<hex>` of the raw file bytes.
+- `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
+- `body` is the raw on-disk bytes as a UTF-8 string for every format.
+- `content` is present only when `format` is `json` or `yaml`; equals the parsed object. For `json|yaml`, `frontmatter` mirrors the top-level `_meta` (or `{}` if absent).
+- `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 
 Errors use a distinct envelope:
@@ -506,6 +546,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
 | `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
+| `migrate-keys [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):

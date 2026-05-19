@@ -1,6 +1,6 @@
 # textus
 
-Reference Ruby implementation of the **textus/1** protocol — a storage convention and JSON wire protocol for agent-readable project memory: addressable dotted keys, schema-validated Markdown entries, role-gated writes, declarative compute, and symlinked publish targets.
+Reference Ruby implementation of the **textus/1** protocol — a storage convention and JSON wire protocol for agent-readable project memory: addressable dotted keys, schema-validated entries (markdown, JSON, YAML, or text per entry), role-gated writes, declarative compute, and copy-based publish targets.
 
 See [`SPEC.md`](SPEC.md) for the protocol. Implementation notes live in [`docs/`](docs/).
 
@@ -143,13 +143,13 @@ The effective role for any CLI call is resolved in order: `--as` flag, then `TEX
 
 Derived entries are not authored by hand. Each declares a `projection:` block (select prefixes, pluck fields, optional sort/limit/transform) and optionally a Mustache template under `.textus/templates/`. textus implements a deliberately restricted Mustache subset (variables, sections, inverted sections, comments — no partials, no lambdas, no HTML escaping). Results are bounded at 1000 rows; template recursion at depth 8.
 
-A derived entry MAY declare `publish_to:` listing repo-relative destinations. On rebuild, textus performs an atomic symlink swap (with copy-mode fallback on filesystems without symlinks). See SPEC §5.2 and §5.3.
+Derived entries may declare `format:` to be `markdown` (default), `json`, `yaml`, or `text`. The in-store file is the consumer-shaped artifact — `cat .textus/zones/derived/marketplace.json` returns valid JSON without going through textus. `publish_to:` then performs a byte-for-byte file copy of that artifact to each destination, alongside a `.textus-managed.json` sentinel. See SPEC §5.2, §5.3, and §5.12.
 
 ## Extension points
 
 Three DSL verbs:
 
-- **`Textus.fetcher(:name) do |config:, store:|`** — pulls data into an intake entry. Return `{ frontmatter:, body: }`. Configured via `source.fetcher` in the manifest. Five built-ins ship out of the box: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
+- **`Textus.fetcher(:name) do |config:, store:|`** — pulls data into an intake entry. Returns one of `{ frontmatter:, body: }`, `{ content: }` (for `format: json|yaml` entries), or `{ body: }` (raw bytes); the store normalizes all three. Configured via `source.fetcher` in the manifest. Five built-ins ship out of the box: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
 - **`Textus.reducer(:name) do |rows:, config:|`** — shapes rows in a derived projection. Pure function. Configured via `projection.reducer`.
 - **`Textus.hook(:event, :name) do |kwargs|`** — reacts to a lifecycle event. Five events: `:put`, `:delete`, `:refresh`, `:build`, `:accept`.
 
