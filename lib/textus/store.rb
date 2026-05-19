@@ -3,7 +3,7 @@ require "time"
 
 module Textus
   class Store
-    attr_reader :root, :manifest
+    attr_reader :root, :manifest, :registry
 
     def self.discover(start_dir = Dir.pwd)
       dir = File.expand_path(start_dir)
@@ -22,23 +22,16 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
-      load_project_parsers
-      load_project_calculators
+      @registry = ExtensionRegistry.new
       @schemas = {}
+      load_extensions
     end
 
-    def load_project_parsers
-      dir = File.join(@root, "parsers")
-      return unless File.directory?(dir)
-
-      Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) }
-    end
-
-    def load_project_calculators
-      dir = File.join(@root, "calculators")
-      return unless File.directory?(dir)
-
-      Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) }
+    def load_extensions
+      Textus.with_registry(@registry) do
+        dir = File.join(@root, "extensions")
+        Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) } if File.directory?(dir)
+      end
     end
 
     def schema_for(name)
