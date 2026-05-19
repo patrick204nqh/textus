@@ -1,9 +1,0 @@
-name: project
-required: [name, status]
-fields:
-  name:       { type: string, maintained_by: human }
-  status:     { type: string, maintained_by: human }
-  summary:    { type: string, maintained_by: ai }
-  updated_at: { type: time,   maintained_by: script }
-evolution:
-  added_in: 2026-05-19

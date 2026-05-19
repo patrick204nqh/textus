@@ -4,108 +4,77 @@ zones:
   - { name: working, writable_by: [human, ai, script] }
   - { name: intake,  writable_by: [script] }
   - { name: derived, writable_by: [build] }
-entries:
-  # ---- canon: author-curated, slow-changing identity ----
-  - key: canon.voice
-    path: canon/voice.md
-    zone: canon
-    schema: null
-    owner: human:self
 
-  # ---- working: day-to-day editable surface ----
-  - key: working.projects
-    path: working/projects
+entries:
+  # ---- canon: plugin + marketplace identity (slow-changing, human-authored) ----
+  - { key: canon.plugin,       path: canon/voice-tools.md,           zone: canon, schema: plugin, owner: human:self }
+  - { key: canon.marketplace,  path: canon/example-marketplace.md,   zone: canon, schema: null,   owner: human:self }
+
+  # ---- working: catalogued plugin content ----
+  - key: working.agents
+    path: working/agents
     zone: working
-    schema: project
+    schema: agent
     owner: human:self
     nested: true
 
   - key: working.skills
     path: working/skills
     zone: working
-    schema: null
+    schema: skill
     owner: human:self
-    nested: true
+    nested: true     # supports working.skills.writing.voice-writer (≥4 segments)
 
-  # Deep-nested directory tree (≥4 segments below the entry path).
-  # Demonstrates that the nested-tree resolver handles arbitrary depth.
-  - key: working.network
-    path: working/network
+  - key: working.commands
+    path: working/commands
     zone: working
-    format: markdown
-    schema: person
+    schema: command
     owner: human:self
     nested: true
 
-  # ---- intake: script-fed, TTL-bound ----
-  - key: intake.upstream.releases
-    path: intake/upstream/releases.md
-    zone: intake
-    schema: null
-    owner: script:cron
-    source:
-      fetcher: rss
-      config:
-        url: https://example.com/releases.rss
-      ttl: 6h
-
-  # Reads from a local file via the project-local :local-file fetcher.
-  # Run `textus refresh intake.upstream.notes --as=script` to materialize.
+  # ---- intake: fetcher-fed (textus capability demo) ----
   - key: intake.upstream.notes
     path: intake/upstream/notes.md
     zone: intake
-    schema: null
     owner: script:local
     source:
       fetcher: local-file
-      config:
-        path: .textus/zones/canon/voice.md
+      config: { path: .textus/zones/canon/voice-tools.md }
       ttl: 12h
 
-  # ---- derived: machine-built, never hand-edited ----
-  - key: derived.claude.root
-    path: derived/claude/root.md
+  # ---- derived: machine-built ----
+  - key: derived.plugin
+    path: derived/plugin.json
     zone: derived
-    schema: null
+    format: json
     owner: build:auto
     projection:
-      select: [working.projects]
-      pluck: [name, status, summary, updated_at]
-      reducer: rank-by-recency
-    template: claude-root.mustache
-    publish_to: [CLAUDE.md]
-    # External-runner hook: textus surfaces this via `extensions list`
-    # but does NOT invoke it. A wrapper (cron, lefthook, CI) reads
-    # `textus extensions list --kind=hook --format=json` and dispatches.
-    events:
-      build:
-        - { exec: bin/notify-build, as: script }
+      select: [canon.plugin]
+      pluck: "*"
+      reducer: plugin-envelope
+    publish_to: [.claude-plugin/plugin.json]
 
-  # Templateless JSON output. The reducer shapes the final object;
-  # the builder injects _meta as the first top-level key.
   - key: derived.marketplace
     path: derived/marketplace.json
     zone: derived
     format: json
-    schema: null
     owner: build:auto
     projection:
-      select: [working.skills]
-      pluck: [name, description, version]
-      sort_by: name
+      select: [canon.marketplace, canon.plugin, working.skills]
+      pluck: "*"
       reducer: marketplace-envelope
-    publish_to: [marketplace.json]
+    publish_to: [.claude-plugin/marketplace.json]
 
-  # YAML sibling — same reducer, different serializer.
-  - key: derived.marketplace-yaml
-    path: derived/marketplace.yaml
+  - key: derived.claude-root
+    path: derived/claude-root.md
     zone: derived
-    format: yaml
-    schema: null
     owner: build:auto
     projection:
-      select: [working.skills]
-      pluck: [name, description, version]
-      sort_by: name
-      reducer: marketplace-envelope
-    publish_to: [marketplace.yaml]
+      select: [canon.plugin, working.agents, working.skills, working.commands]
+      pluck: "*"
+      reducer: claude-root
+    template: claude-root.mustache
+    publish_to: [CLAUDE.md]
+    events:
+      build:
+        - { exec: bin/notify-build, as: script }

@@ -1,8 +1,0 @@
-name: person
-required: [name]
-fields:
-  name: { type: string, maintained_by: human }
-  role: { type: string, maintained_by: human }
-  org:  { type: string, maintained_by: human }
-evolution:
-  added_in: 2026-05-19

@@ -1,10 +1,28 @@
-# Wraps a list of skill rows in the marketplace envelope shape.
-# Returns a Hash, so the projection's sort/limit/position markers don't apply —
-# the builder uses this as the top-level structured payload (with _meta injected first).
+# Assembles a Claude Code marketplace.json document from three projection sources:
+#   - canon.marketplace          → name, owner
+#   - canon.plugin               → plugin name/description for the single listing
+#   - working.skills.<...>       → the per-skill source paths under ./skills/
 Textus.reducer(:"marketplace-envelope") do |rows:, config:|
   _ = config
+
+  market = rows.find { |r| r["_key"] == "canon.marketplace" } || {}
+  plugin = rows.find { |r| r["_key"] == "canon.plugin" } || {}
+  skills = rows
+           .select { |r| r["_key"].to_s.start_with?("working.skills.") }
+           .map    { |r| "./skills/#{r["name"]}" }
+           .sort
+
   {
-    "protocol" => "textus/1",
-    "skills" => rows,
+    "$schema" => "https://code.claude.com/schemas/marketplace.json",
+    "name"    => market["name"],
+    "owner"   => market["owner"],
+    "plugins" => [
+      {
+        "name"        => plugin["name"],
+        "source"      => "./",
+        "description" => plugin["description"],
+        "skills"      => skills,
+      },
+    ],
   }
 end
