@@ -1,6 +1,7 @@
 module Textus
   class StoreView
-    READ_METHODS = %i[get list where schema_envelope deps rdeps published stale validate_all].freeze
+    READ_METHODS  = %i[get list where schema_envelope deps rdeps published stale validate_all].freeze
+    WRITE_METHODS = %i[put delete accept].freeze
 
     def initialize(store)
       @store = store
@@ -10,8 +11,8 @@ module Textus
       define_method(m) { |*args, **kw| @store.public_send(m, *args, **kw) }
     end
 
-    def put(*) = raise UsageError.new("StoreView is read-only; extension code may not write")
-    def delete(*) = raise UsageError.new("StoreView is read-only; extension code may not write")
-    def accept(*) = raise UsageError.new("StoreView is read-only; extension code may not write")
+    WRITE_METHODS.each do |m|
+      define_method(m) { |*_args, **_kw| raise UsageError.new("StoreView is read-only") }
+    end
   end
 end
