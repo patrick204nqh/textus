@@ -75,6 +75,42 @@ RSpec.describe "Manifest source.fetcher" do
     expect(e.events["put"].first["hook"]).to eq("notify")
   end
 
+  context "events: block validation" do
+    it "rejects unknown event names" do
+      write_manifest(<<~YAML)
+        version: textus/1
+        zones: [{ name: working, writable_by: [human] }]
+        entries:
+          - key: working.x
+            path: working/x.md
+            zone: working
+            events:
+              nonsense:
+                - { hook: notify }
+      YAML
+      expect { Textus::Manifest.load(root) }
+        .to raise_error(Textus::UsageError, /unknown event 'nonsense'/)
+    end
+
+    it "accepts all five known events" do
+      write_manifest(<<~YAML)
+        version: textus/1
+        zones: [{ name: working, writable_by: [human] }]
+        entries:
+          - key: working.x
+            path: working/x.md
+            zone: working
+            events:
+              put:     [{ hook: a }]
+              delete:  [{ hook: b }]
+              refresh: [{ hook: c }]
+              build:   [{ hook: d }]
+              accept:  [{ hook: e }]
+      YAML
+      expect { Textus::Manifest.load(root) }.not_to raise_error
+    end
+  end
+
   it "fetcher_config defaults to {} when entry has no source block" do
     write_manifest(<<~YAML)
       version: textus/1

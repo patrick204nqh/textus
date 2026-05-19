@@ -151,12 +151,21 @@ module Textus
           "use source.fetcher (+ source.config). See SPEC §5.4.",
         )
       end
-      return unless raw.key?("hooks")
+      if raw.key?("hooks")
+        raise UsageError.new(
+          "entry '#{@key}': 'hooks:' renamed to 'events:' in 0.2; " \
+          "remove on_ prefix from event names. See SPEC §5.10.",
+        )
+      end
 
-      raise UsageError.new(
-        "entry '#{@key}': 'hooks:' renamed to 'events:' in 0.2; " \
-        "remove on_ prefix from event names. See SPEC §5.10.",
-      )
+      @events.each_key do |evt|
+        next if ExtensionRegistry::EVENTS.include?(evt.to_sym)
+
+        raise UsageError.new(
+          "entry '#{@key}': unknown event '#{evt}' in events: block. " \
+          "Known events: #{ExtensionRegistry::EVENTS.join(", ")}.",
+        )
+      end
     end
   end
 end
