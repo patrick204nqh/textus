@@ -3,8 +3,6 @@
   "generated_at": "{{generated_at}}",
   "count": {{count}},
   "skills": [
-{{#entries}}
-    { "name": "{{name}}", "description": "{{description}}", "version": "{{version}}" }
-{{/entries}}
-  ]
+{{#entries}}    { "name": "{{name}}", "description": "{{description}}", "version": "{{version}}" }{{^_last}},{{/_last}}
+{{/entries}}  ]
 }

@@ -3,20 +3,22 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::Init do
-  it "scaffolds a .textus/ from the personal profile" do
+  it "scaffolds a .textus/ with the default manifest" do
     tmp = Dir.mktmpdir
     root = File.join(tmp, ".textus")
-    Textus::Init.run(root, profile: "personal")
+    Textus::Init.run(root)
     expect(File.exist?(File.join(root, "manifest.yaml"))).to be true
     expect(File.directory?(File.join(root, "schemas"))).to be true
+    expect(File.read(File.join(root, "manifest.yaml"))).to include("version: textus/1")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "raises on unknown profile" do
+  it "raises if .textus/ already exists" do
     tmp = Dir.mktmpdir
-    expect { Textus::Init.run(File.join(tmp, ".textus"), profile: "no-such") }
-      .to raise_error(Textus::UsageError)
+    root = File.join(tmp, ".textus")
+    Textus::Init.run(root)
+    expect { Textus::Init.run(root) }.to raise_error(Textus::UsageError)
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
@@ -24,7 +26,7 @@ RSpec.describe Textus::Init do
   it "creates .textus/extensions/ with a README stub" do
     tmp = Dir.mktmpdir
     target = File.join(tmp, ".textus")
-    Textus::Init.run(target, profile: "personal")
+    Textus::Init.run(target)
     expect(File.directory?(File.join(target, "extensions"))).to be true
     expect(File.read(File.join(target, "extensions", "README.md"))).to include("Textus.fetcher")
   ensure

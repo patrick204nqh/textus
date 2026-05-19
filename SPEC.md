@@ -10,9 +10,9 @@
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol that lets humans, scripts, and AI agents read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and symlinked publish targets.
+A storage convention and JSON wire protocol that lets humans, scripts, and AI agents read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
 
-The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths via symlinks. The CLI surface (`textus get/put/list/where/schema/build/...` `--format=json`) returns a versioned envelope any caller can parse without knowing Markdown.
+The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/build/...` `--format=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
 You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, gated, computed, and published. The contents are entirely yours.
 
@@ -25,7 +25,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
 | L2 | **Sources** | Declared external inputs (`intake` zone): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
-| L4 | **Publish** | Atomic symlink swap (with copy-mode fallback) from derived entries to repo-relative paths declared via `publish_to:`. |
+| L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish_to:`. The in-store artifact is the consumer-shaped output; the published file is an identical copy with a `.textus-managed.json` sentinel. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
 
 ## 2. Goals and non-goals
@@ -37,7 +37,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 - Role-based write gates (humans, scripts, AI, build runners get different permissions per zone).
 - Optimistic concurrency via ETags.
 - Pure declarative compute: derived entries computed from projections + Mustache, no shell-out.
-- Publish derived entries to well-known paths via atomic symlinks.
+- Publish derived entries to well-known paths as body-only plain files.
 - Plain-file backend — consumers can also read raw if they prefer.
 
 **Non-goals**
@@ -199,9 +199,9 @@ publish_to:
   - .ai/instructions.md
 ```
 
-When the entry is recomputed, textus publishes the rendered body to each destination using an atomic symlink swap: the new content is written to a temp file, then `rename(2)`d into place via a symlink under `.textus/published/`, so readers never observe a partial file.
+When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/derived/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
 
-On filesystems where symlinks are unavailable (some Windows configurations, some CI scratch volumes), textus falls back to copy mode. In copy mode the destination file is overwritten atomically, and a sentinel `.textus-managed.json` is written alongside it recording the source key, etag, and timestamp. The sentinel exists so out-of-band edits can be detected on the next publish.
+A sentinel `.textus-managed.json` is written alongside each published file recording the source path, the target's sha256, and `mode: "copy"`. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing or marked as managed.
 
 ### 5.4 Intake (declared, refreshed via registered fetcher)
 
@@ -504,7 +504,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `refresh K --as=script` | write | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
 | `accept K --as=human` | write | `human` |
-| `init [--profile=P]` | write | `human` |
+| `init` | write | `human` |
 | `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
 | `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
 
@@ -534,7 +534,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only the `human` role may invoke `accept`.
 
-`textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory. `--profile=P` selects a starter manifest profile.
+`textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
 `textus schema-init NAME` writes a stub schema. `schema-diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `schema-migrate NAME --rename=OLD:NEW` rewrites the frontmatter key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
 
@@ -573,8 +573,8 @@ Given a manifest entry `derived.catalogs.skills` whose `projection` clause selec
 **Fixture F — Mustache render:**
 Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
 
-**Fixture G — Symlink publish:**
-Given a manifest entry with `publish_to: <path>`, a successful `textus build` for that entry leaves a symlink at `<path>` pointing at the canonical derived file under `.textus/zones/derived/…`. Re-running `build` is idempotent.
+**Fixture G — Copy publish:**
+Given a manifest entry with `publish_to: <path>`, a successful `textus build` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a `<path>.textus-managed.json` sentinel recording `source`, `sha256`, and `mode: "copy"`. Re-running `build` is idempotent.
 
 **Fixture H — Audit log format:**
 Every successful write verb (`put`, `delete`, `build`, `accept`, `schema-migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.

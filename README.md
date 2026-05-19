@@ -31,7 +31,7 @@ bundle exec exe/textus --help
 Bootstrap a fresh tree:
 
 ```sh
-bundle exec exe/textus init --profile=personal
+bundle exec exe/textus init
 ```
 
 This scaffolds `.textus/` with a starter manifest, the five zone directories, baseline schemas, and an empty audit log. The resulting layout:
@@ -122,7 +122,7 @@ All verbs accept `--format=json` and emit the envelope defined in SPEC §8. Writ
 
 | Verb | Purpose |
 |---|---|
-| `init [--profile=P]` | Scaffold a fresh `.textus/` tree |
+| `init` | Scaffold a fresh `.textus/` tree |
 | `schema-init NAME` | Write a stub schema |
 | `schema-diff NAME` | Compare on-disk schema against entries claiming it |
 | `schema-migrate NAME [--rename=OLD:NEW]` | Rewrite frontmatter keys across affected entries |

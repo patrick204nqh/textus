@@ -32,7 +32,9 @@ RSpec.describe Textus::Projection do
                                   })
     result = proj.run
     expect(result["entries"].length).to eq(2)
-    expect(result["entries"].first).to eq("name" => "alice", "org" => "x")
+    expect(result["entries"].first).to include("name" => "alice", "org" => "x")
+    expect(result["entries"].first).to include("_first" => true, "_last" => false, "_index" => 0)
+    expect(result["entries"].last).to include("_first" => false, "_last" => true)
   end
 
   it "caps at limit=1000 by default" do

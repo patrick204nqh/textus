@@ -88,7 +88,7 @@ RSpec.describe Textus::Builder do
 
   after { FileUtils.remove_entry(tmp) }
 
-  it "materializes a derived markdown entry and updates symlink" do
+  it "materializes a derived markdown entry and publishes a copy" do
     res = Textus::Builder.new(store).build(prefix: "derived.catalogs.people")
     expect(res["built"].map { |b| b["key"] }).to include("derived.catalogs.people")
     body = File.read(File.join(root, "zones/derived/catalogs/people.md"))
@@ -100,7 +100,9 @@ RSpec.describe Textus::Builder do
     expect(parsed["frontmatter"]["generated"]["at"]).to match(/\dT\d/)
 
     published = File.join(File.dirname(root), "PEOPLE.md")
-    expect(File.symlink?(published) || File.exist?(published + ".textus-managed.json")).to be true
+    expect(File.exist?(published + ".textus-managed.json")).to be true
+    expect(File.symlink?(published)).to be false
+    expect(File.binread(published)).to eq(File.binread(File.join(root, "zones/derived/catalogs/people.md")))
   end
 
   it "materializes a templateless JSON entry with _meta injected first" do

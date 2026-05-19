@@ -148,7 +148,7 @@ module Textus
     def publish_and_fire(mentry, target_path)
       mentry.publish_to.each do |rel|
         repo_root = File.dirname(@root)
-        Symlink.publish(source: target_path, target: File.join(repo_root, rel))
+        Publisher.publish(source: target_path, target: File.join(repo_root, rel))
       end
 
       envelope = @store.get(mentry.key)

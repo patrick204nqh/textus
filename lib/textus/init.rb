@@ -2,7 +2,19 @@ require "fileutils"
 
 module Textus
   module Init
-    def self.run(target_root, profile: "personal")
+    DEFAULT_MANIFEST = <<~YAML
+      version: textus/1
+      zones:
+        - { name: canon,   writable_by: [human] }
+        - { name: working, writable_by: [human, ai, script] }
+        - { name: pending, writable_by: [ai, human] }
+        - { name: derived, writable_by: [build] }
+      entries:
+        - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null, owner: human:self }
+        - { key: working.notes,  path: working/notes,     zone: working, schema: null, owner: human:self, nested: true }
+    YAML
+
+    def self.run(target_root)
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
 
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
@@ -23,11 +35,9 @@ module Textus
 
         See SPEC.md §5.11 for the full contract.
       MD
-      profile_path = File.expand_path("../profiles/#{profile}.yaml", __FILE__)
-      raise UsageError.new("unknown profile: #{profile}") unless File.exist?(profile_path)
 
-      FileUtils.cp(profile_path, File.join(target_root, "manifest.yaml"))
-      { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => profile }
+      File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
+      { "protocol" => PROTOCOL, "initialized" => target_root }
     end
   end
 end
