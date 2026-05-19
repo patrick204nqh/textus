@@ -16,8 +16,18 @@ namespace :textus do
     end
   end
 
-  desc "Refresh intake + rebuild derived"
+  desc "Refresh intake + rebuild derived + dispatch external :build hooks"
   task update: %i[refresh] do
     sh "textus build --format=json | jq -c '{built: (.built | length)}'"
+
+    # Manifest-declared `events: { build: [{ exec: ... }] }` rows are
+    # advertised by textus but never invoked by it. An external runner
+    # (this Rakefile, in this example) reads the listing and dispatches.
+    ext_json, _ = Open3.capture2("textus", "extensions", "list", "--kind=hook", "--format=json")
+    JSON.parse(ext_json)["extensions"].each do |row|
+      next unless row["exec"] && row["event"] == "build"
+      puts "dispatching #{row['exec']} for #{row['key']} (as=#{row['as']})"
+      sh row["exec"], row["key"]
+    end
   end
 end

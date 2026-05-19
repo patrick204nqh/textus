@@ -24,6 +24,7 @@ A minimal but real `.textus/` tree that compiles a Claude Code plugin's
       skills/*.md            # one file per skill
     derived/                 # build output (do not hand-edit)
   audit.log                  # append-only writer log
+bin/notify-build             # external-runner stub for the :build event
 CLAUDE.md                    # symlink into .textus/zones/derived/claude/root.md
 marketplace.json             # symlink into .textus/zones/derived/marketplace.md
 Rakefile                     # `rake textus:refresh` / `rake textus:update`
@@ -61,7 +62,11 @@ This example exercises the full 0.2 surface end-to-end:
    declares `events: { build: [{ exec: bin/notify-build, as: script }] }`.
    Textus does NOT invoke this — it surfaces it via
    `textus extensions list --kind=hook --format=json` so external runners
-   (cron, lefthook, CI) can dispatch.
+   (cron, lefthook, CI) can dispatch. The `Rakefile`'s `textus:update` task
+   demonstrates one such dispatcher: after `textus build`, it reads the
+   listing and runs each `exec:` with the affected key. The bundled
+   `bin/notify-build` is a 5-line stub that appends to `.textus/notify.log`
+   — swap for a Slack webhook or pipeline trigger.
 8. **Schema-as-contract.** `.textus/schemas/project.yaml` declares each field's
    `maintained_by` (human / ai / script). `textus validate-all` cross-checks
    that the last writer of every field had authority — humans always override.
