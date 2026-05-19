@@ -28,6 +28,9 @@ module Textus
       when "delete"       then verb_delete(argv)
       when "validate-all" then verb_validate_all(argv)
       when "build"        then verb_build(argv)
+      when "deps"         then verb_deps(argv)
+      when "rdeps"        then verb_rdeps(argv)
+      when "published"    then verb_published(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -150,6 +153,23 @@ module Textus
       res = Textus::Builder.new(store).build(prefix: prefix)
       @stdout.puts(JSON.generate(res))
       0
+    end
+
+    def verb_deps(argv)
+      key = argv.shift or raise UsageError.new("deps requires a key")
+      parse_format!(argv)
+      emit({ "protocol" => Textus::PROTOCOL, "key" => key, "deps" => store.deps(key) })
+    end
+
+    def verb_rdeps(argv)
+      key = argv.shift or raise UsageError.new("rdeps requires a key")
+      parse_format!(argv)
+      emit({ "protocol" => Textus::PROTOCOL, "key" => key, "rdeps" => store.rdeps(key) })
+    end
+
+    def verb_published(argv)
+      parse_format!(argv)
+      emit({ "protocol" => Textus::PROTOCOL, "published" => store.published })
     end
 
     def emit(obj)
