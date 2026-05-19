@@ -41,6 +41,7 @@ module Textus
       when "schema-migrate" then verb_schema_migrate(argv)
       when "refresh"        then verb_refresh(argv)
       when "extensions"     then verb_extensions(argv)
+      when "migrate-keys"   then verb_migrate_keys(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -241,13 +242,11 @@ module Textus
     end
 
     def verb_init(argv)
-      profile = "personal"
       OptionParser.new do |o|
-        o.on("--profile=P") { |v| profile = v }
         o.on("--format=FMT") {}
       end.permute!(argv)
       target = File.join(@cwd, ".textus")
-      res = Textus::Init.run(target, profile: profile)
+      res = Textus::Init.run(target)
       @stdout.puts(JSON.generate(res))
       0
     end
@@ -307,6 +306,18 @@ module Textus
       rows.select! { |r| r["kind"] == kind } if kind
 
       emit({ "protocol" => Textus::PROTOCOL, "extensions" => rows })
+    end
+
+    def verb_migrate_keys(argv)
+      write = false
+      OptionParser.new do |o|
+        o.on("--dry-run") { write = false }
+        o.on("--write")   { write = true }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      res = Textus::MigrateKeys.run(store, write: write)
+      @stdout.puts(JSON.generate(res))
+      res["ok"] ? 0 : 1
     end
 
     def verb_published(argv)
