@@ -78,9 +78,12 @@ module Textus
       }
     end
 
-    def put(key, frontmatter:, body:, if_etag: nil)
+    def put(key, frontmatter:, body:, if_etag: nil, as: Role::DEFAULT)
       mentry, path, _ = @manifest.resolve(key)
-      raise WriteForbidden.new(key, mentry.zone) unless mentry.agent_writable?
+      writers = @manifest.zone_writers(mentry.zone)
+      unless writers.include?(as)
+        raise WriteForbidden.new(key, mentry.zone)
+      end
 
       basename = File.basename(path, ".md")
       if frontmatter["name"] && frontmatter["name"] != basename
@@ -90,15 +93,29 @@ module Textus
       schema = schema_for(mentry.schema)
       schema.validate!(frontmatter) if schema
 
+      etag_before = File.exist?(path) ? Etag.for_file(path) : nil
       if if_etag
-        current = File.exist?(path) ? Etag.for_file(path) : nil
-        raise EtagMismatch.new(key, if_etag, current) if current != if_etag
+        raise EtagMismatch.new(key, if_etag, etag_before) if etag_before != if_etag
       end
 
       FileUtils.mkdir_p(File.dirname(path))
       bytes = Entry.serialize(frontmatter: frontmatter, body: body)
       File.binwrite(path, bytes)
-      build_envelope(key, mentry, path, frontmatter, body, Etag.for_bytes(bytes))
+      etag_after = Etag.for_bytes(bytes)
+      audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
+      build_envelope(key, mentry, path, frontmatter, body, etag_after)
+    end
+
+    def delete(key, if_etag: nil, as: Role::DEFAULT)
+      mentry, path, _ = @manifest.resolve(key)
+      writers = @manifest.zone_writers(mentry.zone)
+      raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
+      raise UnknownKey, key unless File.exist?(path)
+      etag_before = Etag.for_file(path)
+      raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
+      File.delete(path)
+      audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
+      { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 
     def stale(prefix: nil)
@@ -136,6 +153,10 @@ module Textus
     end
 
     private
+
+    def audit_log
+      @audit_log ||= AuditLog.new(@root)
+    end
 
     def newest_source_after(gen, gen_time)
       Array(gen["sources"]).each do |src|

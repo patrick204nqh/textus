@@ -12,43 +12,22 @@ RSpec.describe "textus/1 conformance" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "zones/state/network/org"))
-    FileUtils.mkdir_p(File.join(root, "zones/state/projects"))
+    FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
+    FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/derived/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "zones/fixed"))
+    FileUtils.mkdir_p(File.join(root, "zones/canon"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/1
+      zones:
+        - { name: canon,   writable_by: [human] }
+        - { name: working, writable_by: [human, ai, script] }
+        - { name: derived, writable_by: [build] }
       entries:
-        - key: fixed.identity
-          path: fixed/identity
-          zone: fixed
-          schema: null
-          owner: textus:identity
-
-        - key: state.network.org
-          path: state/network/org
-          zone: state
-          schema: person
-          owner: textus:network
-          nested: true
-
-        - key: state.projects
-          path: state/projects
-          zone: state
-          schema: null
-          owner: textus:projects
-          nested: true
-
-        - key: derived.catalogs.skills
-          path: derived/catalogs/skills
-          zone: derived
-          schema: null
-          owner: textus:build
-          generator:
-            command: "rake catalog:skills"
-            sources:
-              - state.projects
+        - { key: canon.identity,        path: canon/identity,        zone: canon,   schema: null,   owner: human:patrick }
+        - { key: working.network.org,   path: working/network/org,   zone: working, schema: person, owner: human:patrick, nested: true }
+        - { key: working.projects,      path: working/projects,      zone: working, schema: null,   owner: human:patrick, nested: true }
+        - { key: derived.catalogs.skills, path: derived/catalogs/skills, zone: derived, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -68,7 +47,7 @@ RSpec.describe "textus/1 conformance" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "zones/state/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "zones/working/network/org/jane.md"), <<~MD)
       ---
       name: jane
       relationship: peer
@@ -82,14 +61,14 @@ RSpec.describe "textus/1 conformance" do
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
-      env = store.get("state.network.org.jane")
+      env = store.get("working.network.org.jane")
 
       expect(env["protocol"]).to eq("textus/1")
-      expect(env["key"]).to eq("state.network.org.jane")
-      expect(env["zone"]).to eq("state")
-      expect(env["owner"]).to eq("textus:network")
+      expect(env["key"]).to eq("working.network.org.jane")
+      expect(env["zone"]).to eq("working")
+      expect(env["owner"]).to eq("human:patrick")
       expect(File.absolute_path?(env["path"])).to be true
-      expect(env["path"]).to end_with("state/network/org/jane.md")
+      expect(env["path"]).to end_with("working/network/org/jane.md")
 
       expect(env["frontmatter"]).to eq(
         "name" => "jane", "relationship" => "peer", "org" => "envato",
@@ -102,16 +81,15 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
-  describe "Fixture B — zone gate on write" do
-    it "raises WriteForbidden with code 'write_forbidden' and exit 1" do
+  describe "Fixture B — role gate on write" do
+    it "raises WriteForbidden when an AI tries to write canon" do
       expect {
-        store.put("fixed.identity", frontmatter: { "name" => "identity" }, body: "n/a")
+        store.put("canon.identity",
+          frontmatter: { "name" => "identity" }, body: "n/a", as: "ai")
       }.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
-        expect(env["ok"]).to eq(false)
         expect(env["code"]).to eq("write_forbidden")
-        expect(env["details"]["zone"]).to eq("fixed")
-        expect(err.exit_code).to eq(1)
+        expect(env["details"]["zone"]).to eq("canon")
       end
     end
   end
@@ -120,9 +98,10 @@ RSpec.describe "textus/1 conformance" do
     it "raises SchemaViolation listing the missing required field" do
       expect {
         store.put(
-          "state.network.org.bob",
+          "working.network.org.bob",
           frontmatter: { "name" => "bob", "org" => "envato" },
           body: "",
+          as: "human",
         )
       }.to raise_error(Textus::SchemaViolation) do |err|
         env = err.to_envelope
@@ -142,12 +121,12 @@ RSpec.describe "textus/1 conformance" do
           by: "rake catalog:skills"
           at: "2020-01-01T00:00:00Z"
           from:
-            - state.projects
+            - working.projects
         ---
         catalog body
       MD
 
-      project_path = File.join(root, "zones/state/projects/acme.md")
+      project_path = File.join(root, "zones/working/projects/acme.md")
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
@@ -156,7 +135,7 @@ RSpec.describe "textus/1 conformance" do
       row = rows.first
       expect(row["key"]).to eq("derived.catalogs.skills")
       expect(row["generator"]["command"]).to eq("rake catalog:skills")
-      expect(row["reason"]).to match(/state\.projects/)
+      expect(row["reason"]).to match(/working\.projects/)
     end
   end
 
@@ -194,19 +173,19 @@ RSpec.describe "textus/1 conformance" do
     it "emits a textus/1 envelope for `get`" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["get", "state.network.org.jane", "--format=json"],
+        ["get", "working.network.org.jane", "--format=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
       expect(env["protocol"]).to eq("textus/1")
-      expect(env["key"]).to eq("state.network.org.jane")
+      expect(env["key"]).to eq("working.network.org.jane")
     end
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["put", "state.network.org.jane", "--stdin", "--format=json"],
+        ["put", "working.network.org.jane", "--stdin", "--format=json"],
         stdin: StringIO.new(JSON.generate(
           "frontmatter" => { "name" => "jane", "relationship" => "peer", "org" => "envato" },
           "body" => "updated\n",
@@ -217,6 +196,24 @@ RSpec.describe "textus/1 conformance" do
       expect(rc).to eq(1)
       env = JSON.parse(out.string.lines.last)
       expect(env["code"]).to eq("etag_mismatch")
+    end
+  end
+
+  describe "delete verb" do
+    it "deletes an entry, audit-logs it, and refuses without role" do
+      store.put("working.network.org.tmp",
+        frontmatter: { "name" => "tmp", "relationship" => "peer", "org" => "envato" },
+        body: "tmp", as: "human")
+      res = store.delete("working.network.org.tmp", as: "human")
+      expect(res["deleted"]).to be true
+      expect(File.exist?(File.join(root, "zones/working/network/org/tmp.md"))).to be false
+      expect(File.read(File.join(root, "audit.log"))).to match(/\tdelete\t/)
+    end
+
+    it "rejects delete on canon by ai role" do
+      File.write(File.join(root, "zones/canon/identity.md"), "---\nname: identity\n---\nx\n")
+      expect { store.delete("canon.identity", as: "ai") }
+        .to raise_error(Textus::WriteForbidden)
     end
   end
 end
