@@ -1,5 +1,7 @@
 require "json"
 require "optparse"
+require "time"
+require "yaml"
 
 module Textus
   class CLI
@@ -109,15 +111,33 @@ module Textus
       key = argv.shift or raise UsageError.new("put requires a key")
       as_flag = nil
       use_stdin = false
+      parser_name = nil
       OptionParser.new do |o|
         o.on("--stdin") { use_stdin = true }
         o.on("--as=ROLE") { |v| as_flag = v }
+        o.on("--parse=NAME") { |v| parser_name = v }
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("put requires --stdin in v1") unless use_stdin
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
-      payload = JSON.parse(@stdin.read)
+      raw = @stdin.read
+      payload =
+        if parser_name
+          parsed = Textus::Parsers.parse(parser_name, raw)
+          basename = key.split(".").last
+          {
+            "frontmatter" => {
+              "name" => basename,
+              "last_refreshed_at" => Time.now.utc.iso8601,
+              "parsed_with" => parser_name,
+            },
+            "body" => YAML.dump(parsed),
+          }
+        else
+          JSON.parse(raw)
+        end
+
       fm = payload["frontmatter"] || {}
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
