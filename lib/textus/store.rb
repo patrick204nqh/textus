@@ -68,7 +68,7 @@ module Textus
 
     def get(key)
       mentry, path, = @manifest.resolve(key)
-      raise UnknownKey.new(key) unless File.exist?(path)
+      raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
       raw = File.binread(path)
       parsed = Entry.for_format(mentry.format).parse(raw, path: path)
@@ -165,7 +165,7 @@ module Textus
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
-      raise UnknownKey.new(key) unless File.exist?(path)
+      raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
       etag_before = Etag.for_file(path)
       raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
