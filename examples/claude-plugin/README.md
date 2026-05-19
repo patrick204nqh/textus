@@ -21,6 +21,33 @@ CLAUDE.md                    # symlink into .textus/zones/derived/claude/root.md
 marketplace.json             # symlink into .textus/zones/derived/marketplace.md
 ```
 
+## Tour — every extension point in one repo
+
+This example exercises the full v1.1 surface end-to-end:
+
+1. **Bootstrap.** `textus init --profile=claude-plugin` lays down `.textus/`
+   with zones, templates, schemas, parsers, and calculators.
+2. **Human authority on canon.** Edit `.textus/zones/canon/voice.md`. The
+   `canon` zone is `writable_by: [human]` — AI and scripts cannot touch it.
+3. **AI-assisted updates via pending.** AI proposes a patch:
+   `textus put pending.suggestion.001 --as=ai` and a human accepts it with
+   `textus accept pending.suggestion.001 --to=working.projects.textus`.
+4. **Intake refresh via TTL + hooks.** `textus stale --zone=intake` reports
+   entries past their `source.ttl`. Then
+   `textus hooks list --event=on_stale --format=json` shows the registered
+   runner (`scripts/refresh-intake.sh`), which fetches the RSS feed and pipes
+   it through `textus put --parse=rss`. Textus never executes the hook itself.
+5. **Project-local parser.** `.textus/parsers/lowercase.rb` registers
+   `Textus::Parsers.register("lowercase", ...)` and is auto-loaded on store
+   boot. Used when an intake entry declares `source.parse: lowercase`.
+6. **Project-local calculator.** `.textus/calculators/rank-by-recency.rb`
+   registers a pure `rows -> rows` transform. The `derived.claude.root`
+   projection declares `transform: rank-by-recency`, so `textus build`
+   orders projects by `updated_at` before rendering `CLAUDE.md` via Mustache.
+7. **Schema-as-contract.** `.textus/schemas/project.yaml` declares each field's
+   `maintained_by` (human / ai / script). `textus validate-all` cross-checks
+   that the last writer of every field had authority — humans always override.
+
 ## Walkthrough
 
 ```bash
