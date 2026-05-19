@@ -6,6 +6,8 @@ module Textus
     SEP = "---".freeze
 
     def self.parse(raw, path: nil)
+      raw = raw.dup.force_encoding(Encoding::UTF_8)
+      raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?
       unless raw.start_with?("---\n") || raw.start_with?("---\r\n")
         return { "frontmatter" => {}, "body" => raw }
       end
