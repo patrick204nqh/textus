@@ -57,8 +57,10 @@ module Textus
       }
     end
 
-    def list(prefix: nil)
-      @manifest.enumerate(prefix: prefix).map do |row|
+    def list(prefix: nil, zone: nil)
+      rows = @manifest.enumerate(prefix: prefix)
+      rows = rows.select { |r| r[:manifest_entry].zone == zone } if zone
+      rows.map do |row|
         {
           "key" => row[:key],
           "zone" => row[:manifest_entry].zone,
@@ -130,10 +132,11 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => violations.empty?, "violations" => violations }
     end
 
-    def stale(prefix: nil)
+    def stale(prefix: nil, zone: nil)
       out = []
       @manifest.entries.each do |mentry|
         next unless mentry.zone == "derived"
+        next if zone && mentry.zone != zone
         gen = mentry.generator
         next unless gen
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))

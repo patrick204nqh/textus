@@ -54,15 +54,27 @@ module Textus
       prefix = nil
       OptionParser.new do |o|
         o.on("--prefix=KEY") { |v| prefix = v }
+        o.on("--zone=Z") {}
         o.on("--format=FMT") {}
       end.permute!(argv)
       prefix
     end
 
+    def parse_prefix_and_zone!(argv)
+      prefix = nil
+      zone = nil
+      OptionParser.new do |o|
+        o.on("--prefix=KEY") { |v| prefix = v }
+        o.on("--zone=Z") { |v| zone = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      [prefix, zone]
+    end
+
     def verb_list(argv)
-      prefix = parse_prefix!(argv.dup)
+      prefix, zone = parse_prefix_and_zone!(argv.dup)
       parse_format!(argv)
-      emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix) })
+      emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
     end
 
     def verb_where(argv)
@@ -84,9 +96,9 @@ module Textus
     end
 
     def verb_stale(argv)
-      prefix = parse_prefix!(argv.dup)
+      prefix, zone = parse_prefix_and_zone!(argv.dup)
       parse_format!(argv)
-      emit(store.stale(prefix: prefix))
+      emit(store.stale(prefix: prefix, zone: zone))
     end
 
     def verb_put(argv)

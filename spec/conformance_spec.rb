@@ -221,6 +221,12 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
+  describe "--zone filter on list" do
+    it "returns only entries in the named zone" do
+      expect(store.list(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
+    end
+  end
+
   describe "validate-all" do
     it "returns ok when every entry conforms" do
       res = store.validate_all
