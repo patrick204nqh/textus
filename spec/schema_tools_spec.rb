@@ -58,6 +58,26 @@ RSpec.describe Textus::SchemaTools do
     expect(keys).not_to include("working.people.alice")
   end
 
+  it "auto-applies migrate_from on schema-migrate without --rename" do
+    s = store
+    s.put("working.people.alice",
+      frontmatter: { "name" => "alice" },
+      body: "hello", as: "human")
+
+    File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
+      "name" => "person",
+      "required" => ["full_name"],
+      "fields" => { "full_name" => { "type" => "string" } },
+      "evolution" => { "migrate_from" => { "name" => "full_name" } },
+    }))
+
+    res = Textus::SchemaTools.migrate(store, name: "person", rename: nil)
+    expect(res["migrated"]).not_to be_empty
+    env = store.get(res["migrated"].first)
+    expect(env["frontmatter"]).to have_key("full_name")
+    expect(env["frontmatter"]).not_to have_key("name")
+  end
+
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
     s.put("working.people.alice",

@@ -35,19 +35,34 @@ module Textus
     end
 
     # textus schema-migrate NAME --rename=OLD:NEW → rewrites frontmatter across affected entries
-    def self.migrate(store, name:, rename:)
-      old_field, new_field = rename.split(":", 2)
-      raise UsageError.new("--rename=OLD:NEW") unless old_field && new_field && !new_field.empty?
+    # If --rename is omitted, falls back to schema.evolution.migrate_from.
+    def self.migrate(store, name:, rename: nil)
+      renames =
+        if rename
+          old_field, new_field = rename.split(":", 2)
+          raise UsageError.new("--rename=OLD:NEW") unless old_field && new_field && !new_field.empty?
+          { old_field => new_field }
+        else
+          load_schema(store, name).evolution["migrate_from"] || {}
+        end
+      raise UsageError.new("schema-migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
+
       touched = []
       store.manifest.enumerate.each do |row|
         env = store.get(row[:key])
         fm = env["frontmatter"]
-        next unless fm.key?(old_field)
-        fm[new_field] = fm.delete(old_field)
+        changed = false
+        renames.each do |old, new|
+          if fm.key?(old)
+            fm[new] = fm.delete(old)
+            changed = true
+          end
+        end
+        next unless changed
         store.put(row[:key], frontmatter: fm, body: env["body"], as: "human")
         touched << row[:key]
       end
-      { "protocol" => PROTOCOL, "migrated" => touched }
+      { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }
     end
 
     def self.infer_type(value)
