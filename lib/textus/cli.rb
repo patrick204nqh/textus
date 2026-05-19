@@ -75,17 +75,18 @@ module Textus
     def parse_prefix_and_zone!(argv)
       prefix = nil
       zone = nil
+      fmt = "text"
       OptionParser.new do |o|
         o.on("--prefix=KEY") { |v| prefix = v }
         o.on("--zone=Z") { |v| zone = v }
-        o.on("--format=FMT") {}
+        o.on("--format=FMT") { |v| fmt = v }
       end.permute!(argv)
+      raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
       [prefix, zone]
     end
 
     def verb_list(argv)
-      prefix, zone = parse_prefix_and_zone!(argv.dup)
-      parse_format!(argv)
+      prefix, zone = parse_prefix_and_zone!(argv)
       emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
     end
 
@@ -108,8 +109,7 @@ module Textus
     end
 
     def verb_stale(argv)
-      prefix, zone = parse_prefix_and_zone!(argv.dup)
-      parse_format!(argv)
+      prefix, zone = parse_prefix_and_zone!(argv)
       emit(store.stale(prefix: prefix, zone: zone))
     end
 
