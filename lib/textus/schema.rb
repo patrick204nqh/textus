@@ -5,7 +5,7 @@ module Textus
     attr_reader :name, :required, :optional, :fields, :raw
 
     def self.load(path)
-      raw = YAML.safe_load(File.read(path), permitted_classes: [Symbol], aliases: false)
+      raw = YAML.safe_load(File.read(path), permitted_classes: [Symbol, Date, Time], aliases: false)
       new(raw)
     end
 
@@ -19,6 +19,18 @@ module Textus
 
     def to_h
       @raw
+    end
+
+    def maintained_by(field)
+      meta = @fields[field] or return nil
+      meta["maintained_by"]
+    end
+
+    def evolution
+      raw = @raw["evolution"] || {}
+      raw.each_with_object({}) do |(k, v), h|
+        h[k] = v.is_a?(Date) || v.is_a?(Time) ? v.to_s : v
+      end
     end
 
     # Returns nil on success; raises SchemaViolation on hard failure.
