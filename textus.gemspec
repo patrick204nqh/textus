@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email       = ["patrick204nqh@gmail.com"]
   s.license     = "MIT"
   s.homepage    = "https://github.com/patrick204nqh/textus"
-  s.required_ruby_version = ">= 3.1"
+  s.required_ruby_version = ">= 3.3"
 
   s.files = Dir[
     "lib/**/*.rb",
