@@ -150,12 +150,12 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
-  describe "put --parse=NAME" do
+  describe "put --fetcher=NAME" do
     it "parses stdin and writes entry with last_refreshed_at" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "intake.calendar.events", "--parse=ical-events",
+        ["put", "intake.calendar.events", "--fetcher=ical-events",
          "--stdin", "--as=script", "--format=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
@@ -163,7 +163,7 @@ RSpec.describe "textus/1 conformance" do
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
       expect(env["frontmatter"]["last_refreshed_at"]).not_to be_nil
-      expect(env["frontmatter"]["parsed_with"]).to eq("ical-events")
+      expect(env["frontmatter"]["fetched_with"]).to eq("ical-events")
     end
   end
 

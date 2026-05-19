@@ -1,6 +1,7 @@
 require "json"
 require "optparse"
 require "time"
+require "timeout"
 require "yaml"
 
 module Textus
@@ -38,7 +39,8 @@ module Textus
       when "schema-init"    then verb_schema_init(argv)
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
-      when "hooks"          then verb_hooks(argv)
+      when "refresh"        then verb_refresh(argv)
+      when "extensions"     then verb_extensions(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -117,15 +119,15 @@ module Textus
       emit(store.stale(prefix: prefix, zone: zone))
     end
 
-    def verb_put(argv)
+    def verb_put(argv) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       key = argv.shift or raise UsageError.new("put requires a key")
       as_flag = nil
       use_stdin = false
-      parser_name = nil
+      fetcher_name = nil
       OptionParser.new do |o|
         o.on("--stdin") { use_stdin = true }
         o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--parse=NAME") { |v| parser_name = v }
+        o.on("--fetcher=NAME") { |v| fetcher_name = v }
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("put requires --stdin in v1") unless use_stdin
@@ -134,20 +136,26 @@ module Textus
 
       raw = @stdin.read
       payload =
-        if parser_name
-          # Bridge: --parse=NAME is renamed to --fetcher=NAME and gains a 2s
-          # timeout in Task 14. Until then this path is unbounded.
-          fetched = store.registry.fetcher(parser_name).call(
-            config: { "bytes" => raw }, store: store,
-          )
+        if fetcher_name
+          callable = store.registry.fetcher(fetcher_name)
+          result =
+            begin
+              Timeout.timeout(Textus::Refresh::FETCHER_TIMEOUT_SECONDS) do
+                callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store))
+              end
+            rescue Timeout::Error
+              raise UsageError.new(
+                "fetcher '#{fetcher_name}' exceeded #{Textus::Refresh::FETCHER_TIMEOUT_SECONDS}s timeout",
+              )
+            end
           basename = key.split(".").last
           {
             "frontmatter" => {
               "name" => basename,
               "last_refreshed_at" => Time.now.utc.iso8601,
-              "parsed_with" => parser_name,
-            }.merge(fetched[:frontmatter] || {}),
-            "body" => fetched[:body],
+              "fetched_with" => fetcher_name,
+            }.merge(result[:frontmatter] || result["frontmatter"] || {}),
+            "body" => result[:body] || result["body"] || "",
           }
         else
           JSON.parse(raw)
@@ -255,17 +263,50 @@ module Textus
       emit(store.accept(key, as: role))
     end
 
-    def verb_hooks(argv)
-      subcommand = argv.shift
-      raise UsageError.new("hooks requires 'list'") unless subcommand == "list"
-
-      event = nil
+    def verb_refresh(argv)
+      key = argv.shift or raise UsageError.new("refresh requires a key")
+      as_flag = nil
       OptionParser.new do |o|
-        o.on("--event=E") { |v| event = v }
+        o.on("--as=ROLE") { |v| as_flag = v }
         o.on("--format=FMT") {}
       end.permute!(argv)
-      rows = Textus::Hooks.list(store.manifest, event: event)
-      emit({ "protocol" => Textus::PROTOCOL, "hooks" => rows })
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+      emit(Textus::Refresh.call(store, key, as: role))
+    end
+
+    def verb_extensions(argv) # rubocop:disable Metrics/AbcSize
+      subcommand = argv.shift
+      raise UsageError.new("extensions requires 'list'") unless subcommand == "list"
+
+      kind = nil
+      OptionParser.new do |o|
+        o.on("--kind=K") { |v| kind = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+
+      rows = []
+      rows += store.registry.fetcher_names.map { |n| { "kind" => "fetcher", "name" => n.to_s } }
+      rows += store.registry.reducer_names.map { |n| { "kind" => "reducer", "name" => n.to_s } }
+      store.registry.hook_events.each do |evt|
+        store.registry.hooks(evt).each do |h|
+          rows << { "kind" => "hook", "event" => evt.to_s, "name" => h[:name].to_s }
+        end
+      end
+      store.manifest.entries.each do |e|
+        e.events.each do |evt, defs|
+          Array(defs).each do |defn|
+            next unless defn["exec"]
+
+            rows << {
+              "kind" => "hook", "event" => evt.to_s, "exec" => defn["exec"],
+              "key" => e.key, "as" => defn["as"] || "script"
+            }
+          end
+        end
+      end
+      rows.select! { |r| r["kind"] == kind } if kind
+
+      emit({ "protocol" => Textus::PROTOCOL, "extensions" => rows })
     end
 
     def verb_published(argv)
