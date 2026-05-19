@@ -1,8 +1,8 @@
 # textus/1 — Specification
 
-**Status:** Draft v0.1 (2026-05-18)
+**Status:** Draft v1.0 (2026-05-19)
 **Protocol identifier:** `textus/1`
-**Reference implementation:** Ruby gem `textus` (planned)
+**Reference implementation:** Ruby gem `textus`
 
 > *textus* — Latin for "the fabric a text is woven from," same root as *context* (from *con-texere*, "to weave together"). This spec defines a storage shape and wire protocol for that fabric.
 
@@ -10,11 +10,23 @@
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol that lets AI agents and human collaborators read and write structured project memory **deterministically**, by addressing entries with dotted keys instead of paths, with **schema validation** and **zone-based write gates**.
+A storage convention and JSON wire protocol that lets humans, scripts, and AI agents read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and symlinked publish targets.
 
-The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees. Schemas (also YAML) define what frontmatter shape each entry must have. The CLI surface (`textus get/put/list/where/schema --format=json`) returns a versioned envelope that any agent or tool can parse without knowing Markdown.
+The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths via symlinks. The CLI surface (`textus get/put/list/where/schema/build/...` `--format=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
-You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, and gated. The contents are entirely yours.
+You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, gated, computed, and published. The contents are entirely yours.
+
+### 1.1 The five layers
+
+textus is organized as five composable layers. Each layer has a single responsibility; later layers build on earlier ones.
+
+| Layer | Name | Responsibility |
+|---|---|---|
+| L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
+| L2 | **Sources** | Declared external inputs (`intake` zone): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
+| L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
+| L4 | **Publish** | Atomic symlink swap (with copy-mode fallback) from derived entries to repo-relative paths declared via `publish_to:`. |
+| L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
 
 ## 2. Goals and non-goals
 
@@ -22,9 +34,11 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 - Stable wire format (`textus/1`) any language can speak.
 - Deterministic read/write of structured Markdown via a CLI returning JSON.
 - Schema-validated frontmatter using YAML schemas as data.
-- Write gating via zones (some entries are agent-writable, some aren't).
+- Role-based write gates (humans, scripts, AI, build runners get different permissions per zone).
 - Optimistic concurrency via ETags.
-- Plain-file backend — agents can also read raw if they prefer.
+- Pure declarative compute: derived entries computed from projections + Mustache, no shell-out.
+- Publish derived entries to well-known paths via atomic symlinks.
+- Plain-file backend — consumers can also read raw if they prefer.
 
 **Non-goals**
 - Not a database. No queries, indexes, joins, or full-text search.
@@ -32,114 +46,128 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 - Not a sync protocol. Single-writer per file, ETag-checked.
 - Not a transport. Spawn the CLI or wrap it in MCP/HTTP downstream.
 - Not a UI. Filesystem + CLI. Viewers ship elsewhere.
+- Not a fetcher. textus declares sources; external runners fetch them.
+- Not an executor. textus computes pure projections but never spawns shell commands.
 
 ## 3. Storage layout
 
-The root is `.textus/` at the project working directory. A typical tree:
+The root is `.textus/` at the project working directory. A typical v1.0 tree:
 
 ```
 .textus/
-  manifest.yaml              # key → subtree mapping + zone declarations
+  manifest.yaml              # key → subtree mapping + zones declarations
+  role                       # optional: default role for this checkout (one line, e.g. "human")
+  audit.log                  # append-only NDJSON log of every successful write
   schemas/                   # YAML schema files
+    identity.yaml
     person.yaml
     project.yaml
-    decision.yaml
-  fixed/                     # zone: fixed (human-only writes)
-    ...
-  state/                     # zone: state (agent-writable)
-    network/org/
-      jane.md
-      ...
-    projects/
-      acme/dashboard.md
-      ...
-  derived/                   # zone: derived (build-tool writes only)
-    catalogs/
-      ...
+  templates/                 # Mustache templates referenced by derived entries
+    people.mustache
+  zones/
+    canon/                   # zone: canon (human-only)
+      identity.md
+    working/                 # zone: working (human, ai, script)
+      network/org/jane.md
+      projects/acme/dashboard.md
+    intake/                  # zone: intake (script — declared external inputs)
+      calendar/events.md
+    pending/                 # zone: pending (ai proposals awaiting accept)
+      proposal-2026-05-19-bob.md
+    derived/                 # zone: derived (build only — computed outputs)
+      catalogs/people.md
 ```
 
-Zone directories are conventional but their semantics are declared in the manifest, not the directory name. The reference implementation defaults to the names above; alternative layouts are allowed if the manifest reflects them.
+Zone directories are conventional; their write semantics are declared in the manifest, not the directory name. The reference implementation defaults to `.textus/zones/<zone>/...` but alternative layouts are allowed if the manifest reflects them.
+
+`.textus/audit.log` is an append-only NDJSON file written under a file lock by every successful `put`, `delete`, `accept`, and `build`. `.textus/role` (one line containing a role name) is optional and participates in the role-resolution order (§5).
 
 ## 4. Manifest
 
-The manifest declares the key-to-subtree mapping, the zone each subtree belongs to, the schema applied to entries in that subtree, and the owner string recorded in writes.
+The manifest declares: (a) which zones exist and which roles may write to each, (b) the key-to-subtree mapping, (c) the schema applied to entries in each subtree, and (d) the owner string recorded in writes.
 
 ```yaml
 # .textus/manifest.yaml
 version: textus/1
+
+zones:
+  - name: canon
+    writable_by: [human]
+  - name: working
+    writable_by: [human, ai, script]
+  - name: intake
+    writable_by: [script]
+  - name: pending
+    writable_by: [ai]
+  - name: derived
+    writable_by: [build]
+
 entries:
-  - key: state.network.org
-    path: state/network/org
-    zone: state
+  - key: canon.identity
+    path: canon/identity.md
+    zone: canon
+    schema: identity
+
+  - key: working.network.org
+    path: working/network/org
+    zone: working
     schema: person
     owner: textus:network
+    nested: true
 
-  - key: state.projects
-    path: state/projects
-    zone: state
-    schema: project
-    owner: textus:projects
-    nested: true        # any key state.projects.<anything>... resolves under path/
-
-  - key: derived.catalogs.skills
-    path: derived/catalogs/skills.md
+  - key: derived.catalogs.people
+    path: derived/catalogs/people.md
     zone: derived
-    schema: null        # generated content, no frontmatter contract
+    schema: null
     owner: textus:build
-    generator:                          # optional; required for `textus stale`
-      command: "rake catalog:skills"    # how the build runner regenerates this
-      sources:                          # textus keys or repo-relative paths
-        - state.projects
-        - state.network
 ```
 
-The `generator` block (see §5.1) is optional structurally but required for any derived entry that wants to participate in staleness detection.
+**Backward compatibility.** If the manifest omits the `zones:` block, the legacy v0.1 three-zone model is synthesized:
 
-**Key grammar:** dotted segments matching `/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/`. Segments joined by `.`. Example: `state.projects.acme.dashboard`.
+```yaml
+zones:
+  - name: fixed
+    writable_by: [human]
+  - name: state
+    writable_by: [human, ai, script]
+  - name: derived
+    writable_by: [build]
+```
+
+Old manifests written against textus/1 draft v0.1 therefore parse without modification, and any tooling expecting `fixed`/`state`/`derived` continues to work.
+
+**Key grammar:** dotted segments matching `/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/`. Segments joined by `.`. Example: `working.projects.acme.dashboard`.
 
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly.
 
-## 5. Zones
+## 5. Zones and role-based write gates
 
-Three zones with fixed semantics:
+Each zone declares which **roles** may write to it via `writable_by:` in the manifest. Reads are unrestricted across all zones; only writes are gated.
 
-| Zone | Writer | Agent-writable | Use |
-|---|---|---|---|
-| `fixed` | human | no | Identity, voice, immutable canon |
-| `state` | owner (declared in manifest) | **yes** | Project state, decisions, network — the things agents update |
-| `derived` | build tool | no | Generated catalogs, indexes — overwritten by the build |
-
-Agents may only `put` into entries whose resolved zone is `state`. Writes to `fixed` or `derived` return `WRITE_FORBIDDEN`. Reads are unrestricted.
-
-### 5.1 Derived content provenance and the `generator` contract
-
-textus is a **dataflow oracle, not an executor**. It records what generated each derived entry and detects when an entry is stale, but it never invokes generator commands itself. External build runners (lefthook, rake, make, just, CI) execute. This keeps the spec portable across languages, free of shell-execution surface, and composable with whatever build system a consumer already has.
-
-Two pieces of metadata make this work:
-
-**(a) The `generator:` block in the manifest** (see §4 example) declares how a derived entry is regenerated:
-
-| Field | Required | Meaning |
+| Zone | `writable_by` | Use case |
 |---|---|---|
-| `command` | yes | Opaque string the build runner invokes — textus does not parse or execute it |
-| `sources` | yes | List of textus keys and/or repo-relative file paths whose changes invalidate this entry |
+| `canon` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
+| `working` | `[human, ai, script]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
+| `intake` | `[script]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or AI directly. |
+| `pending` | `[ai]` | AI-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
+| `derived` | `[build]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
 
-**(b) A `generated:` frontmatter block** (see §7) on each derived file records when it was last written and from what state:
+A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `writable_by` list, the write returns `write_forbidden`.
 
-```yaml
----
-generated:
-  by: "rake catalog:skills"
-  at: "2026-05-18T10:00:00Z"
-  from:
-    - state.projects
-    - state.network
----
-```
+### 5.1 Role resolution
 
-`generated.from` SHOULD match `generator.sources` from the manifest. Build runners are expected to write this block when regenerating; textus does not synthesize it.
+The effective role for any CLI invocation is resolved in this order; the first match wins:
 
-**Staleness rule.** A derived entry is stale when *any* item listed in its manifest `generator.sources` has a current etag/mtime newer than the entry's `generated.at` timestamp. The `textus stale` verb (§9) computes this and returns the offenders with their declared generator commands; the build runner reads that list and executes the commands.
+1. `--as=<role>` flag on the command line.
+2. `TEXTUS_ROLE` environment variable.
+3. `.textus/role` file (one line, role name) at the project root.
+4. Default: `human`.
+
+Recognized roles in v1.0: `human`, `ai`, `script`, `build`. Unknown roles are rejected with `invalid_role`. The roles list is intentionally open-ended: a future minor revision MAY introduce additional roles without breaking the wire string.
+
+Every successful write records the resolved role and a wall-clock timestamp in `.textus/audit.log`, so reviewers can later distinguish a human edit from an agent edit even though both live in the same file.
+
+> **Note:** §5.2 (compute layer), §5.3 (publish), §5.4 (intake), and §5.5 (pending / accept workflow) are added by a follow-up task. The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
 
 ## 6. Schemas
 
