@@ -110,7 +110,7 @@ module Textus
 
   class ManifestEntry
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw,
-                :projection, :template, :publish_to, :source
+                :projection, :template, :publish_to, :source, :hooks
     def initialize(manifest, raw)
       @raw = raw
       @key = raw["key"] or raise UsageError.new("manifest entry missing key")
@@ -124,6 +124,7 @@ module Textus
       @template = raw["template"]
       @publish_to = Array(raw["publish_to"])
       @source = raw["source"]
+      @hooks = raw["hooks"] || {}
     end
 
     def agent_writable?
