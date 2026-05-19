@@ -30,6 +30,24 @@ RSpec.describe Textus::AuditLog do
     expect(log.last_writer_for("missing")).to be_nil
   end
 
+  it "appends an event_error row with JSON extras in column 7" do
+    log = Textus::AuditLog.new(root)
+    log.append(role: "script", verb: "event_error", key: "working.x",
+               etag_before: nil, etag_after: nil,
+               extras: { "event" => "put", "hook" => "boom", "error" => "boom!" })
+    cols = File.read(File.join(root, "audit.log")).chomp.split("\t")
+    expect(cols.length).to eq(7)
+    expect(JSON.parse(cols[6])).to include("event" => "put", "hook" => "boom")
+  end
+
+  it "writes 6-column lines for regular writes (back-compat)" do
+    log = Textus::AuditLog.new(root)
+    log.append(role: "human", verb: "put", key: "working.x",
+               etag_before: nil, etag_after: "abc")
+    cols = File.read(File.join(root, "audit.log")).chomp.split("\t")
+    expect(cols.length).to eq(6)
+  end
+
   it "is safe under concurrent writes (smoke test)" do
     threads = 20.times.map do |i|
       Thread.new do

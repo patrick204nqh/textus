@@ -42,7 +42,7 @@ RSpec.describe "Lifecycle events" do
     expect($textus_event_log).to include([:delete, "working.x"])
   end
 
-  it "logs hook errors to audit log but does not abort the write", pending: "audit extras column lands in Task 12" do
+  it "logs hook errors to audit log but does not abort the write" do
     File.write(File.join(root, "extensions/boom.rb"), <<~RUBY)
       Textus.hook(:put, :boom) { |key:, envelope:, store:| raise "bang" }
     RUBY

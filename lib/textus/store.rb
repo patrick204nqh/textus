@@ -148,12 +148,15 @@ module Textus
     def fire_event(event, **kwargs)
       view = StoreView.new(self)
       @registry.hooks(event).each do |entry|
+        name = entry[:name]
         Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
-      rescue StandardError => _e
-        # TODO(task-12): route hook failures to audit log once AuditLog supports
-        # an extras: JSON column. Until then, errors here are silently swallowed
-        # — the write/delete itself has already committed.
-        # Timeout::Error inherits from StandardError, so it's covered.
+      rescue StandardError => e
+        audit_log.append(
+          role: "script", verb: "event_error",
+          key: kwargs[:key] || kwargs[:target_key] || "-",
+          etag_before: nil, etag_after: nil,
+          extras: { "event" => event.to_s, "hook" => name.to_s, "error" => "#{e.class}: #{e.message}" }
+        )
       end
     end
 
