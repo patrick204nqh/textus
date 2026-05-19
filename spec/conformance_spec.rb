@@ -160,6 +160,36 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
+  describe "zones block" do
+    it "parses declared zones with writable_by" do
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/1
+        zones:
+          - { name: canon,   writable_by: [human] }
+          - { name: working, writable_by: [human, ai, script] }
+        entries:
+          - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null, owner: human:patrick }
+      YAML
+      FileUtils.mkdir_p(File.join(root, "zones/canon"))
+      File.write(File.join(root, "zones/canon/identity.md"), "---\nname: identity\n---\n")
+      m = Textus::Manifest.load(root)
+      expect(m.zone_writers("canon")).to eq(["human"])
+      expect(m.zone_writers("working")).to contain_exactly("human", "ai", "script")
+    end
+
+    it "synthesizes default zones if zones block is absent (backward compat)" do
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/1
+        entries:
+          - { key: state.x, path: state/x.md, zone: state, schema: null, owner: o }
+      YAML
+      m = Textus::Manifest.load(root)
+      expect(m.zone_writers("fixed")).to eq(["human"])
+      expect(m.zone_writers("state")).to contain_exactly("human", "ai", "script")
+      expect(m.zone_writers("derived")).to eq(["build"])
+    end
+  end
+
   describe "CLI" do
     it "emits a textus/1 envelope for `get`" do
       out = StringIO.new

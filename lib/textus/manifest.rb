@@ -6,6 +6,29 @@ module Textus
 
     attr_reader :root, :entries, :raw
 
+    LEGACY_ZONES = {
+      "fixed"   => ["human"],
+      "state"   => ["human", "ai", "script"],
+      "derived" => ["build"],
+    }.freeze
+
+    def zones
+      @zones ||= begin
+        declared = Array(@raw["zones"])
+        if declared.empty?
+          LEGACY_ZONES.transform_values { |w| w.dup }
+        else
+          declared.each_with_object({}) do |z, h|
+            h[z["name"]] = Array(z["writable_by"])
+          end
+        end
+      end
+    end
+
+    def zone_writers(zone_name)
+      zones[zone_name] or raise UsageError.new("undeclared zone '#{zone_name}'")
+    end
+
     def self.load(root)
       manifest_path = File.join(root, "manifest.yaml")
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
