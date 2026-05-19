@@ -1,10 +1,11 @@
-# Build outputs — regenerate with `textus build`.
-/CLAUDE.md
-/marketplace.json
-/.textus/zones/derived/claude/
-/.textus/zones/derived/marketplace.md
-/.textus/.last-build.json
-/.textus/last-build.log
+# This example commits every build artifact (.claude-plugin/*.json,
+# CLAUDE.md, agents/*.md, skills/*/SKILL.md, commands/*.md, and the
+# .textus/sentinels/ tree) so a reader can inspect the full pipeline
+# output without running `textus build`. In a real plugin you'd likely
+# ignore the consumer-side mirrors instead.
+
+# Local runtime artifacts — not source.
 /.textus/audit.log
-/.textus/zones/intake/upstream/
 /.textus/notify.log
+/.textus/last-build.log
+/.textus/.last-build.json

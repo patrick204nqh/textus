@@ -3,6 +3,7 @@ zones:
   - { name: canon,   writable_by: [human] }
   - { name: working, writable_by: [human, ai, script] }
   - { name: intake,  writable_by: [script] }
+  - { name: pending, writable_by: [ai, human] }
   - { name: derived, writable_by: [build] }
 
 entries:

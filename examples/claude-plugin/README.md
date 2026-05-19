@@ -104,9 +104,12 @@ textus build --format=json
 ```
 
 After the build, the three `publish_to` targets are byte-copies of the
-generated files in `.textus/zones/derived/`, each accompanied by a
-`<file>.textus-managed.json` sentinel recording the source path, sha256, and
-publish mode.
+generated files in `.textus/zones/derived/`. For every published file
+(at any path — `.claude-plugin/plugin.json`, `CLAUDE.md`, `agents/*.md`, …)
+textus writes a sentinel under `.textus/sentinels/<target-rel>.textus-managed.json`
+recording the source path, sha256, and publish mode. Sentinels live in
+the store rather than beside the consumer file so consumer directories
+stay clean.
 
 ## Per-leaf publishing (`publish_each:`)
 
@@ -136,6 +139,67 @@ on, mirroring the consumer paths.
 
 Re-run `textus build` (or the `ruby -I../../lib` invocation above) after
 editing any working-zone file and the consumer mirrors update automatically.
+
+## Operational verbs
+
+Three verbs you'll reach for when the catalog moves around:
+
+### `textus doctor`
+
+Health-check the whole store. Reports missing schemas/templates, broken
+extensions, illegal nested keys, sentinel drift (somebody hand-edited a
+published file), and audit-log corruption.
+
+```bash
+textus doctor --format=json
+# → { "protocol": "textus/1", "ok": true, "issues": [],
+#     "summary": { "error": 0, "warning": 0, "info": 0 } }
+```
+
+If you edit `agents/voice-writer.md` by hand instead of editing
+`.textus/zones/working/agents/voice-writer.md`, the next `doctor` will
+surface a `sentinel.drift` warning with a `fix:` hint pointing you at
+`textus build`.
+
+### `textus mv` — move with identity preserved
+
+Each entry written through the API has an optional `uid:` field (16
+hex chars, auto-minted on first `put`). `textus mv` renames a key
+without losing that identity, and writes an `mv` row to `.textus/audit.log`
+recording both keys, both paths, and the uid.
+
+```bash
+# Move a skill between topics — uid survives, audit row written.
+textus mv working.skills.writing.voice-writer \
+          working.skills.editorial.voice-writer \
+          --as=human --format=json
+```
+
+This is how you handle real refactors: re-org an `org/` tree under
+`working/network/`, retag a project, recategorize a skill. The audit
+trail tells you *when* the move happened; the uid keeps cross-references
+stable.
+
+### `textus extensions list`
+
+Inspect the reducers, fetchers, and hooks the store has loaded from
+`.textus/extensions/`:
+
+```bash
+textus extensions list --format=json
+```
+
+Useful when wiring up an external runner that needs to discover declared
+`events: { build: [{ exec: ..., as: script }] }` hooks (this example's
+`derived.claude-root` declares one — see `Rakefile`'s `textus:update` task
+for a working dispatcher).
+
+## Did-you-mean on unknown keys
+
+`textus get working.skills.editorail.voice-writer` (typo'd) reports the
+top suggestions via the `did you mean:` hint, ranked by shared prefix and
+Levenshtein distance against the actual key set. Same applies to `where`,
+`put`, `delete`, and `mv`.
 
 ## Intake refresh
 
