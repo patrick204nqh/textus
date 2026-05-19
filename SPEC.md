@@ -304,6 +304,39 @@ evolution:
 
 > **Note:** The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
 
+### 5.9 Calculators (v1.1)
+
+Calculators are the L3 extension point: pure, named functions that transform projection rows into projection rows. They mirror parsers (§5.4) — same registry shape, same 2s timeout, same auto-load discipline — but operate on structured rows rather than raw bytes.
+
+**Registry shape.** A calculator is registered with a name and a callable accepting an array of row hashes:
+
+```ruby
+Textus::Calculators.register("rank-by-recency", ->(rows) {
+  rows.sort_by { |r| r["updated_at"].to_s }.reverse
+})
+```
+
+**Auto-load.** Files in `.textus/calculators/*.rb` are `load`ed at `Store#initialize`, after parsers. Calculators registered there are available to every projection in the project.
+
+**Invocation.** A projection opts into a calculator via the `transform:` field:
+
+```yaml
+projection:
+  select: [working.projects]
+  pluck:  [name, status, updated_at]
+  transform: rank-by-recency
+  sort_by: updated_at
+  limit: 50
+```
+
+The transform runs **between pluck and sort**: rows are collected, plucked to the declared columns (with `_key` attached when no explicit pluck is given), then handed to the calculator. The returned array is sorted and limited as usual. A projection without `transform:` behaves exactly as in v1.0.
+
+**Purity.** A calculator MUST be a pure function: rows in, rows out. It MUST NOT perform I/O, mutate the store, or call back into textus. Implementations MAY enforce this; at minimum, they MUST NOT pass the store or any mutable global state into the callable.
+
+**Timeout.** Every `Calculators.apply` call is wrapped in `Timeout.timeout(2)`. A calculator that exceeds 2 seconds raises a `usage` error (`calculator 'NAME' exceeded 2s timeout`). An unknown name raises `usage` (`unknown calculator: NAME`). Both surface as non-zero CLI exits with `kind: "usage"` in the envelope.
+
+**Why a separate L3 surface.** L1 parsers translate bytes to entries. L3 calculators translate entries to projection rows. Keeping them split preserves the layering: parsers run during intake refresh, calculators run during build. Neither layer ever writes to the store; both are bounded by the same 2s ceiling.
+
 ## 6. Schemas
 
 Schemas live in `.textus/schemas/<name>.yaml`. A schema declares the required and optional frontmatter fields for entries that reference it.
