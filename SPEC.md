@@ -375,14 +375,24 @@ Errors use a distinct envelope:
 
 The reference binary is `textus`. Conforming implementations MAY use any binary name; the protocol is in the JSON.
 
-| Verb | Purpose | Reads / writes |
+All verbs accept `--format=json` and emit a canonical envelope (success or error). Write verbs require `--as=<role>`; the role must satisfy the target zone's write gate (§5).
+
+| Verb | Reads / writes | Role required |
 |---|---|---|
-| `textus list [--prefix=<key>] --format=json` | Enumerate all keys under an optional prefix | read |
-| `textus where <key> --format=json` | Resolve a key to its file path without reading | read |
-| `textus get <key> --format=json` | Return the full envelope for a key | read |
-| `textus put <key> --stdin --format=json` | Write/update an entry, body and frontmatter on stdin as JSON `{frontmatter, body, if_etag?}` | write |
-| `textus schema <key> --format=json` | Return the resolved schema definition for a key | read |
-| `textus stale [--prefix=<key>] --format=json` | List derived entries whose `generator.sources` have changed since `generated.at` | read |
+| `list [--prefix=K] [--zone=Z] [--stale]` | read | any |
+| `where K` | read | any |
+| `get K` | read | any |
+| `schema K` | read | any |
+| `stale [--prefix=K] [--strict]` | read | any |
+| `deps K` / `rdeps K` | read | any |
+| `published` | read | any |
+| `validate-all` | read | any |
+| `put K --stdin --as=R` | write | per zone |
+| `delete K --if-etag=E --as=R` | write | per zone |
+| `build [--prefix=K] [--dry-run]` | write | `build` (default) |
+| `accept K --as=human` | write | `human` |
+| `init [--profile=P]` | write | `human` |
+| `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -392,21 +402,27 @@ The reference binary is `textus`. Conforming implementations MAY use any binary 
   "if_etag": "sha256:8f3c…" }
 ```
 
-`if_etag` is optional. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
+`if_etag` is optional on `put`, required on `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted on `put`, the write is unconditional (last-writer-wins).
 
 **`textus stale` output shape:**
 
 ```json
 [
   { "key": "derived.catalogs.skills",
-    "path": "/abs/.textus/derived/catalogs/skills.md",
+    "path": "/abs/.textus/zones/derived/catalogs/skills.md",
     "generator": { "command": "rake catalog:skills",
                    "sources": ["state.projects", "state.network"] },
     "reason": "source 'state.projects' modified after generated.at" }
 ]
 ```
 
-Build runners consume this list and execute `generator.command` themselves. textus never invokes the command.
+`textus build` consumes the stale list and executes each `generator.command` itself, writing results back through `put` under the `build` role. `--dry-run` prints the plan without executing.
+
+`textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only the `human` role may invoke `accept`.
+
+`textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory. `--profile=P` selects a starter manifest profile.
+
+`textus schema-init NAME` writes a stub schema. `schema-diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `schema-migrate NAME --rename=OLD:NEW` rewrites the frontmatter key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
 
 ## 10. ETag semantics
 
@@ -423,19 +439,34 @@ The reference Ruby gem follows semver independently. Gem 1.x speaks `textus/1`.
 
 ## 12. Conformance fixtures
 
-A conformant implementation MUST pass these three fixtures (the reference test suite will ship a YAML file listing inputs and expected envelopes):
+A conformant implementation MUST pass these fixtures (the reference test suite ships a YAML file listing inputs and expected envelopes):
 
 **Fixture A — Resolve and read:**
-Given a manifest with `state.network.org` → `state/network/org` (nested), schema `person`, and a file `state/network/org/jane.md` with valid frontmatter, `textus get state.network.org.jane --format=json` returns the canonical envelope above with `etag` matching the file's sha256.
+Given a manifest with `state.network.org` → `state/network/org` (nested), schema `person`, and a file `state/network/org/jane.md` with valid frontmatter, `textus get state.network.org.jane --format=json` returns the canonical envelope with `etag` matching the file's sha256.
 
-**Fixture B — Zone gate on write:**
-Given a manifest entry where `key: fixed.identity` has `zone: fixed`, `textus put fixed.identity --stdin` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
+**Fixture B — Role gate on write:**
+Given a manifest entry where `key: canon.identity` lives in the `canon` zone (human-only), `textus put canon.identity --stdin --as=ai` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
 
-**Fixture C — Schema validation:**
-Given the `person` schema above and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
+**Fixture C — Schema violation:**
+Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `derived.catalogs.skills` with `generator.sources: [state.projects]`, and a state entry under `state.projects` whose file mtime is newer than the derived entry's `generated.at` frontmatter timestamp, `textus stale --format=json` includes the derived entry with its declared `generator.command` and a `reason` field naming the stale source. Calling textus does NOT execute the command.
+Given a manifest entry `derived.catalogs.skills` with `generator.sources: [state.projects]`, and a state entry under `state.projects` whose file mtime is newer than the derived entry's `generated.at` frontmatter timestamp, `textus stale --format=json` includes the derived entry with its declared `generator.command` and a `reason` field naming the stale source. Calling `textus stale` does NOT execute the command.
+
+**Fixture E — Projection build:**
+Given a manifest entry `derived.catalogs.skills` whose `projection` clause selects fields from `state.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
+
+**Fixture F — Mustache render:**
+Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
+
+**Fixture G — Symlink publish:**
+Given a manifest entry with `publish_to: <path>`, a successful `textus build` for that entry leaves a symlink at `<path>` pointing at the canonical derived file under `.textus/zones/derived/…`. Re-running `build` is idempotent.
+
+**Fixture H — Audit log format:**
+Every successful write verb (`put`, `delete`, `build`, `accept`, `schema-migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
+
+**Fixture I — Pending → accept:**
+Given a pending entry `pending.canon.identity.patch` proposing a change to `canon.identity`, `textus accept canon.identity --as=human` copies the patch body into `canon.identity`, deletes the pending entry, and appends two audit lines (one for the canon write, one for the pending delete) in that order.
 
 ## 13. Why not X?
 
