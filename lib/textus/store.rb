@@ -30,7 +30,7 @@ module Textus
     def load_extensions
       Textus.with_registry(@registry) do
         dir = File.join(@root, "extensions")
-        Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) } if File.directory?(dir)
+        Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) } if File.directory?(dir) # rubocop:disable Lint/RedundantDirGlobSort
       end
     end
 
