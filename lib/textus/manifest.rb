@@ -137,8 +137,7 @@ module Textus
     private
 
     def parse_source!(src)
-      return @fetcher = @fetcher_config = @ttl = nil unless src
-
+      src ||= {}
       @fetcher = src["fetcher"]
       @fetcher_config = src["config"] || {}
       @ttl = src["ttl"]

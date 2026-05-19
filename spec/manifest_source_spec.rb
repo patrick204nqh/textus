@@ -74,4 +74,17 @@ RSpec.describe "Manifest source.fetcher" do
     e = m.entries.first
     expect(e.events["put"].first["hook"]).to eq("notify")
   end
+
+  it "fetcher_config defaults to {} when entry has no source block" do
+    write_manifest(<<~YAML)
+      version: textus/1
+      zones: [{ name: working, writable_by: [human] }]
+      entries:
+        - { key: working.x, path: working/x.md, zone: working }
+    YAML
+    e = Textus::Manifest.load(root).entries.first
+    expect(e.fetcher).to be_nil
+    expect(e.fetcher_config).to eq({})
+    expect(e.ttl).to be_nil
+  end
 end
