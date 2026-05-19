@@ -199,6 +199,23 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
+  describe "validate-all" do
+    it "returns ok when every entry conforms" do
+      res = store.validate_all
+      expect(res["ok"]).to be true
+      expect(res["violations"]).to be_empty
+    end
+
+    it "reports schema violations and bad frontmatter" do
+      File.write(File.join(root, "zones/working/network/org/broken.md"),
+                 "---\nname: broken\n---\n")
+      res = store.validate_all
+      expect(res["ok"]).to be false
+      keys = res["violations"].map { |v| v["key"] }
+      expect(keys).to include("working.network.org.broken")
+    end
+  end
+
   describe "delete verb" do
     it "deletes an entry, audit-logs it, and refuses without role" do
       store.put("working.network.org.tmp",

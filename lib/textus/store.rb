@@ -118,6 +118,18 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 
+    def validate_all
+      violations = []
+      @manifest.enumerate.each do |row|
+        begin
+          get(row[:key])
+        rescue Textus::Error => e
+          violations << { "key" => row[:key], "code" => e.code, "message" => e.message }
+        end
+      end
+      { "protocol" => PROTOCOL, "ok" => violations.empty?, "violations" => violations }
+    end
+
     def stale(prefix: nil)
       out = []
       @manifest.entries.each do |mentry|
