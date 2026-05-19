@@ -36,6 +36,18 @@ entries:
     nested: true
     publish_each: "commands/{basename}.md"
 
+  # ---- pending: AI proposals awaiting human accept ----
+  # An AI agent writes a proposal here with --as=ai. A human reviews it and
+  # runs `textus accept pending.<id> --as=human`, which (a) writes the
+  # proposal's `target_key` to its real home and (b) deletes the pending
+  # entry. See examples/claude-plugin/README.md → "AI proposals (pending)".
+  - key: pending.suggestion
+    path: pending/suggestion
+    zone: pending
+    schema: null
+    owner: ai:catalog
+    nested: true
+
   # ---- intake: fetcher-fed (textus capability demo) ----
   - key: intake.upstream.notes
     path: intake/upstream/notes.md

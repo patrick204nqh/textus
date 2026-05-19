@@ -194,6 +194,70 @@ Useful when wiring up an external runner that needs to discover declared
 `derived.claude-root` declares one — see `Rakefile`'s `textus:update` task
 for a working dispatcher).
 
+## AI proposals (`pending` zone)
+
+The `pending` zone is the canonical write path for AI agents. The agent
+writes a *proposal* with `--as=ai` — the proposal carries the target key
+and the payload it would write. A human reviews the file like any diff,
+then runs `textus accept` to apply it. The accept step writes to the real
+target (with `--as=human`, so any zone the human can write to is fair
+game) and deletes the pending entry. The whole exchange is in
+`.textus/audit.log`: one `put` row by `ai` against the pending key, one
+`put` row by `human` against the real target, one `delete` row by
+`human` against the pending key.
+
+The manifest declares a nested pending entry so any agent can drop a
+proposal under it:
+
+```yaml
+- key: pending.suggestion
+  path: pending/suggestion
+  zone: pending
+  schema: null
+  owner: ai:catalog
+  nested: true
+```
+
+A live fixture lives at
+`.textus/zones/pending/suggestion/001.md` — open it to see the proposal
+envelope shape:
+
+```yaml
+---
+name: 001
+proposal:
+  target_key: working.skills.editorial.copy-editor
+  action: put              # or "delete"
+frontmatter:               # what to write into target_key
+  name: copy-editor
+  description: ...
+  version: 0.1.0
+---
+
+<body the proposal would write>
+```
+
+End-to-end, the loop is:
+
+```bash
+# 1. AI proposes (write into pending) — replays the fixture.
+textus put pending.suggestion.001 --stdin --as=ai --format=json < proposal.json
+
+# 2. Human reviews:
+textus list --prefix=pending --format=json
+textus get  pending.suggestion.001 --format=json
+
+# 3. Human accepts. textus writes target_key with --as=human, then
+#    deletes the pending entry. The build picks it up via publish_each.
+textus accept pending.suggestion.001 --as=human --format=json
+textus build --format=json
+```
+
+`textus accept` enforces `--as=human` (an AI can propose, only a human
+can accept). The on-disk fixture in this repo is committed for inspection
+— don't `accept` it unless you actually want the `copy-editor` skill
+added to the catalog (it isn't otherwise wired up).
+
 ## Did-you-mean on unknown keys
 
 `textus get working.skills.editorail.voice-writer` (typo'd) reports the
