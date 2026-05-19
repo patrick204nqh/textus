@@ -150,9 +150,10 @@ module Textus
       @registry.hooks(event).each do |entry|
         Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
       rescue StandardError => _e
-        # Will be properly audited in Task 12 once AuditLog supports extras:.
-        # For now: hook errors are silently swallowed (write/delete already committed).
-        # Timeout::Error inherits from StandardError, so it's covered here.
+        # TODO(task-12): route hook failures to audit log once AuditLog supports
+        # an extras: JSON column. Until then, errors here are silently swallowed
+        # — the write/delete itself has already committed.
+        # Timeout::Error inherits from StandardError, so it's covered.
       end
     end
 
