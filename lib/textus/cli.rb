@@ -33,6 +33,7 @@ module Textus
       when "deps"         then verb_deps(argv)
       when "rdeps"        then verb_rdeps(argv)
       when "published"    then verb_published(argv)
+      when "accept"       then verb_accept(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -185,6 +186,17 @@ module Textus
       key = argv.shift or raise UsageError.new("rdeps requires a key")
       parse_format!(argv)
       emit({ "protocol" => Textus::PROTOCOL, "key" => key, "rdeps" => store.rdeps(key) })
+    end
+
+    def verb_accept(argv)
+      key = argv.shift or raise UsageError.new("accept requires a key")
+      as_flag = nil
+      OptionParser.new do |o|
+        o.on("--as=ROLE") { |v| as_flag = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+      emit(store.accept(key, as: role))
     end
 
     def verb_published(argv)

@@ -127,6 +127,10 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 
+    def accept(key, as:)
+      Proposal.accept(self, key, as: as)
+    end
+
     def deps(key)      = Dependencies.deps_of(@manifest, key)
     def rdeps(key)     = Dependencies.rdeps_of(@manifest, key)
     def published      = Dependencies.published_of(@manifest)
