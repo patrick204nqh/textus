@@ -337,6 +337,36 @@ The transform runs **between pluck and sort**: rows are collected, plucked to th
 
 **Why a separate L3 surface.** L1 parsers translate bytes to entries. L3 calculators translate entries to projection rows. Keeping them split preserves the layering: parsers run during intake refresh, calculators run during build. Neither layer ever writes to the store; both are bounded by the same 2s ceiling.
 
+### 5.10 Lifecycle hooks (v1.1)
+
+Hooks let a manifest entry declare external runner scripts that should fire at named lifecycle moments. Textus does **not** execute hooks — it only enumerates them. An external runner (lefthook, cron, a build orchestrator) is responsible for translating declared hooks into actual invocations.
+
+**Declaration.** Hooks attach to a manifest entry under a `hooks:` block, keyed by event name. Each event maps to an array of hook definitions:
+
+```yaml
+- key: intake.upstream.releases
+  path: intake/upstream/releases.md
+  zone: intake
+  schema: null
+  owner: script:cron
+  source: { from: https://example.com/releases.rss, parse: rss, ttl: 6h }
+  hooks:
+    on_stale:
+      - { run: scripts/refresh-intake.sh, as: script }
+    on_build:
+      - { run: scripts/rebuild-index.sh, as: build }
+```
+
+**Events (v1.1 set):** `on_put`, `on_delete`, `on_refresh`, `on_stale`, `on_accept`, `on_build`. Unknown events produce a `usage` error from `textus hooks list --event=…`.
+
+**Hook shape.** Each hook is an object with two fields:
+- `run` — a runner-resolvable string. Opaque to textus; runners interpret it (path to a script, named pipeline step, etc.).
+- `as` — the role the runner should claim when it writes back through textus. Defaults to `script` if omitted.
+
+**Enumeration.** `textus hooks list [--event=E] --format=json` returns one row per declared hook, with `key`, `event`, `run`, and `as`. Runners filter by event and dispatch. Textus never invokes `run`.
+
+**Boundary.** This is the same invariant as parsers and calculators: textus owns declaration and audit; user code runs only at bounded, named extension points. Hooks differ in that the runner — not textus — invokes them. The list verb is read-only and side-effect free.
+
 ## 6. Schemas
 
 Schemas live in `.textus/schemas/<name>.yaml`. A schema declares the required and optional frontmatter fields for entries that reference it.
@@ -452,6 +482,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `accept K --as=human` | write | `human` |
 | `init [--profile=P]` | write | `human` |
 | `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
+| `hooks list [--event=E]` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):
 
