@@ -9,8 +9,7 @@ AllCops:
     - "vendor/**/*"
     - "tmp/**/*"
     - "pkg/**/*"
-    - "examples/**/.textus/parsers/*.rb"
-    - "examples/**/.textus/calculators/*.rb"
+    - "examples/**/.textus/extensions/*.rb"
     - "docs/plans/**/*"
 
 # --- Style ---

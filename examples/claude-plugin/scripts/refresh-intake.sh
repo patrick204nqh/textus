@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
-# Run from a directory containing .textus/. Requires: curl, jq, textus.
+# Run from a directory containing .textus/. Requires: textus.
+#
+# In 0.2 textus owns the fetch step directly: `textus refresh` walks every
+# intake entry whose TTL has expired, calls its registered fetcher (built-in
+# or `.textus/extensions/*.rb`), and writes the result back through put.
 set -euo pipefail
 
-stale_json=$(textus stale --zone=intake --format=json)
-echo "$stale_json" | jq -c '.[]?' | while read -r row; do
-  key=$(echo "$row"    | jq -r '.key')
-  url=$(echo "$row"    | jq -r '.source.from')
-  parser=$(echo "$row" | jq -r '.source.parse')
-  echo "refreshing $key  ←  $url  (parser=$parser)"
-  curl -sSL "$url" \
-    | textus put "$key" --parse="$parser" --stdin --as=script --format=json \
-    | jq -c '{key, etag}'
-done
+textus refresh --format=json | jq -c '.refreshed[]?' || true
 echo "intake refresh complete"

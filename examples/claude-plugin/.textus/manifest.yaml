@@ -34,11 +34,10 @@ entries:
     schema: null
     owner: script:cron
     source:
-      from: https://example.com/releases.rss
-      parse: rss
+      fetcher: rss
+      config:
+        url: https://example.com/releases.rss
       ttl: 6h
-    hooks:
-      on_stale: [{ run: scripts/refresh-intake.sh, as: script }]
 
   - key: intake.upstream.notes
     path: intake/upstream/notes.md
@@ -46,11 +45,10 @@ entries:
     schema: null
     owner: script:cron
     source:
-      from: https://example.com/notes.txt
-      parse: lowercase
+      fetcher: lowercase
+      config:
+        url: https://example.com/notes.txt
       ttl: 12h
-    hooks:
-      on_stale: [{ run: scripts/refresh-intake.sh, as: script }]
 
   # ---- derived: machine-built, never hand-edited ----
   - key: derived.claude.root
@@ -61,7 +59,7 @@ entries:
     projection:
       select: [working.projects]
       pluck: [name, status, summary, updated_at]
-      transform: rank-by-recency
+      reducer: rank-by-recency
     template: claude-root.mustache
     publish_to: [CLAUDE.md]
 
