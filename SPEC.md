@@ -302,8 +302,6 @@ evolution:
 
 **Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over AI/script-managed data — humans curating canon over AI-written embeddings is a feature, not a bug. All other role mismatches are reported by `validate-all` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
-> **Note:** The sections below (§6+) remain from v0.1 and will be updated in subsequent tasks to align with the v1.0 storage layout and role model described above.
-
 ### 5.9 Calculators (v1.1)
 
 Calculators are the L3 extension point: pure, named functions that transform projection rows into projection rows. They mirror parsers (§5.4) — same registry shape, same 2s timeout, same auto-load discipline — but operate on structured rows rather than raw bytes.
@@ -408,7 +406,7 @@ Short body in Markdown.
 
 The frontmatter `name:` field, when present, must match the file's basename (without `.md`). Implementations may relax this for backward compat but the reference impl enforces it.
 
-Entries in `zone: derived` SHOULD additionally carry the `generated:` block defined in §5.1. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build runners can extend the metadata without breaking conformance.
+Entries in `zone: derived` SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build runners can extend the metadata without breaking conformance.
 
 ## 8. Envelope (the wire format)
 
@@ -417,10 +415,10 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 ```json
 {
   "protocol": "textus/1",
-  "key": "state.network.org.jane",
-  "zone": "state",
+  "key": "working.network.org.jane",
+  "zone": "working",
   "owner": "textus:network",
-  "path": "/absolute/path/to/.textus/state/network/org/jane.md",
+  "path": "/absolute/path/to/.textus/zones/working/network/org/jane.md",
   "frontmatter": { "name": "jane", "relationship": "peer", "org": "envato" },
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
@@ -431,7 +429,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/1`.
 - `key` MUST be the canonical resolved key.
-- `zone` MUST be one of `fixed`, `state`, `derived`.
+- `zone` MUST be one of the zones declared in the manifest (`canon`, `working`, `intake`, `pending`, `derived` for the default v1.0 model; legacy v0.1 manifests synthesize `fixed`, `state`, `derived` per §4).
 - `path` MUST be an absolute filesystem path.
 - `etag` MUST be `sha256:<hex>` of the raw file bytes.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
@@ -443,8 +441,8 @@ Errors use a distinct envelope:
   "protocol": "textus/1",
   "ok": false,
   "code": "write_forbidden",
-  "message": "zone 'fixed' is not agent-writable for key 'fixed.identity'",
-  "details": { "key": "fixed.identity", "zone": "fixed" }
+  "message": "zone 'canon' is not writable by role 'ai' for key 'canon.identity'",
+  "details": { "key": "canon.identity", "zone": "canon", "role": "ai" }
 }
 ```
 
@@ -455,7 +453,7 @@ Errors use a distinct envelope:
 | `unknown_key` | Key does not resolve | 1 |
 | `bad_frontmatter` | YAML parse failed or `name:` mismatch | 1 |
 | `schema_violation` | Required field missing or wrong type | 1 |
-| `write_forbidden` | Zone is not agent-writable | 1 |
+| `write_forbidden` | Resolved role is not in the zone's `writable_by` | 1 |
 | `etag_mismatch` | Concurrent write detected | 1 |
 | `io_error` | Filesystem failure | 64 |
 | `usage` | CLI argument error | 2 |
@@ -501,8 +499,8 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
   { "key": "derived.catalogs.skills",
     "path": "/abs/.textus/zones/derived/catalogs/skills.md",
     "generator": { "command": "rake catalog:skills",
-                   "sources": ["state.projects", "state.network"] },
-    "reason": "source 'state.projects' modified after generated.at" }
+                   "sources": ["working.projects", "working.network"] },
+    "reason": "source 'working.projects' modified after generated.at" }
 ]
 ```
 
@@ -532,7 +530,7 @@ The reference Ruby gem follows semver independently. Gem 1.x speaks `textus/1`.
 A conformant implementation MUST pass these fixtures (the reference test suite ships a YAML file listing inputs and expected envelopes):
 
 **Fixture A — Resolve and read:**
-Given a manifest with `state.network.org` → `state/network/org` (nested), schema `person`, and a file `state/network/org/jane.md` with valid frontmatter, `textus get state.network.org.jane --format=json` returns the canonical envelope with `etag` matching the file's sha256.
+Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --format=json` returns the canonical envelope with `etag` matching the file's sha256.
 
 **Fixture B — Role gate on write:**
 Given a manifest entry where `key: canon.identity` lives in the `canon` zone (human-only), `textus put canon.identity --stdin --as=ai` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
@@ -541,10 +539,10 @@ Given a manifest entry where `key: canon.identity` lives in the `canon` zone (hu
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `derived.catalogs.skills` with `generator.sources: [state.projects]`, and a state entry under `state.projects` whose file mtime is newer than the derived entry's `generated.at` frontmatter timestamp, `textus stale --format=json` includes the derived entry with its declared `generator.command` and a `reason` field naming the stale source. Calling `textus stale` does NOT execute the command.
+Given a manifest entry `derived.catalogs.skills` with `generator.sources: [working.projects]`, and a working-zone entry under `working.projects` whose file mtime is newer than the derived entry's `generated.at` frontmatter timestamp, `textus stale --format=json` includes the derived entry with its declared `generator.command` and a `reason` field naming the stale source. Calling `textus stale` does NOT execute the command.
 
 **Fixture E — Projection build:**
-Given a manifest entry `derived.catalogs.skills` whose `projection` clause selects fields from `state.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
+Given a manifest entry `derived.catalogs.skills` whose `projection` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
 
 **Fixture F — Mustache render:**
 Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
@@ -589,19 +587,19 @@ A v1 implementation MUST:
 - [ ] Resolve keys via longest-prefix match against manifest entries.
 - [ ] Read frontmatter + body from `.md` files; validate against the named schema.
 - [ ] Compute `sha256:<hex>` etags over raw file bytes.
-- [ ] Refuse writes to non-state zones with `write_forbidden`.
+- [ ] Refuse writes whose resolved role is not in the target zone's `writable_by` list with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly.
 - [ ] Use the error codes in §8 and the exit-code table.
 - [ ] Implement `textus stale` per §5.1 and §9, comparing each derived entry's `generator.sources` against its `generated.at` timestamp without invoking any commands.
-- [ ] Pass the four conformance fixtures in §12.
+- [ ] Pass the conformance fixtures A–I in §12.
 
 A v1 implementation MAY:
 
-- Add additional CLI verbs (delete, move, validate-all) that are not part of the spec.
+- Add additional CLI verbs (e.g. `move`, vendor-specific reporters) beyond the v1.0 set in §9.
 - Provide alternate output formats (`--format=yaml`, `--format=table`) for human use.
 - Support additional schema field types beyond §6, marked as `vendor:<name>` extensions.
 
 ---
 
 **Spec word count target:** <2500 words (allowance widened from 2000 to fit Level-A/B derived provenance + staleness in v1).
-**Reviewed against community-testing checklist (idea file §"Community-testing"):** ✅ <2500 words; ✅ implementable in a day in TS/Python (four concepts: manifest, schema, envelope, staleness check); ✅ four conformance fixtures; ✅ "Why not X?" section present (incl. why no execution); ✅ name picked.
+**Reviewed against community-testing checklist (idea file §"Community-testing"):** ✅ <2500 words; ✅ implementable in a day in TS/Python (four concepts: manifest, schema, envelope, staleness check); ✅ conformance fixtures A–I; ✅ "Why not X?" section present (incl. why no execution); ✅ name picked.
