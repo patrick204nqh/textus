@@ -11,8 +11,16 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/patrick204nqh/textus"
   s.required_ruby_version = ">= 3.1"
 
-  s.files = Dir["lib/**/*.rb", "lib/textus/profiles/*.yaml", "exe/*", "README.md", "SPEC.md", "docs/architecture.md",
-                "docs/conventions.md"]
+  s.files = Dir[
+    "lib/**/*.rb",
+    "lib/textus/profiles/*.yaml",
+    "exe/*",
+    "README.md",
+    "SPEC.md",
+    "CHANGELOG.md",
+    "docs/architecture.md",
+    "docs/conventions.md",
+  ]
   s.bindir = "exe"
   s.executables = ["textus"]
 
@@ -22,5 +30,13 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency "rake", "~> 13.0"
   s.add_development_dependency "rspec", "~> 3.13"
-  s.metadata["rubygems_mfa_required"] = "true"
+
+  s.metadata = {
+    "homepage_uri" => s.homepage,
+    "source_code_uri" => "https://github.com/patrick204nqh/textus",
+    "bug_tracker_uri" => "https://github.com/patrick204nqh/textus/issues",
+    "changelog_uri" => "https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md",
+    "documentation_uri" => "https://github.com/patrick204nqh/textus/blob/main/SPEC.md",
+    "rubygems_mfa_required" => "true",
+  }
 end

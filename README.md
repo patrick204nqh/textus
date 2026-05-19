@@ -170,9 +170,15 @@ Runs the full suite, including conformance fixtures A–I from SPEC §12.
 ## Code quality
 
 ```sh
-bundle exec rubocop           # lint
-bundle exec rubocop -A        # lint + autocorrect
-bundle exec lefthook install  # install git hooks (one-time)
+bundle exec rubocop      # lint
+bundle exec rubocop -A   # lint + autocorrect
+```
+
+Git hooks via [Lefthook](https://github.com/evilmartians/lefthook):
+
+```sh
+brew bundle install      # installs lefthook (see Brewfile)
+lefthook install         # writes .git/hooks/{pre-commit,pre-push}
 ```
 
 Hooks (defined in `lefthook.yml`):
@@ -180,6 +186,9 @@ Hooks (defined in `lefthook.yml`):
 - `pre-push` — runs the full `rspec` suite and `rubocop` over the tree.
 
 Bypass with `LEFTHOOK=0 git commit ...` when needed.
+
+CI runs `rspec` (Ruby 3.1 / 3.2 / 3.3) and `rubocop` via GitHub Actions
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## License
 
