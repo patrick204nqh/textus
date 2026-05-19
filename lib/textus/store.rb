@@ -1,4 +1,5 @@
 require "fileutils"
+require "securerandom"
 require "time"
 require "timeout"
 
@@ -8,6 +9,13 @@ module Textus
     HOOK_TIMEOUT_SECONDS = 2
 
     attr_reader :root, :manifest, :registry
+
+    # A Textus UID: 16 lowercase hex chars (SecureRandom.hex(8)). Not a UUID —
+    # short on purpose. Random enough for collision-never-in-practice within a
+    # single store.
+    def self.mint_uid
+      SecureRandom.hex(8)
+    end
 
     def self.discover(start_dir = Dir.pwd)
       dir = File.expand_path(start_dir)
@@ -122,6 +130,9 @@ module Textus
 
       frontmatter ||= {}
       strategy = Entry.for_format(mentry.format)
+
+      existing_uid = existing_uid_for(mentry, path)
+      frontmatter, content = ensure_uid(mentry.format, frontmatter, content, existing_uid)
 
       bytes, eff_fm, eff_body, eff_content = serialize_for_put(
         mentry: mentry, path: path, strategy: strategy,
@@ -308,7 +319,157 @@ module Textus
     end
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
 
+    # Returns the Textus UID for a key (or nil if the entry has none yet).
+    # Raises UnknownKey if the key doesn't resolve to a real file.
+    def uid(key)
+      env = get(key)
+      env["uid"]
+    end
+
+    # Move an entry from old_key to new_key within the same zone. Preserves
+    # uid (minting one first if absent), validates both keys against the
+    # manifest, refuses to clobber, and writes one mv audit row.
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false)
+      @manifest.validate_key!(old_key)
+      @manifest.validate_key!(new_key)
+      raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
+
+      old_mentry, old_path, = @manifest.resolve(old_key)
+      raise UnknownKey.new(old_key) unless File.exist?(old_path)
+
+      new_mentry, new_path, = @manifest.resolve(new_key)
+
+      if old_mentry.zone != new_mentry.zone
+        raise UsageError.new(
+          "mv: cross-zone move refused (#{old_mentry.zone} → #{new_mentry.zone}). " \
+          "Use put+delete for cross-zone moves.",
+        )
+      end
+      if old_mentry.format != new_mentry.format
+        raise UsageError.new(
+          "mv: format mismatch (#{old_mentry.format} → #{new_mentry.format}); refusing.",
+        )
+      end
+
+      writers = @manifest.zone_writers(old_mentry.zone)
+      raise WriteForbidden.new(old_key, old_mentry.zone) unless writers.include?(as)
+
+      raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)
+
+      # Mint uid before the move so the audit row carries it.
+      pre_env = get(old_key)
+      current_uid = pre_env["uid"]
+      etag_before = pre_env["etag"]
+
+      if dry_run
+        return {
+          "protocol" => PROTOCOL, "ok" => true, "dry_run" => true,
+          "from_key" => old_key, "to_key" => new_key,
+          "from_path" => old_path, "to_path" => new_path,
+          "uid" => current_uid
+        }
+      end
+
+      if current_uid.nil?
+        # Write the uid in place first so the source file carries it before mv.
+        pre_env = put(old_key,
+                      frontmatter: pre_env["frontmatter"],
+                      body: pre_env["body"],
+                      content: pre_env["content"],
+                      as: as,
+                      suppress_events: true)
+        current_uid = pre_env["uid"]
+        etag_before = pre_env["etag"]
+      end
+
+      FileUtils.mkdir_p(File.dirname(new_path))
+      FileUtils.mv(old_path, new_path)
+      rewrite_name_for_mv!(new_mentry, new_path, new_key)
+      etag_after = Etag.for_file(new_path)
+
+      audit_log.append(
+        role: as, verb: "mv", key: new_key,
+        etag_before: etag_before, etag_after: etag_after,
+        extras: {
+          "from_key" => old_key, "to_key" => new_key,
+          "from_path" => old_path, "to_path" => new_path,
+          "uid" => current_uid
+        }
+      )
+
+      env = get(new_key)
+      {
+        "protocol" => PROTOCOL, "ok" => true,
+        "from_key" => old_key, "to_key" => new_key,
+        "from_path" => old_path, "to_path" => new_path,
+        "uid" => current_uid,
+        "envelope" => env
+      }
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
     private
+
+    # If the moved file carries a `name:` field (markdown) or `_meta.name`
+    # (json/yaml), rewrite it to the new basename so enforce_name_match! stays
+    # happy on the next read. Only touches the bytes when name actually changes.
+    def rewrite_name_for_mv!(mentry, new_path, new_key)
+      strategy = Entry.for_format(mentry.format)
+      raw = File.binread(new_path)
+      parsed = strategy.parse(raw, path: new_path)
+      basename = new_key.split(".").last
+
+      case mentry.format
+      when "markdown"
+        fm = parsed["frontmatter"] || {}
+        return unless fm.is_a?(Hash) && fm["name"].is_a?(String) && fm["name"] != basename
+
+        fm = fm.merge("name" => basename)
+        File.binwrite(new_path, strategy.serialize(frontmatter: fm, body: parsed["body"]))
+      when "json", "yaml"
+        content = parsed["content"]
+        return unless content.is_a?(Hash) && content["_meta"].is_a?(Hash) &&
+                      content["_meta"]["name"].is_a?(String) && content["_meta"]["name"] != basename
+
+        meta = content["_meta"].merge("name" => basename)
+        content = { "_meta" => meta }.merge(content.except("_meta"))
+        File.binwrite(new_path, strategy.serialize(frontmatter: {}, body: "", content: content))
+      end
+    end
+
+    def existing_uid_for(mentry, path)
+      return nil unless File.exist?(path)
+
+      raw = File.binread(path)
+      parsed = Entry.for_format(mentry.format).parse(raw, path: path)
+      extract_uid(mentry.format, parsed["frontmatter"], parsed["content"])
+    rescue StandardError
+      nil
+    end
+
+    # Ensures the payload carries a uid: preserve existing, else mint.
+    # Returns [frontmatter, content] possibly mutated.
+    def ensure_uid(format, frontmatter, content, existing_uid)
+      case format
+      when "markdown"
+        fm = frontmatter.is_a?(Hash) ? frontmatter.dup : {}
+        fm["uid"] = existing_uid || Store.mint_uid unless fm["uid"].is_a?(String) && !fm["uid"].empty?
+        [fm, content]
+      when "json", "yaml"
+        c = content.is_a?(Hash) ? content.dup : nil
+        if c
+          meta = c["_meta"].is_a?(Hash) ? c["_meta"].dup : {}
+          meta["uid"] = existing_uid || Store.mint_uid if !meta["uid"].is_a?(String) || meta["uid"].empty?
+          # Keep _meta first for etag stability.
+          c = { "_meta" => meta }.merge(c.except("_meta"))
+        end
+        [frontmatter, c]
+      else
+        # text: no uid channel
+        [frontmatter, content]
+      end
+    end
 
     def audit_log
       @audit_log ||= AuditLog.new(@root)
@@ -422,9 +583,24 @@ module Textus
         "body" => body,
         "etag" => etag,
         "schema_ref" => mentry.schema,
+        "uid" => extract_uid(mentry.format, fm, content),
       }
       env["content"] = content unless content.nil?
       env
+    end
+
+    # Pull a Textus UID out of the parsed entry shape per format.
+    # markdown: frontmatter["uid"]; json/yaml: content["_meta"]["uid"]; text: nil.
+    def extract_uid(format, fm, content)
+      case format
+      when "markdown"
+        v = fm.is_a?(Hash) ? fm["uid"] : nil
+        v.is_a?(String) ? v : nil
+      when "json", "yaml"
+        meta = content.is_a?(Hash) ? content["_meta"] : nil
+        v = meta.is_a?(Hash) ? meta["uid"] : nil
+        v.is_a?(String) ? v : nil
+      end
     end
   end
   # rubocop:enable Metrics/ClassLength

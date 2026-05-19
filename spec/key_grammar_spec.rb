@@ -70,6 +70,28 @@ RSpec.describe "Key grammar enforcement" do
     end
   end
 
+  describe "UnknownKey suggestions" do
+    it "attaches ranked suggestions when a near-miss key is requested" do
+      write_manifest(<<~YAML)
+        - { key: working.notes, path: working/notes, zone: working, nested: true }
+      YAML
+      FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
+      %w[alpha beta gamma].each do |n|
+        File.write(File.join(root, "zones/working/notes/#{n}.md"), "---\nname: #{n}\n---\nx\n")
+      end
+      store = Textus::Store.new(root)
+      begin
+        store.get("workng.notes.alpha")
+        raise "expected UnknownKey"
+      rescue Textus::UnknownKey => e
+        expect(e.suggestions).to include("working.notes.alpha")
+        expect(e.suggestions.length).to be <= 5
+        expect(e.message).to match(/did you mean/)
+        expect(e.to_envelope["details"]["suggestions"]).to include("working.notes.alpha")
+      end
+    end
+  end
+
   describe "Manifest#enumerate — illegal filenames" do
     it "warns and skips illegal nested filenames rather than raising" do
       write_manifest(<<~YAML)

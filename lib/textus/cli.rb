@@ -5,6 +5,7 @@ require "timeout"
 require "yaml"
 
 module Textus
+  # rubocop:disable Metrics/ClassLength
   class CLI
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
@@ -17,7 +18,7 @@ module Textus
       @cwd = cwd
     end
 
-    def run(argv) # rubocop:disable Metrics/CyclomaticComplexity
+    def run(argv) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/AbcSize
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
@@ -42,6 +43,8 @@ module Textus
       when "refresh"        then verb_refresh(argv)
       when "extensions"     then verb_extensions(argv)
       when "migrate-keys"   then verb_migrate_keys(argv)
+      when "mv"             then verb_mv(argv)
+      when "uid"            then verb_uid(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -320,6 +323,26 @@ module Textus
       res["ok"] ? 0 : 1
     end
 
+    def verb_mv(argv)
+      old_key = argv.shift or raise UsageError.new("mv requires <old-key> <new-key>")
+      new_key = argv.shift or raise UsageError.new("mv requires <old-key> <new-key>")
+      as_flag = nil
+      dry_run = false
+      OptionParser.new do |o|
+        o.on("--as=ROLE") { |v| as_flag = v }
+        o.on("--dry-run") { dry_run = true }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+      emit(store.mv(old_key, new_key, as: role, dry_run: dry_run))
+    end
+
+    def verb_uid(argv)
+      key = argv.shift or raise UsageError.new("uid requires a key")
+      parse_format!(argv)
+      emit({ "protocol" => PROTOCOL, "key" => key, "uid" => store.uid(key) })
+    end
+
     def verb_published(argv)
       parse_format!(argv)
       emit({ "protocol" => Textus::PROTOCOL, "published" => store.published })
@@ -349,4 +372,5 @@ module Textus
       HELP
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

@@ -278,7 +278,7 @@ Schema (tab-separated, one record per line):
 <iso8601-utc>\t<role>\t<verb>\t<key>\t<etag-before-or-NULL>\t<etag-after-or-NULL>
 ```
 
-`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, ...). `<key>` is the affected entry key. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `<key>` and the file's pre- and post-rename etags.
+`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). `<key>` is the affected entry key. For `mv`, `<key>` is the **new** key, and an extras JSON column carries `from_key`, `to_key`, `from_path`, `to_path`, and `uid`. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `<key>` and the file's pre- and post-rename etags.
 
 ### 5.7 Security bounds
 
@@ -467,6 +467,14 @@ Short body in Markdown.
 
 The frontmatter `name:` field, when present, must match the file's basename (without `.md`). Implementations may relax this for backward compat but the reference impl enforces it.
 
+**`uid:` (Textus UID).** Entries MAY carry a stable identity field that survives renames and moves. Optional. When present:
+
+- Lives at top-level `uid:` in markdown frontmatter, or `_meta.uid` in `json`/`yaml` entries.
+- Format: lowercase hex string, 12 or more characters. The reference impl mints 16 hex chars (`SecureRandom.hex(8)`). This is a **Textus UID**, not a UUID — short on purpose.
+- Auto-assigned on the first successful `Store#put` if the payload has no uid. Preserved on subsequent puts.
+- Existing files without a uid continue to work. The envelope shows `"uid": null` until a put mints one.
+- `text` entries have no metadata channel and therefore no uid; their envelope always shows `"uid": null`.
+
 Entries in `zone: derived` SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build runners can extend the metadata without breaking conformance.
 
 ## 8. Envelope (the wire format)
@@ -484,7 +492,8 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
   "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
-  "schema_ref": "person"
+  "schema_ref": "person",
+  "uid": "a1b2c3d4e5f60718"
 }
 ```
 
@@ -498,6 +507,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 - `content` is present only when `format` is `json` or `yaml`; equals the parsed object. For `json|yaml`, `frontmatter` mirrors the top-level `_meta` (or `{}` if absent).
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
+- `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
 
 Errors use a distinct envelope:
 
@@ -547,6 +557,8 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `init` | write | `human` |
 | `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
 | `migrate-keys [--dry-run\|--write]` | write (with `--write`) | `human` |
+| `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
+| `uid K` | read | any |
 | `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):

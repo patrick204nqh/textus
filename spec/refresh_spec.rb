@@ -75,7 +75,9 @@ RSpec.describe Textus::Refresh do
       env = described_class.call(store, "intake.repos", as: "script")
       expect(env["format"]).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
-      expect(JSON.parse(File.read(path))).to eq("items" => [{ "id" => 1 }, { "id" => 2 }])
+      parsed = JSON.parse(File.read(path))
+      expect(parsed["items"]).to eq([{ "id" => 1 }, { "id" => 2 }])
+      expect(parsed.dig("_meta", "uid")).to match(/\A[a-f0-9]{12,}\z/)
     end
 
     it "accepts {body:} for a format: text entry and writes bytes verbatim" do

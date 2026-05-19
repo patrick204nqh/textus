@@ -21,7 +21,16 @@ module Textus
   end
 
   class UnknownKey < Error
-    def initialize(key) = super("unknown_key", "key '#{key}' does not resolve", details: { "key" => key })
+    attr_reader :suggestions
+
+    def initialize(key, suggestions: [])
+      @suggestions = Array(suggestions)
+      details = { "key" => key }
+      details["suggestions"] = @suggestions unless @suggestions.empty?
+      msg = "key '#{key}' does not resolve"
+      msg += "; did you mean: #{@suggestions.join(", ")}" unless @suggestions.empty?
+      super("unknown_key", msg, details: details)
+    end
   end
 
   class BadFrontmatter < Error

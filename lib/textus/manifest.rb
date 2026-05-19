@@ -66,7 +66,7 @@ module Textus
                    .map { |e| [e, e.key.split(".")] }
                    .select { |(_, esegs)| esegs == segments[0, esegs.length] }
                    .sort_by { |(_, esegs)| -esegs.length }
-      raise UnknownKey.new(key) if candidates.empty?
+      raise UnknownKey.new(key, suggestions: suggestions_for(key)) if candidates.empty?
 
       entry, esegs = candidates.first
       remaining = segments[esegs.length..]
@@ -74,12 +74,24 @@ module Textus
         path = resolve_leaf_path(entry)
         [entry, path, []]
       else
-        raise UnknownKey.new(key) unless entry.nested
+        raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless entry.nested
 
         primary_ext = Entry.for_format(entry.format).extensions.first
         path = File.join(@root, "zones", entry.path, *remaining) + primary_ext
         [entry, path, remaining]
       end
+    end
+
+    # Returns up to 5 dotted keys from the manifest that look similar to the
+    # requested key, ranked by shared-prefix length then Levenshtein distance.
+    def suggestions_for(key)
+      candidates = enumerate.map { |r| r[:key] }
+      # Include declared (non-nested) entry keys even if file is missing.
+      candidates.concat(@entries.reject(&:nested).map(&:key))
+      candidates.uniq!
+      KeyDistance.suggest(key, candidates, limit: 5)
+    rescue StandardError
+      []
     end
 
     # Enumerate all entry files reachable through the manifest. Returns
