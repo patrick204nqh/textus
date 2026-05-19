@@ -18,6 +18,7 @@ RSpec.describe Textus::SchemaTools do
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
     YAML
   end
+
   after { FileUtils.remove_entry(tmp) }
 
   def store = Textus::Store.new(root)
@@ -25,12 +26,12 @@ RSpec.describe Textus::SchemaTools do
   it "schema-init infers a schema from an entry's frontmatter" do
     s = store
     s.put("working.people.alice",
-      frontmatter: { "name" => "alice", "org" => "envato", "age" => 30 },
-      body: "", as: "human")
+          frontmatter: { "name" => "alice", "org" => "envato", "age" => 30 },
+          body: "", as: "human")
 
     res = Textus::SchemaTools.init(s, name: "person", from: "working.people.alice")
     expect(res["schema_name"]).to eq("person")
-    raw = YAML.safe_load(File.read(res["path"]))
+    raw = YAML.safe_load_file(res["path"])
     expect(raw["required"]).to include("name", "org", "age")
     expect(raw["fields"]["age"]["type"]).to eq("number")
     expect(raw["fields"]["org"]["type"]).to eq("string")
@@ -39,18 +40,19 @@ RSpec.describe Textus::SchemaTools do
   it "schema-diff reports entries that violate the schema" do
     s = store
     s.put("working.people.alice",
-      frontmatter: { "name" => "alice", "org" => "envato" },
-      body: "", as: "human")
+          frontmatter: { "name" => "alice", "org" => "envato" },
+          body: "", as: "human")
     s.put("working.people.bob",
-      frontmatter: { "name" => "bob" },
-      body: "", as: "human")
+          frontmatter: { "name" => "bob" },
+          body: "", as: "human")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
-      "name" => "person",
-      "required" => ["name", "org"],
-      "optional" => [],
-      "fields" => { "name" => { "type" => "string" }, "org" => { "type" => "string" } },
-    }))
+                                                                      "name" => "person",
+                                                                      "required" => %w[name org],
+                                                                      "optional" => [],
+                                                                      "fields" => { "name" => { "type" => "string" },
+                                                                                    "org" => { "type" => "string" } },
+                                                                    }))
 
     res = Textus::SchemaTools.diff(store, name: "person")
     keys = res["drift"].map { |d| d["key"] }
@@ -61,15 +63,15 @@ RSpec.describe Textus::SchemaTools do
   it "auto-applies migrate_from on schema-migrate without --rename" do
     s = store
     s.put("working.people.alice",
-      frontmatter: { "name" => "alice" },
-      body: "hello", as: "human")
+          frontmatter: { "name" => "alice" },
+          body: "hello", as: "human")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
-      "name" => "person",
-      "required" => ["full_name"],
-      "fields" => { "full_name" => { "type" => "string" } },
-      "evolution" => { "migrate_from" => { "name" => "full_name" } },
-    }))
+                                                                      "name" => "person",
+                                                                      "required" => ["full_name"],
+                                                                      "fields" => { "full_name" => { "type" => "string" } },
+                                                                      "evolution" => { "migrate_from" => { "name" => "full_name" } },
+                                                                    }))
 
     res = Textus::SchemaTools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
@@ -81,11 +83,11 @@ RSpec.describe Textus::SchemaTools do
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
     s.put("working.people.alice",
-      frontmatter: { "name" => "alice", "org" => "envato" },
-      body: "hello", as: "human")
+          frontmatter: { "name" => "alice", "org" => "envato" },
+          body: "hello", as: "human")
     s.put("working.people.bob",
-      frontmatter: { "name" => "bob", "company" => "other" },
-      body: "world", as: "human")
+          frontmatter: { "name" => "bob", "company" => "other" },
+          body: "world", as: "human")
 
     res = Textus::SchemaTools.migrate(store, name: "person", rename: "org:organization")
     expect(res["migrated"]).to eq(["working.people.alice"])

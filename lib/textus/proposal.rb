@@ -2,6 +2,7 @@ module Textus
   module Proposal
     def self.accept(store, pending_key, as:)
       raise ProposalError.new("only human role can accept proposals; got '#{as}'") unless as == "human"
+
       env = store.get(pending_key)
       proposal = env["frontmatter"]["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
       target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")

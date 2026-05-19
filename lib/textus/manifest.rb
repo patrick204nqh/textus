@@ -7,8 +7,8 @@ module Textus
     attr_reader :root, :entries, :raw
 
     LEGACY_ZONES = {
-      "fixed"   => ["human"],
-      "state"   => ["human", "ai", "script"],
+      "fixed" => ["human"],
+      "state" => %w[human ai script],
       "derived" => ["build"],
     }.freeze
 
@@ -16,10 +16,10 @@ module Textus
       @zones ||= begin
         declared = Array(@raw["zones"])
         if declared.empty?
-          LEGACY_ZONES.transform_values { |w| w.dup }
+          LEGACY_ZONES.transform_values(&:dup)
         else
-          declared.each_with_object({}) do |z, h|
-            h[z["name"]] = Array(z["writable_by"])
+          declared.to_h do |z|
+            [z["name"], Array(z["writable_by"])]
           end
         end
       end
@@ -32,8 +32,10 @@ module Textus
     def self.load(root)
       manifest_path = File.join(root, "manifest.yaml")
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
-      raw = YAML.safe_load(File.read(manifest_path), aliases: false)
+
+      raw = YAML.safe_load_file(manifest_path, aliases: false)
       raise BadFrontmatter.new(manifest_path, "unsupported manifest version #{raw["version"].inspect}") unless raw["version"] == PROTOCOL
+
       new(root, raw)
     end
 
@@ -49,10 +51,11 @@ module Textus
       segments = key.split(".")
       # longest-prefix match
       candidates = @entries
-        .map { |e| [e, e.key.split(".")] }
-        .select { |(_, esegs)| esegs == segments[0, esegs.length] }
-        .sort_by { |(_, esegs)| -esegs.length }
-      raise UnknownKey, key if candidates.empty?
+                   .map { |e| [e, e.key.split(".")] }
+                   .select { |(_, esegs)| esegs == segments[0, esegs.length] }
+                   .sort_by { |(_, esegs)| -esegs.length }
+      raise UnknownKey.new(key) if candidates.empty?
+
       entry, esegs = candidates.first
       remaining = segments[esegs.length..]
       if remaining.empty?
@@ -63,7 +66,8 @@ module Textus
                end
         [entry, path, []]
       else
-        raise UnknownKey, key unless entry.nested
+        raise UnknownKey.new(key) unless entry.nested
+
         path = File.join(@root, "zones", entry.path, *remaining) + ".md"
         [entry, path, remaining]
       end
@@ -77,21 +81,22 @@ module Textus
         if entry.nested
           base = File.join(@root, "zones", entry.path)
           next unless File.directory?(base)
+
           Dir.glob(File.join(base, "**", "*.md")).each do |fp|
-            rel = fp.sub(/\A#{Regexp.escape(base)}\/?/, "").sub(/\.md\z/, "")
+            rel = fp.sub(%r{\A#{Regexp.escape(base)}/?}, "").sub(/\.md\z/, "")
             segs = rel.split("/").reject(&:empty?)
             next if segs.empty?
+
             full_key = (entry.key.split(".") + segs).join(".")
             out << { key: full_key, path: fp, manifest_entry: entry }
           end
         else
-          if entry.path.end_with?(".md")
-            fp = File.join(@root, "zones", entry.path)
-            out << { key: entry.key, path: fp, manifest_entry: entry } if File.exist?(fp)
-          else
-            fp = File.join(@root, "zones", entry.path + ".md")
-            out << { key: entry.key, path: fp, manifest_entry: entry } if File.exist?(fp)
-          end
+          fp = if entry.path.end_with?(".md")
+                 File.join(@root, "zones", entry.path)
+               else
+                 File.join(@root, "zones", entry.path + ".md")
+               end
+          out << { key: entry.key, path: fp, manifest_entry: entry } if File.exist?(fp)
         end
       end
       out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
@@ -100,10 +105,9 @@ module Textus
 
     def validate_key!(key)
       raise UsageError.new("empty key") if key.nil? || key.empty?
+
       key.split(".").each do |seg|
-        unless seg.match?(KEY_SEGMENT)
-          raise UsageError.new("invalid key segment '#{seg}' in '#{key}'")
-        end
+        raise UsageError.new("invalid key segment '#{seg}' in '#{key}'") unless seg.match?(KEY_SEGMENT)
       end
     end
   end
@@ -111,7 +115,8 @@ module Textus
   class ManifestEntry
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw,
                 :projection, :template, :publish_to, :source, :hooks
-    def initialize(manifest, raw)
+
+    def initialize(_manifest, raw)
       @raw = raw
       @key = raw["key"] or raise UsageError.new("manifest entry missing key")
       @path = raw["path"] or raise UsageError.new("manifest entry '#{@key}' missing path")

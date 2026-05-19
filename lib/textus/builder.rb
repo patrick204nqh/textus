@@ -15,6 +15,7 @@ module Textus
         next unless derived_zone?(mentry)
         next unless mentry.projection || mentry.template
         next if prefix && !mentry.key.start_with?(prefix)
+
         result = materialize(mentry)
         built << result
       end
@@ -40,6 +41,7 @@ module Textus
         if mentry.template
           tpl_path = File.join(@root, "templates", mentry.template)
           raise TemplateError.new("template not found: #{tpl_path}") unless File.exist?(tpl_path)
+
           Mustache.render(File.read(tpl_path), data)
         else
           format_default(data)

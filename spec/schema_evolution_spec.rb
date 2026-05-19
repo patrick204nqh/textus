@@ -5,6 +5,7 @@ require "tmpdir"
 RSpec.describe "Schema evolution metadata" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
+
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -20,6 +21,7 @@ RSpec.describe "Schema evolution metadata" do
           name: full_name
     YAML
   end
+
   after { FileUtils.remove_entry(tmp) }
 
   it "exposes maintained_by per field" do

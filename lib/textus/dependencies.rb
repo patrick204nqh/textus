@@ -2,8 +2,7 @@ module Textus
   module Dependencies
     def self.deps_of(manifest, key)
       entry = manifest.entries.find { |e| e.key == key } or return []
-      result = []
-      Array(entry.projection&.fetch("select", nil)).each { |s| result << s }
+      result = Array(entry.projection&.fetch("select", nil)).map { |s| s }
       Array(entry.generator&.fetch("sources", nil)).each { |s| result << s }
       result.uniq
     end

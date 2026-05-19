@@ -16,7 +16,7 @@ module Textus
       @cwd = cwd
     end
 
-    def run(argv)
+    def run(argv) # rubocop:disable Metrics/CyclomaticComplexity
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
@@ -39,8 +39,10 @@ module Textus
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
       when "hooks"          then verb_hooks(argv)
-      when "--version", "-v" then @stdout.puts(VERSION); 0
-      when "--help", "-h"    then print_help; 0
+      when "--version", "-v" then @stdout.puts(VERSION)
+                                  0
+      when "--help", "-h"    then print_help
+                                  0
       else raise UsageError.new("unknown verb: #{verb}")
       end
     rescue Textus::Error => e
@@ -59,6 +61,7 @@ module Textus
         o.on("--format=FMT") { |v| fmt = v }
       end.permute!(argv)
       raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
+
       fmt
     end
 
@@ -82,6 +85,7 @@ module Textus
         o.on("--format=FMT") { |v| fmt = v }
       end.permute!(argv)
       raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
+
       [prefix, zone]
     end
 
@@ -125,6 +129,7 @@ module Textus
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("put requires --stdin in v1") unless use_stdin
+
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
       raw = @stdin.read
@@ -201,6 +206,7 @@ module Textus
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("schema-init requires --from=KEY") unless from_key
+
       emit(Textus::SchemaTools.init(store, name: name, from: from_key))
     end
 
@@ -218,6 +224,7 @@ module Textus
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("schema-migrate requires --rename=OLD:NEW") unless rename
+
       emit(Textus::SchemaTools.migrate(store, name: name, rename: rename))
     end
 
@@ -247,6 +254,7 @@ module Textus
     def verb_hooks(argv)
       subcommand = argv.shift
       raise UsageError.new("hooks requires 'list'") unless subcommand == "list"
+
       event = nil
       OptionParser.new do |o|
         o.on("--event=E") { |v| event = v }

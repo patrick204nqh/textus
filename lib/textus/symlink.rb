@@ -10,19 +10,20 @@ module Textus
         if File.exist?(target) && !File.symlink?(target) && !managed?(target)
           raise PublishError.new("refusing to clobber non-symlink at #{target}")
         end
+
         File.delete(target)
         sentinel = target + ".textus-managed.json"
-        File.delete(sentinel) if File.exist?(sentinel)
+        FileUtils.rm_f(sentinel)
       end
       begin
         File.symlink(source, target)
       rescue NotImplementedError, Errno::EPERM
         FileUtils.cp(source, target)
         File.write(target + ".textus-managed.json", JSON.generate(
-          "source" => source,
-          "sha256" => Digest::SHA256.hexdigest(File.binread(source)),
-          "mode"   => "copy",
-        ))
+                                                      "source" => source,
+                                                      "sha256" => Digest::SHA256.hexdigest(File.binread(source)),
+                                                      "mode" => "copy",
+                                                    ))
       end
     end
 

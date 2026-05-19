@@ -11,14 +11,16 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/patrick204nqh/textus"
   s.required_ruby_version = ">= 3.1"
 
-  s.files = Dir["lib/**/*.rb", "lib/textus/profiles/*.yaml", "exe/*", "README.md", "SPEC.md", "docs/architecture.md", "docs/conventions.md"]
+  s.files = Dir["lib/**/*.rb", "lib/textus/profiles/*.yaml", "exe/*", "README.md", "SPEC.md", "docs/architecture.md",
+                "docs/conventions.md"]
   s.bindir = "exe"
   s.executables = ["textus"]
 
-  s.add_dependency "psych", ">= 5.0"
   s.add_dependency "csv", ">= 3.0"
+  s.add_dependency "psych", ">= 5.0"
   s.add_dependency "rexml", ">= 3.2"
 
-  s.add_development_dependency "rspec", "~> 3.13"
   s.add_development_dependency "rake", "~> 13.0"
+  s.add_development_dependency "rspec", "~> 3.13"
+  s.metadata["rubygems_mfa_required"] = "true"
 end

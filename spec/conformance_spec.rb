@@ -94,10 +94,10 @@ RSpec.describe "textus/1 conformance" do
 
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an AI tries to write canon" do
-      expect {
+      expect do
         store.put("canon.identity",
-          frontmatter: { "name" => "identity" }, body: "n/a", as: "ai")
-      }.to raise_error(Textus::WriteForbidden) do |err|
+                  frontmatter: { "name" => "identity" }, body: "n/a", as: "ai")
+      end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
         expect(env["details"]["zone"]).to eq("canon")
@@ -107,14 +107,14 @@ RSpec.describe "textus/1 conformance" do
 
   describe "Fixture C — schema validation" do
     it "raises SchemaViolation listing the missing required field" do
-      expect {
+      expect do
         store.put(
           "working.network.org.bob",
           frontmatter: { "name" => "bob", "org" => "envato" },
           body: "",
           as: "human",
         )
-      }.to raise_error(Textus::SchemaViolation) do |err|
+      end.to raise_error(Textus::SchemaViolation) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("schema_violation")
         expect(env["details"]["missing"]).to eq(["relationship"])
@@ -158,7 +158,7 @@ RSpec.describe "textus/1 conformance" do
         ["put", "intake.calendar.events", "--parse=ical-events",
          "--stdin", "--as=script", "--format=json"],
         stdin: StringIO.new(ics),
-        stdout: out, stderr: StringIO.new, cwd: tmp,
+        stdout: out, stderr: StringIO.new, cwd: tmp
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
@@ -253,11 +253,11 @@ RSpec.describe "textus/1 conformance" do
       rc = Textus::CLI.run(
         ["put", "working.network.org.jane", "--stdin", "--format=json"],
         stdin: StringIO.new(JSON.generate(
-          "frontmatter" => { "name" => "jane", "relationship" => "peer", "org" => "envato" },
-          "body" => "updated\n",
-          "if_etag" => "sha256:deadbeef",
-        )),
-        stdout: out, stderr: StringIO.new, cwd: tmp,
+                              "frontmatter" => { "name" => "jane", "relationship" => "peer", "org" => "envato" },
+                              "body" => "updated\n",
+                              "if_etag" => "sha256:deadbeef",
+                            )),
+        stdout: out, stderr: StringIO.new, cwd: tmp
       )
       expect(rc).to eq(1)
       env = JSON.parse(out.string.lines.last)
@@ -313,8 +313,8 @@ RSpec.describe "textus/1 conformance" do
   describe "delete verb" do
     it "deletes an entry, audit-logs it, and refuses without role" do
       store.put("working.network.org.tmp",
-        frontmatter: { "name" => "tmp", "relationship" => "peer", "org" => "envato" },
-        body: "tmp", as: "human")
+                frontmatter: { "name" => "tmp", "relationship" => "peer", "org" => "envato" },
+                body: "tmp", as: "human")
       res = store.delete("working.network.org.tmp", as: "human")
       expect(res["deleted"]).to be true
       expect(File.exist?(File.join(root, "zones/working/network/org/tmp.md"))).to be false

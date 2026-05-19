@@ -167,6 +167,20 @@ bundle exec rspec
 
 Runs the full suite, including conformance fixtures A–I from SPEC §12.
 
+## Code quality
+
+```sh
+bundle exec rubocop           # lint
+bundle exec rubocop -A        # lint + autocorrect
+bundle exec lefthook install  # install git hooks (one-time)
+```
+
+Hooks (defined in `lefthook.yml`):
+- `pre-commit` — runs `rubocop` on staged Ruby files.
+- `pre-push` — runs the full `rspec` suite and `rubocop` over the tree.
+
+Bypass with `LEFTHOOK=0 git commit ...` when needed.
+
 ## License
 
 MIT.

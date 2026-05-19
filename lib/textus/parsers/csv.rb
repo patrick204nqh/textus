@@ -1,5 +1,5 @@
 require "csv"
-Textus::Parsers.register("csv", ->(content) {
+Textus::Parsers.register("csv", lambda { |content|
   rows = CSV.parse(content, headers: true)
-  rows.map { |r| r.to_h }
+  rows.map(&:to_h)
 })

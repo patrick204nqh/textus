@@ -41,6 +41,7 @@ module Textus
         if rename
           old_field, new_field = rename.split(":", 2)
           raise UsageError.new("--rename=OLD:NEW") unless old_field && new_field && !new_field.empty?
+
           { old_field => new_field }
         else
           load_schema(store, name).evolution["migrate_from"] || {}
@@ -59,6 +60,7 @@ module Textus
           end
         end
         next unless changed
+
         store.put(row[:key], frontmatter: fm, body: env["body"], as: "human")
         touched << row[:key]
       end

@@ -9,15 +9,15 @@ while (line = STDIN.gets)
   case req["method"]
   when "tools/list"
     puts JSON.generate({
-      "id" => req["id"],
-      "result" => {
-        "tools" => [
-          { "name" => "textus_get",  "description" => "Read a textus entry by key" },
-          { "name" => "textus_list", "description" => "List entries under a prefix" },
-          { "name" => "textus_put",  "description" => "Write to a working entry" },
-        ],
-      },
-    })
+                         "id" => req["id"],
+                         "result" => {
+                           "tools" => [
+                             { "name" => "textus_get",  "description" => "Read a textus entry by key" },
+                             { "name" => "textus_list", "description" => "List entries under a prefix" },
+                             { "name" => "textus_put",  "description" => "Write to a working entry" },
+                           ],
+                         },
+                       })
   when "tools/call"
     name = req["params"]["name"]
     args = req["params"]["arguments"]

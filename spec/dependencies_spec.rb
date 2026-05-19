@@ -36,6 +36,7 @@ RSpec.describe Textus::Dependencies do
     File.write(File.join(root, "templates/people.mustache"),
                "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
+
   after { FileUtils.remove_entry(tmp) }
 
   it "lists dependencies declared in projection.select" do

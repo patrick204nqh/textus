@@ -36,6 +36,7 @@ RSpec.describe Textus::Builder do
     File.write(File.join(root, "templates/people.mustache"),
                "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
+
   after { FileUtils.remove_entry(tmp) }
 
   it "materializes a derived entry and updates symlink" do

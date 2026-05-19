@@ -5,7 +5,7 @@ module Textus
     attr_reader :name, :required, :optional, :fields, :raw
 
     def self.load(path)
-      raw = YAML.safe_load(File.read(path), permitted_classes: [Symbol, Date, Time], aliases: false)
+      raw = YAML.safe_load_file(path, permitted_classes: [Symbol, Date, Time], aliases: false)
       new(raw)
     end
 
@@ -42,6 +42,7 @@ module Textus
       known = (@required + @optional).uniq
       frontmatter.each do |k, v|
         next unless @fields.key?(k)
+
         check_type!(k, v, @fields[k])
       end
 
@@ -51,7 +52,7 @@ module Textus
 
     private
 
-    def check_type!(field, value, spec)
+    def check_type!(field, value, spec) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       type = spec["type"]
       case type
       when "string"
@@ -78,7 +79,6 @@ module Textus
         end
       when nil
         # untyped — no check
-      else
         # unknown type spec — vendor extension; ignore
       end
     end

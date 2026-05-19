@@ -21,14 +21,15 @@ RSpec.describe Textus::Projection do
     File.write(File.join(root, "zones/working/people/bob.md"),
                "---\nname: bob\norg: y\n---\n")
   end
+
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   it "selects + plucks + sorts" do
     proj = Textus::Projection.new(store, {
-      "select" => "working.people",
-      "pluck"  => ["name", "org"],
-      "sort_by" => "name",
-    })
+                                    "select" => "working.people",
+                                    "pluck" => %w[name org],
+                                    "sort_by" => "name",
+                                  })
     result = proj.run
     expect(result["entries"].length).to eq(2)
     expect(result["entries"].first).to eq("name" => "alice", "org" => "x")
@@ -40,23 +41,23 @@ RSpec.describe Textus::Projection do
   end
 
   it "raises if limit > 1000" do
-    expect {
+    expect do
       Textus::Projection.new(store, { "select" => "working.people", "limit" => 5000 })
-    }.to raise_error(Textus::InvalidProjection)
+    end.to raise_error(Textus::InvalidProjection)
   end
 
   it "applies a transform calculator before sort/limit" do
     snapshot = Textus::Calculators::REGISTRY.dup
     begin
-      Textus::Calculators.register("score", ->(rows) {
+      Textus::Calculators.register("score", lambda { |rows|
         rows.map { |r| r.merge("score" => r["name"].length) }
       })
       proj = Textus::Projection.new(store, {
-        "select" => "working.people",
-        "pluck"  => ["name"],
-        "transform" => "score",
-        "sort_by" => "score",
-      })
+                                      "select" => "working.people",
+                                      "pluck" => ["name"],
+                                      "transform" => "score",
+                                      "sort_by" => "score",
+                                    })
       out = proj.run
       expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
     ensure

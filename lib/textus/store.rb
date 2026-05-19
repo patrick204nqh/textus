@@ -10,8 +10,10 @@ module Textus
       loop do
         candidate = File.join(dir, ".textus")
         return new(candidate) if File.directory?(candidate) && File.exist?(File.join(candidate, "manifest.yaml"))
+
         parent = File.dirname(dir)
         break if parent == dir
+
         dir = parent
       end
       raise IoError.new("no .textus directory found from #{start_dir}")
@@ -28,40 +30,43 @@ module Textus
     def load_project_parsers
       dir = File.join(@root, "parsers")
       return unless File.directory?(dir)
-      Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) }
+
+      Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) }
     end
 
     def load_project_calculators
       dir = File.join(@root, "calculators")
       return unless File.directory?(dir)
-      Dir.glob(File.join(dir, "*.rb")).sort.each { |f| load(f) }
+
+      Dir.glob(File.join(dir, "*.rb")).each { |f| load(f) }
     end
 
     def schema_for(name)
       return nil if name.nil?
+
       @schemas[name] ||= begin
         sp = File.join(@root, "schemas", "#{name}.yaml")
         raise IoError.new("schema not found: #{sp}") unless File.exist?(sp)
+
         Schema.load(sp)
       end
     end
 
     def get(key)
-      mentry, path, _ = @manifest.resolve(key)
-      raise UnknownKey, key unless File.exist?(path)
+      mentry, path, = @manifest.resolve(key)
+      raise UnknownKey.new(key) unless File.exist?(path)
+
       raw = File.binread(path)
       parsed = Entry.parse(raw, path: path)
       fm = parsed["frontmatter"]
       enforce_name_match!(path, fm)
       schema = schema_for(mentry.schema)
-      if schema
-        schema.validate!(fm)
-      end
+      schema&.validate!(fm)
       build_envelope(key, mentry, path, fm, parsed["body"], Etag.for_bytes(raw))
     end
 
     def where(key)
-      mentry, path, _ = @manifest.resolve(key)
+      mentry, path, = @manifest.resolve(key)
       {
         "protocol" => PROTOCOL,
         "key" => key,
@@ -84,7 +89,7 @@ module Textus
     end
 
     def schema_envelope(key)
-      mentry, _, _ = @manifest.resolve(key)
+      mentry, = @manifest.resolve(key)
       schema = schema_for(mentry.schema)
       {
         "protocol" => PROTOCOL,
@@ -95,11 +100,9 @@ module Textus
     end
 
     def put(key, frontmatter:, body:, if_etag: nil, as: Role::DEFAULT)
-      mentry, path, _ = @manifest.resolve(key)
+      mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
-      unless writers.include?(as)
-        raise WriteForbidden.new(key, mentry.zone)
-      end
+      raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
 
       basename = File.basename(path, ".md")
       if frontmatter["name"] && frontmatter["name"] != basename
@@ -107,12 +110,10 @@ module Textus
       end
 
       schema = schema_for(mentry.schema)
-      schema.validate!(frontmatter) if schema
+      schema&.validate!(frontmatter)
 
       etag_before = File.exist?(path) ? Etag.for_file(path) : nil
-      if if_etag
-        raise EtagMismatch.new(key, if_etag, etag_before) if etag_before != if_etag
-      end
+      raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && (etag_before != if_etag)
 
       FileUtils.mkdir_p(File.dirname(path))
       bytes = Entry.serialize(frontmatter: frontmatter, body: body)
@@ -123,12 +124,14 @@ module Textus
     end
 
     def delete(key, if_etag: nil, as: Role::DEFAULT)
-      mentry, path, _ = @manifest.resolve(key)
+      mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone) unless writers.include?(as)
-      raise UnknownKey, key unless File.exist?(path)
+      raise UnknownKey.new(key) unless File.exist?(path)
+
       etag_before = Etag.for_file(path)
       raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
+
       File.delete(path)
       audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
@@ -155,10 +158,15 @@ module Textus
       @manifest.enumerate.each do |row|
         mentry = row[:manifest_entry]
         next unless mentry.schema
+
         schema = schema_for(mentry.schema)
         next unless schema
 
-        env = get(row[:key]) rescue next
+        env = begin
+          get(row[:key])
+        rescue StandardError
+          next
+        end
         last_writer = audit_log.last_writer_for(row[:key])
         next if last_writer.nil?
 
@@ -167,6 +175,7 @@ module Textus
           next if owner.nil?
           next if last_writer == owner
           next if last_writer == "human"
+
           violations << {
             "key" => row[:key],
             "code" => "role_authority",
@@ -180,18 +189,20 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => violations.empty?, "violations" => violations }
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
     def stale(prefix: nil, zone: nil)
       out = []
       @manifest.entries.each do |mentry|
         next unless mentry.zone == "derived"
         next if zone && mentry.zone != zone
+
         gen = mentry.generator
         next unless gen
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
         path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
 
-        if !File.exist?(path)
+        unless File.exist?(path)
           out << stale_row(mentry, path, "derived entry has never been generated")
           next
         end
@@ -203,7 +214,11 @@ module Textus
           out << stale_row(mentry, path, "missing generated.at frontmatter")
           next
         end
-        gen_time = Time.parse(generated_at.to_s) rescue nil
+        gen_time = begin
+          Time.parse(generated_at.to_s)
+        rescue StandardError
+          nil
+        end
         unless gen_time
           out << stale_row(mentry, path, "unparseable generated.at: #{generated_at.inspect}")
           next
@@ -217,12 +232,13 @@ module Textus
         next unless mentry.source
         next if zone && mentry.zone != zone
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
+
         ttl = parse_ttl(mentry.source["ttl"])
         next unless ttl
 
         path = mentry.path.end_with?(".md") ? File.join(@root, "zones", mentry.path) : File.join(@root, "zones", mentry.path + ".md")
 
-        if !File.exist?(path)
+        unless File.exist?(path)
           out << intake_stale_row(mentry, path, "never refreshed")
           next
         end
@@ -234,14 +250,17 @@ module Textus
           next
         end
 
-        last = Time.parse(last_str.to_s) rescue nil
-        if last.nil? || (Time.now - last) > ttl
-          out << intake_stale_row(mentry, path, "ttl exceeded (#{ttl}s)")
+        last = begin
+          Time.parse(last_str.to_s)
+        rescue StandardError
+          nil
         end
+        out << intake_stale_row(mentry, path, "ttl exceeded (#{ttl}s)") if last.nil? || (Time.now - last) > ttl
       end
 
       out
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
 
     private
 
@@ -272,13 +291,14 @@ module Textus
 
     def parse_ttl(s)
       return nil unless s
+
       m = s.to_s.match(/\A(\d+)([smhd])\z/) or return nil
       n = m[1].to_i
       case m[2]
       when "s" then n
       when "m" then n * 60
       when "h" then n * 3600
-      when "d" then n * 86400
+      when "d" then n * 86_400
       end
     end
 
@@ -297,9 +317,9 @@ module Textus
 
     def enforce_name_match!(path, fm)
       basename = File.basename(path, ".md")
-      if fm["name"] && fm["name"] != basename
-        raise BadFrontmatter.new(path, "frontmatter name '#{fm["name"]}' does not match basename '#{basename}'")
-      end
+      return unless fm["name"] && fm["name"] != basename
+
+      raise BadFrontmatter.new(path, "frontmatter name '#{fm["name"]}' does not match basename '#{basename}'")
     end
 
     def build_envelope(key, mentry, path, fm, body, etag)

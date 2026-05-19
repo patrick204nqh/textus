@@ -7,6 +7,7 @@ RSpec.describe Textus::AuditLog do
   let(:tmp)  { Dir.mktmpdir("textus-audit") }
   let(:root) { File.join(tmp, ".textus") }
   let(:log)  { Textus::AuditLog.new(root) }
+
   before { FileUtils.mkdir_p(root) }
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
@@ -31,8 +32,10 @@ RSpec.describe Textus::AuditLog do
 
   it "is safe under concurrent writes (smoke test)" do
     threads = 20.times.map do |i|
-      Thread.new { log.append(role: "ai", verb: "put", key: "working.k#{i}",
-                              etag_before: nil, etag_after: "sha256:#{i}") }
+      Thread.new do
+        log.append(role: "ai", verb: "put", key: "working.k#{i}",
+                   etag_before: nil, etag_after: "sha256:#{i}")
+      end
     end
     threads.each(&:join)
     lines = File.read(File.join(root, "audit.log")).lines

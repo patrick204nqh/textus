@@ -6,6 +6,7 @@ RSpec.describe Textus::Symlink do
   let(:tmp) { Dir.mktmpdir }
   let(:src) { File.join(tmp, "src.md") }
   let(:dst) { File.join(tmp, "dst.md") }
+
   before { File.write(src, "hello") }
   after  { FileUtils.remove_entry(tmp) }
 

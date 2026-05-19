@@ -43,8 +43,8 @@ RSpec.describe Textus::Parsers do
 
   it "enforces a 2s timeout on parser callables" do
     Textus::Parsers.register("slow", ->(_c) { sleep 5 })
-    expect {
+    expect do
       Textus::Parsers.parse("slow", "hi")
-    }.to raise_error(Textus::UsageError, /2s timeout/)
+    end.to raise_error(Textus::UsageError, /2s timeout/)
   end
 end

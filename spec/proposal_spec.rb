@@ -20,17 +20,18 @@ RSpec.describe "Pending + accept" do
         - { key: pending,             path: pending,             zone: pending, schema: null, owner: o, nested: true }
     YAML
   end
+
   after { FileUtils.remove_entry(tmp) }
 
   it "AI writes a proposal, human accepts, target appears, proposal removed" do
     store.put("pending.2026-05-19-add-bob",
-      frontmatter: {
-        "name" => "2026-05-19-add-bob",
-        "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
-        "frontmatter" => { "name" => "bob", "org" => "envato" },
-      },
-      body: "Proposed",
-      as: "ai")
+              frontmatter: {
+                "name" => "2026-05-19-add-bob",
+                "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
+                "frontmatter" => { "name" => "bob", "org" => "envato" },
+              },
+              body: "Proposed",
+              as: "ai")
 
     res = store.accept("pending.2026-05-19-add-bob", as: "human")
     expect(res["target_key"]).to eq("working.network.org.bob")
@@ -40,12 +41,12 @@ RSpec.describe "Pending + accept" do
 
   it "rejects accept when not --as=human" do
     store.put("pending.foo",
-      frontmatter: {
-        "name" => "foo",
-        "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
-        "frontmatter" => { "name" => "x" },
-      },
-      body: "", as: "ai")
+              frontmatter: {
+                "name" => "foo",
+                "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
+                "frontmatter" => { "name" => "x" },
+              },
+              body: "", as: "ai")
     expect { store.accept("pending.foo", as: "ai") }
       .to raise_error(Textus::ProposalError, /human/)
   end

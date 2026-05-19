@@ -5,6 +5,7 @@ require "tmpdir"
 RSpec.describe Textus::Role do
   let(:tmp) { Dir.mktmpdir("textus-role") }
   let(:root) { File.join(tmp, ".textus") }
+
   before { FileUtils.mkdir_p(root) }
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 

@@ -1,5 +1,5 @@
-Textus::Parsers.register("markdown-links", ->(content) {
-  content.scan(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/).map do |text, href|
+Textus::Parsers.register("markdown-links", lambda { |content|
+  content.scan(%r{\[([^\]]+)\]\((https?://[^)\s]+)\)}).map do |text, href|
     { "text" => text, "href" => href }
   end
 })

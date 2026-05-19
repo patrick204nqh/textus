@@ -8,13 +8,13 @@ module Textus
     def self.parse(raw, path: nil)
       raw = raw.dup.force_encoding(Encoding::UTF_8)
       raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?
-      unless raw.start_with?("---\n") || raw.start_with?("---\r\n")
-        return { "frontmatter" => {}, "body" => raw }
-      end
+      return { "frontmatter" => {}, "body" => raw } unless raw.start_with?("---\n") || raw.start_with?("---\r\n")
+
       lines = raw.split(/\r?\n/, -1)
       # lines[0] == "---"
       close_idx = lines[1..].index("---")
       raise BadFrontmatter.new(path, "frontmatter not terminated") unless close_idx
+
       close_idx += 1
       fm_yaml = lines[1...close_idx].join("\n")
       body = lines[(close_idx + 1)..].join("\n")
