@@ -48,8 +48,8 @@ entries:
     owner: build:auto
     projection:
       select: [working.projects]
-      pluck: [name, status, summary]
-      sort_by: name
+      pluck: [name, status, summary, updated_at]
+      transform: rank-by-recency
     template: claude-root.mustache
     publish_to: [CLAUDE.md]
 
