@@ -16,6 +16,8 @@ Gem::Specification.new do |s|
   s.executables = ["textus"]
 
   s.add_dependency "psych", ">= 5.0"
+  s.add_dependency "csv", ">= 3.0"
+  s.add_dependency "rexml", ">= 3.2"
 
   s.add_development_dependency "rspec", "~> 3.13"
   s.add_development_dependency "rake", "~> 13.0"
