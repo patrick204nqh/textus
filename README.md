@@ -9,7 +9,7 @@ See [`SPEC.md`](SPEC.md) for the protocol. Implementation notes live in [`docs/`
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/1`. Stable; breaking changes require `textus/2`.
-- **Gem version:** semver, currently `0.1.0` (first release). Gem `0.x.y` and `1.x` both speak `textus/1`.
+- **Gem version:** semver, currently `0.2.0`. Gem `0.x.y` and `1.x` both speak `textus/1`.
 
 Envelope payloads carry the `protocol` field; the gem version is irrelevant to the wire format.
 
@@ -186,7 +186,7 @@ brew bundle install      # installs lefthook (see Brewfile)
 lefthook install         # writes .git/hooks/{pre-commit,pre-push}
 ```
 
-Hooks (defined in `lefthook.yml`):
+Git hooks (defined in `lefthook.yml`):
 - `pre-commit` — runs `rubocop` on staged Ruby files.
 - `pre-push` — runs the full `rspec` suite and `rubocop` over the tree.
 
