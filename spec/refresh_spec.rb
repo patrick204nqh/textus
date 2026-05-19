@@ -54,6 +54,52 @@ RSpec.describe Textus::Refresh do
       .to raise_error(Textus::UsageError, /timeout/i)
   end
 
+  context "fetcher return-shape normalization (plan-1.2 §7)" do
+    it "accepts {content:} for a format: json entry and writes valid JSON" do
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/1
+        zones: [{ name: intake, writable_by: [script] }]
+        entries:
+          - key: intake.repos
+            path: intake/repos.json
+            zone: intake
+            format: json
+            source: { fetcher: stub_fetch, config: {} }
+      YAML
+      File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+        Textus.fetcher(:stub_fetch) do |config:, store:|
+          { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
+        end
+      RUBY
+      store = Textus::Store.new(root)
+      env = described_class.call(store, "intake.repos", as: "script")
+      expect(env["format"]).to eq("json")
+      path = File.join(root, "zones/intake/repos.json")
+      expect(JSON.parse(File.read(path))).to eq("items" => [{ "id" => 1 }, { "id" => 2 }])
+    end
+
+    it "accepts {body:} for a format: text entry and writes bytes verbatim" do
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/1
+        zones: [{ name: intake, writable_by: [script] }]
+        entries:
+          - key: intake.notes
+            path: intake/notes.txt
+            zone: intake
+            format: text
+            source: { fetcher: stub_fetch, config: { msg: hello } }
+      YAML
+      File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+        Textus.fetcher(:stub_fetch) do |config:, store:|
+          { body: "raw bytes\\nline 2\\n" }
+        end
+      RUBY
+      store = Textus::Store.new(root)
+      described_class.call(store, "intake.notes", as: "script")
+      expect(File.read(File.join(root, "zones/intake/notes.txt"))).to eq("raw bytes\nline 2\n")
+    end
+  end
+
   it "wraps fetcher exceptions with the fetcher name" do
     File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
       Textus.fetcher(:stub_fetch) { |config:, store:| raise "network down" }

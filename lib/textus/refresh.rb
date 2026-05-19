@@ -22,9 +22,15 @@ module Textus
           raise UsageError.new("fetcher '#{mentry.fetcher}' raised: #{e.class}: #{e.message}")
         end
 
-      fm = result[:frontmatter] || result["frontmatter"] || {}
-      body = result[:body] || result["body"] || ""
-      envelope = store.put(key, frontmatter: fm, body: body, as: as, suppress_events: true)
+      normalized = normalize_fetcher_result(result, format: mentry.format)
+      envelope = store.put(
+        key,
+        frontmatter: normalized[:frontmatter],
+        body: normalized[:body],
+        content: normalized[:content],
+        as: as,
+        suppress_events: true,
+      )
 
       change = if before_etag.nil?
                  :created
@@ -35,6 +41,35 @@ module Textus
                end
       store.fire_event(:refresh, key: key, envelope: envelope, change: change) unless change == :unchanged
       envelope
+    end
+
+    # Normalize the three accepted fetcher return shapes into the store's
+    # internal {frontmatter, body, content} representation. See plan-1.2 §7.
+    def self.normalize_fetcher_result(res, format:)
+      res = res.transform_keys(&:to_s) if res.is_a?(Hash)
+      res ||= {}
+      fm      = res["frontmatter"]
+      body    = res["body"]
+      content = res["content"]
+
+      case format
+      when "markdown"
+        { frontmatter: fm || {}, body: body.to_s, content: nil }
+      when "text"
+        { frontmatter: {}, body: body.to_s, content: nil }
+      when "json", "yaml"
+        if !content.nil?
+          meta = content.is_a?(Hash) && content["_meta"].is_a?(Hash) ? content["_meta"] : {}
+          { frontmatter: meta, body: nil, content: content }
+        elsif !body.nil?
+          # Store#put will re-parse and validate the bytes.
+          { frontmatter: {}, body: body.to_s, content: nil }
+        else
+          raise UsageError.new("fetcher for #{format} returned neither content nor body")
+        end
+      else
+        raise UsageError.new("unknown format #{format.inspect}")
+      end
     end
   end
 end
