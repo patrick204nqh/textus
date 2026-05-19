@@ -53,4 +53,13 @@ RSpec.describe Textus::Refresh do
     expect { described_class.call(store, "intake.repos", as: "script") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
+
+  it "wraps fetcher exceptions with the fetcher name" do
+    File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+      Textus.fetcher(:stub_fetch) { |config:, store:| raise "network down" }
+    RUBY
+    store = Textus::Store.new(root)
+    expect { described_class.call(store, "intake.repos", as: "script") }
+      .to raise_error(Textus::UsageError, /fetcher 'stub_fetch' raised.*network down/)
+  end
 end

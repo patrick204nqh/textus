@@ -15,6 +15,10 @@ module Textus
           Timeout.timeout(FETCHER_TIMEOUT_SECONDS) { callable.call(config: mentry.fetcher_config, store: view) }
         rescue Timeout::Error
           raise UsageError.new("fetcher '#{mentry.fetcher}' exceeded #{FETCHER_TIMEOUT_SECONDS}s timeout")
+        rescue Textus::Error
+          raise
+        rescue StandardError => e
+          raise UsageError.new("fetcher '#{mentry.fetcher}' raised: #{e.class}: #{e.message}")
         end
 
       fm = result[:frontmatter] || result["frontmatter"] || {}
