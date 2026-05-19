@@ -35,6 +35,9 @@ module Textus
       when "published"    then verb_published(argv)
       when "accept"       then verb_accept(argv)
       when "init"         then verb_init(argv)
+      when "schema-init"    then verb_schema_init(argv)
+      when "schema-diff"    then verb_schema_diff(argv)
+      when "schema-migrate" then verb_schema_migrate(argv)
       when "--version", "-v" then @stdout.puts(VERSION); 0
       when "--help", "-h"    then print_help; 0
       else raise UsageError.new("unknown verb: #{verb}")
@@ -187,6 +190,34 @@ module Textus
       key = argv.shift or raise UsageError.new("rdeps requires a key")
       parse_format!(argv)
       emit({ "protocol" => Textus::PROTOCOL, "key" => key, "rdeps" => store.rdeps(key) })
+    end
+
+    def verb_schema_init(argv)
+      name = argv.shift or raise UsageError.new("schema-init NAME")
+      from_key = nil
+      OptionParser.new do |o|
+        o.on("--from=KEY") { |v| from_key = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      raise UsageError.new("schema-init requires --from=KEY") unless from_key
+      emit(Textus::SchemaTools.init(store, name: name, from: from_key))
+    end
+
+    def verb_schema_diff(argv)
+      name = argv.shift or raise UsageError.new("schema-diff NAME")
+      parse_format!(argv)
+      emit(Textus::SchemaTools.diff(store, name: name))
+    end
+
+    def verb_schema_migrate(argv)
+      name = argv.shift or raise UsageError.new("schema-migrate NAME")
+      rename = nil
+      OptionParser.new do |o|
+        o.on("--rename=O:N") { |v| rename = v }
+        o.on("--format=FMT") {}
+      end.permute!(argv)
+      raise UsageError.new("schema-migrate requires --rename=OLD:NEW") unless rename
+      emit(Textus::SchemaTools.migrate(store, name: name, rename: rename))
     end
 
     def verb_init(argv)
