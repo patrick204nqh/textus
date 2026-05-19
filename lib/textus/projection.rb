@@ -1,4 +1,5 @@
 require "time"
+require "timeout"
 
 module Textus
   class Projection
@@ -19,7 +20,7 @@ module Textus
         row = pluck(env["frontmatter"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end
-      rows = apply_transform(rows)
+      rows = apply_reducer(rows)
       rows = sort(rows)
       rows = rows.first(@limit)
       { "entries" => rows, "count" => rows.length, "generated_at" => Time.now.utc.iso8601 }
@@ -27,9 +28,12 @@ module Textus
 
     private
 
-    def apply_transform(rows)
-      name = @spec["transform"] or return rows
-      Calculators.apply(name, rows)
+    def apply_reducer(rows)
+      name = @spec["reducer"] or return rows
+      callable = @store.registry.reducer(name)
+      Timeout.timeout(2) { callable.call(rows: rows, config: @spec["reducer_config"]) }
+    rescue Timeout::Error
+      raise UsageError.new("reducer '#{name}' exceeded 2s timeout")
     end
 
     def collect_keys

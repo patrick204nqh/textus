@@ -46,23 +46,31 @@ RSpec.describe Textus::Projection do
     end.to raise_error(Textus::InvalidProjection)
   end
 
-  it "applies a transform calculator before sort/limit" do
-    snapshot = Textus::Calculators::REGISTRY.dup
-    begin
-      Textus::Calculators.register("score", lambda { |rows|
-        rows.map { |r| r.merge("score" => r["name"].length) }
-      })
-      proj = Textus::Projection.new(store, {
-                                      "select" => "working.people",
-                                      "pluck" => ["name"],
-                                      "transform" => "score",
-                                      "sort_by" => "score",
-                                    })
-      out = proj.run
-      expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
-    ensure
-      Textus::Calculators::REGISTRY.clear
-      Textus::Calculators::REGISTRY.merge!(snapshot)
+  it "applies a reducer before sort/limit" do
+    store.registry.register_reducer(:score) do |rows:, config:|
+      _ = config
+      rows.map { |r| r.merge("score" => r["name"].length) }
     end
+    proj = Textus::Projection.new(store, {
+                                    "select" => "working.people",
+                                    "pluck" => ["name"],
+                                    "reducer" => "score",
+                                    "sort_by" => "score",
+                                  })
+    out = proj.run
+    expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
+  end
+
+  it "raises UsageError when a reducer exceeds 2s timeout" do
+    store.registry.register_reducer(:slow) do |rows:, config:|
+      _ = rows
+      _ = config
+      sleep 5
+    end
+    proj = Textus::Projection.new(store, {
+                                    "select" => "working.people",
+                                    "reducer" => "slow",
+                                  })
+    expect { proj.run }.to raise_error(Textus::UsageError, /reducer 'slow' exceeded 2s timeout/)
   end
 end
