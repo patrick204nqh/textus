@@ -26,7 +26,7 @@ RSpec.describe Textus::SchemaTools do
   it "schema-init infers a schema from an entry's frontmatter" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "envato", "age" => 30 },
+          frontmatter: { "name" => "alice", "org" => "acme", "age" => 30 },
           body: "", as: "human")
 
     res = Textus::SchemaTools.init(s, name: "person", from: "working.people.alice")
@@ -40,7 +40,7 @@ RSpec.describe Textus::SchemaTools do
   it "schema-diff reports entries that violate the schema" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "envato" },
+          frontmatter: { "name" => "alice", "org" => "acme" },
           body: "", as: "human")
     s.put("working.people.bob",
           frontmatter: { "name" => "bob" },
@@ -83,7 +83,7 @@ RSpec.describe Textus::SchemaTools do
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "envato" },
+          frontmatter: { "name" => "alice", "org" => "acme" },
           body: "hello", as: "human")
     s.put("working.people.bob",
           frontmatter: { "name" => "bob", "company" => "other" },
@@ -93,7 +93,7 @@ RSpec.describe Textus::SchemaTools do
     expect(res["migrated"]).to eq(["working.people.alice"])
 
     env = store.get("working.people.alice")
-    expect(env["frontmatter"]["organization"]).to eq("envato")
+    expect(env["frontmatter"]["organization"]).to eq("acme")
     expect(env["frontmatter"]).not_to have_key("org")
   end
 end

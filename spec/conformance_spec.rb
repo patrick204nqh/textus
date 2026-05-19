@@ -62,7 +62,7 @@ RSpec.describe "textus/1 conformance" do
       ---
       name: jane
       relationship: peer
-      org: envato
+      org: acme
       ---
       Short body in Markdown.
     MD
@@ -82,7 +82,7 @@ RSpec.describe "textus/1 conformance" do
       expect(env["path"]).to end_with("working/network/org/jane.md")
 
       expect(env["frontmatter"]).to eq(
-        "name" => "jane", "relationship" => "peer", "org" => "envato",
+        "name" => "jane", "relationship" => "peer", "org" => "acme",
       )
       expect(env["body"]).to include("Short body in Markdown.")
 
@@ -110,7 +110,7 @@ RSpec.describe "textus/1 conformance" do
       expect do
         store.put(
           "working.network.org.bob",
-          frontmatter: { "name" => "bob", "org" => "envato" },
+          frontmatter: { "name" => "bob", "org" => "acme" },
           body: "",
           as: "human",
         )
@@ -253,7 +253,7 @@ RSpec.describe "textus/1 conformance" do
       rc = Textus::CLI.run(
         ["put", "working.network.org.jane", "--stdin", "--format=json"],
         stdin: StringIO.new(JSON.generate(
-                              "frontmatter" => { "name" => "jane", "relationship" => "peer", "org" => "envato" },
+                              "frontmatter" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
                               "body" => "updated\n",
                               "if_etag" => "sha256:deadbeef",
                             )),
@@ -313,7 +313,7 @@ RSpec.describe "textus/1 conformance" do
   describe "delete verb" do
     it "deletes an entry, audit-logs it, and refuses without role" do
       store.put("working.network.org.tmp",
-                frontmatter: { "name" => "tmp", "relationship" => "peer", "org" => "envato" },
+                frontmatter: { "name" => "tmp", "relationship" => "peer", "org" => "acme" },
                 body: "tmp", as: "human")
       res = store.delete("working.network.org.tmp", as: "human")
       expect(res["deleted"]).to be true

@@ -85,7 +85,7 @@ Read and write:
 ```sh
 textus get working.network.org.jane --format=json
 textus list --zone=working --format=json
-echo '{"frontmatter":{"name":"bob","relationship":"peer","org":"envato"},"body":"hi\n"}' \
+echo '{"frontmatter":{"name":"bob","relationship":"peer","org":"acme"},"body":"hi\n"}' \
   | textus put working.network.org.bob --as=human --stdin --format=json
 textus stale --zone=derived --format=json
 ```
@@ -187,7 +187,7 @@ Hooks (defined in `lefthook.yml`):
 
 Bypass with `LEFTHOOK=0 git commit ...` when needed.
 
-CI runs `rspec` (Ruby 3.1 / 3.2 / 3.3) and `rubocop` via GitHub Actions
+CI runs `rspec` (Ruby 3.3 / 3.4) and `rubocop` via GitHub Actions
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## License

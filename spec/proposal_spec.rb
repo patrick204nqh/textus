@@ -28,7 +28,7 @@ RSpec.describe "Pending + accept" do
               frontmatter: {
                 "name" => "2026-05-19-add-bob",
                 "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
-                "frontmatter" => { "name" => "bob", "org" => "envato" },
+                "frontmatter" => { "name" => "bob", "org" => "acme" },
               },
               body: "Proposed",
               as: "ai")

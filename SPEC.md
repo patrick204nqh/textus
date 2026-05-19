@@ -240,7 +240,7 @@ proposal:
 frontmatter:
   name: bob
   relationship: peer
-  org: envato
+  org: acme
 ---
 Proposed body content.
 ```
@@ -399,7 +399,7 @@ Every entry is a UTF-8 Markdown file with a YAML frontmatter block:
 ---
 name: jane
 relationship: peer
-org: envato
+org: acme
 ---
 Short body in Markdown.
 ```
@@ -419,7 +419,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
   "zone": "working",
   "owner": "textus:network",
   "path": "/absolute/path/to/.textus/zones/working/network/org/jane.md",
-  "frontmatter": { "name": "jane", "relationship": "peer", "org": "envato" },
+  "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
   "schema_ref": "person"
@@ -485,7 +485,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 **`put` input** (read from stdin when `--stdin` is given):
 
 ```json
-{ "frontmatter": { "name": "jane", "relationship": "peer", "org": "envato" },
+{ "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body.\n",
   "if_etag": "sha256:8f3c…" }
 ```
