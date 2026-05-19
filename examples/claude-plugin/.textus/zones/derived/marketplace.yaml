@@ -1,5 +1,5 @@
 _meta:
-  generated_at: '2026-05-19T15:36:28Z'
+  generated_at: '2026-05-19T15:40:27Z'
   from:
   - working.skills
   reducer: marketplace-envelope
@@ -8,4 +8,3 @@ skills:
 - name: voice-writer
   description: Rewrites prose in the author's canonical voice.
   version: 0.1.0
-generated_at: '2026-05-19T15:36:28Z'

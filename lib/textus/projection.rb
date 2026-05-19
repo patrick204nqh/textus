@@ -24,8 +24,9 @@ module Textus
       reduced = apply_reducer(rows)
       # Reducers may return either an Array of rows (legacy / templated builds)
       # or a Hash that becomes the structured-format payload base. In the Hash
-      # case, downstream sort/limit/position markers don't apply.
-      return reduced.merge("generated_at" => Time.now.utc.iso8601) if reduced.is_a?(Hash)
+      # case, downstream sort/limit/position markers don't apply, and the
+      # builder owns `_meta.generated_at` so we don't stamp it here.
+      return reduced if reduced.is_a?(Hash)
 
       rows = reduced
       rows = sort(rows)
