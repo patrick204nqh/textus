@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-19T15:49:24Z'
+  at: '2026-05-19T15:58:39Z'
   from:
   - canon.plugin
   - working.agents
@@ -33,4 +33,4 @@ generated:
 
 
 ---
-_Built at 2026-05-19T15:49:24Z._
+_Built at 2026-05-19T15:58:39Z._

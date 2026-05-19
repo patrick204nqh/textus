@@ -100,7 +100,8 @@ RSpec.describe Textus::Builder do
     expect(parsed["frontmatter"]["generated"]["at"]).to match(/\dT\d/)
 
     published = File.join(File.dirname(root), "PEOPLE.md")
-    expect(File.exist?(published + ".textus-managed.json")).to be true
+    sentinel = File.join(root, "sentinels", "PEOPLE.md.textus-managed.json")
+    expect(File.exist?(sentinel)).to be true
     expect(File.symlink?(published)).to be false
     expect(File.binread(published)).to eq(File.binread(File.join(root, "zones/derived/catalogs/people.md")))
   end
