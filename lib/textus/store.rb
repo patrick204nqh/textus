@@ -151,11 +151,14 @@ module Textus
         name = entry[:name]
         Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
       rescue StandardError => e
+        extras = { "event" => event.to_s, "hook" => name.to_s, "error" => "#{e.class}: #{e.message}" }
+        extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
+        extras["pending_key"] = kwargs[:pending_key] if kwargs.key?(:pending_key)
         audit_log.append(
           role: "script", verb: "event_error",
-          key: kwargs[:key] || kwargs[:target_key] || "-",
+          key: kwargs[:key] || kwargs[:target_key] || kwargs[:pending_key] || "-",
           etag_before: nil, etag_after: nil,
-          extras: { "event" => event.to_s, "hook" => name.to_s, "error" => "#{e.class}: #{e.message}" }
+          extras: extras
         )
       end
     end

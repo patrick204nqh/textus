@@ -229,5 +229,20 @@ RSpec.describe "Accept event" do
     store.accept("pending.bob", as: "human")
     expect($log).to include([:accept, "pending.bob", "working.bob"])
   end
+
+  it "records both target_key and pending_key when an :accept hook fails" do
+    File.write(File.join(root, "extensions/log.rb"), <<~RUBY)
+      Textus.hook(:accept, :boom) { |pending_key:, target_key:, store:| raise "bang" }
+    RUBY
+    store = Textus::Store.new(root)
+    store.accept("pending.bob", as: "human")
+    audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| l.chomp.split("\t") }
+    err = audit_lines.find { |c| c[2] == "event_error" }
+    expect(err).not_to be_nil
+    extras = JSON.parse(err[6])
+    expect(extras["event"]).to eq("accept")
+    expect(extras["pending_key"]).to eq("pending.bob")
+    expect(extras["target_key"]).to eq("working.bob")
+  end
 end
 # rubocop:enable Style/GlobalVars, RSpec/MultipleDescribes
