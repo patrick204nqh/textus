@@ -29,6 +29,11 @@ RSpec.describe "Textus DSL verbs" do # rubocop:disable RSpec/MultipleDescribes
       expect(fired).to eq(["x"])
     end
 
+    it "Textus.doctor_check registers into the current registry" do
+      Textus.doctor_check(:org_rules) { |store:| [store].clear }
+      expect(reg.doctor_check_names).to contain_exactly(:org_rules)
+    end
+
     it "isolates registries across threads" do
       other = Textus::ExtensionRegistry.new
       Textus.with_registry(other) do

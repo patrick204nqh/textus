@@ -64,4 +64,21 @@ RSpec.describe Textus::ExtensionRegistry do
         .to raise_error(Textus::UsageError, /fetcher 'dup' already registered/)
     end
   end
+
+  describe "doctor_checks" do
+    it "registers and retrieves doctor_check blocks" do
+      reg = Textus::ExtensionRegistry.new
+      reg.register_doctor_check(:org_rules) { |store:| [store].clear }
+      expect(reg.doctor_check(:org_rules)).to be_a(Proc)
+      expect(reg.doctor_check_names).to contain_exactly(:org_rules)
+    end
+
+    it "raises on duplicate doctor_check name" do
+      reg = Textus::ExtensionRegistry.new
+      noop = proc { |store:| [store].clear }
+      reg.register_doctor_check(:dup, &noop)
+      expect { reg.register_doctor_check(:dup, &noop) }
+        .to raise_error(Textus::UsageError, /already registered/)
+    end
+  end
 end

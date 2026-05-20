@@ -26,4 +26,8 @@ module Textus
   def self.hook(event, name, &)
     current_registry.register_hook(event, name, &)
   end
+
+  def self.doctor_check(name, &)
+    current_registry.register_doctor_check(name, &)
+  end
 end

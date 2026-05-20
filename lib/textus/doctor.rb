@@ -1,12 +1,14 @@
 require "digest"
 require "json"
+require "timeout"
 
 module Textus
   # Health check for a Textus store. Returns a JSON-friendly Hash envelope
   # with an `issues` array and a summary. Each issue is a Hash with
   # `code`, `level`, `subject`, `message`, and optionally `fix`.
-  module Doctor
+  module Doctor # rubocop:disable Metrics/ModuleLength -- 8 built-in checks + extension dispatch
     LEVELS = %w[error warning info].freeze
+    DOCTOR_CHECK_TIMEOUT_SECONDS = 2
 
     module_function
 
@@ -20,6 +22,7 @@ module Textus
       issues.concat(check_sentinels(store))
       issues.concat(check_audit_log(store))
       issues.concat(check_unowned_schema_fields(store))
+      issues.concat(run_registered_checks(store))
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }
       {
@@ -253,6 +256,43 @@ module Textus
         }
       end
       out
+    end
+
+    def run_registered_checks(store)
+      out = []
+      view = StoreView.new(store)
+      store.registry.doctor_check_names.each do |name|
+        callable = store.registry.doctor_check(name)
+        begin
+          result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: view) }
+          if result.is_a?(Array)
+            out.concat(result.map { |h| h.transform_keys(&:to_s) })
+          else
+            out << fail_issue(name, code: "doctor_check.bad_return",
+                                    message: "doctor_check '#{name}' returned #{result.class} (expected Array)",
+                                    fix: "return an array of issue hashes from the doctor_check block")
+          end
+        rescue Timeout::Error
+          out << fail_issue(name, code: "doctor_check.timeout",
+                                  message: "doctor_check '#{name}' exceeded #{DOCTOR_CHECK_TIMEOUT_SECONDS}s",
+                                  fix: "shorten the check or split it into smaller checks")
+        rescue StandardError => e
+          out << fail_issue(name, code: "doctor_check.failed",
+                                  message: "#{e.class}: #{e.message}",
+                                  fix: "fix the doctor_check block in .textus/extensions/")
+        end
+      end
+      out
+    end
+
+    def fail_issue(name, code:, message:, fix:)
+      {
+        "code" => code,
+        "level" => "error",
+        "subject" => name.to_s,
+        "message" => message,
+        "fix" => fix,
+      }
     end
 
     # --- Helpers ----------------------------------------------------------
