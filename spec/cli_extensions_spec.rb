@@ -18,12 +18,13 @@ RSpec.describe "CLI extension verbs" do
         - key: intake.x
           path: intake/x.md
           zone: intake
-          source: { fetcher: stub }
+          source: { action: stub }
     YAML
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
-      Textus.fetcher(:stub) { |config:, store:| { frontmatter: { "name" => "x" }, body: "ok" } }
+      Textus.action(:stub) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "ok" } }
       Textus.reducer(:r)     { |rows:, config:| rows }
       Textus.hook(:put, :h)  { |key:, envelope:, store:| }
+      Textus.doctor_check(:dc) { |store:| { ok: true } }
     RUBY
   end
 
@@ -35,20 +36,21 @@ RSpec.describe "CLI extension verbs" do
     [rc, out.string.lines.last]
   end
 
-  it "textus refresh KEY invokes the fetcher" do
+  it "textus refresh KEY invokes the action" do
     rc, line = run_cli(["refresh", "intake.x", "--as=script", "--format=json"])
     expect(rc).to eq(0)
     expect(JSON.parse(line)["body"]).to eq("ok")
   end
 
-  it "textus extensions list returns fetcher/reducer/hook names" do
+  it "textus extensions list returns action/reducer/hook/doctor_check names" do
     rc, line = run_cli(["extensions", "list", "--format=json"])
     expect(rc).to eq(0)
     payload = JSON.parse(line)
     names = payload["extensions"].group_by { |e| e["kind"] }
-    expect(names["fetcher"].map { |e| e["name"] }).to include("stub")
+    expect(names["action"].map { |e| e["name"] }).to include("stub")
     expect(names["reducer"].map { |e| e["name"] }).to include("r")
     expect(names["hook"].map { |e| e["name"] }).to include("h")
+    expect(names["doctor_check"].map { |e| e["name"] }).to include("dc")
   end
 
   it "textus extensions list --kind=hook filters" do
@@ -56,7 +58,7 @@ RSpec.describe "CLI extension verbs" do
     expect(JSON.parse(line)["extensions"].map { |e| e["kind"] }).to all(eq("hook"))
   end
 
-  it "textus put --fetcher=NAME applies the fetcher to stdin bytes" do
+  it "textus put --action=NAME applies the action to stdin bytes" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/1
@@ -65,7 +67,7 @@ RSpec.describe "CLI extension verbs" do
     YAML
     out = StringIO.new
     rc = Textus::CLI.run(
-      ["put", "working.j", "--stdin", "--fetcher=json", "--as=human", "--format=json"],
+      ["put", "working.j", "--stdin", "--action=json", "--as=human", "--format=json"],
       stdin: StringIO.new('{"a":1}'), stdout: out, stderr: StringIO.new, cwd: tmp,
     )
     expect(rc).to eq(0)
