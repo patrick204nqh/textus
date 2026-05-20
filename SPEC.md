@@ -46,7 +46,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 - Not a sync protocol. Single-writer per file, ETag-checked.
 - Not a transport. Spawn the CLI or wrap it in MCP/HTTP downstream.
 - Not a UI. Filesystem + CLI. Viewers ship elsewhere.
-- Not a fetcher. textus declares sources; external runners fetch them.
+- Not a fetcher. textus declares sources; external runners invoke actions to materialize them.
 - Not an executor. textus computes pure projections but never spawns shell commands.
 
 ## 3. Storage layout
@@ -595,7 +595,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
 | `validate-all` | read | any |
-| `put K --stdin --as=R [--fetcher=NAME]` | write | per zone |
+| `put K --stdin --as=R [--action=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh K --as=script` | write | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
@@ -605,7 +605,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `migrate-keys [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `uid K` | read | any |
-| `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
+| `extensions list [--kind=action\|reducer\|hook]` | read | any |
 | `doctor [--format=json]` | read | any |
 | `intro [--format=json]` | read | any |
 

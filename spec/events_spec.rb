@@ -108,7 +108,7 @@ RSpec.describe "Refresh event" do
   it "does NOT fire :refresh when the fetched bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
-    # Rewrite extension with same fetcher body so the log is preserved
+    # Rewrite extension with same action body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
       $log ||= []

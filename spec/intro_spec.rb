@@ -38,7 +38,7 @@ RSpec.describe Textus::Intro do
           zone: intake
           owner: script:local
           source:
-            action: demo-fetcher
+            action: demo-action
             config: { foo: 1 }
             ttl: 6h
         - key: derived.report
@@ -55,7 +55,7 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "extensions/exts.rb"), <<~RUBY)
-      Textus.action(:demo_fetcher) { |config:, store:, args:| { frontmatter: {}, body: "" } }
+      Textus.action(:demo_action)  { |config:, store:, args:| { frontmatter: {}, body: "" } }
       Textus.action(:zebra)        { |config:, store:, args:| { frontmatter: {}, body: "" } }
       Textus.action(:apple)        { |config:, store:, args:| { frontmatter: {}, body: "" } }
       Textus.reducer(:rank_by_recency) { |rows:, config:| rows }
@@ -126,8 +126,8 @@ RSpec.describe Textus::Intro do
     env = described_class.run(store)
     ext = env["extensions"]
     expect(ext["reducers"]).to eq(%w[alpha rank_by_recency])
-    # demo_fetcher, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["actions"]).to include("apple", "demo_fetcher", "zebra")
+    # demo_action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
+    expect(ext["actions"]).to include("apple", "demo_action", "zebra")
     expect(ext["actions"]).to eq(ext["actions"].sort)
     expect(ext["hooks"]).to eq([{ "event" => "build", "name" => "stamp_log" }])
     expect(ext["doctor_checks"]).to include("smoke")

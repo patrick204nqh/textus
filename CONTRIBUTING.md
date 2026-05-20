@@ -24,7 +24,7 @@ lefthook install         # writes .git/hooks/{pre-commit,pre-push}
 
 ## Scope and tradeoffs
 
-textus is deliberately small. Before adding a new verb, fetcher, or extension hook:
+textus is deliberately small. Before adding a new verb, action, or extension hook:
 
 - Can existing primitives compose it? Prefer composition over new surface.
 - Does it belong in the gem or in `.textus/extensions/`? Project-local extensions are encouraged — that's what the DSL exists for.
