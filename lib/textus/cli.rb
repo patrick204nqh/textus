@@ -150,12 +150,12 @@ module Textus
           callable = store.registry.fetcher(fetcher_name)
           result =
             begin
-              Timeout.timeout(Textus::Refresh::FETCHER_TIMEOUT_SECONDS) do
+              Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
                 callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store))
               end
             rescue Timeout::Error
               raise UsageError.new(
-                "fetcher '#{fetcher_name}' exceeded #{Textus::Refresh::FETCHER_TIMEOUT_SECONDS}s timeout",
+                "fetcher '#{fetcher_name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
               )
             end
           basename = key.split(".").last

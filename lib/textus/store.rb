@@ -51,7 +51,7 @@ module Textus
 
     def load_extensions
       Textus.with_registry(@registry) do
-        BuiltinFetchers.register_all
+        BuiltinActions.register_all
         dir = File.join(@root, "extensions")
         return unless File.directory?(dir)
 
@@ -296,7 +296,7 @@ module Textus
       end
 
       @manifest.entries.each do |mentry|
-        next unless mentry.fetcher
+        next unless mentry.action
         next if zone && mentry.zone != zone
         next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
@@ -529,7 +529,7 @@ module Textus
     end
 
     def intake_stale_row(mentry, path, reason)
-      { "key" => mentry.key, "path" => path, "fetcher" => mentry.fetcher, "reason" => reason }
+      { "key" => mentry.key, "path" => path, "action" => mentry.action, "reason" => reason }
     end
 
     def stale_row(mentry, path, reason)

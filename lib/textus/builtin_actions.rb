@@ -4,31 +4,35 @@ require "yaml"
 require "rexml/document"
 
 module Textus
-  module BuiltinFetchers
+  module BuiltinActions
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def self.register_all
-      Textus.fetcher(:json) do |config:, store:|
+      Textus.action(:json) do |config:, store:, args:|
         _ = store
+        _ = args
         data = JSON.parse(config["bytes"].to_s)
         { frontmatter: {}, body: YAML.dump(data) }
       end
 
-      Textus.fetcher(:csv) do |config:, store:|
+      Textus.action(:csv) do |config:, store:, args:|
         _ = store
+        _ = args
         rows = CSV.parse(config["bytes"].to_s, headers: true).map(&:to_h)
         { frontmatter: {}, body: YAML.dump(rows) }
       end
 
-      Textus.fetcher(:"markdown-links") do |config:, store:|
+      Textus.action(:"markdown-links") do |config:, store:, args:|
         _ = store
+        _ = args
         links = config["bytes"].to_s.scan(%r{\[([^\]]+)\]\((https?://[^)\s]+)\)}).map do |text, href|
           { "text" => text, "href" => href }
         end
         { frontmatter: {}, body: YAML.dump(links) }
       end
 
-      Textus.fetcher(:"ical-events") do |config:, store:|
+      Textus.action(:"ical-events") do |config:, store:, args:|
         _ = store
+        _ = args
         events = []
         current = nil
         config["bytes"].to_s.each_line do |line|
@@ -45,8 +49,9 @@ module Textus
         { frontmatter: {}, body: YAML.dump(events) }
       end
 
-      Textus.fetcher(:rss) do |config:, store:|
+      Textus.action(:rss) do |config:, store:, args:|
         _ = store
+        _ = args
         doc = REXML::Document.new(config["bytes"].to_s)
         items = doc.elements.to_a("//item").map do |item|
           {
