@@ -15,8 +15,8 @@ module Textus
       raise UsageError.new("no active registry; extension code must be loaded by a Store")
   end
 
-  def self.fetcher(name, &)
-    current_registry.register_fetcher(name, &)
+  def self.action(name, &)
+    current_registry.register_action(name, &)
   end
 
   def self.reducer(name, &)

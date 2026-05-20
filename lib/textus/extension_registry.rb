@@ -3,17 +3,17 @@ module Textus
     EVENTS = %i[put delete refresh build accept].freeze
 
     def initialize
-      @fetchers = {}
+      @actions = {}
       @reducers = {}
       @hooks = {}
       @doctor_checks = {}
     end
 
-    def register_fetcher(name, &blk)
+    def register_action(name, &blk)
       name = name.to_sym
-      raise UsageError.new("fetcher '#{name}' already registered") if @fetchers.key?(name)
+      raise UsageError.new("action '#{name}' already registered") if @actions.key?(name)
 
-      @fetchers[name] = blk
+      @actions[name] = blk
     end
 
     def register_reducer(name, &blk)
@@ -37,8 +37,8 @@ module Textus
       @doctor_checks[name] = blk
     end
 
-    def fetcher(name)
-      @fetchers[name.to_sym] or raise UsageError.new("unknown fetcher: #{name}")
+    def action(name)
+      @actions[name.to_sym] or raise UsageError.new("unknown action: #{name}")
     end
 
     def reducer(name)
@@ -53,10 +53,9 @@ module Textus
       @doctor_checks[name.to_sym] or raise UsageError.new("unknown doctor_check: #{name}")
     end
 
-    def doctor_check_names = @doctor_checks.keys
-
-    def fetcher_names = @fetchers.keys
-    def reducer_names = @reducers.keys
-    def hook_events   = @hooks.keys
+    def action_names        = @actions.keys
+    def reducer_names       = @reducers.keys
+    def hook_events         = @hooks.keys
+    def doctor_check_names  = @doctor_checks.keys
   end
 end
