@@ -17,7 +17,10 @@ module Textus
       SecureRandom.hex(8)
     end
 
-    def self.discover(start_dir = Dir.pwd)
+    def self.discover(start_dir = Dir.pwd, root: nil)
+      explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
+      return discover_explicit(explicit) if explicit
+
       dir = File.expand_path(start_dir)
       loop do
         candidate = File.join(dir, ".textus")
@@ -29,6 +32,13 @@ module Textus
         dir = parent
       end
       raise IoError.new("no .textus directory found from #{start_dir}")
+    end
+
+    private_class_method def self.discover_explicit(root_arg)
+      abs = File.expand_path(root_arg)
+      raise IoError.new("no textus store at #{abs}") unless File.directory?(abs) && File.exist?(File.join(abs, "manifest.yaml"))
+
+      new(abs)
     end
 
     def initialize(root)
