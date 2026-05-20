@@ -45,12 +45,12 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
   audit.log           # append-only NDJSON, every write
   schemas/            # YAML field shapes per entry family
   templates/          # mustache templates for derived entries
-  extensions/         # one .rb per fetcher / reducer / hook
+  extensions/         # one .rb per action / reducer / hook / doctor_check
   sentinels/          # publish bookkeeping
   zones/
     canon/            # human-only — identity, voice, decisions
     working/          # human / ai / script — day-to-day catalog
-    intake/           # script — declared external inputs (fetchers)
+    intake/           # script — declared external inputs (actions)
     pending/          # ai + human — proposals awaiting accept
     derived/          # build only — computed outputs
 ```
@@ -67,7 +67,7 @@ echo '{"frontmatter":{"name":"bob","org":"acme"},"body":"hi\n"}' \
 textus stale --zone=derived --format=json
 ```
 
-For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake fetcher — see [`examples/claude-plugin/`](examples/claude-plugin/).
+For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake action — see [`examples/claude-plugin/`](examples/claude-plugin/).
 
 ## What 0.2 ships
 
@@ -98,13 +98,14 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `validate-all` | Validate every entry against its schema |
-| `extensions list [--kind=K]` | Registered fetchers, reducers, declared hooks |
+| `extensions list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
 
 **Write:**
 
 | Verb | Role |
 |---|---|
-| `put K --stdin --as=R [--fetcher=NAME]` | per zone |
+| `put K --stdin --as=R [--action=NAME]` | per zone |
+| `action NAME [--key=val] [--as=R]` | per zone written (invoke a registered action) |
 | `delete K --if-etag=E --as=R` | per zone |
 | `refresh K --as=script` | per zone (typically `script`) |
 | `mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
@@ -133,7 +134,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 |---|---|---|
 | `canon` | `[human]` | Identity, voice, decisions — slow-changing |
 | `working` | `[human, ai, script]` | Active project state |
-| `intake` | `[script]` | Declared external inputs (fetchers) |
+| `intake` | `[script]` | Declared external inputs (actions) |
 | `pending` | `[ai, human]` | AI proposals; humans run `textus accept` to apply |
 | `derived` | `[build]` | Computed outputs from `textus build` |
 
@@ -147,17 +148,18 @@ Derived entries declare a `projection:` (`select`, `pluck`, `sort_by`, `limit`, 
 
 ## Extensions
 
-Three DSL verbs, registered in `.textus/extensions/*.rb`. Each `Store` gets its own registry — no global state.
+Four DSL verbs, registered in `.textus/extensions/*.rb`. Each `Store` gets its own registry — no global state.
 
-- **`Textus.fetcher(:name) do |config:, store:|`** — pulls data into an intake entry. Returns `{frontmatter:, body:}`, `{content:}` (for json/yaml entries), or `{body:}` (raw). The store normalizes all three shapes. Configured via `source.fetcher` in the manifest. Five built-ins ship: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
+- **`Textus.action(:name) do |config:, store:, args:|`** — runs in three invocation modes (intake refresh, `textus action` verb, `put --action`). Returns `{frontmatter:, body:}`, `{content:}`, or `{body:}` when its return is consumed (intake and put-fetch); writes via `store.put` for side-effectful work (verb mode). The store normalizes all three return shapes. Configured via `source.action` in the manifest for intake. Five built-ins ship: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
 - **`Textus.reducer(:name) do |rows:, config:|`** — shapes rows in a derived projection. Pure function. Configured via `projection.reducer`. May return an Array (templated builds) or a Hash (templateless json/yaml).
 - **`Textus.hook(:event, :name) do |kwargs|`** — fires on `:put`, `:delete`, `:refresh`, `:build`, or `:accept`. In-process; 2 s timeout per hook; failures land in the audit log as `event_error` rows.
+- **`Textus.doctor_check(:name) do |store:|`** — contributes whole-tree validators to `textus doctor`. Returns an array of issue hashes `{code, level, subject, message, fix}` that merge into the doctor report. Timeouts and exceptions surface as `doctor_check.*` issues; they do not abort the doctor run.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8 and §5.11.
 
 ## Examples
 
-[`examples/claude-plugin/`](examples/claude-plugin/) — a Claude Code plugin (`voice-tools`) whose entire content surface — agents, skills, commands, `CLAUDE.md`, `plugin.json`, `marketplace.json` — is textus-managed. Demonstrates per-entry formats, `publish_each`, intake fetchers, in-process reducers and hooks, the AI-propose / human-accept loop, and the `inject_intro:` flag that puts an orientation preamble at the top of `CLAUDE.md`.
+[`examples/claude-plugin/`](examples/claude-plugin/) — a Claude Code plugin (`voice-tools`) whose entire content surface — agents, skills, commands, `CLAUDE.md`, `plugin.json`, `marketplace.json` — is textus-managed. Demonstrates per-entry formats, `publish_each`, intake actions, in-process reducers and hooks, the AI-propose / human-accept loop, and the `inject_intro:` flag that puts an orientation preamble at the top of `CLAUDE.md`.
 
 ## Tests
 

@@ -31,12 +31,13 @@ module Textus
       File.write(File.join(target_root, "extensions", "README.md"), <<~MD)
         # Extensions
 
-        Drop one Ruby file per extension. Three verbs are available:
+        Drop one Ruby file per extension. Four verbs are available:
 
         ```ruby
-        Textus.fetcher(:name)        { |config:, store:| ... }
-        Textus.reducer(:name)        { |rows:, config:| ... }
-        Textus.hook(:event, :name)   { |key:, envelope:, store:, **kw| ... }
+        Textus.action(:name)         { |config:, store:, args:| ... }
+        Textus.reducer(:name)        { |rows:, config:|         ... }
+        Textus.hook(:event, :name)   { |key:, envelope:, **kw|  ... }
+        Textus.doctor_check(:name)   { |store:|                 ... }
         ```
 
         Events: :put, :delete, :refresh, :build, :accept.

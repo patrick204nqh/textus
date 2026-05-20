@@ -48,13 +48,13 @@ entries:
     owner: ai:catalog
     nested: true
 
-  # ---- intake: fetcher-fed (textus capability demo) ----
+  # ---- intake: action-fed (textus capability demo) ----
   - key: intake.upstream.notes
     path: intake/upstream/notes.md
     zone: intake
     owner: script:local
     source:
-      fetcher: local-file
+      action: local-file
       config: { path: .textus/zones/canon/voice-tools.md }
       ttl: 12h
 

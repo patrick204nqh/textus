@@ -1,5 +1,5 @@
-Textus.fetcher(:"local-file") do |config:, store:|
-  path = config["path"] or raise "local-file fetcher requires source.config.path"
+Textus.action(:"local-file") do |config:, store:, args:|
+  path = config["path"] or raise "local-file action requires source.config.path"
   abs = File.absolute_path?(path) ? path : File.expand_path(path)
   raise "local-file: not found: #{abs}" unless File.exist?(abs)
 
