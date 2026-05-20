@@ -10,7 +10,7 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
-## 1.3.0 — Extension API redesign (breaking)
+## 0.4.0 — Extension API redesign (breaking)
 
 - **Breaking:** `Textus.fetcher` removed. Use `Textus.action` instead. The block signature changes from `|config:, store:|` to `|config:, store:, args:|`.
 - **Breaking:** Manifest field `source.fetcher` renamed to `source.action`. Legacy field is rejected with a migration error.

@@ -376,7 +376,7 @@ module Textus
       end
       if src.key?("fetcher")
         raise UsageError.new(
-          "entry '#{@key}': source.fetcher renamed to source.action in v1.3; " \
+          "entry '#{@key}': source.fetcher renamed to source.action in 0.4; " \
           "rename the key. See SPEC §5.4.",
         )
       end
