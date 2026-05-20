@@ -16,9 +16,13 @@ module Textus
       @stdout = stdout
       @stderr = stderr
       @cwd = cwd
+      @root_arg = nil
     end
 
     def run(argv) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/AbcSize
+      OptionParser.new do |o|
+        o.on("--root=PATH") { |v| @root_arg = v }
+      end.order!(argv)
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
@@ -60,7 +64,7 @@ module Textus
     private
 
     def store
-      @store ||= Store.discover(@cwd)
+      @store ||= Store.discover(@cwd, root: @root_arg)
     end
 
     def parse_format!(argv)

@@ -75,6 +75,16 @@ Zone directories under `zones/` are conventional; their write semantics are decl
 
 `.textus/audit.log` is an append-only NDJSON file written under a file lock by every successful `put`, `delete`, `accept`, and `build`. `.textus/role` (one line containing a role name) is optional and participates in the role-resolution order (§5).
 
+### 3.1 Store location precedence (v0.3)
+
+Implementations MUST resolve the store root in this order; the first match wins:
+
+1. `--root <path>` flag passed to the CLI (or `root:` kwarg to `Store.discover`).
+2. `TEXTUS_ROOT` environment variable.
+3. Walk up from cwd looking for a `.textus/` directory containing `manifest.yaml`.
+
+When (1) or (2) names a path that has no `manifest.yaml`, the CLI exits with `io_error` and a message naming the resolved absolute path. When (3) reaches the filesystem root without finding a store, the CLI exits with `io_error` naming the search start point.
+
 ## 4. Manifest
 
 The manifest declares: (a) which zones exist and which roles may write to each, (b) the key-to-subtree mapping, (c) the schema applied to entries in each subtree, and (d) the owner string recorded in writes.

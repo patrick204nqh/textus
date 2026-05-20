@@ -10,6 +10,21 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-20 — Configurable store root
+
+### Added
+
+- `--root <path>` CLI flag and `TEXTUS_ROOT` environment variable for store
+  discovery. `Textus::Store.discover` now accepts an optional `root:` kwarg.
+  Unblocks embedding a textus store at non-default paths (e.g. nested under a
+  plugin directory like `plugins/<name>/.textus/`) where walking up from cwd
+  to find `.textus/` is undesirable or ambiguous.
+
+### Documentation
+
+- SPEC.md §3.1 documents the new store-location precedence:
+  1. `--root` / `root:` kwarg, 2. `TEXTUS_ROOT`, 3. cwd walk.
+
 ## [0.2.0] — 2026-05-20 — Storage rewrite, agent surface, extension DSL (BREAKING)
 
 This release reshapes textus from a markdown-only frontmatter store into a
