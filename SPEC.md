@@ -46,7 +46,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 - Not a sync protocol. Single-writer per file, ETag-checked.
 - Not a transport. Spawn the CLI or wrap it in MCP/HTTP downstream.
 - Not a UI. Filesystem + CLI. Viewers ship elsewhere.
-- Not a fetcher. textus declares sources; external runners fetch them.
+- Not a fetcher. textus declares sources; external runners invoke actions to materialize them.
 - Not an executor. textus computes pure projections but never spawns shell commands.
 
 ## 3. Storage layout
@@ -250,38 +250,38 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 
 **Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is byte-copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The build envelope grows a `published_leaves` array — one row per leaf, with `key`, `source`, and `target` — alongside the existing `built` array. Targets that would resolve outside the repo root are refused.
 
-### 5.4 Intake (declared, refreshed via registered fetcher)
+### 5.4 Intake (declared, refreshed via registered action)
 
-Intake entries declare an external source by naming a **fetcher** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: a fetcher only runs when explicitly invoked by `textus refresh KEY --as=script`. The declaration is data only:
+Intake entries declare an external source by naming an **action** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an action only runs in intake mode when explicitly invoked by `textus refresh KEY --as=script`. The declaration is data only:
 
 ```yaml
 - key: intake.calendar.events
   zone: intake
   source:
-    fetcher: ical-events
+    action: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
     ttl: 6h
 ```
 
-`fetcher` names a registered fetcher; `config` is an opaque hash handed to the fetcher; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from` and `source.parse` with a clear usage error.
+`action` names a registered action; `config` is an opaque hash handed to the action; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, and `source.fetcher` with a clear usage error.
 
-**Fetcher contract.** A fetcher is registered via `Textus.fetcher(:name) do |config:, store:| ... end` and MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
+**Action contract (intake mode).** An action is registered via `Textus.action(:name) do |config:, store:, args:| ... end`. In intake mode the action MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
 
-- `{ frontmatter:, body: }` — markdown-friendly (current shape).
+- `{ frontmatter:, body: }` — markdown-friendly.
 - `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
 - `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
 
-The `store:` argument is a read-only `Textus::StoreView` (§5.11). Every fetcher call is wrapped in `Timeout.timeout(2)`; exceptions and timeouts surface as `usage` errors that abort the refresh.
+The `store:` argument is a writable `Textus::StoreView` (§5.11) bound to the calling role; the `args:` argument is `{}` in intake mode (it carries CLI flags in verb mode — §5.11). Every action call is wrapped in `Timeout.timeout(2)`; exceptions and timeouts surface as `usage` errors that abort the refresh.
 
-**Built-in fetchers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer fetcher) is responsible for supplying bytes.
+**Built-in actions.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer action) is responsible for supplying bytes.
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.fetcher`, invokes it with `(config:, store:)`, and writes the result under role `script`.
+1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.action`, invokes it with `(config:, store:, args: {})`, and writes the result under role `script`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`.
 
-Both paths share the same role gate, audit-log entry, and `:refresh` event (§5.10). User-supplied fetchers live in `.textus/extensions/*.rb` and auto-load at `Store#initialize` (§5.11).
+Both paths share the same role gate, audit-log entry, and `:refresh` event (§5.10). User-supplied actions live in `.textus/extensions/*.rb` and auto-load at `Store#initialize` (§5.11).
 
 ### 5.5 Pending / accept workflow
 
@@ -419,29 +419,39 @@ Textus does NOT invoke these — they surface only through `textus extensions li
 
 **Removed.** The v1.1 `on_stale` event is removed in 0.2. Staleness is a poll, surfaced by `textus stale`. The `on_`-prefix convention from v1.1 is gone; events are bare symbols.
 
-### 5.11 Extension surface (v1.2)
+### 5.11 Extension surface (v1.3)
 
-Three DSL verbs cover all user-supplied code:
+Four DSL verbs cover all user-supplied code:
 
 ```
-Textus.fetcher(:name)       do |config:, store:|   ... end   # returns {frontmatter:, body:} | {content:} | {body:}
-Textus.reducer(:name)       do |rows:, config:|    ... end   # returns rows
-Textus.hook(:event, :name)  do |**kwargs|          ... end   # side effects; return ignored
+Textus.action(:name)         do |config:, store:, args:|  ... end   # intake mode: returns content; verb mode: writes via store.put
+Textus.reducer(:name)        do |rows:, config:|          ... end   # returns rows
+Textus.hook(:event, :name)   do |**kwargs|                ... end   # side effects; return ignored
+Textus.doctor_check(:name)   do |store:|                  ... end   # returns array of issue hashes
 ```
 
 Files in `.textus/extensions/*.rb` are loaded at `Store#initialize`, in lexical order, with the registry installed as the current registry for that store. Registries are per-Store: two Store instances in the same process do not share state.
 
-Failure modes:
+**Action invocation modes.**
 
-| Surface  | Timeout    | Exception                                   | Bad return |
-|----------|------------|---------------------------------------------|------------|
-| fetcher  | aborts op  | aborts op (wrapped as `UsageError`)         | aborts op  |
-| reducer  | aborts op  | aborts op                                   | aborts op  |
-| hook     | logged     | logged (audit `event_error` row)            | n/a        |
+| Mode    | Invoked by                | `config:`              | `store:`               | `args:`              | Return                                  |
+|---------|---------------------------|------------------------|------------------------|----------------------|------------------------------------------|
+| intake  | `textus refresh KEY`      | manifest `source.config` | writable view (role from `--as`) | `{}`                | required; normalized into entry write    |
+| verb    | `textus action NAME ...`  | `{}`                   | writable view (role from `--as`) | parsed CLI kv hash   | ignored                                  |
+| put-fetch | `textus put K --action=N --stdin` | `{ "bytes" => stdin }` | read-only view         | `{}`                 | required; merged into the put payload    |
 
-Fetchers and reducers are pure transforms; return values flow into the store. Hooks are side effects; return values are discarded.
+**Failure modes:**
 
-The `store:` argument is always a `Textus::StoreView` — a read-only proxy exposing `get`, `list`, `where`, `schema_envelope`, `deps`, `rdeps`, `published`, `stale`, `validate_all`. Write attempts raise `Textus::UsageError`.
+| Surface         | Timeout    | Exception                                   | Bad return |
+|-----------------|------------|---------------------------------------------|------------|
+| action          | aborts op  | aborts op (wrapped as `UsageError`)         | aborts op  |
+| reducer         | aborts op  | aborts op                                   | aborts op  |
+| hook            | logged     | logged (audit `event_error` row)            | n/a        |
+| doctor_check    | reported as `doctor_check.timeout` issue | reported as `doctor_check.failed` issue | reported as `doctor_check.bad_return` |
+
+Actions and reducers are pure transforms in modes where their return matters; their return values flow into the store. Hooks and doctor_checks shape side outputs (event chain, doctor report) — only doctor_check return values are merged.
+
+The `store:` argument is always a `Textus::StoreView`. In intake and verb modes it is writable and bound to the calling role; in put-fetch mode and inside doctor_checks it is read-only. Write attempts on a read-only view raise `Textus::UsageError`.
 
 ### 5.12 Storage formats (v1.2)
 
@@ -585,7 +595,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
 | `validate-all` | read | any |
-| `put K --stdin --as=R [--fetcher=NAME]` | write | per zone |
+| `put K --stdin --as=R [--action=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh K --as=script` | write | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
@@ -595,7 +605,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `migrate-keys [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `uid K` | read | any |
-| `extensions list [--kind=fetcher\|reducer\|hook]` | read | any |
+| `extensions list [--kind=action\|reducer\|hook]` | read | any |
 | `doctor [--format=json]` | read | any |
 | `intro [--format=json]` | read | any |
 

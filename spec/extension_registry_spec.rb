@@ -4,21 +4,21 @@ RSpec.describe Textus::ExtensionRegistry do
   let(:reg) { described_class.new }
   let(:noop) { proc { :noop } }
 
-  describe "fetchers" do
-    it "registers and looks up a fetcher" do
-      reg.register_fetcher(:github_repos) { |config:, store:| [config, store, { frontmatter: {}, body: "" }].last }
-      expect(reg.fetcher(:github_repos)).to be_a(Proc)
+  describe "actions" do
+    it "registers and looks up an action" do
+      reg.register_action(:github_repos) { |config:, store:, args:| [config, store, args].last && { frontmatter: {}, body: "" } }
+      expect(reg.action(:github_repos)).to be_a(Proc)
     end
 
-    it "raises usage error for unknown fetcher" do
-      expect { reg.fetcher(:nope) }
-        .to raise_error(Textus::UsageError, /unknown fetcher: nope/)
+    it "raises usage error for unknown action" do
+      expect { reg.action(:nope) }
+        .to raise_error(Textus::UsageError, /unknown action: nope/)
     end
 
-    it "lists registered fetchers by name" do
-      reg.register_fetcher(:a, &noop)
-      reg.register_fetcher(:b, &noop)
-      expect(reg.fetcher_names).to contain_exactly(:a, :b)
+    it "lists registered actions by name" do
+      reg.register_action(:a, &noop)
+      reg.register_action(:b, &noop)
+      expect(reg.action_names).to contain_exactly(:a, :b)
     end
   end
 
@@ -58,10 +58,27 @@ RSpec.describe Textus::ExtensionRegistry do
   end
 
   describe "duplicate registration" do
-    it "raises on duplicate fetcher name" do
-      reg.register_fetcher(:dup, &noop)
-      expect { reg.register_fetcher(:dup, &noop) }
-        .to raise_error(Textus::UsageError, /fetcher 'dup' already registered/)
+    it "raises on duplicate action name" do
+      reg.register_action(:dup, &noop)
+      expect { reg.register_action(:dup, &noop) }
+        .to raise_error(Textus::UsageError, /action 'dup' already registered/)
+    end
+  end
+
+  describe "doctor_checks" do
+    it "registers and retrieves doctor_check blocks" do
+      reg = Textus::ExtensionRegistry.new
+      reg.register_doctor_check(:org_rules) { |store:| [store].clear }
+      expect(reg.doctor_check(:org_rules)).to be_a(Proc)
+      expect(reg.doctor_check_names).to contain_exactly(:org_rules)
+    end
+
+    it "raises on duplicate doctor_check name" do
+      reg = Textus::ExtensionRegistry.new
+      noop = proc { |store:| [store].clear }
+      reg.register_doctor_check(:dup, &noop)
+      expect { reg.register_doctor_check(:dup, &noop) }
+        .to raise_error(Textus::UsageError, /already registered/)
     end
   end
 end

@@ -70,11 +70,11 @@ RSpec.describe "Refresh event" do
         - key: intake.x
           path: intake/x.md
           zone: intake
-          source: { fetcher: f }
+          source: { action: f }
     YAML
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
       $log = []
-      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     $log = []
@@ -96,7 +96,7 @@ RSpec.describe "Refresh event" do
     Textus::Refresh.call(store, "intake.x", as: "script")
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v2" } }
+      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v2" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk (fresh registry)
@@ -108,17 +108,17 @@ RSpec.describe "Refresh event" do
   it "does NOT fire :refresh when the fetched bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
-    # Rewrite extension with same fetcher body so the log is preserved
+    # Rewrite extension with same action body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk
     store2 = Textus::Store.new(root)
     Textus::Refresh.call(store2, "intake.x", as: "script")
-    # Two refreshes with identical fetcher body (both "v1") — only the first
+    # Two refreshes with identical action body (both "v1") — only the first
     # should fire :refresh (with :created). The second matches, so no fire.
     expect($log).to eq([["intake.x", :created]])
   end
@@ -126,7 +126,7 @@ RSpec.describe "Refresh event" do
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
     File.write(File.join(root, "extensions/ext.rb"), <<~RUBY)
       $log = []
-      Textus.fetcher(:f) { |config:, store:| { frontmatter: { "name" => "x" }, body: "v" } }
+      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v" } }
       Textus.hook(:put,     :p) { |key:, envelope:, store:| $log << [:put, key] }
       Textus.hook(:refresh, :r) { |key:, envelope:, store:, change:| $log << [:refresh, key, change] }
     RUBY

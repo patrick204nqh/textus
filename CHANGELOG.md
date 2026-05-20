@@ -10,6 +10,21 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+## 0.4.0 — Extension API redesign (breaking)
+
+- **Breaking:** `Textus.fetcher` removed. Use `Textus.action` instead. The block signature changes from `|config:, store:|` to `|config:, store:, args:|`.
+- **Breaking:** Manifest field `source.fetcher` renamed to `source.action`. Legacy field is rejected with a migration error.
+- **Breaking:** CLI flag `textus put --fetcher=NAME` renamed to `textus put --action=NAME`.
+- **Breaking:** `BuiltinFetchers` module renamed to `BuiltinActions`.
+- **Breaking:** Synthesized frontmatter key `fetched_with` renamed to `actioned_with` on `put --action`.
+- **New:** `Textus.action` works in three invocation modes — intake refresh, the new `textus action NAME` verb, and `put --action`. See SPEC §5.11.
+- **New:** `Textus.doctor_check(:name) { |store:| ... }` primitive; contributed checks merge into the doctor report.
+- **New:** `textus action NAME [--key=val ...] [--as=ROLE]` CLI verb for invoking actions in verb mode.
+- **New:** `StoreView` gains a writable mode (`writable: true, as: ROLE`); intake and verb-mode actions receive a writable view bound to the calling role.
+- **New:** `extensions list` enumerates actions and doctor_checks.
+
+Migration: in every `.textus/extensions/*.rb`, rename `Textus.fetcher(:x)` to `Textus.action(:x)` and add `args:` to the block signature. In every manifest, rename `source.fetcher:` to `source.action:`. In CI/scripts using `textus put --fetcher=`, switch to `--action=`.
+
 ## [0.3.0] — 2026-05-20 — Configurable store root
 
 ### Added

@@ -19,12 +19,12 @@ Please do not file public issues for security-sensitive matters until a fix is r
 
 ## Scope
 
-textus stores data on the local filesystem and writes a single append-only audit log. It does not make network calls of its own — only registered fetchers do, and they run with the role permissions declared in the manifest. In-scope issues include:
+textus stores data on the local filesystem and writes a single append-only audit log. It does not make network calls of its own — only registered actions do, and they run with the role permissions declared in the manifest. In-scope issues include:
 
-- credential or token leakage through fetchers, hooks, or extensions,
+- credential or token leakage through actions, hooks, or extensions,
 - audit-log tampering paths,
 - role-gate bypass on `put`, `delete`, `mv`, `accept`, or `build`,
 - path traversal via `publish_to:` or `publish_each:` templates,
 - arbitrary code execution through extension loading or template rendering.
 
-Out of scope: vulnerabilities in user-supplied extension code, fetchers calling untrusted endpoints, or downstream consumers of the published artifacts.
+Out of scope: vulnerabilities in user-supplied extension code, actions calling untrusted endpoints, or downstream consumers of the published artifacts.

@@ -18,7 +18,7 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 → Write authority by zone:
     - **canon** (human ) — slow-changing identity; human-only writes
     - **working** (human ai script ) — active project state; humans, AI, and scripts share this surface
-    - **intake** (script ) — declared external inputs; script-refreshed via fetchers
+    - **intake** (script ) — declared external inputs; script-refreshed via actions
     - **pending** (ai human ) — AI proposals awaiting human accept
     - **derived** (build ) — build-computed outputs; never hand-edited
 

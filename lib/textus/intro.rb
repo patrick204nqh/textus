@@ -13,7 +13,7 @@ module Textus
     ZONE_PURPOSES = {
       "canon" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
-      "intake" => "declared external inputs; script-refreshed via fetchers",
+      "intake" => "declared external inputs; script-refreshed via actions",
       "pending" => "AI proposals awaiting human accept",
       "derived" => "build-computed outputs; never hand-edited",
     }.freeze
@@ -22,7 +22,7 @@ module Textus
       "human" => "edit files in canon/working zones, then 'textus put KEY --as=human'",
       "ai" => "propose changes by writing 'pending.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
               "a human runs 'textus accept' to apply",
-      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared fetcher)",
+      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
       "build" => "'textus build' computes derived entries from projections; derived files are never hand-edited",
     }.freeze
 
@@ -40,11 +40,11 @@ module Textus
       { "name" => "mv",       "summary" => "rename a key in place; uid preserved, audit row written" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run a fetcher for an intake entry" },
+      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
       { "name" => "stale",    "summary" => "list derived/intake entries past their freshness check" },
       { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "migrate-keys", "summary" => "rename files whose basenames violate the strict key grammar" },
-      { "name" => "extensions", "summary" => "list registered reducers/fetchers/hooks" },
+      { "name" => "extensions", "summary" => "list registered actions, reducers, doctor_checks, declared hooks" },
     ].freeze
 
     def self.run(store)
@@ -80,7 +80,7 @@ module Textus
           "owner" => e.owner,
           "format" => e.format,
           "derived" => derived,
-          "intake" => !e.fetcher.nil?,
+          "intake" => !e.action.nil?,
           "publish_to" => Array(e.publish_to),
           "publish_each" => e.publish_each,
         }
@@ -90,13 +90,15 @@ module Textus
     def self.extensions_for(store)
       reg = store.registry
       reducers = reg.reducer_names.map(&:to_s).sort
-      fetchers = reg.fetcher_names.map(&:to_s).sort
+      actions = reg.action_names.map(&:to_s).sort
+      doctor_checks = reg.doctor_check_names.map(&:to_s).sort
       hooks = reg.hook_events.flat_map do |evt|
         reg.hooks(evt).map { |h| { "event" => evt.to_s, "name" => h[:name].to_s } }
       end.sort_by { |h| [h["event"], h["name"]] }
       {
         "reducers" => reducers,
-        "fetchers" => fetchers,
+        "actions" => actions,
+        "doctor_checks" => doctor_checks,
         "hooks" => hooks,
       }
     end

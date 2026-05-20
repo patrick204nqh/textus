@@ -199,7 +199,7 @@ module Textus
     PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
 
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
-                :projection, :template, :publish_to, :publish_each, :fetcher, :fetcher_config, :ttl, :events,
+                :projection, :template, :publish_to, :publish_each, :action, :action_config, :ttl, :events,
                 :inject_intro
 
     def initialize(manifest, raw)
@@ -361,8 +361,8 @@ module Textus
 
     def parse_source!(src)
       src ||= {}
-      @fetcher = src["fetcher"]
-      @fetcher_config = src["config"] || {}
+      @action = src["action"]
+      @action_config = src["config"] || {}
       @ttl = src["ttl"]
     end
 
@@ -371,7 +371,13 @@ module Textus
       if src.key?("parse") || src.key?("from")
         raise UsageError.new(
           "entry '#{@key}': source.parse/source.from removed in 0.2; " \
-          "use source.fetcher (+ source.config). See SPEC §5.4.",
+          "use source.action (+ source.config). See SPEC §5.4.",
+        )
+      end
+      if src.key?("fetcher")
+        raise UsageError.new(
+          "entry '#{@key}': source.fetcher renamed to source.action in 0.4; " \
+          "rename the key. See SPEC §5.4.",
         )
       end
       if raw.key?("hooks")

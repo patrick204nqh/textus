@@ -1,38 +1,38 @@
 require "spec_helper"
 require "yaml"
 
-RSpec.describe "Built-in fetchers" do
+RSpec.describe "Built-in actions" do
   let(:reg) { Textus::ExtensionRegistry.new }
 
-  before { Textus.with_registry(reg) { Textus::BuiltinFetchers.register_all } }
+  before { Textus.with_registry(reg) { Textus::BuiltinActions.register_all } }
 
   it "registers json, csv, markdown-links, ical-events, rss" do
-    expect(reg.fetcher_names).to contain_exactly(:json, :csv, :"markdown-links", :"ical-events", :rss)
+    expect(reg.action_names).to contain_exactly(:json, :csv, :"markdown-links", :"ical-events", :rss)
   end
 
-  it "json fetcher parses JSON bytes from config['bytes']" do
-    out = reg.fetcher(:json).call(config: { "bytes" => '{"a":1}' }, store: nil)
+  it "json action parses JSON bytes from config['bytes']" do
+    out = reg.action(:json).call(config: { "bytes" => '{"a":1}' }, store: nil, args: {})
     expect(out[:frontmatter]).to eq({})
     expect(YAML.safe_load(out[:body])).to eq({ "a" => 1 })
   end
 
-  it "csv fetcher parses CSV into array-of-hashes" do
-    out = reg.fetcher(:csv).call(config: { "bytes" => "name,age\nalice,30\nbob,40\n" }, store: nil)
+  it "csv action parses CSV into array-of-hashes" do
+    out = reg.action(:csv).call(config: { "bytes" => "name,age\nalice,30\nbob,40\n" }, store: nil, args: {})
     expect(YAML.safe_load(out[:body])).to eq(
       [{ "name" => "alice", "age" => "30" }, { "name" => "bob", "age" => "40" }],
     )
   end
 
-  it "markdown-links fetcher extracts text/href pairs" do
+  it "markdown-links action extracts text/href pairs" do
     md = "see [openai](https://openai.com) and [google](https://google.com)"
-    out = reg.fetcher(:"markdown-links").call(config: { "bytes" => md }, store: nil)
+    out = reg.action(:"markdown-links").call(config: { "bytes" => md }, store: nil, args: {})
     expect(YAML.safe_load(out[:body])).to contain_exactly(
       { "text" => "openai", "href" => "https://openai.com" },
       { "text" => "google", "href" => "https://google.com" },
     )
   end
 
-  it "ical-events fetcher extracts VEVENT blocks" do
+  it "ical-events action extracts VEVENT blocks" do
     ics = <<~ICS
       BEGIN:VEVENT
       SUMMARY:Hello
@@ -43,7 +43,7 @@ RSpec.describe "Built-in fetchers" do
       LOCATION:Earth
       END:VEVENT
     ICS
-    out = reg.fetcher(:"ical-events").call(config: { "bytes" => ics }, store: nil)
+    out = reg.action(:"ical-events").call(config: { "bytes" => ics }, store: nil, args: {})
     events = YAML.safe_load(out[:body])
     expect(events).to eq([
                            { "summary" => "Hello", "dtstart" => "20240101T000000Z" },
@@ -51,14 +51,14 @@ RSpec.describe "Built-in fetchers" do
                          ])
   end
 
-  it "rss fetcher extracts item title/link/pubDate" do
+  it "rss action extracts item title/link/pubDate" do
     rss = <<~XML
       <rss><channel>
         <item><title>One</title><link>https://a</link><pubDate>now</pubDate></item>
         <item><title>Two</title><link>https://b</link><pubDate>later</pubDate></item>
       </channel></rss>
     XML
-    out = reg.fetcher(:rss).call(config: { "bytes" => rss }, store: nil)
+    out = reg.action(:rss).call(config: { "bytes" => rss }, store: nil, args: {})
     expect(YAML.safe_load(out[:body])).to eq([
                                                { "title" => "One", "link" => "https://a", "pubDate" => "now" },
                                                { "title" => "Two", "link" => "https://b", "pubDate" => "later" },

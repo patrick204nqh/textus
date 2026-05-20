@@ -44,6 +44,7 @@ module Textus
       when "schema-init"    then verb_schema_init(argv)
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
+      when "action"         then verb_action(argv)
       when "refresh"        then verb_refresh(argv)
       when "extensions"     then verb_extensions(argv)
       when "migrate-keys"   then verb_migrate_keys(argv)
@@ -133,11 +134,11 @@ module Textus
       key = argv.shift or raise UsageError.new("put requires a key")
       as_flag = nil
       use_stdin = false
-      fetcher_name = nil
+      action_name = nil
       OptionParser.new do |o|
         o.on("--stdin") { use_stdin = true }
         o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--fetcher=NAME") { |v| fetcher_name = v }
+        o.on("--action=NAME") { |v| action_name = v }
         o.on("--format=FMT") {}
       end.permute!(argv)
       raise UsageError.new("put requires --stdin in v1") unless use_stdin
@@ -146,16 +147,16 @@ module Textus
 
       raw = @stdin.read
       payload =
-        if fetcher_name
-          callable = store.registry.fetcher(fetcher_name)
+        if action_name
+          callable = store.registry.action(action_name)
           result =
             begin
-              Timeout.timeout(Textus::Refresh::FETCHER_TIMEOUT_SECONDS) do
-                callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store))
+              Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
+                callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store), args: {})
               end
             rescue Timeout::Error
               raise UsageError.new(
-                "fetcher '#{fetcher_name}' exceeded #{Textus::Refresh::FETCHER_TIMEOUT_SECONDS}s timeout",
+                "action '#{action_name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
               )
             end
           basename = key.split(".").last
@@ -163,7 +164,7 @@ module Textus
             "frontmatter" => {
               "name" => basename,
               "last_refreshed_at" => Time.now.utc.iso8601,
-              "fetched_with" => fetcher_name,
+              "actioned_with" => action_name,
             }.merge(result[:frontmatter] || result["frontmatter"] || {}),
             "body" => result[:body] || result["body"] || "",
           }
@@ -271,6 +272,43 @@ module Textus
       emit(store.accept(key, as: role))
     end
 
+    def verb_action(argv)
+      name = argv.shift
+      raise UsageError.new("action requires a name") if name.nil?
+
+      as_flag = nil
+      args = {}
+      argv.each do |tok|
+        case tok
+        when /\A--as=(.+)\z/         then as_flag = ::Regexp.last_match(1)
+        when /\A--format=/           then next
+        when /\A--([\w-]+)=(.*)\z/   then args[::Regexp.last_match(1)] = ::Regexp.last_match(2)
+        else
+          raise UsageError.new("unknown arg to 'action #{name}': #{tok}")
+        end
+      end
+
+      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+      callable = store.registry.action(name)
+      view = StoreView.new(store, writable: true, as: role)
+
+      begin
+        Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
+          callable.call(config: {}, store: view, args: args)
+        end
+      rescue Timeout::Error
+        raise UsageError.new(
+          "action '#{name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
+        )
+      rescue Textus::Error
+        raise
+      rescue StandardError => e
+        raise UsageError.new("action '#{name}' raised: #{e.class}: #{e.message}")
+      end
+
+      emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
+    end
+
     def verb_refresh(argv)
       key = argv.shift or raise UsageError.new("refresh requires a key")
       as_flag = nil
@@ -293,7 +331,8 @@ module Textus
       end.permute!(argv)
 
       rows = []
-      rows += store.registry.fetcher_names.map { |n| { "kind" => "fetcher", "name" => n.to_s } }
+      rows += store.registry.action_names.map { |n| { "kind" => "action", "name" => n.to_s } }
+      rows += store.registry.doctor_check_names.map { |n| { "kind" => "doctor_check", "name" => n.to_s } }
       rows += store.registry.reducer_names.map { |n| { "kind" => "reducer", "name" => n.to_s } }
       store.registry.hook_events.each do |evt|
         store.registry.hooks(evt).each do |h|
@@ -388,9 +427,10 @@ module Textus
           textus list [--prefix=KEY] --format=json
           textus where KEY --format=json
           textus get KEY --format=json
-          textus put KEY --stdin --format=json
+          textus put KEY --stdin [--action=NAME] --format=json
           textus schema KEY --format=json
           textus stale [--prefix=KEY] --format=json
+          textus action NAME [--key=val ...] [--as=ROLE] --format=json
       HELP
     end
   end

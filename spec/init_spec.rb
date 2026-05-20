@@ -28,7 +28,7 @@ RSpec.describe Textus::Init do
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
     expect(File.directory?(File.join(target, "extensions"))).to be true
-    expect(File.read(File.join(target, "extensions", "README.md"))).to include("Textus.fetcher")
+    expect(File.read(File.join(target, "extensions", "README.md"))).to include("Textus.action")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end

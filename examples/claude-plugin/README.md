@@ -46,7 +46,7 @@ voice-tools/
       marketplace-envelope.rb# reducer → marketplace.json shape
       claude-root.rb         # reducer → CLAUDE.md template payload
       rank-by-recency.rb     # demo reducer (kept for reference)
-      local-file.rb          # demo fetcher (intake refresh)
+      local-file.rb          # demo action (intake refresh)
       build-stamp.rb         # demo :build hook (in-process)
     templates/
       claude-root.mustache   # renders CLAUDE.md from the projection payload
@@ -59,7 +59,7 @@ voice-tools/
         skills/<topic>/<name>.md  # nested ≥4 segments (e.g. working.skills.writing.voice-writer)
         commands/<name>.md
       intake/
-        upstream/notes.md      # fetcher demo (local-file)
+        upstream/notes.md      # action demo (local-file)
       derived/
         plugin.json            # → publish_to .claude-plugin/plugin.json
         marketplace.json       # → publish_to .claude-plugin/marketplace.json
@@ -77,8 +77,8 @@ voice-tools/
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
-- **Intake** is fetcher-fed (script-only). The `intake.upstream.notes` entry
-  uses the project-local `local-file` fetcher as a small demo.
+- **Intake** is action-fed (script-only). The `intake.upstream.notes` entry
+  uses the project-local `local-file` action as a small demo.
 - **Derived** is owned by `build:auto`. Three derived entries assemble the
   shipped surface:
   - `derived.plugin` → `plugin-envelope` reducer → `.claude-plugin/plugin.json`
@@ -182,7 +182,7 @@ stable.
 
 ### `textus extensions list`
 
-Inspect the reducers, fetchers, and hooks the store has loaded from
+Inspect the actions, reducers, hooks, and doctor_checks the store has loaded from
 `.textus/extensions/`:
 
 ```bash
@@ -268,7 +268,7 @@ Levenshtein distance against the actual key set. Same applies to `where`,
 ## Intake refresh
 
 `intake.upstream.notes` reads `.textus/zones/canon/voice-tools.md` through
-the in-process `local-file` fetcher. Walk it with:
+the in-process `local-file` action. Walk it with:
 
 ```bash
 rake textus:refresh    # refresh every stale intake entry
@@ -287,6 +287,6 @@ registers into an isolated per-store registry. This example wires up:
 - `claude-root` — groups projection rows by source prefix for the CLAUDE.md
   template payload.
 - `rank-by-recency`, `local-file`, `build-stamp` — kept as demos of the
-  reducer / fetcher / hook surfaces.
+  action / reducer / hook / doctor_check surfaces.
 
 Inspect everything currently loaded with `textus extensions list --format=json`.

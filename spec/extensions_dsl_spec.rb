@@ -11,9 +11,9 @@ RSpec.describe "Textus DSL verbs" do # rubocop:disable RSpec/MultipleDescribes
       Textus.with_registry(reg) { ex.run }
     end
 
-    it "Textus.fetcher registers into the current registry" do
-      Textus.fetcher(:gh) { |config:, store:| [config, store, { frontmatter: {}, body: "ok" }].last }
-      out = reg.fetcher(:gh).call(config: {}, store: nil)
+    it "Textus.action registers into the current registry" do
+      Textus.action(:gh) { |config:, store:, args:| [config, store, args, { frontmatter: {}, body: "ok" }].last }
+      out = reg.action(:gh).call(config: {}, store: nil, args: {})
       expect(out[:body]).to eq("ok")
     end
 
@@ -29,19 +29,24 @@ RSpec.describe "Textus DSL verbs" do # rubocop:disable RSpec/MultipleDescribes
       expect(fired).to eq(["x"])
     end
 
+    it "Textus.doctor_check registers into the current registry" do
+      Textus.doctor_check(:org_rules) { |store:| [store].clear }
+      expect(reg.doctor_check_names).to contain_exactly(:org_rules)
+    end
+
     it "isolates registries across threads" do
       other = Textus::ExtensionRegistry.new
       Textus.with_registry(other) do
-        Textus.fetcher(:o, &noop)
+        Textus.action(:o, &noop)
       end
-      expect(other.fetcher_names).to eq([:o])
-      expect(reg.fetcher_names).to eq([])
+      expect(other.action_names).to eq([:o])
+      expect(reg.action_names).to eq([])
     end
   end
 
   context "outside with_registry" do
     it "raises usage error" do
-      expect { Textus.fetcher(:naked, &noop) }
+      expect { Textus.action(:naked, &noop) }
         .to raise_error(Textus::UsageError, /no active registry/)
     end
   end
@@ -61,7 +66,7 @@ RSpec.describe "Store-scoped extension loading" do
         - { key: working.x, path: working/x.md, zone: working }
     YAML
     File.write(File.join(root, "extensions/greet.rb"), <<~RUBY)
-      Textus.fetcher(:greet) { |config:, store:| [config, store, { frontmatter: { "name" => "x" }, body: "hi" }].last }
+      Textus.action(:greet) { |config:, store:, args:| [config, store, args, { frontmatter: { "name" => "x" }, body: "hi" }].last }
       Textus.reducer(:noop)  { |rows:, config:| [config, rows].last }
       Textus.hook(:put, :tap) { |key:, envelope:, store:| [key, envelope, store] }
     RUBY
@@ -71,7 +76,7 @@ RSpec.describe "Store-scoped extension loading" do
 
   it "loads .textus/extensions/*.rb into the store's own registry" do
     store = Textus::Store.new(root)
-    expect(store.registry.fetcher_names).to include(:greet)
+    expect(store.registry.action_names).to include(:greet)
     expect(store.registry.reducer_names).to include(:noop)
     expect(store.registry.hooks(:put).map { |h| h[:name] }).to include(:tap)
   end
@@ -80,7 +85,7 @@ RSpec.describe "Store-scoped extension loading" do
     s1 = Textus::Store.new(root)
     s2 = Textus::Store.new(root)
     expect(s1.registry).not_to be(s2.registry)
-    expect(s1.registry.fetcher_names).to eq(s2.registry.fetcher_names)
+    expect(s1.registry.action_names).to eq(s2.registry.action_names)
   end
 
   it "wraps extension load failures with filename context" do
