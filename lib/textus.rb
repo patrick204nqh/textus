@@ -1,6 +1,6 @@
 require_relative "textus/version"
 require_relative "textus/errors"
-require_relative "textus/extension_registry"
+require_relative "textus/hook_registry"
 require_relative "textus/extensions"
 require_relative "textus/role"
 require_relative "textus/audit_log"
