@@ -97,7 +97,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `stale [--prefix=K] [--zone=Z]` | List stale derived/intake entries |
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
-| `validate-all` | Validate every entry against its schema |
+| `doctor --check=schema_violations` | Validate every entry against its schema |
 | `extensions list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
 
 **Write:**
