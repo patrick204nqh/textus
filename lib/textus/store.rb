@@ -42,12 +42,12 @@ module Textus
       @bus = Hooks::Dispatcher.new(audit_log: audit_log)
       @registry = Hooks::Registry.new(dispatcher: @bus)
       @schemas = {}
-      load_extensions
+      load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
     end
 
-    def load_extensions
+    def load_hooks
       Textus.with_registry(@registry) do
         Hooks::Builtin.register_all
         dir = File.join(@root, "hooks")
@@ -57,7 +57,7 @@ module Textus
           begin
             load(f)
           rescue StandardError, ScriptError => e
-            raise UsageError.new("failed loading extension #{File.basename(f)}: #{e.class}: #{e.message}")
+            raise UsageError.new("failed loading hook #{File.basename(f)}: #{e.class}: #{e.message}")
           end
         end
       end
