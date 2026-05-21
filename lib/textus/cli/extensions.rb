@@ -30,7 +30,7 @@ module Textus
         end
         rows.select! { |r| r["kind"] == kind } if kind
 
-        emit({ "protocol" => PROTOCOL, "extensions" => rows })
+        emit({ "extensions" => rows })
       end
     end
   end
