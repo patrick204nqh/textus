@@ -45,7 +45,7 @@ module Textus
       when "action"         then verb_action(argv)
       when "refresh"        then dispatch(RefreshVerb, argv)
       when "extensions"     then dispatch(Extensions, argv)
-      when "migrate-keys"   then verb_migrate_keys(argv)
+      when "migrate-keys"   then dispatch(MigrateKeysVerb, argv)
       when "mv"             then verb_mv(argv)
       when "uid"            then dispatch(Uid, argv)
       when "doctor"         then dispatch(DoctorVerb, argv)
@@ -189,18 +189,6 @@ module Textus
       end
 
       emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
-    end
-
-    def verb_migrate_keys(argv)
-      write = false
-      OptionParser.new do |o|
-        o.on("--dry-run") { write = false }
-        o.on("--write")   { write = true }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      res = Textus::MigrateKeys.run(store, write: write)
-      @stdout.puts(JSON.generate(res))
-      res["ok"] ? 0 : 1
     end
 
     def verb_mv(argv)
