@@ -36,7 +36,7 @@ module Textus
       when "delete"       then verb_delete(argv)
       when "build"        then verb_build(argv)
       when "deps"         then dispatch(Deps, argv)
-      when "rdeps"        then verb_rdeps(argv)
+      when "rdeps"        then dispatch(Rdeps, argv)
       when "published"    then verb_published(argv)
       when "accept"       then verb_accept(argv)
       when "init"         then verb_init(argv)
@@ -177,12 +177,6 @@ module Textus
       res = Textus::Builder.new(store).build(prefix: prefix)
       @stdout.puts(JSON.generate(res))
       0
-    end
-
-    def verb_rdeps(argv)
-      key = argv.shift or raise UsageError.new("rdeps requires a key")
-      parse_format!(argv)
-      emit({ "protocol" => Textus::PROTOCOL, "key" => key, "rdeps" => store.rdeps(key) })
     end
 
     def verb_schema_init(argv)
