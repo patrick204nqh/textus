@@ -8,7 +8,7 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
-## [Unreleased]
+## 0.7.0 — Reader/Writer split, EventBus, Builder pipeline (2026-05-21)
 
 ### Added
 - `Textus::EventBus` is now the publish/subscribe core for lifecycle events. Embedded callers can `store.bus.subscribe(:put, :name) { ... }` outside the `.textus/hooks/` directory. Hook semantics, audit behavior, and the 2-second timeout are unchanged.
