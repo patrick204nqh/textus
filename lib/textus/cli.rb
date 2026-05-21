@@ -50,7 +50,7 @@ module Textus
       when "mv"             then verb_mv(argv)
       when "uid"            then dispatch(Uid, argv)
       when "doctor"         then verb_doctor(argv)
-      when "intro"          then verb_intro(argv)
+      when "intro"          then dispatch(IntroVerb, argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
@@ -338,11 +338,6 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.mv(old_key, new_key, as: role, dry_run: dry_run))
-    end
-
-    def verb_intro(argv)
-      parse_format!(argv)
-      emit(Textus::Intro.run(store))
     end
 
     def verb_doctor(argv)
