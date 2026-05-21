@@ -286,27 +286,14 @@ module Textus
     # rubocop:disable Metrics/ParameterLists
     def build_envelope(key, mentry, path, meta, body, etag, content: nil)
       # rubocop:enable Metrics/ParameterLists
-      env = {
-        "protocol" => PROTOCOL,
-        "key" => key,
-        "zone" => mentry.zone,
-        "owner" => mentry.owner,
-        "path" => path,
-        "format" => mentry.format,
-        "_meta" => meta,
-        "body" => body,
-        "etag" => etag,
-        "schema_ref" => mentry.schema,
-        "uid" => extract_uid(meta),
-      }
-      env["content"] = content unless content.nil?
-      env
+      Envelope.build(
+        key: key, mentry: mentry, path: path,
+        meta: meta, body: body, etag: etag, content: content
+      )
     end
 
-    # Pull a Textus UID out of the unified _meta hash.
     def extract_uid(meta)
-      v = meta.is_a?(Hash) ? meta["uid"] : nil
-      v.is_a?(String) ? v : nil
+      Envelope.extract_uid(meta)
     end
   end
 end
