@@ -16,7 +16,7 @@ RSpec.describe Textus::Refresh do
         - key: intake.repos
           path: intake/repos.md
           zone: intake
-          source: { action: stub_fetch, config: { word: hello } }
+          source: { fetch: stub_fetch, config: { word: hello } }
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
@@ -40,7 +40,7 @@ RSpec.describe Textus::Refresh do
 
   it "raises if entry has no source.fetch" do
     store = Textus::Store.new(root)
-    store.manifest.entries.first.instance_variable_set(:@action, nil)
+    store.manifest.entries.first.instance_variable_set(:@fetch, nil)
     expect { described_class.call(store, "intake.repos", as: "script") }
       .to raise_error(Textus::UsageError, /no fetch declared/)
   end
@@ -64,7 +64,7 @@ RSpec.describe Textus::Refresh do
             path: intake/repos.json
             zone: intake
             format: json
-            source: { action: stub_fetch, config: {} }
+            source: { fetch: stub_fetch, config: {} }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
@@ -89,7 +89,7 @@ RSpec.describe Textus::Refresh do
             path: intake/notes.txt
             zone: intake
             format: text
-            source: { action: stub_fetch, config: { msg: hello } }
+            source: { fetch: stub_fetch, config: { msg: hello } }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|

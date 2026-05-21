@@ -42,7 +42,7 @@ RSpec.describe Textus::Builder do
           format: yaml
           schema: null
           owner: build:auto
-          projection: { select: working.people, pluck: [name, org], reducer: envelope }
+          projection: { select: working.people, pluck: [name, org], reduce: envelope }
         - key: derived.people-json-tpl
           path: derived/people-tpl.json
           zone: derived
@@ -125,8 +125,8 @@ RSpec.describe Textus::Builder do
     parsed = YAML.safe_load(raw, aliases: false)
 
     expect(parsed.keys.first).to eq("_meta")
-    expect(parsed["_meta"].keys).to eq(%w[generated_at from reducer])
-    expect(parsed["_meta"]["reducer"]).to eq("envelope")
+    expect(parsed["_meta"].keys).to eq(%w[generated_at from reduce])
+    expect(parsed["_meta"]["reduce"]).to eq("envelope")
     expect(parsed["protocol"]).to eq("textus/2")
     expect(parsed["people"].map { |r| r["name"] }).to contain_exactly("alice", "bob")
   end

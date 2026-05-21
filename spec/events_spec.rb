@@ -69,7 +69,7 @@ RSpec.describe "Refresh event" do
         - key: intake.x
           path: intake/x.md
           zone: intake
-          source: { action: f }
+          source: { fetch: f }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []

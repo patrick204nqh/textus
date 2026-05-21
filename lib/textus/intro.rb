@@ -80,7 +80,7 @@ module Textus
           "owner" => e.owner,
           "format" => e.format,
           "derived" => derived,
-          "intake" => !e.action.nil?,
+          "intake" => !e.fetch.nil?,
           "publish_to" => Array(e.publish_to),
           "publish_each" => e.publish_each,
         }

@@ -6,25 +6,22 @@ module Textus
 
     def self.call(store, key, as:)
       mentry, path, = store.manifest.resolve(key)
-      # TODO: Task 5 — rename to fetch
-      raise UsageError.new("no fetch declared for '#{key}'") unless mentry.action
+      raise UsageError.new("no fetch declared for '#{key}'") unless mentry.fetch
 
       before_etag = File.exist?(path) ? Etag.for_file(path) : nil
-      # TODO: Task 5 — rename to fetch
-      callable = store.registry.rpc_callable(:fetch, mentry.action)
+      callable = store.registry.rpc_callable(:fetch, mentry.fetch)
       view = StoreView.new(store, writable: true, as: as)
       result =
         begin
           Timeout.timeout(FETCH_TIMEOUT_SECONDS) do
-            # TODO: Task 5 — rename to fetch_config
-            callable.call(store: view, config: mentry.action_config, args: {})
+            callable.call(store: view, config: mentry.fetch_config, args: {})
           end
         rescue Timeout::Error
-          raise UsageError.new("fetch '#{mentry.action}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
+          raise UsageError.new("fetch '#{mentry.fetch}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
         rescue Textus::Error
           raise
         rescue StandardError => e
-          raise UsageError.new("fetch '#{mentry.action}' raised: #{e.class}: #{e.message}")
+          raise UsageError.new("fetch '#{mentry.fetch}' raised: #{e.class}: #{e.message}")
         end
 
       normalized = normalize_action_result(result, format: mentry.format)

@@ -117,7 +117,7 @@ module Textus
           # Default rule: if the reducer returned a Hash (it replaced `rows`), use it as-is.
           # Otherwise wrap the entries list as { "entries" => [...] } so the top level is a Hash
           # (required to carry _meta).
-          if mentry.projection && mentry.projection["reducer"] && data.is_a?(Hash) && !data.key?("entries")
+          if mentry.projection && mentry.projection["reduce"] && data.is_a?(Hash) && !data.key?("entries")
             data
           elsif data.is_a?(Hash) && data["entries"].is_a?(Array)
             { "entries" => data["entries"] }
@@ -168,8 +168,8 @@ module Textus
       from = Array(mentry.projection&.fetch("select", nil)).compact
       meta["from"] = from unless from.empty?
       meta["template"] = mentry.template if mentry.template
-      reducer = mentry.projection&.dig("reducer")
-      meta["reducer"] = reducer if reducer
+      reduce = mentry.projection&.dig("reduce")
+      meta["reduce"] = reduce if reduce
 
       # Rebuild so _meta appears first; user content follows.
       out = { "_meta" => meta }

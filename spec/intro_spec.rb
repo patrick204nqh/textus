@@ -38,7 +38,7 @@ RSpec.describe Textus::Intro do
           zone: intake
           owner: script:local
           source:
-            action: demo-action
+            fetch: demo-action
             config: { foo: 1 }
             ttl: 6h
         - key: derived.report
