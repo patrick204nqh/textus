@@ -265,7 +265,7 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
-  describe "CLI delete + validate-all" do
+  describe "CLI delete" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::CLI.run(
@@ -276,14 +276,13 @@ RSpec.describe "textus/1 conformance" do
       expect(JSON.parse(out.string.lines.last)["deleted"]).to be true
     end
 
-    it "validate-all returns ok in a clean tree" do
+    it "validate-all verb is removed in v0.5; doctor --check=schema_violations replaces it" do
       out = StringIO.new
-      rc = Textus::CLI.run(
-        ["validate-all", "--format=json"],
-        stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
-      )
-      expect(rc).to eq(0)
-      expect(JSON.parse(out.string.lines.last)["ok"]).to be true
+      err = StringIO.new
+      rc = Textus::CLI.run(["validate-all", "--format=json"],
+                           stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
+      expect(rc).not_to eq(0)
+      expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")
     end
   end
 
@@ -293,7 +292,7 @@ RSpec.describe "textus/1 conformance" do
     end
   end
 
-  describe "validate-all" do
+  describe "store#validate_all" do
     it "returns ok when every entry conforms" do
       res = store.validate_all
       expect(res["ok"]).to be true
@@ -307,6 +306,18 @@ RSpec.describe "textus/1 conformance" do
       expect(res["ok"]).to be false
       keys = res["violations"].map { |v| v["key"] }
       expect(keys).to include("working.network.org.broken")
+    end
+  end
+
+  describe "CLI doctor schema_violations" do
+    it "doctor --check=schema_violations returns ok in a clean tree" do
+      out = StringIO.new
+      rc = Textus::CLI.run(
+        ["doctor", "--check=schema_violations", "--format=json"],
+        stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
+      )
+      expect(rc).to eq(0)
+      expect(JSON.parse(out.string.lines.last)["ok"]).to be true
     end
   end
 

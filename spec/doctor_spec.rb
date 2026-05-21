@@ -153,4 +153,42 @@ RSpec.describe Textus::Doctor do
     expect(res["summary"]["warning"]).to be >= 1
     expect(res["ok"]).to be true
   end
+
+  describe "check_schema_violations" do
+    let(:tmp2) { Dir.mktmpdir }
+
+    after { FileUtils.remove_entry(tmp2) }
+
+    it "surfaces validate_all role_authority violations as error-level issues" do
+      ra_root = File.join(tmp2, ".textus")
+      FileUtils.mkdir_p(File.join(ra_root, "schemas"))
+      FileUtils.mkdir_p(File.join(ra_root, "zones/working/people"))
+
+      File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
+        version: textus/1
+        zones:
+          - { name: working, writable_by: [human, ai, script] }
+        entries:
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
+      YAML
+
+      File.write(File.join(ra_root, "schemas/person.yaml"), <<~YAML)
+        name: person
+        required: [full_name]
+        fields:
+          full_name:  { type: string, maintained_by: human }
+          embedding:  { type: array,  maintained_by: ai }
+      YAML
+
+      ra_store = Textus::Store.new(ra_root)
+      # Write full_name as ai — violates maintained_by: human
+      ra_store.put("working.people.alice",
+                   frontmatter: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
+                   body: "", as: "ai")
+
+      res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])
+      codes = res["issues"].map { |i| i["code"] }
+      expect(codes).to include("role_authority")
+    end
+  end
 end

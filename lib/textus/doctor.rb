@@ -9,20 +9,20 @@ module Textus
   module Doctor # rubocop:disable Metrics/ModuleLength -- 8 built-in checks + extension dispatch
     LEVELS = %w[error warning info].freeze
     DOCTOR_CHECK_TIMEOUT_SECONDS = 2
+    ALL_CHECKS = %w[
+      manifest_files schemas templates extensions illegal_keys
+      sentinels audit_log unowned_schema_fields schema_violations
+    ].freeze
 
     module_function
 
-    def run(store)
-      issues = []
-      issues.concat(check_manifest_files(store))
-      issues.concat(check_schemas(store))
-      issues.concat(check_templates(store))
-      issues.concat(check_extensions(store))
-      issues.concat(check_illegal_keys(store))
-      issues.concat(check_sentinels(store))
-      issues.concat(check_audit_log(store))
-      issues.concat(check_unowned_schema_fields(store))
-      issues.concat(run_registered_checks(store))
+    def run(store, checks: ALL_CHECKS)
+      selected = Array(checks).map(&:to_s)
+      unknown = selected - ALL_CHECKS
+      raise UsageError.new("unknown doctor check: #{unknown.first}") unless unknown.empty?
+
+      issues = run_builtin_checks(store, selected)
+      issues.concat(run_registered_checks(store)) # extensions always run
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }
       {
@@ -31,6 +31,20 @@ module Textus
         "issues" => issues,
         "summary" => summary,
       }
+    end
+
+    def run_builtin_checks(store, selected)
+      issues = []
+      issues.concat(check_manifest_files(store))        if selected.include?("manifest_files")
+      issues.concat(check_schemas(store))               if selected.include?("schemas")
+      issues.concat(check_templates(store))             if selected.include?("templates")
+      issues.concat(check_extensions(store))            if selected.include?("extensions")
+      issues.concat(check_illegal_keys(store))          if selected.include?("illegal_keys")
+      issues.concat(check_sentinels(store))             if selected.include?("sentinels")
+      issues.concat(check_audit_log(store))             if selected.include?("audit_log")
+      issues.concat(check_unowned_schema_fields(store)) if selected.include?("unowned_schema_fields")
+      issues.concat(check_schema_violations(store))     if selected.include?("schema_violations")
+      issues
     end
 
     # --- Checks -----------------------------------------------------------
@@ -256,6 +270,21 @@ module Textus
         }
       end
       out
+    end
+
+    def check_schema_violations(store)
+      res = store.validate_all
+      res["violations"].map do |v|
+        fix = v["expected"] &&
+              "field '#{v["field"]}' should be written by '#{v["expected"]}' (last writer: #{v["last_writer"]})"
+        {
+          "code" => v["code"],
+          "level" => "error",
+          "subject" => v["key"],
+          "message" => v["message"] || "#{v["code"]} on #{v["key"]}",
+          "fix" => fix,
+        }.compact
+      end
     end
 
     def run_registered_checks(store)
