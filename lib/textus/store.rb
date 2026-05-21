@@ -46,8 +46,7 @@ module Textus
 
     def load_extensions
       Textus.with_registry(@registry) do
-        # TODO: Task 7 — re-enable once BuiltinHooks lands.
-        # BuiltinActions.register_all
+        BuiltinHooks.register_all
         dir = File.join(@root, "hooks")
         return unless File.directory?(dir)
 
