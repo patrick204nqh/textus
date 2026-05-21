@@ -12,22 +12,10 @@ module Textus
 
   def self.current_registry
     Thread.current[THREAD_REGISTRY_KEY] or
-      raise UsageError.new("no active registry; extension code must be loaded by a Store")
+      raise UsageError.new("no active registry; hook code must be loaded by a Store")
   end
 
-  def self.action(name, &)
-    current_registry.register_action(name, &)
-  end
-
-  def self.reducer(name, &)
-    current_registry.register_reducer(name, &)
-  end
-
-  def self.hook(event, name, &)
-    current_registry.register_hook(event, name, &)
-  end
-
-  def self.doctor_check(name, &)
-    current_registry.register_doctor_check(name, &)
+  def self.hook(event, name, **, &)
+    current_registry.register(event, name, **, &)
   end
 end
