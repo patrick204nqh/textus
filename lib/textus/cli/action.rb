@@ -39,7 +39,7 @@ module Textus
           raise UsageError.new("action '#{name}' raised: #{e.class}: #{e.message}")
         end
 
-        emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
+        emit({ "action" => name, "ok" => true })
       end
     end
   end
