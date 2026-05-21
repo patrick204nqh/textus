@@ -31,11 +31,8 @@ RSpec.describe "CLI default format" do
   end
 
   it "get still accepts --format=json for back-compat" do
-    out = StringIO.new
-    err = StringIO.new
-    Textus::CLI.run(["get", "canon.identity", "--format=json"],
-                    stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
-    parsed = JSON.parse(out.string.lines.last)
+    _rc, out = run_cli(["get", "canon.identity", "--format=json"])
+    parsed = JSON.parse(out.lines.last)
     expect(parsed["code"]).to eq("unknown_key")
   end
 end
