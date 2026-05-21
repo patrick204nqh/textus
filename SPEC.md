@@ -1,7 +1,7 @@
-# textus/1 — Specification
+# textus/2 — Specification
 
-**Status:** Draft v1.0 (2026-05-19)
-**Protocol identifier:** `textus/1`
+**Status:** Draft v2.0 (2026-05-19)
+**Protocol identifier:** `textus/2`
 **Reference implementation:** Ruby gem `textus`
 
 > *textus* — Latin for "the fabric a text is woven from," same root as *context* (from *con-texere*, "to weave together"). This spec defines a storage shape and wire protocol for that fabric.
@@ -31,7 +31,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 ## 2. Goals and non-goals
 
 **Goals**
-- Stable wire format (`textus/1`) any language can speak.
+- Stable wire format (`textus/2`) any language can speak.
 - Deterministic read/write of structured Markdown via a CLI returning JSON.
 - Schema-validated frontmatter using YAML schemas as data.
 - Role-based write gates (humans, scripts, AI, build runners get different permissions per zone).
@@ -91,7 +91,7 @@ The manifest declares: (a) which zones exist and which roles may write to each, 
 
 ```yaml
 # .textus/manifest.yaml
-version: textus/1
+version: textus/2
 
 zones:
   - name: canon
@@ -266,13 +266,13 @@ Intake entries declare an external source by naming a **fetch hook** — a regis
 
 `fetch` names a registered `:fetch` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the hook; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, `source.fetcher`, and `source.action` with a clear usage error.
 
-In intake mode the hook MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
+In intake mode the hook MUST return one of three shapes, all normalized by the store into its internal `{_meta, body, content}` representation (§5.12):
 
-- `{ frontmatter:, body: }` — markdown-friendly.
+- `{ _meta:, body: }` — markdown-friendly; `_meta` becomes the entry's parsed metadata hash.
 - `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
 - `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
 
-**Built-in fetch hooks.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
+**Built-in fetch hooks.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
 
 **Refresh paths.** Two are supported:
 
@@ -369,7 +369,7 @@ textus has a single extension verb: `Textus.hook(event, name, **opts) { ... }`. 
 
 | Event    | Mode    | Args                              | Return        | Failure |
 |----------|---------|-----------------------------------|---------------|---------|
-| :fetch   | rpc     | store:, config:, args:            | {frontmatter:, body:} | aborts op |
+| :fetch   | rpc     | store:, config:, args:            | {_meta:, body:}       | aborts op |
 | :reduce  | rpc     | store:, rows:, config:            | rows array            | aborts op |
 | :check   | rpc     | store:                            | issues array          | aborts doctor |
 | :put     | pubsub  | store:, key:, envelope:           | (discarded)           | logged   |
@@ -384,20 +384,20 @@ textus has a single extension verb: `Textus.hook(event, name, **opts) { ... }`. 
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
 
-The `store:` argument is always a `Textus::StoreView` — read-only proxy. Write attempts raise `UsageError`.
+The `store:` argument is always a read-only store proxy. Write attempts raise `UsageError`.
 
 Each handler runs under `Timeout.timeout(2)`.
 
 ### 5.12 Storage formats (v1.2)
 
-An entry's `format:` selects a storage strategy. All strategies expose the same `parse(bytes) → {frontmatter, body, content}` and `serialize(frontmatter:, body:, content:) → bytes` contract. The store, audit, etag, and projection layers operate on the parsed shape; only (de)serialization differs.
+An entry's `format:` selects a storage strategy. All strategies expose the same `parse(bytes) → {_meta, body, content}` and `serialize(meta:, body:, content:) → bytes` contract. The store, audit, etag, and projection layers operate on the parsed shape; only (de)serialization differs.
 
-- **markdown** — YAML frontmatter between `---` fences, free-form body. Parse: Psych `safe_load` on the front matter; body is the remainder. Serialize: emit `---\n<yaml>\n---\n<body>`. `content` is always `nil`.
-- **json** — entire file is a JSON document. Parse: `JSON.parse`. Serialize: `JSON.pretty_generate(content)` + trailing newline. `frontmatter` is populated from a top-level `_meta` hash (if present, else `{}`); `body` is the raw bytes; `content` is the parsed object.
-- **yaml** — entire file is a YAML mapping. Parse: `YAML.safe_load(bytes, permitted_classes: [Date, Time], aliases: false)`; anchors/aliases rejected. Serialize: `YAML.dump(content).sub(/\A---\n/, "")`. Same `_meta` / `frontmatter` / `body` / `content` rules as JSON.
-- **text** — raw UTF-8 bytes. Parse: body is the file verbatim, `frontmatter` is `{}`, `content` is `nil`. Serialize: write `body` bytes (with trailing newline if missing).
+- **markdown** — YAML frontmatter between `---` fences, free-form body. Parse: Psych `safe_load` on the frontmatter block; body is the remainder. Serialize: emit `---\n<yaml>\n---\n<body>`. `content` is always `nil`. `_meta` holds the parsed frontmatter hash.
+- **json** — entire file is a JSON document. Parse: `JSON.parse`. Serialize: `JSON.pretty_generate(content)` + trailing newline. `_meta` is populated from the top-level `_meta` hash (if present, else `{}`); `body` is the raw bytes; `content` is the parsed object with `_meta` stripped.
+- **yaml** — entire file is a YAML mapping. Parse: `YAML.safe_load(bytes, permitted_classes: [Date, Time], aliases: false)`; anchors/aliases rejected. Serialize: `YAML.dump(content).sub(/\A---\n/, "")`. Same `_meta` / `body` / `content` rules as JSON.
+- **text** — raw UTF-8 bytes. Parse: body is the file verbatim, `_meta` is `{}`, `content` is `nil`. Serialize: write `body` bytes (with trailing newline if missing).
 
-**Envelope shape.** Every envelope carries `format:` (always present, defaults to `markdown` for back-compat). For `json|yaml`, the envelope additionally carries `content:` (parsed object). `body` is always the raw on-disk bytes. `frontmatter` always exists, and for `json|yaml` mirrors the `_meta` block (`{}` if absent). `text` always has `frontmatter: {}` and no `content`.
+**Envelope shape.** Every envelope carries `format:` (always present, defaults to `markdown` for back-compat). For `json|yaml`, the envelope additionally carries `content:` (parsed object). `body` is always the raw on-disk bytes. `_meta` always exists in the envelope: for `markdown` it holds the parsed YAML frontmatter; for `json|yaml` it mirrors the top-level `_meta` block (`{}` if absent); for `text` it is `{}`.
 
 **`_meta` convention.** Derived structured entries (json, yaml) embed a `_meta` hash as the first top-level key. Builder-injected keys appear in a fixed order for etag stability:
 
@@ -464,13 +464,13 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 
 ```json
 {
-  "protocol": "textus/1",
+  "protocol": "textus/2",
   "key": "working.network.org.jane",
   "zone": "working",
   "owner": "textus:network",
   "path": "/absolute/path/to/.textus/zones/working/network/org/jane.md",
   "format": "markdown",
-  "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
+  "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
   "schema_ref": "person",
@@ -479,13 +479,13 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 ```
 
 **Field rules:**
-- `protocol` MUST be the exact string `textus/1`.
+- `protocol` MUST be the exact string `textus/2`.
 - `key` MUST be the canonical resolved key.
 - `zone` MUST be one of the zones declared in the manifest (`canon`, `working`, `intake`, `pending`, `derived` for the default v1.0 model; legacy v0.1 manifests synthesize `fixed`, `state`, `derived` per §4).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
-- `content` is present only when `format` is `json` or `yaml`; equals the parsed object. For `json|yaml`, `frontmatter` mirrors the top-level `_meta` (or `{}` if absent).
+- `content` is present only when `format` is `json` or `yaml`; equals the parsed object. For `json|yaml`, `_meta` mirrors the top-level `_meta` block (or `{}` if absent). For `markdown`, `_meta` holds the parsed YAML frontmatter. For `text`, `_meta` is `{}`.
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
@@ -494,7 +494,7 @@ Errors use a distinct envelope:
 
 ```json
 {
-  "protocol": "textus/1",
+  "protocol": "textus/2",
   "ok": false,
   "code": "write_forbidden",
   "message": "zone 'canon' is not writable by role 'ai' for key 'canon.identity'",
@@ -525,29 +525,29 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `list [--prefix=K] [--zone=Z] [--stale]` | read | any |
 | `where K` | read | any |
 | `get K` | read | any |
-| `schema K` | read | any |
+| `schema show K` | read | any |
 | `stale [--prefix=K] [--strict]` | read | any |
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
-| `doctor --check=schema_violations` | read | any |
-| `put K --stdin --as=R [--action=NAME]` | write | per zone |
+| `hook list` | read | any |
+| `doctor [--check=NAME[,NAME]] [--format=json]` | read | any |
+| `intro [--format=json]` | read | any |
+| `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh K --as=script` | write | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
-| `schema init NAME` / `schema diff NAME` / `schema migrate NAME --rename=OLD:NEW` | write | `human` |
+| `schema init NAME` / `schema diff NAME` / `schema migrate NAME [--rename=OLD:NEW]` | write | `human` |
 | `key migrate [--dry-run\|--write]` | write (with `--write`) | `human` |
-| `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
-| `uid K` | read | any |
-| `extensions list [--kind=action\|reducer\|hook]` | read | any |
-| `doctor [--check=NAME[,NAME]] [--format=json]` | read | any |
-| `intro [--format=json]` | read | any |
+| `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
+| `key uid K` | read | any |
+| `hook run NAME` | write | any |
 
 **`put` input** (read from stdin when `--stdin` is given):
 
 ```json
-{ "frontmatter": { "name": "jane", "relationship": "peer", "org": "acme" },
+{ "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body.\n",
   "if_etag": "sha256:8f3c…" }
 ```
@@ -572,7 +572,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 
 `textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
-`textus schema init NAME` writes a stub schema. `textus schema diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `textus schema migrate NAME --rename=OLD:NEW` rewrites the frontmatter key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
+`textus schema show K` prints the schema for entry `K`. `textus schema init NAME` writes a stub schema. `textus schema diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `textus schema migrate NAME --rename=OLD:NEW` rewrites the `_meta` key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
 
 ## 10. ETag semantics
 
@@ -584,16 +584,17 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/1", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Checks include manifest sanity, missing schemas/templates, extension load failures, illegal nested keys (with proposed normalisation), sentinel drift/orphans, and audit-log line corruption. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/2", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `manifest_files`, `schemas`, `templates`, `extensions`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`. Additional registered `:check` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 
-- The wire string `textus/1` is the protocol version.
-- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/1`.
-- Breaking changes (renamed/removed fields, zone semantics, key grammar) require a new wire string `textus/2`.
+- The current wire string is `textus/2`. It was introduced in gem v0.5, which unified the `_meta` block across all storage formats (markdown, json, yaml, text) and replaced the legacy TSV audit-log write path with NDJSON.
+- `textus/1` was the original protocol (gem ≤ v0.4). Manifests declaring `version: textus/1` are still accepted for backward compatibility (§4).
+- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/2`.
+- Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/3`.
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
-The reference Ruby gem follows semver independently. Gem 1.x speaks `textus/1`.
+The reference Ruby gem follows semver independently. The current gem version is `0.8.0`, which speaks `textus/2`.
 
 ## 12. Conformance fixtures
 
@@ -630,19 +631,19 @@ Given a pending entry `pending.canon.identity.patch` proposing a change to `cano
 
 - **Why not MCP?** MCP is a transport; textus is a data model. The two compose: a 50-line MCP server can wrap `textus get/put` as tools. textus exists because the *shape* of agent-readable project memory deserves a standalone spec, separate from how it's served.
 
-- **Why doesn't textus execute generator commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/1` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. Build runners stay the executor; textus stays a data tool.
+- **Why doesn't textus execute generator commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/2` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. Build runners stay the executor; textus stays a data tool.
 
 - **Why not plain Markdown vaults (Obsidian / Foam)?** No schema enforcement, no write-gating, no addressable wire format. Fine for human notes; underspecified for agents that must act on the contents deterministically.
 
 - **Why not Notion / Coda?** Closed, hosted, lossy export. textus is local-first, plain-files, diffable in git.
 
-- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/1`.
+- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/2`.
 
 - **Why not a database (SQLite, kv store)?** textus's whole point is that the storage is plain files agents and humans both read. A binary store loses git-diff, grep, and editor support.
 
 - **Why not vector embeddings?** Different problem. textus is for facts agents act on deterministically; embeddings are for fuzzy retrieval. They compose — index a textus tree into a vector store if you need both.
 
-## 14. Open questions (v1.x scope)
+## 14. Open questions (v2.x scope)
 
 - **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
 - **Schema imports:** can one schema reference another (`type: $ref: person`)? Defer to v1.1.
@@ -651,21 +652,22 @@ Given a pending entry `pending.canon.identity.patch` proposing a change to `cano
 
 ## 15. Implementation checklist
 
-A v1 implementation MUST:
+A `textus/2` implementation MUST:
 
-- [ ] Parse `.textus/manifest.yaml` and validate the `version: textus/1` declaration.
+- [ ] Parse `.textus/manifest.yaml` and accept `version: textus/2` (and `textus/1` for backward compat per §11).
 - [ ] Resolve keys via longest-prefix match against manifest entries.
-- [ ] Read frontmatter + body from `.md` files; validate against the named schema.
+- [ ] Read `_meta` + body from `.md` files; validate against the named schema.
+- [ ] Read `_meta` from the top-level `_meta` hash in `.json` / `.yaml` files; validate against the named schema.
 - [ ] Compute `sha256:<hex>` etags over raw file bytes.
 - [ ] Refuse writes whose resolved role is not in the target zone's `writable_by` list with `write_forbidden`.
-- [ ] Return envelopes matching the shape in §8 exactly.
+- [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
 - [ ] Implement `textus stale` per §5.1 and §9, comparing each derived entry's `generator.sources` against its `generated.at` timestamp without invoking any commands.
 - [ ] Pass the conformance fixtures A–I in §12.
 
-A v1 implementation MAY:
+A `textus/2` implementation MAY:
 
-- Add additional CLI verbs (e.g. `move`, vendor-specific reporters) beyond the v1.0 set in §9.
+- Add additional CLI verbs (e.g. `move`, vendor-specific reporters) beyond the current set in §9.
 - Provide alternate output formats (`--format=yaml`, `--format=table`) for human use.
 - Support additional schema field types beyond §6, marked as `vendor:<name>` extensions.
 
