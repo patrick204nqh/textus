@@ -394,8 +394,11 @@ The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the au
 | :build   | pubsub  | store:, key:, envelope:, sources:            | (discarded)           | logged   |
 | :accept  | pubsub  | store:, key:, target_key:                    | (discarded)           | logged   |
 | :publish | pubsub  | store:, key:, envelope:, source:, target:    | (discarded)           | logged   |
+| :mv      | pubsub  | store:, from_key:, to_key:, envelope:        | (discarded)           | logged   |
+| :reject  | pubsub  | store:, key:, target_key:                    | (discarded)           | logged   |
+| :loaded  | pubsub  | store:                                       | (discarded)           | logged   |
 
-**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accept`, `key:` is the pending key being accepted and `target_key:` is the destination).
+**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accept`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:mv`, the primary entity is `to_key:` (the destination); `from_key:` is the prior key. For `:reject`, `key:` is the pending key being rejected. For `:loaded`, no key — the event observes store readiness, not an entry.
 
 **RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`source.fetch: NAME`, `projection.reduce: NAME`). Failure or timeout aborts the calling operation.
 
