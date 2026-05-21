@@ -50,8 +50,11 @@ module Textus
 
       attr_reader :positional
 
+      # Hashes get "protocol" => PROTOCOL prepended unless they already
+      # carry one (Store envelopes do). Caller's value wins on collision.
       def emit(obj, exit_code: 0)
-        @stdout.puts(JSON.generate(obj))
+        payload = obj.is_a?(Hash) ? { "protocol" => PROTOCOL }.merge(obj) : obj
+        @stdout.puts(JSON.generate(payload))
         exit_code
       end
     end

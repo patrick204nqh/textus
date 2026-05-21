@@ -3,6 +3,35 @@ require "optparse"
 
 module Textus
   class CLI
+    # verb name → Verb subclass. Adding a new verb is a one-line entry here
+    # plus a new file under lib/textus/cli/.
+    VERBS = {
+      "accept" => Accept,
+      "action" => Action,
+      "build" => Build,
+      "delete" => Delete,
+      "deps" => Deps,
+      "doctor" => DoctorVerb,
+      "extensions" => Extensions,
+      "get" => Get,
+      "init" => InitVerb,
+      "intro" => IntroVerb,
+      "list" => List,
+      "migrate-keys" => MigrateKeysVerb,
+      "mv" => Mv,
+      "published" => Published,
+      "put" => Put,
+      "rdeps" => Rdeps,
+      "refresh" => RefreshVerb,
+      "schema" => SchemaVerb,
+      "schema-diff" => SchemaDiff,
+      "schema-init" => SchemaInit,
+      "schema-migrate" => SchemaMigrate,
+      "stale" => Stale,
+      "uid" => Uid,
+      "where" => Where,
+    }.freeze
+
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
     end
@@ -15,43 +44,19 @@ module Textus
       @root_arg = nil
     end
 
-    def run(argv) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/AbcSize
-      OptionParser.new do |o|
-        o.on("--root=PATH") { |v| @root_arg = v }
-      end.order!(argv)
+    def run(argv)
+      OptionParser.new { |o| o.on("--root=PATH") { |v| @root_arg = v } }.order!(argv)
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
       case verb
-      when "list"   then dispatch(List, argv)
-      when "where"  then dispatch(Where, argv)
-      when "get"    then dispatch(Get, argv)
-      when "put"    then dispatch(Put, argv)
-      when "schema" then dispatch(SchemaVerb, argv)
-      when "stale"  then dispatch(Stale, argv)
-      when "delete"       then dispatch(Delete, argv)
-      when "build"        then dispatch(Build, argv)
-      when "deps"         then dispatch(Deps, argv)
-      when "rdeps"        then dispatch(Rdeps, argv)
-      when "published"    then dispatch(Published, argv)
-      when "accept"       then dispatch(Accept, argv)
-      when "init"         then dispatch(InitVerb, argv)
-      when "schema-init"    then dispatch(SchemaInit, argv)
-      when "schema-diff"    then dispatch(SchemaDiff, argv)
-      when "schema-migrate" then dispatch(SchemaMigrate, argv)
-      when "action"         then dispatch(Action, argv)
-      when "refresh"        then dispatch(RefreshVerb, argv)
-      when "extensions"     then dispatch(Extensions, argv)
-      when "migrate-keys"   then dispatch(MigrateKeysVerb, argv)
-      when "mv"             then dispatch(Mv, argv)
-      when "uid"            then dispatch(Uid, argv)
-      when "doctor"         then dispatch(DoctorVerb, argv)
-      when "intro"          then dispatch(IntroVerb, argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
       when "--help", "-h"    then print_help
                                   0
-      else raise UsageError.new("unknown verb: #{verb}")
+      else
+        klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
+        dispatch(klass, argv)
       end
     rescue Textus::Error => e
       emit_error(e)

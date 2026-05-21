@@ -5,7 +5,7 @@ module Textus
       option :zone, "--zone=Z"
 
       def call(store)
-        emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
+        emit({ "entries" => store.list(prefix: prefix, zone: zone) })
       end
     end
   end
