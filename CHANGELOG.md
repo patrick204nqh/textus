@@ -10,6 +10,9 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+### Changed
+- Internal: extracted `Textus::Path` and `Textus::Envelope` value modules; `Manifest`, `Store`, `Staleness`, and `Builder` now share the same path/envelope construction.
+
 ## 0.6.0 — Hook unification
 
 ### Breaking
