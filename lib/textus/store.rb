@@ -83,28 +83,13 @@ module Textus
 
     def put(...) = @writer.put(...)
 
-    def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-      mentry, path, = @manifest.resolve(key)
-      writers = @manifest.zone_writers(mentry.zone)
-      raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
-      raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
-
-      etag_before = Etag.for_file(path)
-      raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
-
-      File.delete(path)
-      audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
-      fire_event(:delete, key: key) unless suppress_events
-      { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
-    end
+    def delete(...) = @writer.delete(...)
 
     def fire_event(event, **)
       Events.new(self).call(event, **)
     end
 
-    def accept(key, as:)
-      Proposal.accept(self, key, as: as)
-    end
+    def accept(...) = @writer.accept(...)
 
     def deps(key)    = @reader.deps(key)
     def rdeps(key)   = @reader.rdeps(key)

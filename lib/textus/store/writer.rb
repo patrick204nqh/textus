@@ -107,6 +107,25 @@ module Textus
           raise UsageError.new("unknown format #{mentry.format.inspect}")
         end
       end
+
+      def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+        mentry, path, = @manifest.resolve(key)
+        writers = @manifest.zone_writers(mentry.zone)
+        raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
+        raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
+
+        etag_before = Etag.for_file(path)
+        raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
+
+        File.delete(path)
+        @store.audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
+        @store.fire_event(:delete, key: key) unless suppress_events
+        { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
+      end
+
+      def accept(key, as:)
+        Proposal.accept(@store, key, as: as)
+      end
     end
     # rubocop:enable Metrics/ParameterLists
   end
