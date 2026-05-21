@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
+# rubocop:disable RSpec/MultipleDescribes
+
 require "spec_helper"
+require "fileutils"
+require "tmpdir"
 
 RSpec.describe Textus::EventBus do
   let(:audit) { instance_double(Textus::AuditLog, append: nil) }
@@ -33,3 +37,29 @@ RSpec.describe Textus::EventBus do
     expect(seen).to eq(["working.x"])
   end
 end
+
+RSpec.describe "EventBus external subscription" do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/2
+      zones: [{ name: working, writable_by: [human] }]
+      entries:
+        - { key: working.x, path: working/x.md, zone: working }
+    YAML
+  end
+
+  after { FileUtils.remove_entry(tmp) }
+
+  it "lets external code subscribe to :put without a hooks/ file" do
+    store = Textus::Store.new(root)
+    seen = []
+    store.bus.subscribe(:put, :external) { |key:, **| seen << key }
+    store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
+    expect(seen).to eq(["working.x"])
+  end
+end
+# rubocop:enable RSpec/MultipleDescribes
