@@ -4,7 +4,7 @@ module Textus
       class Extensions < Check
         def call
           out = []
-          dir = File.join(store.root, "extensions")
+          dir = File.join(store.root, "hooks")
           return out unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
@@ -14,7 +14,7 @@ module Textus
             end
           rescue StandardError, ScriptError => e
             out << {
-              "code" => "extension.load_failed",
+              "code" => "hook.load_failed",
               "level" => "error",
               "subject" => File.basename(f),
               "message" => "#{e.class}: #{e.message}",
