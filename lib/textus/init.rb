@@ -35,6 +35,11 @@ module Textus
       Textus.reduce(:my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
       Textus.check(:my_check)   { |store:, **| { ok: true } }
       Textus.put(:my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
+
+      # Run a side-effect every time textus writes a file to your repo:
+      Textus.publish(:notify) do |key:, target:, **|
+        warn "wrote \#{target} (from \#{key})"
+      end
       ```
 
       ## Low-level primitive (always available)
@@ -48,7 +53,7 @@ module Textus
       ```
 
       Events: :fetch, :reduce, :check (rpc — return value used)
-              :put, :delete, :refresh, :build, :accept (pub-sub — return discarded)
+              :put, :delete, :refresh, :build, :accept, :publish (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

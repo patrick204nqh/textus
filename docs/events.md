@@ -7,7 +7,7 @@ This is the hook-author's guide. For the normative event table see [`../SPEC.md`
 ## Table of contents
 
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
-2. [The 8 events in plain English](#2-the-8-events-in-plain-english)
+2. [The 9 events in plain English](#2-the-9-events-in-plain-english)
 3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
 4. [The three definition surfaces](#4-the-three-definition-surfaces)
 5. [The `store:` proxy — what you can and can't do](#5-the-store-proxy)
@@ -36,13 +36,14 @@ Every event is one of two kinds.
    :check  → doctor checks          :refresh → after refresh
                                     :build   → after derived materialization
                                     :accept  → after pending → target promotion
+                                    :publish → after each file written to a repo path
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
 
 ---
 
-## 2. The 8 events in plain English
+## 2. The 9 events in plain English
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
@@ -54,6 +55,7 @@ Every event is one of two kinds.
 | `:refresh` | pubsub | Like `:put` but specific to refresh-driven writes. Both fire — `:put` first, then `:refresh`. |
 | `:build` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
 | `:accept` | pubsub | A pending proposal was promoted into its target zone. |
+| `:publish` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
 
 ---
 
@@ -107,7 +109,10 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃   ┃ sort/limit (skipped if reduce returned Hash)
   ┃   ┃ merge `intro` if inject_intro:
   ┃   ┃ render via format + template
-  ┃   ┃ write derived path, byte-copy publish_to: targets
+  ┃   ┃ write derived path
+  ┃   ┃ for each publish_to: / publish_each: target:
+  ┃   ┃   byte-copy file to repo path
+  ┃   ┃   ─────────────────────────────► :publish  (pubsub) — per file written
   ┃   ┃ append audit row {verb:"compute"}
   ┃   ┃ ───────────────────────────────► :build  (pubsub) — per entry
   ✔ done
@@ -154,6 +159,7 @@ end
 Textus.fetch(:local_file)        { |config:, args:, **| ... }
 Textus.reduce(:rank_by_recency)  { |rows:, **|          ... }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
+Textus.publish(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
 ```
 
 **When to use which:**
@@ -192,6 +198,7 @@ end
 | `:refresh` raises | verb still succeeds | `event_error` row |
 | `:build` raises | verb still succeeds | `event_error` row |
 | `:accept` raises | verb still succeeds | `event_error` row |
+| `:publish` raises | verb still succeeds | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 
