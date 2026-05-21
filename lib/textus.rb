@@ -13,4 +13,5 @@ loader.setup
 loader.eager_load
 
 module Textus
+  extend Hooks::Dsl
 end
