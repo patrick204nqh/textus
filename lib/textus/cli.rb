@@ -41,7 +41,7 @@ module Textus
       when "init"         then dispatch(InitVerb, argv)
       when "schema-init"    then dispatch(SchemaInit, argv)
       when "schema-diff"    then dispatch(SchemaDiff, argv)
-      when "schema-migrate" then verb_schema_migrate(argv)
+      when "schema-migrate" then dispatch(SchemaMigrate, argv)
       when "action"         then verb_action(argv)
       when "refresh"        then dispatch(RefreshVerb, argv)
       when "extensions"     then verb_extensions(argv)
@@ -152,18 +152,6 @@ module Textus
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
       emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
-    end
-
-    def verb_schema_migrate(argv)
-      name = argv.shift or raise UsageError.new("schema-migrate NAME")
-      rename = nil
-      OptionParser.new do |o|
-        o.on("--rename=O:N") { |v| rename = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      raise UsageError.new("schema-migrate requires --rename=OLD:NEW") unless rename
-
-      emit(Textus::SchemaTools.migrate(store, name: name, rename: rename))
     end
 
     def verb_action(argv)
