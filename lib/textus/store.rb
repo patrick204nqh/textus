@@ -3,7 +3,7 @@ require "securerandom"
 
 module Textus
   class Store
-    attr_reader :root, :manifest, :registry, :reader, :writer
+    attr_reader :root, :manifest, :registry, :reader, :writer, :bus
 
     # A Textus UID: 16 lowercase hex chars (SecureRandom.hex(8)). Not a UUID —
     # short on purpose. Random enough for collision-never-in-practice within a
@@ -39,7 +39,8 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
-      @registry = HookRegistry.new
+      @bus = EventBus.new(audit_log: audit_log)
+      @registry = HookRegistry.new(bus: @bus)
       @schemas = {}
       load_extensions
       @reader = Reader.new(self)

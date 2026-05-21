@@ -14,9 +14,10 @@ module Textus
       accept: { mode: :pubsub, args: %i[store key target_key] },
     }.freeze
 
-    def initialize
+    def initialize(bus: nil)
       @rpc    = Hash.new { |h, k| h[k] = {} }   # event => { name => callable }
       @pubsub = Hash.new { |h, k| h[k] = [] }   # event => [{name:, callable:, keys:}]
+      @bus    = bus
     end
 
     def register(event, name, keys: nil, &blk)
@@ -33,6 +34,7 @@ module Textus
         raise UsageError.new("#{event} hook '#{name}' already registered") if @pubsub[event.to_sym].any? { |h| h[:name] == name }
 
         @pubsub[event.to_sym] << { name: name, callable: blk, keys: keys }
+        @bus&.subscribe(event, name, keys: keys, &blk)
       end
     end
 
