@@ -37,15 +37,6 @@ module Textus
       Textus.put(:my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
       ```
 
-      ## Group multiple events under one name
-
-      ```ruby
-      Textus.define :my_source do
-        fetch  { |config:, args:, **| … }
-        reduce { |rows:, **|          … }
-      end
-      ```
-
       ## Low-level primitive (always available)
 
       ```ruby

@@ -371,20 +371,13 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 
 #### Sugar surface (0.8.2+)
 
-Per-event methods and a grouped block form are provided for ergonomics. Both delegate to the same registry as `Textus.hook`.
+Per-event methods are provided for ergonomics. They delegate to the same registry as `Textus.hook`.
 
 ```ruby
-# Per-event sugar — one callback, simple case
 Textus.fetch(:local_file)        { |config:, args:, **|  … }
 Textus.reduce(:rank_by_recency)  { |rows:, **|            … }
 Textus.check(:storage_writable)  { |store:|               … }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-
-# Grouped DSL — one logical name, multiple events
-Textus.define :local_file do
-  fetch  { |config:, args:, **| … }
-  reduce { |rows:, **|           … }
-end
 ```
 
 The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the authoritative entry point; sugar methods are thin wrappers.

@@ -174,7 +174,7 @@ Textus.reduce(:rank_by_recency) do |rows:, **|
 end
 ```
 
-The primitive `Textus.hook(event, name, **opts) { ... }` is also supported. See SPEC.md §5.10 for the full contract including `Textus.define` for grouping multiple events under one name.
+The primitive `Textus.hook(event, name, **opts) { ... }` is also supported. See SPEC.md §5.10 for the full contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 

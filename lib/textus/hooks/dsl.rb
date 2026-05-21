@@ -8,11 +8,6 @@ module Textus
           Loader.current_registry.register(event, name, **opts, &blk)
         end
       end
-
-      def define(name, &)
-        registry = Loader.current_registry
-        DefineBuilder.new(registry, name).instance_eval(&)
-      end
     end
   end
 end
