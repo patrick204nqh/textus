@@ -75,7 +75,7 @@ module Textus
         else raise UsageError.new("builder: unsupported format #{mentry.format.inspect} for '#{mentry.key}'")
         end
 
-      target_path = File.join(@root, "zones", mentry.path)
+      target_path = Textus::Path.resolve(@manifest, mentry)
       FileUtils.mkdir_p(File.dirname(target_path))
       File.binwrite(target_path, bytes)
 
