@@ -7,7 +7,7 @@ module Textus
         name = positional.shift or raise UsageError.new("schema init NAME")
         raise UsageError.new("schema init requires --from=KEY") unless from_key
 
-        emit(Textus::SchemaTools.init(store, name: name, from: from_key))
+        emit(Textus::Schema::Tools.init(store, name: name, from: from_key))
       end
     end
   end
