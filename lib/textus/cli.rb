@@ -40,7 +40,7 @@ module Textus
       when "accept"       then dispatch(Accept, argv)
       when "init"         then dispatch(InitVerb, argv)
       when "schema-init"    then dispatch(SchemaInit, argv)
-      when "schema-diff"    then verb_schema_diff(argv)
+      when "schema-diff"    then dispatch(SchemaDiff, argv)
       when "schema-migrate" then verb_schema_migrate(argv)
       when "action"         then verb_action(argv)
       when "refresh"        then dispatch(RefreshVerb, argv)
@@ -152,12 +152,6 @@ module Textus
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
       emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
-    end
-
-    def verb_schema_diff(argv)
-      name = argv.shift or raise UsageError.new("schema-diff NAME")
-      parse_format!(argv)
-      emit(Textus::SchemaTools.diff(store, name: name))
     end
 
     def verb_schema_migrate(argv)
