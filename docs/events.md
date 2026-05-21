@@ -7,7 +7,7 @@ This is the hook-author's guide. For the normative event table see [`../SPEC.md`
 ## Table of contents
 
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
-2. [The 9 events in plain English](#2-the-9-events-in-plain-english)
+2. [The 12 events in plain English](#2-the-12-events-in-plain-english)
 3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
 4. [The three definition surfaces](#4-the-three-definition-surfaces)
 5. [The `store:` proxy — what you can and can't do](#5-the-store-proxy)
@@ -37,13 +37,16 @@ Every event is one of two kinds.
                                     :build   → after derived materialization
                                     :accept  → after pending → target promotion
                                     :publish → after each file written to a repo path
+                                    :mv      → after rename
+                                    :reject  → after proposal discard
+                                    :loaded  → once per Store.new
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
 
 ---
 
-## 2. The 9 events in plain English
+## 2. The 12 events in plain English
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
@@ -56,6 +59,9 @@ Every event is one of two kinds.
 | `:build` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
 | `:accept` | pubsub | A pending proposal was promoted into its target zone. |
 | `:publish` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
+| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:delete` are suppressed — `:mv` is the sole signal. Payload: `{ from_key:, to_key:, envelope: }`. |
+| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accept`. Payload: `{ key:, target_key: }`. |
+| `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
 
 ---
 
@@ -97,6 +103,43 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ ─────────────────────────────────────► :put      (pubsub) — every write fires :put
   ┃ ─────────────────────────────────────► :refresh  (pubsub) — plus the refresh-specific event
   ✔ done
+```
+
+### `textus mv OLD_KEY NEW_KEY --as=<role>`
+
+```
+  ┃ resolve OLD_KEY → manifest entry
+  ┃ role gate                              ── ABORT if no
+  ┃ resolve NEW_KEY, refuse if exists      ── ABORT if collision
+  ┃ mint uid in place if absent (suppressed :put)
+  ┃ FileUtils.mv source → target
+  ┃ rewrite name frontmatter
+  ┃ append audit row {verb:"mv"}
+  ┃ ─────────────────────────────────────► :mv  (pubsub) — single signal; no :put/:delete
+  ✔ done
+```
+
+### `textus reject PENDING_KEY --as=human`
+
+```
+  ┃ require zone == pending                ── ABORT if no
+  ┃ require _meta.proposal block           ── ABORT if no
+  ┃ delete the pending file
+  ┃ append audit row {verb:"delete"}
+  ┃ ─────────────────────────────────────► :delete (pubsub) — generic delete observers still fire
+  ┃ ─────────────────────────────────────► :reject (pubsub) — proposal-specific signal
+  ✔ done
+```
+
+### `Textus::Store.new(root)` (one-shot)
+
+```
+  ┃ load manifest
+  ┃ build dispatcher + registry
+  ┃ load all hooks under .textus/hooks/**.rb
+  ┃ build reader + writer
+  ┃ ─────────────────────────────────────► :loaded (pubsub) — fires exactly once per process per store
+  ✔ store ready for use
 ```
 
 ### `textus build`
