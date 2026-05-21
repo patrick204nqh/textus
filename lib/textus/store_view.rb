@@ -12,7 +12,7 @@ module Textus
     end
 
     READ_METHODS.each do |m|
-      define_method(m) { |*args, **kw| @store.public_send(m, *args, **kw) }
+      define_method(m) { |*args, **kw| @store.reader.public_send(m, *args, **kw) }
     end
 
     WRITE_METHODS.each do |m|
