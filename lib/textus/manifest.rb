@@ -17,23 +17,8 @@ module Textus
 
     attr_reader :root, :entries, :raw
 
-    LEGACY_ZONES = {
-      "fixed" => ["human"],
-      "state" => %w[human ai script],
-      "derived" => ["build"],
-    }.freeze
-
     def zones
-      @zones ||= begin
-        declared = Array(@raw["zones"])
-        if declared.empty?
-          LEGACY_ZONES.transform_values(&:dup)
-        else
-          declared.to_h do |z|
-            [z["name"], Array(z["writable_by"])]
-          end
-        end
-      end
+      @zones ||= Array(@raw["zones"]).to_h { |z| [z["name"], Array(z["writable_by"])] }
     end
 
     def zone_writers(zone_name)
@@ -53,6 +38,8 @@ module Textus
     def initialize(root, raw)
       @root = root
       @raw = raw
+      raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
+
       @entries = Array(raw["entries"]).map { |e| ManifestEntry.new(self, e) }
       validate_declared_keys!
     end
@@ -220,7 +207,7 @@ module Textus
       @inject_intro = raw["inject_intro"] == true
       @format = resolve_format!(raw["format"])
 
-      reject_legacy!(raw)
+      validate_events!
       parse_source!(raw["source"])
       validate_format_matrix!
       validate_publish_each!
@@ -366,27 +353,7 @@ module Textus
       @ttl = src["ttl"]
     end
 
-    def reject_legacy!(raw)
-      src = raw["source"] || {}
-      if src.key?("parse") || src.key?("from")
-        raise UsageError.new(
-          "entry '#{@key}': source.parse/source.from removed in 0.2; " \
-          "use source.action (+ source.config). See SPEC §5.4.",
-        )
-      end
-      if src.key?("fetcher")
-        raise UsageError.new(
-          "entry '#{@key}': source.fetcher renamed to source.action in 0.4; " \
-          "rename the key. See SPEC §5.4.",
-        )
-      end
-      if raw.key?("hooks")
-        raise UsageError.new(
-          "entry '#{@key}': 'hooks:' renamed to 'events:' in 0.2; " \
-          "remove on_ prefix from event names. See SPEC §5.10.",
-        )
-      end
-
+    def validate_events!
       @events.each_key do |evt|
         next if ExtensionRegistry::EVENTS.include?(evt.to_sym)
 

@@ -14,7 +14,7 @@ RSpec.describe "textus --root" do
     custom = File.join(tmp, "store")
     FileUtils.mkdir_p(File.join(custom, "schemas"))
     FileUtils.mkdir_p(File.join(custom, "zones"))
-    File.write(File.join(custom, "manifest.yaml"), "version: textus/1\nentries: []\n")
+    File.write(File.join(custom, "manifest.yaml"), "version: textus/1\nzones:\n  - { name: working, writable_by: [human] }\nentries: []\n")
 
     exe = File.expand_path("../exe/textus", __dir__)
     stdout, _stderr, status = Open3.capture3("ruby", "-I", File.expand_path("../lib", __dir__), exe, "--root=#{custom}", "list",
