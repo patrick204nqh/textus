@@ -69,7 +69,7 @@ module Textus
     end
 
     def parse_format!(argv)
-      fmt = "text"
+      fmt = "json"
       OptionParser.new do |o|
         o.on("--format=FMT") { |v| fmt = v }
       end.permute!(argv)
@@ -91,7 +91,7 @@ module Textus
     def parse_prefix_and_zone!(argv)
       prefix = nil
       zone = nil
-      fmt = "text"
+      fmt = "json"
       OptionParser.new do |o|
         o.on("--prefix=KEY") { |v| prefix = v }
         o.on("--zone=Z") { |v| zone = v }
@@ -423,14 +423,16 @@ module Textus
       @stdout.puts <<~HELP
         textus #{VERSION} — reference implementation of #{PROTOCOL}
 
-        Usage:
-          textus list [--prefix=KEY] --format=json
-          textus where KEY --format=json
-          textus get KEY --format=json
-          textus put KEY --stdin [--action=NAME] --format=json
-          textus schema KEY --format=json
-          textus stale [--prefix=KEY] --format=json
-          textus action NAME [--key=val ...] [--as=ROLE] --format=json
+        Usage (json output is the default; --format=json accepted for back-compat):
+          textus list [--prefix=KEY] [--zone=Z]
+          textus where KEY
+          textus get KEY
+          textus put KEY --stdin [--action=NAME] --as=ROLE
+          textus schema KEY
+          textus stale [--prefix=KEY] [--zone=Z]
+          textus action NAME [--key=val ...] [--as=ROLE]
+          textus doctor
+          textus intro
       HELP
     end
   end
