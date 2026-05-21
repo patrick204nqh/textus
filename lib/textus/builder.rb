@@ -35,19 +35,25 @@ module Textus
           next unless row[:manifest_entry].equal?(mentry)
           next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
 
-          target_rel = mentry.publish_target_for(row[:key])
-          target_abs = File.expand_path(File.join(repo_root, target_rel))
-          unless target_abs.start_with?(File.expand_path(repo_root) + File::SEPARATOR)
-            raise PublishError.new(
-              "entry '#{mentry.key}': publish_each target '#{target_rel}' for key '#{row[:key]}' escapes repo root",
-            )
-          end
-
-          Publisher.publish(source: row[:path], target: target_abs, store_root: @root)
-          out << { "key" => row[:key], "source" => row[:path], "target" => target_abs }
+          out << publish_leaf(mentry, row, repo_root)
         end
       end
       out
+    end
+
+    def publish_leaf(mentry, row, repo_root)
+      target_rel = mentry.publish_target_for(row[:key])
+      target_abs = File.expand_path(File.join(repo_root, target_rel))
+      unless target_abs.start_with?(File.expand_path(repo_root) + File::SEPARATOR)
+        raise PublishError.new(
+          "entry '#{mentry.key}': publish_each target '#{target_rel}' for key '#{row[:key]}' escapes repo root",
+        )
+      end
+
+      Publisher.publish(source: row[:path], target: target_abs, store_root: @root)
+      @store.fire_event(:publish, key: row[:key], envelope: @store.get(row[:key]),
+                                  source: row[:path], target: target_abs)
+      { "key" => row[:key], "source" => row[:path], "target" => target_abs }
     end
 
     def derived_zone?(mentry)
@@ -73,12 +79,16 @@ module Textus
     end
 
     def publish_and_fire(mentry, target_path)
+      envelope = @store.get(mentry.key)
+      repo_root = File.dirname(@root)
+
       mentry.publish_to.each do |rel|
-        repo_root = File.dirname(@root)
-        Publisher.publish(source: target_path, target: File.join(repo_root, rel), store_root: @root)
+        target_abs = File.join(repo_root, rel)
+        Publisher.publish(source: target_path, target: target_abs, store_root: @root)
+        @store.fire_event(:publish, key: mentry.key, envelope: envelope,
+                                    source: target_path, target: target_abs)
       end
 
-      envelope = @store.get(mentry.key)
       @store.fire_event(:build, key: mentry.key, envelope: envelope,
                                 sources: Array(mentry.projection&.fetch("select", nil)).compact)
     end

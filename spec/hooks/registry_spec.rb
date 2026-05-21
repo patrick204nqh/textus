@@ -19,6 +19,13 @@ RSpec.describe Textus::Hooks::Registry do
       expect(Textus::Hooks::Registry::EVENTS[:fetch][:mode]).to eq(:rpc)
       expect(Textus::Hooks::Registry::EVENTS[:put][:mode]).to eq(:pubsub)
     end
+
+    it "registers :publish as a pub-sub event" do
+      spec = Textus::Hooks::Registry::EVENTS[:publish]
+      expect(spec).not_to be_nil
+      expect(spec[:mode]).to eq(:pubsub)
+      expect(spec[:args]).to eq(%i[store key envelope source target])
+    end
   end
 
   describe "RPC hooks (fetch, reduce, check)" do

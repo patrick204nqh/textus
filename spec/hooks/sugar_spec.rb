@@ -58,17 +58,19 @@ RSpec.describe "Textus per-event sugar" do
     end
   end
 
-  describe ".delete / .refresh / .build / .accept" do
+  describe ".delete / .refresh / .build / .accept / .publish" do
     it "registers each pub-sub event" do
       Textus.delete(:d)  { |key:, **| key }
       Textus.refresh(:r) { |key:, envelope:, change:, **| [key, envelope, change] }
       Textus.build(:b)   { |key:, envelope:, sources:, **| [key, envelope, sources] }
       Textus.accept(:a)  { |key:, target_key:, **| [key, target_key] }
+      Textus.publish(:p) { |key:, envelope:, source:, target:, **| [key, envelope, source, target] }
 
       expect(reg.pubsub_handlers(:delete).map { _1[:name] }).to include(:d)
       expect(reg.pubsub_handlers(:refresh).map { _1[:name] }).to include(:r)
       expect(reg.pubsub_handlers(:build).map { _1[:name] }).to include(:b)
       expect(reg.pubsub_handlers(:accept).map { _1[:name] }).to include(:a)
+      expect(reg.pubsub_handlers(:publish).map { _1[:name] }).to include(:p)
     end
   end
 end
