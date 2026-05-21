@@ -13,8 +13,8 @@ exe/textus  →  Textus::CLI  ──┬──►  Store          (verb impl: get
                               ├──►  Doctor         (doctor verb)
                               ├──►  Init           (init verb)
                               ├──►  Intro          (intro verb)
-                              ├──►  MigrateKeys    (migrate-keys, mv verbs)
-                              ├──►  SchemaTools    (schema-init/diff/migrate verbs)
+                              ├──►  MigrateKeys    (key migrate, key mv verbs)
+                              ├──►  SchemaTools    (schema init/diff/migrate verbs)
                               ├──►  StoreView      (read-only projection over Store)
                               └──►  Role           (role gate)
 ```
@@ -62,8 +62,8 @@ Declared in the manifest, loaded on demand, dispatched by `Store` and `Refresh`.
 First-class CLI verbs that don't fit the read/write/build axes. Read-mostly; side modules off CLI.
 
 - **`Doctor`** — `doctor` verb: validates manifest, schemas, hooks, and (via `MigrateKeys`) suggests key migrations. Talks to Manifest/Schema/Entry/HookRegistry directly.
-- **`MigrateKeys`** — `migrate-keys` and `mv` verbs; computes renames against the manifest.
-- **`SchemaTools`** — `schema-init`, `schema-diff`, `schema-migrate` verbs.
+- **`MigrateKeys`** — `key migrate` and `key mv` verbs; computes renames against the manifest.
+- **`SchemaTools`** — `schema init`, `schema diff`, `schema migrate` verbs.
 - **`Init`** — `init` verb: scaffolds `.textus/` with the five zone directories, baseline schemas, empty audit log, starter manifest.
 - **`Intro`** — `intro` verb: emits the human/agent-facing onboarding payload.
 - **`StoreView`** — read-only projection over `Store` for code that should not mutate.
@@ -72,7 +72,7 @@ First-class CLI verbs that don't fit the read/write/build axes. Read-mostly; sid
 ### 5. Primitives
 
 - **`Errors`** — `Textus::Error` subclasses, each carrying a stable `code`, a `details` hash, and an `exit_code`. `CLI` catches them at the top level and emits the §8 error envelope on stdout. In `--format=json` mode, errors are **never** written to stderr — agents read stdout.
-- **`version`** — gem semver string (independent of the wire protocol `textus/1`).
+- **`version`** — gem semver string (independent of the wire protocol `textus/2`).
 
 ## Invariants
 
