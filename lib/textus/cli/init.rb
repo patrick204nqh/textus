@@ -5,9 +5,7 @@ module Textus
 
       def call(_store)
         target = File.join(@cwd, ".textus")
-        res = Textus::Init.run(target)
-        @stdout.puts(JSON.generate(res))
-        0
+        emit(Textus::Init.run(target))
       end
     end
   end

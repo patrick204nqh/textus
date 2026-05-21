@@ -1,6 +1,6 @@
 module Textus
   class CLI
-    class ActionVerb < Verb
+    class Action < Verb
       def parse(argv)
         @raw_argv = argv
       end

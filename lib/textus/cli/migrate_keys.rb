@@ -7,8 +7,7 @@ module Textus
       def call(store)
         effective_write = write && !dry_run
         res = Textus::MigrateKeys.run(store, write: effective_write || false)
-        @stdout.puts(JSON.generate(res))
-        res["ok"] ? 0 : 1
+        emit(res, exit_code: res["ok"] ? 0 : 1)
       end
     end
   end

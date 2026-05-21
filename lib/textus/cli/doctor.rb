@@ -6,8 +6,7 @@ module Textus
       def call(store)
         check_list = checks&.split(",")&.map(&:strip)
         res = Textus::Doctor.run(store, checks: check_list)
-        @stdout.puts(JSON.generate(res))
-        res["ok"] ? 0 : 1
+        emit(res, exit_code: res["ok"] ? 0 : 1)
       end
     end
   end

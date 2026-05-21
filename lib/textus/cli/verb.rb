@@ -50,9 +50,9 @@ module Textus
 
       attr_reader :positional
 
-      def emit(obj)
+      def emit(obj, exit_code: 0)
         @stdout.puts(JSON.generate(obj))
-        0
+        exit_code
       end
     end
   end
