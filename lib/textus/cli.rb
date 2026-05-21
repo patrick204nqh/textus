@@ -48,7 +48,7 @@ module Textus
       when "migrate-keys"   then verb_migrate_keys(argv)
       when "mv"             then verb_mv(argv)
       when "uid"            then dispatch(Uid, argv)
-      when "doctor"         then verb_doctor(argv)
+      when "doctor"         then dispatch(DoctorVerb, argv)
       when "intro"          then dispatch(IntroVerb, argv)
       when "--version", "-v" then @stdout.puts(VERSION)
                                   0
@@ -291,17 +291,6 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.mv(old_key, new_key, as: role, dry_run: dry_run))
-    end
-
-    def verb_doctor(argv)
-      checks = nil
-      OptionParser.new do |o|
-        o.on("--check=NAME") { |v| checks = v.split(",").map(&:strip) }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      res = Textus::Doctor.run(store, checks: checks)
-      @stdout.puts(JSON.generate(res))
-      res["ok"] ? 0 : 1
     end
 
     def emit(obj)
