@@ -154,7 +154,7 @@ module Textus
             "path" => abs_path,
             "proposed_key" => proposed,
             "message" => "illegal key segment '#{stem}' at #{abs_path}",
-            "fix" => "run 'textus migrate-keys --dry-run' then '--write' to rename to '#{proposed}'",
+            "fix" => "run 'textus key migrate --dry-run' then '--write' to rename to '#{proposed}'",
           }
         end
       end
