@@ -5,10 +5,73 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The **gem version** (`0.x.y`) is distinct from the **protocol version**
-(currently `textus/1`, embedded in every envelope as `protocol`). The protocol
+(currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
+
+## 0.5.0 — Wire protocol `textus/2`; CLI restructure; Store split (breaking)
+
+This release reshapes the public surface ahead of 1.0. The wire protocol bumps to `textus/2`; the CLI grows nested subcommand groups; `Store` is decomposed into a thin facade plus four focused helpers; the audit log finally matches its documented NDJSON shape; and a pile of pre-0.4 cruft gets cut.
+
+### Wire protocol — `textus/1` → `textus/2`
+
+- **Breaking:** every envelope now carries `"_meta"` instead of `"frontmatter"`. For json/yaml entries, envelope `content` no longer carries a duplicate `_meta` — the metadata lives only at the envelope's top level.
+- **Breaking:** `Manifest.load` refuses `textus/1` manifests with a pointer at the new migration command. On-disk file shapes are unchanged — only the manifest version string changes.
+- **New:** `textus migrate v2` flips `version: textus/1` to `version: textus/2` in `.textus/manifest.yaml`. One command, no file edits.
+- **Internal cleanup:** `Store#extract_uid`, `enforce_name_match!`, `serialize_for_put`, `validate_all`, and `build_envelope` no longer format-switch — metadata access is uniform. Role-authority validation now works for json/yaml entries (was markdown-only).
+- **API:** `Store#put` keyword renamed from `frontmatter:` to `meta:`. Action callbacks return `_meta:` (formerly `frontmatter:`).
+
+### CLI — nested subcommand groups
+
+- **New:** `textus key {mv, uid, migrate}`, `textus schema {show, init, diff, migrate}`, `textus extension {list, run}`. Discoverable, groupable, scales.
+- **Deprecated (removed in 0.6):** the flat verbs `mv`, `uid`, `migrate-keys`, `schema-init`, `schema-diff`, `schema-migrate`, `extensions`, `action` still work but emit a stderr deprecation warning. `textus schema KEY` (positional dotted-key form) keeps working via a back-compat fallback in `SchemaGroup`.
+- **New:** `textus list`, `textus get`, etc. default to JSON output. `--format=json` is still accepted; non-json values still raise.
+- **CLI refactor:** `lib/textus/cli.rb` shrank from 434 LOC to ~100 LOC. Every verb is now a small command-object file under `lib/textus/cli/`. Dispatch is a frozen `VERBS` hash.
+
+### Audit log — true NDJSON
+
+- **Breaking:** `.textus/audit.log` rows are now one JSON object per line (`{"ts":..., "role":..., "verb":..., "key":..., "etag_before":..., "etag_after":...}`). Missing etags are `null`, not the string `"NULL"`.
+- **Structural shape:** `from_key`, `to_key`, `uid` (mv rows) live at the top level; arbitrary contextual data goes into an `extras` sub-object that is omitted when empty.
+- **Back-compat:** legacy TSV rows still parse during 0.5 — `AuditLog#last_writer_for` and `Doctor#check_audit_log` accept both formats. Legacy support removed in 0.6.
+
+### Doctor
+
+- **New:** `textus doctor --check=schema_violations[,name,…]` runs only the named built-in checks. The 9 built-ins are `manifest_files`, `schemas`, `templates`, `extensions`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`. Extension checks always run.
+- **Breaking:** the standalone `textus validate-all` verb is gone. Use `textus doctor --check=schema_violations` instead. The internal `Store#validate_all` Ruby method is unchanged.
+
+### Manifest / store cleanup
+
+- **Breaking:** `LEGACY_ZONES` fallback removed. Manifests must declare a `zones:` block explicitly (init scaffold does this).
+- **Breaking:** legacy syntax errors removed for `source.parse` / `source.from` / `source.fetcher` / top-level `hooks:`. Those names were rejected with helpful errors in 0.4; in 0.5 they get the generic "unknown key" error from YAML parsing.
+- **Internal:** `ManifestEntry` moved to its own file (`lib/textus/manifest_entry.rb`).
+
+### Store split
+
+- **Internal:** `lib/textus/store.rb` shrank from 617 LOC to ~312 LOC. Four focused helpers live under `lib/textus/store/`:
+  - `events.rb` (31 LOC) — `fire_event` hook plumbing
+  - `validator.rb` (53 LOC) — `validate_all` body
+  - `staleness.rb` (142 LOC) — `stale` body (was 5 rubocop disables)
+  - `mover.rb` (118 LOC) — `mv` body
+- No public-API change. `Store` facade delegates to each helper one-line.
+
+### Migration cheat-sheet
+
+```sh
+# 1. Upgrade the gem
+gem update textus           # ≥ 0.5.0
+
+# 2. Upgrade the store
+cd /path/to/your/store
+textus migrate v2           # flips manifest version
+
+# 3. Anything else?
+#    - Audit log: existing TSV rows still readable; new rows are NDJSON.
+#    - CLI scripts: replace `textus mv ...` with `textus key mv ...`
+#      (and 7 similar aliases). Old forms work through 0.5 with a stderr warning.
+#    - Ruby callers of Store#put: pass `meta:` instead of `frontmatter:`.
+#    - Anything reading envelope["frontmatter"]: read envelope["_meta"] instead.
+```
 
 ## 0.4.0 — Extension API redesign (breaking)
 
