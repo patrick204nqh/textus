@@ -3,7 +3,7 @@ module Textus
     class HookGroup < Group
       self.cli_name = "hook"
       subcommands["list"] = Hooks
-      subcommands["run"]  = Action
+      subcommands["run"]  = HookRun
     end
   end
 end

@@ -1,13 +1,13 @@
 module Textus
   class CLI
-    class Action < Verb
+    class HookRun < Verb
       def parse(argv)
         @raw_argv = argv
       end
 
       def call(store)
         name = @raw_argv.shift
-        raise UsageError.new("action requires a name") if name.nil?
+        raise UsageError.new("hook run requires a name") if name.nil?
 
         as_flag = nil
         args = {}
@@ -17,7 +17,7 @@ module Textus
           when /\A--format=/           then next
           when /\A--([\w-]+)=(.*)\z/   then args[::Regexp.last_match(1)] = ::Regexp.last_match(2)
           else
-            raise UsageError.new("unknown arg to 'action #{name}': #{tok}")
+            raise UsageError.new("unknown arg to 'hook run #{name}': #{tok}")
           end
         end
 
@@ -31,12 +31,12 @@ module Textus
           end
         rescue Timeout::Error
           raise UsageError.new(
-            "action '#{name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
+            "hook run '#{name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
           )
         rescue Textus::Error
           raise
         rescue StandardError => e
-          raise UsageError.new("action '#{name}' raised: #{e.class}: #{e.message}")
+          raise UsageError.new("hook run '#{name}' raised: #{e.class}: #{e.message}")
         end
 
         emit({ "action" => name, "ok" => true })
