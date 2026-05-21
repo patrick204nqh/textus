@@ -87,7 +87,8 @@ module Textus
     def delete(...) = @writer.delete(...)
 
     def fire_event(event, **)
-      Events.new(self).call(event, **)
+      view = StoreView.new(self)
+      @bus.publish(event, store: view, **)
     end
 
     def accept(...) = @writer.accept(...)
