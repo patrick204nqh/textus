@@ -222,16 +222,14 @@ RSpec.describe "textus/2 conformance" do
       expect(m.zone_writers("working")).to contain_exactly("human", "ai", "script")
     end
 
-    it "synthesizes default zones if zones block is absent (backward compat)" do
+    it "raises BadFrontmatter if zones block is absent" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/2
         entries:
           - { key: state.x, path: state/x.md, zone: state, schema: null, owner: o }
       YAML
-      m = Textus::Manifest.load(root)
-      expect(m.zone_writers("fixed")).to eq(["human"])
-      expect(m.zone_writers("state")).to contain_exactly("human", "ai", "script")
-      expect(m.zone_writers("derived")).to eq(["build"])
+      expect { Textus::Manifest.load(root) }
+        .to raise_error(Textus::BadFrontmatter, /manifest must declare zones/)
     end
   end
 
@@ -329,7 +327,7 @@ RSpec.describe "textus/2 conformance" do
       res = store.delete("working.network.org.tmp", as: "human")
       expect(res["deleted"]).to be true
       expect(File.exist?(File.join(root, "zones/working/network/org/tmp.md"))).to be false
-      expect(File.read(File.join(root, "audit.log"))).to match(/\tdelete\t/)
+      expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
     end
 
     it "rejects delete on canon by ai role" do

@@ -49,10 +49,9 @@ RSpec.describe "Lifecycle events" do
     store = Textus::Store.new(root)
     env = store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
     expect(env["body"]).to eq("hi") # write succeeded
-    last = File.readlines(File.join(root, "audit.log")).last.chomp.split("\t")
-    extras = JSON.parse(last[6])
-    expect(extras["event"]).to eq("put")
-    expect(extras["error"]).to match(/bang/)
+    last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
+    expect(last["extras"]["event"]).to eq("put")
+    expect(last["extras"]["error"]).to match(/bang/)
   end
 end
 
@@ -239,13 +238,12 @@ RSpec.describe "Accept event" do
     RUBY
     store = Textus::Store.new(root)
     store.accept("pending.bob", as: "human")
-    audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| l.chomp.split("\t") }
-    err = audit_lines.find { |c| c[2] == "event_error" }
+    audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
+    err = audit_lines.find { |h| h["verb"] == "event_error" }
     expect(err).not_to be_nil
-    extras = JSON.parse(err[6])
-    expect(extras["event"]).to eq("accept")
-    expect(extras["pending_key"]).to eq("pending.bob")
-    expect(extras["target_key"]).to eq("working.bob")
+    expect(err["extras"]["event"]).to eq("accept")
+    expect(err["extras"]["pending_key"]).to eq("pending.bob")
+    expect(err["extras"]["target_key"]).to eq("working.bob")
   end
 end
 # rubocop:enable Style/GlobalVars, RSpec/MultipleDescribes
