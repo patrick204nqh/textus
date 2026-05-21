@@ -42,7 +42,7 @@ module Textus
       when "schema-init"    then dispatch(SchemaInit, argv)
       when "schema-diff"    then dispatch(SchemaDiff, argv)
       when "schema-migrate" then dispatch(SchemaMigrate, argv)
-      when "action"         then verb_action(argv)
+      when "action"         then dispatch(ActionVerb, argv)
       when "refresh"        then dispatch(RefreshVerb, argv)
       when "extensions"     then dispatch(Extensions, argv)
       when "migrate-keys"   then dispatch(MigrateKeysVerb, argv)
@@ -152,43 +152,6 @@ module Textus
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
       emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
-    end
-
-    def verb_action(argv)
-      name = argv.shift
-      raise UsageError.new("action requires a name") if name.nil?
-
-      as_flag = nil
-      args = {}
-      argv.each do |tok|
-        case tok
-        when /\A--as=(.+)\z/         then as_flag = ::Regexp.last_match(1)
-        when /\A--format=/           then next
-        when /\A--([\w-]+)=(.*)\z/   then args[::Regexp.last_match(1)] = ::Regexp.last_match(2)
-        else
-          raise UsageError.new("unknown arg to 'action #{name}': #{tok}")
-        end
-      end
-
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-      callable = store.registry.action(name)
-      view = StoreView.new(store, writable: true, as: role)
-
-      begin
-        Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
-          callable.call(config: {}, store: view, args: args)
-        end
-      rescue Timeout::Error
-        raise UsageError.new(
-          "action '#{name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
-        )
-      rescue Textus::Error
-        raise
-      rescue StandardError => e
-        raise UsageError.new("action '#{name}' raised: #{e.class}: #{e.message}")
-      end
-
-      emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
     end
 
     def emit(obj)
