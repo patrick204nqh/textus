@@ -5,7 +5,6 @@ require "timeout"
 require "yaml"
 
 module Textus
-  # rubocop:disable Metrics/ClassLength
   class CLI
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
@@ -44,7 +43,7 @@ module Textus
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
       when "action"         then verb_action(argv)
-      when "refresh"        then verb_refresh(argv)
+      when "refresh"        then dispatch(RefreshVerb, argv)
       when "extensions"     then verb_extensions(argv)
       when "migrate-keys"   then verb_migrate_keys(argv)
       when "mv"             then verb_mv(argv)
@@ -245,17 +244,6 @@ module Textus
       emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
     end
 
-    def verb_refresh(argv)
-      key = argv.shift or raise UsageError.new("refresh requires a key")
-      as_flag = nil
-      OptionParser.new do |o|
-        o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-      emit(Textus::Refresh.call(store, key, as: role))
-    end
-
     def verb_extensions(argv) # rubocop:disable Metrics/AbcSize
       subcommand = argv.shift
       raise UsageError.new("extensions requires 'list'") unless subcommand == "list"
@@ -358,5 +346,4 @@ module Textus
       HELP
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end
