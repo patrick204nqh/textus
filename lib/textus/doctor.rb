@@ -6,7 +6,7 @@ module Textus
   # Health check for a Textus store. Returns a JSON-friendly Hash envelope
   # with an `issues` array and a summary. Each issue is a Hash with
   # `code`, `level`, `subject`, `message`, and optionally `fix`.
-  module Doctor # rubocop:disable Metrics/ModuleLength -- 8 built-in checks + extension dispatch
+  module Doctor # rubocop:disable Metrics/ModuleLength -- 9 built-in checks + extension dispatch
     LEVELS = %w[error warning info].freeze
     DOCTOR_CHECK_TIMEOUT_SECONDS = 2
     ALL_CHECKS = %w[
@@ -16,10 +16,14 @@ module Textus
 
     module_function
 
-    def run(store, checks: ALL_CHECKS)
-      selected = Array(checks).map(&:to_s)
+    def run(store, checks: nil)
+      selected = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected - ALL_CHECKS
-      raise UsageError.new("unknown doctor check: #{unknown.first}") unless unknown.empty?
+      unless unknown.empty?
+        raise UsageError.new(
+          "unknown doctor check: #{unknown.first}. Valid checks: #{ALL_CHECKS.join(", ")}",
+        )
+      end
 
       issues = run_builtin_checks(store, selected)
       issues.concat(run_registered_checks(store)) # extensions always run

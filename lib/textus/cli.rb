@@ -388,10 +388,10 @@ module Textus
     def verb_doctor(argv)
       checks = nil
       OptionParser.new do |o|
-        o.on("--check=NAME") { |v| checks = v.split(",") }
+        o.on("--check=NAME") { |v| checks = v.split(",").map(&:strip) }
         o.on("--format=FMT") {}
       end.permute!(argv)
-      res = checks ? Textus::Doctor.run(store, checks: checks) : Textus::Doctor.run(store)
+      res = Textus::Doctor.run(store, checks: checks)
       @stdout.puts(JSON.generate(res))
       res["ok"] ? 0 : 1
     end
