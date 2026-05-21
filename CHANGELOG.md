@@ -12,6 +12,7 @@ is additive within a major; a new major would change the wire string.
 
 ### Changed
 - Internal: extracted `Textus::Path` and `Textus::Envelope` value modules; `Manifest`, `Store`, `Staleness`, and `Builder` now share the same path/envelope construction.
+- Internal: split `Textus::Store` into `Store::Reader` and `Store::Writer`. Public API unchanged. `Mover`, `Validator`, and `Staleness` now take explicit collaborators instead of the full store.
 
 ## 0.6.0 — Hook unification
 
