@@ -34,7 +34,7 @@ module Textus
       when "schema" then dispatch(Schema, argv)
       when "stale"  then dispatch(Stale, argv)
       when "delete"       then verb_delete(argv)
-      when "build"        then verb_build(argv)
+      when "build"        then dispatch(Build, argv)
       when "deps"         then dispatch(Deps, argv)
       when "rdeps"        then dispatch(Rdeps, argv)
       when "published"    then dispatch(Published, argv)
@@ -166,17 +166,6 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.delete(key, if_etag: if_etag, as: role))
-    end
-
-    def verb_build(argv)
-      prefix = nil
-      OptionParser.new do |o|
-        o.on("--prefix=K") { |v| prefix = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      res = Textus::Builder.new(store).build(prefix: prefix)
-      @stdout.puts(JSON.generate(res))
-      0
     end
 
     def verb_schema_init(argv)
