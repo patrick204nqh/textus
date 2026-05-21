@@ -67,7 +67,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports hook.load_failed for broken hook files" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
-    # Store#load_extensions also loads from hooks/ and raises on load error,
+    # Store#load_hooks also loads from hooks/ and raises on load error,
     # so we move the broken file out of the way during Store.new, then move
     # it back before doctor runs.
     File.write(File.join(root, "hooks/broken.rb"), <<~RUBY)
@@ -150,6 +150,19 @@ RSpec.describe Textus::Doctor do
     expect(res["summary"]).to include("error", "warning", "info")
     expect(res["summary"]["warning"]).to be >= 1
     expect(res["ok"]).to be true
+  end
+
+  it "reports hook.check_failed with a fix hint pointing to .textus/hooks/" do
+    FileUtils.mkdir_p(File.join(root, "hooks"))
+    File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
+      Textus.hook(:check, :bad_check) { |store:| raise "boom in check" }
+    RUBY
+    store = Textus::Store.new(root)
+    res = described_class.run(store)
+    issue = res["issues"].find { |i| i["code"] == "doctor_check.failed" }
+    expect(issue).not_to be_nil
+    expect(issue["fix"]).to include(".textus/hooks/")
+    expect(issue["fix"]).not_to include(".textus/extensions/")
   end
 
   describe "check_schema_violations" do

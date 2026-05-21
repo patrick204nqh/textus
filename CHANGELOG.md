@@ -8,6 +8,27 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.8.1 — Terminology cleanup (2026-05-21)
+
+### Breaking — intro output
+- `textus intro` JSON: the `"extensions"` key is renamed to `"hooks"`. Consumers
+  reading `env["extensions"]` must switch to `env["hooks"]`. Wire protocol
+  remains `textus/2`; envelope shape on read/write is unchanged.
+
+### Internal Ruby renames
+- `Textus::Store#load_extensions` → `Textus::Store#load_hooks`.
+- `Textus::Intro.extensions_for` → `Textus::Intro.hooks_for`.
+- Error string `"failed loading extension <file>"` → `"failed loading hook <file>"`.
+
+### Fixed
+- `textus doctor` `:check`-hook failure hint pointed to `.textus/extensions/`,
+  which has never existed in 0.6+. Now correctly points to `.textus/hooks/`.
+
+### Docs
+- SPEC.md §5.10: "single extension verb" → "single hook verb".
+- Scaffolded `.textus/hooks/README.md` no longer mixes "hook" and "extension"
+  terminology.
+
 ## 0.8.0 — Folder restructure & Zeitwerk autoload (2026-05-21)
 
 ### Breaking — internal Ruby renames

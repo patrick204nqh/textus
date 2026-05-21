@@ -2,7 +2,7 @@ module Textus
   # Read-only "what's in this store and how do I use it" envelope.
   # A single call gives an agent the working model of a textus-managed
   # project: zones and their write authority, entries and their flags,
-  # registered extensions, write flows, and the CLI verb catalog.
+  # registered hooks, write flows, and the CLI verb catalog.
   #
   # Intro is side-effect-free.
   module Intro
@@ -53,7 +53,7 @@ module Textus
         "store_root" => store.root,
         "zones" => zones_for(store),
         "entries" => entries_for(store),
-        "extensions" => extensions_for(store),
+        "hooks" => hooks_for(store),
         "write_flows" => WRITE_FLOWS.dup,
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
@@ -87,7 +87,7 @@ module Textus
       end
     end
 
-    def self.extensions_for(store)
+    def self.hooks_for(store)
       reg = store.registry
       sections = {}
       Hooks::Registry::EVENTS.each do |event, spec|

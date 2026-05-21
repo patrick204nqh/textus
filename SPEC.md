@@ -365,7 +365,7 @@ Reducers are RPC hooks on the `:reduce` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single extension verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/*.rb` are `load`ed at `Store#initialize` in lexical order.
+textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/*.rb` are `load`ed at `Store#initialize` in lexical order.
 
 | Event    | Mode    | Args                              | Return        | Failure |
 |----------|---------|-----------------------------------|---------------|---------|

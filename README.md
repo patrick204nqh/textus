@@ -45,7 +45,7 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
   audit.log           # append-only NDJSON, every write
   schemas/            # YAML field shapes per entry family
   templates/          # mustache templates for derived entries
-  extensions/         # one .rb per action / reducer / hook / doctor_check
+  hooks/              # one .rb per hook
   sentinels/          # publish bookkeeping
   zones/
     canon/            # human-only — identity, voice, decisions
@@ -77,8 +77,8 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key migrate --dry-run|--write` rewrites existing stores with illegal segments deterministically.
-- **`textus intro`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded extensions, write flows per role, the full CLI verb table. The boot signal for any agent — one tool call and it knows your store.
-- **`textus doctor`.** Health check across 9 categories: missing schemas/templates, broken extensions, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
+- **`textus intro`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table. The boot signal for any agent — one tool call and it knows your store.
+- **`textus doctor`.** Health check across 9 categories: missing schemas/templates, broken hooks, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
 - **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
 
 Symlink-mode publish was removed; publish is `FileUtils.cp` + sentinel. Sentinels for published files live under `.textus/sentinels/<target_rel>.textus-managed.json` so consumer directories stay clean. Legacy sibling sentinels auto-migrate on next publish.
@@ -91,7 +91,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 
 | Verb | Purpose |
 |---|---|
-| `intro` | Store orientation: zones, entries, extensions, write flows, CLI map |
+| `intro` | Store orientation: zones, entries, hooks, write flows, CLI map |
 | `list [--prefix=K] [--zone=Z]` | Enumerate keys |
 | `where K` | Resolve a key to its filesystem path |
 | `get K` | Full envelope (frontmatter, body, uid, etag, format) |

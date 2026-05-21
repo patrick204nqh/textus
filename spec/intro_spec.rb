@@ -124,7 +124,7 @@ RSpec.describe Textus::Intro do
 
   it "lists hooks grouped by event, sorted alphabetically" do
     env = described_class.run(store)
-    ext = env["extensions"]
+    ext = env["hooks"]
     expect(ext["reduce"]).to eq(%w[alpha rank_by_recency])
     # demo_action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
     expect(ext["fetch"]).to include("apple", "demo_action", "zebra")

@@ -67,7 +67,7 @@ module Textus
         rescue StandardError => e
           out << fail_issue(name, code: "doctor_check.failed",
                                   message: "#{e.class}: #{e.message}",
-                                  fix: "fix the doctor_check block in .textus/extensions/")
+                                  fix: "fix the :check hook in .textus/hooks/")
         end
       end
       out
