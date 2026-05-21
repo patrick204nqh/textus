@@ -37,15 +37,14 @@ module Textus
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
       { "name" => "accept",   "summary" => "apply a pending.* proposal; --as=human only" },
-      { "name" => "mv",       "summary" => "rename a key in place; uid preserved, audit row written" },
+      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key migrate'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
       { "name" => "refresh",  "summary" => "run an action for an intake entry" },
       { "name" => "stale",    "summary" => "list derived/intake entries past their freshness check" },
       { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
-      { "name" => "migrate-keys", "summary" => "rename files whose basenames violate the strict key grammar" },
       { "name" => "hook",
-        "summary" => "list registered hooks grouped by event (fetch, reduce, check, put, delete, refresh, build, accept)" },
+        "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
     ].freeze
 
     def self.run(store)

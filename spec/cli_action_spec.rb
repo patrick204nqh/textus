@@ -33,7 +33,7 @@ RSpec.describe "textus action verb" do
       stdout = StringIO.new
       stderr = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "action", "sync_demo", "--who=patrick", "--as=human"],
+        ["--root=#{root}", "hook", "run", "sync_demo", "--who=patrick", "--as=human"],
         stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: dir,
       )
       expect(rc).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
@@ -54,11 +54,11 @@ RSpec.describe "textus action verb" do
       Textus::Init.run(root)
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "action"],
+        ["--root=#{root}", "hook", "run"],
         stdin: StringIO.new(""), stdout: out, stderr: StringIO.new, cwd: dir,
       )
       expect(rc).not_to eq(0)
-      expect(JSON.parse(out.string.lines.last)["message"]).to match(/action requires a name/)
+      expect(JSON.parse(out.string.lines.last)["message"]).to match(/requires a name/)
     end
   end
 
@@ -75,7 +75,7 @@ RSpec.describe "textus action verb" do
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "action", "slow", "--as=script"],
+        ["--root=#{root}", "hook", "run", "slow", "--as=script"],
         stdin: StringIO.new(""), stdout: out, stderr: StringIO.new, cwd: dir,
       )
       expect(rc).not_to eq(0)

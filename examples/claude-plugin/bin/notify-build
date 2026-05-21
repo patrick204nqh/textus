@@ -2,9 +2,9 @@
 # External-runner hook for the :build event.
 #
 # Textus itself NEVER invokes this script. A wrapper (cron, lefthook, CI, a
-# Rakefile task) reads `textus extensions list --kind=hook --format=json`,
-# finds rows with `kind=hook` + `exec:` set, and dispatches the exec string
-# under the declared `as:` role.
+# Rakefile task) reads `textus hook list --format=json`, finds rows with
+# `mode=manifest` + `exec:` set, and dispatches the exec string under the
+# declared `as:` role.
 #
 # Usage: bin/notify-build KEY
 #

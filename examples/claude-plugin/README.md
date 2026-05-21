@@ -152,7 +152,7 @@ published file), and audit-log corruption.
 
 ```bash
 textus doctor --format=json
-# → { "protocol": "textus/1", "ok": true, "issues": [],
+# → { "protocol": "textus/2", "ok": true, "issues": [],
 #     "summary": { "error": 0, "warning": 0, "info": 0 } }
 ```
 
@@ -161,18 +161,18 @@ If you edit `agents/voice-writer.md` by hand instead of editing
 surface a `sentinel.drift` warning with a `fix:` hint pointing you at
 `textus build`.
 
-### `textus mv` — move with identity preserved
+### `textus key mv` — move with identity preserved
 
 Each entry written through the API has an optional `uid:` field (16
-hex chars, auto-minted on first `put`). `textus mv` renames a key
+hex chars, auto-minted on first `put`). `textus key mv` renames a key
 without losing that identity, and writes an `mv` row to `.textus/audit.log`
 recording both keys, both paths, and the uid.
 
 ```bash
 # Move a skill between topics — uid survives, audit row written.
-textus mv working.skills.writing.voice-writer \
-          working.skills.editorial.voice-writer \
-          --as=human --format=json
+textus key mv working.skills.writing.voice-writer \
+              working.skills.editorial.voice-writer \
+              --as=human --format=json
 ```
 
 This is how you handle real refactors: re-org an `org/` tree under
@@ -180,13 +180,13 @@ This is how you handle real refactors: re-org an `org/` tree under
 trail tells you *when* the move happened; the uid keeps cross-references
 stable.
 
-### `textus extensions list`
+### `textus hook list`
 
-Inspect the actions, reducers, hooks, and doctor_checks the store has loaded from
-`.textus/extensions/`:
+Inspect the hooks the store has loaded from `.textus/hooks/` and the
+manifest-declared exec hooks:
 
 ```bash
-textus extensions list --format=json
+textus hook list --format=json
 ```
 
 Useful when wiring up an external runner that needs to discover declared
@@ -277,7 +277,7 @@ rake textus:update     # refresh + build + dispatch external :build hooks
 
 ## Project-local extensions
 
-Every `.rb` file in `.textus/extensions/` is auto-loaded on store boot and
+Every `.rb` file in `.textus/hooks/` is auto-loaded on store boot and
 registers into an isolated per-store registry. This example wires up:
 
 - `plugin-envelope` — turns the `canon.plugin` row into a Claude
@@ -287,6 +287,7 @@ registers into an isolated per-store registry. This example wires up:
 - `claude-root` — groups projection rows by source prefix for the CLAUDE.md
   template payload.
 - `rank-by-recency`, `local-file`, `build-stamp` — kept as demos of the
-  action / reducer / hook / doctor_check surfaces.
+  `:reduce` / `:fetch` / `:build` / `:check` event surfaces (all expressed
+  through the unified `Textus.hook(event, name)` DSL).
 
-Inspect everything currently loaded with `textus extensions list --format=json`.
+Inspect everything currently loaded with `textus hook list --format=json`.

@@ -32,7 +32,7 @@ module Textus
       raw = YAML.safe_load_file(manifest_path, aliases: false)
       unless raw["version"] == PROTOCOL
         msg = if raw["version"] == "textus/1"
-                "manifest is textus/1; run 'textus migrate v2' to upgrade. See SPEC §15."
+                "manifest is textus/1; edit manifest.yaml: change 'version: textus/1' to 'version: #{PROTOCOL}'"
               else
                 "unsupported manifest version #{raw["version"].inspect}"
               end
@@ -107,7 +107,7 @@ module Textus
 
             illegal = segs.find { |s| !valid_segment?(s) }
             if illegal
-              warn("textus: skipping illegal key segment '#{illegal}' at #{fp} — run 'textus migrate-keys --dry-run'")
+              warn("textus: skipping illegal key segment '#{illegal}' at #{fp} — run 'textus key migrate --dry-run'")
               next
             end
 

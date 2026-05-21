@@ -139,7 +139,7 @@ zones:
 
 Old manifests written against textus/1 draft v0.1 therefore parse without modification, and any tooling expecting `fixed`/`state`/`derived` continues to work.
 
-**Key grammar (enforced from v1.2):** dotted segments matching `/^[a-z0-9][a-z0-9-]*$/`. Segments are joined by `.`. A key has at most 8 segments; each segment is at most 64 characters. Segments MUST NOT contain dots, slashes, uppercase letters, or underscores. Example: `working.projects.acme.dashboard`. Enforcement points: manifest load (rejects illegal `key:` declarations and illegal nested file/directory names), `put` (rejects illegal keys before any write), `enumerate` (filters and warns on illegal filenames so existing trees still load with a clear migration message). Run-once migration: `textus migrate-keys --dry-run` then `--write` (see §audit).
+**Key grammar (enforced from v1.2):** dotted segments matching `/^[a-z0-9][a-z0-9-]*$/`. Segments are joined by `.`. A key has at most 8 segments; each segment is at most 64 characters. Segments MUST NOT contain dots, slashes, uppercase letters, or underscores. Example: `working.projects.acme.dashboard`. Enforcement points: manifest load (rejects illegal `key:` declarations and illegal nested file/directory names), `put` (rejects illegal keys before any write), `enumerate` (filters and warns on illegal filenames so existing trees still load with a clear migration message). Run-once migration: `textus key migrate --dry-run` then `--write` (see §audit).
 
 **Per-entry `format:` (enforced from v1.2):** an entry MAY declare `format:` to be one of `markdown` (default), `json`, `yaml`, or `text`. The `format` controls the on-disk shape and which path extension is required:
 
@@ -312,7 +312,7 @@ Schema (one JSON object per line, no interior whitespace):
 {"ts":"<iso8601-utc>","role":"<role>","verb":"<verb>","key":"<key>","etag_before":<etag-or-null>,"etag_after":<etag-or-null>}
 ```
 
-`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `key` and the file's pre- and post-rename etags.
+`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). Note that `migrate-keys` here is the on-disk payload key — the CLI surface is `textus key migrate`; the payload string is retained for log stability. `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag). `key migrate --write` emits one line per renamed file (with payload `verb: "migrate-keys"`) using the new key as `key` and the file's pre- and post-rename etags.
 
 For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
 
@@ -353,7 +353,7 @@ evolution:
     OLD_FIELD: NEW_FIELD
 ```
 
-`textus schema-migrate NAME` consults `evolution.migrate_from` when invoked without `--rename=OLD:NEW`, applying every declared rename across affected entries in one pass. An explicit `--rename` flag overrides the schema-declared map for that invocation.
+`textus schema migrate NAME` consults `evolution.migrate_from` when invoked without `--rename=OLD:NEW`, applying every declared rename across affected entries in one pass. An explicit `--rename` flag overrides the schema-declared map for that invocation.
 
 **Backwards compat:** v1.0 schemas (no `fields:`, no `evolution:`) continue to parse and behave identically. `schema.maintained_by(field)` returns `nil` for every field; `schema.evolution` returns `{}`.
 
@@ -536,8 +536,8 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
-| `schema-init NAME` / `schema-diff NAME` / `schema-migrate NAME --rename=OLD:NEW` | write | `human` |
-| `migrate-keys [--dry-run\|--write]` | write (with `--write`) | `human` |
+| `schema init NAME` / `schema diff NAME` / `schema migrate NAME --rename=OLD:NEW` | write | `human` |
+| `key migrate [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `uid K` | read | any |
 | `extensions list [--kind=action\|reducer\|hook]` | read | any |
@@ -572,7 +572,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 
 `textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
-`textus schema-init NAME` writes a stub schema. `schema-diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `schema-migrate NAME --rename=OLD:NEW` rewrites the frontmatter key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
+`textus schema init NAME` writes a stub schema. `textus schema diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `textus schema migrate NAME --rename=OLD:NEW` rewrites the frontmatter key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
 
 ## 10. ETag semantics
 
@@ -621,7 +621,7 @@ Given a derived entry with a `template` clause referencing a `.mustache` file an
 Given a manifest entry with `publish_to: <path>`, a successful `textus build` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a sentinel at `.textus/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `build` is idempotent.
 
 **Fixture H — Audit log format:**
-Every successful write verb (`put`, `delete`, `build`, `accept`, `schema-migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
+Every successful write verb (`put`, `delete`, `build`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
 
 **Fixture I — Pending → accept:**
 Given a pending entry `pending.canon.identity.patch` proposing a change to `canon.identity`, `textus accept canon.identity --as=human` copies the patch body into `canon.identity`, deletes the pending entry, and appends two audit lines (one for the canon write, one for the pending delete) in that order.

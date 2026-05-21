@@ -128,8 +128,6 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `schema diff NAME` | Compare a schema against entries that claim it |
 | `schema migrate NAME [--rename=OLD:NEW]` | Rewrite frontmatter keys across affected entries |
 
-**Deprecated (removed in 0.6):** `mv`, `uid`, `migrate-keys`, `schema-init`, `schema-diff`, `schema-migrate`, `extensions`, `action`.
-
 ## Zones and roles
 
 | Zone | `writable_by` | Purpose |

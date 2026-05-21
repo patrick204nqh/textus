@@ -86,7 +86,7 @@ module Textus
           "level" => "error",
           "subject" => entry.key,
           "message" => "schema '#{entry.schema}' not found at #{sp}",
-          "fix" => "create the schema file or run 'textus schema-init #{entry.schema} --from=<key>'",
+          "fix" => "create the schema file or run 'textus schema init #{entry.schema} --from=<key>'",
         }
       end
       out
@@ -154,7 +154,7 @@ module Textus
             "path" => abs_path,
             "proposed_key" => proposed,
             "message" => "illegal key segment '#{stem}' at #{abs_path}",
-            "fix" => "run 'textus migrate-keys --dry-run' then '--write' to rename to '#{proposed}'",
+            "fix" => "run 'textus key migrate --dry-run' then '--write' to rename to '#{proposed}'",
           }
         end
       end
@@ -230,7 +230,9 @@ module Textus
             }
           end
         else
-          # Legacy TSV: minimum 6 fields. Removed in 0.6.
+          # Legacy TSV (pre-0.5): read-only support retained for on-disk logs
+          # written by older textus versions. Never written by current code.
+          # Minimum 6 fields.
           fields = stripped.split("\t")
           next if fields.length >= 6
 

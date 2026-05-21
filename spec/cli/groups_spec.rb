@@ -59,24 +59,6 @@ RSpec.describe "CLI subcommand groups" do
     end
   end
 
-  # ── flat alias mv (deprecated) ────────────────────────────────────────────
-
-  describe "textus mv OLD NEW (deprecated flat alias)" do
-    it "works and prints a deprecation warning on stderr" do
-      File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
-        zones:
-          - { name: working, writable_by: [human, ai, script] }
-        entries:
-          - { key: working.note, path: working/note.md, zone: working }
-          - { key: working.memo, path: working/memo.md, zone: working }
-      YAML
-      rc = run(["mv", "working.note", "working.memo", "--as=human"])
-      expect(rc).to eq(0)
-      expect(stderr.string).to match(/deprecated.*use 'textus key mv'.*Removed in 0\.6/i)
-    end
-  end
-
   # ── schema group ──────────────────────────────────────────────────────────
 
   describe "textus schema show KEY" do
@@ -84,14 +66,6 @@ RSpec.describe "CLI subcommand groups" do
       rc = run(["schema", "show", "working.note"])
       expect(rc).to eq(0)
       expect(stderr.string).to be_empty
-    end
-  end
-
-  describe "textus schema KEY (back-compat dotted key)" do
-    it "falls through to schema show and prints a deprecation warning" do
-      rc = run(["schema", "working.note"])
-      expect(rc).to eq(0)
-      expect(stderr.string).to match(/deprecated.*use 'textus schema show KEY'.*Removed in 0\.6/i)
     end
   end
 
