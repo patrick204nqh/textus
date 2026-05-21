@@ -97,21 +97,13 @@ RSpec.describe "CLI subcommand groups" do
 
   # ── extension group ───────────────────────────────────────────────────────
 
-  describe "textus extension list" do
-    it "lists extensions and prints no deprecation warning" do
-      rc = run(%w[extension list])
+  describe "textus hook list" do
+    it "lists hooks and prints no deprecation warning" do
+      rc = run(%w[hook list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
-      expect(payload).to have_key("extensions")
+      expect(payload).to have_key("hooks")
       expect(stderr.string).to be_empty
-    end
-  end
-
-  describe "textus extensions list (deprecated flat alias)" do
-    it "works and prints a deprecation warning" do
-      rc = run(%w[extensions list])
-      expect(rc).to eq(0)
-      expect(stderr.string).to match(/deprecated.*use 'textus extension list'.*Removed in 0\.6/i)
     end
   end
 

@@ -3,7 +3,7 @@ module Textus
     class Put < Verb
       option :as_flag, "--as=ROLE"
       option :use_stdin, "--stdin"
-      option :action_name, "--action=NAME"
+      option :fetch_name, "--fetch=NAME"
 
       def call(store) # rubocop:disable Metrics/AbcSize
         key = positional.shift or raise UsageError.new("put requires a key")
@@ -13,16 +13,16 @@ module Textus
 
         raw = @stdin.read
         payload =
-          if action_name
-            callable = store.registry.action(action_name)
+          if fetch_name
+            callable = store.registry.rpc_callable(:fetch, fetch_name)
             result =
               begin
-                Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
+                Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do
                   callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store), args: {})
                 end
               rescue Timeout::Error
                 raise UsageError.new(
-                  "action '#{action_name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
+                  "fetch '#{fetch_name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
                 )
               end
             basename = key.split(".").last
@@ -30,7 +30,7 @@ module Textus
               "_meta" => {
                 "name" => basename,
                 "last_refreshed_at" => Time.now.utc.iso8601,
-                "actioned_with" => action_name,
+                "fetched_with" => fetch_name,
               }.merge(result[:_meta] || result["_meta"] || result[:frontmatter] || result["frontmatter"] || {}),
               "body" => result[:body] || result["body"] || "",
             }

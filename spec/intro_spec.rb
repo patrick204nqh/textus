@@ -122,15 +122,15 @@ RSpec.describe Textus::Intro do
     expect(by_key["working.notes"]["nested"]).to be true
   end
 
-  it "lists extensions sorted alphabetically" do
+  it "lists hooks grouped by event, sorted alphabetically" do
     env = described_class.run(store)
     ext = env["extensions"]
-    expect(ext["reducers"]).to eq(%w[alpha rank_by_recency])
+    expect(ext["reduce"]).to eq(%w[alpha rank_by_recency])
     # demo_action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["actions"]).to include("apple", "demo_action", "zebra")
-    expect(ext["actions"]).to eq(ext["actions"].sort)
-    expect(ext["hooks"]).to eq([{ "event" => "build", "name" => "stamp_log" }])
-    expect(ext["doctor_checks"]).to include("smoke")
+    expect(ext["fetch"]).to include("apple", "demo_action", "zebra")
+    expect(ext["fetch"]).to eq(ext["fetch"].sort)
+    expect(ext["build"]).to eq(["stamp_log"])
+    expect(ext["check"]).to include("smoke")
   end
 
   it "includes verbatim write_flows and cli_verbs" do
@@ -139,7 +139,7 @@ RSpec.describe Textus::Intro do
     expect(env["write_flows"]["ai"]).to include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "extensions")
+    expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "hook")
   end
 
   it "is callable through the CLI as JSON" do

@@ -27,16 +27,16 @@ module Textus
         end
 
         role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-        callable = store.registry.action(name)
+        callable = store.registry.rpc_callable(:fetch, name)
         view = StoreView.new(store, writable: true, as: role)
 
         begin
-          Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
+          Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do
             callable.call(config: {}, store: view, args: args)
           end
         rescue Timeout::Error
           raise UsageError.new(
-            "action '#{name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
+            "action '#{name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
           )
         rescue Textus::Error
           raise

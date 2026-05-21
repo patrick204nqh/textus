@@ -98,7 +98,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
-| `extension list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
+| `hook list [--event=E]` | Registered hooks grouped by event (fetch, reduce, check, put, delete, refresh, build, accept) |
 
 **Write:**
 
