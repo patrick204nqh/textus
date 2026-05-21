@@ -2,7 +2,7 @@ module Textus
   class CLI
     class Published < Verb
       def call(store)
-        emit({ "protocol" => Textus::PROTOCOL, "published" => store.published })
+        emit({ "protocol" => PROTOCOL, "published" => store.published })
       end
     end
   end
