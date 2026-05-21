@@ -60,16 +60,18 @@ Manifest `path:` fields are relative to `.textus/zones/`. So `working.network.or
 Read and write:
 
 ```sh
-textus get working.network.org.jane --format=json
-textus list --zone=working --format=json
-echo '{"frontmatter":{"name":"bob","org":"acme"},"body":"hi\n"}' \
-  | textus put working.network.org.bob --as=human --stdin --format=json
-textus stale --zone=derived --format=json
+textus get working.network.org.jane
+textus list --zone=working
+echo '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
+  | textus put working.network.org.bob --as=human --stdin
+textus stale --zone=derived
 ```
+
+(All verbs return JSON envelopes by default; pass `--format=json` explicitly if you prefer.)
 
 For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake action — see [`examples/claude-plugin/`](examples/claude-plugin/).
 
-## What 0.2 ships
+## What ships today
 
 - **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/derived/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `reducer`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
