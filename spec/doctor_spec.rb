@@ -152,6 +152,19 @@ RSpec.describe Textus::Doctor do
     expect(res["ok"]).to be true
   end
 
+  it "reports hook.check_failed with a fix hint pointing to .textus/hooks/" do
+    FileUtils.mkdir_p(File.join(root, "hooks"))
+    File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
+      Textus.hook(:check, :bad_check) { |store:| raise "boom in check" }
+    RUBY
+    store = Textus::Store.new(root)
+    res = described_class.run(store)
+    issue = res["issues"].find { |i| i["code"] == "doctor_check.failed" }
+    expect(issue).not_to be_nil
+    expect(issue["fix"]).to include(".textus/hooks/")
+    expect(issue["fix"]).not_to include(".textus/extensions/")
+  end
+
   describe "check_schema_violations" do
     let(:tmp2) { Dir.mktmpdir }
 
