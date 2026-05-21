@@ -4,7 +4,8 @@ module Textus
   class Store
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     class Mover
-      def initialize(reader:, writer:, manifest:, audit_log:)
+      def initialize(store:, reader:, writer:, manifest:, audit_log:)
+        @store = store
         @reader = reader
         @writer = writer
         @manifest = manifest
@@ -79,13 +80,14 @@ module Textus
           }
         )
 
-        env = @reader.get(new_key)
+        new_envelope = @reader.get(new_key)
+        @store.fire_event(:mv, from_key: old_key, to_key: new_key, envelope: new_envelope)
         {
           "protocol" => PROTOCOL, "ok" => true,
           "from_key" => old_key, "to_key" => new_key,
           "from_path" => old_path, "to_path" => new_path,
           "uid" => current_uid,
-          "envelope" => env
+          "envelope" => new_envelope
         }
       end
 
