@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::HookRegistry do
+RSpec.describe Textus::Hooks::Registry do
   let(:reg) { described_class.new }
 
   # Reusable hook bodies whose kwargs are referenced so rubocop is happy.
@@ -15,9 +15,9 @@ RSpec.describe Textus::HookRegistry do
 
   describe "EVENTS table" do
     it "freezes the table and exposes mode/args for each event" do
-      expect(Textus::HookRegistry::EVENTS).to be_frozen
-      expect(Textus::HookRegistry::EVENTS[:fetch][:mode]).to eq(:rpc)
-      expect(Textus::HookRegistry::EVENTS[:put][:mode]).to eq(:pubsub)
+      expect(Textus::Hooks::Registry::EVENTS).to be_frozen
+      expect(Textus::Hooks::Registry::EVENTS[:fetch][:mode]).to eq(:rpc)
+      expect(Textus::Hooks::Registry::EVENTS[:put][:mode]).to eq(:pubsub)
     end
   end
 

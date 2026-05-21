@@ -184,7 +184,7 @@ module Textus
       end
 
       def validate_events!
-        pubsub_events = HookRegistry::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
+        pubsub_events = Hooks::Registry::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
         @events.each_key do |evt|
           next if pubsub_events.include?(evt.to_sym)
 

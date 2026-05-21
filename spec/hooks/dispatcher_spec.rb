@@ -6,7 +6,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Textus::EventBus do
+RSpec.describe Textus::Hooks::Dispatcher do
   let(:audit) { instance_double(Textus::Store::AuditLog, append: nil) }
   let(:bus)   { described_class.new(audit_log: audit) }
 
@@ -38,7 +38,7 @@ RSpec.describe Textus::EventBus do
   end
 end
 
-RSpec.describe "EventBus external subscription" do
+RSpec.describe "Hooks::Dispatcher external subscription" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 

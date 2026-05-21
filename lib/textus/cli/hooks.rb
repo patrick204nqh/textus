@@ -12,7 +12,7 @@ module Textus
         end
 
         rows = []
-        HookRegistry::EVENTS.each do |event, spec|
+        Textus::Hooks::Registry::EVENTS.each do |event, spec|
           mode = spec[:mode].to_s
           case spec[:mode]
           when :rpc

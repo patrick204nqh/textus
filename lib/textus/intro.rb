@@ -90,7 +90,7 @@ module Textus
     def self.extensions_for(store)
       reg = store.registry
       sections = {}
-      HookRegistry::EVENTS.each do |event, spec|
+      Hooks::Registry::EVENTS.each do |event, spec|
         case spec[:mode]
         when :rpc
           sections[event.to_s] = reg.rpc_names(event).map(&:to_s).sort

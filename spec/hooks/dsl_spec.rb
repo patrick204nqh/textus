@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe "Textus.hook DSL" do
-  let(:reg) { Textus::HookRegistry.new }
+  let(:reg) { Textus::Hooks::Registry.new }
 
   around { |ex| Textus.with_registry(reg) { ex.run } }
 

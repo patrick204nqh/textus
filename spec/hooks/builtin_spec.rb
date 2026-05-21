@@ -2,9 +2,9 @@ require "spec_helper"
 require "yaml"
 
 RSpec.describe "Built-in hooks" do
-  let(:reg) { Textus::HookRegistry.new }
+  let(:reg) { Textus::Hooks::Registry.new }
 
-  before { Textus.with_registry(reg) { Textus::BuiltinHooks.register_all } }
+  before { Textus.with_registry(reg) { Textus::Hooks::Builtin.register_all } }
 
   it "registers json, csv, markdown-links, ical-events, rss as :fetch hooks" do
     expect(reg.rpc_names(:fetch)).to contain_exactly(:json, :csv, :"markdown-links", :"ical-events", :rss)
