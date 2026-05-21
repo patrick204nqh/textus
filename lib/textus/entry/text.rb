@@ -6,11 +6,11 @@ module Textus
         raw = raw.dup.force_encoding(Encoding::UTF_8)
         raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?
 
-        { "frontmatter" => {}, "body" => raw, "content" => nil }
+        { "_meta" => {}, "body" => raw, "content" => nil }
       end
 
-      def self.serialize(frontmatter:, body:, content: nil)
-        _ = frontmatter
+      def self.serialize(meta:, body:, content: nil)
+        _ = meta
         _ = content
         b = body.to_s
         b += "\n" unless b.empty? || b.end_with?("\n")

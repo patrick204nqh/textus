@@ -7,7 +7,7 @@ module Textus
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
         raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?
-        return { "frontmatter" => {}, "body" => raw, "content" => nil } unless raw.start_with?("---\n") || raw.start_with?("---\r\n")
+        return { "_meta" => {}, "body" => raw, "content" => nil } unless raw.start_with?("---\n") || raw.start_with?("---\r\n")
 
         lines = raw.split(/\r?\n/, -1)
         close_idx = lines[1..].index("---")
@@ -22,12 +22,12 @@ module Textus
           raise BadFrontmatter.new(path, "YAML parse failed: #{e.message}")
         end
         fm = {} unless fm.is_a?(Hash)
-        { "frontmatter" => fm, "body" => body, "content" => nil }
+        { "_meta" => fm, "body" => body, "content" => nil }
       end
 
-      def self.serialize(frontmatter:, body:, content: nil)
+      def self.serialize(meta:, body:, content: nil)
         _ = content # markdown ignores content
-        fm_yaml = frontmatter.empty? ? "" : ::YAML.dump(frontmatter).sub(/\A---\n/, "")
+        fm_yaml = meta.empty? ? "" : ::YAML.dump(meta).sub(/\A---\n/, "")
         body = body.to_s
         body += "\n" unless body.empty? || body.end_with?("\n")
         "---\n#{fm_yaml}---\n#{body}"

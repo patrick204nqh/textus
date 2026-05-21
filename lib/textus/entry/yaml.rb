@@ -17,13 +17,15 @@ module Textus
 
         meta = parsed["_meta"]
         fm = meta.is_a?(Hash) ? meta : {}
-        { "frontmatter" => fm, "body" => raw, "content" => parsed }
+        content_without_meta = parsed.except("_meta")
+        { "_meta" => fm, "body" => raw, "content" => content_without_meta }
       end
 
-      def self.serialize(frontmatter:, body:, content: nil)
-        _ = frontmatter
+      def self.serialize(meta:, body:, content: nil)
         if content.is_a?(Hash)
-          ::YAML.dump(content).sub(/\A---\n/, "")
+          # Re-inject _meta as the first key so on-disk shape is stable.
+          on_disk = meta && !meta.empty? ? { "_meta" => meta }.merge(content) : content
+          ::YAML.dump(on_disk).sub(/\A---\n/, "")
         elsif body && !body.to_s.empty?
           b = body.to_s
           b += "\n" unless b.end_with?("\n")
