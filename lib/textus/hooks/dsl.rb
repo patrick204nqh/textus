@@ -1,7 +1,13 @@
 module Textus
   module Hooks
     module Dsl
-      def fetch(name, **, &) = Loader.current_registry.register(:fetch, name.to_sym, **, &)
+      EVENTS = %i[fetch reduce check put delete refresh build accept].freeze
+
+      EVENTS.each do |event|
+        define_method(event) do |name, **opts, &blk|
+          Loader.current_registry.register(event, name, **opts, &blk)
+        end
+      end
     end
   end
 end
