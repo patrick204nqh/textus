@@ -73,7 +73,7 @@ RSpec.describe "Refresh event" do
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     $log = []
@@ -95,7 +95,7 @@ RSpec.describe "Refresh event" do
     Textus::Refresh.call(store, "intake.x", as: "script")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v2" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk (fresh registry)
@@ -111,7 +111,7 @@ RSpec.describe "Refresh event" do
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk
@@ -125,7 +125,7 @@ RSpec.describe "Refresh event" do
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
       Textus.hook(:put,     :p) { |key:, envelope:, store:| $log << [:put, key] }
       Textus.hook(:refresh, :r) { |key:, envelope:, store:, change:| $log << [:refresh, key, change] }
     RUBY
