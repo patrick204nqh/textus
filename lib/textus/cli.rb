@@ -38,7 +38,7 @@ module Textus
       when "deps"         then dispatch(Deps, argv)
       when "rdeps"        then dispatch(Rdeps, argv)
       when "published"    then dispatch(Published, argv)
-      when "accept"       then verb_accept(argv)
+      when "accept"       then dispatch(Accept, argv)
       when "init"         then verb_init(argv)
       when "schema-init"    then verb_schema_init(argv)
       when "schema-diff"    then verb_schema_diff(argv)
@@ -206,17 +206,6 @@ module Textus
       res = Textus::Init.run(target)
       @stdout.puts(JSON.generate(res))
       0
-    end
-
-    def verb_accept(argv)
-      key = argv.shift or raise UsageError.new("accept requires a key")
-      as_flag = nil
-      OptionParser.new do |o|
-        o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-      emit(store.accept(key, as: role))
     end
 
     def verb_action(argv)
