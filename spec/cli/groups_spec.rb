@@ -69,7 +69,7 @@ RSpec.describe "CLI subcommand groups" do
     end
   end
 
-  # ── extension group ───────────────────────────────────────────────────────
+  # ── hook group ────────────────────────────────────────────────────────────
 
   describe "textus hook list" do
     it "lists hooks and prints no deprecation warning" do

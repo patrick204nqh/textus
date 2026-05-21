@@ -67,7 +67,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports hook.load_failed for broken hook files" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
-    # Store#load_extensions also loads from hooks/ and raises on load error,
+    # Store#load_hooks also loads from hooks/ and raises on load error,
     # so we move the broken file out of the way during Store.new, then move
     # it back before doctor runs.
     File.write(File.join(root, "hooks/broken.rb"), <<~RUBY)

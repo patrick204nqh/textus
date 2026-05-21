@@ -98,7 +98,7 @@ RSpec.describe "Refresh event" do
       Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
-    # Re-instantiate to reload extension file from disk (fresh registry)
+    # Re-instantiate to reload hook file from disk (fresh registry)
     store2 = Textus::Store.new(root)
     Textus::Refresh.call(store2, "intake.x", as: "script")
     expect($log.last).to eq(["intake.x", :updated])
@@ -107,14 +107,14 @@ RSpec.describe "Refresh event" do
   it "does NOT fire :refresh when the fetched bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
-    # Rewrite extension with same action body so the log is preserved
+    # Rewrite hook with same body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
       Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
-    # Re-instantiate to reload extension file from disk
+    # Re-instantiate to reload hook file from disk
     store2 = Textus::Store.new(root)
     Textus::Refresh.call(store2, "intake.x", as: "script")
     # Two refreshes with identical action body (both "v1") — only the first
