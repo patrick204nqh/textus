@@ -8,6 +8,29 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.8.3 — Plugin layout (UNRELEASED)
+
+### Added
+- Plugin-directory convention for `.textus/hooks/`. Each subdirectory is
+  treated as a plugin: its `lib/` (if present) is prepended to `$LOAD_PATH`,
+  and its entry file (`<name>.rb` or fallback `hook.rb`) is loaded first.
+  The plugin subtree is not auto-globbed — the entry file pulls in the rest
+  via `require`. This lets multi-file plugins live entirely inside
+  `.textus/hooks/` without a parallel gem-path shim.
+
+### Changed
+- Hook loader no longer recurses arbitrarily. Top-level `*.rb` files load
+  first, then each immediate subdirectory is processed as a plugin (see
+  above). A subdirectory under `.textus/hooks/` without an entry file is now
+  rejected with `UsageError` — previously it was silently recursed into.
+
+### Unchanged
+- Top-level `.textus/hooks/*.rb` single-file hooks load exactly as before
+  (using `load`, so re-instantiating a `Store` re-executes them — matches
+  prior behavior).
+- All registered hook names, EVENTS table, DSL surface, wire protocol
+  (`textus/2`), envelope shape.
+
 ## 0.8.2 — Hook DSL sugar + :publish event (2026-05-22)
 
 ### Added

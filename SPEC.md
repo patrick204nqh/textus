@@ -365,9 +365,30 @@ Reducers are RPC hooks on the `:reduce` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
+textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/` are `load`ed at `Store#initialize`: top-level `*.rb` files first, then each plugin subdirectory's entry file (see "Plugin layout" below).
 
-The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path. Files are loaded in alphabetical order by full path.
+#### Plugin layout (0.8.3+)
+
+Subdirectories under `.textus/hooks/` are treated as plugins. For each subdir `<name>/`:
+
+- If `<name>/lib/` exists, it is prepended to `$LOAD_PATH`. Plugin code can then `require "<name>/foo"` against files under `<name>/lib/<name>/foo.rb`.
+- The entry file is `load`ed first. Resolution order: `<name>/<name>.rb`, then `<name>/hook.rb`. A subdir with neither is rejected with `UsageError`.
+- The plugin subtree is **not** auto-globbed. The entry file is responsible for pulling in the rest via `require`.
+
+Top-level `.textus/hooks/*.rb` continue to load as before — use them for simple single-file hooks.
+
+```
+.textus/hooks/
+  notify.rb                       # single-file hook
+  patrick/                        # plugin
+    patrick.rb                    # entry
+    lib/
+      patrick/
+        runner.rb
+        config.rb
+```
+
+The registered event and name come from the DSL call, not the file path.
 
 #### Sugar surface (0.8.2+)
 
