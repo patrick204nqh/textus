@@ -46,7 +46,7 @@ module Textus
       when "refresh"        then dispatch(RefreshVerb, argv)
       when "extensions"     then dispatch(Extensions, argv)
       when "migrate-keys"   then dispatch(MigrateKeysVerb, argv)
-      when "mv"             then verb_mv(argv)
+      when "mv"             then dispatch(Mv, argv)
       when "uid"            then dispatch(Uid, argv)
       when "doctor"         then dispatch(DoctorVerb, argv)
       when "intro"          then dispatch(IntroVerb, argv)
@@ -189,20 +189,6 @@ module Textus
       end
 
       emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
-    end
-
-    def verb_mv(argv)
-      old_key = argv.shift or raise UsageError.new("mv requires <old-key> <new-key>")
-      new_key = argv.shift or raise UsageError.new("mv requires <old-key> <new-key>")
-      as_flag = nil
-      dry_run = false
-      OptionParser.new do |o|
-        o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--dry-run") { dry_run = true }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-      emit(store.mv(old_key, new_key, as: role, dry_run: dry_run))
     end
 
     def emit(obj)
