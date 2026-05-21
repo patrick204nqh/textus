@@ -86,7 +86,7 @@ module Textus
           "level" => "error",
           "subject" => entry.key,
           "message" => "schema '#{entry.schema}' not found at #{sp}",
-          "fix" => "create the schema file or run 'textus schema-init #{entry.schema} --from=<key>'",
+          "fix" => "create the schema file or run 'textus schema init #{entry.schema} --from=<key>'",
         }
       end
       out

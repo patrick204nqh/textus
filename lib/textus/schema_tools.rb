@@ -3,7 +3,7 @@ require "fileutils"
 
 module Textus
   module SchemaTools
-    # textus schema-init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
+    # textus schema init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
     def self.init(store, name:, from:)
       env = store.get(from)
       meta = env["_meta"]
@@ -19,7 +19,7 @@ module Textus
       { "protocol" => PROTOCOL, "schema_name" => name, "path" => target }
     end
 
-    # textus schema-diff NAME  → list keys whose frontmatter violates the schema
+    # textus schema diff NAME  → list keys whose frontmatter violates the schema
     def self.diff(store, name:)
       schema = load_schema(store, name)
       drift = []
@@ -34,7 +34,7 @@ module Textus
       { "protocol" => PROTOCOL, "schema_name" => name, "drift" => drift }
     end
 
-    # textus schema-migrate NAME --rename=OLD:NEW → rewrites frontmatter across affected entries
+    # textus schema migrate NAME --rename=OLD:NEW → rewrites frontmatter across affected entries
     # If --rename is omitted, falls back to schema.evolution.migrate_from.
     def self.migrate(store, name:, rename: nil)
       renames =
@@ -46,7 +46,7 @@ module Textus
         else
           load_schema(store, name).evolution["migrate_from"] || {}
         end
-      raise UsageError.new("schema-migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
+      raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
       touched = []
       store.manifest.enumerate.each do |row|
