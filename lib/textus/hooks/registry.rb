@@ -14,7 +14,7 @@ module Textus
         build: { mode: :pubsub, args: %i[store key envelope sources] },
         accept: { mode: :pubsub, args: %i[store key target_key] },
         publish: { mode: :pubsub, args: %i[store key envelope source target] },
-        mv: { mode: :pubsub, args: %i[store from_key to_key envelope] },
+        mv: { mode: :pubsub, args: %i[store key from_key to_key envelope] },
       }.freeze
 
       def initialize(dispatcher: nil)

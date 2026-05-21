@@ -81,7 +81,7 @@ module Textus
         )
 
         new_envelope = @reader.get(new_key)
-        @store.fire_event(:mv, from_key: old_key, to_key: new_key, envelope: new_envelope)
+        @store.fire_event(:mv, key: new_key, from_key: old_key, to_key: new_key, envelope: new_envelope)
         {
           "protocol" => PROTOCOL, "ok" => true,
           "from_key" => old_key, "to_key" => new_key,

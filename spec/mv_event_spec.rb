@@ -19,7 +19,7 @@ RSpec.describe ":mv event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:mv, :log_mv) do |from_key:, to_key:, envelope:, store:|
+      Textus.hook(:mv, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
         $textus_event_log << [:mv, from_key, to_key, envelope["uid"]]
       end
       Textus.hook(:put,    :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
@@ -59,6 +59,21 @@ RSpec.describe ":mv event" do
     $textus_event_log.clear
     store.mv("working.a", "working.b", as: "human", dry_run: true)
     expect($textus_event_log).to be_empty
+  end
+
+  it "routes :mv hooks via keys: glob against the destination key" do
+    File.write(File.join(root, "hooks/scoped.rb"), <<~RUBY)
+      $textus_scoped_log ||= []
+      Textus.hook(:mv, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
+      Textus.hook(:mv, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
+    RUBY
+    $textus_scoped_log = []
+    store = Textus::Store.new(root)
+    store.put("working.a", meta: { "name" => "a" }, body: "hi", as: "human")
+    store.mv("working.a", "working.b", as: "human")
+    expect($textus_scoped_log.map(&:first)).to eq([:match])
+  ensure
+    $textus_scoped_log = nil
   end
 end
 # rubocop:enable Style/GlobalVars
