@@ -1,6 +1,5 @@
 require "fileutils"
 require "securerandom"
-require "time"
 
 module Textus
   class Store
