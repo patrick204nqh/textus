@@ -1,0 +1,41 @@
+require "spec_helper"
+require "tmpdir"
+require "fileutils"
+
+RSpec.describe Textus::Doctor::Check::Schemas do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "schemas"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/2
+      zones:
+        - { name: working, writable_by: [human] }
+      entries:
+        - { key: working.note, path: working/note.md, zone: working, schema: note }
+    YAML
+    File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
+      name: note
+      required: []
+      fields: {}
+    YAML
+  end
+
+  after { FileUtils.remove_entry(tmp) }
+
+  it "returns empty array when all referenced schemas exist" do
+    store = Textus::Store.new(root)
+    issues = described_class.new(store).call
+    expect(issues).to eq([])
+  end
+
+  it "returns an error issue when a referenced schema is missing" do
+    File.delete(File.join(root, "schemas/note.yaml"))
+    store = Textus::Store.new(root)
+    issues = described_class.new(store).call
+    expect(issues).to include(hash_including("code" => "schema.missing", "level" => "error"))
+    expect(issues.first["fix"]).to include("note")
+  end
+end
