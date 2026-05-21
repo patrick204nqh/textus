@@ -4,19 +4,22 @@ module Textus
   class Store
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     class Mover
-      def initialize(store)
-        @store = store
+      def initialize(reader:, writer:, manifest:, audit_log:)
+        @reader = reader
+        @writer = writer
+        @manifest = manifest
+        @audit_log = audit_log
       end
 
       def call(old_key, new_key, as: Role::DEFAULT, dry_run: false)
-        @store.manifest.validate_key!(old_key)
-        @store.manifest.validate_key!(new_key)
+        @manifest.validate_key!(old_key)
+        @manifest.validate_key!(new_key)
         raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-        old_mentry, old_path, = @store.manifest.resolve(old_key)
+        old_mentry, old_path, = @manifest.resolve(old_key)
         raise UnknownKey.new(old_key) unless File.exist?(old_path)
 
-        new_mentry, new_path, = @store.manifest.resolve(new_key)
+        new_mentry, new_path, = @manifest.resolve(new_key)
 
         if old_mentry.zone != new_mentry.zone
           raise UsageError.new(
@@ -30,13 +33,13 @@ module Textus
           )
         end
 
-        writers = @store.manifest.zone_writers(old_mentry.zone)
+        writers = @manifest.zone_writers(old_mentry.zone)
         raise WriteForbidden.new(old_key, old_mentry.zone, writers: writers) unless writers.include?(as)
 
         raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)
 
         # Mint uid before the move so the audit row carries it.
-        pre_env = @store.get(old_key)
+        pre_env = @reader.get(old_key)
         current_uid = pre_env["uid"]
         etag_before = pre_env["etag"]
 
@@ -51,12 +54,12 @@ module Textus
 
         if current_uid.nil?
           # Write the uid in place first so the source file carries it before mv.
-          pre_env = @store.put(old_key,
-                               meta: pre_env["_meta"],
-                               body: pre_env["body"],
-                               content: pre_env["content"],
-                               as: as,
-                               suppress_events: true)
+          pre_env = @writer.put(old_key,
+                                meta: pre_env["_meta"],
+                                body: pre_env["body"],
+                                content: pre_env["content"],
+                                as: as,
+                                suppress_events: true)
           current_uid = pre_env["uid"]
           etag_before = pre_env["etag"]
         end
@@ -66,7 +69,7 @@ module Textus
         rewrite_name_for_mv!(new_mentry, new_path, new_key)
         etag_after = Etag.for_file(new_path)
 
-        @store.audit_log.append(
+        @audit_log.append(
           role: as, verb: "mv", key: new_key,
           etag_before: etag_before, etag_after: etag_after,
           extras: {
@@ -76,7 +79,7 @@ module Textus
           }
         )
 
-        env = @store.get(new_key)
+        env = @reader.get(new_key)
         {
           "protocol" => PROTOCOL, "ok" => true,
           "from_key" => old_key, "to_key" => new_key,

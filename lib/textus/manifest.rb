@@ -169,12 +169,7 @@ module Textus
     end
 
     def resolve_leaf_path(entry)
-      primary_ext = Entry.for_format(entry.format).extensions.first
-      if File.extname(entry.path) == ""
-        File.join(@root, "zones", entry.path + primary_ext)
-      else
-        File.join(@root, "zones", entry.path)
-      end
+      Textus::Path.resolve(self, entry)
     end
 
     def nested_glob(format)

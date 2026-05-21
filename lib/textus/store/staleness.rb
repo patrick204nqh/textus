@@ -4,13 +4,13 @@ module Textus
   class Store
     # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
     class Staleness
-      def initialize(store)
-        @store = store
+      def initialize(manifest:)
+        @manifest = manifest
       end
 
       def call(prefix: nil, zone: nil)
         out = []
-        @store.manifest.entries.each do |mentry|
+        @manifest.entries.each do |mentry|
           next unless mentry.zone == "derived"
           next if zone && mentry.zone != zone
 
@@ -18,7 +18,7 @@ module Textus
           next unless gen
           next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-          path = path_for_entry(mentry)
+          path = Textus::Path.resolve(@manifest, mentry)
 
           unless File.exist?(path)
             out << stale_row(mentry, path, "derived entry has never been generated")
@@ -46,7 +46,7 @@ module Textus
           out << stale_row(mentry, path, "source '#{offender}' modified after generated.at") if offender
         end
 
-        @store.manifest.entries.each do |mentry|
+        @manifest.entries.each do |mentry|
           next unless mentry.fetch
           next if zone && mentry.zone != zone
           next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
@@ -54,7 +54,7 @@ module Textus
           ttl = parse_ttl(mentry.ttl)
           next unless ttl
 
-          path = path_for_entry(mentry)
+          path = Textus::Path.resolve(@manifest, mentry)
 
           unless File.exist?(path)
             out << intake_stale_row(mentry, path, "never refreshed")
@@ -81,23 +81,14 @@ module Textus
 
       private
 
-      def path_for_entry(mentry)
-        primary_ext = Entry.for_format(mentry.format).extensions.first
-        if File.extname(mentry.path) == ""
-          File.join(@store.root, "zones", mentry.path + primary_ext)
-        else
-          File.join(@store.root, "zones", mentry.path)
-        end
-      end
-
       def newest_source_after(gen, gen_time)
         Array(gen["sources"]).each do |src|
           if src.match?(/\A[a-z0-9.][a-z0-9._-]*\z/) && !src.include?("/")
-            @store.manifest.enumerate(prefix: src).each do |row|
+            @manifest.enumerate(prefix: src).each do |row|
               return src if File.mtime(row[:path]) > gen_time
             end
           else
-            abs = File.absolute_path?(src) ? src : File.join(File.dirname(@store.root), src)
+            abs = File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.root), src)
             if File.directory?(abs)
               Dir.glob(File.join(abs, "**", "*")).each do |fp|
                 next unless File.file?(fp)
