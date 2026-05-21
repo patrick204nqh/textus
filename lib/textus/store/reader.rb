@@ -16,12 +16,7 @@ module Textus
         content = parsed["content"]
         @store.writer.enforce_name_match!(path, meta, mentry.format)
         schema = @store.schema_for(mentry.schema)
-        if schema
-          case mentry.format
-          when "markdown" then schema.validate!(meta)
-          when "json", "yaml" then schema.validate!(content || {})
-          end
-        end
+        Entry.for_format(mentry.format).validate_against(schema, parsed) if schema
         Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: meta, body: parsed["body"],

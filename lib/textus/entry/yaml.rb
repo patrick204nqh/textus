@@ -35,6 +35,10 @@ module Textus
         end
       end
 
+      def self.validate_against(schema, parsed)
+        schema.validate!(parsed["content"] || {})
+      end
+
       def self.extensions = [".yaml", ".yml"]
     end
   end

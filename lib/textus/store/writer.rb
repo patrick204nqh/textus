@@ -31,10 +31,10 @@ module Textus
 
         schema = @store.schema_for(mentry.schema)
         if schema
-          case mentry.format
-          when "markdown" then schema.validate!(eff_meta)
-          when "json", "yaml" then schema.validate!(eff_content || {})
-          end
+          Entry.for_format(mentry.format).validate_against(
+            schema,
+            { "_meta" => eff_meta, "content" => eff_content },
+          )
         end
 
         etag_before = File.exist?(path) ? Etag.for_file(path) : nil

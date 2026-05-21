@@ -61,4 +61,18 @@ RSpec.describe Textus::Entry::Yaml do
   describe ".extensions" do
     it { expect(described_class.extensions).to eq([".yaml", ".yml"]) }
   end
+
+  describe ".validate_against" do
+    let(:schema) { instance_spy(Textus::Schema) }
+
+    it "passes parsed content to schema.validate!" do
+      described_class.validate_against(schema, { "_meta" => {}, "content" => { "x" => 1 } })
+      expect(schema).to have_received(:validate!).with({ "x" => 1 })
+    end
+
+    it "passes empty hash when content is nil" do
+      described_class.validate_against(schema, { "_meta" => {}, "content" => nil })
+      expect(schema).to have_received(:validate!).with({})
+    end
+  end
 end

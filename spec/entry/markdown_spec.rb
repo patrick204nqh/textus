@@ -49,4 +49,13 @@ RSpec.describe Textus::Entry::Markdown do
       expect(described_class.extensions).to eq([".md"])
     end
   end
+
+  describe ".validate_against" do
+    let(:schema) { instance_spy(Textus::Schema) }
+
+    it "passes parsed _meta to schema.validate!" do
+      described_class.validate_against(schema, { "_meta" => { "name" => "x" }, "body" => "" })
+      expect(schema).to have_received(:validate!).with({ "name" => "x" })
+    end
+  end
 end
