@@ -8,6 +8,32 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.8.2 — Hook DSL sugar (2026-05-21)
+
+### Added
+- Per-event hook sugar: `Textus.fetch`, `.reduce`, `.check`, `.put`, `.delete`,
+  `.refresh`, `.build`, `.accept`. Each takes `(name, **opts, &blk)` and
+  delegates to the existing registry. Block signatures are per-event (no
+  `store:` required for the simple case — use `**` to absorb unused kwargs).
+- `Textus.define :name do … end` block DSL for grouping multiple event
+  handlers under a single logical name. Inside the block, call
+  `fetch/reduce/check/put/delete/refresh/build/accept` without repeating the
+  name.
+- `.textus/hooks/**/*.rb` — hook files in subdirectories are now loaded.
+  Subdirectory names are organizational; the registered event and name come
+  from the DSL call, not the file path. Files load in alphabetical order by
+  full path.
+
+### Unchanged
+- `Textus.hook(:event, :name, &blk)` primitive — still works, still the
+  authoritative entry point.
+- Registry shape, dispatcher behavior, audit log, wire protocol (`textus/2`),
+  envelope shape.
+
+### Example migrations
+The bundled `examples/claude-plugin` was migrated to the new DSL (snake_case
+names, sugar methods). No behavioral change; serves as the canonical example.
+
 ## 0.8.1 — Terminology cleanup (2026-05-21)
 
 ### Breaking — intro output
