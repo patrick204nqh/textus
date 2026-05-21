@@ -47,4 +47,22 @@ RSpec.describe Textus::CLI::Verb do
     v.parse(["alpha", "--format=json", "beta"])
     expect(v.positional).to eq(%w[alpha beta])
   end
+
+  it "two subclasses have independent option registries" do
+    a = Class.new(described_class) { option :alpha, "--alpha=A" }
+    b = Class.new(described_class) { option :beta,  "--beta=B" }
+
+    expect(a.options.map(&:first)).to eq([:alpha])
+    expect(b.options.map(&:first)).to eq([:beta])
+    expect(a.options).not_to be(b.options)
+  end
+
+  it "needs_store? defaults to true; subclasses may override to opt out" do
+    store_free = Class.new(described_class) do
+      def self.needs_store? = false
+      def call(_) = 0
+    end
+    expect(described_class.needs_store?).to be(true)
+    expect(store_free.needs_store?).to be(false)
+  end
 end

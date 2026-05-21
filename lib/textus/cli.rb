@@ -70,7 +70,7 @@ module Textus
     def dispatch(klass, argv)
       v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr)
       v.parse(argv)
-      v.call(store)
+      v.call(klass.needs_store? ? store : nil)
     end
 
     def parse_format!(argv)
