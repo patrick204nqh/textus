@@ -29,7 +29,7 @@ module Textus
       case verb
       when "list"   then verb_list(argv)
       when "where"  then verb_where(argv)
-      when "get"    then verb_get(argv)
+      when "get"    then dispatch(Get, argv)
       when "put"    then verb_put(argv)
       when "schema" then verb_schema(argv)
       when "stale"  then verb_stale(argv)
@@ -65,6 +65,12 @@ module Textus
 
     def store
       @store ||= Store.discover(@cwd, root: @root_arg)
+    end
+
+    def dispatch(klass, argv)
+      v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr)
+      v.parse(argv)
+      v.call(store)
     end
 
     def parse_format!(argv)
@@ -110,12 +116,6 @@ module Textus
       key = argv.shift or raise UsageError.new("where requires a key")
       parse_format!(argv)
       emit(store.where(key))
-    end
-
-    def verb_get(argv)
-      key = argv.shift or raise UsageError.new("get requires a key")
-      parse_format!(argv)
-      emit(store.get(key))
     end
 
     def verb_schema(argv)
