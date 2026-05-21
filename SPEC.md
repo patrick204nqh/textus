@@ -355,7 +355,7 @@ evolution:
 
 **Backwards compat:** v1.0 schemas (no `fields:`, no `evolution:`) continue to parse and behave identically. `schema.maintained_by(field)` returns `nil` for every field; `schema.evolution` returns `{}`.
 
-**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over AI/script-managed data — humans curating canon over AI-written embeddings is a feature, not a bug. All other role mismatches are reported by `validate-all` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
+**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over AI/script-managed data — humans curating canon over AI-written embeddings is a feature, not a bug. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
 ### 5.9 Reducers (v1.2)
 
@@ -594,7 +594,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `stale [--prefix=K] [--strict]` | read | any |
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
-| `validate-all` | read | any |
+| `doctor --check=schema_violations` | read | any |
 | `put K --stdin --as=R [--action=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh K --as=script` | write | per zone (typically `script`) |
@@ -606,7 +606,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `uid K` | read | any |
 | `extensions list [--kind=action\|reducer\|hook]` | read | any |
-| `doctor [--format=json]` | read | any |
+| `doctor [--check=NAME[,NAME]] [--format=json]` | read | any |
 | `intro [--format=json]` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):

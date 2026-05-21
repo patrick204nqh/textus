@@ -34,7 +34,6 @@ module Textus
       when "schema" then verb_schema(argv)
       when "stale"  then verb_stale(argv)
       when "delete"       then verb_delete(argv)
-      when "validate-all" then verb_validate_all(argv)
       when "build"        then verb_build(argv)
       when "deps"         then verb_deps(argv)
       when "rdeps"        then verb_rdeps(argv)
@@ -189,13 +188,6 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.delete(key, if_etag: if_etag, as: role))
-    end
-
-    def verb_validate_all(argv)
-      parse_format!(argv)
-      res = store.validate_all
-      @stdout.puts(JSON.generate(res))
-      res["ok"] ? 0 : 1
     end
 
     def verb_build(argv)
@@ -394,10 +386,12 @@ module Textus
     end
 
     def verb_doctor(argv)
+      checks = nil
       OptionParser.new do |o|
+        o.on("--check=NAME") { |v| checks = v.split(",").map(&:strip) }
         o.on("--format=FMT") {}
       end.permute!(argv)
-      res = Textus::Doctor.run(store)
+      res = Textus::Doctor.run(store, checks: checks)
       @stdout.puts(JSON.generate(res))
       res["ok"] ? 0 : 1
     end
