@@ -1,8 +1,5 @@
 require "json"
 require "optparse"
-require "time"
-require "timeout"
-require "yaml"
 
 module Textus
   class CLI
@@ -70,40 +67,6 @@ module Textus
       v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
       v.parse(argv)
       v.call(klass.needs_store? ? store : nil)
-    end
-
-    def parse_format!(argv)
-      fmt = "json"
-      OptionParser.new do |o|
-        o.on("--format=FMT") { |v| fmt = v }
-      end.permute!(argv)
-      raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
-
-      fmt
-    end
-
-    def parse_prefix!(argv)
-      prefix = nil
-      OptionParser.new do |o|
-        o.on("--prefix=KEY") { |v| prefix = v }
-        o.on("--zone=Z") {}
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      prefix
-    end
-
-    def parse_prefix_and_zone!(argv)
-      prefix = nil
-      zone = nil
-      fmt = "json"
-      OptionParser.new do |o|
-        o.on("--prefix=KEY") { |v| prefix = v }
-        o.on("--zone=Z") { |v| zone = v }
-        o.on("--format=FMT") { |v| fmt = v }
-      end.permute!(argv)
-      raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
-
-      [prefix, zone]
     end
 
     def emit(obj)
