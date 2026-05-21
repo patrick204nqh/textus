@@ -279,7 +279,7 @@ In intake mode the hook MUST return one of three shapes, all normalized by the s
 1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.fetch`, invokes the registered `:fetch` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`.
 
-Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
@@ -365,18 +365,35 @@ Reducers are RPC hooks on the `:reduce` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/*.rb` are `load`ed at `Store#initialize` in lexical order.
+textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
+
+The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path. Files are loaded in alphabetical order by full path.
+
+#### Sugar surface (0.8.2+)
+
+Per-event methods are provided for ergonomics. They delegate to the same registry as `Textus.hook`.
+
+```ruby
+Textus.fetch(:local_file)        { |config:, args:, **|  … }
+Textus.reduce(:rank_by_recency)  { |rows:, **|            … }
+Textus.check(:storage_writable)  { |store:|               … }
+Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| … }
+Textus.publish(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+```
+
+The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the authoritative entry point; sugar methods are thin wrappers.
 
 | Event    | Mode    | Args                              | Return        | Failure |
 |----------|---------|-----------------------------------|---------------|---------|
-| :fetch   | rpc     | store:, config:, args:            | {_meta:, body:}       | aborts op |
-| :reduce  | rpc     | store:, rows:, config:            | rows array            | aborts op |
-| :check   | rpc     | store:                            | issues array          | aborts doctor |
-| :put     | pubsub  | store:, key:, envelope:           | (discarded)           | logged   |
-| :delete  | pubsub  | store:, key:                      | (discarded)           | logged   |
-| :refresh | pubsub  | store:, key:, envelope:, change:  | (discarded)           | logged   |
-| :build   | pubsub  | store:, key:, envelope:, sources: | (discarded)           | logged   |
-| :accept  | pubsub  | store:, key:, target_key:         | (discarded)           | logged   |
+| :fetch   | rpc     | store:, config:, args:                       | {_meta:, body:}       | aborts op |
+| :reduce  | rpc     | store:, rows:, config:                       | rows array            | aborts op |
+| :check   | rpc     | store:                                       | issues array          | aborts doctor |
+| :put     | pubsub  | store:, key:, envelope:                      | (discarded)           | logged   |
+| :delete  | pubsub  | store:, key:                                 | (discarded)           | logged   |
+| :refresh | pubsub  | store:, key:, envelope:, change:             | (discarded)           | logged   |
+| :build   | pubsub  | store:, key:, envelope:, sources:            | (discarded)           | logged   |
+| :accept  | pubsub  | store:, key:, target_key:                    | (discarded)           | logged   |
+| :publish | pubsub  | store:, key:, envelope:, source:, target:    | (discarded)           | logged   |
 
 **Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accept`, `key:` is the pending key being accepted and `target_key:` is the destination).
 

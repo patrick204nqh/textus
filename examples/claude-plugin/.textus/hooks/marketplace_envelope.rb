@@ -2,10 +2,7 @@
 #   - canon.marketplace          → name, owner
 #   - canon.plugin               → plugin name/description for the single listing
 #   - working.skills.<...>       → the per-skill source paths under ./skills/
-Textus.hook(:reduce, :"marketplace-envelope") do |store:, rows:, config:|
-  _ = store
-  _ = config
-
+Textus.reduce(:marketplace_envelope) do |rows:, **|
   market = rows.find { |r| r["_key"] == "canon.marketplace" } || {}
   plugin = rows.find { |r| r["_key"] == "canon.plugin" } || {}
   skills = rows

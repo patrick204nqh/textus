@@ -53,7 +53,7 @@ module Textus
         dir = File.join(@root, "hooks")
         return unless File.directory?(dir)
 
-        Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
+        Dir.glob(File.join(dir, "**/*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
           begin
             load(f)
           rescue StandardError, ScriptError => e

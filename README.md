@@ -150,20 +150,31 @@ Derived entries declare a `projection:` (`select`, `pluck`, `sort_by`, `limit`, 
 
 ## Extension points
 
-textus exposes one DSL verb:
+textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). Events:
 
-```ruby
-Textus.hook(event, name, **opts) { |args| ... }
-```
-
-Drop `.rb` files into `.textus/hooks/`. Events:
-
-- `:fetch` — bring bytes in from elsewhere (returns `{frontmatter:, body:}`)
+- `:fetch` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
 - `:reduce` — transform rows during projection (returns rows)
 - `:check` — custom doctor check (returns issues)
 - `:put`, `:delete`, `:refresh`, `:build`, `:accept` — react to lifecycle events
 
-See SPEC.md §5.10 for the full contract.
+```ruby
+# Inside .textus/hooks/local_file.rb
+Textus.fetch(:local_file) do |config:, args:, **|
+  path = config["path"] or raise "local-file requires source.config.path"
+  {
+    _meta: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
+    body: File.read(File.expand_path(path)),
+  }
+end
+```
+
+```ruby
+Textus.reduce(:rank_by_recency) do |rows:, **|
+  rows.sort_by { |r| r["updated_at"].to_s }.reverse
+end
+```
+
+The primitive `Textus.hook(event, name, **opts) { ... }` is also supported. See SPEC.md §5.10 for the full contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 

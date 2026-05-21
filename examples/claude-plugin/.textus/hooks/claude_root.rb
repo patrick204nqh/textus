@@ -4,9 +4,7 @@ require "time"
 # projection bypasses sort/limit and the builder hands the Hash straight to
 # Mustache. `generated_at` is stamped here because Projection only stamps it
 # for the array path.
-Textus.hook(:reduce, :"claude-root") do |store:, rows:, config:|
-  _ = store
-  _ = config
+Textus.reduce(:claude_root) do |rows:, **|
   by_prefix = ->(prefix) {
     rows.select { |r| r["_key"].to_s.start_with?(prefix) }
         .sort_by { |r| r["name"].to_s }

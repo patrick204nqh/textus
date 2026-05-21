@@ -13,6 +13,7 @@ module Textus
         refresh: { mode: :pubsub, args: %i[store key envelope change] },
         build: { mode: :pubsub, args: %i[store key envelope sources] },
         accept: { mode: :pubsub, args: %i[store key target_key] },
+        publish: { mode: :pubsub, args: %i[store key envelope source target] },
       }.freeze
 
       def initialize(dispatcher: nil)
