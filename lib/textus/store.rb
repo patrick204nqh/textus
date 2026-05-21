@@ -92,6 +92,7 @@ module Textus
     end
 
     def accept(...) = @writer.accept(...)
+    def reject(...) = @writer.reject(...)
 
     def deps(key)    = @reader.deps(key)
     def rdeps(key)   = @reader.rdeps(key)

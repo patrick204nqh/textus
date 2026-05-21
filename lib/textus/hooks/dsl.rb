@@ -1,7 +1,7 @@
 module Textus
   module Hooks
     module Dsl
-      EVENTS = %i[fetch reduce check put delete refresh build accept publish mv].freeze
+      EVENTS = %i[fetch reduce check put delete refresh build accept publish mv reject].freeze
 
       EVENTS.each do |event|
         define_method(event) do |name, **opts, &blk|
