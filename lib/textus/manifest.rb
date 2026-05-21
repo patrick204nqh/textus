@@ -2,11 +2,6 @@ require "yaml"
 
 module Textus
   class Manifest
-    # Transitional aliases — canonical definitions live in Key::Grammar.
-    KEY_SEGMENT = Key::Grammar::SEGMENT
-    MAX_SEGMENTS = Key::Grammar::MAX_SEGMENTS
-    MAX_SEGMENT_LEN = Key::Grammar::MAX_SEGMENT_LEN
-
     EXT_TO_FORMAT = {
       ".md" => "markdown",
       ".json" => "json",
@@ -145,9 +140,9 @@ module Textus
 
     def valid_segment?(seg)
       return false if seg.nil? || seg.empty?
-      return false if seg.length > MAX_SEGMENT_LEN
+      return false if seg.length > Key::Grammar::MAX_SEGMENT_LEN
 
-      seg.match?(KEY_SEGMENT)
+      seg.match?(Key::Grammar::SEGMENT)
     end
 
     def validate_declared_keys!

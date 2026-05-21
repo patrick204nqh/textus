@@ -65,21 +65,19 @@ RSpec.describe Textus::Doctor do
     expect(res["ok"]).to be false
   end
 
-  it "reports extension.load_failed for broken extensions" do
-    FileUtils.mkdir_p(File.join(root, "extensions"))
-    File.write(File.join(root, "extensions/broken.rb"), <<~RUBY)
-      raise "boom from broken extension"
+  it "reports hook.load_failed for broken hook files" do
+    FileUtils.mkdir_p(File.join(root, "hooks"))
+    # Store#load_extensions also loads from hooks/ and raises on load error,
+    # so we move the broken file out of the way during Store.new, then move
+    # it back before doctor runs.
+    File.write(File.join(root, "hooks/broken.rb"), <<~RUBY)
+      raise "boom from broken hook"
     RUBY
-    # Store discovery will fail too — load Doctor directly with a manual store.
-    # Use Store.new but rescue its load failure path: since extensions also load
-    # at Store#initialize, the broken extension would surface there. Instead
-    # bypass by stubbing the directory after store init.
-    FileUtils.mkdir_p(File.join(root, "extensions.tmp"))
-    File.rename(File.join(root, "extensions"), File.join(root, "extensions.disabled"))
+    File.rename(File.join(root, "hooks"), File.join(root, "hooks.disabled"))
     store = Textus::Store.new(root)
-    File.rename(File.join(root, "extensions.disabled"), File.join(root, "extensions"))
+    File.rename(File.join(root, "hooks.disabled"), File.join(root, "hooks"))
     res = described_class.run(store)
-    issue = res["issues"].find { |i| i["code"] == "extension.load_failed" }
+    issue = res["issues"].find { |i| i["code"] == "hook.load_failed" }
     expect(issue).not_to be_nil
     expect(issue["level"]).to eq("error")
     expect(issue["subject"]).to eq("broken.rb")

@@ -55,9 +55,9 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.hook(:fetch, :demo_action)  { |store:, config:, args:| { frontmatter: {}, body: "" } }
-      Textus.hook(:fetch, :zebra)        { |store:, config:, args:| { frontmatter: {}, body: "" } }
-      Textus.hook(:fetch, :apple)        { |store:, config:, args:| { frontmatter: {}, body: "" } }
+      Textus.hook(:fetch, :demo_action)  { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.hook(:fetch, :zebra)        { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.hook(:fetch, :apple)        { |store:, config:, args:| { _meta: {}, body: "" } }
       Textus.hook(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
       Textus.hook(:reduce, :alpha)           { |store:, rows:, config:| rows }
       Textus.hook(:build, :stamp_log)        { |store:, key:, envelope:, sources:| }

@@ -12,7 +12,7 @@ module Textus
       Check::ManifestFiles,
       Check::Schemas,
       Check::Templates,
-      Check::Extensions,
+      Check::Hooks,
       Check::IllegalKeys,
       Check::Sentinels,
       Check::AuditLog,

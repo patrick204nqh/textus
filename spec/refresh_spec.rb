@@ -21,7 +21,7 @@ RSpec.describe Textus::Refresh do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
         {
-          frontmatter: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
+          _meta: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
           body: config["word"]
         }
       end

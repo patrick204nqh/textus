@@ -4,7 +4,7 @@ Textus.hook(:fetch, :"local-file") do |store:, config:, args:|
   raise "local-file: not found: #{abs}" unless File.exist?(abs)
 
   {
-    frontmatter: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
+    _meta: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
     body: File.read(abs),
   }
 end

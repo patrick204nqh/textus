@@ -8,7 +8,7 @@ RSpec.describe "Textus.hook DSL" do
   it "registers a fetch hook via :fetch event" do
     Textus.hook(:fetch, :gh) do |store:, config:, args:|
       [store, config, args]
-      { frontmatter: {}, body: "x" }
+      { _meta: {}, body: "x" }
     end
     out = reg.rpc_callable(:fetch, :gh).call(store: nil, config: {}, args: {})
     expect(out[:body]).to eq("x")

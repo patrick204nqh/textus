@@ -21,7 +21,7 @@ RSpec.describe "CLI hook verbs" do
           source: { fetch: stub }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-      Textus.hook(:fetch,  :stub) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "ok" } }
+      Textus.hook(:fetch,  :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
       Textus.hook(:reduce, :r)    { |store:, rows:, config:| rows }
       Textus.hook(:put,    :h)    { |store:, key:, envelope:| }
       Textus.hook(:check,  :dc)   { |store:| [] }
@@ -66,7 +66,7 @@ RSpec.describe "CLI hook verbs" do
       entries: [{ key: working.j, path: working/j.md, zone: working }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
-      Textus.hook(:fetch, :jbytes) { |store:, config:, args:| { frontmatter: {}, body: config["bytes"] } }
+      Textus.hook(:fetch, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
     RUBY
     out = StringIO.new
     rc = Textus::CLI.run(

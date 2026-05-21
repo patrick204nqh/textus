@@ -13,7 +13,7 @@ module Textus
             walk_nested(base) do |abs_path, is_dir|
               basename = File.basename(abs_path)
               stem = is_dir ? basename : basename.sub(/#{Regexp.escape(File.extname(basename))}\z/, "")
-              next if stem.match?(Manifest::KEY_SEGMENT)
+              next if stem.match?(Key::Grammar::SEGMENT)
 
               proposed = Textus::MigrateKeys.normalize(stem)
               out << {

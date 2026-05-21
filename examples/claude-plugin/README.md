@@ -100,7 +100,7 @@ ruby -I../../lib -rtextus -e \
 Or with the CLI on PATH:
 
 ```bash
-textus build --format=json
+textus build
 ```
 
 After the build, the three `publish_to` targets are byte-copies of the
@@ -151,7 +151,7 @@ extensions, illegal nested keys, sentinel drift (somebody hand-edited a
 published file), and audit-log corruption.
 
 ```bash
-textus doctor --format=json
+textus doctor
 # → { "protocol": "textus/2", "ok": true, "issues": [],
 #     "summary": { "error": 0, "warning": 0, "info": 0 } }
 ```
@@ -172,7 +172,7 @@ recording both keys, both paths, and the uid.
 # Move a skill between topics — uid survives, audit row written.
 textus key mv working.skills.writing.voice-writer \
               working.skills.editorial.voice-writer \
-              --as=human --format=json
+              --as=human
 ```
 
 This is how you handle real refactors: re-org an `org/` tree under
@@ -186,7 +186,7 @@ Inspect the hooks the store has loaded from `.textus/hooks/` and the
 manifest-declared exec hooks:
 
 ```bash
-textus hook list --format=json
+textus hook list
 ```
 
 Useful when wiring up an external runner that needs to discover declared
@@ -241,16 +241,16 @@ End-to-end, the loop is:
 
 ```bash
 # 1. AI proposes (write into pending) — replays the fixture.
-textus put pending.suggestion.001 --stdin --as=ai --format=json < proposal.json
+textus put pending.suggestion.001 --stdin --as=ai < proposal.json
 
 # 2. Human reviews:
-textus list --prefix=pending --format=json
-textus get  pending.suggestion.001 --format=json
+textus list --prefix=pending
+textus get  pending.suggestion.001
 
 # 3. Human accepts. textus writes target_key with --as=human, then
 #    deletes the pending entry. The build picks it up via publish_each.
-textus accept pending.suggestion.001 --as=human --format=json
-textus build --format=json
+textus accept pending.suggestion.001 --as=human
+textus build
 ```
 
 `textus accept` enforces `--as=human` (an AI can propose, only a human
@@ -290,4 +290,4 @@ registers into an isolated per-store registry. This example wires up:
   `:reduce` / `:fetch` / `:build` / `:check` event surfaces (all expressed
   through the unified `Textus.hook(event, name)` DSL).
 
-Inspect everything currently loaded with `textus hook list --format=json`.
+Inspect everything currently loaded with `textus hook list`.
