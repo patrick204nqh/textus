@@ -8,7 +8,7 @@ RSpec.describe Textus::Refresh do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
-    FileUtils.mkdir_p(File.join(root, "extensions"))
+    FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
@@ -18,7 +18,7 @@ RSpec.describe Textus::Refresh do
           zone: intake
           source: { action: stub_fetch, config: { word: hello } }
     YAML
-    File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+    File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.action(:stub_fetch) do |config:, store:, args:|
         {
           frontmatter: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
@@ -46,7 +46,7 @@ RSpec.describe Textus::Refresh do
   end
 
   it "wraps action in 2s timeout" do
-    File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+    File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.action(:stub_fetch) { |config:, store:, args:| sleep 3 }
     RUBY
     store = Textus::Store.new(root)
@@ -66,7 +66,7 @@ RSpec.describe Textus::Refresh do
             format: json
             source: { action: stub_fetch, config: {} }
       YAML
-      File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+      File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.action(:stub_fetch) do |config:, store:, args:|
           { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
         end
@@ -91,7 +91,7 @@ RSpec.describe Textus::Refresh do
             format: text
             source: { action: stub_fetch, config: { msg: hello } }
       YAML
-      File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+      File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.action(:stub_fetch) do |config:, store:, args:|
           { body: "raw bytes\\nline 2\\n" }
         end
@@ -103,7 +103,7 @@ RSpec.describe Textus::Refresh do
   end
 
   it "wraps action exceptions with the action name" do
-    File.write(File.join(root, "extensions/stub.rb"), <<~RUBY)
+    File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.action(:stub_fetch) { |config:, store:, args:| raise "network down" }
     RUBY
     store = Textus::Store.new(root)

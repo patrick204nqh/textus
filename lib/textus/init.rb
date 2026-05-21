@@ -22,27 +22,30 @@ module Textus
 
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
-      FileUtils.mkdir_p(File.join(target_root, "extensions"))
+      FileUtils.mkdir_p(File.join(target_root, "hooks"))
       ZONES.each do |z|
         dir = File.join(target_root, "zones", z)
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
-      File.write(File.join(target_root, "extensions", "README.md"), <<~MD)
-        # Extensions
+      File.write(File.join(target_root, "hooks", "README.md"), <<~MD)
+        # Hooks
 
-        Drop one Ruby file per extension. Four verbs are available:
+        Drop one Ruby file per hook. All extensions register through one DSL.
+        Every handler receives `store:` as its first kwarg, then event-specific args.
 
         ```ruby
-        Textus.action(:name)         { |config:, store:, args:| ... }
-        Textus.reducer(:name)        { |rows:, config:|         ... }
-        Textus.hook(:event, :name)   { |key:, envelope:, **kw|  ... }
-        Textus.doctor_check(:name)   { |store:|                 ... }
+        Textus.hook(:fetch,  :name) { |store:, config:, args:|  ... }   # bring bytes in
+        Textus.hook(:reduce, :name) { |store:, rows:, config:|  ... }   # transform rows
+        Textus.hook(:check,  :name) { |store:|                  ... }   # doctor check
+        Textus.hook(:put,    :name, keys: ["..."])                      # lifecycle listener
+                                    { |store:, key:, envelope:| ... }
         ```
 
-        Events: :put, :delete, :refresh, :build, :accept.
+        Events: :fetch, :reduce, :check (rpc — return value used)
+                :put, :delete, :refresh, :build, :accept (pub-sub — return discarded)
 
-        See SPEC.md §5.11 for the full contract.
+        See SPEC.md §5.10 for the full table.
       MD
 
       File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)

@@ -16,7 +16,7 @@ RSpec.describe Textus::Intro do
     FileUtils.mkdir_p(File.join(root, "zones/pending"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
-    FileUtils.mkdir_p(File.join(root, "extensions"))
+    FileUtils.mkdir_p(File.join(root, "hooks"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
@@ -54,7 +54,7 @@ RSpec.describe Textus::Intro do
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
-    File.write(File.join(root, "extensions/exts.rb"), <<~RUBY)
+    File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
       Textus.action(:demo_action)  { |config:, store:, args:| { frontmatter: {}, body: "" } }
       Textus.action(:zebra)        { |config:, store:, args:| { frontmatter: {}, body: "" } }
       Textus.action(:apple)        { |config:, store:, args:| { frontmatter: {}, body: "" } }

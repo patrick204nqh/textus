@@ -172,12 +172,13 @@ module Textus
     end
 
     def validate_events!
+      pubsub_events = HookRegistry::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
       @events.each_key do |evt|
-        next if ExtensionRegistry::EVENTS.include?(evt.to_sym)
+        next if pubsub_events.include?(evt.to_sym)
 
         raise UsageError.new(
           "entry '#{@key}': unknown event '#{evt}' in events: block. " \
-          "Known events: #{ExtensionRegistry::EVENTS.join(", ")}.",
+          "Known events: #{pubsub_events.join(", ")}.",
         )
       end
     end

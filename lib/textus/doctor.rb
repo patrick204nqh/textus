@@ -117,7 +117,7 @@ module Textus
       return out unless File.directory?(dir)
 
       Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-        registry = ExtensionRegistry.new
+        registry = HookRegistry.new
         Textus.with_registry(registry) do
           load(f)
         end

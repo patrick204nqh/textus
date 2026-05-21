@@ -23,12 +23,12 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "creates .textus/extensions/ with a README stub" do
+  it "creates .textus/hooks/ with a README stub" do
     tmp = Dir.mktmpdir
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
-    expect(File.directory?(File.join(target, "extensions"))).to be true
-    expect(File.read(File.join(target, "extensions", "README.md"))).to include("Textus.action")
+    expect(File.directory?(File.join(target, "hooks"))).to be true
+    expect(File.read(File.join(target, "hooks", "README.md"))).to include("Textus.hook")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end

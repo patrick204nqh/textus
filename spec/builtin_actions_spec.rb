@@ -2,7 +2,7 @@ require "spec_helper"
 require "yaml"
 
 RSpec.describe "Built-in actions" do
-  let(:reg) { Textus::ExtensionRegistry.new }
+  let(:reg) { Textus::HookRegistry.new }
 
   before { Textus.with_registry(reg) { Textus::BuiltinActions.register_all } }
 

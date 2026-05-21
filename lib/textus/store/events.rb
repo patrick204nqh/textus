@@ -11,7 +11,8 @@ module Textus
 
       def call(event, **kwargs)
         view = StoreView.new(@store)
-        @store.registry.hooks(event).each do |entry|
+        key = kwargs[:key] || kwargs[:pending_key] || kwargs[:target_key] || "-"
+        @store.registry.listeners(event, key: key).each do |entry|
           name = entry[:name]
           Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
         rescue StandardError => e

@@ -39,15 +39,16 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
-      @registry = ExtensionRegistry.new
+      @registry = HookRegistry.new
       @schemas = {}
       load_extensions
     end
 
     def load_extensions
       Textus.with_registry(@registry) do
-        BuiltinActions.register_all
-        dir = File.join(@root, "extensions")
+        # TODO: Task 7 — re-enable once BuiltinHooks lands.
+        # BuiltinActions.register_all
+        dir = File.join(@root, "hooks")
         return unless File.directory?(dir)
 
         Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
