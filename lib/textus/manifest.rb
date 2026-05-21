@@ -2,10 +2,10 @@ require "yaml"
 
 module Textus
   class Manifest
-    # New stricter grammar: lowercase + digits + internal hyphens. No underscores.
-    KEY_SEGMENT = /\A[a-z0-9][a-z0-9-]*\z/
-    MAX_SEGMENTS = 8
-    MAX_SEGMENT_LEN = 64
+    # Transitional aliases — canonical definitions live in Key::Grammar.
+    KEY_SEGMENT = Key::Grammar::SEGMENT
+    MAX_SEGMENTS = Key::Grammar::MAX_SEGMENTS
+    MAX_SEGMENT_LEN = Key::Grammar::MAX_SEGMENT_LEN
 
     EXT_TO_FORMAT = {
       ".md" => "markdown",
@@ -83,7 +83,7 @@ module Textus
       # Include declared (non-nested) entry keys even if file is missing.
       candidates.concat(@entries.reject(&:nested).map(&:key))
       candidates.uniq!
-      KeyDistance.suggest(key, candidates, limit: 5)
+      Key::Distance.suggest(key, candidates, limit: 5)
     rescue StandardError
       []
     end
@@ -138,21 +138,7 @@ module Textus
     def validate_key!(key)
       raise UsageError.new("empty key") if key.nil? || key.empty?
 
-      segs = key.split(".")
-      raise UsageError.new("key '#{key}' has #{segs.length} segments (max #{MAX_SEGMENTS})") if segs.length > MAX_SEGMENTS
-
-      segs.each do |seg|
-        if seg.empty?
-          raise UsageError.new("empty segment in key '#{key}'")
-        elsif seg.length > MAX_SEGMENT_LEN
-          raise UsageError.new("segment '#{seg}' in key '#{key}' exceeds #{MAX_SEGMENT_LEN} chars")
-        elsif !seg.match?(KEY_SEGMENT)
-          raise UsageError.new(
-            "invalid key segment '#{seg}' in '#{key}': must match [a-z0-9][a-z0-9-]* " \
-            "(lowercase, digits, hyphens; no underscores or uppercase)",
-          )
-        end
-      end
+      Key::Grammar.validate!(key)
     end
 
     private
@@ -169,7 +155,7 @@ module Textus
     end
 
     def resolve_leaf_path(entry)
-      Textus::Path.resolve(self, entry)
+      Textus::Key::Path.resolve(self, entry)
     end
 
     def nested_glob(format)

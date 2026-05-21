@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Textus::Path do
+RSpec.describe Textus::Key::Path do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -22,12 +22,12 @@ RSpec.describe Textus::Path do
   it "resolves leaf entries by appending the primary extension when missing" do
     manifest = Textus::Manifest.load(root)
     entry, = manifest.resolve("working.x")
-    expect(Textus::Path.resolve(manifest, entry)).to eq(File.join(root, "zones/working/x.md"))
+    expect(Textus::Key::Path.resolve(manifest, entry)).to eq(File.join(root, "zones/working/x.md"))
   end
 
   it "honors paths that already carry an extension" do
     manifest = Textus::Manifest.load(root)
     entry, = manifest.resolve("working.x")
-    expect(Textus::Path.resolve(manifest, entry)).to end_with(".md")
+    expect(Textus::Key::Path.resolve(manifest, entry)).to end_with(".md")
   end
 end

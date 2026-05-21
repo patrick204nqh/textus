@@ -45,7 +45,7 @@ module Textus
         bytes = klass.new(template_loader: template_loader).call(mentry: mentry, data: data)
 
         # 3. Write
-        target_path = Path.resolve(store.manifest, mentry)
+        target_path = Key::Path.resolve(store.manifest, mentry)
         FileUtils.mkdir_p(File.dirname(target_path))
         File.binwrite(target_path, bytes)
 
