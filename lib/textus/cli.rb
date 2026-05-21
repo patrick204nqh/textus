@@ -7,7 +7,6 @@ module Textus
     # plus a new file under lib/textus/cli/.
     VERBS = {
       "accept" => Accept,
-      "action" => Action,
       "build" => Build,
       "delete" => Delete,
       "deps" => Deps,
@@ -18,26 +17,14 @@ module Textus
       "intro" => IntroVerb,
       "key" => KeyGroup,
       "list" => List,
-      "migrate" => Migrate,
-      "migrate-keys" => MigrateKeysVerb,
-      "mv" => Mv,
       "published" => Published,
       "put" => Put,
       "rdeps" => Rdeps,
       "refresh" => RefreshVerb,
       "schema" => SchemaGroup,
-      "schema-diff" => SchemaDiff,
-      "schema-init" => SchemaInit,
-      "schema-migrate" => SchemaMigrate,
       "stale" => Stale,
-      "uid" => Uid,
       "where" => Where,
     }.freeze
-
-    # Flat aliases kept for backward-compat through 0.5; emit deprecation warnings.
-    DEPRECATED_ALIASES = %w[
-      mv uid migrate-keys schema-init schema-diff schema-migrate action
-    ].freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
@@ -63,7 +50,7 @@ module Textus
                                   0
       else
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
-        dispatch(klass, argv, deprecated_alias: DEPRECATED_ALIASES.include?(verb))
+        dispatch(klass, argv)
       end
     rescue Textus::Error => e
       emit_error(e)
@@ -75,9 +62,8 @@ module Textus
       @store ||= Store.discover(@cwd, root: @root_arg)
     end
 
-    def dispatch(klass, argv, deprecated_alias: false)
+    def dispatch(klass, argv)
       v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
-      v.deprecated_alias = true if deprecated_alias && v.respond_to?(:deprecated_alias=)
       v.parse(argv)
       v.call(klass.needs_store? ? store : nil)
     end
@@ -91,7 +77,7 @@ module Textus
 
     def print_help
       @stdout.puts <<~HELP
-        textus #{VERSION} — reference implementation of #{PROTOCOL} (was textus/1)
+        textus #{VERSION} — reference implementation of #{PROTOCOL}
 
         Usage (json output is the default; --format=json accepted for back-compat):
           textus list [--prefix=KEY] [--zone=Z]
@@ -101,14 +87,10 @@ module Textus
           textus stale [--prefix=KEY] [--zone=Z]
           textus doctor
           textus intro
-          textus migrate v2
 
           textus key {mv,uid,migrate}
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
-
-        Deprecated (removed in 0.6): mv, uid, migrate-keys, schema-init,
-        schema-diff, schema-migrate, action.
       HELP
     end
   end

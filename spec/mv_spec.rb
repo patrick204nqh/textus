@@ -103,7 +103,7 @@ RSpec.describe "textus mv" do
     out = StringIO.new
     err = StringIO.new
     code = Textus::CLI.run(
-      ["mv", "working.notes.alpha", "working.notes.beta", "--as=human", "--format=json"],
+      ["key", "mv", "working.notes.alpha", "working.notes.beta", "--as=human", "--format=json"],
       stdin: StringIO.new, stdout: out, stderr: err, cwd: File.dirname(root),
     )
     expect(code).to eq(0), "stdout=#{out.string} stderr=#{err.string}"

@@ -1,11 +1,6 @@
 module Textus
   class CLI
     class MigrateKeysVerb < Verb
-      prepend DeprecatedAliasMixin
-
-      def self.deprecated_name = "migrate-keys"
-      def self.replacement_path = "key migrate"
-
       option :write, "--write"
       option :dry_run, "--dry-run"
 

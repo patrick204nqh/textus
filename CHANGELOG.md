@@ -19,6 +19,22 @@ is additive within a major; a new major would change the wire string.
 - Internal: removed `Store::Events`; replaced by the bus.
 - Internal: restructured `Textus::Builder` as a step pipeline (`LoadSources → Project → Render → Write`) with one renderer per format (`markdown/text/json/yaml`). Adding a new output format is now a single-file change.
 
+## 0.6.1 — Deprecation cleanup
+
+### Breaking
+- Flat verb aliases promised "removed in 0.6" are now actually removed:
+  - `textus mv` → `textus key mv`
+  - `textus uid` → `textus key uid`
+  - `textus migrate-keys` → `textus key migrate`
+  - `textus schema-init` → `textus schema init`
+  - `textus schema-diff` → `textus schema diff`
+  - `textus schema-migrate` → `textus schema migrate`
+  - `textus schema KEY` (positional) → `textus schema show KEY`
+  - `textus action NAME` → `textus hook run NAME`
+- `Textus::CLI::Action` class renamed to `Textus::CLI::HookRun`; file `cli/action.rb` → `cli/hook_run.rb`.
+- `Textus::CLI::DeprecatedAliasMixin` module deleted (no remaining users).
+- `textus migrate v2` command removed along with `Textus::MigrateV2` module and `Textus::CLI::Migrate` class. The migration was a one-line manifest rewrite (`version: textus/1` → `version: textus/2`); on-disk entry shapes never changed. To upgrade a `textus/1` manifest, edit `.textus/manifest.yaml` directly. `Manifest.load` still detects the old version and prints the exact edit in its error message.
+
 ## 0.6.0 — Hook unification
 
 ### Breaking

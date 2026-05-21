@@ -54,7 +54,9 @@ module Textus
       if line.start_with?("{")
         JSON.parse(line)
       else
-        # Legacy TSV: ts, role, verb, key, etag_before, etag_after [, json_extras]
+        # Legacy TSV (pre-0.5): read-only support retained for on-disk logs
+        # written by older textus versions. Never written by current code.
+        # Format: ts, role, verb, key, etag_before, etag_after [, json_extras]
         fields = line.split("\t")
         return nil if fields.length < 4
 

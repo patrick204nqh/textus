@@ -92,7 +92,7 @@ RSpec.describe Textus::Doctor do
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
     expect(issue).not_to be_nil
     expect(issue["proposed_key"]).to eq("bad-name")
-    expect(issue["fix"]).to include("migrate-keys")
+    expect(issue["fix"]).to include("key migrate")
   end
 
   it "reports sentinel.orphan when a sentinel's target is missing" do

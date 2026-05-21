@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-19T17:05:03Z'
+  at: '2026-05-21T08:04:40Z'
   from:
   - canon.plugin
   - working.agents
@@ -13,7 +13,7 @@ start. It is the projection of textus over `.textus/zones/...`. Do not
 edit by hand — edit the source under `.textus/zones/working/...` and run
 `textus build`.
 
-→ Context store: `.textus/` (textus, protocol textus/1).
+→ Context store: `.textus/` (textus, protocol textus/2).
 → Run `textus intro --format=json` for the full catalog shape and write flows.
 → Write authority by zone:
     - **canon** (human ) — slow-changing identity; human-only writes
@@ -52,4 +52,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-19T17:05:03Z._
+_Built at 2026-05-21T08:04:40Z._
