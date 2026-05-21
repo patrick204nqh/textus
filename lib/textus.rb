@@ -1,4 +1,15 @@
+require "zeitwerk"
 require_relative "textus/version"
+
+loader = Zeitwerk::Loader.for_gem
+loader.inflector.inflect(
+  "cli" => "CLI",
+  "json" => "Json",
+  "yaml" => "Yaml",
+)
+
+# Existing require_relative block stays until Task 13 verifies Zeitwerk
+# resolves every constant on its own.
 require_relative "textus/errors"
 require_relative "textus/hook_registry"
 require_relative "textus/event_bus"
@@ -73,3 +84,5 @@ require_relative "textus/cli/key_group"
 require_relative "textus/cli/schema_group"
 require_relative "textus/cli/hook_group"
 require_relative "textus/cli"
+
+loader.setup
