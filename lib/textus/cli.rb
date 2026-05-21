@@ -28,7 +28,7 @@ module Textus
 
       case verb
       when "list"   then verb_list(argv)
-      when "where"  then verb_where(argv)
+      when "where"  then dispatch(Where, argv)
       when "get"    then dispatch(Get, argv)
       when "put"    then verb_put(argv)
       when "schema" then verb_schema(argv)
@@ -110,12 +110,6 @@ module Textus
     def verb_list(argv)
       prefix, zone = parse_prefix_and_zone!(argv)
       emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
-    end
-
-    def verb_where(argv)
-      key = argv.shift or raise UsageError.new("where requires a key")
-      parse_format!(argv)
-      emit(store.where(key))
     end
 
     def verb_schema(argv)
