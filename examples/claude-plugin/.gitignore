@@ -1,11 +1,15 @@
 # This example commits every build artifact (.claude-plugin/*.json,
-# CLAUDE.md, agents/*.md, skills/*/SKILL.md, commands/*.md, and the
-# .textus/sentinels/ tree) so a reader can inspect the full pipeline
-# output without running `textus build`. In a real plugin you'd likely
-# ignore the consumer-side mirrors instead.
+# CLAUDE.md, agents/*.md, skills/*/SKILL.md, commands/*.md) so a reader
+# can inspect the full pipeline output without running `textus build`.
+# In a real plugin you'd likely ignore the consumer-side mirrors instead.
+#
+# Sentinels are excluded because the current textus build writes
+# absolute source/target paths into them, which would leak the author's
+# local filesystem layout. Run `textus build` locally to regenerate.
 
 # Local runtime artifacts — not source.
 /.textus/audit.log
 /.textus/notify.log
 /.textus/last-build.log
 /.textus/.last-build.json
+/.textus/sentinels/
