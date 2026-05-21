@@ -230,7 +230,9 @@ module Textus
             }
           end
         else
-          # Legacy TSV: minimum 6 fields. Removed in 0.6.
+          # Legacy TSV (pre-0.5): read-only support retained for on-disk logs
+          # written by older textus versions. Never written by current code.
+          # Minimum 6 fields.
           fields = stripped.split("\t")
           next if fields.length >= 6
 
