@@ -32,7 +32,7 @@ module Textus
       when "put"    then verb_put(argv)
       when "schema" then dispatch(Schema, argv)
       when "stale"  then dispatch(Stale, argv)
-      when "delete"       then verb_delete(argv)
+      when "delete"       then dispatch(Delete, argv)
       when "build"        then dispatch(Build, argv)
       when "deps"         then dispatch(Deps, argv)
       when "rdeps"        then dispatch(Rdeps, argv)
@@ -152,19 +152,6 @@ module Textus
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
       emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
-    end
-
-    def verb_delete(argv)
-      key = argv.shift or raise UsageError.new("delete requires a key")
-      as_flag = nil
-      if_etag = nil
-      OptionParser.new do |o|
-        o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--if-etag=E") { |v| if_etag = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-      emit(store.delete(key, if_etag: if_etag, as: role))
     end
 
     def verb_schema_init(argv)
