@@ -1,11 +1,23 @@
 module Textus
   class CLI
     class Extensions < Verb
+      prepend DeprecatedAliasMixin
+
+      def self.deprecated_name = "extensions"
+      def self.replacement_path = "extension list"
+
       option :kind, "--kind=K"
 
       def call(store) # rubocop:disable Metrics/AbcSize
-        subcommand = positional.shift
-        raise UsageError.new("extensions requires 'list'") unless subcommand == "list"
+        # When invoked as the flat alias `textus extensions list`, the positional "list"
+        # is still present. When invoked via `textus extension list` (group), it has been
+        # consumed by the group dispatcher — both are valid.
+        subcommand = positional.first
+        if subcommand
+          raise UsageError.new("extensions requires 'list'") unless subcommand == "list"
+
+          positional.shift
+        end
 
         rows = []
         rows += store.registry.action_names.map { |n| { "kind" => "action", "name" => n.to_s } }

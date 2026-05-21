@@ -12,10 +12,12 @@ module Textus
       "delete" => Delete,
       "deps" => Deps,
       "doctor" => DoctorVerb,
+      "extension" => ExtensionGroup,
       "extensions" => Extensions,
       "get" => Get,
       "init" => InitVerb,
       "intro" => IntroVerb,
+      "key" => KeyGroup,
       "list" => List,
       "migrate-keys" => MigrateKeysVerb,
       "mv" => Mv,
@@ -23,7 +25,7 @@ module Textus
       "put" => Put,
       "rdeps" => Rdeps,
       "refresh" => RefreshVerb,
-      "schema" => SchemaVerb,
+      "schema" => SchemaGroup,
       "schema-diff" => SchemaDiff,
       "schema-init" => SchemaInit,
       "schema-migrate" => SchemaMigrate,
@@ -31,6 +33,11 @@ module Textus
       "uid" => Uid,
       "where" => Where,
     }.freeze
+
+    # Flat aliases kept for backward-compat through 0.5; emit deprecation warnings.
+    DEPRECATED_ALIASES = %w[
+      mv uid migrate-keys schema-init schema-diff schema-migrate extensions action
+    ].freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
@@ -56,7 +63,7 @@ module Textus
                                   0
       else
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
-        dispatch(klass, argv)
+        dispatch(klass, argv, deprecated_alias: DEPRECATED_ALIASES.include?(verb))
       end
     rescue Textus::Error => e
       emit_error(e)
@@ -68,8 +75,9 @@ module Textus
       @store ||= Store.discover(@cwd, root: @root_arg)
     end
 
-    def dispatch(klass, argv)
+    def dispatch(klass, argv, deprecated_alias: false)
       v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
+      v.deprecated_alias = true if deprecated_alias && v.respond_to?(:deprecated_alias=)
       v.parse(argv)
       v.call(klass.needs_store? ? store : nil)
     end
@@ -90,11 +98,16 @@ module Textus
           textus where KEY
           textus get KEY
           textus put KEY --stdin [--action=NAME] --as=ROLE
-          textus schema KEY
           textus stale [--prefix=KEY] [--zone=Z]
-          textus action NAME [--key=val ...] [--as=ROLE]
           textus doctor
           textus intro
+
+          textus key {mv,uid,migrate}
+          textus schema {show,init,diff,migrate}
+          textus extension {list,run}
+
+        Deprecated (removed in 0.6): mv, uid, migrate-keys, schema-init,
+        schema-diff, schema-migrate, extensions, action.
       HELP
     end
   end

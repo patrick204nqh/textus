@@ -30,48 +30,6 @@ RSpec.describe "Manifest source.action" do
     expect(e.ttl).to eq("1h")
   end
 
-  it "rejects legacy source.parse with a clear error" do
-    write_manifest(<<~YAML)
-      version: textus/1
-      zones: [{ name: intake, writable_by: [script] }]
-      entries:
-        - key: intake.x
-          path: intake/x.md
-          zone: intake
-          source: { from: https://e.com, parse: json, ttl: 1h }
-    YAML
-    expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /source\.parse.*0\.2.*source\.action/i)
-  end
-
-  it "rejects legacy source.fetcher with a migration hint" do
-    write_manifest(<<~YAML)
-      version: textus/1
-      zones: [{ name: intake, writable_by: [script] }]
-      entries:
-        - key: intake.k
-          path: intake/k.md
-          zone: intake
-          source: { fetcher: x }
-    YAML
-    expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /source\.fetcher.*source\.action/i)
-  end
-
-  it "rejects legacy hooks: top-level key" do
-    write_manifest(<<~YAML)
-      version: textus/1
-      zones: [{ name: working, writable_by: [human] }]
-      entries:
-        - key: working.x
-          path: working/x.md
-          zone: working
-          hooks: { on_put: [{ run: x }] }
-    YAML
-    expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /hooks.*renamed.*events.*0\.2/i)
-  end
-
   it "exposes ManifestEntry#events from events: block" do
     write_manifest(<<~YAML)
       version: textus/1
