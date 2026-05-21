@@ -45,6 +45,7 @@ module Textus
       load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
+      fire_event(:loaded)
     end
 
     def load_hooks
