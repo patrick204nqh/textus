@@ -1,13 +1,8 @@
 require "fileutils"
 require "securerandom"
-require "time"
-require "timeout"
 
 module Textus
-  # rubocop:disable Metrics/ClassLength
   class Store
-    HOOK_TIMEOUT_SECONDS = 2
-
     attr_reader :root, :manifest, :registry
 
     # A Textus UID: 16 lowercase hex chars (SecureRandom.hex(8)). Not a UUID —
@@ -186,22 +181,8 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 
-    def fire_event(event, **kwargs)
-      view = StoreView.new(self)
-      @registry.hooks(event).each do |entry|
-        name = entry[:name]
-        Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
-      rescue StandardError => e
-        extras = { "event" => event.to_s, "hook" => name.to_s, "error" => "#{e.class}: #{e.message}" }
-        extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
-        extras["pending_key"] = kwargs[:pending_key] if kwargs.key?(:pending_key)
-        audit_log.append(
-          role: "script", verb: "event_error",
-          key: kwargs[:key] || kwargs[:target_key] || kwargs[:pending_key] || "-",
-          etag_before: nil, etag_after: nil,
-          extras: extras
-        )
-      end
+    def fire_event(event, **)
+      Events.new(self).call(event, **)
     end
 
     def accept(key, as:)
@@ -213,121 +194,12 @@ module Textus
     def published      = Dependencies.published_of(@manifest)
 
     def validate_all
-      violations = []
-      @manifest.enumerate.each do |row|
-        begin
-          get(row[:key])
-        rescue Textus::Error => e
-          violations << { "key" => row[:key], "code" => e.code, "message" => e.message }
-        end
-      end
-
-      @manifest.enumerate.each do |row|
-        mentry = row[:manifest_entry]
-        next unless mentry.schema
-
-        schema = schema_for(mentry.schema)
-        next unless schema
-
-        env = begin
-          get(row[:key])
-        rescue StandardError
-          next
-        end
-        last_writer = audit_log.last_writer_for(row[:key])
-        next if last_writer.nil?
-
-        env["_meta"].each_key do |field|
-          owner = schema.maintained_by(field)
-          next if owner.nil?
-          next if last_writer == owner
-          next if last_writer == "human"
-
-          violations << {
-            "key" => row[:key],
-            "code" => "role_authority",
-            "field" => field,
-            "expected" => owner,
-            "last_writer" => last_writer,
-          }
-        end
-      end
-
-      { "protocol" => PROTOCOL, "ok" => violations.empty?, "violations" => violations }
+      Validator.new(self).call
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
     def stale(prefix: nil, zone: nil)
-      out = []
-      @manifest.entries.each do |mentry|
-        next unless mentry.zone == "derived"
-        next if zone && mentry.zone != zone
-
-        gen = mentry.generator
-        next unless gen
-        next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
-
-        path = path_for_entry(mentry)
-
-        unless File.exist?(path)
-          out << stale_row(mentry, path, "derived entry has never been generated")
-          next
-        end
-
-        raw = File.binread(path)
-        parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-        generated_at = parsed["_meta"].dig("generated", "at")
-        unless generated_at
-          out << stale_row(mentry, path, "missing generated.at frontmatter")
-          next
-        end
-        gen_time = begin
-          Time.parse(generated_at.to_s)
-        rescue StandardError
-          nil
-        end
-        unless gen_time
-          out << stale_row(mentry, path, "unparseable generated.at: #{generated_at.inspect}")
-          next
-        end
-
-        offender = newest_source_after(gen, gen_time)
-        out << stale_row(mentry, path, "source '#{offender}' modified after generated.at") if offender
-      end
-
-      @manifest.entries.each do |mentry|
-        next unless mentry.action
-        next if zone && mentry.zone != zone
-        next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
-
-        ttl = parse_ttl(mentry.ttl)
-        next unless ttl
-
-        path = path_for_entry(mentry)
-
-        unless File.exist?(path)
-          out << intake_stale_row(mentry, path, "never refreshed")
-          next
-        end
-
-        meta = Entry.for_format(mentry.format).parse(File.binread(path), path: path)["_meta"]
-        last_str = meta["last_refreshed_at"]
-        if last_str.nil?
-          out << intake_stale_row(mentry, path, "never refreshed (no last_refreshed_at)")
-          next
-        end
-
-        last = begin
-          Time.parse(last_str.to_s)
-        rescue StandardError
-          nil
-        end
-        out << intake_stale_row(mentry, path, "ttl exceeded (#{ttl}s)") if last.nil? || (Time.now - last) > ttl
-      end
-
-      out
+      Staleness.new(self).call(prefix: prefix, zone: zone)
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/BlockLength
 
     # Returns the Textus UID for a key (or nil if the entry has none yet).
     # Raises UnknownKey if the key doesn't resolve to a real file.
@@ -339,112 +211,15 @@ module Textus
     # Move an entry from old_key to new_key within the same zone. Preserves
     # uid (minting one first if absent), validates both keys against the
     # manifest, refuses to clobber, and writes one mv audit row.
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false)
-      @manifest.validate_key!(old_key)
-      @manifest.validate_key!(new_key)
-      raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
-
-      old_mentry, old_path, = @manifest.resolve(old_key)
-      raise UnknownKey.new(old_key) unless File.exist?(old_path)
-
-      new_mentry, new_path, = @manifest.resolve(new_key)
-
-      if old_mentry.zone != new_mentry.zone
-        raise UsageError.new(
-          "mv: cross-zone move refused (#{old_mentry.zone} → #{new_mentry.zone}). " \
-          "Use put+delete for cross-zone moves.",
-        )
-      end
-      if old_mentry.format != new_mentry.format
-        raise UsageError.new(
-          "mv: format mismatch (#{old_mentry.format} → #{new_mentry.format}); refusing.",
-        )
-      end
-
-      writers = @manifest.zone_writers(old_mentry.zone)
-      raise WriteForbidden.new(old_key, old_mentry.zone, writers: writers) unless writers.include?(as)
-
-      raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)
-
-      # Mint uid before the move so the audit row carries it.
-      pre_env = get(old_key)
-      current_uid = pre_env["uid"]
-      etag_before = pre_env["etag"]
-
-      if dry_run
-        return {
-          "protocol" => PROTOCOL, "ok" => true, "dry_run" => true,
-          "from_key" => old_key, "to_key" => new_key,
-          "from_path" => old_path, "to_path" => new_path,
-          "uid" => current_uid
-        }
-      end
-
-      if current_uid.nil?
-        # Write the uid in place first so the source file carries it before mv.
-        pre_env = put(old_key,
-                      meta: pre_env["_meta"],
-                      body: pre_env["body"],
-                      content: pre_env["content"],
-                      as: as,
-                      suppress_events: true)
-        current_uid = pre_env["uid"]
-        etag_before = pre_env["etag"]
-      end
-
-      FileUtils.mkdir_p(File.dirname(new_path))
-      FileUtils.mv(old_path, new_path)
-      rewrite_name_for_mv!(new_mentry, new_path, new_key)
-      etag_after = Etag.for_file(new_path)
-
-      audit_log.append(
-        role: as, verb: "mv", key: new_key,
-        etag_before: etag_before, etag_after: etag_after,
-        extras: {
-          "from_key" => old_key, "to_key" => new_key,
-          "from_path" => old_path, "to_path" => new_path,
-          "uid" => current_uid
-        }
-      )
-
-      env = get(new_key)
-      {
-        "protocol" => PROTOCOL, "ok" => true,
-        "from_key" => old_key, "to_key" => new_key,
-        "from_path" => old_path, "to_path" => new_path,
-        "uid" => current_uid,
-        "envelope" => env
-      }
+      Mover.new(self).call(old_key, new_key, as: as, dry_run: dry_run)
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+    def audit_log
+      @audit_log ||= AuditLog.new(@root)
+    end
 
     private
-
-    # If the moved file carries a `name:` field (markdown) or `_meta.name`
-    # (json/yaml), rewrite it to the new basename so enforce_name_match! stays
-    # happy on the next read. Only touches the bytes when name actually changes.
-    def rewrite_name_for_mv!(mentry, new_path, new_key)
-      strategy = Entry.for_format(mentry.format)
-      raw = File.binread(new_path)
-      parsed = strategy.parse(raw, path: new_path)
-      basename = new_key.split(".").last
-
-      case mentry.format
-      when "markdown"
-        meta = parsed["_meta"] || {}
-        return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
-
-        meta = meta.merge("name" => basename)
-        File.binwrite(new_path, strategy.serialize(meta: meta, body: parsed["body"]))
-      when "json", "yaml"
-        meta = parsed["_meta"]
-        return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
-
-        new_meta = meta.merge("name" => basename)
-        File.binwrite(new_path, strategy.serialize(meta: new_meta, body: "", content: parsed["content"]))
-      end
-    end
 
     def existing_uid_for(mentry, path)
       return nil unless File.exist?(path)
@@ -468,66 +243,6 @@ module Textus
         # text: no uid channel
         [meta, content]
       end
-    end
-
-    def audit_log
-      @audit_log ||= AuditLog.new(@root)
-    end
-
-    def path_for_entry(mentry)
-      primary_ext = Entry.for_format(mentry.format).extensions.first
-      if File.extname(mentry.path) == ""
-        File.join(@root, "zones", mentry.path + primary_ext)
-      else
-        File.join(@root, "zones", mentry.path)
-      end
-    end
-
-    def newest_source_after(gen, gen_time)
-      Array(gen["sources"]).each do |src|
-        if src.match?(/\A[a-z0-9.][a-z0-9._-]*\z/) && !src.include?("/")
-          @manifest.enumerate(prefix: src).each do |row|
-            return src if File.mtime(row[:path]) > gen_time
-          end
-        else
-          abs = File.absolute_path?(src) ? src : File.join(File.dirname(@root), src)
-          if File.directory?(abs)
-            Dir.glob(File.join(abs, "**", "*")).each do |fp|
-              next unless File.file?(fp)
-              return src if File.mtime(fp) > gen_time
-            end
-          elsif File.exist?(abs)
-            return src if File.mtime(abs) > gen_time
-          end
-        end
-      end
-      nil
-    end
-
-    def parse_ttl(s)
-      return nil unless s
-
-      m = s.to_s.match(/\A(\d+)([smhd])\z/) or return nil
-      n = m[1].to_i
-      case m[2]
-      when "s" then n
-      when "m" then n * 60
-      when "h" then n * 3600
-      when "d" then n * 86_400
-      end
-    end
-
-    def intake_stale_row(mentry, path, reason)
-      { "key" => mentry.key, "path" => path, "action" => mentry.action, "reason" => reason }
-    end
-
-    def stale_row(mentry, path, reason)
-      {
-        "key" => mentry.key,
-        "path" => path,
-        "generator" => mentry.generator,
-        "reason" => reason,
-      }
     end
 
     def enforce_name_match!(path, meta, format)
@@ -594,5 +309,4 @@ module Textus
       v.is_a?(String) ? v : nil
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end
