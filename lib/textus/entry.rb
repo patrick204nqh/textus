@@ -1,9 +1,3 @@
-require_relative "entry/base"
-require_relative "entry/markdown"
-require_relative "entry/json"
-require_relative "entry/yaml"
-require_relative "entry/text"
-
 module Textus
   # Public entry-format dispatcher.
   module Entry
