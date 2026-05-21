@@ -17,6 +17,51 @@ module Textus
         - { key: working.notes,  path: working/notes,     zone: working, schema: null, owner: human:self, nested: true }
     YAML
 
+    HOOKS_README = <<~MD
+      # Hooks
+
+      Drop one Ruby file per hook. All hooks register through one DSL.
+      Files anywhere under `.textus/hooks/` (including subdirectories) are loaded at
+      startup in alphabetical order by full path. Subdirectory names are organizational
+      only — the registered event and name come from the DSL call, not the file path.
+
+      ## Per-event sugar (preferred)
+
+      ```ruby
+      Textus.fetch(:my_source) do |config:, args:, **|
+        { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
+      end
+
+      Textus.reduce(:my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
+      Textus.check(:my_check)   { |store:, **| { ok: true } }
+      Textus.put(:my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
+      ```
+
+      ## Group multiple events under one name
+
+      ```ruby
+      Textus.define :my_source do
+        fetch  { |config:, args:, **| … }
+        reduce { |rows:, **|          … }
+      end
+      ```
+
+      ## Low-level primitive (always available)
+
+      ```ruby
+      Textus.hook(:fetch,  :name) { |store:, config:, args:|  ... }   # bring bytes in
+      Textus.hook(:reduce, :name) { |store:, rows:, config:|  ... }   # transform rows
+      Textus.hook(:check,  :name) { |store:|                  ... }   # doctor check
+      Textus.hook(:put,    :name, keys: ["..."])                      # lifecycle listener
+                                  { |store:, key:, envelope:| ... }
+      ```
+
+      Events: :fetch, :reduce, :check (rpc — return value used)
+              :put, :delete, :refresh, :build, :accept (pub-sub — return discarded)
+
+      See SPEC.md §5.10 for the full table.
+    MD
+
     def self.run(target_root)
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
 
@@ -28,26 +73,7 @@ module Textus
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
-      File.write(File.join(target_root, "hooks", "README.md"), <<~MD)
-        # Hooks
-
-        Drop one Ruby file per hook. All hooks register through one DSL.
-        Every handler receives `store:` as its first kwarg, then event-specific args.
-
-        ```ruby
-        Textus.hook(:fetch,  :name) { |store:, config:, args:|  ... }   # bring bytes in
-        Textus.hook(:reduce, :name) { |store:, rows:, config:|  ... }   # transform rows
-        Textus.hook(:check,  :name) { |store:|                  ... }   # doctor check
-        Textus.hook(:put,    :name, keys: ["..."])                      # lifecycle listener
-                                    { |store:, key:, envelope:| ... }
-        ```
-
-        Events: :fetch, :reduce, :check (rpc — return value used)
-                :put, :delete, :refresh, :build, :accept (pub-sub — return discarded)
-
-        See SPEC.md §5.10 for the full table.
-      MD
-
+      File.write(File.join(target_root, "hooks", "README.md"), HOOKS_README)
       File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
       { "protocol" => PROTOCOL, "initialized" => target_root }
     end
