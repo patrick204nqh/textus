@@ -27,7 +27,7 @@ module Textus
       raise UsageError.new("missing verb") if verb.nil?
 
       case verb
-      when "list"   then verb_list(argv)
+      when "list"   then dispatch(List, argv)
       when "where"  then dispatch(Where, argv)
       when "get"    then dispatch(Get, argv)
       when "put"    then verb_put(argv)
@@ -105,11 +105,6 @@ module Textus
       raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
 
       [prefix, zone]
-    end
-
-    def verb_list(argv)
-      prefix, zone = parse_prefix_and_zone!(argv)
-      emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
     end
 
     def verb_stale(argv)
