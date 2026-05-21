@@ -39,7 +39,7 @@ module Textus
       when "published"    then dispatch(Published, argv)
       when "accept"       then dispatch(Accept, argv)
       when "init"         then dispatch(InitVerb, argv)
-      when "schema-init"    then verb_schema_init(argv)
+      when "schema-init"    then dispatch(SchemaInit, argv)
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
       when "action"         then verb_action(argv)
@@ -152,18 +152,6 @@ module Textus
       body = payload["body"] || ""
       if_etag = payload["if_etag"]
       emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
-    end
-
-    def verb_schema_init(argv)
-      name = argv.shift or raise UsageError.new("schema-init NAME")
-      from_key = nil
-      OptionParser.new do |o|
-        o.on("--from=KEY") { |v| from_key = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      raise UsageError.new("schema-init requires --from=KEY") unless from_key
-
-      emit(Textus::SchemaTools.init(store, name: name, from: from_key))
     end
 
     def verb_schema_diff(argv)
