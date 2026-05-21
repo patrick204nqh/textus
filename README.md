@@ -7,14 +7,14 @@
 
 A context store for codebases that humans and AI agents both have to read and write. Dotted keys, schema-validated entries, role-gated writes, byte-copy publish, an audit log of every change. Built so an agent landing in your repo can run one command (`textus intro`) and know what to read, what to write, and what's off-limits.
 
-Reference implementation in Ruby. Wire format `textus/1`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
+Reference implementation in Ruby. Wire format `textus/2`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
 
 ## Versioning
 
 Two versions, deliberately independent:
 
-- **Protocol wire string:** `textus/1`. Stable; breaking changes require `textus/2`.
-- **Gem version:** semver, currently `0.2.0`. Gem `0.x.y` and `1.x` both speak `textus/1`.
+- **Protocol wire string:** `textus/2`. Stable; breaking changes require `textus/3`.
+- **Gem version:** semver, currently `0.8.0`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -76,7 +76,7 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key migrate --dry-run|--write` rewrites existing stores with illegal segments deterministically.
 - **`textus intro`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded extensions, write flows per role, the full CLI verb table. The boot signal for any agent — one tool call and it knows your store.
-- **`textus doctor`.** Health check across 8 categories: missing schemas/templates, broken extensions, illegal nested keys, sentinel drift, audit log readability. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
+- **`textus doctor`.** Health check across 9 categories: missing schemas/templates, broken extensions, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
 - **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
 
 Symlink-mode publish was removed; publish is `FileUtils.cp` + sentinel. Sentinels for published files live under `.textus/sentinels/<target_rel>.textus-managed.json` so consumer directories stay clean. Legacy sibling sentinels auto-migrate on next publish.
@@ -105,7 +105,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | Verb | Role |
 |---|---|
 | `put K --stdin --as=R [--action=NAME]` | per zone |
-| `extension run NAME [--key=val] [--as=R]` | per zone written (invoke a registered action) |
+| `hook run NAME [--key=val] [--as=R]` | per zone written (invoke a registered fetch hook) |
 | `delete K --if-etag=E --as=R` | per zone |
 | `refresh K --as=script` | per zone (typically `script`) |
 | `key mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
