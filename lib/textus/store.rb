@@ -53,14 +53,34 @@ module Textus
         dir = File.join(@root, "hooks")
         return unless File.directory?(dir)
 
-        Dir.glob(File.join(dir, "**/*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-          begin
-            load(f)
-          rescue StandardError, ScriptError => e
-            raise UsageError.new("failed loading hook #{File.basename(f)}: #{e.class}: #{e.message}")
-          end
-        end
+        load_top_level_hooks(dir)
+        load_plugin_dirs(dir)
       end
+    end
+
+    def load_top_level_hooks(dir)
+      Dir.glob(File.join(dir, "*.rb")).each { |f| require_hook_file(f) }
+    end
+
+    def load_plugin_dirs(dir)
+      Dir.children(dir).sort.each do |name|
+        sub = File.join(dir, name)
+        next unless File.directory?(sub)
+
+        lib = File.join(sub, "lib")
+        $LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
+
+        entry = [File.join(sub, "#{name}.rb"), File.join(sub, "hook.rb")].find { |p| File.file?(p) }
+        raise UsageError.new("hook plugin directory #{name}/ has no entry file (expected #{name}.rb or hook.rb)") unless entry
+
+        require_hook_file(entry)
+      end
+    end
+
+    def require_hook_file(path)
+      load(path)
+    rescue StandardError, ScriptError => e
+      raise UsageError.new("failed loading hook #{File.basename(path)}: #{e.class}: #{e.message}")
     end
 
     def schema_for(name)

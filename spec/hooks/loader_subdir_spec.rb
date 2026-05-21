@@ -18,12 +18,12 @@ RSpec.describe "Hook loader subdirectory support" do
       write_minimal_manifest(textus)
 
       File.write(
-        File.join(textus, "hooks", "fetch", "nested_fetch.rb"),
+        File.join(textus, "hooks", "fetch", "fetch.rb"),
         'Textus.fetch(:nested_fetch) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } }',
       )
 
       File.write(
-        File.join(textus, "hooks", "reduce", "nested_reduce.rb"),
+        File.join(textus, "hooks", "reduce", "reduce.rb"),
         "Textus.reduce(:nested_reduce) { |rows:, **| rows.reverse }",
       )
 
