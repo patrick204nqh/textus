@@ -293,7 +293,7 @@ module Textus
 
     def run_registered_checks(store)
       out = []
-      view = StoreView.new(store)
+      view = Store::View.new(store)
       store.registry.rpc_names(:check).each do |name|
         callable = store.registry.rpc_callable(:check, name)
         begin

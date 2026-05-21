@@ -7,7 +7,7 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::EventBus do
-  let(:audit) { instance_double(Textus::AuditLog, append: nil) }
+  let(:audit) { instance_double(Textus::Store::AuditLog, append: nil) }
   let(:bus)   { described_class.new(audit_log: audit) }
 
   it "calls every subscriber in registration order" do

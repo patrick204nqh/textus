@@ -87,7 +87,7 @@ module Textus
     def delete(...) = @writer.delete(...)
 
     def fire_event(event, **)
-      view = StoreView.new(self)
+      view = Store::View.new(self)
       @bus.publish(event, store: view, **)
     end
 
@@ -110,7 +110,7 @@ module Textus
     end
 
     def audit_log
-      @audit_log ||= AuditLog.new(@root)
+      @audit_log ||= Store::AuditLog.new(@root)
     end
   end
 end

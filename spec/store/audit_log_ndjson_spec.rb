@@ -3,7 +3,7 @@ require "fileutils"
 require "tmpdir"
 require "json"
 
-RSpec.describe Textus::AuditLog do
+RSpec.describe Textus::Store::AuditLog do
   let(:tmp) { Dir.mktmpdir }
   let(:log) { described_class.new(tmp) }
 

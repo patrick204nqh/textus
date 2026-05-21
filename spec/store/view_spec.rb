@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Textus::StoreView do
+RSpec.describe Textus::Store::View do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
   let(:view) { described_class.new(Textus::Store.new(root)) }
@@ -58,7 +58,7 @@ RSpec.describe Textus::StoreView do
   it "raises if writable: true with no as: role" do
     store = Textus::Store.new(root)
     expect { described_class.new(store, writable: true) }
-      .to raise_error(Textus::UsageError, /writable StoreView requires/)
+      .to raise_error(Textus::UsageError, /writable Store::View requires/)
   end
 
   it "allows a per-call as: override of the bound role" do
@@ -71,6 +71,6 @@ RSpec.describe Textus::StoreView do
   it "raises if writable: true with empty-string as: role" do
     store = Textus::Store.new(root)
     expect { described_class.new(store, writable: true, as: "") }
-      .to raise_error(Textus::UsageError, /writable StoreView requires/)
+      .to raise_error(Textus::UsageError, /writable Store::View requires/)
   end
 end

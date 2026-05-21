@@ -18,7 +18,7 @@ module Textus
             result =
               begin
                 Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do
-                  callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store), args: {})
+                  callable.call(config: { "bytes" => raw }, store: Textus::Store::View.new(store), args: {})
                 end
               rescue Timeout::Error
                 raise UsageError.new(
