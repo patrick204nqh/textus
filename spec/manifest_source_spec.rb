@@ -13,7 +13,7 @@ RSpec.describe "Manifest source.fetch" do
     File.write(File.join(root, "manifest.yaml"), yaml)
   end
 
-  it "exposes ManifestEntry#fetch and #fetch_config" do
+  it "exposes Manifest::Entry#fetch and #fetch_config" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
@@ -77,7 +77,7 @@ RSpec.describe "Manifest source.fetch" do
       .to raise_error(Textus::UsageError, /projection\.reducer renamed to projection\.reduce in 0\.6/)
   end
 
-  it "exposes ManifestEntry#events from events: block" do
+  it "exposes Manifest::Entry#events from events: block" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [human] }]

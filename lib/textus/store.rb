@@ -39,8 +39,8 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
-      @bus = EventBus.new(audit_log: audit_log)
-      @registry = HookRegistry.new(bus: @bus)
+      @bus = Hooks::Dispatcher.new(audit_log: audit_log)
+      @registry = Hooks::Registry.new(dispatcher: @bus)
       @schemas = {}
       load_extensions
       @reader = Reader.new(self)
@@ -49,7 +49,7 @@ module Textus
 
     def load_extensions
       Textus.with_registry(@registry) do
-        BuiltinHooks.register_all
+        Hooks::Builtin.register_all
         dir = File.join(@root, "hooks")
         return unless File.directory?(dir)
 
@@ -87,7 +87,7 @@ module Textus
     def delete(...) = @writer.delete(...)
 
     def fire_event(event, **)
-      view = StoreView.new(self)
+      view = Store::View.new(self)
       @bus.publish(event, store: view, **)
     end
 
@@ -110,7 +110,7 @@ module Textus
     end
 
     def audit_log
-      @audit_log ||= AuditLog.new(@root)
+      @audit_log ||= Store::AuditLog.new(@root)
     end
   end
 end

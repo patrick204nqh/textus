@@ -18,7 +18,7 @@ module Textus
           next unless gen
           next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-          path = Textus::Path.resolve(@manifest, mentry)
+          path = Textus::Key::Path.resolve(@manifest, mentry)
 
           unless File.exist?(path)
             out << stale_row(mentry, path, "derived entry has never been generated")
@@ -54,7 +54,7 @@ module Textus
           ttl = parse_ttl(mentry.ttl)
           next unless ttl
 
-          path = Textus::Path.resolve(@manifest, mentry)
+          path = Textus::Key::Path.resolve(@manifest, mentry)
 
           unless File.exist?(path)
             out << intake_stale_row(mentry, path, "never refreshed")

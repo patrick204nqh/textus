@@ -10,7 +10,7 @@ module Textus
 
       before_etag = File.exist?(path) ? Etag.for_file(path) : nil
       callable = store.registry.rpc_callable(:fetch, mentry.fetch)
-      view = StoreView.new(store, writable: true, as: as)
+      view = Store::View.new(store, writable: true, as: as)
       result =
         begin
           Timeout.timeout(FETCH_TIMEOUT_SECONDS) do

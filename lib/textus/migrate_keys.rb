@@ -112,7 +112,7 @@ module Textus
     # ------------------------------------------------------------------
 
     def apply!(store, renames)
-      audit = AuditLog.new(store.root)
+      audit = Store::AuditLog.new(store.root)
       renames.each do |r|
         # Bottom-up order means a child's ancestors haven't moved yet, so
         # `from`/`to` are valid as-recorded. The audit `key` reflects the

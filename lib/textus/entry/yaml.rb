@@ -3,7 +3,7 @@ require "yaml"
 module Textus
   module Entry
     # YAML entry storage. Top-level must be a mapping so we can carry _meta.
-    module Yaml
+    class Yaml < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
         raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?
@@ -33,6 +33,10 @@ module Textus
         else
           raise UsageError.new("yaml serialize requires :content or :body")
         end
+      end
+
+      def self.validate_against(schema, parsed)
+        schema.validate!(parsed["content"] || {})
       end
 
       def self.extensions = [".yaml", ".yml"]

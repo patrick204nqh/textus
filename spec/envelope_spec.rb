@@ -5,7 +5,7 @@ require "spec_helper"
 RSpec.describe Textus::Envelope do
   let(:mentry) do
     instance_double(
-      Textus::ManifestEntry,
+      Textus::Manifest::Entry,
       zone: "working", owner: "human", format: "markdown", schema: nil,
     )
   end

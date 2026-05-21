@@ -3,7 +3,7 @@ require "fileutils"
 require "tmpdir"
 require "yaml"
 
-RSpec.describe Textus::SchemaTools do
+RSpec.describe Textus::Schema::Tools do
   let(:tmp) { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -29,7 +29,7 @@ RSpec.describe Textus::SchemaTools do
           meta: { "name" => "alice", "org" => "acme", "age" => 30 },
           body: "", as: "human")
 
-    res = Textus::SchemaTools.init(s, name: "person", from: "working.people.alice")
+    res = Textus::Schema::Tools.init(s, name: "person", from: "working.people.alice")
     expect(res["schema_name"]).to eq("person")
     raw = YAML.safe_load_file(res["path"])
     expect(raw["required"]).to include("name", "org", "age")
@@ -54,7 +54,7 @@ RSpec.describe Textus::SchemaTools do
                                                                                     "org" => { "type" => "string" } },
                                                                     }))
 
-    res = Textus::SchemaTools.diff(store, name: "person")
+    res = Textus::Schema::Tools.diff(store, name: "person")
     keys = res["drift"].map { |d| d["key"] }
     expect(keys).to include("working.people.bob")
     expect(keys).not_to include("working.people.alice")
@@ -73,7 +73,7 @@ RSpec.describe Textus::SchemaTools do
                                                                       "evolution" => { "migrate_from" => { "name" => "full_name" } },
                                                                     }))
 
-    res = Textus::SchemaTools.migrate(store, name: "person", rename: nil)
+    res = Textus::Schema::Tools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
     env = store.get(res["migrated"].first)
     expect(env["_meta"]).to have_key("full_name")
@@ -89,7 +89,7 @@ RSpec.describe Textus::SchemaTools do
           meta: { "name" => "bob", "company" => "other" },
           body: "world", as: "human")
 
-    res = Textus::SchemaTools.migrate(store, name: "person", rename: "org:organization")
+    res = Textus::Schema::Tools.migrate(store, name: "person", rename: "org:organization")
     expect(res["migrated"]).to eq(["working.people.alice"])
 
     env = store.get("working.people.alice")
