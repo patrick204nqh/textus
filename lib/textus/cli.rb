@@ -69,11 +69,6 @@ module Textus
       v.call(klass.needs_store? ? store : nil)
     end
 
-    def emit(obj)
-      @stdout.puts(JSON.generate(obj))
-      0
-    end
-
     def emit_error(err)
       @stdout.puts(JSON.generate(err.to_envelope))
       @stderr.puts("#{err.code}: #{err.message}")

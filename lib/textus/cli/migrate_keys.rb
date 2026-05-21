@@ -5,7 +5,8 @@ module Textus
       option :dry_run, "--dry-run"
 
       def call(store)
-        res = Textus::MigrateKeys.run(store, write: write || false)
+        effective_write = write && !dry_run
+        res = Textus::MigrateKeys.run(store, write: effective_write || false)
         @stdout.puts(JSON.generate(res))
         res["ok"] ? 0 : 1
       end
