@@ -76,39 +76,9 @@ module Textus
       @reader.get(key)
     end
 
-    def where(key)
-      mentry, path, = @manifest.resolve(key)
-      {
-        "protocol" => PROTOCOL,
-        "key" => key,
-        "zone" => mentry.zone,
-        "owner" => mentry.owner,
-        "path" => path,
-      }
-    end
-
-    def list(prefix: nil, zone: nil)
-      rows = @manifest.enumerate(prefix: prefix)
-      rows = rows.select { |r| r[:manifest_entry].zone == zone } if zone
-      rows.map do |row|
-        {
-          "key" => row[:key],
-          "zone" => row[:manifest_entry].zone,
-          "path" => row[:path],
-        }
-      end
-    end
-
-    def schema_envelope(key)
-      mentry, = @manifest.resolve(key)
-      schema = schema_for(mentry.schema)
-      {
-        "protocol" => PROTOCOL,
-        "key" => key,
-        "schema_ref" => mentry.schema,
-        "schema" => schema&.to_h,
-      }
-    end
+    def where(key) = @reader.where(key)
+    def list(**) = @reader.list(**)
+    def schema_envelope(key) = @reader.schema_envelope(key)
 
     # rubocop:disable Metrics/ParameterLists
     def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
@@ -186,12 +156,7 @@ module Textus
       Staleness.new(self).call(prefix: prefix, zone: zone)
     end
 
-    # Returns the Textus UID for a key (or nil if the entry has none yet).
-    # Raises UnknownKey if the key doesn't resolve to a real file.
-    def uid(key)
-      env = get(key)
-      env["uid"]
-    end
+    def uid(key) = @reader.uid(key)
 
     # Move an entry from old_key to new_key within the same zone. Preserves
     # uid (minting one first if absent), validates both keys against the

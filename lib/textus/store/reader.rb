@@ -28,6 +28,29 @@ module Textus
           etag: Etag.for_bytes(raw), content: content
         )
       end
+
+      def list(prefix: nil, zone: nil)
+        rows = @manifest.enumerate(prefix: prefix)
+        rows = rows.select { |r| r[:manifest_entry].zone == zone } if zone
+        rows.map { |row| { "key" => row[:key], "zone" => row[:manifest_entry].zone, "path" => row[:path] } }
+      end
+
+      def where(key)
+        mentry, path, = @manifest.resolve(key)
+        { "protocol" => PROTOCOL, "key" => key, "zone" => mentry.zone, "owner" => mentry.owner, "path" => path }
+      end
+
+      def schema_envelope(key)
+        mentry, = @manifest.resolve(key)
+        schema = @store.schema_for(mentry.schema)
+        { "protocol" => PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
+      end
+
+      # Returns the Textus UID for a key (or nil if the entry has none yet).
+      # Raises UnknownKey if the key doesn't resolve to a real file.
+      def uid(key)
+        get(key)["uid"]
+      end
     end
   end
 end
