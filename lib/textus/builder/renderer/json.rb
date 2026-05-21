@@ -2,12 +2,8 @@ require "json"
 
 module Textus
   class Builder
-    module Renderer
-      class Json
-        def initialize(template_loader:)
-          @template_loader = template_loader
-        end
-
+    class Renderer
+      class Json < Renderer
         def call(mentry:, data:)
           content = mentry.template ? parse_rendered_template!(mentry, data) : default_shape(mentry, data)
           final = InjectMeta.call(content, mentry)

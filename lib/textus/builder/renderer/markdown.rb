@@ -2,12 +2,8 @@ require "time"
 
 module Textus
   class Builder
-    module Renderer
-      class Markdown
-        def initialize(template_loader:)
-          @template_loader = template_loader
-        end
-
+    class Renderer
+      class Markdown < Renderer
         def call(mentry:, data:)
           raise TemplateError.new("entry '#{mentry.key}': markdown build requires a template") unless mentry.template
 

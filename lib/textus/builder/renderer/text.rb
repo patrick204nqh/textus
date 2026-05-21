@@ -1,11 +1,7 @@
 module Textus
   class Builder
-    module Renderer
-      class Text
-        def initialize(template_loader:)
-          @template_loader = template_loader
-        end
-
+    class Renderer
+      class Text < Renderer
         def call(mentry:, data:)
           raise TemplateError.new("entry '#{mentry.key}': text build requires a template") unless mentry.template
 
