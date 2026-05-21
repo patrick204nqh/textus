@@ -242,6 +242,9 @@ end
 | `:build` raises | verb still succeeds | `event_error` row |
 | `:accept` raises | verb still succeeds | `event_error` row |
 | `:publish` raises | verb still succeeds | `event_error` row |
+| `:mv` raises | verb still succeeds | `event_error` row |
+| `:reject` raises | verb still succeeds | `event_error` row |
+| `:loaded` raises | store still ready | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 

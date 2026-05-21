@@ -72,7 +72,7 @@ Builder ──► Pipeline ──► LoadSources ──► Project ──► Ren
 Declared in the manifest, loaded on demand, dispatched by `Store` and `Refresh`.
 
 - **`Hooks::Registry`** — loads one `.rb` per hook from `.textus/hooks/`, registers callables under their `(event, name)`. Single source of truth via the `EVENTS` table (rpc vs pubsub, arg shape, failure semantics). For pub-sub events it also forwards registrations to the `Hooks::Dispatcher`.
-- **`Hooks::Dispatcher`** — first-class pub/sub for lifecycle events (`:put`, `:delete`, `:refresh`, `:build`, `:accept`). Owns the 2-second per-handler timeout and the audit-on-failure middleware (raising handlers do not abort the write; they produce an `event_error` audit row). Embedded callers can `store.dispatcher.subscribe(:put, :name) { ... }` outside `.textus/hooks/`.
+- **`Hooks::Dispatcher`** — first-class pub/sub for lifecycle events (`:put`, `:delete`, `:refresh`, `:build`, `:accept`, `:publish`, `:mv`, `:reject`, `:loaded`). Owns the 2-second per-handler timeout and the audit-on-failure middleware (raising handlers do not abort the write; they produce an `event_error` audit row). Embedded callers can `store.dispatcher.subscribe(:put, :name) { ... }` outside `.textus/hooks/`.
 - **`Hooks::Builtin`** — ships built-in `:fetch` hooks (e.g. json, csv, ical-events, rss) available without user-supplied hooks.
 - **`Refresh`** — `refresh` verb: looks up the `:fetch` hook for a key, invokes it, normalizes the result by declared format, writes through `Store::Writer` with an etag check.
 

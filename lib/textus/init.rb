@@ -53,7 +53,7 @@ module Textus
       ```
 
       Events: :fetch, :reduce, :check (rpc — return value used)
-              :put, :delete, :refresh, :build, :accept, :publish (pub-sub — return discarded)
+              :put, :delete, :refresh, :build, :accept, :publish, :mv, :reject, :loaded (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD
