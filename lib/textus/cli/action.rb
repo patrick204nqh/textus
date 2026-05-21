@@ -1,6 +1,11 @@
 module Textus
   class CLI
     class Action < Verb
+      prepend DeprecatedAliasMixin
+
+      def self.deprecated_name = "action"
+      def self.replacement_path = "extension run"
+
       def parse(argv)
         @raw_argv = argv
       end

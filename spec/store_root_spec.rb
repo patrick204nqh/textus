@@ -10,7 +10,7 @@ RSpec.describe Textus::Store, ".discover" do
   def make_store_at(dir)
     FileUtils.mkdir_p(File.join(dir, "schemas"))
     FileUtils.mkdir_p(File.join(dir, "zones"))
-    File.write(File.join(dir, "manifest.yaml"), "version: textus/2\nentries: []\n")
+    File.write(File.join(dir, "manifest.yaml"), "version: textus/2\nzones:\n  - { name: working, writable_by: [human] }\nentries: []\n")
   end
 
   it "honors an explicit root: kwarg" do
