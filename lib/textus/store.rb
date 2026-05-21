@@ -144,17 +144,11 @@ module Textus
       Proposal.accept(self, key, as: as)
     end
 
-    def deps(key)      = Dependencies.deps_of(@manifest, key)
-    def rdeps(key)     = Dependencies.rdeps_of(@manifest, key)
-    def published      = Dependencies.published_of(@manifest)
-
-    def validate_all
-      Validator.new(self).call
-    end
-
-    def stale(prefix: nil, zone: nil)
-      Staleness.new(self).call(prefix: prefix, zone: zone)
-    end
+    def deps(key)    = @reader.deps(key)
+    def rdeps(key)   = @reader.rdeps(key)
+    def published    = @reader.published
+    def stale(**)    = @reader.stale(**)
+    def validate_all = @reader.validate_all
 
     def uid(key) = @reader.uid(key)
 

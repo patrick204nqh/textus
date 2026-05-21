@@ -51,6 +51,12 @@ module Textus
       def uid(key)
         get(key)["uid"]
       end
+
+      def deps(key)   = Dependencies.deps_of(@manifest, key)
+      def rdeps(key)  = Dependencies.rdeps_of(@manifest, key)
+      def published   = Dependencies.published_of(@manifest)
+      def stale(prefix: nil, zone: nil) = Staleness.new(@store).call(prefix: prefix, zone: zone)
+      def validate_all = Validator.new(@store).call
     end
   end
 end
