@@ -47,11 +47,11 @@ module Textus
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
 
-      @entries = Array(raw["entries"]).map { |e| ManifestEntry.new(self, e) }
+      @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!
     end
 
-    # Returns [ManifestEntry, resolved_path, remaining_segments]
+    # Returns [Manifest::Entry, resolved_path, remaining_segments]
     def resolve(key)
       validate_key!(key)
       segments = key.split(".")
@@ -70,7 +70,7 @@ module Textus
       else
         raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless entry.nested
 
-        primary_ext = Entry.for_format(entry.format).extensions.first
+        primary_ext = Textus::Entry.for_format(entry.format).extensions.first
         path = File.join(@root, "zones", entry.path, *remaining) + primary_ext
         [entry, path, remaining]
       end
