@@ -42,6 +42,7 @@ module Textus
       @registry = HookRegistry.new
       @schemas = {}
       load_extensions
+      @reader = Reader.new(self)
     end
 
     def load_extensions
@@ -72,23 +73,7 @@ module Textus
     end
 
     def get(key)
-      mentry, path, = @manifest.resolve(key)
-      raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
-
-      raw = File.binread(path)
-      parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-      meta = parsed["_meta"]
-      content = parsed["content"]
-      enforce_name_match!(path, meta, mentry.format)
-      schema = schema_for(mentry.schema)
-      if schema
-        case mentry.format
-        when "markdown" then schema.validate!(meta)
-        when "json", "yaml" then schema.validate!(content || {})
-          # text: schema forbidden by manifest validation
-        end
-      end
-      build_envelope(key, mentry, path, meta, parsed["body"], Etag.for_bytes(raw), content: content)
+      @reader.get(key)
     end
 
     def where(key)
