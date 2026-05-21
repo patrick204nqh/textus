@@ -29,7 +29,7 @@ module Textus
       when "list"   then dispatch(List, argv)
       when "where"  then dispatch(Where, argv)
       when "get"    then dispatch(Get, argv)
-      when "put"    then verb_put(argv)
+      when "put"    then dispatch(Put, argv)
       when "schema" then dispatch(Schema, argv)
       when "stale"  then dispatch(Stale, argv)
       when "delete"       then dispatch(Delete, argv)
@@ -104,54 +104,6 @@ module Textus
       raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
 
       [prefix, zone]
-    end
-
-    def verb_put(argv) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      key = argv.shift or raise UsageError.new("put requires a key")
-      as_flag = nil
-      use_stdin = false
-      action_name = nil
-      OptionParser.new do |o|
-        o.on("--stdin") { use_stdin = true }
-        o.on("--as=ROLE") { |v| as_flag = v }
-        o.on("--action=NAME") { |v| action_name = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      raise UsageError.new("put requires --stdin in v1") unless use_stdin
-
-      role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-
-      raw = @stdin.read
-      payload =
-        if action_name
-          callable = store.registry.action(action_name)
-          result =
-            begin
-              Timeout.timeout(Textus::Refresh::ACTION_TIMEOUT_SECONDS) do
-                callable.call(config: { "bytes" => raw }, store: Textus::StoreView.new(store), args: {})
-              end
-            rescue Timeout::Error
-              raise UsageError.new(
-                "action '#{action_name}' exceeded #{Textus::Refresh::ACTION_TIMEOUT_SECONDS}s timeout",
-              )
-            end
-          basename = key.split(".").last
-          {
-            "frontmatter" => {
-              "name" => basename,
-              "last_refreshed_at" => Time.now.utc.iso8601,
-              "actioned_with" => action_name,
-            }.merge(result[:frontmatter] || result["frontmatter"] || {}),
-            "body" => result[:body] || result["body"] || "",
-          }
-        else
-          JSON.parse(raw)
-        end
-
-      fm = payload["frontmatter"] || {}
-      body = payload["body"] || ""
-      if_etag = payload["if_etag"]
-      emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
     end
 
     def emit(obj)
