@@ -110,20 +110,5 @@ module Textus
     def audit_log
       @audit_log ||= AuditLog.new(@root)
     end
-
-    private
-
-    # rubocop:disable Metrics/ParameterLists
-    def build_envelope(key, mentry, path, meta, body, etag, content: nil)
-      # rubocop:enable Metrics/ParameterLists
-      Envelope.build(
-        key: key, mentry: mentry, path: path,
-        meta: meta, body: body, etag: etag, content: content
-      )
-    end
-
-    def extract_uid(meta)
-      Envelope.extract_uid(meta)
-    end
   end
 end
