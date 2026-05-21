@@ -3,7 +3,7 @@ require "json"
 module Textus
   module Entry
     # JSON entry storage. Top-level must be an object so we can carry _meta.
-    module Json
+    class Json < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
         raise BadFrontmatter.new(path, "entry is not valid UTF-8") unless raw.valid_encoding?

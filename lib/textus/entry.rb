@@ -1,3 +1,4 @@
+require_relative "entry/base"
 require_relative "entry/markdown"
 require_relative "entry/json"
 require_relative "entry/yaml"
