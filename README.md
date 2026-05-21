@@ -73,8 +73,8 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 - **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/derived/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `reducer`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
-- **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
-- **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus migrate-keys --dry-run|--write` rewrites existing stores with illegal segments deterministically.
+- **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
+- **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key migrate --dry-run|--write` rewrites existing stores with illegal segments deterministically.
 - **`textus intro`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded extensions, write flows per role, the full CLI verb table. The boot signal for any agent — one tool call and it knows your store.
 - **`textus doctor`.** Health check across 8 categories: missing schemas/templates, broken extensions, illegal nested keys, sentinel drift, audit log readability. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
 - **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
@@ -93,22 +93,22 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `list [--prefix=K] [--zone=Z]` | Enumerate keys |
 | `where K` | Resolve a key to its filesystem path |
 | `get K` | Full envelope (frontmatter, body, uid, etag, format) |
-| `schema K` | Schema bound to an entry |
+| `schema show K` | Schema bound to an entry |
 | `stale [--prefix=K] [--zone=Z]` | List stale derived/intake entries |
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
-| `extensions list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
+| `extension list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
 
 **Write:**
 
 | Verb | Role |
 |---|---|
 | `put K --stdin --as=R [--action=NAME]` | per zone |
-| `action NAME [--key=val] [--as=R]` | per zone written (invoke a registered action) |
+| `extension run NAME [--key=val] [--as=R]` | per zone written (invoke a registered action) |
 | `delete K --if-etag=E --as=R` | per zone |
 | `refresh K --as=script` | per zone (typically `script`) |
-| `mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
+| `key mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
 | `build [--prefix=K] [--dry-run]` | `build` |
 | `accept K --as=human` | `human` only |
 
@@ -117,16 +117,18 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | Verb | Purpose |
 |---|---|
 | `doctor` | 8 health checks; `ok: true` when clean |
-| `migrate-keys [--dry-run]` | Rename files whose basenames violate the strict key grammar |
+| `key migrate [--dry-run]` | Rename files whose basenames violate the strict key grammar |
 
 **Scaffolding (human-only):**
 
 | Verb | Purpose |
 |---|---|
 | `init` | Scaffold a fresh `.textus/` |
-| `schema-init NAME` | Stub a schema |
-| `schema-diff NAME` | Compare a schema against entries that claim it |
-| `schema-migrate NAME [--rename=OLD:NEW]` | Rewrite frontmatter keys across affected entries |
+| `schema init NAME` | Stub a schema |
+| `schema diff NAME` | Compare a schema against entries that claim it |
+| `schema migrate NAME [--rename=OLD:NEW]` | Rewrite frontmatter keys across affected entries |
+
+**Deprecated (removed in 0.6):** `mv`, `uid`, `migrate-keys`, `schema-init`, `schema-diff`, `schema-migrate`, `extensions`, `action`.
 
 ## Zones and roles
 
