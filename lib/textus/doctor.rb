@@ -217,32 +217,30 @@ module Textus
         stripped = line.chomp
         next if stripped.empty?
 
-        # Audit log is TSV, not NDJSON. Treat as malformed if it doesn't have
-        # at least 6 tab-separated fields (timestamp, role, verb, key, etag_before, etag_after).
-        fields = stripped.split("\t")
-        if fields.length < 6
+        if stripped.start_with?("{")
+          begin
+            JSON.parse(stripped)
+          rescue JSON::ParserError => e
+            out << {
+              "code" => "audit.parse_error",
+              "level" => "warning",
+              "subject" => "#{path}:#{lineno}",
+              "message" => "audit log line #{lineno} is invalid JSON: #{e.message}",
+              "fix" => "inspect #{path} at line #{lineno} and remove the corrupted row",
+            }
+          end
+        else
+          # Legacy TSV: minimum 6 fields. Removed in 0.6.
+          fields = stripped.split("\t")
+          next if fields.length >= 6
+
           out << {
             "code" => "audit.parse_error",
             "level" => "warning",
             "subject" => "#{path}:#{lineno}",
-            "message" => "audit log line #{lineno} has #{fields.length} fields (expected >=6)",
+            "message" => "audit log line #{lineno} has #{fields.length} fields " \
+                         "(expected >=6 for legacy TSV; consider migrating to NDJSON)",
             "fix" => "inspect #{path} at line #{lineno} and remove the corrupted row",
-          }
-          next
-        end
-
-        extras = fields[6]
-        next if extras.nil? || extras.empty?
-
-        begin
-          JSON.parse(extras)
-        rescue JSON::ParserError => e
-          out << {
-            "code" => "audit.parse_error",
-            "level" => "warning",
-            "subject" => "#{path}:#{lineno}",
-            "message" => "audit log line #{lineno} extras JSON malformed: #{e.message}",
-            "fix" => "inspect #{path} at line #{lineno} and fix the JSON in the last column",
           }
         end
       end

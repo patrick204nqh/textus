@@ -327,7 +327,7 @@ RSpec.describe "textus/1 conformance" do
       res = store.delete("working.network.org.tmp", as: "human")
       expect(res["deleted"]).to be true
       expect(File.exist?(File.join(root, "zones/working/network/org/tmp.md"))).to be false
-      expect(File.read(File.join(root, "audit.log"))).to match(/\tdelete\t/)
+      expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
     end
 
     it "rejects delete on canon by ai role" do
