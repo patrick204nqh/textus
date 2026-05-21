@@ -8,6 +8,38 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.8.0 — Folder restructure & Zeitwerk autoload (2026-05-21)
+
+### Breaking (internal — public CLI/wire surface unchanged)
+- Internal Ruby constants renamed. No deprecation aliases; downstream code referencing internals must update directly.
+  - `Textus::EventBus` → `Textus::Hooks::Dispatcher`
+  - `Textus::HookRegistry` → `Textus::Hooks::Registry`
+  - `Textus::BuiltinHooks` → `Textus::Hooks::Builtin`
+  - `Textus::Extensions` (module) → `Textus::Hooks::Loader`
+  - `Textus::StoreView` → `Textus::Store::View`
+  - `Textus::AuditLog` → `Textus::Store::AuditLog`
+  - `Textus::ManifestEntry` → `Textus::Manifest::Entry`
+  - `Textus::KeyDistance` → `Textus::Key::Distance`
+  - `Textus::Path` → `Textus::Key::Path`
+  - `Textus::SchemaTools` → `Textus::Schema::Tools`
+  - `Textus::CLI::<Verb>` → `Textus::CLI::Verb::<Verb>` (all 23 verbs)
+  - `Textus::CLI::<Name>Group` → `Textus::CLI::Group::<Name>` (key, schema, hook)
+- `Hooks::Registry#initialize` keyword `bus:` renamed to `dispatcher:`.
+
+### Added
+- `Textus::Entry::Base` — explicit strategy interface for entry formats. Concrete strategies inherit and override.
+- `Textus::Builder::Renderer` — explicit base for output renderers.
+- `Textus::Doctor::Check` — explicit base for doctor checks. Each builtin check (9 total) is now its own file under `lib/textus/doctor/check/`.
+
+### Changed
+- Per-format schema validation moved from `Store::Reader`/`Store::Writer` onto `Entry::Base#validate_against`. Reader/Writer no longer carry a `case mentry.format` switch.
+- `Textus::Doctor` reduced to an orchestrator; the 9 builtin checks live under `Doctor::Check::*`.
+- `lib/textus.rb` switched to Zeitwerk autoload. The manual `require_relative` tree (75 lines) is gone.
+- `lib/textus/builder/renderers/` directory renamed to `renderer/` (singular) to match `Builder::Renderer::*` namespace.
+
+### Migration
+External code referencing the old internal constants must rename. `Textus.hook`, `Textus.with_registry`, the entire CLI surface, and the `textus/2` wire format are unchanged. The published API (`Store`, `Manifest`, `Envelope`, `Etag`, `Role`, `Error` hierarchy, `Builder`, `Doctor`, `Refresh`, `Init`, `CLI.run`) is unchanged.
+
 ## 0.7.0 — Reader/Writer split, EventBus, Builder pipeline (2026-05-21)
 
 ### Added
