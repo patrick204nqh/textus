@@ -2,6 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 require "time"
+require "json"
 
 RSpec.describe Textus::AuditLog do
   let(:tmp)  { Dir.mktmpdir("textus-audit") }
@@ -11,14 +12,16 @@ RSpec.describe Textus::AuditLog do
   before { FileUtils.mkdir_p(root) }
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
-  it "appends a tab-separated line per write" do
+  it "appends one NDJSON object per write" do
     log.append(role: "human", verb: "put", key: "working.x",
                etag_before: nil, etag_after: "sha256:abc")
     line = File.read(File.join(root, "audit.log")).lines.first
-    fields = line.chomp.split("\t")
-    expect(fields.length).to eq(6)
-    expect { Time.iso8601(fields[0]) }.not_to raise_error
-    expect(fields[1..]).to eq(["human", "put", "working.x", "NULL", "sha256:abc"])
+    parsed = JSON.parse(line)
+    expect { Time.iso8601(parsed["ts"]) }.not_to raise_error
+    expect(parsed).to include(
+      "role" => "human", "verb" => "put", "key" => "working.x",
+      "etag_before" => nil, "etag_after" => "sha256:abc"
+    )
   end
 
   it "returns the most recent role that wrote a key" do
@@ -30,22 +33,19 @@ RSpec.describe Textus::AuditLog do
     expect(log.last_writer_for("missing")).to be_nil
   end
 
-  it "appends an event_error row with JSON extras in column 7" do
-    log = Textus::AuditLog.new(root)
+  it "appends an event_error row with extras sub-object" do
     log.append(role: "script", verb: "event_error", key: "working.x",
                etag_before: nil, etag_after: nil,
                extras: { "event" => "put", "hook" => "boom", "error" => "boom!" })
-    cols = File.read(File.join(root, "audit.log")).chomp.split("\t")
-    expect(cols.length).to eq(7)
-    expect(JSON.parse(cols[6])).to include("event" => "put", "hook" => "boom")
+    parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)
+    expect(parsed["extras"]).to include("event" => "put", "hook" => "boom")
   end
 
-  it "writes 6-column lines for regular writes (back-compat)" do
-    log = Textus::AuditLog.new(root)
+  it "omits extras key for regular writes" do
     log.append(role: "human", verb: "put", key: "working.x",
                etag_before: nil, etag_after: "abc")
-    cols = File.read(File.join(root, "audit.log")).chomp.split("\t")
-    expect(cols.length).to eq(6)
+    parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)
+    expect(parsed).not_to have_key("extras")
   end
 
   it "is safe under concurrent writes (smoke test)" do
@@ -58,6 +58,7 @@ RSpec.describe Textus::AuditLog do
     threads.each(&:join)
     lines = File.read(File.join(root, "audit.log")).lines
     expect(lines.length).to eq(20)
-    expect(lines.all? { |l| l.chomp.split("\t").length == 6 }).to be true
+    expect(lines.all? { |l| l.start_with?("{") }).to be true
+    expect(lines.all? { |l| JSON.parse(l)["verb"] == "put" }).to be true
   end
 end

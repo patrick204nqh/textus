@@ -306,15 +306,19 @@ Proposed body content.
 
 ### 5.6 Audit log
 
-Every successful write appends one line to an append-only TSV file at `.textus/audit.log`. The file is opened with `flock(LOCK_EX)` for the duration of each append so concurrent writers serialize cleanly.
+Every successful write appends one compact JSON object (NDJSON) to `.textus/audit.log`. The file is opened with `flock(LOCK_EX)` for the duration of each append so concurrent writers serialize cleanly.
 
-Schema (tab-separated, one record per line):
+Schema (one JSON object per line, no interior whitespace):
 
+```json
+{"ts":"<iso8601-utc>","role":"<role>","verb":"<verb>","key":"<key>","etag_before":<etag-or-null>,"etag_after":<etag-or-null>}
 ```
-<iso8601-utc>\t<role>\t<verb>\t<key>\t<etag-before-or-NULL>\t<etag-after-or-NULL>
-```
 
-`<iso8601-utc>` is the wall-clock timestamp in UTC with second (or finer) precision. `<role>` is the resolved role for the invocation. `<verb>` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). `<key>` is the affected entry key. For `mv`, `<key>` is the **new** key, and an extras JSON column carries `from_key`, `to_key`, `from_path`, `to_path`, and `uid`. `<etag-before>` and `<etag-after>` are the entry etags before and after the write, or the literal string `NULL` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `<key>` and the file's pre- and post-rename etags.
+`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the CLI verb (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag). `migrate-keys --write` emits one line per renamed file using the new key as `key` and the file's pre- and post-rename etags.
+
+For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
+
+**Backward compatibility (v0.5):** files written by v0.4 and earlier contain TSV rows. Readers MUST accept mixed-format files: lines starting with `{` are parsed as JSON; other lines are treated as legacy TSV (`ts\trole\tverb\tkey\tetag_before\tetag_after[\tjson_extras]`). TSV write support is removed in v0.6.
 
 ### 5.7 Security bounds
 
@@ -403,7 +407,7 @@ Lifecycle events fire in-process. Subscribers register via `Textus.hook(:event, 
 
 `:refresh` with `change: :unchanged` does NOT fire — only `:created` and `:updated` are emitted. The `store:` kwarg is always a `Textus::StoreView` (§5.11).
 
-**Timeout and isolation.** Each hook runs under `Timeout.timeout(2)`. Hook errors and timeouts are recorded as `event_error` rows in `.textus/audit.log` (column 7, JSON-encoded extras with `event`, `hook`, `error`) but do NOT abort the triggering operation. The store write that fired the event is already committed by the time hooks run.
+**Timeout and isolation.** Each hook runs under `Timeout.timeout(2)`. Hook errors and timeouts are recorded as `event_error` rows in `.textus/audit.log` (NDJSON with an `extras` object carrying `event`, `hook`, `error`) but do NOT abort the triggering operation. The store write that fired the event is already committed by the time hooks run.
 
 **Manifest declarations.** A manifest entry MAY declare external-runner hooks under an `events:` block, keyed by event name:
 

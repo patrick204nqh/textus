@@ -106,17 +106,16 @@ RSpec.describe Textus::MigrateKeys do
       expect(File.exist?(File.join(root, "zones/working/notes/some-file.md"))).to be true
       expect(File.read(File.join(root, "zones/working/notes/some-file.md"))).to eq("---\n---\nA")
 
-      lines = File.readlines(File.join(root, "audit.log")).map(&:chomp)
-      migrate_lines = lines.select { |l| l.include?("\tmigrate-keys\t") }
+      parsed_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
+      migrate_lines = parsed_lines.select { |h| h["verb"] == "migrate-keys" }
       expect(migrate_lines.length).to eq(1)
 
-      fields = migrate_lines.first.split("\t")
-      expect(fields[1]).to eq("script")
-      expect(fields[2]).to eq("migrate-keys")
-      expect(fields[3]).to eq("working.notes.some-file")
-      extras = JSON.parse(fields[6])
-      expect(extras["from"]).to end_with("/Some_File.md")
-      expect(extras["to"]).to end_with("/some-file.md")
+      row = migrate_lines.first
+      expect(row["role"]).to eq("script")
+      expect(row["verb"]).to eq("migrate-keys")
+      expect(row["key"]).to eq("working.notes.some-file")
+      expect(row["extras"]["from"]).to end_with("/Some_File.md")
+      expect(row["extras"]["to"]).to end_with("/some-file.md")
     end
   end
 
@@ -136,24 +135,22 @@ RSpec.describe Textus::MigrateKeys do
       expect(File.exist?(File.join(root, "zones/working/notes/Org/CMC.Global/charter.md"))).to be false
       expect(File.exist?(File.join(root, "zones/working/notes/org/cmc-global/charter.md"))).to be true
 
-      lines = File.readlines(File.join(root, "audit.log")).map(&:chomp)
-      migrate_lines = lines.select { |l| l.include?("\tmigrate-keys\t") }
+      parsed_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
+      migrate_lines = parsed_lines.select { |h| h["verb"] == "migrate-keys" }
       # Two directories renamed: CMC.Global and Org. (charter.md is already legal.)
       expect(migrate_lines.length).to eq(2)
 
-      keys = migrate_lines.map { |l| l.split("\t")[3] }
+      keys = migrate_lines.map { |h| h["key"] }
       # Order matters: child dir is renamed before its parent dir.
       expect(keys).to eq(["working.notes.org.cmc-global", "working.notes.org"])
 
-      first_extras = JSON.parse(migrate_lines.first.split("\t")[6])
       # The child rename's `from` should reflect the disk path at the moment
       # of renaming (parent not yet renamed).
-      expect(first_extras["from"]).to end_with("/Org/CMC.Global")
-      expect(first_extras["to"]).to end_with("/Org/cmc-global")
+      expect(migrate_lines.first["extras"]["from"]).to end_with("/Org/CMC.Global")
+      expect(migrate_lines.first["extras"]["to"]).to end_with("/Org/cmc-global")
 
-      second_extras = JSON.parse(migrate_lines.last.split("\t")[6])
-      expect(second_extras["from"]).to end_with("/notes/Org")
-      expect(second_extras["to"]).to end_with("/notes/org")
+      expect(migrate_lines.last["extras"]["from"]).to end_with("/notes/Org")
+      expect(migrate_lines.last["extras"]["to"]).to end_with("/notes/org")
     end
   end
 end

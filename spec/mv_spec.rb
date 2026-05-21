@@ -40,19 +40,18 @@ RSpec.describe "textus mv" do
     expect(store.get("working.notes.beta")["uid"]).to eq(uid)
   end
 
-  it "writes an audit row with verb=mv and extras" do
+  it "writes an audit row with verb=mv and top-level structural fields" do
     put_md("working.notes.alpha")
     store.mv("working.notes.alpha", "working.notes.beta", as: "human")
     line = File.read(File.join(root, "audit.log")).lines.last.chomp
-    cols = line.split("\t")
-    expect(cols[2]).to eq("mv")
-    expect(cols[3]).to eq("working.notes.beta")
-    extras = JSON.parse(cols[6])
-    expect(extras["from_key"]).to eq("working.notes.alpha")
-    expect(extras["to_key"]).to eq("working.notes.beta")
-    expect(extras["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(extras["from_path"]).to end_with("working/notes/alpha.md")
-    expect(extras["to_path"]).to end_with("working/notes/beta.md")
+    parsed = JSON.parse(line)
+    expect(parsed["verb"]).to eq("mv")
+    expect(parsed["key"]).to eq("working.notes.beta")
+    expect(parsed["from_key"]).to eq("working.notes.alpha")
+    expect(parsed["to_key"]).to eq("working.notes.beta")
+    expect(parsed["uid"]).to match(/\A[a-f0-9]{12,}\z/)
+    expect(parsed["extras"]["from_path"]).to end_with("working/notes/alpha.md")
+    expect(parsed["extras"]["to_path"]).to end_with("working/notes/beta.md")
   end
 
   it "refuses cross-zone moves" do
@@ -95,8 +94,8 @@ RSpec.describe "textus mv" do
     expect(store.get("working.notes.beta")["uid"]).to eq(res["uid"])
 
     line = File.read(File.join(root, "audit.log")).lines.last
-    extras = JSON.parse(line.chomp.split("\t")[6])
-    expect(extras["uid"]).to eq(res["uid"])
+    parsed = JSON.parse(line.chomp)
+    expect(parsed["uid"]).to eq(res["uid"])
   end
 
   it "is wired up in the CLI" do
