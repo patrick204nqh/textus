@@ -33,6 +33,16 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
+  it "scaffolds hooks/README.md without dangling 'extension' terminology" do
+    Dir.mktmpdir do |dir|
+      target = File.join(dir, ".textus")
+      Textus::Init.run(target)
+      readme = File.read(File.join(target, "hooks/README.md"))
+      expect(readme).to include("All hooks register through one DSL")
+      expect(readme).not_to match(/extensions register/i)
+    end
+  end
+
   it "declares all five zones and pre-creates their directories" do
     tmp = Dir.mktmpdir
     target = File.join(tmp, ".textus")

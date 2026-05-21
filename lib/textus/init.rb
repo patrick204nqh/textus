@@ -31,7 +31,7 @@ module Textus
       File.write(File.join(target_root, "hooks", "README.md"), <<~MD)
         # Hooks
 
-        Drop one Ruby file per hook. All extensions register through one DSL.
+        Drop one Ruby file per hook. All hooks register through one DSL.
         Every handler receives `store:` as its first kwarg, then event-specific args.
 
         ```ruby
