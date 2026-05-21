@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-21T08:04:40Z'
+  at: '2026-05-21T13:21:17Z'
   from:
   - canon.plugin
   - working.agents
@@ -14,7 +14,7 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 `textus build`.
 
 → Context store: `.textus/` (textus, protocol textus/2).
-→ Run `textus intro --format=json` for the full catalog shape and write flows.
+→ Run `textus intro` for the full catalog shape and write flows.
 → Write authority by zone:
     - **canon** (human ) — slow-changing identity; human-only writes
     - **working** (human ai script ) — active project state; humans, AI, and scripts share this surface
@@ -52,4 +52,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-21T08:04:40Z._
+_Built at 2026-05-21T13:21:17Z._

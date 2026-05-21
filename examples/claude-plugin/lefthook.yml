@@ -1,5 +1,5 @@
 pre-commit:
   commands:
     textus-build:
-      run: bundle exec textus build --format=json | tee .textus/.last-build.json
+      run: bundle exec textus build | tee .textus/.last-build.json
       stage_fixed: true
