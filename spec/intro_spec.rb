@@ -55,13 +55,13 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.action(:demo_action)  { |config:, store:, args:| { frontmatter: {}, body: "" } }
-      Textus.action(:zebra)        { |config:, store:, args:| { frontmatter: {}, body: "" } }
-      Textus.action(:apple)        { |config:, store:, args:| { frontmatter: {}, body: "" } }
-      Textus.reducer(:rank_by_recency) { |rows:, config:| rows }
-      Textus.reducer(:alpha)           { |rows:, config:| rows }
-      Textus.hook(:build, :stamp_log)  { |**_| }
-      Textus.doctor_check(:smoke)      { |store:| { ok: true } }
+      Textus.hook(:fetch, :demo_action)  { |store:, config:, args:| { frontmatter: {}, body: "" } }
+      Textus.hook(:fetch, :zebra)        { |store:, config:, args:| { frontmatter: {}, body: "" } }
+      Textus.hook(:fetch, :apple)        { |store:, config:, args:| { frontmatter: {}, body: "" } }
+      Textus.hook(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
+      Textus.hook(:reduce, :alpha)           { |store:, rows:, config:| rows }
+      Textus.hook(:build, :stamp_log)        { |store:, key:, envelope:, sources:| }
+      Textus.hook(:check, :smoke)            { |store:| [] }
     RUBY
   end
 

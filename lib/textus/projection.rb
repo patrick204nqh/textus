@@ -39,9 +39,10 @@ module Textus
 
     def apply_reducer(rows)
       name = @spec["reducer"] or return rows
-      callable = @store.registry.reducer(name)
+      callable = @store.registry.rpc_callable(:reduce, name)
+      view = StoreView.new(@store)
       Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
-        callable.call(rows: rows, config: @spec["reducer_config"] || {})
+        callable.call(store: view, rows: rows, config: @spec["reducer_config"] || {})
       end
     rescue Timeout::Error
       raise UsageError.new("reducer '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")

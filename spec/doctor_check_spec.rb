@@ -11,8 +11,8 @@ RSpec.describe "registered doctor_check invocation" do
   it "merges registered check issues into the doctor report" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "extensions/org_rules.rb"), <<~RUBY)
-        Textus.doctor_check(:org_rules) do |store:|
+      File.write(File.join(root, "hooks/org_rules.rb"), <<~RUBY)
+        Textus.hook(:check, :org_rules) do |store:|
           [{ "code" => "org.bad_naming", "level" => "warning",
              "subject" => "test", "message" => "fake issue", "fix" => "n/a" }]
         end
@@ -29,8 +29,8 @@ RSpec.describe "registered doctor_check invocation" do
   it "captures a check that raises as an error-level issue without aborting" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "extensions/boom.rb"), <<~RUBY)
-        Textus.doctor_check(:boom) { |store:| raise "kaboom" }
+      File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
+        Textus.hook(:check, :boom) { |store:| raise "kaboom" }
       RUBY
 
       store = Textus::Store.new(root)
@@ -45,8 +45,8 @@ RSpec.describe "registered doctor_check invocation" do
   it "captures a check that times out" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "extensions/slow.rb"), <<~RUBY)
-        Textus.doctor_check(:slow) { |store:| :unreached }
+      File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
+        Textus.hook(:check, :slow) { |store:| :unreached }
       RUBY
 
       allow(Timeout).to receive(:timeout).and_call_original

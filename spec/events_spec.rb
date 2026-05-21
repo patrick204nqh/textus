@@ -73,7 +73,7 @@ RSpec.describe "Refresh event" do
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     $log = []
@@ -95,7 +95,7 @@ RSpec.describe "Refresh event" do
     Textus::Refresh.call(store, "intake.x", as: "script")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v2" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v2" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk (fresh registry)
@@ -111,7 +111,7 @@ RSpec.describe "Refresh event" do
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v1" } }
       Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload extension file from disk
@@ -125,7 +125,7 @@ RSpec.describe "Refresh event" do
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.action(:f) { |config:, store:, args:| { frontmatter: { "name" => "x" }, body: "v" } }
+      Textus.hook(:fetch, :f) { |store:, config:, args:| { frontmatter: { "name" => "x" }, body: "v" } }
       Textus.hook(:put,     :p) { |key:, envelope:, store:| $log << [:put, key] }
       Textus.hook(:refresh, :r) { |key:, envelope:, store:, change:| $log << [:refresh, key, change] }
     RUBY
@@ -214,8 +214,8 @@ RSpec.describe "Accept event" do
     MD
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:accept, :t) do |pending_key:, target_key:, store:|
-        $log << [:accept, pending_key, target_key]
+      Textus.hook(:accept, :t) do |key:, target_key:, store:|
+        $log << [:accept, key, target_key]
       end
     RUBY
     $log = []
@@ -232,9 +232,9 @@ RSpec.describe "Accept event" do
     expect($log).to include([:accept, "pending.bob", "working.bob"])
   end
 
-  it "records both target_key and pending_key when an :accept hook fails" do
+  it "records both target_key and key when an :accept hook fails" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-      Textus.hook(:accept, :boom) { |pending_key:, target_key:, store:| raise "bang" }
+      Textus.hook(:accept, :boom) { |key:, target_key:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
     store.accept("pending.bob", as: "human")
@@ -242,7 +242,7 @@ RSpec.describe "Accept event" do
     err = audit_lines.find { |h| h["verb"] == "event_error" }
     expect(err).not_to be_nil
     expect(err["extras"]["event"]).to eq("accept")
-    expect(err["extras"]["pending_key"]).to eq("pending.bob")
+    expect(err["key"]).to eq("pending.bob")
     expect(err["extras"]["target_key"]).to eq("working.bob")
   end
 end

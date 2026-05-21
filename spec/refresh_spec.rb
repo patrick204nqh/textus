@@ -19,7 +19,7 @@ RSpec.describe Textus::Refresh do
           source: { action: stub_fetch, config: { word: hello } }
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.action(:stub_fetch) do |config:, store:, args:|
+      Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
         {
           frontmatter: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
           body: config["word"]
@@ -38,16 +38,16 @@ RSpec.describe Textus::Refresh do
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
   end
 
-  it "raises if entry has no source.action" do
+  it "raises if entry has no source.fetch" do
     store = Textus::Store.new(root)
     store.manifest.entries.first.instance_variable_set(:@action, nil)
     expect { described_class.call(store, "intake.repos", as: "script") }
-      .to raise_error(Textus::UsageError, /no action declared/)
+      .to raise_error(Textus::UsageError, /no fetch declared/)
   end
 
-  it "wraps action in 2s timeout" do
+  it "wraps fetch in 2s timeout" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.action(:stub_fetch) { |config:, store:, args:| sleep 3 }
+      Textus.hook(:fetch, :stub_fetch) { |config:, store:, args:| sleep 3 }
     RUBY
     store = Textus::Store.new(root)
     expect { described_class.call(store, "intake.repos", as: "script") }
@@ -67,7 +67,7 @@ RSpec.describe Textus::Refresh do
             source: { action: stub_fetch, config: {} }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.action(:stub_fetch) do |config:, store:, args:|
+        Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
           { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
         end
       RUBY
@@ -92,7 +92,7 @@ RSpec.describe Textus::Refresh do
             source: { action: stub_fetch, config: { msg: hello } }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.action(:stub_fetch) do |config:, store:, args:|
+        Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
           { body: "raw bytes\\nline 2\\n" }
         end
       RUBY
@@ -102,12 +102,12 @@ RSpec.describe Textus::Refresh do
     end
   end
 
-  it "wraps action exceptions with the action name" do
+  it "wraps fetch exceptions with the fetch name" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.action(:stub_fetch) { |config:, store:, args:| raise "network down" }
+      Textus.hook(:fetch, :stub_fetch) { |config:, store:, args:| raise "network down" }
     RUBY
     store = Textus::Store.new(root)
     expect { described_class.call(store, "intake.repos", as: "script") }
-      .to raise_error(Textus::UsageError, /action 'stub_fetch' raised.*network down/)
+      .to raise_error(Textus::UsageError, /fetch 'stub_fetch' raised.*network down/)
   end
 end

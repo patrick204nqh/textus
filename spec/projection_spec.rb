@@ -49,8 +49,9 @@ RSpec.describe Textus::Projection do
   end
 
   it "applies a reducer before sort/limit" do
-    store.registry.register_reducer(:score) do |rows:, config:|
+    store.registry.register(:reduce, :score) do |store:, rows:, config:|
       _ = config
+      _ = store
       rows.map { |r| r.merge("score" => r["name"].length) }
     end
     proj = Textus::Projection.new(store, {
@@ -64,9 +65,10 @@ RSpec.describe Textus::Projection do
   end
 
   it "raises UsageError when a reducer exceeds 2s timeout" do
-    store.registry.register_reducer(:slow) do |rows:, config:|
+    store.registry.register(:reduce, :slow) do |store:, rows:, config:|
       _ = rows
       _ = config
+      _ = store
       sleep 5
     end
     proj = Textus::Projection.new(store, {
