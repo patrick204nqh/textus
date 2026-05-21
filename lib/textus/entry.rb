@@ -23,8 +23,8 @@ module Textus
       for_format(format).parse(raw, path: path)
     end
 
-    def self.serialize(frontmatter: {}, body: "", content: nil, format: "markdown")
-      for_format(format).serialize(frontmatter: frontmatter, body: body, content: content)
+    def self.serialize(meta: {}, body: "", content: nil, format: "markdown")
+      for_format(format).serialize(meta: meta, body: body, content: content)
     end
   end
 end

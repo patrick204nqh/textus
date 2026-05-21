@@ -10,7 +10,7 @@ RSpec.describe "Textus UID" do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
       entries:
@@ -24,14 +24,14 @@ RSpec.describe "Textus UID" do
   after { FileUtils.remove_entry(tmp) }
 
   it "auto-mints a uid on first put for markdown" do
-    env = store.put("working.md", frontmatter: { "name" => "md" }, body: "hi", as: "human")
+    env = store.put("working.md", meta: { "name" => "md" }, body: "hi", as: "human")
     expect(env["uid"]).to match(/\A[a-f0-9]{12,}\z/)
   end
 
   it "preserves the uid on subsequent puts" do
-    e1 = store.put("working.md", frontmatter: { "name" => "md" }, body: "hi", as: "human")
+    e1 = store.put("working.md", meta: { "name" => "md" }, body: "hi", as: "human")
     uid = e1["uid"]
-    e2 = store.put("working.md", frontmatter: { "name" => "md" }, body: "again", as: "human")
+    e2 = store.put("working.md", meta: { "name" => "md" }, body: "again", as: "human")
     expect(e2["uid"]).to eq(uid)
     e3 = store.get("working.md")
     expect(e3["uid"]).to eq(uid)
@@ -42,21 +42,21 @@ RSpec.describe "Textus UID" do
     File.write(path, "---\nname: md\n---\nhand-rolled\n")
     expect(store.get("working.md")["uid"]).to be_nil
 
-    env = store.put("working.md", frontmatter: store.get("working.md")["frontmatter"],
+    env = store.put("working.md", meta: store.get("working.md")["_meta"],
                                   body: store.get("working.md")["body"], as: "human")
     expect(env["uid"]).to match(/\A[a-f0-9]{16}\z/)
   end
 
-  it "stores uid in _meta.uid for json entries" do
+  it "stores uid in _meta.uid for json entries (accessible via env['_meta'])" do
     env = store.put("working.j", content: { "name" => "j", "x" => 1 }, as: "human")
     expect(env["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(env["content"]["_meta"]["uid"]).to eq(env["uid"])
+    expect(env["_meta"]["uid"]).to eq(env["uid"])
   end
 
-  it "stores uid in _meta.uid for yaml entries" do
+  it "stores uid in _meta.uid for yaml entries (accessible via env['_meta'])" do
     env = store.put("working.y", content: { "name" => "y", "x" => 1 }, as: "human")
     expect(env["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(env["content"]["_meta"]["uid"]).to eq(env["uid"])
+    expect(env["_meta"]["uid"]).to eq(env["uid"])
   end
 
   it "yields nil uid for text entries even after put" do
@@ -65,7 +65,7 @@ RSpec.describe "Textus UID" do
   end
 
   it "Store#uid returns the uid for a key" do
-    env = store.put("working.md", frontmatter: { "name" => "md" }, body: "hi", as: "human")
+    env = store.put("working.md", meta: { "name" => "md" }, body: "hi", as: "human")
     expect(store.uid("working.md")).to eq(env["uid"])
   end
 end

@@ -11,7 +11,7 @@ RSpec.describe Textus::StoreView do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human] }
         - { name: intake,  writable_by: [script] }
@@ -31,7 +31,7 @@ RSpec.describe Textus::StoreView do
   end
 
   it "raises on write attempts" do
-    expect { view.put("working.x", frontmatter: {}, body: "") }.to raise_error(Textus::UsageError, /read-only/)
+    expect { view.put("working.x", meta: {}, body: "") }.to raise_error(Textus::UsageError, /read-only/)
     expect { view.delete("working.x") }.to raise_error(Textus::UsageError, /read-only/)
     expect { view.accept("working.x") }.to raise_error(Textus::UsageError, /read-only/)
   end
@@ -44,14 +44,14 @@ RSpec.describe Textus::StoreView do
   it "is read-only by default" do
     store = Textus::Store.new(root)
     v = described_class.new(store)
-    expect { v.put("intake.demo", frontmatter: {}, body: "") }
+    expect { v.put("intake.demo", meta: {}, body: "") }
       .to raise_error(Textus::UsageError, /read-only/)
   end
 
   it "permits writes when constructed writable with an as: role" do
     store = Textus::Store.new(root)
     v = described_class.new(store, writable: true, as: "script")
-    env = v.put("intake.demo", frontmatter: { "name" => "demo" }, body: "hello")
+    env = v.put("intake.demo", meta: { "name" => "demo" }, body: "hello")
     expect(env["key"]).to eq("intake.demo")
   end
 
@@ -64,7 +64,7 @@ RSpec.describe Textus::StoreView do
   it "allows a per-call as: override of the bound role" do
     store = Textus::Store.new(root)
     v = described_class.new(store, writable: true, as: "script")
-    env = v.put("working.x", frontmatter: { "name" => "x" }, body: "updated", as: "human")
+    env = v.put("working.x", meta: { "name" => "x" }, body: "updated", as: "human")
     expect(env["key"]).to eq("working.x")
   end
 

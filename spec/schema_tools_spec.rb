@@ -11,7 +11,7 @@ RSpec.describe Textus::SchemaTools do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
       entries:
@@ -26,7 +26,7 @@ RSpec.describe Textus::SchemaTools do
   it "schema-init infers a schema from an entry's frontmatter" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "acme", "age" => 30 },
+          meta: { "name" => "alice", "org" => "acme", "age" => 30 },
           body: "", as: "human")
 
     res = Textus::SchemaTools.init(s, name: "person", from: "working.people.alice")
@@ -40,10 +40,10 @@ RSpec.describe Textus::SchemaTools do
   it "schema-diff reports entries that violate the schema" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "acme" },
+          meta: { "name" => "alice", "org" => "acme" },
           body: "", as: "human")
     s.put("working.people.bob",
-          frontmatter: { "name" => "bob" },
+          meta: { "name" => "bob" },
           body: "", as: "human")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
@@ -63,7 +63,7 @@ RSpec.describe Textus::SchemaTools do
   it "auto-applies migrate_from on schema-migrate without --rename" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice" },
+          meta: { "name" => "alice" },
           body: "hello", as: "human")
 
     File.write(File.join(root, "schemas", "person.yaml"), YAML.dump({
@@ -76,24 +76,24 @@ RSpec.describe Textus::SchemaTools do
     res = Textus::SchemaTools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
     env = store.get(res["migrated"].first)
-    expect(env["frontmatter"]).to have_key("full_name")
-    expect(env["frontmatter"]).not_to have_key("name")
+    expect(env["_meta"]).to have_key("full_name")
+    expect(env["_meta"]).not_to have_key("name")
   end
 
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
     s.put("working.people.alice",
-          frontmatter: { "name" => "alice", "org" => "acme" },
+          meta: { "name" => "alice", "org" => "acme" },
           body: "hello", as: "human")
     s.put("working.people.bob",
-          frontmatter: { "name" => "bob", "company" => "other" },
+          meta: { "name" => "bob", "company" => "other" },
           body: "world", as: "human")
 
     res = Textus::SchemaTools.migrate(store, name: "person", rename: "org:organization")
     expect(res["migrated"]).to eq(["working.people.alice"])
 
     env = store.get("working.people.alice")
-    expect(env["frontmatter"]["organization"]).to eq("acme")
-    expect(env["frontmatter"]).not_to have_key("org")
+    expect(env["_meta"]["organization"]).to eq("acme")
+    expect(env["_meta"]).not_to have_key("org")
   end
 end

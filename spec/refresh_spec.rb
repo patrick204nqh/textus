@@ -10,7 +10,7 @@ RSpec.describe Textus::Refresh do
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.repos
@@ -57,7 +57,7 @@ RSpec.describe Textus::Refresh do
   context "action return-shape normalization (plan-1.2 §7)" do
     it "accepts {content:} for a format: json entry and writes valid JSON" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/1
+        version: textus/2
         zones: [{ name: intake, writable_by: [script] }]
         entries:
           - key: intake.repos
@@ -82,7 +82,7 @@ RSpec.describe Textus::Refresh do
 
     it "accepts {body:} for a format: text entry and writes bytes verbatim" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/1
+        version: textus/2
         zones: [{ name: intake, writable_by: [script] }]
         entries:
           - key: intake.notes

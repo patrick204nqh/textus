@@ -12,7 +12,7 @@ RSpec.describe "textus mv" do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
     FileUtils.mkdir_p(File.join(root, "zones/canon/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: canon,   writable_by: [human] }
@@ -26,7 +26,7 @@ RSpec.describe "textus mv" do
 
   def put_md(key, body: "hi")
     basename = key.split(".").last
-    store.put(key, frontmatter: { "name" => basename }, body: body, as: "human")
+    store.put(key, meta: { "name" => basename }, body: body, as: "human")
   end
 
   it "moves an entry within the same zone, preserving uid" do

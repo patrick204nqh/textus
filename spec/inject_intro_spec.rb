@@ -11,7 +11,7 @@ RSpec.describe "inject_intro:" do
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: derived, writable_by: [build] }
@@ -38,14 +38,14 @@ RSpec.describe "inject_intro:" do
     store = Textus::Store.new(root)
     Textus::Builder.new(store).build
     body = File.read(File.join(root, "zones/derived/root.md"))
-    expect(body).to include("protocol=textus/1")
+    expect(body).to include("protocol=textus/2")
     expect(body).to include("zone:canon/")
     expect(body).to include("zone:derived/")
   end
 
   it "raises on inject_intro: on a non-derived entry" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon, writable_by: [human] }
       entries:
@@ -63,7 +63,7 @@ RSpec.describe "inject_intro:" do
     # JSON derived entries do not require a template (template is an escape
     # hatch). inject_intro: on a templateless derived entry must still raise.
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: derived, writable_by: [build] }
@@ -81,7 +81,7 @@ RSpec.describe "inject_intro:" do
 
   it "does not inject intro: when flag is absent" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: derived, writable_by: [build] }
@@ -96,6 +96,6 @@ RSpec.describe "inject_intro:" do
     store = Textus::Store.new(root)
     Textus::Builder.new(store).build
     body = File.read(File.join(root, "zones/derived/root.md"))
-    expect(body).not_to include("protocol=textus/1")
+    expect(body).not_to include("protocol=textus/2")
   end
 end

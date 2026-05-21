@@ -15,7 +15,7 @@ RSpec.describe Textus::Builder do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: derived, writable_by: [build] }
@@ -96,8 +96,8 @@ RSpec.describe Textus::Builder do
     expect(body).to include("- bob (y)")
     # Existing frontmatter contract: generated.at still present in markdown.
     parsed = Textus::Entry.for_format("markdown").parse(body, path: nil)
-    expect(parsed["frontmatter"]["generated"]).to be_a(Hash)
-    expect(parsed["frontmatter"]["generated"]["at"]).to match(/\dT\d/)
+    expect(parsed["_meta"]["generated"]).to be_a(Hash)
+    expect(parsed["_meta"]["generated"]["at"]).to match(/\dT\d/)
 
     published = File.join(File.dirname(root), "PEOPLE.md")
     sentinel = File.join(root, "sentinels", "PEOPLE.md.textus-managed.json")

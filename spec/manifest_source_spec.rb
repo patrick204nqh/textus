@@ -15,7 +15,7 @@ RSpec.describe "Manifest source.action" do
 
   it "exposes ManifestEntry#action and #action_config" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.repos
@@ -32,7 +32,7 @@ RSpec.describe "Manifest source.action" do
 
   it "rejects legacy source.parse with a clear error" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.x
@@ -46,7 +46,7 @@ RSpec.describe "Manifest source.action" do
 
   it "rejects legacy source.fetcher with a migration hint" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.k
@@ -60,7 +60,7 @@ RSpec.describe "Manifest source.action" do
 
   it "rejects legacy hooks: top-level key" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - key: working.x
@@ -74,7 +74,7 @@ RSpec.describe "Manifest source.action" do
 
   it "exposes ManifestEntry#events from events: block" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - key: working.x
@@ -92,7 +92,7 @@ RSpec.describe "Manifest source.action" do
   context "events: block validation" do
     it "rejects unknown event names" do
       write_manifest(<<~YAML)
-        version: textus/1
+        version: textus/2
         zones: [{ name: working, writable_by: [human] }]
         entries:
           - key: working.x
@@ -108,7 +108,7 @@ RSpec.describe "Manifest source.action" do
 
     it "accepts all five known events" do
       write_manifest(<<~YAML)
-        version: textus/1
+        version: textus/2
         zones: [{ name: working, writable_by: [human] }]
         entries:
           - key: working.x
@@ -127,7 +127,7 @@ RSpec.describe "Manifest source.action" do
 
   it "action_config defaults to {} when entry has no source block" do
     write_manifest(<<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }

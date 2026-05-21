@@ -3,18 +3,18 @@ require "json"
 
 RSpec.describe Textus::Entry::Json do
   describe ".parse" do
-    it "extracts _meta into frontmatter and exposes full hash as content" do
+    it "extracts _meta into _meta and exposes data WITHOUT _meta as content" do
       raw = JSON.pretty_generate({ "_meta" => { "title" => "T" }, "name" => "x" })
       result = described_class.parse(raw, path: "x.json")
-      expect(result["frontmatter"]).to eq({ "title" => "T" })
-      expect(result["content"]).to eq({ "_meta" => { "title" => "T" }, "name" => "x" })
+      expect(result["_meta"]).to eq({ "title" => "T" })
+      expect(result["content"]).to eq({ "name" => "x" })
       expect(result["body"]).to eq(raw)
     end
 
-    it "treats missing _meta as empty frontmatter" do
+    it "treats missing _meta as empty _meta" do
       raw = '{"name":"x"}'
       result = described_class.parse(raw, path: "x.json")
-      expect(result["frontmatter"]).to eq({})
+      expect(result["_meta"]).to eq({})
       expect(result["content"]).to eq({ "name" => "x" })
     end
 
@@ -30,21 +30,22 @@ RSpec.describe Textus::Entry::Json do
   end
 
   describe ".serialize" do
-    it "round-trips content ↔ bytes" do
-      content = { "_meta" => { "k" => "v" }, "data" => [1, 2] }
-      raw = described_class.serialize(frontmatter: {}, body: "", content: content)
+    it "round-trips content ↔ bytes (re-injects _meta on disk)" do
+      content = { "data" => [1, 2] }
+      meta    = { "k" => "v" }
+      raw = described_class.serialize(meta: meta, body: "", content: content)
       parsed = described_class.parse(raw, path: "x.json")
-      expect(parsed["content"]).to eq(content)
-      expect(parsed["frontmatter"]).to eq({ "k" => "v" })
+      expect(parsed["_meta"]).to eq({ "k" => "v" })
+      expect(parsed["content"]).to eq({ "data" => [1, 2] })
     end
 
     it "passes through body when content is absent" do
-      raw = described_class.serialize(frontmatter: {}, body: '{"a":1}', content: nil)
+      raw = described_class.serialize(meta: {}, body: '{"a":1}', content: nil)
       expect(raw).to eq("{\"a\":1}\n")
     end
 
     it "raises UsageError if neither content nor body is given" do
-      expect { described_class.serialize(frontmatter: {}, body: "", content: nil) }
+      expect { described_class.serialize(meta: {}, body: "", content: nil) }
         .to raise_error(Textus::UsageError)
     end
   end

@@ -51,10 +51,10 @@ module Textus
     private
 
     def default_hint_for(path, m)
-      if m.is_a?(String) && (match = m.match(/frontmatter name '([^']+)' does not match basename '([^']+)'/))
+      if m.is_a?(String) && (match = m.match(/name '([^']+)' does not match basename '([^']+)'/))
         name, basename = match.captures
         ext = File.extname(path)
-        "rename the file to '#{name}#{ext}' or change frontmatter name: to '#{basename}'"
+        "rename the file to '#{name}#{ext}' or change _meta.name to '#{basename}'"
       else
         "open #{path} and check the YAML frontmatter for syntax errors"
       end
