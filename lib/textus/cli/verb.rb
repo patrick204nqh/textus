@@ -28,10 +28,11 @@ module Textus
         end
       end
 
-      def initialize(stdin:, stdout:, stderr:)
+      def initialize(stdin:, stdout:, stderr:, cwd: nil)
         @stdin = stdin
         @stdout = stdout
         @stderr = stderr
+        @cwd = cwd
       end
 
       def parse(argv)

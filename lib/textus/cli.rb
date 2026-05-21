@@ -38,7 +38,7 @@ module Textus
       when "rdeps"        then dispatch(Rdeps, argv)
       when "published"    then dispatch(Published, argv)
       when "accept"       then dispatch(Accept, argv)
-      when "init"         then verb_init(argv)
+      when "init"         then dispatch(InitVerb, argv)
       when "schema-init"    then verb_schema_init(argv)
       when "schema-diff"    then verb_schema_diff(argv)
       when "schema-migrate" then verb_schema_migrate(argv)
@@ -67,7 +67,7 @@ module Textus
     end
 
     def dispatch(klass, argv)
-      v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr)
+      v = klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
       v.parse(argv)
       v.call(klass.needs_store? ? store : nil)
     end
@@ -182,16 +182,6 @@ module Textus
       raise UsageError.new("schema-migrate requires --rename=OLD:NEW") unless rename
 
       emit(Textus::SchemaTools.migrate(store, name: name, rename: rename))
-    end
-
-    def verb_init(argv)
-      OptionParser.new do |o|
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-      target = File.join(@cwd, ".textus")
-      res = Textus::Init.run(target)
-      @stdout.puts(JSON.generate(res))
-      0
     end
 
     def verb_action(argv)
