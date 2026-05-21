@@ -1,13 +1,10 @@
 require "fileutils"
 require "securerandom"
 require "time"
-require "timeout"
 
 module Textus
   # rubocop:disable Metrics/ClassLength
   class Store
-    HOOK_TIMEOUT_SECONDS = 2
-
     attr_reader :root, :manifest, :registry
 
     # A Textus UID: 16 lowercase hex chars (SecureRandom.hex(8)). Not a UUID —
@@ -186,22 +183,8 @@ module Textus
       { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
     end
 
-    def fire_event(event, **kwargs)
-      view = StoreView.new(self)
-      @registry.hooks(event).each do |entry|
-        name = entry[:name]
-        Timeout.timeout(HOOK_TIMEOUT_SECONDS) { entry[:callable].call(store: view, **kwargs) }
-      rescue StandardError => e
-        extras = { "event" => event.to_s, "hook" => name.to_s, "error" => "#{e.class}: #{e.message}" }
-        extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
-        extras["pending_key"] = kwargs[:pending_key] if kwargs.key?(:pending_key)
-        audit_log.append(
-          role: "script", verb: "event_error",
-          key: kwargs[:key] || kwargs[:target_key] || kwargs[:pending_key] || "-",
-          etag_before: nil, etag_after: nil,
-          extras: extras
-        )
-      end
+    def fire_event(event, **)
+      Events.new(self).call(event, **)
     end
 
     def accept(key, as:)
@@ -419,6 +402,10 @@ module Textus
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
+    def audit_log
+      @audit_log ||= AuditLog.new(@root)
+    end
+
     private
 
     # If the moved file carries a `name:` field (markdown) or `_meta.name`
@@ -468,10 +455,6 @@ module Textus
         # text: no uid channel
         [meta, content]
       end
-    end
-
-    def audit_log
-      @audit_log ||= AuditLog.new(@root)
     end
 
     def path_for_entry(mentry)
