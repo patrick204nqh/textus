@@ -32,7 +32,7 @@ module Textus
       when "get"    then dispatch(Get, argv)
       when "put"    then verb_put(argv)
       when "schema" then dispatch(Schema, argv)
-      when "stale"  then verb_stale(argv)
+      when "stale"  then dispatch(Stale, argv)
       when "delete"       then verb_delete(argv)
       when "build"        then verb_build(argv)
       when "deps"         then verb_deps(argv)
@@ -105,11 +105,6 @@ module Textus
       raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
 
       [prefix, zone]
-    end
-
-    def verb_stale(argv)
-      prefix, zone = parse_prefix_and_zone!(argv)
-      emit(store.stale(prefix: prefix, zone: zone))
     end
 
     def verb_put(argv) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
