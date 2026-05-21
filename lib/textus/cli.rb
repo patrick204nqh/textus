@@ -48,7 +48,7 @@ module Textus
       when "extensions"     then verb_extensions(argv)
       when "migrate-keys"   then verb_migrate_keys(argv)
       when "mv"             then verb_mv(argv)
-      when "uid"            then verb_uid(argv)
+      when "uid"            then dispatch(Uid, argv)
       when "doctor"         then verb_doctor(argv)
       when "intro"          then verb_intro(argv)
       when "--version", "-v" then @stdout.puts(VERSION)
@@ -338,12 +338,6 @@ module Textus
       end.permute!(argv)
       role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
       emit(store.mv(old_key, new_key, as: role, dry_run: dry_run))
-    end
-
-    def verb_uid(argv)
-      key = argv.shift or raise UsageError.new("uid requires a key")
-      parse_format!(argv)
-      emit({ "protocol" => PROTOCOL, "key" => key, "uid" => store.uid(key) })
     end
 
     def verb_intro(argv)
