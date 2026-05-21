@@ -17,7 +17,6 @@ module Textus
       "intro" => IntroVerb,
       "key" => KeyGroup,
       "list" => List,
-      "migrate" => Migrate,
       "published" => Published,
       "put" => Put,
       "rdeps" => Rdeps,
@@ -78,7 +77,7 @@ module Textus
 
     def print_help
       @stdout.puts <<~HELP
-        textus #{VERSION} — reference implementation of #{PROTOCOL} (was textus/1)
+        textus #{VERSION} — reference implementation of #{PROTOCOL}
 
         Usage (json output is the default; --format=json accepted for back-compat):
           textus list [--prefix=KEY] [--zone=Z]
@@ -88,7 +87,6 @@ module Textus
           textus stale [--prefix=KEY] [--zone=Z]
           textus doctor
           textus intro
-          textus migrate v2
 
           textus key {mv,uid,migrate}
           textus schema {show,init,diff,migrate}

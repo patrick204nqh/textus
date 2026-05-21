@@ -24,6 +24,7 @@ is additive within a major; a new major would change the wire string.
   - `textus action NAME` → `textus hook run NAME`
 - `Textus::CLI::Action` class renamed to `Textus::CLI::HookRun`; file `cli/action.rb` → `cli/hook_run.rb`.
 - `Textus::CLI::DeprecatedAliasMixin` module deleted (no remaining users).
+- `textus migrate v2` command removed along with `Textus::MigrateV2` module and `Textus::CLI::Migrate` class. The migration was a one-line manifest rewrite (`version: textus/1` → `version: textus/2`); on-disk entry shapes never changed. To upgrade a `textus/1` manifest, edit `.textus/manifest.yaml` directly. `Manifest.load` still detects the old version and prints the exact edit in its error message.
 
 ## 0.6.0 — Hook unification
 
