@@ -59,7 +59,7 @@ Every event is one of two kinds.
 | `:build` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
 | `:accept` | pubsub | A pending proposal was promoted into its target zone. |
 | `:publish` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
-| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:delete` are suppressed — `:mv` is the sole signal. Payload: `{ from_key:, to_key:, envelope: }`. |
+| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:delete` are suppressed — `:mv` is the sole signal. Payload: `{ key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
 | `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accept`. Payload: `{ key:, target_key: }`. |
 | `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
 
