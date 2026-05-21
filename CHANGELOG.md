@@ -10,21 +10,27 @@ is additive within a major; a new major would change the wire string.
 
 ## 0.8.0 — Folder restructure & Zeitwerk autoload (2026-05-21)
 
-### Breaking (internal — public CLI/wire surface unchanged)
-- Internal Ruby constants renamed. No deprecation aliases; downstream code referencing internals must update directly.
-  - `Textus::EventBus` → `Textus::Hooks::Dispatcher`
-  - `Textus::HookRegistry` → `Textus::Hooks::Registry`
-  - `Textus::BuiltinHooks` → `Textus::Hooks::Builtin`
-  - `Textus::Extensions` (module) → `Textus::Hooks::Loader`
-  - `Textus::StoreView` → `Textus::Store::View`
-  - `Textus::AuditLog` → `Textus::Store::AuditLog`
-  - `Textus::ManifestEntry` → `Textus::Manifest::Entry`
-  - `Textus::KeyDistance` → `Textus::Key::Distance`
-  - `Textus::Path` → `Textus::Key::Path`
-  - `Textus::SchemaTools` → `Textus::Schema::Tools`
-  - `Textus::CLI::<Verb>` → `Textus::CLI::Verb::<Verb>` (all 23 verbs)
-  - `Textus::CLI::<Name>Group` → `Textus::CLI::Group::<Name>` (key, schema, hook)
+### Breaking — internal Ruby renames
+Internal Ruby constants renamed. No deprecation aliases; downstream code referencing internals must update directly.
+- `Textus::EventBus` → `Textus::Hooks::Dispatcher`
+- `Textus::HookRegistry` → `Textus::Hooks::Registry`
+- `Textus::BuiltinHooks` → `Textus::Hooks::Builtin`
+- `Textus::Extensions` (module) → `Textus::Hooks::Loader`
+- `Textus::StoreView` → `Textus::Store::View`
+- `Textus::AuditLog` → `Textus::Store::AuditLog`
+- `Textus::ManifestEntry` → `Textus::Manifest::Entry`
+- `Textus::KeyDistance` → `Textus::Key::Distance`
+- `Textus::Path` → `Textus::Key::Path`
+- `Textus::SchemaTools` → `Textus::Schema::Tools`
+- `Textus::CLI::<Verb>` → `Textus::CLI::Verb::<Verb>` (all 23 verbs)
+- `Textus::CLI::<Name>Group` → `Textus::CLI::Group::<Name>` (key, schema, hook)
+- `Textus::Doctor::Check::Extensions` → `Textus::Doctor::Check::Hooks`
 - `Hooks::Registry#initialize` keyword `bus:` renamed to `dispatcher:`.
+
+### Breaking — doctor CLI surface
+- `textus doctor --check=extensions` → `textus doctor --check=hooks`. The check name listed in `ALL_CHECKS` and the SPEC §10.2 enumeration changes from `"extensions"` to `"hooks"`, matching the hook subsystem rename in 0.6.
+- Doctor issue `code` for broken hook files: `extension.load_failed` → `hook.load_failed`.
+- Doctor::Check::Hooks now inspects `.textus/hooks/` (matches `Store#load_extensions`). Previously inspected `.textus/extensions/`, which was the pre-0.6 directory — the check was dead code on any store created with current `textus init`.
 
 ### Added
 - `Textus::Entry::Base` — explicit strategy interface for entry formats. Concrete strategies inherit and override.

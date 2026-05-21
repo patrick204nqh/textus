@@ -1,14 +1,14 @@
 module Textus
   module Doctor
     class Check
-      class Extensions < Check
+      class Hooks < Check
         def call
           out = []
           dir = File.join(store.root, "hooks")
           return out unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-            registry = Hooks::Registry.new
+            registry = Textus::Hooks::Registry.new
             Textus.with_registry(registry) do
               load(f)
             end
