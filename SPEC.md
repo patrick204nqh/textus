@@ -279,7 +279,7 @@ In intake mode the hook MUST return one of three shapes, all normalized by the s
 1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.fetch`, invokes the registered `:fetch` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`.
 
-Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
@@ -365,7 +365,29 @@ Reducers are RPC hooks on the `:reduce` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/*.rb` are `load`ed at `Store#initialize` in lexical order.
+textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
+
+The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path. Files are loaded in alphabetical order by full path.
+
+#### Sugar surface (0.8.2+)
+
+Per-event methods and a grouped block form are provided for ergonomics. Both delegate to the same registry as `Textus.hook`.
+
+```ruby
+# Per-event sugar — one callback, simple case
+Textus.fetch(:local_file)        { |config:, args:, **|  … }
+Textus.reduce(:rank_by_recency)  { |rows:, **|            … }
+Textus.check(:storage_writable)  { |store:|               … }
+Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| … }
+
+# Grouped DSL — one logical name, multiple events
+Textus.define :local_file do
+  fetch  { |config:, args:, **| … }
+  reduce { |rows:, **|           … }
+end
+```
+
+The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the authoritative entry point; sugar methods are thin wrappers.
 
 | Event    | Mode    | Args                              | Return        | Failure |
 |----------|---------|-----------------------------------|---------------|---------|
