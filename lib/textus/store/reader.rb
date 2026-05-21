@@ -14,7 +14,7 @@ module Textus
         parsed = Entry.for_format(mentry.format).parse(raw, path: path)
         meta = parsed["_meta"]
         content = parsed["content"]
-        @store.send(:enforce_name_match!, path, meta, mentry.format)
+        @store.writer.enforce_name_match!(path, meta, mentry.format)
         schema = @store.schema_for(mentry.schema)
         if schema
           case mentry.format
