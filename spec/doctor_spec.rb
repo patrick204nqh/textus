@@ -13,7 +13,7 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: derived, writable_by: [build] }
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports a clean store as ok: true with no error-level issues" do
     res = doctor
-    expect(res["protocol"]).to eq("textus/1")
+    expect(res["protocol"]).to eq("textus/2")
     expect(res["ok"]).to be true
     expect(res["issues"].any? { |i| i["level"] == "error" }).to be false
   end
@@ -165,7 +165,7 @@ RSpec.describe Textus::Doctor do
       FileUtils.mkdir_p(File.join(ra_root, "zones/working/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
-        version: textus/1
+        version: textus/2
         zones:
           - { name: working, writable_by: [human, ai, script] }
         entries:
@@ -183,7 +183,7 @@ RSpec.describe Textus::Doctor do
       ra_store = Textus::Store.new(ra_root)
       # Write full_name as ai — violates maintained_by: human
       ra_store.put("working.people.alice",
-                   frontmatter: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
+                   meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
                    body: "", as: "ai")
 
       res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])

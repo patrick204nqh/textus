@@ -11,7 +11,7 @@ RSpec.describe "Pending + accept" do
     FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(root, "zones/pending"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: pending, writable_by: [ai, human] }
@@ -25,7 +25,7 @@ RSpec.describe "Pending + accept" do
 
   it "AI writes a proposal, human accepts, target appears, proposal removed" do
     store.put("pending.2026-05-19-add-bob",
-              frontmatter: {
+              meta: {
                 "name" => "2026-05-19-add-bob",
                 "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
                 "frontmatter" => { "name" => "bob", "org" => "acme" },
@@ -41,7 +41,7 @@ RSpec.describe "Pending + accept" do
 
   it "rejects accept when not --as=human" do
     store.put("pending.foo",
-              frontmatter: {
+              meta: {
                 "name" => "foo",
                 "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
                 "frontmatter" => { "name" => "x" },

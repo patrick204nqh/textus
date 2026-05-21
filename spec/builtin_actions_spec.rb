@@ -12,7 +12,7 @@ RSpec.describe "Built-in actions" do
 
   it "json action parses JSON bytes from config['bytes']" do
     out = reg.action(:json).call(config: { "bytes" => '{"a":1}' }, store: nil, args: {})
-    expect(out[:frontmatter]).to eq({})
+    expect(out[:_meta]).to eq({})
     expect(YAML.safe_load(out[:body])).to eq({ "a" => 1 })
   end
 

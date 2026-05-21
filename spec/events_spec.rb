@@ -11,7 +11,7 @@ RSpec.describe "Lifecycle events" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
@@ -31,13 +31,13 @@ RSpec.describe "Lifecycle events" do
 
   it "fires :put after a write" do
     store = Textus::Store.new(root)
-    store.put("working.x", frontmatter: { "name" => "x" }, body: "hi", as: "human")
+    store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
     expect($textus_event_log).to include([:put, "working.x"])
   end
 
   it "fires :delete after a delete" do
     store = Textus::Store.new(root)
-    store.put("working.x", frontmatter: { "name" => "x" }, body: "hi", as: "human")
+    store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
     store.delete("working.x", as: "human")
     expect($textus_event_log).to include([:delete, "working.x"])
   end
@@ -47,7 +47,7 @@ RSpec.describe "Lifecycle events" do
       Textus.hook(:put, :boom) { |key:, envelope:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
-    env = store.put("working.x", frontmatter: { "name" => "x" }, body: "hi", as: "human")
+    env = store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
     expect(env["body"]).to eq("hi") # write succeeded
     last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
     expect(last["extras"]["event"]).to eq("put")
@@ -63,7 +63,7 @@ RSpec.describe "Refresh event" do
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.x
@@ -146,7 +146,7 @@ RSpec.describe "Build and accept events" do
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human] }
         - { name: derived, writable_by: [build] }
@@ -193,7 +193,7 @@ RSpec.describe "Accept event" do
     FileUtils.mkdir_p(File.join(root, "zones/pending"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human] }
         - { name: pending, writable_by: [ai, human] }

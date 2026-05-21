@@ -18,7 +18,7 @@ module Textus
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
       rows = keys.map do |key|
         env = @store.get(key)
-        row = pluck(env["frontmatter"], env["body"])
+        row = pluck(env["_meta"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end
       reduced = apply_reducer(rows)

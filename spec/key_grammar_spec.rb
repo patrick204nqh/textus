@@ -14,7 +14,7 @@ RSpec.describe "Key grammar enforcement" do
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
       entries:
@@ -65,7 +65,7 @@ RSpec.describe "Key grammar enforcement" do
     it "rejects illegal key at put time before any write" do
       store = Textus::Store.new(root)
       expect do
-        store.put("working.Bad_Name", frontmatter: { "name" => "Bad_Name" }, body: "x", as: "human")
+        store.put("working.Bad_Name", meta: { "name" => "Bad_Name" }, body: "x", as: "human")
       end.to raise_error(Textus::UsageError, /invalid key segment/)
     end
   end

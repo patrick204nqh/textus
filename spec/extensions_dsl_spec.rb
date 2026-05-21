@@ -60,7 +60,7 @@ RSpec.describe "Store-scoped extension loading" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }

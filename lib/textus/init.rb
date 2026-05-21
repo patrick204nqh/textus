@@ -5,7 +5,7 @@ module Textus
     ZONES = %w[canon working intake pending derived].freeze
 
     DEFAULT_MANIFEST = <<~YAML
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: working, writable_by: [human, ai, script] }

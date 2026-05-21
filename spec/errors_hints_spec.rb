@@ -17,7 +17,7 @@ RSpec.describe "Textus error hints" do
   it "BadFrontmatter hint includes both names when name/basename mismatch" do
     err = Textus::BadFrontmatter.new(
       "/tmp/jane.md",
-      "frontmatter name 'janet' does not match basename 'jane'",
+      "name 'janet' does not match basename 'jane'",
     )
     expect(err.hint).to be_a(String)
     expect(err.hint).to include("janet")

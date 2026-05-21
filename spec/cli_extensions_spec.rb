@@ -12,7 +12,7 @@ RSpec.describe "CLI extension verbs" do
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "extensions"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
       entries:
         - key: intake.x
@@ -61,7 +61,7 @@ RSpec.describe "CLI extension verbs" do
   it "textus put --action=NAME applies the action to stdin bytes" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones: [{ name: working, writable_by: [human, script] }]
       entries: [{ key: working.j, path: working/j.md, zone: working }]
     YAML

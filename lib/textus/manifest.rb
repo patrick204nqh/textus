@@ -30,7 +30,14 @@ module Textus
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
 
       raw = YAML.safe_load_file(manifest_path, aliases: false)
-      raise BadFrontmatter.new(manifest_path, "unsupported manifest version #{raw["version"].inspect}") unless raw["version"] == PROTOCOL
+      unless raw["version"] == PROTOCOL
+        msg = if raw["version"] == "textus/1"
+                "manifest is textus/1; run 'textus migrate v2' to upgrade. See SPEC §15."
+              else
+                "unsupported manifest version #{raw["version"].inspect}"
+              end
+        raise BadFrontmatter.new(manifest_path, msg)
+      end
 
       new(root, raw)
     end

@@ -96,14 +96,14 @@ module Textus
           "from" => Array(mentry.projection&.fetch("select", nil)).compact,
         },
       }
-      Entry.for_format("markdown").serialize(frontmatter: frontmatter, body: body)
+      Entry.for_format("markdown").serialize(meta: frontmatter, body: body)
     end
 
     # Text: projection -> template -> text.serialize(body). No frontmatter, no _meta.
     def build_text(mentry, data)
       data = data.merge("intro" => Intro.run(@store)) if mentry.inject_intro
       body = render_template!(mentry, data)
-      Entry.for_format("text").serialize(frontmatter: {}, body: body)
+      Entry.for_format("text").serialize(meta: {}, body: body)
     end
 
     # JSON / YAML pipeline. Templateless = default; template = escape hatch.
@@ -127,7 +127,7 @@ module Textus
         end
 
       final = inject_meta(content, mentry)
-      strategy.serialize(frontmatter: {}, body: "", content: final)
+      strategy.serialize(meta: {}, body: "", content: final)
     end
 
     def render_template!(mentry, data)

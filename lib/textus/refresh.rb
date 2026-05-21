@@ -27,7 +27,7 @@ module Textus
       normalized = normalize_action_result(result, format: mentry.format)
       envelope = store.put(
         key,
-        frontmatter: normalized[:frontmatter],
+        meta: normalized[:meta],
         body: normalized[:body],
         content: normalized[:content],
         as: as,
@@ -50,21 +50,21 @@ module Textus
     def self.normalize_action_result(res, format:)
       res = res.transform_keys(&:to_s) if res.is_a?(Hash)
       res ||= {}
-      fm      = res["frontmatter"]
+      # Accept both legacy :frontmatter/:_meta key names from actions.
+      meta_val = res["_meta"] || res["frontmatter"]
       body    = res["body"]
       content = res["content"]
 
       case format
       when "markdown"
-        { frontmatter: fm || {}, body: body.to_s, content: nil }
+        { meta: meta_val || {}, body: body.to_s, content: nil }
       when "text"
-        { frontmatter: {}, body: body.to_s, content: nil }
+        { meta: {}, body: body.to_s, content: nil }
       when "json", "yaml"
         if !content.nil?
-          meta = content.is_a?(Hash) && content["_meta"].is_a?(Hash) ? content["_meta"] : {}
-          { frontmatter: meta, body: nil, content: content }
+          { meta: meta_val || {}, body: nil, content: content }
         elsif !body.nil?
-          { frontmatter: {}, body: body.to_s, content: nil }
+          { meta: {}, body: body.to_s, content: nil }
         else
           raise UsageError.new("action for #{format} returned neither content nor body")
         end

@@ -4,15 +4,15 @@ module Textus
       raise ProposalError.new("only human role can accept proposals; got '#{as}'") unless as == "human"
 
       env = store.get(pending_key)
-      proposal = env["frontmatter"]["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
+      proposal = env["_meta"]["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
       target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
       action = proposal["action"] || "put"
 
       case action
       when "put"
-        target_fm = env["frontmatter"]["frontmatter"] || {}
+        target_meta = env["_meta"]["frontmatter"] || {}
         target_body = env["body"]
-        store.put(target, frontmatter: target_fm, body: target_body, as: "human")
+        store.put(target, meta: target_meta, body: target_body, as: "human")
       when "delete"
         store.delete(target, as: "human")
       else

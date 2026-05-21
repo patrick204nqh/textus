@@ -18,7 +18,7 @@ RSpec.describe "CLI subcommand groups" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: archive, writable_by: [human] }
@@ -44,7 +44,7 @@ RSpec.describe "CLI subcommand groups" do
   describe "textus key mv OLD NEW" do
     it "works and prints no deprecation warning" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/1
+        version: textus/2
         zones:
           - { name: working, writable_by: [human, ai, script] }
         entries:
@@ -64,7 +64,7 @@ RSpec.describe "CLI subcommand groups" do
   describe "textus mv OLD NEW (deprecated flat alias)" do
     it "works and prints a deprecation warning on stderr" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/1
+        version: textus/2
         zones:
           - { name: working, writable_by: [human, ai, script] }
         entries:

@@ -82,18 +82,18 @@ module Textus
 
       raw = File.binread(path)
       parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-      fm = parsed["frontmatter"]
+      meta = parsed["_meta"]
       content = parsed["content"]
-      enforce_name_match!(path, fm, mentry.format)
+      enforce_name_match!(path, meta, mentry.format)
       schema = schema_for(mentry.schema)
       if schema
         case mentry.format
-        when "markdown" then schema.validate!(fm)
+        when "markdown" then schema.validate!(meta)
         when "json", "yaml" then schema.validate!(content || {})
           # text: schema forbidden by manifest validation
         end
       end
-      build_envelope(key, mentry, path, fm, parsed["body"], Etag.for_bytes(raw), content: content)
+      build_envelope(key, mentry, path, meta, parsed["body"], Etag.for_bytes(raw), content: content)
     end
 
     def where(key)
@@ -131,30 +131,30 @@ module Textus
     end
 
     # rubocop:disable Metrics/ParameterLists
-    def put(key, frontmatter: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+    def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
       # rubocop:enable Metrics/ParameterLists
       @manifest.validate_key!(key)
       mentry, path, = @manifest.resolve(key)
       writers = @manifest.zone_writers(mentry.zone)
       raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
 
-      frontmatter ||= {}
+      meta ||= {}
       strategy = Entry.for_format(mentry.format)
 
       existing_uid = existing_uid_for(mentry, path)
-      frontmatter, content = ensure_uid(mentry.format, frontmatter, content, existing_uid)
+      meta, content = ensure_uid(mentry.format, meta, content, existing_uid)
 
-      bytes, eff_fm, eff_body, eff_content = serialize_for_put(
+      bytes, eff_meta, eff_body, eff_content = serialize_for_put(
         mentry: mentry, path: path, strategy: strategy,
-        frontmatter: frontmatter, body: body, content: content
+        meta: meta, body: body, content: content
       )
 
-      enforce_name_match!(path, eff_fm, mentry.format)
+      enforce_name_match!(path, eff_meta, mentry.format)
 
       schema = schema_for(mentry.schema)
       if schema
         case mentry.format
-        when "markdown" then schema.validate!(eff_fm)
+        when "markdown" then schema.validate!(eff_meta)
         when "json", "yaml" then schema.validate!(eff_content || {})
         end
       end
@@ -166,7 +166,7 @@ module Textus
       File.binwrite(path, bytes)
       etag_after = Etag.for_bytes(bytes)
       audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
-      envelope = build_envelope(key, mentry, path, eff_fm, eff_body, etag_after, content: eff_content)
+      envelope = build_envelope(key, mentry, path, eff_meta, eff_body, etag_after, content: eff_content)
       fire_event(:put, key: key, envelope: envelope) unless suppress_events
       envelope
     end
@@ -237,7 +237,7 @@ module Textus
         last_writer = audit_log.last_writer_for(row[:key])
         next if last_writer.nil?
 
-        env["frontmatter"].each_key do |field|
+        env["_meta"].each_key do |field|
           owner = schema.maintained_by(field)
           next if owner.nil?
           next if last_writer == owner
@@ -276,7 +276,7 @@ module Textus
 
         raw = File.binread(path)
         parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-        generated_at = parsed["frontmatter"].dig("generated", "at")
+        generated_at = parsed["_meta"].dig("generated", "at")
         unless generated_at
           out << stale_row(mentry, path, "missing generated.at frontmatter")
           next
@@ -310,8 +310,8 @@ module Textus
           next
         end
 
-        fm = Entry.for_format(mentry.format).parse(File.binread(path), path: path)["frontmatter"]
-        last_str = fm["last_refreshed_at"]
+        meta = Entry.for_format(mentry.format).parse(File.binread(path), path: path)["_meta"]
+        last_str = meta["last_refreshed_at"]
         if last_str.nil?
           out << intake_stale_row(mentry, path, "never refreshed (no last_refreshed_at)")
           next
@@ -384,7 +384,7 @@ module Textus
       if current_uid.nil?
         # Write the uid in place first so the source file carries it before mv.
         pre_env = put(old_key,
-                      frontmatter: pre_env["frontmatter"],
+                      meta: pre_env["_meta"],
                       body: pre_env["body"],
                       content: pre_env["content"],
                       as: as,
@@ -432,19 +432,17 @@ module Textus
 
       case mentry.format
       when "markdown"
-        fm = parsed["frontmatter"] || {}
-        return unless fm.is_a?(Hash) && fm["name"].is_a?(String) && fm["name"] != basename
+        meta = parsed["_meta"] || {}
+        return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
 
-        fm = fm.merge("name" => basename)
-        File.binwrite(new_path, strategy.serialize(frontmatter: fm, body: parsed["body"]))
+        meta = meta.merge("name" => basename)
+        File.binwrite(new_path, strategy.serialize(meta: meta, body: parsed["body"]))
       when "json", "yaml"
-        content = parsed["content"]
-        return unless content.is_a?(Hash) && content["_meta"].is_a?(Hash) &&
-                      content["_meta"]["name"].is_a?(String) && content["_meta"]["name"] != basename
+        meta = parsed["_meta"]
+        return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
 
-        meta = content["_meta"].merge("name" => basename)
-        content = { "_meta" => meta }.merge(content.except("_meta"))
-        File.binwrite(new_path, strategy.serialize(frontmatter: {}, body: "", content: content))
+        new_meta = meta.merge("name" => basename)
+        File.binwrite(new_path, strategy.serialize(meta: new_meta, body: "", content: parsed["content"]))
       end
     end
 
@@ -453,31 +451,22 @@ module Textus
 
       raw = File.binread(path)
       parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-      extract_uid(mentry.format, parsed["frontmatter"], parsed["content"])
+      extract_uid(parsed["_meta"])
     rescue StandardError
       nil
     end
 
     # Ensures the payload carries a uid: preserve existing, else mint.
-    # Returns [frontmatter, content] possibly mutated.
-    def ensure_uid(format, frontmatter, content, existing_uid)
+    # Returns [meta, content] possibly mutated.
+    def ensure_uid(format, meta, content, existing_uid)
       case format
-      when "markdown"
-        fm = frontmatter.is_a?(Hash) ? frontmatter.dup : {}
-        fm["uid"] = existing_uid || Store.mint_uid unless fm["uid"].is_a?(String) && !fm["uid"].empty?
-        [fm, content]
-      when "json", "yaml"
-        c = content.is_a?(Hash) ? content.dup : nil
-        if c
-          meta = c["_meta"].is_a?(Hash) ? c["_meta"].dup : {}
-          meta["uid"] = existing_uid || Store.mint_uid if !meta["uid"].is_a?(String) || meta["uid"].empty?
-          # Keep _meta first for etag stability.
-          c = { "_meta" => meta }.merge(c.except("_meta"))
-        end
-        [frontmatter, c]
+      when "markdown", "json", "yaml"
+        m = meta.is_a?(Hash) ? meta.dup : {}
+        m["uid"] = existing_uid || Store.mint_uid unless m["uid"].is_a?(String) && !m["uid"].empty?
+        [m, content]
       else
         # text: no uid channel
-        [frontmatter, content]
+        [meta, content]
       end
     end
 
@@ -541,21 +530,22 @@ module Textus
       }
     end
 
-    def enforce_name_match!(path, fm, format)
-      # Name<->basename check only meaningful for markdown frontmatter.
-      return unless format == "markdown"
+    def enforce_name_match!(path, meta, format)
+      return unless %w[markdown json yaml].include?(format)
+      return unless meta.is_a?(Hash) && meta["name"]
 
-      basename = File.basename(path, ".md")
-      return unless fm.is_a?(Hash) && fm["name"] && fm["name"] != basename
+      ext = Entry.for_format(format).extensions.first
+      basename = File.basename(path, ext)
+      return if meta["name"] == basename
 
-      raise BadFrontmatter.new(path, "frontmatter name '#{fm["name"]}' does not match basename '#{basename}'")
+      raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
     end
 
-    def serialize_for_put(mentry:, path:, strategy:, frontmatter:, body:, content:)
+    def serialize_for_put(mentry:, path:, strategy:, meta:, body:, content:)
       case mentry.format
       when "markdown", "text"
-        bytes = strategy.serialize(frontmatter: frontmatter, body: body.to_s)
-        [bytes, frontmatter, body.to_s, nil]
+        bytes = strategy.serialize(meta: meta, body: body.to_s)
+        [bytes, meta, body.to_s, nil]
       when "json", "yaml"
         raise UsageError.new("put for #{mentry.format} requires content: or body:") if content.nil? && (body.nil? || body.to_s.empty?)
 
@@ -566,13 +556,12 @@ module Textus
           rescue BadFrontmatter => e
             raise BadContent.new(path, "bad_content: #{e.message}")
           end
+          eff_meta = parsed["_meta"]
           eff_content = parsed["content"]
-          eff_fm = eff_content.is_a?(Hash) && eff_content["_meta"].is_a?(Hash) ? eff_content["_meta"] : {}
-          [body.to_s, eff_fm, body.to_s, eff_content]
+          [body.to_s, eff_meta, body.to_s, eff_content]
         else
-          bytes = strategy.serialize(frontmatter: {}, body: "", content: content)
-          eff_fm = content.is_a?(Hash) && content["_meta"].is_a?(Hash) ? content["_meta"] : (frontmatter || {})
-          [bytes, eff_fm, bytes, content]
+          bytes = strategy.serialize(meta: meta, body: "", content: content)
+          [bytes, meta, bytes, content]
         end
       else
         raise UsageError.new("unknown format #{mentry.format.inspect}")
@@ -580,7 +569,7 @@ module Textus
     end
 
     # rubocop:disable Metrics/ParameterLists
-    def build_envelope(key, mentry, path, fm, body, etag, content: nil)
+    def build_envelope(key, mentry, path, meta, body, etag, content: nil)
       # rubocop:enable Metrics/ParameterLists
       env = {
         "protocol" => PROTOCOL,
@@ -589,28 +578,20 @@ module Textus
         "owner" => mentry.owner,
         "path" => path,
         "format" => mentry.format,
-        "frontmatter" => fm,
+        "_meta" => meta,
         "body" => body,
         "etag" => etag,
         "schema_ref" => mentry.schema,
-        "uid" => extract_uid(mentry.format, fm, content),
+        "uid" => extract_uid(meta),
       }
       env["content"] = content unless content.nil?
       env
     end
 
-    # Pull a Textus UID out of the parsed entry shape per format.
-    # markdown: frontmatter["uid"]; json/yaml: content["_meta"]["uid"]; text: nil.
-    def extract_uid(format, fm, content)
-      case format
-      when "markdown"
-        v = fm.is_a?(Hash) ? fm["uid"] : nil
-        v.is_a?(String) ? v : nil
-      when "json", "yaml"
-        meta = content.is_a?(Hash) ? content["_meta"] : nil
-        v = meta.is_a?(Hash) ? meta["uid"] : nil
-        v.is_a?(String) ? v : nil
-      end
+    # Pull a Textus UID out of the unified _meta hash.
+    def extract_uid(meta)
+      v = meta.is_a?(Hash) ? meta["uid"] : nil
+      v.is_a?(String) ? v : nil
     end
   end
   # rubocop:enable Metrics/ClassLength

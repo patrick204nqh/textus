@@ -27,21 +27,21 @@ module Textus
               end
             basename = key.split(".").last
             {
-              "frontmatter" => {
+              "_meta" => {
                 "name" => basename,
                 "last_refreshed_at" => Time.now.utc.iso8601,
                 "actioned_with" => action_name,
-              }.merge(result[:frontmatter] || result["frontmatter"] || {}),
+              }.merge(result[:_meta] || result["_meta"] || result[:frontmatter] || result["frontmatter"] || {}),
               "body" => result[:body] || result["body"] || "",
             }
           else
             JSON.parse(raw)
           end
 
-        fm = payload["frontmatter"] || {}
+        meta = payload["_meta"] || payload["frontmatter"] || {}
         body = payload["body"] || ""
         if_etag = payload["if_etag"]
-        emit(store.put(key, frontmatter: fm, body: body, if_etag: if_etag, as: role))
+        emit(store.put(key, meta: meta, body: body, if_etag: if_etag, as: role))
       end
     end
   end

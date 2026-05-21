@@ -7,7 +7,7 @@ require "fileutils"
 RSpec.describe "textus action verb" do
   def custom_manifest_with_demo!(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: canon,   writable_by: [human] }
         - { name: working, writable_by: [human, ai, script] }
@@ -26,7 +26,7 @@ RSpec.describe "textus action verb" do
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "extensions/sync.rb"), <<~RUBY)
         Textus.action(:sync_demo) do |config:, store:, args:|
-          store.put("working.demo", frontmatter: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok")
+          store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok")
         end
       RUBY
 
@@ -44,7 +44,7 @@ RSpec.describe "textus action verb" do
 
       store = Textus::Store.new(root)
       env = store.get("working.demo")
-      expect(env["frontmatter"]["who"]).to eq("patrick")
+      expect(env["_meta"]["who"]).to eq("patrick")
     end
   end
 

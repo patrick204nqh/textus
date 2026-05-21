@@ -6,12 +6,12 @@ module Textus
     # textus schema-init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
     def self.init(store, name:, from:)
       env = store.get(from)
-      fm = env["frontmatter"]
+      meta = env["_meta"]
       schema = {
         "name" => name,
-        "required" => fm.keys,
+        "required" => meta.keys,
         "optional" => [],
-        "fields" => fm.each_with_object({}) { |(k, v), h| h[k] = { "type" => infer_type(v) } },
+        "fields" => meta.each_with_object({}) { |(k, v), h| h[k] = { "type" => infer_type(v) } },
       }
       FileUtils.mkdir_p(File.join(store.root, "schemas"))
       target = File.join(store.root, "schemas", "#{name}.yaml")
@@ -26,7 +26,7 @@ module Textus
       store.manifest.enumerate.each do |row|
         env = store.get(row[:key])
         begin
-          schema.validate!(env["frontmatter"])
+          schema.validate!(env["_meta"])
         rescue SchemaViolation => e
           drift << { "key" => row[:key], "details" => e.details }
         end
@@ -51,17 +51,17 @@ module Textus
       touched = []
       store.manifest.enumerate.each do |row|
         env = store.get(row[:key])
-        fm = env["frontmatter"]
+        meta = env["_meta"]
         changed = false
         renames.each do |old, new|
-          if fm.key?(old)
-            fm[new] = fm.delete(old)
+          if meta.key?(old)
+            meta[new] = meta.delete(old)
             changed = true
           end
         end
         next unless changed
 
-        store.put(row[:key], frontmatter: fm, body: env["body"], as: "human")
+        store.put(row[:key], meta: meta, body: env["body"], as: "human")
         touched << row[:key]
       end
       { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }

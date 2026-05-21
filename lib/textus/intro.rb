@@ -6,7 +6,7 @@ module Textus
   #
   # Intro is side-effect-free.
   module Intro
-    PROTOCOL_ID = "textus/1".freeze
+    PROTOCOL_ID = PROTOCOL
 
     # Conventional zone purposes. Unknown zones (declared in the manifest
     # but not listed here) get no `purpose` field.
@@ -32,7 +32,7 @@ module Textus
     CLI_VERBS = [
       { "name" => "intro",    "summary" => "this output — orientation for agents and tools" },
       { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
-      { "name" => "get",      "summary" => "read an entry; envelope with frontmatter, body, uid, etag" },
+      { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },

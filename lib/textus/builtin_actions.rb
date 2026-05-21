@@ -11,14 +11,14 @@ module Textus
         _ = store
         _ = args
         data = JSON.parse(config["bytes"].to_s)
-        { frontmatter: {}, body: YAML.dump(data) }
+        { _meta: {}, body: YAML.dump(data) }
       end
 
       Textus.action(:csv) do |config:, store:, args:|
         _ = store
         _ = args
         rows = CSV.parse(config["bytes"].to_s, headers: true).map(&:to_h)
-        { frontmatter: {}, body: YAML.dump(rows) }
+        { _meta: {}, body: YAML.dump(rows) }
       end
 
       Textus.action(:"markdown-links") do |config:, store:, args:|
@@ -27,7 +27,7 @@ module Textus
         links = config["bytes"].to_s.scan(%r{\[([^\]]+)\]\((https?://[^)\s]+)\)}).map do |text, href|
           { "text" => text, "href" => href }
         end
-        { frontmatter: {}, body: YAML.dump(links) }
+        { _meta: {}, body: YAML.dump(links) }
       end
 
       Textus.action(:"ical-events") do |config:, store:, args:|
@@ -46,7 +46,7 @@ module Textus
             current[Regexp.last_match(1).downcase] = Regexp.last_match(2) if current
           end
         end
-        { frontmatter: {}, body: YAML.dump(events) }
+        { _meta: {}, body: YAML.dump(events) }
       end
 
       Textus.action(:rss) do |config:, store:, args:|
@@ -60,7 +60,7 @@ module Textus
             "pubDate" => item.elements["pubDate"]&.text,
           }
         end
-        { frontmatter: {}, body: YAML.dump(items) }
+        { _meta: {}, body: YAML.dump(items) }
       end
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength

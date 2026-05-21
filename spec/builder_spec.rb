@@ -15,7 +15,7 @@ RSpec.describe Textus::Builder do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/1
+      version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: derived, writable_by: [build] }
@@ -82,7 +82,7 @@ RSpec.describe Textus::Builder do
     # path uses it as the payload base.
     store.registry.register_reducer(:envelope) do |rows:, config:|
       _ = config
-      { "protocol" => "textus/1", "people" => rows.sort_by { |r| r["name"].to_s } }
+      { "protocol" => "textus/2", "people" => rows.sort_by { |r| r["name"].to_s } }
     end
   end
 
@@ -96,8 +96,8 @@ RSpec.describe Textus::Builder do
     expect(body).to include("- bob (y)")
     # Existing frontmatter contract: generated.at still present in markdown.
     parsed = Textus::Entry.for_format("markdown").parse(body, path: nil)
-    expect(parsed["frontmatter"]["generated"]).to be_a(Hash)
-    expect(parsed["frontmatter"]["generated"]["at"]).to match(/\dT\d/)
+    expect(parsed["_meta"]["generated"]).to be_a(Hash)
+    expect(parsed["_meta"]["generated"]["at"]).to match(/\dT\d/)
 
     published = File.join(File.dirname(root), "PEOPLE.md")
     sentinel = File.join(root, "sentinels", "PEOPLE.md.textus-managed.json")
@@ -126,7 +126,7 @@ RSpec.describe Textus::Builder do
     expect(parsed.keys.first).to eq("_meta")
     expect(parsed["_meta"].keys).to eq(%w[generated_at from reducer])
     expect(parsed["_meta"]["reducer"]).to eq("envelope")
-    expect(parsed["protocol"]).to eq("textus/1")
+    expect(parsed["protocol"]).to eq("textus/2")
     expect(parsed["people"].map { |r| r["name"] }).to contain_exactly("alice", "bob")
   end
 
