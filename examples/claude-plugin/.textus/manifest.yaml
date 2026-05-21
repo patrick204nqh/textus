@@ -54,7 +54,7 @@ entries:
     zone: intake
     owner: script:local
     source:
-      fetch: local-file
+      fetch: local_file
       config: { path: .textus/zones/canon/voice-tools.md }
       ttl: 12h
 
@@ -67,7 +67,7 @@ entries:
     projection:
       select: [canon.plugin]
       pluck: "*"
-      reduce: plugin-envelope
+      reduce: plugin_envelope
     publish_to: [.claude-plugin/plugin.json]
 
   - key: derived.marketplace
@@ -78,7 +78,7 @@ entries:
     projection:
       select: [canon.marketplace, canon.plugin, working.skills]
       pluck: "*"
-      reduce: marketplace-envelope
+      reduce: marketplace_envelope
     publish_to: [.claude-plugin/marketplace.json]
 
   - key: derived.claude-root
@@ -88,7 +88,7 @@ entries:
     projection:
       select: [canon.plugin, working.agents, working.skills, working.commands]
       pluck: "*"
-      reduce: claude-root
+      reduce: claude_root
     template: claude-root.mustache
     inject_intro: true
     publish_to: [CLAUDE.md]
