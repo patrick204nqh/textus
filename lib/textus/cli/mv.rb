@@ -1,11 +1,6 @@
 module Textus
   class CLI
     class Mv < Verb
-      prepend DeprecatedAliasMixin
-
-      def self.deprecated_name = "mv"
-      def self.replacement_path = "key mv"
-
       option :as_flag, "--as=ROLE"
       option :dry_run, "--dry-run"
 

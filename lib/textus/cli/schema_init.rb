@@ -1,11 +1,6 @@
 module Textus
   class CLI
     class SchemaInit < Verb
-      prepend DeprecatedAliasMixin
-
-      def self.deprecated_name = "schema-init"
-      def self.replacement_path = "schema init"
-
       option :from_key, "--from=KEY"
 
       def call(store)

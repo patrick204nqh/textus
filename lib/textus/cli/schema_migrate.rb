@@ -1,11 +1,6 @@
 module Textus
   class CLI
     class SchemaMigrate < Verb
-      prepend DeprecatedAliasMixin
-
-      def self.deprecated_name = "schema-migrate"
-      def self.replacement_path = "schema migrate"
-
       option :rename, "--rename=O:N"
 
       def call(store)
