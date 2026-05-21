@@ -31,7 +31,7 @@ module Textus
       when "where"  then dispatch(Where, argv)
       when "get"    then dispatch(Get, argv)
       when "put"    then verb_put(argv)
-      when "schema" then verb_schema(argv)
+      when "schema" then dispatch(Schema, argv)
       when "stale"  then verb_stale(argv)
       when "delete"       then verb_delete(argv)
       when "build"        then verb_build(argv)
@@ -110,12 +110,6 @@ module Textus
     def verb_list(argv)
       prefix, zone = parse_prefix_and_zone!(argv)
       emit({ "protocol" => PROTOCOL, "entries" => store.list(prefix: prefix, zone: zone) })
-    end
-
-    def verb_schema(argv)
-      key = argv.shift or raise UsageError.new("schema requires a key")
-      parse_format!(argv)
-      emit(store.schema_envelope(key))
     end
 
     def verb_stale(argv)
