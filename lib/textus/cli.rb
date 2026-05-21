@@ -37,7 +37,7 @@ module Textus
       when "build"        then verb_build(argv)
       when "deps"         then dispatch(Deps, argv)
       when "rdeps"        then dispatch(Rdeps, argv)
-      when "published"    then verb_published(argv)
+      when "published"    then dispatch(Published, argv)
       when "accept"       then verb_accept(argv)
       when "init"         then verb_init(argv)
       when "schema-init"    then verb_schema_init(argv)
@@ -360,11 +360,6 @@ module Textus
       res = Textus::Doctor.run(store, checks: checks)
       @stdout.puts(JSON.generate(res))
       res["ok"] ? 0 : 1
-    end
-
-    def verb_published(argv)
-      parse_format!(argv)
-      emit({ "protocol" => Textus::PROTOCOL, "published" => store.published })
     end
 
     def emit(obj)
