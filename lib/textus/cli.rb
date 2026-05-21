@@ -44,7 +44,7 @@ module Textus
       when "schema-migrate" then dispatch(SchemaMigrate, argv)
       when "action"         then verb_action(argv)
       when "refresh"        then dispatch(RefreshVerb, argv)
-      when "extensions"     then verb_extensions(argv)
+      when "extensions"     then dispatch(Extensions, argv)
       when "migrate-keys"   then verb_migrate_keys(argv)
       when "mv"             then verb_mv(argv)
       when "uid"            then dispatch(Uid, argv)
@@ -189,42 +189,6 @@ module Textus
       end
 
       emit({ "protocol" => Textus::PROTOCOL, "action" => name, "ok" => true })
-    end
-
-    def verb_extensions(argv) # rubocop:disable Metrics/AbcSize
-      subcommand = argv.shift
-      raise UsageError.new("extensions requires 'list'") unless subcommand == "list"
-
-      kind = nil
-      OptionParser.new do |o|
-        o.on("--kind=K") { |v| kind = v }
-        o.on("--format=FMT") {}
-      end.permute!(argv)
-
-      rows = []
-      rows += store.registry.action_names.map { |n| { "kind" => "action", "name" => n.to_s } }
-      rows += store.registry.doctor_check_names.map { |n| { "kind" => "doctor_check", "name" => n.to_s } }
-      rows += store.registry.reducer_names.map { |n| { "kind" => "reducer", "name" => n.to_s } }
-      store.registry.hook_events.each do |evt|
-        store.registry.hooks(evt).each do |h|
-          rows << { "kind" => "hook", "event" => evt.to_s, "name" => h[:name].to_s }
-        end
-      end
-      store.manifest.entries.each do |e|
-        e.events.each do |evt, defs|
-          Array(defs).each do |defn|
-            next unless defn["exec"]
-
-            rows << {
-              "kind" => "hook", "event" => evt.to_s, "exec" => defn["exec"],
-              "key" => e.key, "as" => defn["as"] || "script"
-            }
-          end
-        end
-      end
-      rows.select! { |r| r["kind"] == kind } if kind
-
-      emit({ "protocol" => Textus::PROTOCOL, "extensions" => rows })
     end
 
     def verb_migrate_keys(argv)
