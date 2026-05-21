@@ -55,8 +55,18 @@ module Textus
       def deps(key)   = Dependencies.deps_of(@manifest, key)
       def rdeps(key)  = Dependencies.rdeps_of(@manifest, key)
       def published   = Dependencies.published_of(@manifest)
-      def stale(prefix: nil, zone: nil) = Staleness.new(@store).call(prefix: prefix, zone: zone)
-      def validate_all = Validator.new(@store).call
+
+      def stale(prefix: nil, zone: nil)
+        Staleness.new(manifest: @manifest).call(prefix: prefix, zone: zone)
+      end
+
+      def validate_all
+        Validator.new(
+          reader: self, manifest: @manifest,
+          audit_log: @store.audit_log,
+          schema_for: ->(name) { @store.schema_for(name) }
+        ).call
+      end
     end
   end
 end

@@ -103,7 +103,8 @@ module Textus
     # uid (minting one first if absent), validates both keys against the
     # manifest, refuses to clobber, and writes one mv audit row.
     def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false)
-      Mover.new(self).call(old_key, new_key, as: as, dry_run: dry_run)
+      Mover.new(reader: @reader, writer: @writer, manifest: @manifest, audit_log: audit_log)
+           .call(old_key, new_key, as: as, dry_run: dry_run)
     end
 
     def audit_log
