@@ -24,8 +24,8 @@ RSpec.describe "textus action verb" do
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       custom_manifest_with_demo!(root)
-      File.write(File.join(root, "extensions/sync.rb"), <<~RUBY)
-        Textus.action(:sync_demo) do |config:, store:, args:|
+      File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
+        Textus.hook(:fetch, :sync_demo) do |store:, config:, args:|
           store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok")
         end
       RUBY
@@ -66,12 +66,12 @@ RSpec.describe "textus action verb" do
     Dir.mktmpdir do |dir|
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
-      File.write(File.join(root, "extensions/slow.rb"), <<~RUBY)
-        Textus.action(:slow) { |config:, store:, args:| sleep 5 }
+      File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
+        Textus.hook(:fetch, :slow) { |store:, config:, args:| sleep 5 }
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original
       allow(Timeout).to receive(:timeout)
-        .with(Textus::Refresh::ACTION_TIMEOUT_SECONDS)
+        .with(Textus::Refresh::FETCH_TIMEOUT_SECONDS)
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(

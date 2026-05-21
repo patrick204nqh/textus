@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe "Manifest source.action" do
+RSpec.describe "Manifest source.fetch" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -13,7 +13,7 @@ RSpec.describe "Manifest source.action" do
     File.write(File.join(root, "manifest.yaml"), yaml)
   end
 
-  it "exposes ManifestEntry#action and #action_config" do
+  it "exposes ManifestEntry#fetch and #fetch_config" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: intake, writable_by: [script] }]
@@ -21,13 +21,60 @@ RSpec.describe "Manifest source.action" do
         - key: intake.repos
           path: intake/repos.md
           zone: intake
-          source: { action: github_repos, config: { org: acme }, ttl: 1h }
+          source: { fetch: github_repos, config: { org: acme }, ttl: 1h }
     YAML
     m = Textus::Manifest.load(root)
     e = m.entries.first
-    expect(e.action).to eq("github_repos")
-    expect(e.action_config).to eq({ "org" => "acme" })
+    expect(e.fetch).to eq("github_repos")
+    expect(e.fetch_config).to eq({ "org" => "acme" })
     expect(e.ttl).to eq("1h")
+  end
+
+  it "rejects legacy source.action: with a clear error" do
+    write_manifest(<<~YAML)
+      version: textus/2
+      zones: [{ name: intake, writable_by: [script] }]
+      entries:
+        - key: intake.repos
+          path: intake/repos.md
+          zone: intake
+          source: { action: gh_repos }
+    YAML
+    expect { Textus::Manifest.load(root) }
+      .to raise_error(Textus::UsageError, /source\.action renamed to source\.fetch in 0\.6/)
+  end
+
+  it "accepts projection.reduce:" do
+    write_manifest(<<~YAML)
+      version: textus/2
+      zones:
+        - { name: working, writable_by: [human] }
+        - { name: derived, writable_by: [build] }
+      entries:
+        - key: derived.top
+          path: derived/top.md
+          zone: derived
+          template: top.mustache
+          projection: { select: [working.x], reduce: rank }
+    YAML
+    expect(Textus::Manifest.load(root).entries.first.projection["reduce"]).to eq("rank")
+  end
+
+  it "rejects legacy projection.reducer: with a clear error" do
+    write_manifest(<<~YAML)
+      version: textus/2
+      zones:
+        - { name: working, writable_by: [human] }
+        - { name: derived, writable_by: [build] }
+      entries:
+        - key: derived.top
+          path: derived/top.md
+          zone: derived
+          template: top.mustache
+          projection: { select: [working.x], reducer: rank }
+    YAML
+    expect { Textus::Manifest.load(root) }
+      .to raise_error(Textus::UsageError, /projection\.reducer renamed to projection\.reduce in 0\.6/)
   end
 
   it "exposes ManifestEntry#events from events: block" do
@@ -83,7 +130,7 @@ RSpec.describe "Manifest source.action" do
     end
   end
 
-  it "action_config defaults to {} when entry has no source block" do
+  it "fetch_config defaults to {} when entry has no source block" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [human] }]
@@ -91,8 +138,8 @@ RSpec.describe "Manifest source.action" do
         - { key: working.x, path: working/x.md, zone: working }
     YAML
     e = Textus::Manifest.load(root).entries.first
-    expect(e.action).to be_nil
-    expect(e.action_config).to eq({})
+    expect(e.fetch).to be_nil
+    expect(e.fetch_config).to eq({})
     expect(e.ttl).to be_nil
   end
 end

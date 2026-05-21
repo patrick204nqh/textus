@@ -1,6 +1,7 @@
 # Wraps the canon.plugin row into the Claude Code plugin.json envelope.
 # Strips internal `_key` and `generated` metadata before emitting.
-Textus.reducer(:"plugin-envelope") do |rows:, config:|
+Textus.hook(:reduce, :"plugin-envelope") do |store:, rows:, config:|
+  _ = store
   _ = config
   row = rows.first || {}
   body = row.reject { |k, _| k.start_with?("_") || k == "generated" }

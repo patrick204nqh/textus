@@ -44,7 +44,8 @@ module Textus
       { "name" => "stale",    "summary" => "list derived/intake entries past their freshness check" },
       { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "migrate-keys", "summary" => "rename files whose basenames violate the strict key grammar" },
-      { "name" => "extensions", "summary" => "list registered actions, reducers, doctor_checks, declared hooks" },
+      { "name" => "hook",
+        "summary" => "list registered hooks grouped by event (fetch, reduce, check, put, delete, refresh, build, accept)" },
     ].freeze
 
     def self.run(store)
@@ -80,7 +81,7 @@ module Textus
           "owner" => e.owner,
           "format" => e.format,
           "derived" => derived,
-          "intake" => !e.action.nil?,
+          "intake" => !e.fetch.nil?,
           "publish_to" => Array(e.publish_to),
           "publish_each" => e.publish_each,
         }
@@ -89,18 +90,16 @@ module Textus
 
     def self.extensions_for(store)
       reg = store.registry
-      reducers = reg.reducer_names.map(&:to_s).sort
-      actions = reg.action_names.map(&:to_s).sort
-      doctor_checks = reg.doctor_check_names.map(&:to_s).sort
-      hooks = reg.hook_events.flat_map do |evt|
-        reg.hooks(evt).map { |h| { "event" => evt.to_s, "name" => h[:name].to_s } }
-      end.sort_by { |h| [h["event"], h["name"]] }
-      {
-        "reducers" => reducers,
-        "actions" => actions,
-        "doctor_checks" => doctor_checks,
-        "hooks" => hooks,
-      }
+      sections = {}
+      HookRegistry::EVENTS.each do |event, spec|
+        case spec[:mode]
+        when :rpc
+          sections[event.to_s] = reg.rpc_names(event).map(&:to_s).sort
+        when :pubsub
+          sections[event.to_s] = reg.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
+        end
+      end
+      sections
     end
   end
 end

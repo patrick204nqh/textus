@@ -10,6 +10,25 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+## 0.6.0 — Hook unification
+
+### Breaking
+- Four DSL verbs (`Textus.action`, `Textus.reducer`, `Textus.hook`, `Textus.doctor_check`) collapsed into one: `Textus.hook(event, name, **opts) { ... }`.
+- `ExtensionRegistry` class renamed to `HookRegistry`.
+- `.textus/extensions/` directory renamed to `.textus/hooks/`. No back-compat read.
+- Manifest: `source.action:` → `source.fetch:` (also renames the registry event from `:action` to `:fetch` and the `ManifestEntry#action`/`#action_config` accessors to `#fetch`/`#fetch_config`).
+- Manifest: `projection.reducer:` → `projection.reduce:`.
+- CLI: `textus extension list` → `textus hook list`; output rows keyed by `event`+`mode` instead of `kind`.
+- CLI: `textus put --action=NAME` → `textus put --fetch=NAME`.
+- Pub-sub hooks gain an optional `keys:` glob filter for per-key scoping.
+- Hook signatures standardized: `store:` is now mandatory and first on every hook (`:reduce` previously had no `store:`). Event-specific kwargs follow.
+- `:accept` event renames `pending_key:` → `key:` to match every other lifecycle event.
+- All event names are now verbs in a uniform grammar (RPC verbs `:fetch :reduce :check`; pub-sub verbs `:put :delete :refresh :build :accept`).
+
+### New
+- `EVENTS` metadata table on `HookRegistry` is the single source of truth for event names, argument shapes, return shapes, and failure semantics (rpc vs pubsub).
+- Shape-check at registration: callable kwargs are verified against the EVENTS table at load time; mismatched signatures raise `UsageError` immediately instead of surfacing at fire time.
+
 ## 0.5.0 — Wire protocol `textus/2`; CLI restructure; Store split (breaking)
 
 This release reshapes the public surface ahead of 1.0. The wire protocol bumps to `textus/2`; the CLI grows nested subcommand groups; `Store` is decomposed into a thin facade plus four focused helpers; the audit log finally matches its documented NDJSON shape; and a pile of pre-0.4 cruft gets cut.

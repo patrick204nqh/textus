@@ -4,7 +4,7 @@ module Textus
     PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
 
     attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
-                :projection, :template, :publish_to, :publish_each, :action, :action_config, :ttl, :events,
+                :projection, :template, :publish_to, :publish_each, :fetch, :fetch_config, :ttl, :events,
                 :inject_intro
 
     def initialize(manifest, raw)
@@ -27,6 +27,7 @@ module Textus
 
       validate_events!
       parse_source!(raw["source"])
+      reject_legacy_projection_keys!
       validate_format_matrix!
       validate_publish_each!
       validate_inject_intro!
@@ -166,18 +167,27 @@ module Textus
 
     def parse_source!(src)
       src ||= {}
-      @action = src["action"]
-      @action_config = src["config"] || {}
+      raise UsageError.new("entry '#{@key}': source.action renamed to source.fetch in 0.6") if src.key?("action")
+
+      @fetch = src["fetch"]
+      @fetch_config = src["config"] || {}
       @ttl = src["ttl"]
     end
 
+    def reject_legacy_projection_keys!
+      return unless @projection.is_a?(Hash) && @projection.key?("reducer")
+
+      raise UsageError.new("entry '#{@key}': projection.reducer renamed to projection.reduce in 0.6")
+    end
+
     def validate_events!
+      pubsub_events = HookRegistry::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
       @events.each_key do |evt|
-        next if ExtensionRegistry::EVENTS.include?(evt.to_sym)
+        next if pubsub_events.include?(evt.to_sym)
 
         raise UsageError.new(
           "entry '#{@key}': unknown event '#{evt}' in events: block. " \
-          "Known events: #{ExtensionRegistry::EVENTS.join(", ")}.",
+          "Known events: #{pubsub_events.join(", ")}.",
         )
       end
     end

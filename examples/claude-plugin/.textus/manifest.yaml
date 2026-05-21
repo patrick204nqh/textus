@@ -48,13 +48,13 @@ entries:
     owner: ai:catalog
     nested: true
 
-  # ---- intake: action-fed (textus capability demo) ----
+  # ---- intake: fetch-fed (textus capability demo) ----
   - key: intake.upstream.notes
     path: intake/upstream/notes.md
     zone: intake
     owner: script:local
     source:
-      action: local-file
+      fetch: local-file
       config: { path: .textus/zones/canon/voice-tools.md }
       ttl: 12h
 
@@ -67,7 +67,7 @@ entries:
     projection:
       select: [canon.plugin]
       pluck: "*"
-      reducer: plugin-envelope
+      reduce: plugin-envelope
     publish_to: [.claude-plugin/plugin.json]
 
   - key: derived.marketplace
@@ -78,7 +78,7 @@ entries:
     projection:
       select: [canon.marketplace, canon.plugin, working.skills]
       pluck: "*"
-      reducer: marketplace-envelope
+      reduce: marketplace-envelope
     publish_to: [.claude-plugin/marketplace.json]
 
   - key: derived.claude-root
@@ -88,7 +88,7 @@ entries:
     projection:
       select: [canon.plugin, working.agents, working.skills, working.commands]
       pluck: "*"
-      reducer: claude-root
+      reduce: claude-root
     template: claude-root.mustache
     inject_intro: true
     publish_to: [CLAUDE.md]

@@ -4,24 +4,24 @@ require "yaml"
 require "rexml/document"
 
 module Textus
-  module BuiltinActions
+  module BuiltinHooks
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def self.register_all
-      Textus.action(:json) do |config:, store:, args:|
+      Textus.hook(:fetch, :json) do |store:, config:, args:|
         _ = store
         _ = args
         data = JSON.parse(config["bytes"].to_s)
         { _meta: {}, body: YAML.dump(data) }
       end
 
-      Textus.action(:csv) do |config:, store:, args:|
+      Textus.hook(:fetch, :csv) do |store:, config:, args:|
         _ = store
         _ = args
         rows = CSV.parse(config["bytes"].to_s, headers: true).map(&:to_h)
         { _meta: {}, body: YAML.dump(rows) }
       end
 
-      Textus.action(:"markdown-links") do |config:, store:, args:|
+      Textus.hook(:fetch, :"markdown-links") do |store:, config:, args:|
         _ = store
         _ = args
         links = config["bytes"].to_s.scan(%r{\[([^\]]+)\]\((https?://[^)\s]+)\)}).map do |text, href|
@@ -30,7 +30,7 @@ module Textus
         { _meta: {}, body: YAML.dump(links) }
       end
 
-      Textus.action(:"ical-events") do |config:, store:, args:|
+      Textus.hook(:fetch, :"ical-events") do |store:, config:, args:|
         _ = store
         _ = args
         events = []
@@ -49,7 +49,7 @@ module Textus
         { _meta: {}, body: YAML.dump(events) }
       end
 
-      Textus.action(:rss) do |config:, store:, args:|
+      Textus.hook(:fetch, :rss) do |store:, config:, args:|
         _ = store
         _ = args
         doc = REXML::Document.new(config["bytes"].to_s)

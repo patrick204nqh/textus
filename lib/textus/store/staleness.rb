@@ -47,7 +47,7 @@ module Textus
         end
 
         @store.manifest.entries.each do |mentry|
-          next unless mentry.action
+          next unless mentry.fetch
           next if zone && mentry.zone != zone
           next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
@@ -125,7 +125,7 @@ module Textus
       end
 
       def intake_stale_row(mentry, path, reason)
-        { "key" => mentry.key, "path" => path, "action" => mentry.action, "reason" => reason }
+        { "key" => mentry.key, "path" => path, "fetch" => mentry.fetch, "reason" => reason }
       end
 
       def stale_row(mentry, path, reason)

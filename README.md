@@ -98,7 +98,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
-| `extension list [--kind=K]` | Registered actions, reducers, hooks, doctor_checks |
+| `hook list [--event=E]` | Registered hooks grouped by event (fetch, reduce, check, put, delete, refresh, build, accept) |
 
 **Write:**
 
@@ -148,16 +148,24 @@ Derived entries declare a `projection:` (`select`, `pluck`, `sort_by`, `limit`, 
 
 `publish_to: [path]` byte-copies a single derived file to one target. `publish_each: "template/{basename}.md"` on a nested entry byte-copies every leaf to its templated target — substitutes `{leaf}`, `{basename}`, `{key}`, `{ext}`. Sentinels for every published file live under `.textus/sentinels/`. See SPEC §5.2, §5.3, §5.12.
 
-## Extensions
+## Extension points
 
-Four DSL verbs, registered in `.textus/extensions/*.rb`. Each `Store` gets its own registry — no global state.
+textus exposes one DSL verb:
 
-- **`Textus.action(:name) do |config:, store:, args:|`** — runs in three invocation modes (intake refresh, `textus action` verb, `put --action`). Returns `{frontmatter:, body:}`, `{content:}`, or `{body:}` when its return is consumed (intake and put-fetch); writes via `store.put` for side-effectful work (verb mode). The store normalizes all three return shapes. Configured via `source.action` in the manifest for intake. Five built-ins ship: `json`, `csv`, `markdown-links`, `ical-events`, `rss`.
-- **`Textus.reducer(:name) do |rows:, config:|`** — shapes rows in a derived projection. Pure function. Configured via `projection.reducer`. May return an Array (templated builds) or a Hash (templateless json/yaml).
-- **`Textus.hook(:event, :name) do |kwargs|`** — fires on `:put`, `:delete`, `:refresh`, `:build`, or `:accept`. In-process; 2 s timeout per hook; failures land in the audit log as `event_error` rows.
-- **`Textus.doctor_check(:name) do |store:|`** — contributes whole-tree validators to `textus doctor`. Returns an array of issue hashes `{code, level, subject, message, fix}` that merge into the doctor report. Timeouts and exceptions surface as `doctor_check.*` issues; they do not abort the doctor run.
+```ruby
+Textus.hook(event, name, **opts) { |args| ... }
+```
 
-Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8 and §5.11.
+Drop `.rb` files into `.textus/hooks/`. Events:
+
+- `:fetch` — bring bytes in from elsewhere (returns `{frontmatter:, body:}`)
+- `:reduce` — transform rows during projection (returns rows)
+- `:check` — custom doctor check (returns issues)
+- `:put`, `:delete`, `:refresh`, `:build`, `:accept` — react to lifecycle events
+
+See SPEC.md §5.10 for the full contract.
+
+Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
 ## Examples
 

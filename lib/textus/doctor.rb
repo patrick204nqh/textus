@@ -117,7 +117,7 @@ module Textus
       return out unless File.directory?(dir)
 
       Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-        registry = ExtensionRegistry.new
+        registry = HookRegistry.new
         Textus.with_registry(registry) do
           load(f)
         end
@@ -292,8 +292,8 @@ module Textus
     def run_registered_checks(store)
       out = []
       view = StoreView.new(store)
-      store.registry.doctor_check_names.each do |name|
-        callable = store.registry.doctor_check(name)
+      store.registry.rpc_names(:check).each do |name|
+        callable = store.registry.rpc_callable(:check, name)
         begin
           result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: view) }
           if result.is_a?(Array)

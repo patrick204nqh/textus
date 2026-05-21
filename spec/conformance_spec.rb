@@ -36,7 +36,7 @@ RSpec.describe "textus/2 conformance" do
           schema: null
           owner: script:cron
           source:
-            action: http_json
+            fetch: http_json
             config: { url: "https://example.com/calendar.ics" }
             ttl: 1s
     YAML
@@ -150,12 +150,12 @@ RSpec.describe "textus/2 conformance" do
     end
   end
 
-  describe "put --action=NAME" do
+  describe "put --fetch=NAME" do
     it "parses stdin and writes entry with last_refreshed_at" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "intake.calendar.events", "--action=ical-events",
+        ["put", "intake.calendar.events", "--fetch=ical-events",
          "--stdin", "--as=script", "--format=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
@@ -163,7 +163,7 @@ RSpec.describe "textus/2 conformance" do
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
       expect(env["_meta"]["last_refreshed_at"]).not_to be_nil
-      expect(env["_meta"]["actioned_with"]).to eq("ical-events")
+      expect(env["_meta"]["fetched_with"]).to eq("ical-events")
     end
   end
 

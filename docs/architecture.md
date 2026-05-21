@@ -53,16 +53,15 @@ Builder ──► Projection ──► Mustache ──► Entry  ──► Publi
 
 Declared in the manifest, loaded on demand, dispatched by `Store` and `Refresh`.
 
-- **`Extensions`** — declarative manifest schema for action/reducer/hook/doctor_check extensions.
-- **`ExtensionRegistry`** — loads one `.rb` per extension from `.textus/extensions/`, registers callables under their declared names.
-- **`BuiltinActions`** — ships built-in actions (e.g. json, csv, ical-events, rss) available without user extensions.
-- **`Refresh`** — `refresh` verb: looks up the action for a key, invokes it, normalizes the result by declared format, writes through `Store` with an etag check.
+- **`HookRegistry`** — loads one `.rb` per hook from `.textus/hooks/`, registers callables under their `(event, name)`. Single source of truth via the `EVENTS` table (rpc vs pubsub, arg shape, failure semantics).
+- **`BuiltinHooks`** — ships built-in `:fetch` hooks (e.g. json, csv, ical-events, rss) available without user-supplied hooks.
+- **`Refresh`** — `refresh` verb: looks up the `:fetch` hook for a key, invokes it, normalizes the result by declared format, writes through `Store` with an etag check.
 
 ### 4. Operational tooling
 
 First-class CLI verbs that don't fit the read/write/build axes. Read-mostly; side modules off CLI.
 
-- **`Doctor`** — `doctor` verb: validates manifest, schemas, extensions, and (via `MigrateKeys`) suggests key migrations. Talks to Manifest/Schema/Entry/ExtensionRegistry directly.
+- **`Doctor`** — `doctor` verb: validates manifest, schemas, hooks, and (via `MigrateKeys`) suggests key migrations. Talks to Manifest/Schema/Entry/HookRegistry directly.
 - **`MigrateKeys`** — `migrate-keys` and `mv` verbs; computes renames against the manifest.
 - **`SchemaTools`** — `schema-init`, `schema-diff`, `schema-migrate` verbs.
 - **`Init`** — `init` verb: scaffolds `.textus/` with the five zone directories, baseline schemas, empty audit log, starter manifest.

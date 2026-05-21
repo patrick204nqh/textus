@@ -12,9 +12,8 @@ module Textus
       "delete" => Delete,
       "deps" => Deps,
       "doctor" => DoctorVerb,
-      "extension" => ExtensionGroup,
-      "extensions" => Extensions,
       "get" => Get,
+      "hook" => HookGroup,
       "init" => InitVerb,
       "intro" => IntroVerb,
       "key" => KeyGroup,
@@ -37,7 +36,7 @@ module Textus
 
     # Flat aliases kept for backward-compat through 0.5; emit deprecation warnings.
     DEPRECATED_ALIASES = %w[
-      mv uid migrate-keys schema-init schema-diff schema-migrate extensions action
+      mv uid migrate-keys schema-init schema-diff schema-migrate action
     ].freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
@@ -98,7 +97,7 @@ module Textus
           textus list [--prefix=KEY] [--zone=Z]
           textus where KEY
           textus get KEY
-          textus put KEY --stdin [--action=NAME] --as=ROLE
+          textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus stale [--prefix=KEY] [--zone=Z]
           textus doctor
           textus intro
@@ -106,10 +105,10 @@ module Textus
 
           textus key {mv,uid,migrate}
           textus schema {show,init,diff,migrate}
-          textus extension {list,run}
+          textus hook {list,run}
 
         Deprecated (removed in 0.6): mv, uid, migrate-keys, schema-init,
-        schema-diff, schema-migrate, extensions, action.
+        schema-diff, schema-migrate, action.
       HELP
     end
   end

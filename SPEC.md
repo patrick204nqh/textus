@@ -250,38 +250,36 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 
 **Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is byte-copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The build envelope grows a `published_leaves` array — one row per leaf, with `key`, `source`, and `target` — alongside the existing `built` array. Targets that would resolve outside the repo root are refused.
 
-### 5.4 Intake (declared, refreshed via registered action)
+### 5.4 Intake (declared, refreshed via registered fetch hook)
 
-Intake entries declare an external source by naming an **action** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an action only runs in intake mode when explicitly invoked by `textus refresh KEY --as=script`. The declaration is data only:
+Intake entries declare an external source by naming a **fetch hook** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: a fetch hook only runs in intake mode when explicitly invoked by `textus refresh KEY --as=script`. The declaration is data only:
 
 ```yaml
 - key: intake.calendar.events
   zone: intake
   source:
-    action: ical-events
+    fetch: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
     ttl: 6h
 ```
 
-`action` names a registered action; `config` is an opaque hash handed to the action; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, and `source.fetcher` with a clear usage error.
+`fetch` names a registered `:fetch` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the hook; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, `source.fetcher`, and `source.action` with a clear usage error.
 
-**Action contract (intake mode).** An action is registered via `Textus.action(:name) do |config:, store:, args:| ... end`. In intake mode the action MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
+In intake mode the hook MUST return one of three shapes, all normalized by the store into its internal `{frontmatter, body, content}` representation (§5.12):
 
 - `{ frontmatter:, body: }` — markdown-friendly.
 - `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
 - `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
 
-The `store:` argument is a writable `Textus::StoreView` (§5.11) bound to the calling role; the `args:` argument is `{}` in intake mode (it carries CLI flags in verb mode — §5.11). Every action call is wrapped in `Timeout.timeout(2)`; exceptions and timeouts surface as `usage` errors that abort the refresh.
-
-**Built-in actions.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer action) is responsible for supplying bytes.
+**Built-in fetch hooks.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured frontmatter/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.action`, invokes it with `(config:, store:, args: {})`, and writes the result under role `script`.
+1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.fetch`, invokes the registered `:fetch` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`.
 
-Both paths share the same role gate, audit-log entry, and `:refresh` event (§5.10). User-supplied actions live in `.textus/extensions/*.rb` and auto-load at `Store#initialize` (§5.11).
+Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
@@ -363,99 +361,32 @@ evolution:
 
 ### 5.9 Reducers (v1.2)
 
-Reducers are pure, named functions that shape projection rows into projection rows. Registered via the module-level DSL:
+Reducers are RPC hooks on the `:reduce` event. See §5.10.
 
-```ruby
-Textus.reducer(:rank_by_recency) do |rows:, config:|
-  rows.sort_by { |r| r["updated_at"].to_s }.reverse
-end
-```
+### 5.10 Hooks
 
-**Declaration.** A projection opts into a reducer via `projection.reducer`, with optional `projection.reducer_config`:
+textus has a single extension verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/*.rb` are `load`ed at `Store#initialize` in lexical order.
 
-```yaml
-projection:
-  select: [working.projects]
-  pluck:  [name, status, updated_at]
-  reducer: rank_by_recency
-  reducer_config: { tiebreak: name }
-  sort_by: updated_at
-  limit: 50
-```
+| Event    | Mode    | Args                              | Return        | Failure |
+|----------|---------|-----------------------------------|---------------|---------|
+| :fetch   | rpc     | store:, config:, args:            | {frontmatter:, body:} | aborts op |
+| :reduce  | rpc     | store:, rows:, config:            | rows array            | aborts op |
+| :check   | rpc     | store:                            | issues array          | aborts doctor |
+| :put     | pubsub  | store:, key:, envelope:           | (discarded)           | logged   |
+| :delete  | pubsub  | store:, key:                      | (discarded)           | logged   |
+| :refresh | pubsub  | store:, key:, envelope:, change:  | (discarded)           | logged   |
+| :build   | pubsub  | store:, key:, envelope:, sources: | (discarded)           | logged   |
+| :accept  | pubsub  | store:, key:, target_key:         | (discarded)           | logged   |
 
-The reducer runs **between pluck and sort**. `config:` receives the manifest's `reducer_config` hash (or `{}`). Rows in, rows out.
+**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accept`, `key:` is the pending key being accepted and `target_key:` is the destination).
 
-**Purity.** A reducer MUST NOT perform I/O or mutate the store; no `store:` kwarg is passed.
+**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`source.fetch: NAME`, `projection.reduce: NAME`). Failure or timeout aborts the calling operation.
 
-**Timeout.** Each invocation is wrapped in `Timeout.timeout(Textus::Projection::REDUCER_TIMEOUT_SECONDS)` (2s). Timeouts, exceptions, and unknown names raise `usage` errors and abort the build.
+**Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
 
-**Auto-load.** Reducers register from `.textus/extensions/*.rb`, loaded at `Store#initialize` in lexical order (§5.11). The registry is per-Store; reducers do not share state across `Store` instances.
+The `store:` argument is always a `Textus::StoreView` — read-only proxy. Write attempts raise `UsageError`.
 
-### 5.10 Events (v1.2)
-
-Lifecycle events fire in-process. Subscribers register via `Textus.hook(:event, :name) do |**kwargs| ... end`. Hooks are fire-and-forget: return values are discarded.
-
-**Event set and kwargs:**
-
-| Event     | Fired by                | Kwargs                                                       |
-|-----------|-------------------------|--------------------------------------------------------------|
-| `:put`    | `Store#put`             | `key:, envelope:, store:`                                    |
-| `:delete` | `Store#delete`          | `key:, store:`                                               |
-| `:refresh`| `Refresh.call`          | `key:, envelope:, store:, change:` (`:created` or `:updated`)|
-| `:build`  | `Builder#materialize`   | `key:, envelope:, store:, sources:`                          |
-| `:accept` | `Proposal.accept`       | `pending_key:, target_key:, store:`                          |
-
-`:refresh` with `change: :unchanged` does NOT fire — only `:created` and `:updated` are emitted. The `store:` kwarg is always a `Textus::StoreView` (§5.11).
-
-**Timeout and isolation.** Each hook runs under `Timeout.timeout(2)`. Hook errors and timeouts are recorded as `event_error` rows in `.textus/audit.log` (NDJSON with an `extras` object carrying `event`, `hook`, `error`) but do NOT abort the triggering operation. The store write that fired the event is already committed by the time hooks run.
-
-**Manifest declarations.** A manifest entry MAY declare external-runner hooks under an `events:` block, keyed by event name:
-
-```yaml
-events:
-  refresh:
-    - { exec: scripts/reindex.sh, as: script }
-  build:
-    - { exec: scripts/rebuild-index.sh, as: build }
-```
-
-Textus does NOT invoke these — they surface only through `textus extensions list --kind=hook` for orchestrators (lefthook, cron, CI) to consume. Each entry has `exec` (opaque runner-resolvable string) and `as` (role to claim, defaults to `script`).
-
-**Removed.** The v1.1 `on_stale` event is removed in 0.2. Staleness is a poll, surfaced by `textus stale`. The `on_`-prefix convention from v1.1 is gone; events are bare symbols.
-
-### 5.11 Extension surface (v1.3)
-
-Four DSL verbs cover all user-supplied code:
-
-```
-Textus.action(:name)         do |config:, store:, args:|  ... end   # intake mode: returns content; verb mode: writes via store.put
-Textus.reducer(:name)        do |rows:, config:|          ... end   # returns rows
-Textus.hook(:event, :name)   do |**kwargs|                ... end   # side effects; return ignored
-Textus.doctor_check(:name)   do |store:|                  ... end   # returns array of issue hashes
-```
-
-Files in `.textus/extensions/*.rb` are loaded at `Store#initialize`, in lexical order, with the registry installed as the current registry for that store. Registries are per-Store: two Store instances in the same process do not share state.
-
-**Action invocation modes.**
-
-| Mode    | Invoked by                | `config:`              | `store:`               | `args:`              | Return                                  |
-|---------|---------------------------|------------------------|------------------------|----------------------|------------------------------------------|
-| intake  | `textus refresh KEY`      | manifest `source.config` | writable view (role from `--as`) | `{}`                | required; normalized into entry write    |
-| verb    | `textus action NAME ...`  | `{}`                   | writable view (role from `--as`) | parsed CLI kv hash   | ignored                                  |
-| put-fetch | `textus put K --action=N --stdin` | `{ "bytes" => stdin }` | read-only view         | `{}`                 | required; merged into the put payload    |
-
-**Failure modes:**
-
-| Surface         | Timeout    | Exception                                   | Bad return |
-|-----------------|------------|---------------------------------------------|------------|
-| action          | aborts op  | aborts op (wrapped as `UsageError`)         | aborts op  |
-| reducer         | aborts op  | aborts op                                   | aborts op  |
-| hook            | logged     | logged (audit `event_error` row)            | n/a        |
-| doctor_check    | reported as `doctor_check.timeout` issue | reported as `doctor_check.failed` issue | reported as `doctor_check.bad_return` |
-
-Actions and reducers are pure transforms in modes where their return matters; their return values flow into the store. Hooks and doctor_checks shape side outputs (event chain, doctor report) — only doctor_check return values are merged.
-
-The `store:` argument is always a `Textus::StoreView`. In intake and verb modes it is writable and bound to the calling role; in put-fetch mode and inside doctor_checks it is read-only. Write attempts on a read-only view raise `Textus::UsageError`.
+Each handler runs under `Timeout.timeout(2)`.
 
 ### 5.12 Storage formats (v1.2)
 

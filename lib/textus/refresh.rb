@@ -2,26 +2,26 @@ require "timeout"
 
 module Textus
   module Refresh
-    ACTION_TIMEOUT_SECONDS = 2
+    FETCH_TIMEOUT_SECONDS = 2
 
     def self.call(store, key, as:)
       mentry, path, = store.manifest.resolve(key)
-      raise UsageError.new("no action declared for '#{key}'") unless mentry.action
+      raise UsageError.new("no fetch declared for '#{key}'") unless mentry.fetch
 
       before_etag = File.exist?(path) ? Etag.for_file(path) : nil
-      callable = store.registry.action(mentry.action)
+      callable = store.registry.rpc_callable(:fetch, mentry.fetch)
       view = StoreView.new(store, writable: true, as: as)
       result =
         begin
-          Timeout.timeout(ACTION_TIMEOUT_SECONDS) do
-            callable.call(config: mentry.action_config, store: view, args: {})
+          Timeout.timeout(FETCH_TIMEOUT_SECONDS) do
+            callable.call(store: view, config: mentry.fetch_config, args: {})
           end
         rescue Timeout::Error
-          raise UsageError.new("action '#{mentry.action}' exceeded #{ACTION_TIMEOUT_SECONDS}s timeout")
+          raise UsageError.new("fetch '#{mentry.fetch}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
         rescue Textus::Error
           raise
         rescue StandardError => e
-          raise UsageError.new("action '#{mentry.action}' raised: #{e.class}: #{e.message}")
+          raise UsageError.new("fetch '#{mentry.fetch}' raised: #{e.class}: #{e.message}")
         end
 
       normalized = normalize_action_result(result, format: mentry.format)
@@ -45,12 +45,12 @@ module Textus
       envelope
     end
 
-    # Normalize the three accepted action return shapes into the store's
+    # Normalize the three accepted fetch return shapes into the store's
     # internal {frontmatter, body, content} representation.
     def self.normalize_action_result(res, format:)
       res = res.transform_keys(&:to_s) if res.is_a?(Hash)
       res ||= {}
-      # Accept both legacy :frontmatter/:_meta key names from actions.
+      # Accept both legacy :frontmatter/:_meta key names from fetch hooks.
       meta_val = res["_meta"] || res["frontmatter"]
       body    = res["body"]
       content = res["content"]
@@ -66,7 +66,7 @@ module Textus
         elsif !body.nil?
           { meta: {}, body: body.to_s, content: nil }
         else
-          raise UsageError.new("action for #{format} returned neither content nor body")
+          raise UsageError.new("fetch for #{format} returned neither content nor body")
         end
       else
         raise UsageError.new("unknown format #{format.inspect}")
