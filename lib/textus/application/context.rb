@@ -40,7 +40,7 @@ module Textus
         )
       end
 
-      # Backward-compat for intake handlers receiving a Context (was Store::View)
+      # Backward-compat for intake handlers receiving a Context
       # that call store.put/get/delete on it. Slated for removal in 0.10.0.
       def put(key, **opts)
         opts[:as] ||= role

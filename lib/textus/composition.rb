@@ -41,6 +41,7 @@ module Textus
         bus: ctx.store.bus,
         store_root: ctx.store.root,
         store: ctx.store,
+        role: ctx.role,
       )
     end
 

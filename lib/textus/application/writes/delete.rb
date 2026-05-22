@@ -22,7 +22,7 @@ module Textus
           )
 
           unless suppress_events
-            store_view = Store::View.new(@ctx.store)
+            store_view = Application::Context.new(store: @ctx.store, role: @ctx.role)
             @bus.publish(:deleted,
                          store: store_view,
                          key: key,
