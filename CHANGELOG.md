@@ -8,6 +8,63 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.9.0 — intake, event standardization, read-time freshness, layered architecture (2026-05-22)
+
+### Breaking — manifest schema
+- The `source:` block is renamed to `intake:`. Its inner `fetch:` is renamed to `handler:`. Other inner fields (`config:`, `ttl:`) keep their names.
+- Loading a manifest that still uses `source:` raises a clear migration error.
+
+### Breaking — event names (pub-sub bus)
+- `:fetch` → `:intake` (RPC)
+- `:delete` → `:deleted`
+- `:refresh` → `:refreshed`
+- `:build` → `:built`
+- `:publish` → `:published`
+- `:accept` → `:accepted`
+- `:put`, `:mv`, `:reject`, `:loaded` are unchanged (already past tense).
+
+### Breaking — DSL sugar
+- `Textus.fetch(:name)` → `Textus.intake(:name)`
+- `Textus.refresh`, `.build`, `.publish`, `.delete`, `.accept` rename to past-tense equivalents.
+- The primitive `Textus.hook(event, name)` is unchanged — event symbols update per above.
+
+### Added — read-time freshness
+- Every entry's manifest may declare `intake.on_stale: warn | sync | timed_sync` (default `warn`).
+  - `warn` — return stale envelope with `stale: true`, `stale_reason: "…"`; no refresh.
+  - `sync` — refresh inline, return fresh envelope.
+  - `timed_sync` — attempt sync up to `sync_budget_ms` (default 500ms); if exceeded, fork+detach a child to complete the refresh and return stale + `refreshing: true` to the caller. Unix only; on Windows falls back to `warn`.
+- New envelope fields on `textus get`: `stale`, `stale_reason`, `refreshing`.
+
+### Added — refresh lifecycle events
+- `:refresh_began { key, mode }` fires when refresh begins.
+- `:refresh_failed { key, error_class, error_message }` fires on intake errors.
+- `:refresh_detached { key, started_at, budget_ms }` fires when timed_sync gives up waiting and forks.
+
+### Added — actuator
+- `textus refresh-stale [--prefix=KEY] [--zone=Z]` — refreshes every entry whose TTL has expired. Returns `{ refreshed, failed, skipped }` JSON. Exits non-zero on any failure. Intended for cron / CI.
+
+### Added — doctor check
+- `textus doctor` now verifies every manifest `intake.handler:` resolves to a registered `Textus.intake(:name)`, reports missing handlers as errors, and orphan registrations as warnings.
+
+### Changed — internal architecture (no plugin-visible impact)
+- Internals reorganized into four layers: `domain/` (pure values), `application/` (use cases), `infra/` (adapters), and `cli/` (interface). Plugin DSL, manifest schema, CLI verbs, and envelope shape are unchanged.
+- `Freshness` is split into `Domain::Freshness::Evaluator` (pure) + `Domain::Freshness::Policy#decide` (data-driven) + `Application::Refresh::Orchestrator` (effects).
+- `Refresh.call` is now a one-line shim over `Application::Refresh::Worker.run`. `Refresh::Lock` and `Refresh::Detached` moved to `Infra::Refresh`.
+- `Store#get` now routes through `Application::Reads::Get`. `Store::Reader#get` was reduced to pure I/O (`#read_raw_envelope`) — third-party code calling it directly should switch to `Store#get` for freshness annotations.
+
+### Unchanged
+- Wire protocol stays `textus/2`.
+- `:reduce`, `:check`, `:put` unchanged.
+- The recursive `hooks/**/*.rb` loader from 0.8.2.
+
+### Migration
+1. In `.textus/manifest.yaml`, replace every `source:` with `intake:` and every `fetch:` inside it with `handler:`. No other inner-field renames needed.
+2. In hook files, replace `Textus.fetch(:name)` with `Textus.intake(:name)` and the other five pub-sub sugar names with their past-tense equivalents.
+3. (Optional) Add `on_stale: timed_sync` to entries where you want self-healing reads.
+4. Wire `textus refresh-stale` into cron / GH Actions for scheduled freshness.
+5. If you subscribed to the `:refresh_started` event during 0.9.0 betas, rename your handler to `Textus.refresh_began(:name)`.
+6. If you called `Textus::Refresh::Lock` or `Textus::Refresh::Detached` directly (you probably did not), update to `Textus::Infra::Refresh::Lock` / `Textus::Infra::Refresh::Detached`.
+
 ## 0.8.3 — :mv, :reject, :loaded events (2026-05-22)
 
 ### Added

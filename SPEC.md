@@ -697,6 +697,21 @@ Given a pending entry `pending.canon.identity.patch` proposing a change to `cano
 
 - **Why not vector embeddings?** Different problem. textus is for facts agents act on deterministically; embeddings are for fuzzy retrieval. They compose — index a textus tree into a vector store if you need both.
 
+## 13.1 Layered architecture (internal, 0.9.0+)
+
+Textus internals are organized into four layers. The dependency rule is one-way — each layer may only import from the layer beneath it.
+
+- **Interface** (`lib/textus/cli/`) — CLI verbs. Parses flags, calls a use case, formats JSON.
+- **Application** (`lib/textus/application/`) — Use cases: `Reads::Get`, `Refresh::Worker`, `Refresh::Orchestrator`, `Refresh::All`. Orchestrate domain + infra; no business rules.
+- **Domain** (`lib/textus/domain/`) — Pure values: `Freshness::Policy`, `Action`, `Outcome`, `Freshness::Verdict`, `Freshness::Evaluator`. No I/O, no globals, testable without disk.
+- **Infrastructure** (`lib/textus/infra/`) — Adapters: `EventBus`, `Clock`, `Refresh::Lock`, `Refresh::Detached`. Wrap OS / library primitives.
+
+The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
+
+Plugin authors interact only with the Hook DSL (`Textus.intake`, `Textus.refreshed`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
+
+See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
+
 ## 14. Open questions (v2.x scope)
 
 - **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
