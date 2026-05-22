@@ -14,7 +14,7 @@ Reference implementation in Ruby. Wire format `textus/2`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/2`. Stable; breaking changes require `textus/3`.
-- **Gem version:** semver, currently `0.8.0`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, currently `0.9.0`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -100,14 +100,14 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
-| `hook list [--event=E]` | Registered hooks grouped by event (fetch, reduce, check, put, delete, refresh, build, accept) |
+| `hook list [--event=E]` | Registered hooks grouped by event (intake, reduce, check, put, deleted, refreshed, built, accepted, published, mv, reject, loaded, refresh_started, refresh_failed, refresh_detached) |
 
 **Write:**
 
 | Verb | Role |
 |---|---|
 | `put K --stdin --as=R [--action=NAME]` | per zone |
-| `hook run NAME [--key=val] [--as=R]` | per zone written (invoke a registered fetch hook) |
+| `hook run NAME [--key=val] [--as=R]` | per zone written (invoke a registered intake hook) |
 | `delete K --if-etag=E --as=R` | per zone |
 | `refresh K --as=script` | per zone (typically `script`) |
 | `key mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
@@ -153,15 +153,16 @@ Derived entries declare a `projection:` (`select`, `pluck`, `sort_by`, `limit`, 
 
 textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). Events:
 
-- `:fetch` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
+- `:intake` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
 - `:reduce` — transform rows during projection (returns rows)
 - `:check` — custom doctor check (returns issues)
-- `:put`, `:delete`, `:refresh`, `:build`, `:accept`, `:publish`, `:mv`, `:reject`, `:loaded` — react to lifecycle events
+- `:put`, `:deleted`, `:refreshed`, `:built`, `:accepted`, `:published`, `:mv`, `:reject`, `:loaded` — react to lifecycle events
+- `:refresh_started`, `:refresh_failed`, `:refresh_detached` — background-refresh lifecycle (0.9.0+)
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
-Textus.fetch(:local_file) do |config:, args:, **|
-  path = config["path"] or raise "local-file requires source.config.path"
+Textus.intake(:local_file) do |config:, args:, **|
+  path = config["path"] or raise "local-file requires intake.config.path"
   {
     _meta: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
     body: File.read(File.expand_path(path)),
@@ -173,6 +174,14 @@ end
 Textus.reduce(:rank_by_recency) do |rows:, **|
   rows.sort_by { |r| r["updated_at"].to_s }.reverse
 end
+```
+
+To keep a batch of stale intake entries current in one shot:
+
+```sh
+textus refresh-stale --prefix=working --zone=intake --as=script
+# or just refresh everything stale in the intake zone:
+textus refresh-stale --zone=intake --as=script
 ```
 
 The primitive `Textus.hook(event, name, **opts) { ... }` is also supported. See SPEC.md §5.10 for the full contract.

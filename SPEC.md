@@ -1,6 +1,6 @@
 # textus/2 — Specification
 
-**Status:** Draft v2.0 (2026-05-19)
+**Status:** Draft v2.0 (2026-05-22, updated for 0.9.0)
 **Protocol identifier:** `textus/2`
 **Reference implementation:** Ruby gem `textus`
 
@@ -250,36 +250,50 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 
 **Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is byte-copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The build envelope grows a `published_leaves` array — one row per leaf, with `key`, `source`, and `target` — alongside the existing `built` array. Targets that would resolve outside the repo root are refused.
 
-### 5.4 Intake (declared, refreshed via registered fetch hook)
+### 5.4 Intake (declared, refreshed via registered intake handler)
 
-Intake entries declare an external source by naming a **fetch hook** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: a fetch hook only runs in intake mode when explicitly invoked by `textus refresh KEY --as=script`. The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus refresh KEY --as=script` (or by `textus refresh-stale`). The declaration is data only:
 
 ```yaml
 - key: intake.calendar.events
   zone: intake
-  source:
-    fetch: ical-events
+  intake:
+    handler: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
     ttl: 6h
+    on_stale: warn            # warn | sync | timed_sync (default: warn)
+    sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
 ```
 
-`fetch` names a registered `:fetch` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the hook; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, `source.fetcher`, and `source.action` with a clear usage error.
+`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, `source.fetcher`, `source.action`, and `source.fetch` with a clear usage error pointing at the `intake:` key.
 
-In intake mode the hook MUST return one of three shapes, all normalized by the store into its internal `{_meta, body, content}` representation (§5.12):
+#### `on_stale:` semantics
+
+`on_stale:` declares what happens when `textus get` (or any read path that annotates freshness) encounters a stale intake entry.
+
+| Value | Behaviour |
+|---|---|
+| `warn` (default) | Return the entry immediately with `stale: true`, `stale_reason:` populated, and `refreshing: false`. No blocking. |
+| `sync` | Block the `get` call, run the intake handler in-process, write the refreshed result, then return the fresh envelope. The caller waits. |
+| `timed_sync` | Like `sync`, but with a `sync_budget_ms` deadline (default 500 ms). If the handler finishes within the budget the fresh envelope is returned. If it does not finish in time, return the stale envelope (with `stale: true`, `refreshing: true`) and let the refresh complete in the background. Fires `:refresh_detached` when the deadline is exceeded. |
+
+> **Note:** `list`/`where` paths do **not** annotate freshness in 0.9.0 — only `get` does. Known limitation; full `list` freshness annotation is planned for 0.10.
+
+In intake mode the handler MUST return one of three shapes, all normalized by the store into its internal `{_meta, body, content}` representation (§5.12):
 
 - `{ _meta:, body: }` — markdown-friendly; `_meta` becomes the entry's parsed metadata hash.
 - `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
 - `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
 
-**Built-in fetch hooks.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
+**Built-in intake handlers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `source.fetch`, invokes the registered `:fetch` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
-2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`.
+1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `intake.handler`, invokes the registered `:intake` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
+2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`. The CLI verb `textus refresh-stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
-Both paths share the same role gate, audit-log entry, and `:refresh` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+Both paths share the same role gate, audit-log entry, and `:refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
@@ -374,33 +388,44 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 Per-event methods are provided for ergonomics. They delegate to the same registry as `Textus.hook`.
 
 ```ruby
-Textus.fetch(:local_file)        { |config:, args:, **|  … }
+Textus.intake(:my_source)        { |config:, args:, **|  … }
 Textus.reduce(:rank_by_recency)  { |rows:, **|            … }
 Textus.check(:storage_writable)  { |store:|               … }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-Textus.publish(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
 ```
 
 The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the authoritative entry point; sugar methods are thin wrappers.
 
-| Event    | Mode    | Args                              | Return        | Failure |
-|----------|---------|-----------------------------------|---------------|---------|
-| :fetch   | rpc     | store:, config:, args:                       | {_meta:, body:}       | aborts op |
-| :reduce  | rpc     | store:, rows:, config:                       | rows array            | aborts op |
-| :check   | rpc     | store:                                       | issues array          | aborts doctor |
-| :put     | pubsub  | store:, key:, envelope:                      | (discarded)           | logged   |
-| :delete  | pubsub  | store:, key:                                 | (discarded)           | logged   |
-| :refresh | pubsub  | store:, key:, envelope:, change:             | (discarded)           | logged   |
-| :build   | pubsub  | store:, key:, envelope:, sources:            | (discarded)           | logged   |
-| :accept  | pubsub  | store:, key:, target_key:                    | (discarded)           | logged   |
-| :publish | pubsub  | store:, key:, envelope:, source:, target:    | (discarded)           | logged   |
-| :mv      | pubsub  | store:, key:, from_key:, to_key:, envelope:  | (discarded)           | logged   |
-| :reject  | pubsub  | store:, key:, target_key:                    | (discarded)           | logged   |
-| :loaded  | pubsub  | store:                                       | (discarded)           | logged   |
+| Event               | Mode    | Args                                                      | Return                | Failure       |
+|---------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
+| :intake             | rpc     | store:, config:, args:                                    | {_meta:, body:}       | aborts op     |
+| :reduce             | rpc     | store:, rows:, config:                                    | rows array            | aborts op     |
+| :check              | rpc     | store:                                                    | issues array          | aborts doctor |
+| :put                | pubsub  | store:, key:, envelope:                                   | (discarded)           | logged        |
+| :deleted            | pubsub  | store:, key:                                              | (discarded)           | logged        |
+| :refreshed          | pubsub  | store:, key:, envelope:, change:                          | (discarded)           | logged        |
+| :built              | pubsub  | store:, key:, envelope:, sources:                         | (discarded)           | logged        |
+| :accepted           | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
+| :published          | pubsub  | store:, key:, envelope:, source:, target:                 | (discarded)           | logged        |
+| :mv                 | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
+| :reject             | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
+| :loaded             | pubsub  | store:                                                    | (discarded)           | logged        |
+| :refresh_started    | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
+| :refresh_failed     | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
+| :refresh_detached   | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
 
-**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accept`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:mv`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:reject`, `key:` is the pending key being rejected. For `:loaded`, no key — the event observes store readiness, not an entry.
+**New in 0.9.0:** `:intake` replaces `:fetch` as the RPC event name for intake handlers. `:deleted`, `:refreshed`, `:built`, `:accepted`, `:published` replace `:delete`, `:refresh`, `:build`, `:accept`, `:publish` respectively for all pub-sub callers. The three `:refresh_*` lifecycle events report the progress and failures of background (timed_sync) refreshes.
 
-**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`source.fetch: NAME`, `projection.reduce: NAME`). Failure or timeout aborts the calling operation.
+**`:refresh_started`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
+
+**`:refresh_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
+
+**`:refresh_detached`** fires when a `timed_sync` refresh exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
+
+**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:mv`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:reject`, `key:` is the pending key being rejected. For `:loaded`, no key — the event observes store readiness, not an entry.
+
+**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `projection.reduce: NAME`). Failure or timeout aborts the calling operation.
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
 
@@ -494,7 +519,10 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
   "body": "Short body in Markdown.\n",
   "etag": "sha256:8f3c…",
   "schema_ref": "person",
-  "uid": "a1b2c3d4e5f60718"
+  "uid": "a1b2c3d4e5f60718",
+  "stale": false,
+  "stale_reason": null,
+  "refreshing": false
 }
 ```
 
@@ -509,6 +537,11 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for `intake` entries; always `false` for other zones. (0.9.0+)
+- `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_refreshed"`), or `null` when `stale` is `false`. (0.9.0+)
+- `refreshing` is `true` when a `timed_sync` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, refreshing: true` SHOULD retry after a short delay. (0.9.0+)
+
+> **Note:** `list`/`where` envelopes do **not** include `stale`, `stale_reason`, or `refreshing` in 0.9.0 — freshness annotation is only provided by `get`. This is a known limitation.
 
 Errors use a distinct envelope:
 
@@ -555,6 +588,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh K --as=script` | write | per zone (typically `script`) |
+| `refresh-stale [--prefix=K] [--zone=Z] [--as=script]` | write | per zone (typically `script`) |
 | `build [--prefix=K] [--dry-run]` | write | `build` (default) |
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
@@ -614,7 +648,7 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 - Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/3`.
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
-The reference Ruby gem follows semver independently. The current gem version is `0.8.0`, which speaks `textus/2`.
+The reference Ruby gem follows semver independently. The current gem version is `0.9.0`, which speaks `textus/2`.
 
 ## 12. Conformance fixtures
 

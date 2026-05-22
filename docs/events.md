@@ -31,15 +31,18 @@ Every event is one of two kinds.
    • raised error ABORTS the verb   • raised error LOGGED, verb continues
    • named explicitly by manifest   • triggered by lifecycle, filtered by keys:
 
-   :fetch  → input to the store     :put     → after any write
-   :reduce → projection shaping     :delete  → after delete
-   :check  → doctor checks          :refresh → after refresh
-                                    :build   → after derived materialization
-                                    :accept  → after pending → target promotion
-                                    :publish → after each file written to a repo path
-                                    :mv      → after rename
-                                    :reject  → after proposal discard
-                                    :loaded  → once per Store.new
+   :intake → input to the store     :put              → after any write
+   :reduce → projection shaping     :deleted          → after delete
+   :check  → doctor checks          :refreshed        → after refresh
+                                    :built            → after derived materialization
+                                    :accepted         → after pending → target promotion
+                                    :published        → after each file written to a repo path
+                                    :mv               → after rename
+                                    :reject           → after proposal discard
+                                    :loaded           → once per Store.new
+                                    :refresh_started  → before intake handler runs (0.9.0+)
+                                    :refresh_failed   → intake handler raised (0.9.0+)
+                                    :refresh_detached → timed_sync budget exceeded (0.9.0+)
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
@@ -48,20 +51,32 @@ Every event is one of two kinds.
 
 ## 2. The 12 events in plain English
 
+textus has 12 events: 3 RPC and 9 pub-sub. The 3 new `:refresh_*` lifecycle events (0.9.0+) bring the total surface to 15, but they are listed separately in §2.1.
+
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:fetch` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh`. |
+| `:intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh-stale`. |
 | `:reduce` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:check` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). |
-| `:delete` | pubsub | An entry was just unlinked. |
-| `:refresh` | pubsub | Like `:put` but specific to refresh-driven writes. Both fire — `:put` first, then `:refresh`. |
-| `:build` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
-| `:accept` | pubsub | A pending proposal was promoted into its target zone. |
-| `:publish` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
-| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:delete` are suppressed — `:mv` is the sole signal. Payload: `{ key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
-| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accept`. Payload: `{ key:, target_key: }`. |
+| `:deleted` | pubsub | An entry was just unlinked. |
+| `:refreshed` | pubsub | Like `:put` but specific to refresh-driven writes. Both fire — `:put` first, then `:refreshed`. |
+| `:built` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
+| `:accepted` | pubsub | A pending proposal was promoted into its target zone. |
+| `:published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
+| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:deleted` are suppressed — `:mv` is the sole signal. Payload: `{ key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
+| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accepted`. Payload: `{ key:, target_key: }`. |
 | `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
+
+### 2.1 Refresh lifecycle events (0.9.0+)
+
+Three additional pub-sub events observe the progress of in-process and background intake refreshes.
+
+| Event | Mode | What it's for |
+|-------|------|---------------|
+| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
+| `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ store:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
+| `:refresh_detached` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ store:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -87,21 +102,26 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ role gate                              ── ABORT if no
   ┃ unlink file
   ┃ append audit row {verb:"delete"}
-  ┃ ─────────────────────────────────────► :delete  (pubsub)
+  ┃ ─────────────────────────────────────► :deleted  (pubsub)
   ✔ done
 ```
 
 ### `textus refresh KEY --as=script`
 
 ```
-  ┃ require entry.source.fetch             ── ABORT if missing
-  ┃ ─────────────────────────────────────► :fetch  (RPC)
+  ┃ require entry.intake.handler           ── ABORT if missing
+  ┃ ─────────────────────────────────────► :refresh_started  (pubsub, mode: "sync"|"timed_sync")
+  ┃ ─────────────────────────────────────► :intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
+  ┃   if handler raises:
+  ┃ ─────────────────────────────────────► :refresh_failed  (pubsub)
+  ┃   if timed_sync and budget exceeded:
+  ┃ ─────────────────────────────────────► :refresh_detached  (pubsub) — then continues in bg
   ┃ normalize result by entry.format
   ┃ role gate, etag check, write           (same path as put)
   ┃ append audit row {verb:"refresh"}
-  ┃ ─────────────────────────────────────► :put      (pubsub) — every write fires :put
-  ┃ ─────────────────────────────────────► :refresh  (pubsub) — plus the refresh-specific event
+  ┃ ─────────────────────────────────────► :put       (pubsub) — every write fires :put
+  ┃ ─────────────────────────────────────► :refreshed (pubsub) — plus the refresh-specific event
   ✔ done
 ```
 
@@ -126,8 +146,8 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ require _meta.proposal block           ── ABORT if no
   ┃ delete the pending file
   ┃ append audit row {verb:"delete"}
-  ┃ ─────────────────────────────────────► :delete (pubsub) — generic delete observers still fire
-  ┃ ─────────────────────────────────────► :reject (pubsub) — proposal-specific signal
+  ┃ ─────────────────────────────────────► :deleted (pubsub) — generic delete observers still fire
+  ┃ ─────────────────────────────────────► :reject  (pubsub) — proposal-specific signal
   ✔ done
 ```
 
@@ -155,9 +175,9 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃   ┃ write derived path
   ┃   ┃ for each publish_to: / publish_each: target:
   ┃   ┃   byte-copy file to repo path
-  ┃   ┃   ─────────────────────────────► :publish  (pubsub) — per file written
+  ┃   ┃   ─────────────────────────────► :published  (pubsub) — per file written
   ┃   ┃ append audit row {verb:"compute"}
-  ┃   ┃ ───────────────────────────────► :build  (pubsub) — per entry
+  ┃   ┃ ───────────────────────────────► :built  (pubsub) — per entry
   ✔ done
 ```
 
@@ -167,11 +187,11 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ role gate: must be "human"             ── ABORT if no
   ┃ read pending entry frontmatter
   ┃ apply proposal.action to proposal.target_key
-  ┃   └─► triggers :put or :delete pubsub for the target
+  ┃   └─► triggers :put or :deleted pubsub for the target
   ┃ delete pending entry
-  ┃   └─► triggers :delete pubsub for pending
+  ┃   └─► triggers :deleted pubsub for pending
   ┃ append audit row {verb:"accept"}
-  ┃ ─────────────────────────────────────► :accept  (pubsub)
+  ┃ ─────────────────────────────────────► :accepted  (pubsub)
   ✔ done
 ```
 
@@ -194,19 +214,19 @@ Both register against the same registry. Pick whichever reads best.
 
 ```ruby
 # 1. Primitive — authoritative entry point
-Textus.hook(:fetch, :local_file) do |store:, config:, args:|
+Textus.hook(:intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
 # 2. Per-event sugar (0.8.2+) — one event, one callback
-Textus.fetch(:local_file)        { |config:, args:, **| ... }
+Textus.intake(:local_file)       { |config:, args:, **| ... }
 Textus.reduce(:rank_by_recency)  { |rows:, **|          ... }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
-Textus.publish(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
 ```
 
 **When to use which:**
-- Per-event sugar (`Textus.fetch`, `Textus.reduce`, …) — preferred for simple cases
+- Per-event sugar (`Textus.intake`, `Textus.reduce`, …) — preferred for simple cases
 - `Textus.hook` — authoritative entry point; use when you want the most explicit form
 
 **Signature rule** — every hook accepts kwargs. Either list the ones you need explicitly, or accept `**` to absorb the rest. Missing a required kwarg with no `**` raises `UsageError` at registration time.
@@ -233,18 +253,21 @@ end
 
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
-| `:fetch` raises | refresh aborts | nothing |
+| `:intake` raises | refresh aborts | nothing |
 | `:reduce` raises | build aborts (this entry only) | nothing |
 | `:check` raises | doctor aborts | nothing |
 | `:put` raises | verb still succeeds | `event_error` row in `audit.log` |
-| `:delete` raises | verb still succeeds | `event_error` row |
-| `:refresh` raises | verb still succeeds | `event_error` row |
-| `:build` raises | verb still succeeds | `event_error` row |
-| `:accept` raises | verb still succeeds | `event_error` row |
-| `:publish` raises | verb still succeeds | `event_error` row |
+| `:deleted` raises | verb still succeeds | `event_error` row |
+| `:refreshed` raises | verb still succeeds | `event_error` row |
+| `:built` raises | verb still succeeds | `event_error` row |
+| `:accepted` raises | verb still succeeds | `event_error` row |
+| `:published` raises | verb still succeeds | `event_error` row |
 | `:mv` raises | verb still succeeds | `event_error` row |
 | `:reject` raises | verb still succeeds | `event_error` row |
 | `:loaded` raises | store still ready | `event_error` row |
+| `:refresh_started` raises | verb still succeeds | `event_error` row |
+| `:refresh_failed` raises | verb still succeeds | `event_error` row |
+| `:refresh_detached` raises | verb still succeeds | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 
@@ -267,9 +290,9 @@ One `put` fans out to **every matching handler**, sequentially, each under its o
 
 ---
 
-## 8. Built-in fetch parsers
+## 8. Built-in intake parsers
 
-Five `:fetch` hooks ship pre-registered:
+Five `:intake` hooks ship pre-registered:
 
 | Name | Expects in `config["bytes"]` | Returns |
 |------|------------------------------|---------|
@@ -284,9 +307,9 @@ Five `:fetch` hooks ship pre-registered:
 Wrapping pattern:
 
 ```ruby
-Textus.fetch(:remote_rss) do |store:, config:, args:|
+Textus.intake(:remote_rss) do |store:, config:, args:|
   bytes = Net::HTTP.get(URI(config["url"]))
-  store.invoke_rpc(:fetch, :rss, config: { "bytes" => bytes }, args: args)
+  store.invoke_rpc(:intake, :rss, config: { "bytes" => bytes }, args: args)
 end
 ```
 
@@ -302,15 +325,15 @@ RSpec.describe "my notion hook" do
   around { |ex| Textus.with_registry(reg) { ex.run } }
 
   it "registers under :notion" do
-    Textus.fetch(:notion) { |config:, **| { _meta: {}, body: "stub" } }
-    expect(reg.rpc_names(:fetch)).to include(:notion)
+    Textus.intake(:notion) { |config:, **| { _meta: {}, body: "stub" } }
+    expect(reg.rpc_names(:intake)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    Textus.fetch(:notion) do |config:, args:, **|
+    Textus.intake(:notion) do |config:, args:, **|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
-    handler = reg.rpc(:fetch, :notion)
+    handler = reg.rpc(:intake, :notion)
     result  = handler.call(store: nil, config: {}, args: {})
     expect(result[:body]).to eq("hello")
   end
@@ -335,10 +358,10 @@ See `spec/hooks/sugar_spec.rb` for the canonical patterns.
 
 ## 10. Common patterns
 
-### Connector — paired `:fetch` + `:reduce`
+### Connector — paired `:intake` + `:reduce`
 
 ```ruby
-Textus.fetch(:linear) do |config:, args:, **|
+Textus.intake(:linear) do |config:, args:, **|
   bytes = LinearClient.fetch(config["team_id"])
   { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
 end
@@ -354,7 +377,7 @@ Manifest references the same name on both sides:
 
 ```yaml
 - key: intake.linear.issues
-  source: { fetch: linear, config: { team_id: "ENG" } }
+  intake: { handler: linear, config: { team_id: "ENG" }, ttl: 1h }
 
 - key: derived.linear.dashboard
   projection: { select: [intake.linear.issues], reduce: linear }
@@ -371,7 +394,7 @@ end
 ### Build notifier — desktop ping when derived files rebuild
 
 ```ruby
-Textus.build(:notify) do |key:, sources:, **|
+Textus.built(:notify) do |key:, sources:, **|
   system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
 end
 ```
@@ -393,6 +416,6 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 ## Where to go from here
 
 - [`./zones.md`](./zones.md) — the manifest side: declaring which entries trigger which hooks
-- [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:fetch` and event contracts
+- [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:intake` and event contracts
 - [`./architecture.md`](./architecture.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
 - [`../examples/claude-plugin/.textus/hooks/`](../examples/claude-plugin/.textus/hooks/) — six worked hooks across four event types
