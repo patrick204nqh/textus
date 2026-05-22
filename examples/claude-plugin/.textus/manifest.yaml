@@ -96,7 +96,27 @@ entries:
         - { exec: bin/notify-build, as: script }
 
 policies:
-  # Freshness for the inbox demo — was per-entry intake.ttl in 0.9.1.
+  # Baseline freshness for every inbox.* entry: refresh once a day, warn on stale.
+  # The more-specific block below overrides this for inbox.upstream.notes.
+  - match: inbox.**
+    refresh:
+      ttl: 24h
+      on_stale: warn
+
+  # Per-entry override — more-specific match wins per slot (Policy::Matcher).
   - match: inbox.upstream.notes
     refresh:
       ttl: 12h
+
+  # Guard-rail: every inbox entry must use one of the handlers in this allowlist.
+  # `textus doctor` (check: handler_allowlist) fails if anyone wires up a new
+  # intake handler that isn't on the list.
+  - match: inbox.**
+    handler_allowlist: [local_file]
+
+  # Contract for proposals: a review.* proposal is only "promote-ready" when
+  # it validates against its target's schema AND a human has accepted it.
+  # `human_accept` is enforced today by the role gate on `textus accept`;
+  # `schema_valid` is documentary in 0.9.2 (reserved for `doctor` to enforce).
+  - match: review.**
+    promote_requires: [schema_valid, human_accept]

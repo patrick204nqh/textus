@@ -79,8 +79,11 @@ voice-tools/
   `command`) validate the frontmatter on every read and write.
 - **Inbox** is action-fed (script-only). The `inbox.upstream.notes` entry
   uses the project-local `local_file` action as a small demo. Its freshness
-  policy (`ttl: 12h`) lives in the top-level `policies:` block of the
-  manifest.
+  rule and a per-zone handler allowlist both live in the manifest's top-level
+  `policies:` block — see "Policies" below.
+- **Review** is the AI proposal surface. The manifest's `review.**` policy
+  declares `promote_requires: [schema_valid, human_accept]` — the contract a
+  proposal must satisfy before it can be accepted.
 - **Output** is owned by `build:auto`. Three output entries assemble the
   shipped surface:
   - `output.plugin` → `plugin_envelope` reducer → `.claude-plugin/plugin.json`
@@ -141,6 +144,56 @@ on, mirroring the consumer paths.
 
 Re-run `textus build` (or the `ruby -I../../lib` invocation above) after
 editing any working-zone file and the consumer mirrors update automatically.
+
+## Policies
+
+The manifest's top-level `policies:` block declares rules that apply across
+multiple entries, matched by glob and resolved most-specific-wins per slot.
+This example ships four blocks:
+
+```yaml
+policies:
+  # Baseline: refresh every inbox.* once a day, warn on stale.
+  - match: inbox.**
+    refresh: { ttl: 24h, on_stale: warn }
+
+  # More-specific override for one entry — 12h instead of 24h.
+  - match: inbox.upstream.notes
+    refresh: { ttl: 12h }
+
+  # Guard-rail: every inbox.* must use a handler from this list.
+  - match: inbox.**
+    handler_allowlist: [local_file]
+
+  # Contract for AI proposals.
+  - match: review.**
+    promote_requires: [schema_valid, human_accept]
+```
+
+`textus policy explain inbox.upstream.notes` walks the resolution: two blocks
+contribute a `refresh` rule, the literal-match one wins; one contributes a
+`handler_allowlist`. `textus doctor` runs the `policy_ambiguity` check (no
+two blocks of equal specificity may fill the same slot) and the
+`handler_allowlist` check (every intake handler must be in its policy's
+allowlist).
+
+## Visibility verbs (0.9.2)
+
+Four read-only verbs surface the audit substrate and the policy resolution:
+
+```bash
+textus freshness                    # per-entry status (fresh/stale/never_refreshed/no_policy)
+textus audit --since=7d             # query .textus/audit.log with filters
+textus audit --correlation-id=<id>  # every row from a single request
+textus blame KEY                    # audit rows × git commit metadata
+textus policy list                  # dump the parsed policies block
+textus policy explain KEY           # which blocks match, who wins per slot
+```
+
+The `correlation_id` in audit rows is generated once per CLI invocation and
+threaded through `Application::Context` into every `put` / `delete` / `mv`
+audit row, so a single `textus accept` (which writes the target, deletes the
+review entry) leaves three rows that share one id.
 
 ## Operational verbs
 
