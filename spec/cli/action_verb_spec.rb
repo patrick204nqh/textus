@@ -26,7 +26,9 @@ RSpec.describe "textus action verb" do
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
         Textus.hook(:intake, :sync_demo) do |store:, config:, args:|
-          store.store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok", as: store.role)
+          # `store:` is an Application::Context; .store is the underlying Store.
+          ctx = store
+          ctx.store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok", as: ctx.role)
         end
       RUBY
 
