@@ -86,5 +86,7 @@ module Textus
         "fix" => fix,
       }
     end
+
+    private_class_method :run_registered_checks, :fail_issue
   end
 end

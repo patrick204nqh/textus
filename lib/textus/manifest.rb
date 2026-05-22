@@ -136,6 +136,14 @@ module Textus
     end
     # rubocop:enable Metrics/AbcSize
 
+    def validate_key!(key)
+      raise UsageError.new("empty key") if key.nil? || key.empty?
+
+      Key::Grammar.validate!(key)
+    end
+
+    private
+
     # Validates all declared entry keys; raises UsageError listing all offenders.
     def validate_keys!
       offenders = []
@@ -146,14 +154,6 @@ module Textus
       end
       raise UsageError.new("invalid manifest keys: #{offenders.join("; ")}") unless offenders.empty?
     end
-
-    def validate_key!(key)
-      raise UsageError.new("empty key") if key.nil? || key.empty?
-
-      Key::Grammar.validate!(key)
-    end
-
-    private
 
     def valid_segment?(seg)
       return false if seg.nil? || seg.empty?
