@@ -24,11 +24,11 @@ module Textus
     }.freeze
 
     WRITE_FLOWS = {
-      "human" => "edit files in canon/working zones, then 'textus put KEY --as=human'",
-      "ai" => "propose changes by writing 'pending.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
+      "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
+      "ai" => "propose changes by writing 'review.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
               "a human runs 'textus accept' to apply",
-      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
-      "build" => "'textus build' computes derived entries from projections; derived files are never hand-edited",
+      "script" => "refresh inbox entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
+      "build" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
