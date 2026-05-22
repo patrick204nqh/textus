@@ -96,12 +96,16 @@ module Textus
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus freshness [--prefix=KEY] [--zone=Z]
           textus refresh-stale [--prefix=KEY] [--zone=Z]
+          textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
+          textus blame KEY [--limit=N]
           textus doctor
           textus intro
 
           textus key {mv,uid,migrate}
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
+          textus policy {list,explain}
+          textus migrate {zones,policies}
       HELP
     end
   end
