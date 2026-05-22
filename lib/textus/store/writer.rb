@@ -152,7 +152,7 @@ module Textus
         raise ProposalError.new("only human role can reject proposals; got '#{as}'") unless as == "human"
 
         mentry, = @store.manifest.resolve(pending_key)
-        raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})") unless mentry.proposal_zone?
+        raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})") unless mentry.in_proposal_zone?
 
         env = @store.get(pending_key)
         proposal = env.dig("_meta", "proposal") or

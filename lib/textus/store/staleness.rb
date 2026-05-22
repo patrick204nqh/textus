@@ -11,7 +11,7 @@ module Textus
       def call(prefix: nil, zone: nil)
         out = []
         @manifest.entries.each do |mentry|
-          next unless mentry.generator_zone?
+          next unless mentry.in_generator_zone?
           next if zone && mentry.zone != zone
 
           gen = mentry.generator

@@ -60,18 +60,18 @@ module Textus
       # writable_by signals rather than its literal name. This keeps detection
       # working when users rename the default zones (canon/intake/pending/derived
       # → identity/inbox/review/output, etc.).
-      def generator_zone?
+      def in_generator_zone?
         zone_writers.include?("build")
       end
 
-      def proposal_zone?
+      def in_proposal_zone?
         zone_writers.include?("ai")
       end
 
-      # Legacy alias for generator_zone?. Retained because internal validation
+      # Legacy alias for in_generator_zone?. Retained because internal validation
       # callers (and external tools) read more naturally as `derived?`.
       def derived?
-        generator_zone?
+        in_generator_zone?
       end
 
       private
