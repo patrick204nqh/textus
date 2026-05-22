@@ -23,16 +23,16 @@ module Textus
           end
 
           role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          callable = store.registry.rpc_callable(:fetch, name)
+          callable = store.registry.rpc_callable(:intake, name)
           view = Store::View.new(store, writable: true, as: role)
 
           begin
-            Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do
+            Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
               callable.call(config: {}, store: view, args: args)
             end
           rescue Timeout::Error
             raise UsageError.new(
-              "hook run '#{name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
+              "hook run '#{name}' exceeded #{Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS}s timeout",
             )
           rescue Textus::Error
             raise

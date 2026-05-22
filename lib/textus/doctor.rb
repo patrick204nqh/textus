@@ -13,6 +13,7 @@ module Textus
       Check::Schemas,
       Check::Templates,
       Check::Hooks,
+      Check::IntakeRegistration,
       Check::IllegalKeys,
       Check::Sentinels,
       Check::AuditLog,

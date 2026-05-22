@@ -11,7 +11,7 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 3. [The five default zones](#3-the-five-default-zones)
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
-6. [Wiring data in — intake and `:fetch` hooks](#6-wiring-data-in--intake-and-fetch-hooks)
+6. [Wiring data in — intake and `:intake` hooks](#6-wiring-data-in--intake-and-intake-hooks)
 7. [Wiring data out — derived entries and publishing](#7-wiring-data-out--derived-entries-and-publishing)
 8. [Worked example](#8-worked-example)
 9. [Enforcement — what `textus doctor` checks](#9-enforcement--what-textus-doctor-checks)
@@ -26,7 +26,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
             EXTERNAL WORLD                          INSIDE .textus/zones/
          (network, files, APIs)                  (already-captured context)
                   │                                       │
-                  │  :fetch hook                          │  projection sources
+                  │  :intake hook                         │  projection sources
                   ▼                                       ▼
             ┌──────────┐                            ┌──────────┐
    script ─►│  intake  │                    build ─►│ derived  │─► publish
@@ -87,7 +87,7 @@ zones:
 |------|---------|----------|---------|
 | `canon` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
 | `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `ai`, `script` |
-| `intake` | Declared external inputs. Refreshed by `:fetch` hooks, never edited by hand. | Refreshed on demand | `script` |
+| `intake` | Declared external inputs. Refreshed by `:intake` hooks, never edited by hand. | Refreshed on demand | `script` |
 | `pending` | AI proposals awaiting human review. | Until `accept` or rejection | `ai`, `human` |
 | `derived` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `build` |
 
@@ -175,7 +175,7 @@ entries:
 | `owner` | yes | `<role>:<actor>` — for audit and convention; not enforced. |
 | `nested` | no | If `true`, the key prefix-matches subdirectories. `working.notes.daily.2026-05-21` resolves under `working/notes/`. |
 | `format` | no | `markdown` \| `json` \| `yaml` \| `text`. Inferred from extension if omitted. |
-| `source:` | no | Declares this is an intake entry. See [§6](#6-wiring-data-in--intake-and-fetch-hooks). |
+| `intake:` | no | Declares this is an intake entry. See [§6](#6-wiring-data-in--intake-and-intake-hooks). |
 | `projection:` | no | Declares this is a derived entry. See [§7](#7-wiring-data-out--derived-entries-and-publishing). |
 | `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
 | `inject_intro:` | no | When `true` on a derived entry, the `textus intro` payload is merged into the projection data so templates can reference it. |
@@ -200,28 +200,38 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ---
 
-## 6. Wiring data in — intake and `:fetch` hooks
+## 6. Wiring data in — intake and `:intake` hooks
 
-`intake` zones are populated by `:fetch` hooks. An intake entry declares its source; `textus refresh KEY --as=script` invokes the hook and writes the result.
+`intake` zones are populated by `:intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result.
 
 ```yaml
 - key: intake.upstream.notes
   path: intake/upstream/notes.md
   zone: intake
   owner: script:local
-  source:
-    fetch: local-file                                  # name of the :fetch hook
+  intake:
+    handler: local-file                                # name of the :intake hook
     config: { path: .textus/zones/canon/voice-tools.md }
     ttl: 12h
+    on_stale: warn       # warn | sync | timed_sync (default: warn)
+    sync_budget_ms: 500  # only used when on_stale: timed_sync (default: 500)
 ```
 
-### Built-in `:fetch` hooks
+#### `on_stale:` options
+
+| Value | Behaviour |
+|---|---|
+| `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
+| `sync` | Block the `get` call and refresh in-process before returning. |
+| `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
+
+### Built-in `:intake` handlers
 
 Out of the box, textus ships **parsers** for common shapes — `json`, `csv`, `markdown-links`, `ical-events`, `rss`. These are not full fetchers: each expects raw bytes in `config["bytes"]` and produces structured `_meta`/body. The caller (typically an outer hook you write) is responsible for the actual I/O. This keeps textus itself free of implicit network calls (SPEC §5.4).
 
-If you want bytes to come from disk or a URL, you write the fetcher.
+If you want bytes to come from disk or a URL, you write the handler.
 
-### Custom `:fetch` hooks
+### Custom `:intake` hooks
 
 Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 
@@ -231,14 +241,14 @@ Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 
 ```ruby
 # .textus/hooks/notion.rb — 0.8.2+ sugar form
-Textus.fetch(:notion) do |config:, args:, **|
+Textus.intake(:notion) do |config:, args:, **|
   page_id = config.fetch("page_id")
   body = NotionClient.new.fetch_markdown(page_id)
   { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }
 end
 
 # Equivalent primitive form
-Textus.hook(:fetch, :notion) do |store:, config:, args:|
+Textus.hook(:intake, :notion) do |store:, config:, args:|
   ...
 end
 ```
@@ -249,13 +259,13 @@ Then point an entry at it:
 - key: intake.notion.roadmap
   path: intake/notion/roadmap.md
   zone: intake
-  source:
-    fetch: notion              # matches the hook name
+  intake:
+    handler: notion            # matches the hook name
     config: { page_id: "abc123" }
     ttl: 6h
 ```
 
-`textus refresh intake.notion.roadmap --as=script` invokes the hook, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
+`textus refresh intake.notion.roadmap --as=script` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
 
 ---
 
@@ -283,28 +293,28 @@ Both surfaces are equivalent — they all register against the same registry. Pi
 
 ```ruby
 # 1. Primitive — the authoritative entry point
-Textus.hook(:fetch, :local_file) do |store:, config:, args:|
+Textus.hook(:intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
 # 2. Per-event sugar (0.8.2+) — one event, one callback
-Textus.fetch(:local_file)       { |config:, args:, **| ... }
+Textus.intake(:local_file)      { |config:, args:, **| ... }
 Textus.reduce(:rank_by_recency) { |rows:, **|          ... }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
-Textus.publish(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
 ```
 
-To register multiple events under the same name (e.g. a `:fetch` + `:reduce` connector), simply call the sugar methods separately with the same name:
+To register multiple events under the same name (e.g. an `:intake` + `:reduce` connector), simply call the sugar methods separately with the same name:
 
 ```ruby
-Textus.fetch(:notion)  { |config:, args:, **| ... }
+Textus.intake(:notion) { |config:, args:, **| ... }
 Textus.reduce(:notion) { |rows:, **| ... }
 ```
 
 Both reference the same name from the manifest:
 
 ```yaml
-source:     { fetch: notion, config: { ... } }
+intake:     { handler: notion, config: { ... } }
 projection: { reduce: notion }
 ```
 
@@ -375,7 +385,7 @@ $ git diff CLAUDE.md                                         # review and commit
 
 To layer AI proposals in, add a `pending` zone and let agents write `pending.suggestion.*` with `--as=ai`, then `textus accept pending.suggestion.<id> --as=human` promotes the proposal into `canon` or `working`.
 
-To layer external feeds in, add an `intake` zone with `writable_by: [script]` and an entry whose `source: fetch:` points at a `:fetch` hook. `textus refresh` keeps it current.
+To layer external feeds in, add an `intake` zone with `writable_by: [script]` and an entry whose `intake: handler:` points at an `:intake` hook. `textus refresh` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
 
 ---
 

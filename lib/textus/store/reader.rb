@@ -7,20 +7,22 @@ module Textus
       end
 
       def get(key)
+        read_raw_envelope(key) || raise(UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)))
+      end
+
+      # Reads the current on-disk state of key as a bare envelope, skipping
+      # freshness annotation to avoid recursion. Used by Freshness.refresh_sync
+      # after a sync refresh completes.
+      def read_raw_envelope(key)
         mentry, path, = @manifest.resolve(key)
-        raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
+        return nil unless File.exist?(path)
 
         raw = File.binread(path)
         parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-        meta = parsed["_meta"]
-        content = parsed["content"]
-        @store.writer.enforce_name_match!(path, meta, mentry.format)
-        schema = @store.schema_for(mentry.schema)
-        Entry.for_format(mentry.format).validate_against(schema, parsed) if schema
         Envelope.build(
           key: key, mentry: mentry, path: path,
-          meta: meta, body: parsed["body"],
-          etag: Etag.for_bytes(raw), content: content
+          meta: parsed["_meta"], body: parsed["body"],
+          etag: Etag.for_bytes(raw), content: parsed["content"]
         )
       end
 

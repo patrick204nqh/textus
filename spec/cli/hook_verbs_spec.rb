@@ -18,10 +18,10 @@ RSpec.describe "CLI hook verbs" do
         - key: intake.x
           path: intake/x.md
           zone: intake
-          source: { fetch: stub }
+          intake: { handler: stub }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-      Textus.hook(:fetch,  :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
+      Textus.hook(:intake, :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
       Textus.hook(:reduce, :r)    { |store:, rows:, config:| rows }
       Textus.hook(:put,    :h)    { |store:, key:, envelope:| }
       Textus.hook(:check,  :dc)   { |store:| [] }
@@ -47,7 +47,7 @@ RSpec.describe "CLI hook verbs" do
     expect(rc).to eq(0)
     payload = JSON.parse(line)
     by_event = payload["hooks"].group_by { |e| e["event"] }
-    expect(by_event["fetch"].map { |e| e["name"] }).to include("stub")
+    expect(by_event["intake"].map { |e| e["name"] }).to include("stub")
     expect(by_event["reduce"].map { |e| e["name"] }).to include("r")
     expect(by_event["put"].map { |e| e["name"] }).to include("h")
     expect(by_event["check"].map { |e| e["name"] }).to include("dc")
@@ -66,7 +66,7 @@ RSpec.describe "CLI hook verbs" do
       entries: [{ key: working.j, path: working/j.md, zone: working }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
-      Textus.hook(:fetch, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
+      Textus.hook(:intake, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
     RUBY
     out = StringIO.new
     rc = Textus::CLI.run(

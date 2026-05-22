@@ -5,8 +5,9 @@ module Textus
       PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
 
       attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
-                  :projection, :template, :publish_to, :publish_each, :fetch, :fetch_config, :ttl, :events,
-                  :inject_intro
+                  :projection, :template, :publish_to, :publish_each,
+                  :intake_handler, :intake_config, :ttl, :on_stale, :sync_budget_ms,
+                  :events, :inject_intro
 
       def initialize(manifest, raw)
         @manifest = manifest
@@ -27,7 +28,9 @@ module Textus
         @format = resolve_format!(raw["format"])
 
         validate_events!
-        parse_source!(raw["source"])
+        raise UsageError.new("entry '#{@key}': 'source:' key renamed to 'intake:' in 0.9") if raw.key?("source")
+
+        parse_intake!(raw["intake"])
         reject_legacy_projection_keys!
         validate_format_matrix!
         validate_publish_each!
@@ -60,7 +63,33 @@ module Textus
         raise UsageError.new("entry '#{@key}': #{e.message}")
       end
 
+      def policy
+        @policy ||= Textus::Domain::Freshness::Policy.new(
+          ttl_seconds: parse_ttl_seconds,
+          on_stale: @on_stale,
+          sync_budget_ms: @sync_budget_ms,
+        )
+      end
+
       private
+
+      def parse_ttl_seconds
+        return nil if @ttl.nil?
+
+        str = @ttl.to_s.strip
+        return str.to_i if str.match?(/\A\d+\z/)
+
+        m = str.match(/\A(\d+)\s*([smhd])\z/)
+        return nil unless m
+
+        n = m[1].to_i
+        case m[2]
+        when "s" then n
+        when "m" then n * 60
+        when "h" then n * 3600
+        when "d" then n * 86_400
+        end
+      end
 
       def validate_inject_intro!
         return unless @inject_intro
@@ -168,13 +197,27 @@ module Textus
       end
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
-      def parse_source!(src)
-        src ||= {}
-        raise UsageError.new("entry '#{@key}': source.action renamed to source.fetch in 0.6") if src.key?("action")
+      def parse_intake!(src)
+        raise UsageError.new("entry '#{@key}': source.fetch renamed to intake.handler in 0.9") if src.is_a?(Hash) && src.key?("fetch")
 
-        @fetch = src["fetch"]
-        @fetch_config = src["config"] || {}
-        @ttl = src["ttl"]
+        src ||= {}
+        @intake_handler = src["handler"]
+        @intake_config  = src["config"] || {}
+        @ttl            = src["ttl"]
+        parse_on_stale!(src)
+      end
+
+      def parse_on_stale!(src)
+        raw = src["on_stale"] || "warn"
+        allowed = %i[warn sync timed_sync]
+        sym = raw.to_sym
+        unless allowed.include?(sym)
+          raise UsageError.new(
+            "entry '#{@key}': on_stale must be one of #{allowed.join(", ")} (got #{raw.inspect})",
+          )
+        end
+        @on_stale = sym
+        @sync_budget_ms = src["sync_budget_ms"] || 500
       end
 
       def reject_legacy_projection_keys!

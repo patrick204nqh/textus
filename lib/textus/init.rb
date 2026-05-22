@@ -28,7 +28,7 @@ module Textus
       ## Per-event sugar (preferred)
 
       ```ruby
-      Textus.fetch(:my_source) do |config:, args:, **|
+      Textus.intake(:my_source) do |config:, args:, **|
         { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
       end
 
@@ -37,23 +37,35 @@ module Textus
       Textus.put(:my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
 
       # Run a side-effect every time textus writes a file to your repo:
-      Textus.publish(:notify) do |key:, target:, **|
+      Textus.published(:notify) do |key:, target:, **|
         warn "wrote \#{target} (from \#{key})"
       end
+      ```
+
+      The intake handler above is paired with the manifest:
+
+      ```yaml
+      - key: working.foo
+        intake:
+          handler: my_source
+          ttl: 10m
+          on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
       ```
 
       ## Low-level primitive (always available)
 
       ```ruby
-      Textus.hook(:fetch,  :name) { |store:, config:, args:|  ... }   # bring bytes in
+      Textus.hook(:intake, :name) { |store:, config:, args:|  ... }   # bring bytes in
       Textus.hook(:reduce, :name) { |store:, rows:, config:|  ... }   # transform rows
       Textus.hook(:check,  :name) { |store:|                  ... }   # doctor check
       Textus.hook(:put,    :name, keys: ["..."])                      # lifecycle listener
                                   { |store:, key:, envelope:| ... }
       ```
 
-      Events: :fetch, :reduce, :check (rpc — return value used)
-              :put, :delete, :refresh, :build, :accept, :publish, :mv, :reject, :loaded (pub-sub — return discarded)
+      Events: :intake, :reduce, :check (rpc — return value used)
+              :put, :deleted, :refreshed, :built, :accepted, :published,
+              :mv, :reject, :loaded,
+              :refresh_began, :refresh_failed, :refresh_detached (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

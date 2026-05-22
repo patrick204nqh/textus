@@ -16,10 +16,10 @@ RSpec.describe Textus::Refresh do
         - key: intake.repos
           path: intake/repos.md
           zone: intake
-          source: { fetch: stub_fetch, config: { word: hello } }
+          intake: { handler: stub_fetch, config: { word: hello } }
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
+      Textus.hook(:intake, :stub_fetch) do |config:, store:, args:|
         {
           _meta: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
           body: config["word"]
@@ -38,18 +38,20 @@ RSpec.describe Textus::Refresh do
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
   end
 
-  it "raises if entry has no source.fetch" do
+  it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    store.manifest.entries.first.instance_variable_set(:@fetch, nil)
+    store.manifest.entries.first.instance_variable_set(:@intake_handler, nil)
     expect { described_class.call(store, "intake.repos", as: "script") }
-      .to raise_error(Textus::UsageError, /no fetch declared/)
+      .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
-  it "wraps fetch in 2s timeout" do
+  it "wraps intake in a timeout" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.hook(:fetch, :stub_fetch) { |config:, store:, args:| sleep 3 }
+      Textus.hook(:intake, :stub_fetch) { |config:, store:, args:| sleep 100 }
     RUBY
     store = Textus::Store.new(root)
+    # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
+    allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
     expect { described_class.call(store, "intake.repos", as: "script") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
@@ -64,10 +66,10 @@ RSpec.describe Textus::Refresh do
             path: intake/repos.json
             zone: intake
             format: json
-            source: { fetch: stub_fetch, config: {} }
+            intake: { handler: stub_fetch, config: {} }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
+        Textus.hook(:intake, :stub_fetch) do |config:, store:, args:|
           { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
         end
       RUBY
@@ -89,10 +91,10 @@ RSpec.describe Textus::Refresh do
             path: intake/notes.txt
             zone: intake
             format: text
-            source: { fetch: stub_fetch, config: { msg: hello } }
+            intake: { handler: stub_fetch, config: { msg: hello } }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.hook(:fetch, :stub_fetch) do |config:, store:, args:|
+        Textus.hook(:intake, :stub_fetch) do |config:, store:, args:|
           { body: "raw bytes\\nline 2\\n" }
         end
       RUBY
@@ -102,12 +104,12 @@ RSpec.describe Textus::Refresh do
     end
   end
 
-  it "wraps fetch exceptions with the fetch name" do
+  it "wraps intake exceptions with the handler name" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.hook(:fetch, :stub_fetch) { |config:, store:, args:| raise "network down" }
+      Textus.hook(:intake, :stub_fetch) { |config:, store:, args:| raise "network down" }
     RUBY
     store = Textus::Store.new(root)
     expect { described_class.call(store, "intake.repos", as: "script") }
-      .to raise_error(Textus::UsageError, /fetch 'stub_fetch' raised.*network down/)
+      .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 end

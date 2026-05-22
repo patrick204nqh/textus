@@ -13,13 +13,13 @@ RSpec.describe "Hook loader subdirectory support" do
   it "loads hook files from nested subdirectories" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "hooks", "fetch"))
+      FileUtils.mkdir_p(File.join(textus, "hooks", "intake"))
       FileUtils.mkdir_p(File.join(textus, "hooks", "reduce"))
       write_minimal_manifest(textus)
 
       File.write(
-        File.join(textus, "hooks", "fetch", "nested_fetch.rb"),
-        'Textus.fetch(:nested_fetch) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } }',
+        File.join(textus, "hooks", "intake", "nested_intake.rb"),
+        'Textus.intake(:nested_intake) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } }',
       )
 
       File.write(
@@ -30,7 +30,7 @@ RSpec.describe "Hook loader subdirectory support" do
       store = Textus::Store.new(textus)
       registry = store.instance_variable_get(:@registry)
 
-      expect(registry.rpc_names(:fetch)).to include(:nested_fetch)
+      expect(registry.rpc_names(:intake)).to include(:nested_intake)
       expect(registry.rpc_names(:reduce)).to include(:nested_reduce)
     end
   end
@@ -43,12 +43,12 @@ RSpec.describe "Hook loader subdirectory support" do
 
       File.write(
         File.join(textus, "hooks", "flat.rb"),
-        'Textus.fetch(:flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } }',
+        'Textus.intake(:flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } }',
       )
 
       store = Textus::Store.new(textus)
       registry = store.instance_variable_get(:@registry)
-      expect(registry.rpc_names(:fetch)).to include(:flat)
+      expect(registry.rpc_names(:intake)).to include(:flat)
     end
   end
 end

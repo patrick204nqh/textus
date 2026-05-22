@@ -37,8 +37,8 @@ RSpec.describe Textus::Intro do
           path: intake/feed.md
           zone: intake
           owner: script:local
-          source:
-            fetch: demo-action
+          intake:
+            handler: demo-action
             config: { foo: 1 }
             ttl: 6h
         - key: derived.report
@@ -55,12 +55,12 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.hook(:fetch, :demo_action)  { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:fetch, :zebra)        { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:fetch, :apple)        { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.hook(:intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.hook(:intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.hook(:intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
       Textus.hook(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
       Textus.hook(:reduce, :alpha)           { |store:, rows:, config:| rows }
-      Textus.hook(:build, :stamp_log)        { |store:, key:, envelope:, sources:| }
+      Textus.hook(:built, :stamp_log)        { |store:, key:, envelope:, sources:| }
       Textus.hook(:check, :smoke)            { |store:| [] }
     RUBY
   end
@@ -126,10 +126,10 @@ RSpec.describe Textus::Intro do
     env = described_class.run(store)
     ext = env["hooks"]
     expect(ext["reduce"]).to eq(%w[alpha rank_by_recency])
-    # demo_action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["fetch"]).to include("apple", "demo_action", "zebra")
-    expect(ext["fetch"]).to eq(ext["fetch"].sort)
-    expect(ext["build"]).to eq(["stamp_log"])
+    # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
+    expect(ext["intake"]).to include("apple", "demo-action", "zebra")
+    expect(ext["intake"]).to eq(ext["intake"].sort)
+    expect(ext["built"]).to eq(["stamp_log"])
     expect(ext["check"]).to include("smoke")
   end
 

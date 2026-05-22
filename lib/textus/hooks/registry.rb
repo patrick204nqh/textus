@@ -3,20 +3,23 @@ module Textus
     class Registry
       EVENTS = {
         # RPC: exactly 1 handler per name; return value flows into store; failure aborts.
-        fetch: { mode: :rpc, args: %i[store config args] },
+        intake: { mode: :rpc, args: %i[store config args] },
         reduce: { mode: :rpc, args: %i[store rows config] },
         check: { mode: :rpc, args: %i[store] },
 
         # Pub-sub: 0..N handlers per event; return discarded; failure logged to audit.
         put: { mode: :pubsub, args: %i[store key envelope] },
-        delete: { mode: :pubsub, args: %i[store key] },
-        refresh: { mode: :pubsub, args: %i[store key envelope change] },
-        build: { mode: :pubsub, args: %i[store key envelope sources] },
-        accept: { mode: :pubsub, args: %i[store key target_key] },
-        publish: { mode: :pubsub, args: %i[store key envelope source target] },
+        deleted: { mode: :pubsub, args: %i[store key] },
+        refreshed: { mode: :pubsub, args: %i[store key envelope change] },
+        built: { mode: :pubsub, args: %i[store key envelope sources] },
+        accepted: { mode: :pubsub, args: %i[store key target_key] },
+        published: { mode: :pubsub, args: %i[store key envelope source target] },
         mv: { mode: :pubsub, args: %i[store key from_key to_key envelope] },
         reject: { mode: :pubsub, args: %i[store key target_key] },
         loaded: { mode: :pubsub, args: %i[store] },
+        refresh_began: { mode: :pubsub, args: %i[store key mode] },
+        refresh_failed: { mode: :pubsub, args: %i[store key error_class error_message] },
+        refresh_detached: { mode: :pubsub, args: %i[store key started_at budget_ms] },
       }.freeze
 
       def initialize(dispatcher: nil)

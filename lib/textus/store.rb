@@ -75,8 +75,16 @@ module Textus
       end
     end
 
-    def get(key)
-      @reader.get(key)
+    def get(key, as: "script")
+      bus = Infra::EventBus.new(registry: registry)
+      worker = Application::Refresh::Worker.new(store: self, bus: bus)
+      orchestrator = Application::Refresh::Orchestrator.new(
+        worker: worker, bus: bus, store_root: root, store: self,
+      )
+      result = Application::Reads::Get.new(store: self, orchestrator: orchestrator).call(key, as: as)
+      raise UnknownKey.new(key, suggestions: manifest.suggestions_for(key)) if result.nil?
+
+      result
     end
 
     def where(key) = @reader.where(key)
