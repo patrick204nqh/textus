@@ -170,10 +170,10 @@ module Textus
       raw_entries.each do |re|
         intake = re["intake"]
         next unless intake.is_a?(Hash)
-        next unless intake.key?("ttl") || intake.key?("on_stale")
+        next unless intake.key?("ttl") || intake.key?("on_stale") || intake.key?("sync_budget_ms")
 
         raise UsageError.new(
-          "entry '#{re["key"]}': intake.ttl/intake.on_stale removed in 0.9.2 — " \
+          "entry '#{re["key"]}': intake.ttl/intake.on_stale/intake.sync_budget_ms removed in 0.9.2 — " \
           "move into a top-level policies: block. Run `textus migrate policies` to auto-hoist.",
         )
       end

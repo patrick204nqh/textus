@@ -142,4 +142,20 @@ RSpec.describe "Manifest intake:" do
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /textus migrate policies/)
   end
+
+  it "rejects intake.sync_budget_ms (removed in 0.9.2) with a migrate hint" do
+    write_manifest(<<~YAML)
+      version: textus/2
+      zones: [{ name: working, writable_by: [script] }]
+      entries:
+        - key: working.news
+          path: working/news.md
+          zone: working
+          intake:
+            handler: news_handler
+            sync_budget_ms: 800
+    YAML
+    expect { Textus::Manifest.load(root) }
+      .to raise_error(Textus::UsageError, /textus migrate policies/)
+  end
 end
