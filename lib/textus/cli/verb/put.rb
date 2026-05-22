@@ -10,7 +10,7 @@ module Textus
           key = positional.shift or raise UsageError.new("put requires a key")
           raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
-          role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+          role = resolved_role(store)
 
           raw = @stdin.read
           payload =
