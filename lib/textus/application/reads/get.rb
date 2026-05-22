@@ -19,7 +19,7 @@ module Textus
           return annotate(envelope, verdict, refreshing: false) if verdict.fresh?
 
           action = policy.decide(verdict)
-          outcome = @orchestrator.execute(action, key: key, as: @ctx.role)
+          outcome = @orchestrator.execute(action, key: key)
 
           case outcome
           when Textus::Domain::Outcome::Skipped

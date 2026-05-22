@@ -10,25 +10,25 @@ module Textus
           @detached_spawner = detached_spawner || default_spawner
         end
 
-        def execute(action, key:, as:)
+        def execute(action, key:)
           case action
           when Textus::Domain::Action::Return       then Textus::Domain::Outcome::Skipped.new
-          when Textus::Domain::Action::RefreshSync  then run_sync(key, as)
-          when Textus::Domain::Action::RefreshTimed then run_timed(action.budget_ms, key, as)
+          when Textus::Domain::Action::RefreshSync  then run_sync(key)
+          when Textus::Domain::Action::RefreshTimed then run_timed(action.budget_ms, key)
           else raise ArgumentError.new("unknown action: #{action.inspect}")
           end
         end
 
         private
 
-        def run_sync(key, as)
-          envelope = @worker.run(key, as: as)
+        def run_sync(key)
+          envelope = @worker.run(key)
           Textus::Domain::Outcome::Refreshed.new(envelope: envelope)
         rescue Textus::Error => e
           Textus::Domain::Outcome::Failed.new(error: e)
         end
 
-        def run_timed(budget_ms, key, as)
+        def run_timed(budget_ms, key)
           unless Textus::Infra::Refresh::Detached.supported?
             return Textus::Domain::Outcome::Failed.new(
               error: Textus::UsageError.new("timed_sync requires fork (Unix only)"),
@@ -37,7 +37,7 @@ module Textus
 
           result = nil
           thread = Thread.new do
-            result = @worker.run(key, as: as)
+            result = @worker.run(key)
           rescue Textus::Error => e
             result = e
           end

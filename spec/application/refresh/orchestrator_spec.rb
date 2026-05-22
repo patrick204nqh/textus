@@ -25,7 +25,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
         @result = result
       end
 
-      def run(_key, as: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def run(_key)
         raise @result if @result.is_a?(Exception)
 
         @result
@@ -47,7 +47,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       worker = fake_worker.new({ "key" => "k" })
       orch = make_orchestrator(worker)
 
-      outcome = orch.execute(Textus::Domain::Action::Return.new, key: "k", as: "script")
+      outcome = orch.execute(Textus::Domain::Action::Return.new, key: "k")
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Skipped)
     end
@@ -59,7 +59,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       worker = fake_worker.new(envelope)
       orch = make_orchestrator(worker)
 
-      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "some.key", as: "script")
+      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "some.key")
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Refreshed)
       expect(outcome.envelope).to eq(envelope)
@@ -69,7 +69,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       worker = fake_worker.new(Textus::UsageError.new("intake blew up"))
       orch = make_orchestrator(worker)
 
-      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "k", as: "script")
+      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "k")
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Failed)
       expect(outcome.error.message).to match(/intake blew up/)
@@ -80,7 +80,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
     it "returns Outcome::Detached and calls spawner when worker exceeds budget",
        skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
       slow_worker = Class.new do
-        def run(_key, as: nil) # rubocop:disable Lint/UnusedMethodArgument
+        def run(_key)
           sleep 5
           {}
         end
@@ -99,7 +99,6 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       outcome = orch.execute(
         Textus::Domain::Action::RefreshTimed.new(budget_ms: 50),
         key: "slow.key",
-        as: "script",
       )
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
@@ -115,7 +114,6 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       outcome = orch.execute(
         Textus::Domain::Action::RefreshTimed.new(budget_ms: 5000),
         key: "fast.key",
-        as: "script",
       )
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Refreshed)

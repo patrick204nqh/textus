@@ -1,9 +1,8 @@
 module Textus
   module Refresh
     def self.call(store, key, as:)
-      bus = Textus::Infra::EventBus.new(registry: store.registry)
-      worker = Textus::Application::Refresh::Worker.new(store: store, bus: bus)
-      worker.run(key, as: as)
+      ctx = Textus::Composition.context(store, role: as)
+      Textus::Composition.refresh_worker(ctx).run(key)
     end
 
     def self.refresh_stale(store, prefix: nil, zone: nil, as: "script")

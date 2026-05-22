@@ -5,8 +5,8 @@ module Textus
         module_function
 
         def call(store, prefix: nil, zone: nil, as: "script")
-          bus = Textus::Infra::EventBus.new(registry: store.registry)
-          worker = Textus::Application::Refresh::Worker.new(store: store, bus: bus)
+          ctx = Textus::Composition.context(store, role: as)
+          worker = Textus::Composition.refresh_worker(ctx)
 
           stale_rows = store.stale(prefix: prefix, zone: zone)
           refreshed = []
@@ -18,7 +18,7 @@ module Textus
             reason = row["reason"] || row[:reason]
             if reason.to_s.match?(/ttl exceeded|never refreshed/)
               begin
-                worker.run(key, as: as)
+                worker.run(key)
                 refreshed << key
               rescue Textus::Error => e
                 failed << { "key" => key, "error" => e.message }

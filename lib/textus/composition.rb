@@ -16,13 +16,13 @@ module Textus
     end
 
     def refresh_worker(ctx)
-      Textus::Application::Refresh::Worker.new(store: ctx.store, bus: event_bus(ctx))
+      Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def refresh_orchestrator(ctx)
       Textus::Application::Refresh::Orchestrator.new(
         worker: refresh_worker(ctx),
-        bus: event_bus(ctx),
+        bus: ctx.store.bus,
         store_root: ctx.store.root,
         store: ctx.store,
       )
