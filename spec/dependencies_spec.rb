@@ -3,8 +3,8 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::Dependencies do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
 
   before do
@@ -36,8 +36,6 @@ RSpec.describe Textus::Dependencies do
     File.write(File.join(root, "templates/people.mustache"),
                "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "lists dependencies declared in projection.select" do
     expect(store.deps("output.catalogs.people")).to eq(["working.people"])

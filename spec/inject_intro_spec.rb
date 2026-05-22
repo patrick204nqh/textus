@@ -3,8 +3,7 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe "inject_intro:" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
@@ -31,8 +30,6 @@ RSpec.describe "inject_intro:" do
     TPL
     File.write(File.join(root, "zones/identity/id.md"), "---\nname: id\n---\nx\n")
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "injects intro: into template data when the flag is true" do
     store = Textus::Store.new(root)

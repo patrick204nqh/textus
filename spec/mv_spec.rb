@@ -4,9 +4,9 @@ require "tmpdir"
 require "json"
 
 RSpec.describe "textus mv" do
-  let(:tmp) { Dir.mktmpdir }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
-  let(:root) { File.join(tmp, ".textus") }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
@@ -21,8 +21,6 @@ RSpec.describe "textus mv" do
         - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true }
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def put_md(key, body: "hi")
     basename = key.split(".").last

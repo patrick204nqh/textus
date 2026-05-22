@@ -77,7 +77,7 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 ## What ships today
 
-- **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/derived/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `reducer`).
+- **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/output/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `reducer`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key migrate --dry-run|--write` rewrites existing stores with illegal segments deterministically.
@@ -186,9 +186,9 @@ end
 To keep a batch of stale intake entries current in one shot:
 
 ```sh
-textus refresh-stale --prefix=working --zone=intake --as=script
-# or just refresh everything stale in the intake zone:
-textus refresh-stale --zone=intake --as=script
+textus refresh-stale --prefix=working --zone=inbox --as=script
+# or just refresh everything stale in the inbox zone:
+textus refresh-stale --zone=inbox --as=script
 ```
 
 The primitive `Textus.hook(event, name, **opts) { ... }` is also supported. See SPEC.md §5.10 for the full contract.

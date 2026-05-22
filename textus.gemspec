@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
     "README.md",
     "SPEC.md",
     "CHANGELOG.md",
-    "docs/architecture.md",
+    "ARCHITECTURE.md",
     "docs/conventions.md",
   ]
   s.bindir = "exe"

@@ -23,7 +23,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (`intake` zone): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
+| L2 | **Sources** | Declared external inputs (the `inbox` zone in the default scaffold; any zone writable by `script`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
 | L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish_to:`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/sentinels/<target-rel-path>.textus-managed.json` records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -213,11 +213,11 @@ Every successful write records the resolved role and a wall-clock timestamp in `
 
 ### 5.2 Compute layer (derived entries)
 
-Derived entries live in the `derived` zone. They are not authored by hand; their body is produced by projecting over other entries. A derived entry's frontmatter declares a `projection` block:
+Derived entries live in a zone whose `writable_by:` list includes `build` — `output` in the default scaffold. They are not authored by hand; their body is produced by projecting over other entries. A derived entry's frontmatter declares a `projection` block:
 
 ```yaml
-- key: derived.catalogs.people
-  zone: derived
+- key: output.catalogs.people
+  zone: output
   projection:
     select: working.network.org    # prefix OR [list of prefixes]
     pluck:  [name, relationship, org]
@@ -250,7 +250,7 @@ publish_to:
   - .ai/instructions.md
 ```
 
-When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/derived/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
+When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/<output-zone>/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
 
 A sentinel is written for each published file at `<store_root>/sentinels/<target-relative-to-repo>.textus-managed.json`, recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store rather than beside the consumer file so target directories stay clean. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing or marked as managed. Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
 
@@ -301,13 +301,13 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 **Refresh paths.** Two are supported:
 
 1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `intake.handler`, invokes the registered `:intake` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
-2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`. The CLI verb `textus refresh-stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
+2. **External runner** — a cron job or agent harness reads `textus list --zone=inbox --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`. The CLI verb `textus refresh-stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
 Both paths share the same role gate, audit-log entry, and `:refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
-Pending entries are full proposal patches authored into the `pending` zone, typically by agents or scripts. A pending entry's frontmatter describes the patch it proposes against another zone:
+Proposal entries are full patches authored into a zone whose `writable_by:` list includes `ai` — `review` in the default scaffold — typically by agents or scripts. The entry's frontmatter describes the patch it proposes against another zone:
 
 ```yaml
 ---
@@ -324,7 +324,7 @@ Proposed body content.
 
 `proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content.
 
-`textus accept <pending-key>` is **human-only**: the resolved role must be `human`. It copies the patch into the target zone, records provenance (originating pending key, original role, original timestamp) in the audit log, and removes the pending entry. Agents and scripts can propose but cannot accept.
+`textus accept <proposal-key>` is **human-only**: the resolved role must be `human`. It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. Agents and scripts can propose but cannot accept.
 
 ### 5.6 Audit log
 

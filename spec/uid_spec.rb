@@ -3,9 +3,9 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe "Textus UID" do
-  let(:tmp) { Dir.mktmpdir }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
-  let(:root) { File.join(tmp, ".textus") }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
@@ -20,8 +20,6 @@ RSpec.describe "Textus UID" do
         - { key: working.t,    path: working/t.txt,   zone: working }
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "auto-mints a uid on first put for markdown" do
     env = store.put("working.md", meta: { "name" => "md" }, body: "hi", as: "human")

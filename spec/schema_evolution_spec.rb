@@ -3,8 +3,7 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe "Schema evolution metadata" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
@@ -21,8 +20,6 @@ RSpec.describe "Schema evolution metadata" do
           name: full_name
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "exposes maintained_by per field" do
     s = Textus::Schema.load(File.join(root, "schemas/person.yaml"))

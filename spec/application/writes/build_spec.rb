@@ -9,8 +9,8 @@ RSpec.describe Textus::Application::Writes::Build do
     described_class.new(ctx: ctx, bus: bus)
   end
 
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
 
   before do
@@ -42,8 +42,6 @@ RSpec.describe Textus::Application::Writes::Build do
     File.write(File.join(root, "templates/people.mustache"),
                "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "returns a hash with protocol, built, and published_leaves keys" do
     result = use_case.call

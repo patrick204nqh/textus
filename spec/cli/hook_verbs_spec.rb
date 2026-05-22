@@ -5,8 +5,7 @@ require "json"
 require "stringio"
 
 RSpec.describe "CLI hook verbs" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/inbox"))
@@ -27,8 +26,6 @@ RSpec.describe "CLI hook verbs" do
       Textus.hook(:check,  :dc)   { |store:| [] }
     RUBY
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def run_cli(argv)
     out = StringIO.new

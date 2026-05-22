@@ -5,8 +5,8 @@ require "stringio"
 require "json"
 
 RSpec.describe Textus::CLI::Verb::Blame do
-  let(:tmp)    { Dir.mktmpdir }
-  let(:root)   { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:stdin)  { StringIO.new }
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
@@ -30,8 +30,6 @@ RSpec.describe Textus::CLI::Verb::Blame do
                              "verb" => "put", "key" => "working.doc" })
     end
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "emits a JSON envelope with verb=blame, key, and rows (git nil without a repo)" do
     rc = run(["blame", "working.doc"])

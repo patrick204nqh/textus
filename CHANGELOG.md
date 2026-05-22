@@ -8,6 +8,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.1 — Documentation refresh and spec hygiene (2026-05-22)
+
+Lightweight maintenance release: documentation refresh plus spec-suite hygiene. No `lib/` changes; no CLI, wire-protocol, or behavioral changes.
+
+### Changed
+
+- `docs/architecture.md` deleted. `ARCHITECTURE.md` is now the single source of truth for the layered architecture. Inbound links in `docs/zones.md`, `docs/events.md`, and `textus.gemspec` updated.
+- `SPEC.md` examples and CLI snippets refer to the post-0.9.2 default zone names (`identity` / `inbox` / `review` / `output`) instead of the pre-rename `canon` / `intake` / `pending` / `derived`. Prose that explicitly explains the 0.9.2 rename — including the v0.1 back-compat manifest example and the zone-rename table — is preserved.
+- `README.md` `refresh-stale` examples switched to `--zone=inbox`; the `cat .textus/zones/...` example points at the `output` zone.
+- `ARCHITECTURE.md` layer diagram references `Infra::Publisher` instead of bare `Publisher`.
+- `docs/zones.md` references `Textus::Infra::Publisher` instead of bare `Publisher`.
+
+### Testing
+
+- Deleted redundant `spec/proposal_spec.rb` (the same `"2026-05-19-add-bob"` fixture is covered more thoroughly by `spec/application/writes/accept_spec.rb`, the canonical post-0.9.1 home for Application-layer write tests).
+- Extracted `shared_context "textus_store_fixture"` into `spec/support/fixtures.rb`; 28 specs adopt it, replacing the repeated `let(:tmp)` / `let(:root)` / `after { FileUtils.remove_entry(tmp) }` triplet. `spec/spec_helper.rb` now autoloads `spec/support/**/*.rb`.
+- Fixed an `instance_variable_set(:@intake_handler, nil)` anti-pattern in `spec/refresh_spec.rb` — the "no intake declared" case now uses a manifest entry that was never given an intake handler, instead of mutating a private ivar after construction.
+
 ## 0.10.0 — Shim removal, signal-based zone detection, Builder extraction (2026-05-22)
 
 ### Breaking — Ruby API

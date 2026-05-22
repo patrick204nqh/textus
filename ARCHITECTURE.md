@@ -31,7 +31,7 @@
 │  Manifest           (incl. permission_for)                 │
 │  Hooks::Registry    EventBus     Clock                     │
 │  Refresh::Lock      Refresh::Detached                      │
-│  Publisher          (file copy + sentinel)                 │
+│  Infra::Publisher   (file copy + sentinel)                 │
 └────────────────────────────────────────────────────────────┘
 
    Dependency rule: arrows point DOWN. Domain has zero outbound

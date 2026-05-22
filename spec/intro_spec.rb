@@ -5,8 +5,7 @@ require "json"
 require "stringio"
 
 RSpec.describe Textus::Intro do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
@@ -63,8 +62,6 @@ RSpec.describe Textus::Intro do
       Textus.hook(:check, :smoke)            { |store:| [] }
     RUBY
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def store
     @store ||= Textus::Store.new(root)

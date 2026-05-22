@@ -5,8 +5,8 @@ require "tmpdir"
 require "yaml"
 
 RSpec.describe Textus::Application::Writes::Build do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
   let(:build_use_case) do
     ctx = Textus::Composition.context(store, role: "build")
@@ -90,8 +90,6 @@ RSpec.describe Textus::Application::Writes::Build do
       { "protocol" => "textus/2", "people" => rows.sort_by { |r| r["name"].to_s } }
     end
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "materializes an output markdown entry and publishes a copy" do
     res = build_use_case.call(prefix: "output.catalogs.people")

@@ -3,15 +3,12 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe "Manifest format: field validation" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
