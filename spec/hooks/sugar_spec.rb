@@ -5,28 +5,28 @@ RSpec.describe "Textus per-event sugar" do
 
   around { |ex| Textus.with_registry(reg) { ex.run } }
 
-  describe ".fetch" do
-    it "registers a fetch hook by name" do
-      Textus.fetch(:local_file) do |config:, args:, **|
+  describe ".intake" do
+    it "registers an intake hook by name" do
+      Textus.intake(:local_file) do |config:, args:, **|
         [config, args]
         { _meta: {}, body: "ok" }
       end
-      out = reg.rpc_callable(:fetch, :local_file).call(store: nil, config: {}, args: {})
+      out = reg.rpc_callable(:intake, :local_file).call(store: nil, config: {}, args: {})
       expect(out[:body]).to eq("ok")
     end
 
     it "accepts a string name and normalizes to a symbol" do
-      Textus.fetch("from_string") do |config:, args:, **|
+      Textus.intake("from_string") do |config:, args:, **|
         [config, args]
         { _meta: {}, body: "s" }
       end
-      expect(reg.rpc_names(:fetch)).to include(:from_string)
+      expect(reg.rpc_names(:intake)).to include(:from_string)
     end
 
     it "raises outside with_registry" do
       Thread.new do
         expect do
-          Textus.fetch(:naked) { |config:, args:, **| [config, args] }
+          Textus.intake(:naked) { |config:, args:, **| [config, args] }
         end.to raise_error(Textus::UsageError, /no active registry/)
       end.join
     end
@@ -58,19 +58,31 @@ RSpec.describe "Textus per-event sugar" do
     end
   end
 
-  describe ".delete / .refresh / .build / .accept / .publish" do
+  describe ".deleted / .refreshed / .built / .accepted / .published" do
     it "registers each pub-sub event" do
-      Textus.delete(:d)  { |key:, **| key }
-      Textus.refresh(:r) { |key:, envelope:, change:, **| [key, envelope, change] }
-      Textus.build(:b)   { |key:, envelope:, sources:, **| [key, envelope, sources] }
-      Textus.accept(:a)  { |key:, target_key:, **| [key, target_key] }
-      Textus.publish(:p) { |key:, envelope:, source:, target:, **| [key, envelope, source, target] }
+      Textus.deleted(:d)   { |key:, **| key }
+      Textus.refreshed(:r) { |key:, envelope:, change:, **| [key, envelope, change] }
+      Textus.built(:b)     { |key:, envelope:, sources:, **| [key, envelope, sources] }
+      Textus.accepted(:a)  { |key:, target_key:, **| [key, target_key] }
+      Textus.published(:p) { |key:, envelope:, source:, target:, **| [key, envelope, source, target] }
 
-      expect(reg.pubsub_handlers(:delete).map { _1[:name] }).to include(:d)
-      expect(reg.pubsub_handlers(:refresh).map { _1[:name] }).to include(:r)
-      expect(reg.pubsub_handlers(:build).map { _1[:name] }).to include(:b)
-      expect(reg.pubsub_handlers(:accept).map { _1[:name] }).to include(:a)
-      expect(reg.pubsub_handlers(:publish).map { _1[:name] }).to include(:p)
+      expect(reg.pubsub_handlers(:deleted).map { _1[:name] }).to include(:d)
+      expect(reg.pubsub_handlers(:refreshed).map { _1[:name] }).to include(:r)
+      expect(reg.pubsub_handlers(:built).map { _1[:name] }).to include(:b)
+      expect(reg.pubsub_handlers(:accepted).map { _1[:name] }).to include(:a)
+      expect(reg.pubsub_handlers(:published).map { _1[:name] }).to include(:p)
+    end
+  end
+
+  describe ".refresh_started / .refresh_failed / .refresh_detached" do
+    it "registers each lifecycle event" do
+      Textus.refresh_started(:s)  { |key:, mode:, **| [key, mode] }
+      Textus.refresh_failed(:f)   { |key:, error_class:, error_message:, **| [key, error_class, error_message] }
+      Textus.refresh_detached(:d) { |key:, started_at:, budget_ms:, **| [key, started_at, budget_ms] }
+
+      expect(reg.pubsub_handlers(:refresh_started).map { _1[:name] }).to include(:s)
+      expect(reg.pubsub_handlers(:refresh_failed).map { _1[:name] }).to include(:f)
+      expect(reg.pubsub_handlers(:refresh_detached).map { _1[:name] }).to include(:d)
     end
   end
 end

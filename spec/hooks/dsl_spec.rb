@@ -5,12 +5,12 @@ RSpec.describe "Textus.hook DSL" do
 
   around { |ex| Textus.with_registry(reg) { ex.run } }
 
-  it "registers a fetch hook via :fetch event" do
-    Textus.hook(:fetch, :gh) do |store:, config:, args:|
+  it "registers an intake hook via :intake event" do
+    Textus.hook(:intake, :gh) do |store:, config:, args:|
       [store, config, args]
       { _meta: {}, body: "x" }
     end
-    out = reg.rpc_callable(:fetch, :gh).call(store: nil, config: {}, args: {})
+    out = reg.rpc_callable(:intake, :gh).call(store: nil, config: {}, args: {})
     expect(out[:body]).to eq("x")
   end
 
