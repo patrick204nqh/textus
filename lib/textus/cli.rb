@@ -8,6 +8,7 @@ module Textus
     VERBS = {
       "accept" => Verb::Accept,
       "audit" => Verb::Audit,
+      "blame" => Verb::Blame,
       "reject" => Verb::Reject,
       "build" => Verb::Build,
       "delete" => Verb::Delete,
