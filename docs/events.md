@@ -417,5 +417,5 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 
 - [`./zones.md`](./zones.md) — the manifest side: declaring which entries trigger which hooks
 - [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:intake` and event contracts
-- [`./architecture.md`](./architecture.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
+- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
 - [`../examples/claude-plugin/.textus/hooks/`](../examples/claude-plugin/.textus/hooks/) — six worked hooks across four event types

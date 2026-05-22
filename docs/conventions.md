@@ -18,7 +18,7 @@ Recommended top-level layout — the spec allows alternatives, but this is what 
   manifest.yaml
   schemas/        # YAML schema definitions
   zones/
-    identity/     # identity, voice, canon — humans only
+    identity/     # identity, voice, slow-changing facts — humans only
     working/      # agent-writable working memory
     inbox/        # script-fed external inputs
     review/       # AI proposals awaiting accept

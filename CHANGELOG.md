@@ -8,6 +8,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.1 — Documentation refresh (2026-05-22)
+
+Documentation-only release; no code changes.
+
+### Changed
+
+- `docs/architecture.md` deleted. `ARCHITECTURE.md` is now the single source of truth for the layered architecture. Inbound links in `docs/zones.md`, `docs/events.md`, and `textus.gemspec` updated.
+- `SPEC.md` examples and CLI snippets refer to the post-0.9.2 default zone names (`identity` / `inbox` / `review` / `output`) instead of the pre-rename `canon` / `intake` / `pending` / `derived`. Prose that explicitly explains the 0.9.2 rename — including the v0.1 back-compat manifest example and the zone-rename table — is preserved.
+- `README.md` `refresh-stale` examples switched to `--zone=inbox`; the `cat .textus/zones/...` example points at the `output` zone.
+- `ARCHITECTURE.md` layer diagram references `Infra::Publisher` instead of bare `Publisher`.
+- `docs/zones.md` references `Textus::Infra::Publisher` instead of bare `Publisher`.
+
+No `lib/` changes. No CLI, wire-protocol, or behavioral changes.
+
 ## 0.10.0 — Shim removal, signal-based zone detection, Builder extraction (2026-05-22)
 
 ### Breaking — Ruby API

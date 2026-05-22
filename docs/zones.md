@@ -2,7 +2,7 @@
 
 How to define the **shape of your context** in textus: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
 
-This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](../SPEC.md). For implementation internals, see [`./architecture.md`](./architecture.md).
+This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](../SPEC.md). For implementation internals, see [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ## Table of contents
 
@@ -344,7 +344,7 @@ For every entry in a build-writable zone:
 
 ### The sentinel guard
 
-`Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and build will refuse rather than clobber it.
+`Textus::Infra::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and build will refuse rather than clobber it.
 
 ---
 
@@ -422,6 +422,6 @@ If doctor passes, your declared shape and your on-disk reality agree. If it fail
 ## Where to go from here
 
 - [`../SPEC.md`](../SPEC.md) — the normative wire-protocol spec
-- [`./architecture.md`](./architecture.md) — how the Ruby implementation is laid out
+- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — how the Ruby implementation is laid out
 - [`./conventions.md`](./conventions.md) — store location, transport wrappers, multi-store patterns
 - [`../examples/claude-plugin/`](../examples/claude-plugin/) — a complete worked example
