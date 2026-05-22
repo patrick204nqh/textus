@@ -3,7 +3,7 @@ require "fileutils"
 require "json"
 require "tmpdir"
 
-RSpec.describe Textus::Publisher do
+RSpec.describe Textus::Infra::Publisher do
   let(:tmp) { Dir.mktmpdir }
   let(:store_root) { File.join(tmp, ".textus") }
   let(:src) { File.join(store_root, "zones", "derived", "out.md") }
@@ -19,13 +19,13 @@ RSpec.describe Textus::Publisher do
   after { FileUtils.remove_entry(tmp) }
 
   it "copies source bytes verbatim to the target" do
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.symlink?(dst)).to be false
     expect(File.binread(dst)).to eq(File.binread(src))
   end
 
   it "writes the sentinel under <store_root>/sentinels/, not beside the target" do
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.exist?(sentinel)).to be true
     expect(File.exist?(legacy_sentinel)).to be false
 
@@ -38,21 +38,21 @@ RSpec.describe Textus::Publisher do
 
   it "mirrors nested target paths in the sentinel tree" do
     nested = File.join(tmp, ".claude-plugin", "marketplace.json")
-    Textus::Publisher.publish(source: src, target: nested, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: nested, store_root: store_root)
     expected_sentinel = File.join(store_root, "sentinels", ".claude-plugin", "marketplace.json.textus-managed.json")
     expect(File.exist?(expected_sentinel)).to be true
   end
 
   it "refuses to clobber an unmanaged file" do
     File.write(dst, "preexisting")
-    expect { Textus::Publisher.publish(source: src, target: dst, store_root: store_root) }
+    expect { Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root) }
       .to raise_error(Textus::PublishError, /clobber/)
   end
 
   it "overwrites when the target is already textus-managed (new-location sentinel)" do
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
     File.binwrite(src, "world\n")
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.binread(dst)).to eq("world\n")
   end
 
@@ -60,7 +60,7 @@ RSpec.describe Textus::Publisher do
     File.write(dst, "legacy")
     File.write(legacy_sentinel, JSON.generate("source" => src, "sha256" => "x", "mode" => "copy"))
 
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
 
     expect(File.binread(dst)).to eq("hello\n")
     expect(File.exist?(sentinel)).to be true
@@ -69,7 +69,7 @@ RSpec.describe Textus::Publisher do
 
   it "creates parent directories that don't yet exist" do
     nested = File.join(tmp, "a", "b", "c", "out.md")
-    Textus::Publisher.publish(source: src, target: nested, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: nested, store_root: store_root)
     expect(File.binread(nested)).to eq(File.binread(src))
   end
 
@@ -79,7 +79,7 @@ RSpec.describe Textus::Publisher do
     File.symlink(other, dst)
     File.write(legacy_sentinel, JSON.generate("source" => src, "sha256" => "x", "mode" => "symlink"))
 
-    Textus::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
 
     expect(File.symlink?(dst)).to be false
     expect(File.binread(dst)).to eq(File.binread(src))
@@ -90,7 +90,7 @@ RSpec.describe Textus::Publisher do
     other = File.join(tmp, "other.md")
     File.binwrite(other, "legacy\n")
     File.symlink(other, dst)
-    expect { Textus::Publisher.publish(source: src, target: dst, store_root: store_root) }
+    expect { Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root) }
       .to raise_error(Textus::PublishError, /clobber/)
   end
 end
