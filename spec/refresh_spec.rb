@@ -3,8 +3,7 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::Refresh do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/inbox"))
@@ -17,6 +16,9 @@ RSpec.describe Textus::Refresh do
           path: inbox/repos.md
           zone: inbox
           intake: { handler: stub_fetch, config: { word: hello } }
+        - key: inbox.manual
+          path: inbox/manual.md
+          zone: inbox
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook(:intake, :stub_fetch) do |config:, store:, args:|
@@ -28,8 +30,6 @@ RSpec.describe Textus::Refresh do
     RUBY
   end
 
-  after { FileUtils.remove_entry(tmp) }
-
   it "invokes the action, writes the entry under role=script, returns the envelope" do
     store = Textus::Store.new(root)
     env = described_class.call(store, "inbox.repos", as: "script")
@@ -40,8 +40,7 @@ RSpec.describe Textus::Refresh do
 
   it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    store.manifest.entries.first.instance_variable_set(:@intake_handler, nil)
-    expect { described_class.call(store, "inbox.repos", as: "script") }
+    expect { described_class.call(store, "inbox.manual", as: "script") }
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
