@@ -1,7 +1,7 @@
 require "time"
 
 module Textus
-  class Builder
+  module Builder
     class Renderer
       class Markdown < Renderer
         def call(mentry:, data:)

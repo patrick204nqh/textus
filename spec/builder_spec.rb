@@ -4,10 +4,14 @@ require "json"
 require "tmpdir"
 require "yaml"
 
-RSpec.describe Textus::Builder do
+RSpec.describe Textus::Application::Writes::Build do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
+  let(:build_use_case) do
+    ctx = Textus::Composition.context(store, role: "build")
+    Textus::Composition.writes_build(ctx)
+  end
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
@@ -90,7 +94,7 @@ RSpec.describe Textus::Builder do
   after { FileUtils.remove_entry(tmp) }
 
   it "materializes a derived markdown entry and publishes a copy" do
-    res = Textus::Builder.new(store).build(prefix: "derived.catalogs.people")
+    res = build_use_case.call(prefix: "derived.catalogs.people")
     expect(res["built"].map { |b| b["key"] }).to include("derived.catalogs.people")
     body = File.read(File.join(root, "zones/derived/catalogs/people.md"))
     expect(body).to include("- alice (x)")
@@ -108,7 +112,7 @@ RSpec.describe Textus::Builder do
   end
 
   it "materializes a templateless JSON entry with _meta injected first" do
-    Textus::Builder.new(store).build(prefix: "derived.people-json")
+    build_use_case.call(prefix: "derived.people-json")
     raw = File.read(File.join(root, "zones/derived/people.json"))
     parsed = JSON.parse(raw)
 
@@ -120,7 +124,7 @@ RSpec.describe Textus::Builder do
   end
 
   it "materializes a templateless YAML entry whose reducer shapes the body" do
-    Textus::Builder.new(store).build(prefix: "derived.people-yaml")
+    build_use_case.call(prefix: "derived.people-yaml")
     raw = File.read(File.join(root, "zones/derived/people.yaml"))
     parsed = YAML.safe_load(raw, aliases: false)
 
@@ -132,7 +136,7 @@ RSpec.describe Textus::Builder do
   end
 
   it "supports the JSON template escape hatch and injects _meta first" do
-    Textus::Builder.new(store).build(prefix: "derived.people-json-tpl")
+    build_use_case.call(prefix: "derived.people-json-tpl")
     raw = File.read(File.join(root, "zones/derived/people-tpl.json"))
     parsed = JSON.parse(raw)
 
@@ -143,7 +147,7 @@ RSpec.describe Textus::Builder do
   end
 
   it "raises bad_render when a JSON template renders invalid JSON" do
-    expect { Textus::Builder.new(store).build(prefix: "derived.people-bad-tpl") }
+    expect { build_use_case.call(prefix: "derived.people-bad-tpl") }
       .to raise_error(Textus::BadRender) { |e| expect(e.code).to eq("bad_render") }
   end
 end

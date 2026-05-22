@@ -179,7 +179,7 @@ RSpec.describe "Build and accept events" do
 
   it "fires :built after Builder materializes a derived entry" do
     store = Textus::Store.new(root)
-    Textus::Builder.new(store).build
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
     expect($log).to include([:built, "derived.summary", ["working"]])
   end
 end

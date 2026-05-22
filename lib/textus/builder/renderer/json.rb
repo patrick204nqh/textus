@@ -1,7 +1,7 @@
 require "json"
 
 module Textus
-  class Builder
+  module Builder
     class Renderer
       class Json < Renderer
         def call(mentry:, data:)

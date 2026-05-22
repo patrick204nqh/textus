@@ -2,7 +2,7 @@ require "fileutils"
 require "time"
 
 module Textus
-  class Builder
+  module Builder
     module InjectMeta
       # Returns a new hash with _meta as the first key, per SPEC §6 ordering.
       def self.call(content_hash, mentry)

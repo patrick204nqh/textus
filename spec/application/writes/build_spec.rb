@@ -63,11 +63,30 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(body).to include("- bob (y)")
   end
 
-  it "delegates to Builder without double-firing events" do
-    # Spy that Builder is invoked, and result shape is preserved
-    result = use_case.call
-    expect(result["protocol"]).to eq(Textus::PROTOCOL)
-    expect(result["built"]).to be_an(Array)
-    expect(result["published_leaves"]).to be_an(Array)
+  it "fires :built exactly once per derived entry with correlation_id" do
+    captured = []
+    store.registry.register(:built, :capture) do |key:, correlation_id:, **|
+      captured << { key: key, correlation_id: correlation_id }
+    end
+
+    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-test-123")
+    Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
+
+    expect(captured.size).to eq(1)
+    expect(captured.first[:key]).to eq("derived.catalogs.people")
+    expect(captured.first[:correlation_id]).to eq("cid-test-123")
+  end
+
+  it "fires :published with correlation_id for each publish_to target" do
+    captured = []
+    store.registry.register(:published, :capture) do |key:, correlation_id:, target:, **|
+      captured << { key: key, correlation_id: correlation_id, target: target }
+    end
+
+    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-pub-456")
+    Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
+
+    expect(captured).not_to be_empty
+    expect(captured.map { _1[:correlation_id] }).to all(eq("cid-pub-456"))
   end
 end

@@ -49,7 +49,8 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Builder.new(store).build(prefix: "derived.note")
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+                         .call(prefix: "derived.note")
 
       expect(captured.size).to eq(2)
       expect(captured.map { _1[:key] }).to all(eq("derived.note"))
@@ -69,7 +70,8 @@ RSpec.describe "Builder fires :publish per file" do
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Builder.new(store).build(prefix: "derived.note")
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+                         .call(prefix: "derived.note")
 
       expect(build_events.size).to eq(1)
       expect(build_events.first[:key]).to eq("derived.note")
@@ -104,7 +106,7 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Builder.new(store).build
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }
