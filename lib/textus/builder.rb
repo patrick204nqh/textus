@@ -1,5 +1,8 @@
 require "fileutils"
 
+# As of 0.9.1, Textus::Application::Writes::Build is the preferred public
+# entry point. This class remains as the implementation home of materialization
+# and projection logic; full extraction is deferred to 0.10.0.
 module Textus
   class Builder
     def initialize(store)
