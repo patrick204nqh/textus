@@ -53,8 +53,8 @@ entries:
     path: intake/upstream/notes.md
     zone: intake
     owner: script:local
-    source:
-      fetch: local_file
+    intake:
+      handler: local_file
       config: { path: .textus/zones/canon/voice-tools.md }
       ttl: 12h
 
@@ -93,5 +93,5 @@ entries:
     inject_intro: true
     publish_to: [CLAUDE.md]
     events:
-      build:
+      built:
         - { exec: bin/notify-build, as: script }
