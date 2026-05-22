@@ -129,7 +129,7 @@ policies:
     refresh: { ttl: 6h, on_stale: warn }
 ```
 
-**Note (0.9.2):** the default zone names were renamed from `canon|intake|pending|derived` to `identity|inbox|review|output` to align with one lifecycle axis. `working` is unchanged. Existing stores migrate with `textus migrate zones`. The names are conventional — the manifest is the source of truth for write permissions; rename freely.
+**Note (0.9.2):** the default zone names were renamed from `canon|intake|pending|derived` to `identity|inbox|review|output` to align with one lifecycle axis. `working` is unchanged. Existing stores migrate by hand-editing the manifest and `mv`-ing the zone directories (see CHANGELOG). The names are conventional — the manifest is the source of truth for write permissions; rename freely.
 
 **Backward compatibility.** If the manifest omits the `zones:` block, the legacy v0.1 three-zone model is synthesized:
 
@@ -276,7 +276,7 @@ policies:
       sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
 ```
 
-`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`policies:`** block matched by key glob (§5.11). Implementations MUST reject legacy `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` at manifest load with a clear migration message pointing at `textus migrate policies`. Implementations MUST also reject legacy `source.from`, `source.parse`, `source.fetcher`, `source.action`, and `source.fetch` with a usage error pointing at the `intake:` key.
+`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`policies:`** block matched by key glob (§5.11). Implementations MUST reject legacy `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` at manifest load with a clear migration message pointing at the top-level `policies:` block (see the 0.9.2 CHANGELOG for a hand-edit recipe). Implementations MUST also reject legacy `source.from`, `source.parse`, `source.fetcher`, `source.action`, and `source.fetch` with a usage error pointing at the `intake:` key.
 
 #### `on_stale:` semantics
 
@@ -475,7 +475,7 @@ policies:
 
 **Read surface.** `textus policy list` dumps every block. `textus policy explain KEY` shows the resolved `PolicySet` for one key plus which block won each slot.
 
-**Migration.** `textus migrate policies` hoists every legacy entry-level `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` into a top-level `policies:` block matched by the entry's exact key. Idempotent. Run with `--dry-run` first.
+**Migration.** No migrator ships in 0.9.2 — the gem is pre-1.0 with no known outside upgraders. Existing 0.9.1 stores hand-edit the manifest to move each entry's legacy `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` into a top-level `policies:` block matched by the entry's exact key. See the 0.9.2 CHANGELOG for the recipe.
 
 ### 5.12 Storage formats (v1.2)
 
@@ -640,7 +640,6 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
 | `schema init NAME` / `schema diff NAME` / `schema migrate NAME [--rename=OLD:NEW]` | write | `human` |
-| `migrate zones [--dry-run]` / `migrate policies [--dry-run]` | write | `human` |
 | `key migrate [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `key uid K` | read | any |

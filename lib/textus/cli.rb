@@ -21,7 +21,6 @@ module Textus
       "intro" => Verb::Intro,
       "key" => Group::Key,
       "list" => Verb::List,
-      "migrate" => Group::Migrate,
       "policy" => Group::Policy,
       "published" => Verb::Published,
       "put" => Verb::Put,

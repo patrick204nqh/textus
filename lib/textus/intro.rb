@@ -50,7 +50,6 @@ module Textus
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
       { "name" => "policy", "summary" => "inspect effective policies: 'policy list', 'policy explain KEY'" },
-      { "name" => "migrate", "summary" => "schema migrators: 'migrate zones', 'migrate policies' (and 'key migrate')" },
       { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },

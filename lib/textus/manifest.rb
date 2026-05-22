@@ -174,7 +174,7 @@ module Textus
 
         raise UsageError.new(
           "entry '#{re["key"]}': intake.ttl/intake.on_stale/intake.sync_budget_ms removed in 0.9.2 — " \
-          "move into a top-level policies: block. Run `textus migrate policies` to auto-hoist.",
+          "move into a top-level policies: block (see CHANGELOG migration recipe).",
         )
       end
     end

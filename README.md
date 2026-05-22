@@ -57,7 +57,7 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `working.network.org.jane` lives at `.textus/zones/working/network/org/jane.md`.
 
-> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. `textus migrate zones` renames a 0.9.1 store.
+> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Upgrading a 0.9.1 store is a hand-edit (see CHANGELOG migration recipe).
 
 Read and write:
 
@@ -128,8 +128,6 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 |---|---|
 | `doctor` | Health checks (manifest, schemas, templates, hooks, illegal keys, sentinels, audit log, policy ambiguity, handler allowlist, legacy intake fields); `ok: true` when clean |
 | `key migrate [--dry-run]` | Rename files whose basenames violate the strict key grammar |
-| `migrate zones [--dry-run]` | Rename default zones (`canon → identity`, `intake → inbox`, `pending → review`, `derived → output`) in an existing store |
-| `migrate policies [--dry-run]` | Hoist legacy entry-level `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` into a top-level `policies:` block |
 
 **Scaffolding (human-only):**
 

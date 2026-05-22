@@ -48,7 +48,7 @@ module Textus
             "subject" => key.to_s,
             "message" => "entry '#{key}' carries legacy intake.#{fields.join(", intake.")} " \
                          "(removed in 0.9.2 — freshness lives in top-level policies:)",
-            "fix" => "run `textus migrate policies` to hoist these into a policies: block",
+            "fix" => "hand-edit these into a top-level policies: block (see CHANGELOG migration recipe)",
           }
         end
       end

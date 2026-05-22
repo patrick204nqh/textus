@@ -27,7 +27,7 @@ Recommended top-level layout — the spec allows alternatives, but this is what 
 
 Inside `working/`, group by **domain** (people, projects, decisions, runbooks), not by file type or date. Inside `output/`, group by **producer** (`output/catalogs/`, `output/indexes/`) so it's clear which build job owns what.
 
-> **0.9.2 rename.** Default zone names moved off historical artifact terms (`canon/intake/pending/derived`) to one lifecycle axis (`identity/inbox/review/output`); `working` is unchanged. `textus migrate zones` handles existing stores.
+> **0.9.2 rename.** Default zone names moved off historical artifact terms (`canon/intake/pending/derived`) to one lifecycle axis (`identity/inbox/review/output`); `working` is unchanged. Upgrade existing stores by hand-editing the manifest and `mv`-ing the zone directories (see 0.9.2 CHANGELOG).
 
 ## Schema design
 

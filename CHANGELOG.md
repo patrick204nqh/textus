@@ -13,11 +13,13 @@ is additive within a major; a new major would change the wire string.
 ### Breaking — manifest YAML
 
 - **Top-level `policies:` block added.** Replaces entry-level `intake.ttl` and
-  `intake.on_stale`. Run `textus migrate policies` to auto-hoist.
+  `intake.on_stale`. Hand-edit existing manifests (see migration recipe below);
+  no migrator ships with 0.9.2 because the gem is pre-1.0 with no known
+  outside upgraders.
 - **Default zone names renamed.** `canon → identity`, `intake → inbox`,
-  `pending → review`, `derived → output`. `working` unchanged. Run
-  `textus migrate zones` to rename in an existing store.
-- Custom-named zones are unaffected by either migrator.
+  `pending → review`, `derived → output`. `working` unchanged. Hand-edit
+  the manifest + `mv` the zone directories (see recipe below).
+- Custom-named zones are unaffected.
 
 ### Breaking — CLI
 
@@ -32,7 +34,6 @@ is additive within a major; a new major would change the wire string.
 - `textus blame KEY` — audit rows joined with git commit metadata.
 - `textus policy list` — dump effective policies.
 - `textus policy explain KEY` — show per-slot winners and matching blocks.
-- `textus migrate zones [--dry-run]`, `textus migrate policies [--dry-run]`.
 
 ### Added — domain
 
@@ -62,16 +63,25 @@ is additive within a major; a new major would change the wire string.
 - `:publish` hook (shipped 0.8.2) remains the extension point for custom
   publish targets.
 
-### Migration recipe
+### Migration recipe (hand-edit, no migrator ships)
 
 ```sh
-# In an existing 0.9.1 store, dry-run first:
-textus migrate zones --dry-run
-textus migrate policies --dry-run
+# In your existing .textus/manifest.yaml:
+#   1. Rename zones[].name fields: canon→identity, intake→inbox,
+#      pending→review, derived→output.
+#   2. Rewrite every entries[].zone and entries[].path prefix accordingly.
+#   3. Move each entries[].intake.ttl / on_stale / sync_budget_ms into
+#      a new top-level policies:[] block keyed by the entry's exact key:
+#
+#        policies:
+#          - match: "inbox.news.hn"
+#            refresh: { ttl: 6h, on_stale: sync }
 
-# Apply when output looks right:
-textus migrate zones
-textus migrate policies
+# On disk:
+mv .textus/zones/canon   .textus/zones/identity
+mv .textus/zones/intake  .textus/zones/inbox
+mv .textus/zones/pending .textus/zones/review
+mv .textus/zones/derived .textus/zones/output
 
 # Verify:
 textus doctor

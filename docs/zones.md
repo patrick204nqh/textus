@@ -94,7 +94,7 @@ zones:
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need.
 
-> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Run `textus migrate zones` to rename in an existing store; custom-named zones are untouched.
+> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Upgrade a 0.9.1 store by hand-editing the manifest and `mv`-ing the zone directories (see the 0.9.2 CHANGELOG for the recipe); custom-named zones are untouched.
 
 ---
 
@@ -233,7 +233,7 @@ policies:
 | `sync` | Block the `get` call and refresh in-process before returning. |
 | `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
 
-> **Pre-0.9.2 stores:** `intake.ttl`, `intake.on_stale`, and `intake.sync_budget_ms` lived on the entry itself. Manifest parsing now rejects them — run `textus migrate policies` to hoist them into a `policies:` block automatically.
+> **Pre-0.9.2 stores:** `intake.ttl`, `intake.on_stale`, and `intake.sync_budget_ms` lived on the entry itself. Manifest parsing now rejects them — hand-edit them into a top-level `policies:` block (see the 0.9.2 CHANGELOG for the recipe).
 
 ### Built-in `:intake` handlers
 

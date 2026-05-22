@@ -177,7 +177,7 @@ module Textus
         if src.is_a?(Hash) && (src.key?("ttl") || src.key?("on_stale") || src.key?("sync_budget_ms"))
           raise UsageError.new(
             "entry '#{@key}': intake.ttl/intake.on_stale/intake.sync_budget_ms removed in 0.9.2 — " \
-            "move into a top-level policies: block. Run `textus migrate policies` to auto-hoist.",
+            "move into a top-level policies: block (see CHANGELOG migration recipe).",
           )
         end
 

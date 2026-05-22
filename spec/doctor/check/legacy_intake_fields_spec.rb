@@ -44,7 +44,7 @@ RSpec.describe Textus::Doctor::Check::LegacyIntakeFields do
       expect(bad).not_to be_nil
       expect(bad["subject"]).to eq("inbox.notes")
       expect(bad["level"]).to eq("error")
-      expect(bad["fix"]).to include("textus migrate policies")
+      expect(bad["fix"]).to include("policies: block")
     end
   end
 

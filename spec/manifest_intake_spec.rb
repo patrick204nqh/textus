@@ -111,7 +111,7 @@ RSpec.describe "Manifest intake:" do
       .to raise_error(Textus::UsageError, /source\.fetch renamed to intake\.handler in 0\.9/)
   end
 
-  it "rejects intake.ttl (removed in 0.9.2) with a migrate hint" do
+  it "rejects intake.ttl (removed in 0.9.2) with a migration hint" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
@@ -124,10 +124,10 @@ RSpec.describe "Manifest intake:" do
             ttl: 10m
     YAML
     expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /textus migrate policies/)
+      .to raise_error(Textus::UsageError, /policies: block/)
   end
 
-  it "rejects intake.on_stale (removed in 0.9.2) with a migrate hint" do
+  it "rejects intake.on_stale (removed in 0.9.2) with a migration hint" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
@@ -140,10 +140,10 @@ RSpec.describe "Manifest intake:" do
             on_stale: sync
     YAML
     expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /textus migrate policies/)
+      .to raise_error(Textus::UsageError, /policies: block/)
   end
 
-  it "rejects intake.sync_budget_ms (removed in 0.9.2) with a migrate hint" do
+  it "rejects intake.sync_budget_ms (removed in 0.9.2) with a migration hint" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
@@ -156,6 +156,6 @@ RSpec.describe "Manifest intake:" do
             sync_budget_ms: 800
     YAML
     expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /textus migrate policies/)
+      .to raise_error(Textus::UsageError, /policies: block/)
   end
 end
