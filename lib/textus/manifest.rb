@@ -50,8 +50,17 @@ module Textus
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
 
+      reject_legacy_entry_intake_policy!(Array(raw["entries"]))
       @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!
+    end
+
+    def policies
+      @policies ||= Textus::Manifest::Policies.parse(@raw["policies"] || [])
+    end
+
+    def policies_for(key)
+      policies.for(key)
     end
 
     # Returns [Manifest::Entry, resolved_path, remaining_segments]
@@ -155,6 +164,19 @@ module Textus
 
     def validate_declared_keys!
       @entries.each { |e| validate_key!(e.key) }
+    end
+
+    def reject_legacy_entry_intake_policy!(raw_entries)
+      raw_entries.each do |re|
+        intake = re["intake"]
+        next unless intake.is_a?(Hash)
+        next unless intake.key?("ttl") || intake.key?("on_stale")
+
+        raise UsageError.new(
+          "entry '#{re["key"]}': intake.ttl/intake.on_stale removed in 0.9.2 — " \
+          "move into a top-level policies: block. Run `textus migrate policies` to auto-hoist.",
+        )
+      end
     end
 
     def resolve_leaf_path(entry)
