@@ -5,7 +5,8 @@ module Textus
         option :prefix, "--prefix=K"
 
         def call(store)
-          emit(Textus::Builder.new(store).build(prefix: prefix))
+          ctx = Textus::Composition.context(store, role: "build")
+          emit(Textus::Composition.writes_build(ctx).call(prefix: prefix))
         end
       end
     end

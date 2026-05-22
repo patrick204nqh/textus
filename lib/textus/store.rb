@@ -75,13 +75,9 @@ module Textus
       end
     end
 
-    def get(key, as: "script")
-      bus = Infra::EventBus.new(registry: registry)
-      worker = Application::Refresh::Worker.new(store: self, bus: bus)
-      orchestrator = Application::Refresh::Orchestrator.new(
-        worker: worker, bus: bus, store_root: root, store: self,
-      )
-      result = Application::Reads::Get.new(store: self, orchestrator: orchestrator).call(key, as: as)
+    def get(key, as: Textus::Role::DEFAULT)
+      ctx = Textus::Composition.context(self, role: as)
+      result = Textus::Composition.reads_get(ctx).call(key)
       raise UnknownKey.new(key, suggestions: manifest.suggestions_for(key)) if result.nil?
 
       result
@@ -91,16 +87,30 @@ module Textus
     def list(**) = @reader.list(**)
     def schema_envelope(key) = @reader.schema_envelope(key)
 
-    def put(...) = @writer.put(...)
+    # rubocop:disable Metrics/ParameterLists
+    def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+      ctx = Textus::Composition.context(self, role: as)
+      Textus::Composition.writes_put(ctx).call(
+        key, meta: meta, body: body, content: content, if_etag: if_etag, suppress_events: suppress_events
+      )
+    end
+    # rubocop:enable Metrics/ParameterLists
 
-    def delete(...) = @writer.delete(...)
+    def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
+      ctx = Textus::Composition.context(self, role: as)
+      Textus::Composition.writes_delete(ctx).call(key, if_etag: if_etag, suppress_events: suppress_events)
+    end
 
     def fire_event(event, **)
       view = Store::View.new(self)
       @bus.publish(event, store: view, **)
     end
 
-    def accept(...) = @writer.accept(...)
+    def accept(key, as: Role::DEFAULT)
+      ctx = Textus::Composition.context(self, role: as)
+      Textus::Composition.writes_accept(ctx).call(key)
+    end
+
     def reject(...) = @writer.reject(...)
 
     def deps(key)    = @reader.deps(key)

@@ -2,31 +2,30 @@ module Textus
   module Application
     module Reads
       class Get
-        def initialize(store:, orchestrator:, evaluator: Textus::Domain::Freshness::Evaluator, clock: Time)
-          @store = store
+        def initialize(ctx:, orchestrator:, evaluator: Textus::Domain::Freshness::Evaluator)
+          @ctx          = ctx
           @orchestrator = orchestrator
-          @evaluator = evaluator
-          @clock = clock
+          @evaluator    = evaluator
         end
 
-        def call(key, as: "script")
-          envelope = @store.reader.read_raw_envelope(key)
+        def call(key)
+          envelope = @ctx.store.reader.read_raw_envelope(key)
           return nil if envelope.nil?
 
-          mentry = @store.manifest.resolve(key).first
+          mentry = @ctx.store.manifest.resolve(key).first
           policy = mentry.policy
-          verdict = @evaluator.call(policy, envelope, now: @clock.now)
+          verdict = @evaluator.call(policy, envelope, now: @ctx.now)
 
           return annotate(envelope, verdict, refreshing: false) if verdict.fresh?
 
           action = policy.decide(verdict)
-          outcome = @orchestrator.execute(action, key: key, as: as)
+          outcome = @orchestrator.execute(action, key: key)
 
           case outcome
           when Textus::Domain::Outcome::Skipped
             annotate(envelope, verdict, refreshing: false)
           when Textus::Domain::Outcome::Refreshed
-            fresh_verdict = @evaluator.call(policy, outcome.envelope, now: @clock.now)
+            fresh_verdict = @evaluator.call(policy, outcome.envelope, now: @ctx.now)
             annotate(outcome.envelope, fresh_verdict, refreshing: false)
           when Textus::Domain::Outcome::Detached
             annotate(envelope, verdict, refreshing: true)

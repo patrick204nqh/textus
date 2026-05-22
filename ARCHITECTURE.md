@@ -1,41 +1,38 @@
 # Textus architecture
 
 ```
-┌─ Interface ────────────────────────────────────────────┐
-│  lib/textus/cli/       CLI verbs (get, refresh, …)     │
-└──────────────────────┬─────────────────────────────────┘
+┌─ Interface ────────────────────────────────────────────────┐
+│  CLI verbs:  ctx = Composition.context(store, role:)       │
+│              Composition.<use_case>(ctx).call(...)         │
+└──────────────────────┬─────────────────────────────────────┘
                        │
-┌─ Application ────────▼─────────────────────────────────┐
-│  lib/textus/application/                               │
-│    reads/get.rb               — Reads::Get use case    │
-│    refresh/worker.rb          — one refresh (IO)       │
-│    refresh/orchestrator.rb    — Action → Outcome       │
-│    refresh/all.rb             — batch driver           │
-└──────────┬────────────────────────────┬────────────────┘
-           │ uses domain                │ uses ports
-┌─ Domain ─▼────────────────────────────────────────────────┐
-│  lib/textus/domain/                                       │
-│    action.rb                  — Return | RefreshSync |    │
-│                                  RefreshTimed(budget_ms)  │
-│    outcome.rb                 — Skipped|Refreshed|Detached│
-│                                  |Failed                  │
-│    freshness/policy.rb        — Policy(ttl_seconds,       │
-│                                         on_stale,         │
-│                                         sync_budget_ms)   │
-│                                  .decide(verdict) → Action│
-│    freshness/verdict.rb       — fresh? / stale?           │
-│    freshness/evaluator.rb     — pure (Policy, env, now)   │
-└──────────────────────────────────────┬────────────────────┘
-                                       │ implements
-┌─ Infrastructure ─────────────────────▼────────────────────┐
-│  lib/textus/infra/                                        │
-│    event_bus.rb               — explicit pub-sub injection│
-│    clock.rb                   — injectable time           │
-│    refresh/lock.rb            — per-key flock             │
-│    refresh/detached.rb        — fork+detach child         │
-│  lib/textus/{store,manifest,hooks}/                       │
-│                               — pre-existing adapters     │
-└───────────────────────────────────────────────────────────┘
+┌─ Application ────────▼─────────────────────────────────────┐
+│  Context          (per-request: store, role, correlation,  │
+│                    clock, dry_run; can_read?/can_write?)   │
+│  Composition      (factory module)                         │
+│                                                            │
+│  reads/get.rb              writes/put.rb                   │
+│  refresh/worker.rb         writes/delete.rb                │
+│  refresh/orchestrator.rb   writes/build.rb                 │
+│  refresh/all.rb            writes/accept.rb                │
+│                            writes/publish.rb               │
+└──────────┬───────────────────────────────┬─────────────────┘
+           │ uses domain                   │ uses ports
+┌─ Domain ─▼─────────────────────────────────────────────────┐
+│  Permission             ← NEW: predicate, not Action       │
+│  Freshness::Policy      Freshness::Verdict                 │
+│  Freshness::Evaluator   Action  Outcome                    │
+└──────────────────────────────────────────┬─────────────────┘
+                                           │ implements
+┌─ Infrastructure ─────────────────────────▼─────────────────┐
+│  Store              (pure adapter — exposes ports only)    │
+│    Reader#read_envelope         Writer#write_envelope_…    │
+│    AuditLog, Staleness, Validator, Mover                   │
+│  Manifest           (incl. permission_for)                 │
+│  Hooks::Registry    EventBus     Clock                     │
+│  Refresh::Lock      Refresh::Detached                      │
+│  Publisher          (file copy + sentinel)                 │
+└────────────────────────────────────────────────────────────┘
 
    Dependency rule: arrows point DOWN. Domain has zero outbound
    imports. Application imports Domain + Infra (via ports).
@@ -55,6 +52,15 @@
    - `Action::RefreshSync` → run Worker inline → `Refreshed | Failed`
    - `Action::RefreshTimed(budget_ms:)` → race Worker thread vs budget; on timeout, kill thread, fire `:refresh_detached`, fork+detach child, return `Outcome::Detached`
 9. Map outcome → envelope annotations (`stale`, `refreshing`, `refresh_error`) and return.
+
+## Write path (`store.put`)
+
+1. CLI verb calls `ctx = Composition.context(store, role:)` then `Composition.writes_put(ctx).call(key, ...)`.
+2. `Writes::Put#call` checks `ctx.can_write?(zone)` — raises `write_forbidden` if denied.
+3. Delegates pure I/O to `Store::Writer#write_envelope_to_disk(key, ...)`.
+4. On success, fires `:put` event via the injected `Infra::EventBus`, including `correlation_id` from the Context.
+
+The same pattern applies to `Writes::Delete`, `Writes::Build`, `Writes::Accept`, and `Writes::Publish`: each takes a `Context`, checks permissions at the use-case layer, then delegates raw I/O to the corresponding `Store::Writer` or `Infra::Publisher` primitive.
 
 ## Refresh path (`textus refresh KEY`)
 

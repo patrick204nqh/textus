@@ -710,6 +710,13 @@ The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces 
 
 Plugin authors interact only with the Hook DSL (`Textus.intake`, `Textus.refreshed`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
 
+As of 0.9.1, the write path mirrors the read path:
+
+- **Reads** flow through `Application::Reads::Get`, which takes a `Context` and dispatches refresh via `Application::Refresh::Orchestrator`.
+- **Writes** flow through `Application::Writes::{Put,Delete,Build,Accept,Publish}`, each taking a `Context`. Permission checks happen at the use-case layer (via `Context#can_write?`); I/O happens at `Store::Writer#write_envelope_to_disk` (pure).
+- `Application::Context` is the universal request object: it carries `store`, `role`, `correlation_id`, `clock`, and `dry_run`. Use cases never thread these as separate kwargs.
+- `Textus::Composition` is the factory module CLI verbs (and future MCP server / HTTP shim) use to construct Contexts and use cases.
+
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
 ## 14. Open questions (v2.x scope)

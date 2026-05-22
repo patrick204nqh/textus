@@ -42,7 +42,8 @@ module Textus
           meta = payload["_meta"] || payload["frontmatter"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
-          emit(store.put(key, meta: meta, body: body, if_etag: if_etag, as: role))
+          ctx = Textus::Composition.context(store, role: role)
+          emit(Textus::Composition.writes_put(ctx).call(key, meta: meta, body: body, if_etag: if_etag))
         end
       end
     end

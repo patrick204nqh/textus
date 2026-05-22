@@ -69,8 +69,9 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
 
-      use_case = described_class.new(store: store, orchestrator: fake_orchestrator)
-      envelope = use_case.call("working.doc", as: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "script")
+      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
+      envelope = use_case.call("working.doc")
 
       expect(envelope).not_to be_nil
       expect(envelope["stale"]).to be(false)
@@ -83,8 +84,9 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_no_intake(root)
       # Do NOT write the file — leave the zone dir empty.
 
-      use_case = described_class.new(store: store, orchestrator: fake_orchestrator)
-      result = use_case.call("working.doc", as: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "script")
+      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
+      result = use_case.call("working.doc")
 
       expect(result).to be_nil
     end
@@ -95,8 +97,9 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
 
-      use_case = described_class.new(store: store, orchestrator: fake_orchestrator)
-      envelope = use_case.call("working.doc", as: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "script")
+      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
+      envelope = use_case.call("working.doc")
 
       expect(envelope["stale"]).to be(true)
       expect(envelope["refreshing"]).to be(false)

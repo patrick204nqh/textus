@@ -28,7 +28,8 @@ module Textus
       private
 
       def invoke(event, sub, key, kwargs)
-        Timeout.timeout(HOOK_TIMEOUT_SECONDS) { sub[:callable].call(**kwargs) }
+        accepted = filter_kwargs(sub[:callable], kwargs)
+        Timeout.timeout(HOOK_TIMEOUT_SECONDS) { sub[:callable].call(**accepted) }
       rescue StandardError => e
         extras = { "event" => event.to_s, "hook" => sub[:name].to_s, "error" => "#{e.class}: #{e.message}" }
         extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
@@ -37,6 +38,19 @@ module Textus
           role: "script", verb: "event_error", key: key,
           etag_before: nil, etag_after: nil, extras: extras
         )
+      end
+
+      # Passes only the kwargs a hook block declares. Lets us extend event
+      # payloads (e.g., correlation_id) without breaking hooks written against
+      # the old signature.
+      def filter_kwargs(callable, kwargs)
+        params = callable.parameters
+        return kwargs if params.any? { |type, _| type == :keyrest }
+
+        accepted = params.each_with_object([]) do |(type, name), acc|
+          acc << name if %i[key keyreq].include?(type)
+        end
+        kwargs.slice(*accepted)
       end
 
       def match?(globs, key)

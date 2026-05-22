@@ -8,6 +8,38 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.9.1 — write-path layering + request Context (2026-05-22)
+
+### Changed — internal architecture (no plugin-visible impact)
+
+- Promoted `Store::View` to `Application::Context`. The new Context carries `store`, `role`, `correlation_id`, `clock`, and `dry_run`. It answers `can_read?(zone)` / `can_write?(zone)` via the new `Domain::Permission` value. `Store::View` remains as a deprecated alias for one release; slated for removal in 0.10.0.
+- Extracted `Domain::Permission` from `Manifest#zone_writers`. Pure predicate value — `allows_read?(role)` / `allows_write?(role)`. Manifest gains `#permission_for(zone_name)` returning a `Permission`.
+- Extracted write-path use cases under `Application::Writes::*`:
+  - `Writes::Put` (was `Store::Writer#put` orchestration)
+  - `Writes::Delete` (was `Store::Writer#delete` orchestration)
+  - `Writes::Build` (was `Builder#build` orchestration)
+  - `Writes::Accept` (was `Proposal.accept`)
+  - `Writes::Publish` (was direct calls to `Publisher.publish`)
+- `Store::Writer#put` and `#delete` reduced to pure I/O (`#write_envelope_to_disk`, `#delete_envelope_from_disk`). The original methods remain as backward-compat shims that delegate to the use cases.
+- `Builder`, `Proposal`, `Publisher` become thin shims. `Publisher` also moved to `Textus::Infra::Publisher` (its prior location remains as an alias).
+- `Store#get`, `#put`, `#delete` reduced to 2-line shims through the new `Composition` module. `Store` itself no longer imports from `Application::*`.
+- New `Composition` factory module wires Contexts and use cases. CLI verbs construct via `Composition.context(store, role:)` then `Composition.<use_case>(ctx).call(...)`.
+- `Refresh::Worker` and `Refresh::Orchestrator` migrated to take `Context` instead of `store:` + `as:`.
+
+### Added
+
+- Every event payload now includes `correlation_id` — a UUID generated once per Context. Hook authors can use this to correlate events within a single request (e.g., a `:refreshed` event and a downstream `:built` event share an ID).
+
+### Deprecated
+
+- `Textus::Store::View` — use `Textus::Application::Context`. Removed in 0.10.0.
+- `Textus::Publisher` — use `Textus::Infra::Publisher` or `Textus::Application::Writes::Publish`. Removed in 0.10.0.
+
+### Unchanged
+
+- Plugin DSL, manifest YAML schema, CLI verb JSON output, envelope fields, event names, wire protocol — all identical to 0.9.0.
+- No migration needed for plugin authors.
+
 ## 0.9.0 — intake, event standardization, read-time freshness, layered architecture (2026-05-22)
 
 ### Breaking — manifest schema

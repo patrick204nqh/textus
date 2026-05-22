@@ -47,9 +47,10 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      worker = described_class.new(store: store, bus: test_bus)
+      ctx = Textus::Application::Context.new(store: store, role: "script")
+      worker = described_class.new(ctx: ctx, bus: test_bus)
 
-      envelope = worker.run("intake.item", as: "script")
+      envelope = worker.run("intake.item")
 
       expect(envelope).not_to be_nil
       expect(envelope["body"]).to eq("hello")
@@ -71,10 +72,11 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      worker = described_class.new(store: store, bus: test_bus)
+      ctx = Textus::Application::Context.new(store: store, role: "script")
+      worker = described_class.new(ctx: ctx, bus: test_bus)
 
       expect do
-        worker.run("intake.item", as: "script")
+        worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
       failed_events = test_bus.events.filter { |ev| ev.first == :refresh_failed }
@@ -98,9 +100,10 @@ RSpec.describe Textus::Application::Refresh::Worker do
       YAML
 
       store = Textus::Store.new(textus)
-      worker = described_class.new(store: store, bus: test_bus)
+      ctx = Textus::Application::Context.new(store: store, role: "human")
+      worker = described_class.new(ctx: ctx, bus: test_bus)
 
-      expect { worker.run("plain.doc", as: "human") }
+      expect { worker.run("plain.doc") }
         .to raise_error(Textus::UsageError, /no intake declared/)
     end
   end
