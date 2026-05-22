@@ -57,7 +57,7 @@ RSpec.describe ":reject event and store.reject" do
     store = Textus::Store.new(root)
     store.put("canon.target", meta: { "name" => "target" }, body: "x", as: "human")
     expect { store.reject("canon.target", as: "human") }
-      .to raise_error(Textus::ProposalError, /not a pending/)
+      .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
