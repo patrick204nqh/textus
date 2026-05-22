@@ -33,19 +33,19 @@ module Textus
     end
 
     def writes_delete(ctx)
-      Textus::Application::Writes::Delete.new(ctx: ctx, bus: event_bus(ctx))
+      Textus::Application::Writes::Delete.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def writes_build(ctx)
-      Textus::Application::Writes::Build.new(ctx: ctx, bus: event_bus(ctx))
+      Textus::Application::Writes::Build.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def writes_accept(ctx)
-      Textus::Application::Writes::Accept.new(ctx: ctx, bus: event_bus(ctx))
+      Textus::Application::Writes::Accept.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def writes_publish(ctx)
-      Textus::Application::Writes::Publish.new(ctx: ctx, bus: event_bus(ctx))
+      Textus::Application::Writes::Publish.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def event_bus(ctx)

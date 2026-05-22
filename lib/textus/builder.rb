@@ -53,7 +53,7 @@ module Textus
         )
       end
 
-      Publisher.publish(source: row[:path], target: target_abs, store_root: @root)
+      Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: @root)
       @store.fire_event(:published, key: row[:key], envelope: @store.get(row[:key]),
                                     source: row[:path], target: target_abs)
       { "key" => row[:key], "source" => row[:path], "target" => target_abs }
@@ -87,7 +87,7 @@ module Textus
 
       mentry.publish_to.each do |rel|
         target_abs = File.join(repo_root, rel)
-        Publisher.publish(source: target_path, target: target_abs, store_root: @root)
+        Textus::Infra::Publisher.publish(source: target_path, target: target_abs, store_root: @root)
         @store.fire_event(:published, key: mentry.key, envelope: envelope,
                                       source: target_path, target: target_abs)
       end
