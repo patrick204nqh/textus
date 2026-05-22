@@ -30,9 +30,8 @@ module Textus
 
           Composition.writes_delete(@ctx).call(pending_key)
 
-          store_view = Application::Context.new(store: @ctx.store, role: @ctx.role)
           @bus.publish(:accepted,
-                       store: store_view,
+                       store: @ctx.with_role(@ctx.role),
                        key: pending_key,
                        target_key: target,
                        correlation_id: @ctx.correlation_id)

@@ -105,8 +105,10 @@ module Textus
         end
 
         def publish_event(event, **payload)
-          store_view = Application::Context.new(store: store, role: @ctx.role)
-          @bus.publish(event, store: store_view, correlation_id: @ctx.correlation_id, **payload)
+          # `with_role` returns a Context that preserves the original
+          # correlation_id, so hooks reading `store.correlation_id` see the
+          # same value as the event's top-level correlation_id key.
+          @bus.publish(event, store: @ctx.with_role(@ctx.role), correlation_id: @ctx.correlation_id, **payload)
         end
       end
     end
