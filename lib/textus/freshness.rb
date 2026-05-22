@@ -4,6 +4,34 @@ module Textus
   module Freshness
     module_function
 
+    # Called by Reader when an envelope is stale. Applies the manifest's
+    # on_stale policy. Returns the (possibly updated) envelope.
+    def act_on_stale(store, mentry, key, envelope, role:)
+      case mentry.on_stale
+      when :warn
+        envelope
+      when :sync
+        refresh_sync(store, key, envelope, role: role)
+      when :timed_sync
+        refresh_timed_sync(store, mentry, key, envelope, role: role)
+      else
+        envelope
+      end
+    end
+
+    def refresh_sync(store, key, envelope, role:)
+      Refresh.call(store, key, as: role)
+      fresh = store.reader.read_raw_envelope(key)
+      fresh ? fresh.merge("stale" => false, "stale_reason" => nil, "refreshing" => false) : envelope
+    rescue Textus::Error => e
+      envelope.merge("refresh_error" => e.message)
+    end
+
+    def refresh_timed_sync(store, _mentry, key, envelope, role:)
+      # Placeholder — Task 11 implements timed_sync with fork+detach.
+      refresh_sync(store, key, envelope, role: role)
+    end
+
     # Returns :fresh, or { stale: true, reason: <string> }
     def evaluate(mentry, envelope)
       return :fresh if mentry.ttl.nil? || mentry.intake_handler.nil?

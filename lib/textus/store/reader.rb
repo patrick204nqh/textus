@@ -23,7 +23,24 @@ module Textus
           etag: Etag.for_bytes(raw), content: content
         )
         annotate_freshness!(envelope, mentry)
+        envelope = Freshness.act_on_stale(@store, mentry, key, envelope, role: "script") if envelope["stale"]
         envelope
+      end
+
+      # Reads the current on-disk state of key as a bare envelope, skipping
+      # freshness annotation to avoid recursion. Used by Freshness.refresh_sync
+      # after a sync refresh completes.
+      def read_raw_envelope(key)
+        mentry, path, = @manifest.resolve(key)
+        return nil unless File.exist?(path)
+
+        raw = File.binread(path)
+        parsed = Entry.for_format(mentry.format).parse(raw, path: path)
+        Envelope.build(
+          key: key, mentry: mentry, path: path,
+          meta: parsed["_meta"], body: parsed["body"],
+          etag: Etag.for_bytes(raw), content: parsed["content"]
+        )
       end
 
       def list(prefix: nil, zone: nil)
