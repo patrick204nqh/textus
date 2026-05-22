@@ -5,15 +5,15 @@ require "fileutils"
 RSpec.describe Textus::Application::Writes::Delete do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus_dir, "zones", "canon"))
+    FileUtils.mkdir_p(File.join(textus_dir, "zones", "identity"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
-        - { key: canon.bar,   path: canon/bar.md,   zone: canon }
+        - { key: identity.bar,   path: identity/bar.md,   zone: identity }
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -41,12 +41,12 @@ RSpec.describe Textus::Application::Writes::Delete do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       store = build_store(textus)
-      File.write(File.join(textus, "zones", "canon", "bar.md"), "---\nkey: canon.bar\n---\nbody\n")
+      File.write(File.join(textus, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
       ctx = Textus::Application::Context.new(store: store, role: "script")
 
       expect do
-        described_class.new(ctx: ctx, bus: store.bus).call("canon.bar")
+        described_class.new(ctx: ctx, bus: store.bus).call("identity.bar")
       end.to raise_error(Textus::WriteForbidden)
     end
   end

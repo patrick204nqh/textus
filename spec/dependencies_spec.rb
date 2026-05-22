@@ -9,19 +9,19 @@ RSpec.describe Textus::Dependencies do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
-        - key: derived.catalogs.people
-          path: derived/catalogs/people.md
-          zone: derived
+        - key: output.catalogs.people
+          path: output/catalogs/people.md
+          zone: output
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
@@ -40,16 +40,16 @@ RSpec.describe Textus::Dependencies do
   after { FileUtils.remove_entry(tmp) }
 
   it "lists dependencies declared in projection.select" do
-    expect(store.deps("derived.catalogs.people")).to eq(["working.people"])
+    expect(store.deps("output.catalogs.people")).to eq(["working.people"])
   end
 
   it "lists reverse dependencies" do
-    expect(store.rdeps("working.people")).to eq(["derived.catalogs.people"])
+    expect(store.rdeps("working.people")).to eq(["output.catalogs.people"])
   end
 
   it "lists published entries with publish_to" do
-    expect(store.published.map { |r| r["key"] }).to include("derived.catalogs.people")
-    rec = store.published.find { |r| r["key"] == "derived.catalogs.people" }
+    expect(store.published.map { |r| r["key"] }).to include("output.catalogs.people")
+    rec = store.published.find { |r| r["key"] == "output.catalogs.people" }
     expect(rec["publish_to"]).to eq(["PEOPLE.md"])
   end
 

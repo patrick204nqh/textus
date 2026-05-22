@@ -16,10 +16,10 @@ RSpec.describe Textus::Doctor do
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
         - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
-        - { key: derived.summary, path: derived/summary.md, zone: derived, template: summary.mustache }
+        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
       name: note

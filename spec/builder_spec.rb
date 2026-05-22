@@ -15,49 +15,49 @@ RSpec.describe Textus::Application::Writes::Build do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
-        - key: derived.catalogs.people
-          path: derived/catalogs/people.md
-          zone: derived
+        - key: output.catalogs.people
+          path: output/catalogs/people.md
+          zone: output
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
-        - key: derived.people-json
-          path: derived/people.json
-          zone: derived
+        - key: output.people-json
+          path: output/people.json
+          zone: output
           format: json
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
-        - key: derived.people-yaml
-          path: derived/people.yaml
-          zone: derived
+        - key: output.people-yaml
+          path: output/people.yaml
+          zone: output
           format: yaml
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], reduce: envelope }
-        - key: derived.people-json-tpl
-          path: derived/people-tpl.json
-          zone: derived
+        - key: output.people-json-tpl
+          path: output/people-tpl.json
+          zone: output
           format: json
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
           template: people.json.mustache
-        - key: derived.people-bad-tpl
-          path: derived/people-bad.json
-          zone: derived
+        - key: output.people-bad-tpl
+          path: output/people-bad.json
+          zone: output
           format: json
           schema: null
           owner: build:auto
@@ -93,10 +93,10 @@ RSpec.describe Textus::Application::Writes::Build do
 
   after { FileUtils.remove_entry(tmp) }
 
-  it "materializes a derived markdown entry and publishes a copy" do
-    res = build_use_case.call(prefix: "derived.catalogs.people")
-    expect(res["built"].map { |b| b["key"] }).to include("derived.catalogs.people")
-    body = File.read(File.join(root, "zones/derived/catalogs/people.md"))
+  it "materializes an output markdown entry and publishes a copy" do
+    res = build_use_case.call(prefix: "output.catalogs.people")
+    expect(res["built"].map { |b| b["key"] }).to include("output.catalogs.people")
+    body = File.read(File.join(root, "zones/output/catalogs/people.md"))
     expect(body).to include("- alice (x)")
     expect(body).to include("- bob (y)")
     # Existing frontmatter contract: generated.at still present in markdown.
@@ -108,12 +108,12 @@ RSpec.describe Textus::Application::Writes::Build do
     sentinel = File.join(root, "sentinels", "PEOPLE.md.textus-managed.json")
     expect(File.exist?(sentinel)).to be true
     expect(File.symlink?(published)).to be false
-    expect(File.binread(published)).to eq(File.binread(File.join(root, "zones/derived/catalogs/people.md")))
+    expect(File.binread(published)).to eq(File.binread(File.join(root, "zones/output/catalogs/people.md")))
   end
 
   it "materializes a templateless JSON entry with _meta injected first" do
-    build_use_case.call(prefix: "derived.people-json")
-    raw = File.read(File.join(root, "zones/derived/people.json"))
+    build_use_case.call(prefix: "output.people-json")
+    raw = File.read(File.join(root, "zones/output/people.json"))
     parsed = JSON.parse(raw)
 
     expect(parsed.keys.first).to eq("_meta")
@@ -124,8 +124,8 @@ RSpec.describe Textus::Application::Writes::Build do
   end
 
   it "materializes a templateless YAML entry whose reducer shapes the body" do
-    build_use_case.call(prefix: "derived.people-yaml")
-    raw = File.read(File.join(root, "zones/derived/people.yaml"))
+    build_use_case.call(prefix: "output.people-yaml")
+    raw = File.read(File.join(root, "zones/output/people.yaml"))
     parsed = YAML.safe_load(raw, aliases: false)
 
     expect(parsed.keys.first).to eq("_meta")
@@ -136,8 +136,8 @@ RSpec.describe Textus::Application::Writes::Build do
   end
 
   it "supports the JSON template escape hatch and injects _meta first" do
-    build_use_case.call(prefix: "derived.people-json-tpl")
-    raw = File.read(File.join(root, "zones/derived/people-tpl.json"))
+    build_use_case.call(prefix: "output.people-json-tpl")
+    raw = File.read(File.join(root, "zones/output/people-tpl.json"))
     parsed = JSON.parse(raw)
 
     expect(parsed.keys.first).to eq("_meta")
@@ -147,7 +147,7 @@ RSpec.describe Textus::Application::Writes::Build do
   end
 
   it "raises bad_render when a JSON template renders invalid JSON" do
-    expect { build_use_case.call(prefix: "derived.people-bad-tpl") }
+    expect { build_use_case.call(prefix: "output.people-bad-tpl") }
       .to raise_error(Textus::BadRender) { |e| expect(e.code).to eq("bad_render") }
   end
 end

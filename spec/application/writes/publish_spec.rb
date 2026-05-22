@@ -4,11 +4,11 @@ require "fileutils"
 
 RSpec.describe Textus::Application::Writes::Publish do
   def build_store(textus_dir)
-    FileUtils.mkdir_p(File.join(textus_dir, "zones/canon"))
+    FileUtils.mkdir_p(File.join(textus_dir, "zones/identity"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon, writable_by: [human] }
+        - { name: identity, writable_by: [human] }
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -18,12 +18,12 @@ RSpec.describe Textus::Application::Writes::Publish do
       textus = File.join(root, ".textus")
       store = build_store(textus)
 
-      source = File.join(textus, "zones/canon/src.md")
+      source = File.join(textus, "zones/identity/src.md")
       target = File.join(root, "dist", "src.md")
       File.write(source, "hello textus")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "canon.src")
+      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "identity.src")
 
       expect(File.read(target)).to eq("hello textus")
     end
@@ -34,7 +34,7 @@ RSpec.describe Textus::Application::Writes::Publish do
       textus = File.join(root, ".textus")
       store = build_store(textus)
 
-      source = File.join(textus, "zones/canon/note.md")
+      source = File.join(textus, "zones/identity/note.md")
       target = File.join(root, "out", "note.md")
       File.write(source, "content")
 
@@ -44,10 +44,10 @@ RSpec.describe Textus::Application::Writes::Publish do
         events << { key: key, correlation_id: correlation_id }
       end
 
-      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "canon.note")
+      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "identity.note")
 
       expect(events.length).to eq(1)
-      expect(events.first[:key]).to eq("canon.note")
+      expect(events.first[:key]).to eq("identity.note")
       expect(events.first[:correlation_id]).to eq("pub-1")
     end
   end
@@ -57,7 +57,7 @@ RSpec.describe Textus::Application::Writes::Publish do
       textus = File.join(root, ".textus")
       store = build_store(textus)
 
-      source = File.join(textus, "zones/canon/doc.md")
+      source = File.join(textus, "zones/identity/doc.md")
       target = File.join(root, "pub", "doc.md")
       File.write(source, "doc content")
 
@@ -67,7 +67,7 @@ RSpec.describe Textus::Application::Writes::Publish do
         events << { source: source, target: target }
       end
 
-      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "canon.doc")
+      described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "identity.doc")
 
       expect(events.first[:source]).to eq(source)
       expect(events.first[:target]).to eq(target)
@@ -79,14 +79,14 @@ RSpec.describe Textus::Application::Writes::Publish do
       textus = File.join(root, ".textus")
       store = build_store(textus)
 
-      source = File.join(textus, "zones/canon/item.md")
+      source = File.join(textus, "zones/identity/item.md")
       target = File.join(root, "item.md")
       File.write(source, "new content")
       File.write(target, "pre-existing unmanaged content")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
       expect do
-        described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "canon.item")
+        described_class.new(ctx: ctx, bus: store.bus).call(source: source, target: target, key: "identity.item")
       end.to raise_error(Textus::PublishError, /unmanaged/)
     end
   end

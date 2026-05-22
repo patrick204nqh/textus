@@ -30,7 +30,7 @@ RSpec.describe "Textus error hints" do
   end
 
   it "WriteForbidden hint mentions the writers role list when supplied" do
-    err = Textus::WriteForbidden.new("canon.identity", "canon", writers: ["human"])
+    err = Textus::WriteForbidden.new("identity.self", "identity", writers: ["human"])
     expect(err.hint).to be_a(String)
     expect(err.hint).to include("human")
     expect(err.hint).to include("--as")

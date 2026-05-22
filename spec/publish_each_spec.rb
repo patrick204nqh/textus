@@ -12,7 +12,7 @@ RSpec.describe "publish_each:" do
     FileUtils.mkdir_p(File.join(root, "zones/working/skills/writing"))
     FileUtils.mkdir_p(File.join(root, "zones/working/skills/research"))
     FileUtils.mkdir_p(File.join(root, "zones/working/commands"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
   end
 
   after { FileUtils.remove_entry(tmp) }
@@ -22,7 +22,7 @@ RSpec.describe "publish_each:" do
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
       #{entries_yaml}
     YAML

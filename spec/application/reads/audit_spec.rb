@@ -8,15 +8,15 @@ RSpec.describe Textus::Application::Reads::Audit do
   def build_store(root)
     textus = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus, "zones", "canon"))
+    FileUtils.mkdir_p(File.join(textus, "zones", "identity"))
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working }
-        - { key: canon.note,  path: canon/note.md,  zone: canon }
+        - { key: identity.note,  path: identity/note.md,  zone: identity }
     YAML
     Textus::Store.new(textus)
   end
@@ -56,7 +56,7 @@ RSpec.describe Textus::Application::Reads::Audit do
       store = build_store(root)
       write_log(root, [
                   { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "canon.note" },
+                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
                 ])
       ctx = Textus::Composition.context(store, role: "human")
@@ -73,7 +73,7 @@ RSpec.describe Textus::Application::Reads::Audit do
       write_log(root, [
                   { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc",
                     "extras" => { "correlation_id" => cid } },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "canon.note",
+                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note",
                     "extras" => { "correlation_id" => "other" } },
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
                     "extras" => { "correlation_id" => cid } },
@@ -90,11 +90,11 @@ RSpec.describe Textus::Application::Reads::Audit do
       store = build_store(root)
       write_log(root, [
                   { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "canon.note" },
+                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                 ])
       ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.audit(ctx).call(zone: "canon")
-      expect(rows.map { |r| r["key"] }).to eq(["canon.note"])
+      rows = Textus::Composition.audit(ctx).call(zone: "identity")
+      expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
     end
   end
 

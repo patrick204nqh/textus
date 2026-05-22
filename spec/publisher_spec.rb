@@ -6,7 +6,7 @@ require "tmpdir"
 RSpec.describe Textus::Infra::Publisher do
   let(:tmp) { Dir.mktmpdir }
   let(:store_root) { File.join(tmp, ".textus") }
-  let(:src) { File.join(store_root, "zones", "derived", "out.md") }
+  let(:src) { File.join(store_root, "zones", "output", "out.md") }
   let(:dst) { File.join(tmp, "dst.md") }
   let(:sentinel) { File.join(store_root, "sentinels", "dst.md.textus-managed.json") }
   let(:legacy_sentinel) { dst + ".textus-managed.json" }

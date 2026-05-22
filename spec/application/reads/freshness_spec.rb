@@ -7,18 +7,18 @@ RSpec.describe Textus::Application::Reads::Freshness do
   def build_store(root)
     textus = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus, "zones", "canon"))
+    FileUtils.mkdir_p(File.join(textus, "zones", "identity"))
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
       entries:
         - { key: working.doc,   path: working/doc.md,   zone: working }
         - { key: working.stale, path: working/stale.md, zone: working }
-        - { key: canon.note,    path: canon/note.md,    zone: canon }
+        - { key: identity.note,    path: identity/note.md,    zone: identity }
       policies:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }
@@ -52,14 +52,14 @@ RSpec.describe Textus::Application::Reads::Freshness do
       rows = Textus::Composition.freshness(ctx).call
 
       keys = rows.map { |r| r[:key] }
-      expect(keys).to contain_exactly("working.doc", "working.stale", "canon.note")
+      expect(keys).to contain_exactly("working.doc", "working.stale", "identity.note")
 
       expect(rows).to all(include(:status, :key, :zone))
 
       by_key = rows.to_h { |r| [r[:key], r] }
       expect(by_key["working.doc"][:status]).to eq(:fresh)
       expect(by_key["working.stale"][:status]).to eq(:stale)
-      expect(by_key["canon.note"][:status]).to eq(:no_policy)
+      expect(by_key["identity.note"][:status]).to eq(:no_policy)
     end
   end
 
@@ -67,9 +67,9 @@ RSpec.describe Textus::Application::Reads::Freshness do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call(zone: "canon")
+      rows = Textus::Composition.freshness(ctx).call(zone: "identity")
 
-      expect(rows.map { |r| r[:key] }).to eq(["canon.note"])
+      expect(rows.map { |r| r[:key] }).to eq(["identity.note"])
     end
   end
 

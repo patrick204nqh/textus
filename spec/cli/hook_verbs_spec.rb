@@ -9,15 +9,15 @@ RSpec.describe "CLI hook verbs" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/intake"))
+    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
-      zones: [{ name: intake, writable_by: [script] }]
+      zones: [{ name: inbox, writable_by: [script] }]
       entries:
-        - key: intake.x
-          path: intake/x.md
-          zone: intake
+        - key: inbox.x
+          path: inbox/x.md
+          zone: inbox
           intake: { handler: stub }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -37,7 +37,7 @@ RSpec.describe "CLI hook verbs" do
   end
 
   it "textus refresh KEY invokes the fetch hook" do
-    rc, line = run_cli(["refresh", "intake.x", "--as=script", "--format=json"])
+    rc, line = run_cli(["refresh", "inbox.x", "--as=script", "--format=json"])
     expect(rc).to eq(0)
     expect(JSON.parse(line)["body"]).to eq("ok")
   end

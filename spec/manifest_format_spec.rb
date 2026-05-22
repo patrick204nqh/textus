@@ -8,7 +8,7 @@ RSpec.describe "Manifest format: field validation" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
   end
 
   after { FileUtils.remove_entry(tmp) }
@@ -18,7 +18,7 @@ RSpec.describe "Manifest format: field validation" do
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
       #{entries_yaml}
     YAML
@@ -56,22 +56,22 @@ RSpec.describe "Manifest format: field validation" do
     expect(Textus::Manifest.load(root).entries.first.format).to eq("markdown")
   end
 
-  it "rejects derived markdown without template" do
+  it "rejects output markdown without template" do
     write_manifest(<<~YAML)
-      - key: derived.x
-        path: derived/x.md
-        zone: derived
+      - key: output.x
+        path: output/x.md
+        zone: output
         projection: { select: [working] }
     YAML
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /derived markdown entries require a template/)
   end
 
-  it "accepts derived json without template (templateless escape hatch is also OK)" do
+  it "accepts output json without template (templateless escape hatch is also OK)" do
     write_manifest(<<~YAML)
-      - key: derived.x
-        path: derived/x.json
-        zone: derived
+      - key: output.x
+        path: output/x.json
+        zone: output
         projection: { select: [working] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error

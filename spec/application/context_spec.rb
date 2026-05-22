@@ -9,7 +9,7 @@ RSpec.describe Textus::Application::Context do
       version: textus/2
       zones:
         - { name: working, writable_by: [human, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -39,8 +39,8 @@ RSpec.describe Textus::Application::Context do
       ctx_script = described_class.new(store: store, role: "script")
       expect(ctx_human.can_write?("working")).to be(true)
       expect(ctx_script.can_write?("working")).to be(true)
-      expect(ctx_human.can_write?("canon")).to be(true)
-      expect(ctx_script.can_write?("canon")).to be(false)
+      expect(ctx_human.can_write?("identity")).to be(true)
+      expect(ctx_script.can_write?("identity")).to be(false)
     end
   end
 
