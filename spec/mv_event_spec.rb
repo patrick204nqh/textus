@@ -22,8 +22,8 @@ RSpec.describe ":mv event" do
       Textus.hook(:mv, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
         $textus_event_log << [:mv, from_key, to_key, envelope["uid"]]
       end
-      Textus.hook(:put,    :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
-      Textus.hook(:delete, :log_delete) { |key:, store:|             $textus_event_log << [:delete, key] }
+      Textus.hook(:put,     :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
+      Textus.hook(:deleted, :log_delete) { |key:, store:|             $textus_event_log << [:deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -45,12 +45,12 @@ RSpec.describe ":mv event" do
     expect(mv_events.first[3]).to match(/\A[0-9a-f]{16}\z/)
   end
 
-  it "does NOT fire :put or :delete on mv (mv is its own signal)" do
+  it "does NOT fire :put or :deleted on mv (mv is its own signal)" do
     store = Textus::Store.new(root)
     store.put("working.a", meta: { "name" => "a" }, body: "hi", as: "human")
     $textus_event_log.clear
     store.mv("working.a", "working.b", as: "human")
-    expect($textus_event_log.map(&:first)).not_to include(:put, :delete)
+    expect($textus_event_log.map(&:first)).not_to include(:put, :deleted)
   end
 
   it "does NOT fire :mv on dry_run" do

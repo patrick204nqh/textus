@@ -35,8 +35,8 @@ RSpec.describe "textus/2 conformance" do
           zone: intake
           schema: null
           owner: script:cron
-          source:
-            fetch: http_json
+          intake:
+            handler: http_json
             config: { url: "https://example.com/calendar.ics" }
             ttl: 1s
     YAML

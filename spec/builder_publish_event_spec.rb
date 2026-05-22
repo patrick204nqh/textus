@@ -44,7 +44,7 @@ RSpec.describe "Builder fires :publish per file" do
 
     it "fires :publish once per publish_to target with correct key/source/target" do
       captured = []
-      store.registry.register(:publish, :capture) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:published, :capture) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
@@ -64,7 +64,7 @@ RSpec.describe "Builder fires :publish per file" do
 
     it "fires :build exactly once per derived entry regardless of publish_to count" do
       build_events = []
-      store.registry.register(:build, :capture_build) do |key:, envelope:, sources:, **|
+      store.registry.register(:built, :capture_build) do |key:, envelope:, sources:, **|
         _ = envelope
         build_events << { key: key, sources: sources }
       end
@@ -99,7 +99,7 @@ RSpec.describe "Builder fires :publish per file" do
 
     it "fires :publish once per leaf with the correct leaf key and target" do
       captured = []
-      store.registry.register(:publish, :capture_leaf) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:published, :capture_leaf) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end

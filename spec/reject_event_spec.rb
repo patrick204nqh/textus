@@ -27,7 +27,7 @@ RSpec.describe ":reject event and store.reject" do
       Textus.hook(:reject, :log_reject) do |key:, target_key:, store:|
         $textus_event_log << [:reject, key, target_key]
       end
-      Textus.hook(:delete, :log_delete) { |key:, store:| $textus_event_log << [:delete, key] }
+      Textus.hook(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
     RUBY
     $textus_event_log = []
   end

@@ -119,7 +119,7 @@ module Textus
 
         File.delete(path)
         @store.audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
-        @store.fire_event(:delete, key: key) unless suppress_events
+        @store.fire_event(:deleted, key: key) unless suppress_events
         { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
       end
 

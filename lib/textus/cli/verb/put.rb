@@ -15,7 +15,7 @@ module Textus
           raw = @stdin.read
           payload =
             if fetch_name
-              callable = store.registry.rpc_callable(:fetch, fetch_name)
+              callable = store.registry.rpc_callable(:intake, fetch_name)
               result =
                 begin
                   Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do

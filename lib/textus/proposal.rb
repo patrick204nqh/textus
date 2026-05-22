@@ -20,7 +20,7 @@ module Textus
       end
 
       store.delete(pending_key, as: "human")
-      store.fire_event(:accept, key: pending_key, target_key: target)
+      store.fire_event(:accepted, key: pending_key, target_key: target)
       { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
     end
   end

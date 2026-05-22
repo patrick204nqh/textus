@@ -23,7 +23,7 @@ module Textus
           end
 
           role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          callable = store.registry.rpc_callable(:fetch, name)
+          callable = store.registry.rpc_callable(:intake, name)
           view = Store::View.new(store, writable: true, as: role)
 
           begin

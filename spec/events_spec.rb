@@ -18,8 +18,8 @@ RSpec.describe "Lifecycle events" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:put, :log_put)       { |key:, envelope:, store:| $textus_event_log << [:put, key] }
-      Textus.hook(:delete, :log_delete) { |key:, store:| $textus_event_log << [:delete, key] }
+      Textus.hook(:put,     :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
+      Textus.hook(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -35,11 +35,11 @@ RSpec.describe "Lifecycle events" do
     expect($textus_event_log).to include([:put, "working.x"])
   end
 
-  it "fires :delete after a delete" do
+  it "fires :deleted after a delete" do
     store = Textus::Store.new(root)
     store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
     store.delete("working.x", as: "human")
-    expect($textus_event_log).to include([:delete, "working.x"])
+    expect($textus_event_log).to include([:deleted, "working.x"])
   end
 
   it "logs hook errors to audit log but does not abort the write" do
@@ -69,12 +69,12 @@ RSpec.describe "Refresh event" do
         - key: intake.x
           path: intake/x.md
           zone: intake
-          source: { fetch: f }
+          intake: { handler: f }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     $log = []
   end
@@ -84,19 +84,19 @@ RSpec.describe "Refresh event" do
     $log = nil
   end
 
-  it "fires :refresh with change=:created on first refresh" do
+  it "fires :refreshed with change=:created on first refresh" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
     expect($log).to eq([["intake.x", :created]])
   end
 
-  it "fires :refresh with change=:updated when body differs from previous" do
+  it "fires :refreshed with change=:updated when body differs from previous" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
+      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload hook file from disk (fresh registry)
     store2 = Textus::Store.new(root)
@@ -104,36 +104,36 @@ RSpec.describe "Refresh event" do
     expect($log.last).to eq(["intake.x", :updated])
   end
 
-  it "does NOT fire :refresh when the fetched bytes are identical to the previous bytes" do
+  it "does NOT fire :refreshed when the intake bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
     # Rewrite hook with same body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-      Textus.hook(:refresh, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload hook file from disk
     store2 = Textus::Store.new(root)
     Textus::Refresh.call(store2, "intake.x", as: "script")
     # Two refreshes with identical action body (both "v1") — only the first
-    # should fire :refresh (with :created). The second matches, so no fire.
+    # should fire :refreshed (with :created). The second matches, so no fire.
     expect($log).to eq([["intake.x", :created]])
   end
 
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:fetch, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-      Textus.hook(:put,     :p) { |key:, envelope:, store:| $log << [:put, key] }
-      Textus.hook(:refresh, :r) { |key:, envelope:, store:, change:| $log << [:refresh, key, change] }
+      Textus.hook(:intake,   :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
+      Textus.hook(:put,      :p) { |key:, envelope:, store:| $log << [:put, key] }
+      Textus.hook(:refreshed, :r) { |key:, envelope:, store:, change:| $log << [:refreshed, key, change] }
     RUBY
     $log = []
     store = Textus::Store.new(root)
     Textus::Refresh.call(store, "intake.x", as: "script")
     expect($log.count { |e| e[0] == :put }).to eq(0)
-    expect($log.count { |e| e[0] == :refresh }).to eq(1)
+    expect($log.count { |e| e[0] == :refreshed }).to eq(1)
   end
 end
 
@@ -165,8 +165,8 @@ RSpec.describe "Build and accept events" do
     File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:build, :t) do |key:, envelope:, store:, sources:|
-        $log << [:build, key, sources]
+      Textus.hook(:built, :t) do |key:, envelope:, store:, sources:|
+        $log << [:built, key, sources]
       end
     RUBY
     $log = []
@@ -177,10 +177,10 @@ RSpec.describe "Build and accept events" do
     $log = nil
   end
 
-  it "fires :build after Builder materializes a derived entry" do
+  it "fires :built after Builder materializes a derived entry" do
     store = Textus::Store.new(root)
     Textus::Builder.new(store).build
-    expect($log).to include([:build, "derived.summary", ["working"]])
+    expect($log).to include([:built, "derived.summary", ["working"]])
   end
 end
 
@@ -214,8 +214,8 @@ RSpec.describe "Accept event" do
     MD
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:accept, :t) do |key:, target_key:, store:|
-        $log << [:accept, key, target_key]
+      Textus.hook(:accepted, :t) do |key:, target_key:, store:|
+        $log << [:accepted, key, target_key]
       end
     RUBY
     $log = []
@@ -226,22 +226,22 @@ RSpec.describe "Accept event" do
     $log = nil
   end
 
-  it "fires :accept after Proposal.accept completes" do
+  it "fires :accepted after Proposal.accept completes" do
     store = Textus::Store.new(root)
     store.accept("pending.bob", as: "human")
-    expect($log).to include([:accept, "pending.bob", "working.bob"])
+    expect($log).to include([:accepted, "pending.bob", "working.bob"])
   end
 
-  it "records both target_key and key when an :accept hook fails" do
+  it "records both target_key and key when an :accepted hook fails" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-      Textus.hook(:accept, :boom) { |key:, target_key:, store:| raise "bang" }
+      Textus.hook(:accepted, :boom) { |key:, target_key:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
     store.accept("pending.bob", as: "human")
     audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
     err = audit_lines.find { |h| h["verb"] == "event_error" }
     expect(err).not_to be_nil
-    expect(err["extras"]["event"]).to eq("accept")
+    expect(err["extras"]["event"]).to eq("accepted")
     expect(err["key"]).to eq("pending.bob")
     expect(err["extras"]["target_key"]).to eq("working.bob")
   end
