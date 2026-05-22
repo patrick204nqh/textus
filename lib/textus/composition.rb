@@ -27,6 +27,10 @@ module Textus
       Textus::Application::Reads::Blame.new(ctx: ctx)
     end
 
+    def policy_explain(ctx)
+      Textus::Application::Reads::PolicyExplain.new(ctx: ctx)
+    end
+
     def refresh_worker(ctx)
       Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
     end
