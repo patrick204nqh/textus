@@ -20,13 +20,20 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
           zone: working
           intake:
             handler: counter
-            ttl: 1h
         - key: working.stale
           path: working/stale.md
           zone: working
           intake:
             handler: counter
+      policies:
+        - match: working.fresh
+          refresh:
+            ttl: 1h
+            on_stale: warn
+        - match: working.stale
+          refresh:
             ttl: 1s
+            on_stale: warn
     YAML
 
     File.write(File.join(textus, "zones", "working", "fresh.md"), <<~MD)

@@ -4,7 +4,7 @@ RSpec.describe Textus::Manifest::Policies do
   let(:raw) do
     [
       { "match" => "inbox.**",       "handler_allowlist" => ["http_get"] },
-      { "match" => "inbox.news.*",   "refresh" => { "ttl" => "6h", "on_stale" => "refresh" } },
+      { "match" => "inbox.news.*",   "refresh" => { "ttl" => "6h", "on_stale" => "sync" } },
       { "match" => "review.**",      "promote_requires" => ["schema_valid"] },
     ]
   end
@@ -31,11 +31,11 @@ RSpec.describe Textus::Manifest::Policies do
     it "respects specificity: a more-specific block overrides a less-specific one per slot" do
       raw2 = [
         { "match" => "inbox.**",     "refresh" => { "ttl" => "1d", "on_stale" => "warn" } },
-        { "match" => "inbox.news.*", "refresh" => { "ttl" => "6h", "on_stale" => "refresh" } },
+        { "match" => "inbox.news.*", "refresh" => { "ttl" => "6h", "on_stale" => "sync" } },
       ]
       set = described_class.parse(raw2).for("inbox.news.hn")
       expect(set.refresh.ttl_seconds).to eq(6 * 3600)
-      expect(set.refresh.on_stale).to eq(:refresh)
+      expect(set.refresh.on_stale).to eq(:sync)
     end
   end
 end

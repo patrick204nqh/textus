@@ -13,12 +13,16 @@ RSpec.describe "Manifest intake:" do
     File.write(File.join(root, "manifest.yaml"), yaml)
   end
 
-  def load_entry(yaml)
+  def load_manifest(yaml)
     write_manifest(yaml)
-    Textus::Manifest.load(root).entries.first
+    Textus::Manifest.load(root)
   end
 
-  it "parses intake.handler, intake.config, intake.ttl, intake.on_stale, intake.sync_budget_ms" do
+  def load_entry(yaml)
+    load_manifest(yaml).entries.first
+  end
+
+  it "parses intake.handler and intake.config" do
     e = load_entry(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
@@ -29,43 +33,43 @@ RSpec.describe "Manifest intake:" do
           intake:
             handler: news_handler
             config: { url: https://example.com/feed }
+    YAML
+    expect(e.intake_handler).to eq("news_handler")
+    expect(e.intake_config).to eq({ "url" => "https://example.com/feed" })
+  end
+
+  it "exposes refresh policy via Manifest#policies_for(key)" do
+    m = load_manifest(<<~YAML)
+      version: textus/2
+      zones: [{ name: working, writable_by: [script] }]
+      entries:
+        - key: working.news
+          path: working/news.md
+          zone: working
+          intake:
+            handler: news_handler
+      policies:
+        - match: working.news
+          refresh:
             ttl: 10m
             on_stale: timed_sync
             sync_budget_ms: 800
     YAML
-    expect(e.intake_handler).to eq("news_handler")
-    expect(e.intake_config).to eq({ "url" => "https://example.com/feed" })
-    expect(e.ttl).to eq("10m")
-    expect(e.on_stale).to eq(:timed_sync)
-    expect(e.sync_budget_ms).to eq(800)
+    set = m.policies_for("working.news")
+    expect(set.refresh).to be_a(Textus::Domain::Policy::Refresh)
+    expect(set.refresh.ttl_seconds).to eq(600)
+    expect(set.refresh.on_stale).to eq(:timed_sync)
+    expect(set.refresh.sync_budget_ms).to eq(800)
   end
 
-  it "defaults on_stale to :warn when omitted" do
-    e = load_entry(<<~YAML)
+  it "returns an empty PolicySet for keys with no matching refresh policy" do
+    m = load_manifest(<<~YAML)
       version: textus/2
-      zones: [{ name: working, writable_by: [script] }]
+      zones: [{ name: working, writable_by: [human] }]
       entries:
-        - key: working.news
-          path: working/news.md
-          zone: working
-          intake:
-            handler: news_handler
+        - { key: working.x, path: working/x.md, zone: working }
     YAML
-    expect(e.on_stale).to eq(:warn)
-  end
-
-  it "defaults sync_budget_ms to 500 when omitted" do
-    e = load_entry(<<~YAML)
-      version: textus/2
-      zones: [{ name: working, writable_by: [script] }]
-      entries:
-        - key: working.news
-          path: working/news.md
-          zone: working
-          intake:
-            handler: news_handler
-    YAML
-    expect(e.sync_budget_ms).to eq(500)
+    expect(m.policies_for("working.x").refresh).to be_nil
   end
 
   it "defaults intake_config to {} when no intake block is present" do
@@ -77,9 +81,6 @@ RSpec.describe "Manifest intake:" do
     YAML
     expect(e.intake_handler).to be_nil
     expect(e.intake_config).to eq({})
-    expect(e.ttl).to be_nil
-    expect(e.on_stale).to eq(:warn)
-    expect(e.sync_budget_ms).to eq(500)
   end
 
   it "rejects legacy source: block with UsageError matching /renamed to intake/" do
@@ -110,7 +111,7 @@ RSpec.describe "Manifest intake:" do
       .to raise_error(Textus::UsageError, /source\.fetch renamed to intake\.handler in 0\.9/)
   end
 
-  it "rejects unknown on_stale values with UsageError matching /on_stale must be one of/" do
+  it "rejects intake.ttl (removed in 0.9.2) with a migrate hint" do
     write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
@@ -120,14 +121,14 @@ RSpec.describe "Manifest intake:" do
           zone: working
           intake:
             handler: news_handler
-            on_stale: explode
+            ttl: 10m
     YAML
     expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /on_stale must be one of/)
+      .to raise_error(Textus::UsageError, /textus migrate policies/)
   end
 
-  it "accepts on_stale: sync" do
-    e = load_entry(<<~YAML)
+  it "rejects intake.on_stale (removed in 0.9.2) with a migrate hint" do
+    write_manifest(<<~YAML)
       version: textus/2
       zones: [{ name: working, writable_by: [script] }]
       entries:
@@ -138,99 +139,7 @@ RSpec.describe "Manifest intake:" do
             handler: news_handler
             on_stale: sync
     YAML
-    expect(e.on_stale).to eq(:sync)
-  end
-
-  describe "#policy" do
-    it "returns a Domain::Freshness::Policy with correct attributes" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [script] }]
-        entries:
-          - key: working.news
-            path: working/news.md
-            zone: working
-            intake:
-              handler: news_handler
-              ttl: 10m
-              on_stale: timed_sync
-              sync_budget_ms: 800
-      YAML
-      p = e.policy
-      expect(p).to be_a(Textus::Domain::Freshness::Policy)
-      expect(p.ttl_seconds).to eq(600)
-      expect(p.on_stale).to eq(:timed_sync)
-      expect(p.sync_budget_ms).to eq(800)
-    end
-
-    it "returns ttl_seconds nil when ttl is not set" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [human] }]
-        entries:
-          - { key: working.x, path: working/x.md, zone: working }
-      YAML
-      expect(e.policy.ttl_seconds).to be_nil
-    end
-
-    it "parses ttl in seconds" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [script] }]
-        entries:
-          - key: working.news
-            path: working/news.md
-            zone: working
-            intake:
-              handler: news_handler
-              ttl: 120s
-      YAML
-      expect(e.policy.ttl_seconds).to eq(120)
-    end
-
-    it "parses ttl in hours" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [script] }]
-        entries:
-          - key: working.news
-            path: working/news.md
-            zone: working
-            intake:
-              handler: news_handler
-              ttl: 2h
-      YAML
-      expect(e.policy.ttl_seconds).to eq(7200)
-    end
-
-    it "parses ttl in days" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [script] }]
-        entries:
-          - key: working.news
-            path: working/news.md
-            zone: working
-            intake:
-              handler: news_handler
-              ttl: 1d
-      YAML
-      expect(e.policy.ttl_seconds).to eq(86_400)
-    end
-
-    it "parses bare integer ttl as seconds" do
-      e = load_entry(<<~YAML)
-        version: textus/2
-        zones: [{ name: working, writable_by: [script] }]
-        entries:
-          - key: working.news
-            path: working/news.md
-            zone: working
-            intake:
-              handler: news_handler
-              ttl: 300
-      YAML
-      expect(e.policy.ttl_seconds).to eq(300)
-    end
+    expect { Textus::Manifest.load(root) }
+      .to raise_error(Textus::UsageError, /textus migrate policies/)
   end
 end

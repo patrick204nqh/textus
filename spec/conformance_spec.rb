@@ -38,7 +38,11 @@ RSpec.describe "textus/2 conformance" do
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
+      policies:
+        - match: intake.calendar.events
+          refresh:
             ttl: 1s
+            on_stale: warn
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)

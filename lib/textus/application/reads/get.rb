@@ -12,8 +12,11 @@ module Textus
           envelope = @ctx.store.reader.read_raw_envelope(key)
           return nil if envelope.nil?
 
-          mentry = @ctx.store.manifest.resolve(key).first
-          policy = mentry.policy
+          policy_set = @ctx.store.manifest.policies_for(key)
+          refresh_policy = policy_set.refresh
+          return annotate_fresh(envelope) if refresh_policy.nil?
+
+          policy = refresh_policy.to_freshness_policy
           verdict = @evaluator.call(policy, envelope, now: @ctx.now)
 
           return annotate(envelope, verdict, refreshing: false) if verdict.fresh?
@@ -42,6 +45,15 @@ module Textus
           envelope["stale_reason"]  = verdict.reason
           envelope["refreshing"]    = refreshing
           envelope["refresh_error"] = refresh_error if refresh_error
+          envelope
+        end
+
+        # No refresh policy applies to this key — treat as fresh, skip evaluation/orchestration.
+        def annotate_fresh(envelope)
+          envelope = envelope.dup
+          envelope["stale"]        = false
+          envelope["stale_reason"] = nil
+          envelope["refreshing"]   = false
           envelope
         end
       end

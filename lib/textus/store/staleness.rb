@@ -51,7 +51,8 @@ module Textus
           next if zone && mentry.zone != zone
           next if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
 
-          ttl = parse_ttl(mentry.ttl)
+          policy_set = @manifest.policies_for(mentry.key)
+          ttl = policy_set.refresh&.ttl_seconds
           next unless ttl
 
           path = Textus::Key::Path.resolve(@manifest, mentry)
@@ -100,19 +101,6 @@ module Textus
           end
         end
         nil
-      end
-
-      def parse_ttl(s)
-        return nil unless s
-
-        m = s.to_s.match(/\A(\d+)([smhd])\z/) or return nil
-        n = m[1].to_i
-        case m[2]
-        when "s" then n
-        when "m" then n * 60
-        when "h" then n * 3600
-        when "d" then n * 86_400
-        end
       end
 
       def intake_stale_row(mentry, path, reason)

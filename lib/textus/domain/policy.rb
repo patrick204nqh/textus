@@ -1,7 +1,7 @@
 module Textus
   module Domain
     module Policy
-      ALLOWED_ON_STALE = %i[warn refresh fail block].freeze
+      ALLOWED_ON_STALE = %i[warn sync timed_sync].freeze
     end
   end
 end
