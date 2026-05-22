@@ -27,9 +27,40 @@ module Textus
       envelope.merge("refresh_error" => e.message)
     end
 
-    def refresh_timed_sync(store, _mentry, key, envelope, role:)
-      # Placeholder — Task 11 implements timed_sync with fork+detach.
-      refresh_sync(store, key, envelope, role: role)
+    def refresh_timed_sync(store, mentry, key, envelope, role:)
+      unless Textus::Refresh::Detached.supported?
+        envelope["refresh_error"] = "timed_sync requires fork (Unix only); falling back to warn"
+        return envelope
+      end
+
+      budget = (mentry.sync_budget_ms || 500) / 1000.0
+      result = nil
+
+      refresh_thread = Thread.new do
+        Textus::Refresh.call(store, key, as: role)
+        result = :done
+      rescue Textus::Error
+        result = :failed
+      end
+
+      refresh_thread.join(budget)
+
+      case result
+      when :done
+        fresh = store.reader.read_raw_envelope(key)
+        fresh ? fresh.merge!("stale" => false, "stale_reason" => nil, "refreshing" => false) : envelope
+      when :failed
+        envelope
+      else
+        refresh_thread.kill
+        store.fire_event(:refresh_detached, key: key, started_at: Time.now.utc.iso8601, budget_ms: mentry.sync_budget_ms)
+        Textus::Refresh::Detached.spawn(store_root: store.root, key: key)
+        envelope.merge!(
+          "refreshing" => true,
+          "stale_reason" => "#{envelope["stale_reason"]}; refresh in progress",
+        )
+        envelope
+      end
     end
 
     # Returns :fresh, or { stale: true, reason: <string> }
