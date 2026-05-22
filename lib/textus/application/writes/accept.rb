@@ -17,6 +17,8 @@ module Textus
 
           case action
           when "put"
+            # Nested proposal "frontmatter" — the meta to write to the accepted
+            # target. Not related to the removed intake-handler legacy bridge.
             target_meta = env["_meta"]["frontmatter"] || {}
             target_body = env["body"]
             Composition.writes_put(@ctx).call(target, meta: target_meta, body: target_body)

@@ -33,14 +33,14 @@ module Textus
                   "name" => basename,
                   "last_refreshed_at" => Time.now.utc.iso8601,
                   "fetched_with" => fetch_name,
-                }.merge(result[:_meta] || result["_meta"] || result[:frontmatter] || result["frontmatter"] || {}),
+                }.merge(result[:_meta] || result["_meta"] || {}),
                 "body" => result[:body] || result["body"] || "",
               }
             else
               JSON.parse(raw)
             end
 
-          meta = payload["_meta"] || payload["frontmatter"] || {}
+          meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
           ctx = Textus::Composition.context(store, role: role)

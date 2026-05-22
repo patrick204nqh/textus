@@ -15,8 +15,7 @@ module Textus
     def self.normalize_action_result(res, format:)
       res = res.transform_keys(&:to_s) if res.is_a?(Hash)
       res ||= {}
-      # Accept both legacy :frontmatter/:_meta key names from intake hooks.
-      meta_val = res["_meta"] || res["frontmatter"]
+      meta_val = res["_meta"]
       body    = res["body"]
       content = res["content"]
 
