@@ -17,7 +17,8 @@ module Textus
           end
 
           @ctx.store.writer.delete_envelope_from_disk(
-            key, if_etag: if_etag, as: @ctx.role
+            key, if_etag: if_etag, as: @ctx.role,
+                 correlation_id: @ctx.correlation_id
           )
 
           unless suppress_events
