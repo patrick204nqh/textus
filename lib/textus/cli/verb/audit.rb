@@ -11,8 +11,7 @@ module Textus
         option :limit, "--limit=N"
 
         def call(store)
-          role = Role.resolve(flag: nil, env: ENV, root: store.root)
-          ctx = Textus::Composition.context(store, role: role)
+          ctx = context_for(store)
           since_time = since && Textus::Application::Reads::Audit.parse_since(since, now: ctx.now)
           rows = Textus::Composition.audit(ctx).call(
             key: key_filter,

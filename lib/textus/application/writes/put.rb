@@ -28,9 +28,8 @@ module Textus
           )
 
           unless suppress_events
-            store_view = Store::View.new(@ctx.store)
             @bus.publish(:put,
-                         store: store_view,
+                         store: @ctx.with_role(@ctx.role),
                          key: key,
                          envelope: envelope,
                          correlation_id: @ctx.correlation_id)

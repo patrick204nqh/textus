@@ -1,5 +1,5 @@
 module Textus
-  class Builder
+  module Builder
     # Abstract base for output renderers. Each concrete renderer owns
     # producing the bytes for one manifest format (markdown/json/yaml/text).
     class Renderer

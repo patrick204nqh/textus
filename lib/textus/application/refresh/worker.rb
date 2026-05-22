@@ -23,7 +23,7 @@ module Textus
         private
 
         def read_view
-          Store::View.new(@ctx.store)
+          Application::Context.new(store: @ctx.store, role: @ctx.role)
         end
 
         def fetch_with_bus(key, mentry)

@@ -52,7 +52,7 @@ module Textus
 
     def run_registered_checks(store)
       out = []
-      view = Store::View.new(store)
+      view = Application::Context.new(store: store, role: "human")
       store.registry.rpc_names(:check).each do |name|
         callable = store.registry.rpc_callable(:check, name)
         begin
@@ -86,5 +86,7 @@ module Textus
         "fix" => fix,
       }
     end
+
+    private_class_method :run_registered_checks, :fail_issue
   end
 end

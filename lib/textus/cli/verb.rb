@@ -57,6 +57,20 @@ module Textus
         @stdout.puts(JSON.generate(payload))
         exit_code
       end
+
+      # Resolves the active role for this invocation. Honors the verb's
+      # `--as` flag if declared, then TEXTUS_ROLE, then the project default.
+      def resolved_role(store)
+        flag = respond_to?(:as_flag) ? as_flag : nil
+        Role.resolve(flag: flag, env: ENV, root: store.root)
+      end
+
+      # Returns an Application::Context bound to the resolved role.
+      # Convenience for verbs whose only pre-call boilerplate is
+      # resolving the role and wrapping it in a context.
+      def context_for(store)
+        Textus::Composition.context(store, role: resolved_role(store))
+      end
     end
   end
 end

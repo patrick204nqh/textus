@@ -26,12 +26,12 @@ RSpec.describe "CLI default format" do
   end
 
   it "get rejects unsupported formats" do
-    rc, = run_cli(["get", "canon.identity", "--format=yaml"])
+    rc, = run_cli(["get", "identity.self", "--format=yaml"])
     expect(rc).not_to eq(0)
   end
 
   it "get still accepts --format=json for back-compat" do
-    _rc, out = run_cli(["get", "canon.identity", "--format=json"])
+    _rc, out = run_cli(["get", "identity.self", "--format=json"])
     parsed = JSON.parse(out.lines.last)
     expect(parsed["code"]).to eq("unknown_key")
   end

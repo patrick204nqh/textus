@@ -60,15 +60,15 @@ RSpec.describe "Refresh event" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/intake"))
+    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
-      zones: [{ name: intake, writable_by: [script] }]
+      zones: [{ name: inbox, writable_by: [script] }]
       entries:
-        - key: intake.x
-          path: intake/x.md
-          zone: intake
+        - key: inbox.x
+          path: inbox/x.md
+          zone: inbox
           intake: { handler: f }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -86,13 +86,13 @@ RSpec.describe "Refresh event" do
 
   it "fires :refreshed with change=:created on first refresh" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
-    expect($log).to eq([["intake.x", :created]])
+    Textus::Refresh.call(store, "inbox.x", as: "script")
+    expect($log).to eq([["inbox.x", :created]])
   end
 
   it "fires :refreshed with change=:updated when body differs from previous" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "inbox.x", as: "script")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
       Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
@@ -100,13 +100,13 @@ RSpec.describe "Refresh event" do
     RUBY
     # Re-instantiate to reload hook file from disk (fresh registry)
     store2 = Textus::Store.new(root)
-    Textus::Refresh.call(store2, "intake.x", as: "script")
-    expect($log.last).to eq(["intake.x", :updated])
+    Textus::Refresh.call(store2, "inbox.x", as: "script")
+    expect($log.last).to eq(["inbox.x", :updated])
   end
 
   it "does NOT fire :refreshed when the intake bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "inbox.x", as: "script")
     # Rewrite hook with same body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -116,10 +116,10 @@ RSpec.describe "Refresh event" do
     RUBY
     # Re-instantiate to reload hook file from disk
     store2 = Textus::Store.new(root)
-    Textus::Refresh.call(store2, "intake.x", as: "script")
+    Textus::Refresh.call(store2, "inbox.x", as: "script")
     # Two refreshes with identical action body (both "v1") — only the first
     # should fire :refreshed (with :created). The second matches, so no fire.
-    expect($log).to eq([["intake.x", :created]])
+    expect($log).to eq([["inbox.x", :created]])
   end
 
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
@@ -131,7 +131,7 @@ RSpec.describe "Refresh event" do
     RUBY
     $log = []
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "inbox.x", as: "script")
     expect($log.count { |e| e[0] == :put }).to eq(0)
     expect($log.count { |e| e[0] == :refreshed }).to eq(1)
   end
@@ -143,18 +143,18 @@ RSpec.describe "Build and accept events" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human] }
-        - { name: derived, writable_by: [build] }
+        - { name: output,  writable_by: [build] }
       entries:
         - { key: working.x, path: working/x.md, zone: working }
-        - key: derived.summary
-          path: derived/summary.md
-          zone: derived
+        - key: output.summary
+          path: output/summary.md
+          zone: output
           template: summary.mustache
           projection:
             select: [working]
@@ -177,10 +177,10 @@ RSpec.describe "Build and accept events" do
     $log = nil
   end
 
-  it "fires :built after Builder materializes a derived entry" do
+  it "fires :built after Builder materializes an output entry" do
     store = Textus::Store.new(root)
-    Textus::Builder.new(store).build
-    expect($log).to include([:built, "derived.summary", ["working"]])
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    expect($log).to include([:built, "output.summary", ["working"]])
   end
 end
 
@@ -190,18 +190,18 @@ RSpec.describe "Accept event" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/pending"))
+    FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human] }
-        - { name: pending, writable_by: [ai, human] }
+        - { name: review,  writable_by: [ai, human] }
       entries:
         - { key: working.bob, path: working/bob.md, zone: working }
-        - { key: pending.bob, path: pending/bob.md, zone: pending }
+        - { key: review.bob,  path: review/bob.md,  zone: review }
     YAML
-    File.write(File.join(root, "zones/pending/bob.md"), <<~MD)
+    File.write(File.join(root, "zones/review/bob.md"), <<~MD)
       ---
       name: bob
       proposal:
@@ -228,8 +228,8 @@ RSpec.describe "Accept event" do
 
   it "fires :accepted after Proposal.accept completes" do
     store = Textus::Store.new(root)
-    store.accept("pending.bob", as: "human")
-    expect($log).to include([:accepted, "pending.bob", "working.bob"])
+    store.accept("review.bob", as: "human")
+    expect($log).to include([:accepted, "review.bob", "working.bob"])
   end
 
   it "records both target_key and key when an :accepted hook fails" do
@@ -237,12 +237,12 @@ RSpec.describe "Accept event" do
       Textus.hook(:accepted, :boom) { |key:, target_key:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
-    store.accept("pending.bob", as: "human")
+    store.accept("review.bob", as: "human")
     audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
     err = audit_lines.find { |h| h["verb"] == "event_error" }
     expect(err).not_to be_nil
     expect(err["extras"]["event"]).to eq("accepted")
-    expect(err["key"]).to eq("pending.bob")
+    expect(err["key"]).to eq("review.bob")
     expect(err["extras"]["target_key"]).to eq("working.bob")
   end
 end

@@ -5,15 +5,15 @@ require "fileutils"
 RSpec.describe Textus::Application::Writes::Put do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus_dir, "zones", "canon"))
+    FileUtils.mkdir_p(File.join(textus_dir, "zones", "identity"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
-        - { key: canon.bar,   path: canon/bar.md,   zone: canon }
+        - { key: identity.bar,   path: identity/bar.md,   zone: identity }
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -42,7 +42,7 @@ RSpec.describe Textus::Application::Writes::Put do
       bus = Textus::Infra::EventBus.new(registry: store.registry)
 
       expect do
-        described_class.new(ctx: ctx, bus: bus).call("canon.bar", meta: {}, body: "x")
+        described_class.new(ctx: ctx, bus: bus).call("identity.bar", meta: {}, body: "x")
       end.to raise_error(Textus::WriteForbidden)
     end
   end

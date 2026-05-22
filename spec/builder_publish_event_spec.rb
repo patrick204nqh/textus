@@ -9,7 +9,7 @@ RSpec.describe "Builder fires :publish per file" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
     FileUtils.mkdir_p(File.join(root, "templates"))
   end
@@ -22,12 +22,12 @@ RSpec.describe "Builder fires :publish per file" do
         version: textus/2
         zones:
           - { name: working, writable_by: [human, ai, script] }
-          - { name: derived, writable_by: [build] }
+          - { name: output, writable_by: [build] }
         entries:
           - { key: working.note, path: working/note.md, zone: working, schema: null }
-          - key: derived.note
-            path: derived/note.md
-            zone: derived
+          - key: output.note
+            path: output/note.md
+            zone: output
             schema: null
             owner: build:auto
             projection: { select: working.note }
@@ -49,30 +49,32 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Builder.new(store).build(prefix: "derived.note")
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+                         .call(prefix: "output.note")
 
       expect(captured.size).to eq(2)
-      expect(captured.map { _1[:key] }).to all(eq("derived.note"))
+      expect(captured.map { _1[:key] }).to all(eq("output.note"))
 
       targets = captured.map { _1[:target] }
       expect(targets).to include(File.join(tmp, "out/one.md"))
       expect(targets).to include(File.join(tmp, "out/two.md"))
 
       sources = captured.map { _1[:source] }
-      expect(sources).to all(end_with("derived/note.md"))
+      expect(sources).to all(end_with("output/note.md"))
     end
 
-    it "fires :build exactly once per derived entry regardless of publish_to count" do
+    it "fires :build exactly once per output entry regardless of publish_to count" do
       build_events = []
       store.registry.register(:built, :capture_build) do |key:, envelope:, sources:, **|
         _ = envelope
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Builder.new(store).build(prefix: "derived.note")
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+                         .call(prefix: "output.note")
 
       expect(build_events.size).to eq(1)
-      expect(build_events.first[:key]).to eq("derived.note")
+      expect(build_events.first[:key]).to eq("output.note")
     end
   end
 
@@ -104,7 +106,7 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Builder.new(store).build
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }

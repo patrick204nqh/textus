@@ -16,11 +16,6 @@ module Textus
       "inbox" => "declared external inputs; script-refreshed via actions",
       "review" => "AI proposals awaiting human accept",
       "output" => "build-computed outputs; never hand-edited",
-      # legacy 0.9.1 zone names — kept so intro still annotates pre-rename stores
-      "canon" => "slow-changing identity; human-only writes",
-      "intake" => "declared external inputs; script-refreshed via actions",
-      "pending" => "AI proposals awaiting human accept",
-      "derived" => "build-computed outputs; never hand-edited",
     }.freeze
 
     WRITE_FLOWS = {

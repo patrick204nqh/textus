@@ -10,15 +10,15 @@ RSpec.describe "textus mv" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/canon/notes"))
+    FileUtils.mkdir_p(File.join(root, "zones/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: canon,   writable_by: [human] }
+        - { name: identity,   writable_by: [human] }
       entries:
         - { key: working.notes, path: working/notes, zone: working, nested: true }
-        - { key: canon.notes,   path: canon/notes,   zone: canon,   nested: true }
+        - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true }
     YAML
   end
 
@@ -57,7 +57,7 @@ RSpec.describe "textus mv" do
   it "refuses cross-zone moves" do
     put_md("working.notes.alpha")
     expect do
-      store.mv("working.notes.alpha", "canon.notes.alpha", as: "human")
+      store.mv("working.notes.alpha", "identity.notes.alpha", as: "human")
     end.to raise_error(Textus::UsageError, /cross-zone/)
   end
 

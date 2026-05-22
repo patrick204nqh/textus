@@ -7,20 +7,20 @@ RSpec.describe "inject_intro:" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/canon"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/identity"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: derived, writable_by: [build] }
+        - { name: identity, writable_by: [human] }
+        - { name: output,   writable_by: [build] }
       entries:
-        - { key: canon.id, path: canon/id.md, zone: canon, schema: null }
-        - key: derived.root
-          path: derived/root.md
-          zone: derived
-          projection: { select: [canon.id], pluck: "*" }
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - key: output.root
+          path: output/root.md
+          zone: output
+          projection: { select: [identity.id], pluck: "*" }
           template: root.mustache
           inject_intro: true
     YAML
@@ -29,29 +29,29 @@ RSpec.describe "inject_intro:" do
       {{#intro.zones}}zone:{{name}}/{{purpose}}
       {{/intro.zones}}
     TPL
-    File.write(File.join(root, "zones/canon/id.md"), "---\nname: id\n---\nx\n")
+    File.write(File.join(root, "zones/identity/id.md"), "---\nname: id\n---\nx\n")
   end
 
   after { FileUtils.remove_entry(tmp) }
 
   it "injects intro: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    Textus::Builder.new(store).build
-    body = File.read(File.join(root, "zones/derived/root.md"))
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).to include("protocol=textus/2")
-    expect(body).to include("zone:canon/")
-    expect(body).to include("zone:derived/")
+    expect(body).to include("zone:identity/")
+    expect(body).to include("zone:output/")
   end
 
   it "raises on inject_intro: on a non-derived entry" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon, writable_by: [human] }
+        - { name: identity, writable_by: [human] }
       entries:
-        - key: canon.bad
-          path: canon/bad.md
-          zone: canon
+        - key: identity.bad
+          path: identity/bad.md
+          zone: identity
           schema: null
           template: root.mustache
           inject_intro: true
@@ -65,15 +65,15 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: derived, writable_by: [build] }
+        - { name: identity, writable_by: [human] }
+        - { name: output,   writable_by: [build] }
       entries:
-        - { key: canon.id, path: canon/id.md, zone: canon, schema: null }
-        - key: derived.root
-          path: derived/root.json
-          zone: derived
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - key: output.root
+          path: output/root.json
+          zone: output
           format: json
-          projection: { select: [canon.id], pluck: "*" }
+          projection: { select: [identity.id], pluck: "*" }
           inject_intro: true
     YAML
     expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*template/)
@@ -83,19 +83,19 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: derived, writable_by: [build] }
+        - { name: identity, writable_by: [human] }
+        - { name: output,   writable_by: [build] }
       entries:
-        - { key: canon.id, path: canon/id.md, zone: canon, schema: null }
-        - key: derived.root
-          path: derived/root.md
-          zone: derived
-          projection: { select: [canon.id], pluck: "*" }
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - key: output.root
+          path: output/root.md
+          zone: output
+          projection: { select: [identity.id], pluck: "*" }
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    Textus::Builder.new(store).build
-    body = File.read(File.join(root, "zones/derived/root.md"))
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).not_to include("protocol=textus/2")
   end
 end

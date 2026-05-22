@@ -15,19 +15,19 @@ RSpec.describe Textus::Application::Writes::Build do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
-        - key: derived.catalogs.people
-          path: derived/catalogs/people.md
-          zone: derived
+        - key: output.catalogs.people
+          path: output/catalogs/people.md
+          zone: output
           schema: null
           owner: build:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
@@ -54,20 +54,39 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(result).to have_key("published_leaves")
   end
 
-  it "materializes derived entries and returns their keys in built" do
-    result = use_case.call(prefix: "derived.catalogs.people")
+  it "materializes output entries and returns their keys in built" do
+    result = use_case.call(prefix: "output.catalogs.people")
 
-    expect(result["built"].map { |b| b["key"] }).to include("derived.catalogs.people")
-    body = File.read(File.join(root, "zones/derived/catalogs/people.md"))
+    expect(result["built"].map { |b| b["key"] }).to include("output.catalogs.people")
+    body = File.read(File.join(root, "zones/output/catalogs/people.md"))
     expect(body).to include("- alice (x)")
     expect(body).to include("- bob (y)")
   end
 
-  it "delegates to Builder without double-firing events" do
-    # Spy that Builder is invoked, and result shape is preserved
-    result = use_case.call
-    expect(result["protocol"]).to eq(Textus::PROTOCOL)
-    expect(result["built"]).to be_an(Array)
-    expect(result["published_leaves"]).to be_an(Array)
+  it "fires :built exactly once per output entry with correlation_id" do
+    captured = []
+    store.registry.register(:built, :capture) do |key:, correlation_id:, **|
+      captured << { key: key, correlation_id: correlation_id }
+    end
+
+    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-test-123")
+    Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
+
+    expect(captured.size).to eq(1)
+    expect(captured.first[:key]).to eq("output.catalogs.people")
+    expect(captured.first[:correlation_id]).to eq("cid-test-123")
+  end
+
+  it "fires :published with correlation_id for each publish_to target" do
+    captured = []
+    store.registry.register(:published, :capture) do |key:, correlation_id:, target:, **|
+      captured << { key: key, correlation_id: correlation_id, target: target }
+    end
+
+    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-pub-456")
+    Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
+
+    expect(captured).not_to be_empty
+    expect(captured.map { _1[:correlation_id] }).to all(eq("cid-pub-456"))
   end
 end

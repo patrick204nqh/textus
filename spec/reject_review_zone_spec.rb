@@ -1,0 +1,61 @@
+require "spec_helper"
+require "fileutils"
+require "tmpdir"
+
+# Regression test for the 0.9.2 zone-rename: a zone named `review` (or any
+# non-"pending" name) whose writable_by signals proposal-kind ([ai, human])
+# must be acceptable to store.reject. Prior to signal-based detection this
+# raised ProposalError because Writer#reject hardcoded `zone == "pending"`.
+RSpec.describe "store.reject with signal-based proposal-zone detection" do
+  let(:tmp)  { Dir.mktmpdir }
+  let(:root) { File.join(tmp, ".textus") }
+
+  after { FileUtils.remove_entry(tmp) }
+
+  it "accepts a proposal in a zone literally named 'review' (post-0.9.2 default)" do
+    FileUtils.mkdir_p(File.join(root, "zones/identity"))
+    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/2
+      zones:
+        - { name: identity, writable_by: [human] }
+        - { name: review,   writable_by: [ai, human] }
+      entries:
+        - { key: identity.target, path: identity/target.md, zone: identity }
+        - { key: review.draft,    path: review/draft.md,    zone: review }
+    YAML
+
+    store = Textus::Store.new(root)
+    store.put("review.draft",
+              meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
+              body: "proposed body", as: "ai")
+
+    result = store.reject("review.draft", as: "human")
+    expect(result["rejected"]).to eq("review.draft")
+    expect(result["target_key"]).to eq("identity.target")
+    expect { store.get("review.draft") }.to raise_error(Textus::UnknownKey)
+  end
+
+  it "negative-signal: a zone literally named 'pending' but without [ai] writers is NOT proposal-kind" do
+    # Pure signal check: even though the zone is *named* pending, without an
+    # `ai` writer it is not proposal-kind and reject must refuse.
+    FileUtils.mkdir_p(File.join(root, "zones/identity"))
+    FileUtils.mkdir_p(File.join(root, "zones/pending"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/2
+      zones:
+        - { name: identity, writable_by: [human] }
+        - { name: pending,  writable_by: [human] }
+      entries:
+        - { key: identity.target, path: identity/target.md, zone: identity }
+        - { key: pending.draft,   path: pending/draft.md,   zone: pending }
+    YAML
+
+    store = Textus::Store.new(root)
+    store.put("pending.draft",
+              meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
+              body: "x", as: "human")
+    expect { store.reject("pending.draft", as: "human") }
+      .to raise_error(Textus::ProposalError, /not in a proposal zone/)
+  end
+end

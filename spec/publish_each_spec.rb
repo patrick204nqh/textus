@@ -12,7 +12,7 @@ RSpec.describe "publish_each:" do
     FileUtils.mkdir_p(File.join(root, "zones/working/skills/writing"))
     FileUtils.mkdir_p(File.join(root, "zones/working/skills/research"))
     FileUtils.mkdir_p(File.join(root, "zones/working/commands"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
   end
 
   after { FileUtils.remove_entry(tmp) }
@@ -22,7 +22,7 @@ RSpec.describe "publish_each:" do
       version: textus/2
       zones:
         - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
+        - { name: output, writable_by: [build] }
       entries:
       #{entries_yaml}
     YAML
@@ -148,7 +148,7 @@ RSpec.describe "publish_each:" do
 
     it "publishes one file per leaf with sentinels under .textus/sentinels/" do
       store = Textus::Store.new(root)
-      envelope = Textus::Builder.new(store).build
+      envelope = Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
 
       expect(envelope["published_leaves"].size).to eq(5)
 
@@ -172,7 +172,8 @@ RSpec.describe "publish_each:" do
 
     it "prefix: filter limits which leaves get published" do
       store = Textus::Store.new(root)
-      envelope = Textus::Builder.new(store).build(prefix: "working.agents")
+      envelope = Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+                                    .call(prefix: "working.agents")
       keys = envelope["published_leaves"].map { |r| r["key"] }
       expect(keys).to contain_exactly("working.agents.voice-writer", "working.agents.fact-checker")
     end
@@ -191,7 +192,7 @@ RSpec.describe "publish_each:" do
       File.write(File.join(root, "zones/working/agents/x.md"), "---\nname: x\n---\n")
 
       store = Textus::Store.new(root)
-      expect { Textus::Builder.new(store).build }
+      expect { Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call }
         .to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end

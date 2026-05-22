@@ -1,5 +1,5 @@
 module Textus
-  class Builder
+  module Builder
     class Renderer
       class Text < Renderer
         def call(mentry:, data:)

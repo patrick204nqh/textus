@@ -8,6 +8,111 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.0 — Shim removal, signal-based zone detection, Builder extraction (2026-05-22)
+
+### Breaking — Ruby API
+
+- `Textus::Publisher` constant removed. Use `Textus::Infra::Publisher`.
+- `Textus::Store::View` class removed. Use `Textus::Application::Context`
+  (constructed via `Composition.context(store, role:)`).
+- `Textus::Builder` class removed as a public entry point. Build logic lives
+  in `Textus::Application::Writes::Build`. External callers should use
+  `Textus::Composition.writes_build(ctx).call` instead of
+  `Textus::Builder.new(store).build`. The `Textus::Builder` namespace is
+  retained internally only for nested helpers (`Builder::Pipeline`,
+  `Builder::Renderer::*`).
+- `Application::Context` no longer exposes `put` / `delete` / `get` / `list`
+  / `where` shim methods. Hook callers that receive a Context via the
+  `store:` hook keyword must call `ctx.store.put(...)` etc., and explicitly
+  pass `as: ctx.role` for write operations.
+- Intake handler return values must use `_meta:` for frontmatter. The
+  previous `frontmatter:` legacy key is no longer accepted.
+
+### Fixed
+
+- `textus reject` and `textus refresh-stale` now work correctly for stores
+  that use the post-0.9.2 default zone names (`review`, `output`).
+  Zone-kind detection is now signal-based (driven by `writable_by:`
+  membership), not name-based. Stores using the pre-0.9.2 names (`pending`,
+  `derived`) continue to work.
+- Event payloads' `store:` keyword now carries a Context whose
+  `correlation_id` matches the event payload's top-level `correlation_id`
+  key. Previously the `store:` Context received a fresh, unrelated
+  `correlation_id`.
+
+### Added
+
+- `Textus::Manifest::Entry#in_generator_zone?` and `#in_proposal_zone?`
+  predicates. Internal `derived?` retained as an alias of
+  `in_generator_zone?`.
+- `:built` and `:published` events now carry `correlation_id` in the
+  payload, matching the existing pattern on `:put` / `:deleted` /
+  `:accepted`.
+
+### Removed
+
+- Legacy zone-purpose annotations for `canon` / `intake` / `pending` /
+  `derived` removed from `Textus::Intro::ZONE_PURPOSES`. Custom-named zones
+  continue to get no purpose annotation (existing behavior). Stores still
+  using the pre-rename default names will simply not get purpose
+  annotations on those zones in `textus intro` output.
+- Dead code: `Textus::Manifest#validate_keys!` removed (had no callers).
+
+### Internal
+
+- Builder logic fully extracted into `Application::Writes::Build`.
+- CLI verbs now share `context_for(store)` / `resolved_role(store)`
+  helpers on `CLI::Verb`.
+- Internal helpers in `Manifest`, `Doctor`, and `Manifest::Entry` are
+  properly marked private.
+
+### Unchanged
+
+- Wire protocol stays `textus/2`. Envelope shape unchanged.
+- CLI verbs, their flags, and their JSON output shape — unchanged.
+- Manifest YAML schema — unchanged.
+- Event names — unchanged (payload gains `correlation_id` on `:built` /
+  `:published`, but no existing key is removed or renamed).
+- Hook DSL — unchanged in shape. The `store:` keyword still passes an
+  object that responds to `.get`, `.list`, `.where`. The Context's
+  role-aware `with_role` is the recommended construction site for hook
+  contexts now.
+
+### Migration recipe
+
+```ruby
+# Hook handlers — before 0.10.0
+Textus.hook(:intake, :my_hook) do |store:, config:, args:|
+  store.put("inbox.foo", meta: { ... }, body: "...")  # used Context shim
+end
+
+# Hook handlers — 0.10.0+
+Textus.hook(:intake, :my_hook) do |store:, config:, args:|
+  ctx = store  # rename for clarity if desired
+  ctx.store.put("inbox.foo", meta: { ... }, body: "...", as: ctx.role)
+end
+
+# Intake handler returns — before 0.10.0
+{ frontmatter: { ... }, body: "..." }  # legacy key
+
+# Intake handler returns — 0.10.0+
+{ _meta: { ... }, body: "..." }  # _meta is the canonical key
+```
+
+If you imported the removed constants directly:
+
+```ruby
+# Before
+Textus::Publisher        # removed
+Textus::Store::View      # removed
+Textus::Builder.new(store).build(key, ...)  # removed
+
+# After
+Textus::Infra::Publisher
+Textus::Application::Context  # via Composition.context(store, role:)
+Textus::Composition.writes_build(ctx).call(key, ...)
+```
+
 ## 0.9.2 — Policies, audit verbs, zone rename (2026-05-22)
 
 ### Breaking — manifest YAML

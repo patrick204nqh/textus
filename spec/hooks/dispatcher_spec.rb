@@ -33,7 +33,7 @@ RSpec.describe Textus::Hooks::Dispatcher do
     seen = []
     bus.subscribe(:put, :scoped, keys: "working.*") { |key:, **| seen << key }
     bus.publish(:put, store: :v, key: "working.x", envelope: {})
-    bus.publish(:put, store: :v, key: "canon.y",   envelope: {})
+    bus.publish(:put, store: :v, key: "identity.y", envelope: {})
     expect(seen).to eq(["working.x"])
   end
 end

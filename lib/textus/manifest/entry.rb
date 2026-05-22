@@ -56,14 +56,31 @@ module Textus
         @publish_each.gsub(PUBLISH_EACH_VAR_RE) { vars.fetch(::Regexp.last_match(1)) }
       end
 
+      # Signal-based zone-kind predicates: derive the "kind" of a zone from its
+      # writable_by signals rather than its literal name. This keeps detection
+      # working when users rename the default zones (canon/intake/pending/derived
+      # → identity/inbox/review/output, etc.).
+      def in_generator_zone?
+        zone_writers.include?("build")
+      end
+
+      def in_proposal_zone?
+        zone_writers.include?("ai")
+      end
+
+      # Legacy alias for in_generator_zone?. Retained because internal validation
+      # callers (and external tools) read more naturally as `derived?`.
       def derived?
-        writers = @manifest.zone_writers(@zone)
-        writers.include?("build")
-      rescue UsageError => e
-        raise UsageError.new("entry '#{@key}': #{e.message}")
+        in_generator_zone?
       end
 
       private
+
+      def zone_writers
+        @manifest.zone_writers(@zone)
+      rescue UsageError => e
+        raise UsageError.new("entry '#{@key}': #{e.message}")
+      end
 
       def validate_inject_intro!
         return unless @inject_intro

@@ -17,6 +17,8 @@ module Textus
 
           case action
           when "put"
+            # Nested proposal "frontmatter" — the meta to write to the accepted
+            # target. Not related to the removed intake-handler legacy bridge.
             target_meta = env["_meta"]["frontmatter"] || {}
             target_body = env["body"]
             Composition.writes_put(@ctx).call(target, meta: target_meta, body: target_body)
@@ -28,9 +30,8 @@ module Textus
 
           Composition.writes_delete(@ctx).call(pending_key)
 
-          store_view = Store::View.new(@ctx.store)
           @bus.publish(:accepted,
-                       store: store_view,
+                       store: @ctx.with_role(@ctx.role),
                        key: pending_key,
                        target_key: target,
                        correlation_id: @ctx.correlation_id)

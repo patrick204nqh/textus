@@ -102,7 +102,7 @@ module Textus
     end
 
     def fire_event(event, **)
-      view = Store::View.new(self)
+      view = Textus::Application::Context.new(store: self, role: "human")
       @bus.publish(event, store: view, **)
     end
 

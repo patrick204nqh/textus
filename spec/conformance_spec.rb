@@ -14,32 +14,32 @@ RSpec.describe "textus/2 conformance" do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "zones/canon"))
-    FileUtils.mkdir_p(File.join(root, "zones/intake/calendar"))
+    FileUtils.mkdir_p(File.join(root, "zones/output/catalogs"))
+    FileUtils.mkdir_p(File.join(root, "zones/identity"))
+    FileUtils.mkdir_p(File.join(root, "zones/inbox/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: derived, writable_by: [build] }
-        - { name: intake,  writable_by: [script] }
+        - { name: identity, writable_by: [human] }
+        - { name: working,  writable_by: [human, ai, script] }
+        - { name: output,   writable_by: [build] }
+        - { name: inbox,    writable_by: [script] }
       entries:
-        - { key: canon.identity,        path: canon/identity,        zone: canon,   schema: null,   owner: human:patrick }
-        - { key: working.network.org,   path: working/network/org,   zone: working, schema: person, owner: human:patrick, nested: true }
-        - { key: working.projects,      path: working/projects,      zone: working, schema: null,   owner: human:patrick, nested: true }
-        - { key: derived.catalogs.skills, path: derived/catalogs/skills, zone: derived, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
-        - key: intake.calendar.events
-          path: intake/calendar/events
-          zone: intake
+        - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
+        - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
+        - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true }
+        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
+        - key: inbox.calendar.events
+          path: inbox/calendar/events
+          zone: inbox
           schema: null
           owner: script:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
       policies:
-        - match: intake.calendar.events
+        - match: inbox.calendar.events
           refresh:
             ttl: 1s
             on_stale: warn
@@ -97,14 +97,14 @@ RSpec.describe "textus/2 conformance" do
   end
 
   describe "Fixture B — role gate on write" do
-    it "raises WriteForbidden when an AI tries to write canon" do
+    it "raises WriteForbidden when an AI tries to write identity" do
       expect do
-        store.put("canon.identity",
-                  meta: { "name" => "identity" }, body: "n/a", as: "ai")
+        store.put("identity.self",
+                  meta: { "name" => "self" }, body: "n/a", as: "ai")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
-        expect(env["details"]["zone"]).to eq("canon")
+        expect(env["details"]["zone"]).to eq("identity")
       end
     end
   end
@@ -128,9 +128,9 @@ RSpec.describe "textus/2 conformance" do
   end
 
   describe "Fixture D — staleness detection" do
-    it "flags derived entries with sources newer than generated.at without executing" do
-      derived_path = File.join(root, "zones/derived/catalogs/skills.md")
-      File.write(derived_path, <<~MD)
+    it "flags output entries with sources newer than generated.at without executing" do
+      output_path = File.join(root, "zones/output/catalogs/skills.md")
+      File.write(output_path, <<~MD)
         ---
         generated:
           by: "rake catalog:skills"
@@ -145,10 +145,10 @@ RSpec.describe "textus/2 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = store.stale(zone: "derived")
+      rows = store.stale(zone: "output")
       expect(rows.length).to eq(1)
       row = rows.first
-      expect(row["key"]).to eq("derived.catalogs.skills")
+      expect(row["key"]).to eq("output.catalogs.skills")
       expect(row["generator"]["command"]).to eq("rake catalog:skills")
       expect(row["reason"]).to match(/working\.projects/)
     end
@@ -159,7 +159,7 @@ RSpec.describe "textus/2 conformance" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "intake.calendar.events", "--fetch=ical-events",
+        ["put", "inbox.calendar.events", "--fetch=ical-events",
          "--stdin", "--as=script", "--format=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
@@ -171,40 +171,40 @@ RSpec.describe "textus/2 conformance" do
     end
   end
 
-  describe "intake staleness via TTL" do
-    it "flags intake entries that were never refreshed" do
-      rows = store.stale(zone: "intake")
+  describe "inbox staleness via TTL" do
+    it "flags inbox entries that were never refreshed" do
+      rows = store.stale(zone: "inbox")
       expect(rows.length).to eq(1)
-      expect(rows.first["key"]).to eq("intake.calendar.events")
+      expect(rows.first["key"]).to eq("inbox.calendar.events")
       expect(rows.first["reason"]).to match(/never refreshed/)
     end
 
-    it "flags intake entries past their TTL" do
-      intake_path = File.join(root, "zones/intake/calendar/events.md")
+    it "flags inbox entries past their TTL" do
+      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
       stale_time = (Time.now - 10).utc.iso8601
-      File.write(intake_path, <<~MD)
+      File.write(inbox_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{stale_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "intake")
+      rows = store.stale(zone: "inbox")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
 
-    it "does not flag intake entries within their TTL" do
-      intake_path = File.join(root, "zones/intake/calendar/events.md")
+    it "does not flag inbox entries within their TTL" do
+      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
-      File.write(intake_path, <<~MD)
+      File.write(inbox_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{fresh_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "intake")
+      rows = store.stale(zone: "inbox")
       expect(rows).to be_empty
     end
   end
@@ -214,15 +214,15 @@ RSpec.describe "textus/2 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/2
         zones:
-          - { name: canon,   writable_by: [human] }
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: identity, writable_by: [human] }
+          - { name: working,  writable_by: [human, ai, script] }
         entries:
-          - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null, owner: human:patrick }
+          - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick }
       YAML
-      FileUtils.mkdir_p(File.join(root, "zones/canon"))
-      File.write(File.join(root, "zones/canon/identity.md"), "---\nname: identity\n---\n")
+      FileUtils.mkdir_p(File.join(root, "zones/identity"))
+      File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
-      expect(m.zone_writers("canon")).to eq(["human"])
+      expect(m.zone_writers("identity")).to eq(["human"])
       expect(m.zone_writers("working")).to contain_exactly("human", "ai", "script")
     end
 
@@ -334,9 +334,9 @@ RSpec.describe "textus/2 conformance" do
       expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
     end
 
-    it "rejects delete on canon by ai role" do
-      File.write(File.join(root, "zones/canon/identity.md"), "---\nname: identity\n---\nx\n")
-      expect { store.delete("canon.identity", as: "ai") }
+    it "rejects delete on identity by ai role" do
+      File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\nx\n")
+      expect { store.delete("identity.self", as: "ai") }
         .to raise_error(Textus::WriteForbidden)
     end
   end

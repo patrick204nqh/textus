@@ -136,17 +136,6 @@ module Textus
     end
     # rubocop:enable Metrics/AbcSize
 
-    # Validates all declared entry keys; raises UsageError listing all offenders.
-    def validate_keys!
-      offenders = []
-      @entries.each do |entry|
-        validate_key!(entry.key)
-      rescue UsageError => e
-        offenders << e.message
-      end
-      raise UsageError.new("invalid manifest keys: #{offenders.join("; ")}") unless offenders.empty?
-    end
-
     def validate_key!(key)
       raise UsageError.new("empty key") if key.nil? || key.empty?
 

@@ -1,7 +1,7 @@
 require "yaml"
 
 module Textus
-  class Builder
+  module Builder
     class Renderer
       class Yaml < Renderer
         def call(mentry:, data:)

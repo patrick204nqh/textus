@@ -21,17 +21,17 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
   def build_store(root, intake_body:)
     textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
+    FileUtils.mkdir_p(File.join(textus, "zones", "inbox"))
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: intake, writable_by: [script] }
+        - { name: inbox, writable_by: [script] }
       entries:
-        - key: intake.item
-          path: intake/item.md
-          zone: intake
+        - key: inbox.item
+          path: inbox/item.md
+          zone: inbox
           intake: { handler: test_intake }
     YAML
 
@@ -50,7 +50,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       ctx = Textus::Application::Context.new(store: store, role: "script")
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
-      envelope = worker.run("intake.item")
+      envelope = worker.run("inbox.item")
 
       expect(envelope).not_to be_nil
       expect(envelope["body"]).to eq("hello")
@@ -61,7 +61,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
       refreshed_payload = test_bus.events.find { |name, _| name == :refreshed }.last
       expect(refreshed_payload[:change]).to eq(:created)
-      expect(refreshed_payload[:key]).to eq("intake.item")
+      expect(refreshed_payload[:key]).to eq("inbox.item")
     end
   end
 
@@ -76,12 +76,12 @@ RSpec.describe Textus::Application::Refresh::Worker do
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
       expect do
-        worker.run("intake.item")
+        worker.run("inbox.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
       failed_events = test_bus.events.filter { |ev| ev.first == :refresh_failed }
       expect(failed_events).not_to be_empty
-      expect(failed_events.first.last[:key]).to eq("intake.item")
+      expect(failed_events.first.last[:key]).to eq("inbox.item")
     end
   end
 

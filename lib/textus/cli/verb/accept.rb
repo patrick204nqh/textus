@@ -6,8 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("accept requires a key")
-          role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          ctx = Textus::Composition.context(store, role: role)
+          ctx = context_for(store)
           emit(Textus::Composition.writes_accept(ctx).call(key))
         end
       end

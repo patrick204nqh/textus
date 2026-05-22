@@ -22,9 +22,8 @@ module Textus
           )
 
           unless suppress_events
-            store_view = Store::View.new(@ctx.store)
             @bus.publish(:deleted,
-                         store: store_view,
+                         store: @ctx.with_role(@ctx.role),
                          key: key,
                          correlation_id: @ctx.correlation_id)
           end

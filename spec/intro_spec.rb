@@ -9,11 +9,11 @@ RSpec.describe Textus::Intro do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/canon"))
+    FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/intake"))
-    FileUtils.mkdir_p(File.join(root, "zones/derived"))
-    FileUtils.mkdir_p(File.join(root, "zones/pending"))
+    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
@@ -21,28 +21,28 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: intake,  writable_by: [script] }
-        - { name: pending, writable_by: [ai] }
-        - { name: derived, writable_by: [build] }
+        - { name: identity, writable_by: [human] }
+        - { name: working,  writable_by: [human, ai, script] }
+        - { name: inbox,    writable_by: [script] }
+        - { name: review,   writable_by: [ai] }
+        - { name: output,   writable_by: [build] }
       entries:
-        - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null, owner: human:self }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
         - key: working.notes
           path: working/notes
           zone: working
           schema: null
           nested: true
-        - key: intake.feed
-          path: intake/feed.md
-          zone: intake
+        - key: inbox.feed
+          path: inbox/feed.md
+          zone: inbox
           owner: script:local
           intake:
             handler: demo-action
             config: { foo: 1 }
-        - key: derived.report
-          path: derived/report.md
-          zone: derived
+        - key: output.report
+          path: output/report.md
+          zone: output
           owner: build:auto
           projection:
             select: [working.notes]
@@ -79,10 +79,10 @@ RSpec.describe Textus::Intro do
   it "lists zones with writers and purposes for known zones" do
     env = described_class.run(store)
     names = env["zones"].map { |z| z["name"] }
-    expect(names).to contain_exactly("canon", "working", "intake", "pending", "derived")
-    canon = env["zones"].find { |z| z["name"] == "canon" }
-    expect(canon["writers"]).to eq(["human"])
-    expect(canon["purpose"]).to include("human-only")
+    expect(names).to contain_exactly("identity", "working", "inbox", "review", "output")
+    identity = env["zones"].find { |z| z["name"] == "identity" }
+    expect(identity["writers"]).to eq(["human"])
+    expect(identity["purpose"]).to include("human-only")
 
     working = env["zones"].find { |z| z["name"] == "working" }
     expect(working["writers"]).to include("human", "ai", "script")
@@ -93,10 +93,10 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/2
       zones:
-        - { name: canon, writable_by: [human] }
-        - { name: weird, writable_by: [human] }
+        - { name: identity, writable_by: [human] }
+        - { name: weird,    writable_by: [human] }
       entries:
-        - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null }
     YAML
     s = Textus::Store.new(root)
     env = described_class.run(s)
@@ -108,15 +108,15 @@ RSpec.describe Textus::Intro do
     env = described_class.run(store)
     by_key = env["entries"].to_h { |e| [e["key"], e] }
 
-    expect(by_key["canon.identity"]["derived"]).to be false
-    expect(by_key["canon.identity"]["intake"]).to be false
+    expect(by_key["identity.self"]["derived"]).to be false
+    expect(by_key["identity.self"]["intake"]).to be false
 
-    expect(by_key["intake.feed"]["intake"]).to be true
-    expect(by_key["intake.feed"]["derived"]).to be false
+    expect(by_key["inbox.feed"]["intake"]).to be true
+    expect(by_key["inbox.feed"]["derived"]).to be false
 
-    expect(by_key["derived.report"]["derived"]).to be true
-    expect(by_key["derived.report"]["publish_to"]).to eq(["REPORT.md"])
-    expect(by_key["derived.report"]["publish_each"]).to be_nil
+    expect(by_key["output.report"]["derived"]).to be true
+    expect(by_key["output.report"]["publish_to"]).to eq(["REPORT.md"])
+    expect(by_key["output.report"]["publish_each"]).to be_nil
 
     expect(by_key["working.notes"]["nested"]).to be true
   end

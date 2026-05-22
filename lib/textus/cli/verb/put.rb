@@ -10,7 +10,7 @@ module Textus
           key = positional.shift or raise UsageError.new("put requires a key")
           raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
-          role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
+          role = resolved_role(store)
 
           raw = @stdin.read
           payload =
@@ -19,7 +19,8 @@ module Textus
               result =
                 begin
                   Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
-                    callable.call(config: { "bytes" => raw }, store: Textus::Store::View.new(store), args: {})
+                    callable.call(config: { "bytes" => raw },
+                                  store: Textus::Application::Context.new(store: store, role: role), args: {})
                   end
                 rescue Timeout::Error
                   raise UsageError.new(
@@ -32,14 +33,14 @@ module Textus
                   "name" => basename,
                   "last_refreshed_at" => Time.now.utc.iso8601,
                   "fetched_with" => fetch_name,
-                }.merge(result[:_meta] || result["_meta"] || result[:frontmatter] || result["frontmatter"] || {}),
+                }.merge(result[:_meta] || result["_meta"] || {}),
                 "body" => result[:body] || result["body"] || "",
               }
             else
               JSON.parse(raw)
             end
 
-          meta = payload["_meta"] || payload["frontmatter"] || {}
+          meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
           ctx = Textus::Composition.context(store, role: role)
