@@ -15,6 +15,10 @@ module Textus
       Textus::Application::Reads::Get.new(ctx: ctx, orchestrator: refresh_orchestrator(ctx))
     end
 
+    def freshness(ctx)
+      Textus::Application::Reads::Freshness.new(ctx: ctx)
+    end
+
     def refresh_worker(ctx)
       Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
     end

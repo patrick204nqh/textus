@@ -12,6 +12,7 @@ module Textus
       "delete" => Verb::Delete,
       "deps" => Verb::Deps,
       "doctor" => Verb::Doctor,
+      "freshness" => Verb::Freshness,
       "get" => Verb::Get,
       "hook" => Group::Hook,
       "init" => Verb::Init,
