@@ -4,7 +4,7 @@ RSpec.describe Textus::Hooks::Registry do
   let(:reg) { described_class.new }
 
   # Reusable hook bodies whose kwargs are referenced so rubocop is happy.
-  let(:fetch_body) { ->(store:, config:, args:) { { store: store, config: config, args: args } } }
+  let(:intake_body) { ->(store:, config:, args:) { { store: store, config: config, args: args } } }
   let(:reduce_body) do
     lambda { |store:, rows:, config:|
       [store, config]
@@ -16,27 +16,27 @@ RSpec.describe Textus::Hooks::Registry do
   describe "EVENTS table" do
     it "freezes the table and exposes mode/args for each event" do
       expect(Textus::Hooks::Registry::EVENTS).to be_frozen
-      expect(Textus::Hooks::Registry::EVENTS[:fetch][:mode]).to eq(:rpc)
+      expect(Textus::Hooks::Registry::EVENTS[:intake][:mode]).to eq(:rpc)
       expect(Textus::Hooks::Registry::EVENTS[:put][:mode]).to eq(:pubsub)
     end
 
-    it "registers :publish as a pub-sub event" do
-      spec = Textus::Hooks::Registry::EVENTS[:publish]
+    it "registers :published as a pub-sub event" do
+      spec = Textus::Hooks::Registry::EVENTS[:published]
       expect(spec).not_to be_nil
       expect(spec[:mode]).to eq(:pubsub)
       expect(spec[:args]).to eq(%i[store key envelope source target])
     end
   end
 
-  describe "RPC hooks (fetch, reduce, check)" do
-    it "registers and looks up a fetch hook" do
-      reg.register(:fetch, :gh, &fetch_body)
-      expect(reg.rpc_callable(:fetch, :gh)).to be_a(Proc)
+  describe "RPC hooks (intake, reduce, check)" do
+    it "registers and looks up an intake hook" do
+      reg.register(:intake, :gh, &intake_body)
+      expect(reg.rpc_callable(:intake, :gh)).to be_a(Proc)
     end
 
     it "raises on unknown rpc name" do
-      expect { reg.rpc_callable(:fetch, :nope) }
-        .to raise_error(Textus::UsageError, /unknown fetch: nope/)
+      expect { reg.rpc_callable(:intake, :nope) }
+        .to raise_error(Textus::UsageError, /unknown intake: nope/)
     end
 
     it "raises on duplicate rpc name within event" do
@@ -46,12 +46,12 @@ RSpec.describe Textus::Hooks::Registry do
     end
 
     it "allows the same name across different rpc events" do
-      reg.register(:fetch, :rank, &fetch_body)
+      reg.register(:intake, :rank, &intake_body)
       expect { reg.register(:reduce, :rank, &reduce_body) }.not_to raise_error
     end
   end
 
-  describe "pub-sub hooks (put, delete, refresh, build, accept)" do
+  describe "pub-sub hooks (put, deleted, refreshed, built, accepted)" do
     it "registers multiple handlers per event" do
       reg.register(:put, :h1, &put_body)
       reg.register(:put, :h2, &put_body)
@@ -84,8 +84,8 @@ RSpec.describe Textus::Hooks::Registry do
   describe "shape check at registration" do
     it "rejects rpc callable with wrong kwargs" do
       bad = ->(wrong:) { wrong }
-      expect { reg.register(:fetch, :bad, &bad) }
-        .to raise_error(Textus::UsageError, /fetch hooks must accept kwargs: store, config, args/)
+      expect { reg.register(:intake, :bad, &bad) }
+        .to raise_error(Textus::UsageError, /intake hooks must accept kwargs: store, config, args/)
     end
 
     it "rejects a hook missing the mandatory store: kwarg" do
@@ -99,7 +99,7 @@ RSpec.describe Textus::Hooks::Registry do
 
     it "accepts rpc callable with **kwargs catch-all" do
       catchall = ->(**) { {} }
-      expect { reg.register(:fetch, :ok, &catchall) }.not_to raise_error
+      expect { reg.register(:intake, :ok, &catchall) }.not_to raise_error
     end
   end
 end
