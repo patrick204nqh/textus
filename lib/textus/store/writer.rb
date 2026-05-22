@@ -114,10 +114,19 @@ module Textus
         end
       end
 
+      # Backward-compat shim — orchestration now lives in Application::Writes::Delete.
       def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-        mentry, path, = @manifest.resolve(key)
-        writers = @manifest.zone_writers(mentry.zone)
-        raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
+        ctx = Textus::Application::Context.new(store: @store, role: as)
+        Textus::Application::Writes::Delete.new(ctx: ctx, bus: @store.bus).call(
+          key, if_etag: if_etag, suppress_events: suppress_events
+        )
+      end
+
+      # Pure I/O: resolve path, validate etag, delete from disk, audit. No
+      # permission check and no event firing — those are handled by the caller
+      # (Application::Writes::Delete).
+      def delete_envelope_from_disk(key, if_etag: nil, as: Role::DEFAULT)
+        _, path, = @manifest.resolve(key)
         raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
         etag_before = Etag.for_file(path)
@@ -125,8 +134,6 @@ module Textus
 
         File.delete(path)
         @store.audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
-        @store.fire_event(:deleted, key: key) unless suppress_events
-        { "protocol" => PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
       end
 
       def accept(key, as:)
