@@ -5,8 +5,8 @@ require "stringio"
 require "json"
 
 RSpec.describe Textus::CLI::Verb::Audit do
-  let(:tmp)    { Dir.mktmpdir }
-  let(:root)   { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:stdin)  { StringIO.new }
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
@@ -32,8 +32,6 @@ RSpec.describe Textus::CLI::Verb::Audit do
                              "verb" => "put", "key" => "working.doc" })
     end
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "emits all rows when called with no filters" do
     rc = run(["audit"])

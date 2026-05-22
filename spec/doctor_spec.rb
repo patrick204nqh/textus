@@ -5,8 +5,7 @@ require "json"
 require "digest"
 
 RSpec.describe Textus::Doctor do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
@@ -31,8 +30,6 @@ RSpec.describe Textus::Doctor do
     YAML
     File.write(File.join(root, "templates/summary.mustache"), "summary\n")
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def doctor
     store = Textus::Store.new(root)

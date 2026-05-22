@@ -39,8 +39,7 @@ RSpec.describe Textus::Hooks::Dispatcher do
 end
 
 RSpec.describe "Hooks::Dispatcher external subscription" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
@@ -51,8 +50,6 @@ RSpec.describe "Hooks::Dispatcher external subscription" do
         - { key: working.x, path: working/x.md, zone: working }
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "lets external code subscribe to :put without a hooks/ file" do
     store = Textus::Store.new(root)

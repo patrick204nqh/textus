@@ -3,8 +3,8 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe "Builder fires :publish per file" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:store) { Textus::Store.new(root) }
 
   before do
@@ -13,8 +13,6 @@ RSpec.describe "Builder fires :publish per file" do
     FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
     FileUtils.mkdir_p(File.join(root, "templates"))
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   describe "publish_to: fires :publish once per target path" do
     before do

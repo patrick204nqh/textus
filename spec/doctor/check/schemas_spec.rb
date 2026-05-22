@@ -3,8 +3,7 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe Textus::Doctor::Check::Schemas do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
@@ -22,8 +21,6 @@ RSpec.describe Textus::Doctor::Check::Schemas do
       fields: {}
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "returns empty array when all referenced schemas exist" do
     store = Textus::Store.new(root)

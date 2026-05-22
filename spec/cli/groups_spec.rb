@@ -3,8 +3,7 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe "CLI subcommand groups" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   let(:stdin)  { StringIO.new }
   let(:stdout) { StringIO.new }
@@ -27,8 +26,6 @@ RSpec.describe "CLI subcommand groups" do
     YAML
     File.write(File.join(root, "zones/working/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   # ── key group ─────────────────────────────────────────────────────────────
 

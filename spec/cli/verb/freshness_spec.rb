@@ -6,8 +6,8 @@ require "json"
 require "time"
 
 RSpec.describe Textus::CLI::Verb::Freshness do
-  let(:tmp)    { Dir.mktmpdir }
-  let(:root)   { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:stdin)  { StringIO.new }
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
@@ -36,8 +36,6 @@ RSpec.describe Textus::CLI::Verb::Freshness do
       body
     MD
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "emits a JSON envelope with verb=freshness and rows" do
     rc = run(["freshness"])

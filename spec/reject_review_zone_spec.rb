@@ -7,10 +7,7 @@ require "tmpdir"
 # must be acceptable to store.reject. Prior to signal-based detection this
 # raised ProposalError because Writer#reject hardcoded `zone == "pending"`.
 RSpec.describe "store.reject with signal-based proposal-zone detection" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
-
-  after { FileUtils.remove_entry(tmp) }
+  include_context "textus_store_fixture"
 
   it "accepts a proposal in a zone literally named 'review' (post-0.9.2 default)" do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))

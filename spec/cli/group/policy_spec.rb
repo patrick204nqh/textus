@@ -5,8 +5,8 @@ require "stringio"
 require "json"
 
 RSpec.describe "textus policy group" do
-  let(:tmp)    { Dir.mktmpdir }
-  let(:root)   { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:stdin)  { StringIO.new }
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
@@ -31,8 +31,6 @@ RSpec.describe "textus policy group" do
           handler_allowlist: [src_a]
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   describe "textus policy list" do
     it "emits every parsed block" do

@@ -3,11 +3,9 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe "Manifest intake:" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before { FileUtils.mkdir_p(root) }
-  after  { FileUtils.remove_entry(tmp) }
 
   def write_manifest(yaml)
     File.write(File.join(root, "manifest.yaml"), yaml)

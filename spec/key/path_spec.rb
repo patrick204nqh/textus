@@ -3,8 +3,7 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::Key::Path do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones"))
@@ -16,8 +15,6 @@ RSpec.describe Textus::Key::Path do
         - { key: working.dir, path: working/dir,    zone: working, nested: true }
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   it "resolves leaf entries by appending the primary extension when missing" do
     manifest = Textus::Manifest.load(root)

@@ -4,8 +4,7 @@ require "tmpdir"
 require "yaml"
 
 RSpec.describe Textus::Schema::Tools do
-  let(:tmp) { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
@@ -18,8 +17,6 @@ RSpec.describe Textus::Schema::Tools do
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
     YAML
   end
-
-  after { FileUtils.remove_entry(tmp) }
 
   def store = Textus::Store.new(root)
 
