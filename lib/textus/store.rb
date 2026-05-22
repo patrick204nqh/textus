@@ -45,6 +45,7 @@ module Textus
       load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
+      fire_event(:loaded)
     end
 
     def load_hooks
@@ -92,6 +93,7 @@ module Textus
     end
 
     def accept(...) = @writer.accept(...)
+    def reject(...) = @writer.reject(...)
 
     def deps(key)    = @reader.deps(key)
     def rdeps(key)   = @reader.rdeps(key)
@@ -105,7 +107,7 @@ module Textus
     # uid (minting one first if absent), validates both keys against the
     # manifest, refuses to clobber, and writes one mv audit row.
     def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false)
-      Mover.new(reader: @reader, writer: @writer, manifest: @manifest, audit_log: audit_log)
+      Mover.new(store: self, reader: @reader, writer: @writer, manifest: @manifest, audit_log: audit_log)
            .call(old_key, new_key, as: as, dry_run: dry_run)
     end
 

@@ -126,6 +126,22 @@ module Textus
       def accept(key, as:)
         Proposal.accept(@store, key, as: as)
       end
+
+      def reject(pending_key, as: Role::DEFAULT)
+        raise ProposalError.new("only human role can reject proposals; got '#{as}'") unless as == "human"
+
+        mentry, = @store.manifest.resolve(pending_key)
+        raise ProposalError.new("reject: '#{pending_key}' is not a pending entry (zone=#{mentry.zone})") unless mentry.zone == "pending"
+
+        env = @store.get(pending_key)
+        proposal = env.dig("_meta", "proposal") or
+          raise ProposalError.new("entry has no proposal block: #{pending_key}")
+        target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
+
+        delete(pending_key, as: as)
+        @store.fire_event(:reject, key: pending_key, target_key: target_key)
+        { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
+      end
     end
     # rubocop:enable Metrics/ParameterLists
   end

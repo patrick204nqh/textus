@@ -8,6 +8,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.8.3 — :mv, :reject, :loaded events (2026-05-22)
+
+### Added
+- New `:mv` event — fires after a successful `store.mv`. Payload:
+  `{ key:, from_key:, to_key:, envelope: }` where `key:` equals `to_key:`
+  so `keys:` glob filters route against the entry's post-move home.
+  `:put` and `:delete` remain suppressed for renames; `:mv` is the sole signal.
+- New `:reject` event + `store.reject(pending_key, as: "human")` +
+  `textus reject KEY --as=human` CLI verb. Counterpart to `:accept` —
+  explicitly discards a proposal. Fires `:delete` then `:reject`.
+- New `:loaded` event — fires exactly once at the tail of `Store#initialize`,
+  after all hooks are registered and reader/writer are built. Use for cache
+  warmups and one-shot setup. Payload: `store:` only.
+
 ## 0.8.2 — Hook DSL sugar + :publish event (2026-05-22)
 
 ### Added

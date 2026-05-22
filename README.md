@@ -113,6 +113,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `key mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
 | `build [--prefix=K] [--dry-run]` | `build` |
 | `accept K --as=human` | `human` only |
+| `reject K --as=human` | `human` only (discards a pending proposal; fires `:reject`) |
 
 **Health & maintenance:**
 
@@ -155,7 +156,7 @@ textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectorie
 - `:fetch` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
 - `:reduce` — transform rows during projection (returns rows)
 - `:check` — custom doctor check (returns issues)
-- `:put`, `:delete`, `:refresh`, `:build`, `:accept` — react to lifecycle events
+- `:put`, `:delete`, `:refresh`, `:build`, `:accept`, `:publish`, `:mv`, `:reject`, `:loaded` — react to lifecycle events
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
