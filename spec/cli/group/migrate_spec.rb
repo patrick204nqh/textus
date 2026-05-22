@@ -68,6 +68,30 @@ RSpec.describe "textus migrate group" do
     end
   end
 
+  describe "textus migrate policies" do
+    it "hoists entry-level intake.ttl/on_stale into policies block" do
+      # Use a fresh manifest in the already-migrated zone vocabulary so the
+      # hoist works without needing zones migration first.
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/2
+        zones:
+          - { name: inbox, writable_by: [script] }
+        entries:
+          - key: inbox.news.hn
+            zone: inbox
+            path: inbox/news/hn.md
+            intake: { handler: http_get, ttl: 6h, on_stale: refresh }
+      YAML
+      rc = run(%w[migrate policies])
+      expect(rc).to eq(0)
+      payload = JSON.parse(stdout.string)
+      expect(payload["verb"]).to eq("migrate.policies")
+      yaml = YAML.load_file(File.join(root, "manifest.yaml"))
+      expect(yaml["entries"][0]["intake"]).not_to have_key("ttl")
+      expect(yaml["policies"][0]["match"]).to eq("inbox.news.hn")
+    end
+  end
+
   describe "textus migrate (no subcommand)" do
     it "lists valid subcommands" do
       run(["migrate"])
