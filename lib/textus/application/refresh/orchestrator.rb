@@ -29,7 +29,7 @@ module Textus
         end
 
         def run_timed(budget_ms, key, as)
-          unless Textus::Refresh::Detached.supported?
+          unless Textus::Infra::Refresh::Detached.supported?
             return Textus::Domain::Outcome::Failed.new(
               error: Textus::UsageError.new("timed_sync requires fork (Unix only)"),
             )
@@ -60,7 +60,7 @@ module Textus
         end
 
         def default_spawner
-          Textus::Refresh::Detached.method(:spawn)
+          Textus::Infra::Refresh::Detached.method(:spawn)
         end
       end
     end

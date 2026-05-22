@@ -1,10 +1,10 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Refresh::Lock do
+RSpec.describe Textus::Infra::Refresh::Lock do
   it "acquires and releases a per-key file lock" do
     Dir.mktmpdir do |root|
-      lock = Textus::Refresh::Lock.new(root: root, key: "working.foo")
+      lock = Textus::Infra::Refresh::Lock.new(root: root, key: "working.foo")
       expect(lock.try_acquire).to be(true)
       lock.release
       expect(lock.try_acquire).to be(true)
@@ -19,7 +19,7 @@ RSpec.describe Textus::Refresh::Lock do
 
   it "escapes unsafe key characters in the lock file path" do
     Dir.mktmpdir do |root|
-      lock = Textus::Refresh::Lock.new(root: root, key: "working/../escape")
+      lock = Textus::Infra::Refresh::Lock.new(root: root, key: "working/../escape")
       lock.try_acquire
       lock_file = lock.instance_variable_get(:@path)
       expect(File.expand_path(lock_file)).to start_with(File.expand_path(root))
