@@ -4,11 +4,10 @@ module Textus
       module All
         module_function
 
-        def call(store, prefix: nil, zone: nil, as: "script")
-          ctx = Textus::Composition.context(store, role: as)
+        def call(ctx, prefix: nil, zone: nil)
           worker = Textus::Composition.refresh_worker(ctx)
 
-          stale_rows = store.stale(prefix: prefix, zone: zone)
+          stale_rows = ctx.store.stale(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

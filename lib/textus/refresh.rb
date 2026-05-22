@@ -6,7 +6,8 @@ module Textus
     end
 
     def self.refresh_stale(store, prefix: nil, zone: nil, as: "script")
-      Textus::Application::Refresh::All.call(store, prefix: prefix, zone: zone, as: as)
+      ctx = Textus::Composition.context(store, role: as)
+      Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
     end
 
     # Normalize the three accepted intake return shapes into the store's

@@ -7,7 +7,8 @@ module Textus
         def call(store)
           key = positional.shift or raise UsageError.new("refresh requires a key")
           role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          emit(Textus::Refresh.call(store, key, as: role))
+          ctx = Textus::Composition.context(store, role: role)
+          emit(Textus::Composition.refresh_worker(ctx).run(key))
         end
       end
     end

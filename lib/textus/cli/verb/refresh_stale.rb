@@ -8,7 +8,8 @@ module Textus
 
         def call(store)
           role = Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          result = Textus::Refresh.refresh_stale(store, prefix: prefix, zone: zone, as: role)
+          ctx = Textus::Composition.context(store, role: role)
+          result = Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
           emit(result)
           exit(1) unless result["ok"]
         end
