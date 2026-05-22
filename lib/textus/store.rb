@@ -75,13 +75,9 @@ module Textus
       end
     end
 
-    def get(key, as: "script")
-      bus = Infra::EventBus.new(registry: registry)
-      worker = Application::Refresh::Worker.new(store: self, bus: bus)
-      orchestrator = Application::Refresh::Orchestrator.new(
-        worker: worker, bus: bus, store_root: root, store: self,
-      )
-      result = Application::Reads::Get.new(store: self, orchestrator: orchestrator).call(key, as: as)
+    def get(key, as: Textus::Role::DEFAULT)
+      ctx = Textus::Composition.context(self, role: as)
+      result = Textus::Composition.reads_get(ctx).call(key)
       raise UnknownKey.new(key, suggestions: manifest.suggestions_for(key)) if result.nil?
 
       result
