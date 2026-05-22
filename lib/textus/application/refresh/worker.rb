@@ -22,26 +22,31 @@ module Textus
 
         private
 
-        def fetch_with_bus(key, mentry, as)
-          callable = @store.registry.rpc_callable(:intake, mentry.intake_handler)
-          view = Store::View.new(@store, writable: true, as: as)
-          @bus.publish(:refresh_started, key: key, mode: :sync)
-          call_intake(key, mentry, callable, view)
+        def store_view(writable: false, as: nil)
+          Store::View.new(@store, writable: writable, as: as)
         end
 
-        def call_intake(key, mentry, callable, view)
+        def fetch_with_bus(key, mentry, as)
+          callable = @store.registry.rpc_callable(:intake, mentry.intake_handler)
+          write_view = store_view(writable: true, as: as)
+          read_view  = store_view
+          @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync)
+          call_intake(key, mentry, callable, write_view, read_view)
+        end
+
+        def call_intake(key, mentry, callable, write_view, read_view)
           Timeout.timeout(FETCH_TIMEOUT_SECONDS) do
-            callable.call(store: view, config: mentry.intake_config, args: {})
+            callable.call(store: write_view, config: mentry.intake_config, args: {})
           end
         rescue Timeout::Error
-          @bus.publish(:refresh_failed, key: key, error_class: "Timeout::Error",
+          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",
                                         error_message: "intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s")
           raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
         rescue Textus::Error => e
-          @bus.publish(:refresh_failed, key: key, error_class: e.class.name, error_message: e.message)
+          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name, error_message: e.message)
           raise
         rescue StandardError => e
-          @bus.publish(:refresh_failed, key: key, error_class: e.class.name, error_message: e.message)
+          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name, error_message: e.message)
           raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
         end
 
@@ -53,7 +58,8 @@ module Textus
             as: as, suppress_events: true
           )
           change = detect_change(before_etag, envelope)
-          @bus.publish(:refreshed, key: key, envelope: envelope, change: change) unless change == :unchanged
+          read_view = store_view
+          @bus.publish(:refreshed, store: read_view, key: key, envelope: envelope, change: change) unless change == :unchanged
           envelope
         end
 

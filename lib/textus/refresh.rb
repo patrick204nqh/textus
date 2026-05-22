@@ -1,84 +1,13 @@
-require "timeout"
-
 module Textus
   module Refresh
-    FETCH_TIMEOUT_SECONDS = 2
-
-    def self.call(store, key, as:) # rubocop:disable Metrics/AbcSize
-      mentry, path, = store.manifest.resolve(key)
-      raise UsageError.new("no intake declared for '#{key}'") unless mentry.intake_handler
-
-      before_etag = File.exist?(path) ? Etag.for_file(path) : nil
-      callable = store.registry.rpc_callable(:intake, mentry.intake_handler)
-      view = Store::View.new(store, writable: true, as: as)
-
-      store.fire_event(:refresh_started, key: key, mode: :sync)
-      result =
-        begin
-          Timeout.timeout(FETCH_TIMEOUT_SECONDS) do
-            callable.call(store: view, config: mentry.intake_config, args: {})
-          end
-        rescue Timeout::Error
-          store.fire_event(:refresh_failed, key: key, error_class: "Timeout::Error",
-                                            error_message: "intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s")
-          raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
-        rescue Textus::Error => e
-          store.fire_event(:refresh_failed, key: key, error_class: e.class.name, error_message: e.message)
-          raise
-        rescue StandardError => e
-          store.fire_event(:refresh_failed, key: key, error_class: e.class.name, error_message: e.message)
-          raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
-        end
-
-      normalized = normalize_action_result(result, format: mentry.format)
-      envelope = store.put(
-        key,
-        meta: normalized[:meta],
-        body: normalized[:body],
-        content: normalized[:content],
-        as: as,
-        suppress_events: true,
-      )
-
-      change = if before_etag.nil?
-                 :created
-               elsif envelope["etag"] == before_etag
-                 :unchanged
-               else
-                 :updated
-               end
-      store.fire_event(:refreshed, key: key, envelope: envelope, change: change) unless change == :unchanged
-      envelope
+    def self.call(store, key, as:)
+      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      worker = Textus::Application::Refresh::Worker.new(store: store, bus: bus)
+      worker.run(key, as: as)
     end
 
     def self.refresh_stale(store, prefix: nil, zone: nil, as: "script")
-      stale_rows = store.stale(prefix: prefix, zone: zone)
-      refreshed = []
-      failed = []
-      skipped = []
-
-      stale_rows.each do |row|
-        key = row["key"] || row[:key]
-        reason = row["reason"] || row[:reason]
-        if reason.to_s.match?(/ttl exceeded|never refreshed/)
-          begin
-            Textus::Refresh.call(store, key, as: as)
-            refreshed << key
-          rescue Textus::Error => e
-            failed << { "key" => key, "error" => e.message }
-          end
-        else
-          skipped << { "key" => key, "reason" => reason }
-        end
-      end
-
-      {
-        "protocol" => Textus::PROTOCOL,
-        "ok" => failed.empty?,
-        "refreshed" => refreshed,
-        "failed" => failed,
-        "skipped" => skipped,
-      }
+      Textus::Application::Refresh::All.call(store, prefix: prefix, zone: zone, as: as)
     end
 
     # Normalize the three accepted intake return shapes into the store's

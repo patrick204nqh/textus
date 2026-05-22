@@ -45,11 +45,13 @@ RSpec.describe Textus::Refresh do
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
-  it "wraps intake in 2s timeout" do
+  it "wraps intake in a timeout" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.hook(:intake, :stub_fetch) { |config:, store:, args:| sleep 3 }
+      Textus.hook(:intake, :stub_fetch) { |config:, store:, args:| sleep 100 }
     RUBY
     store = Textus::Store.new(root)
+    # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
+    allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
     expect { described_class.call(store, "intake.repos", as: "script") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end

@@ -18,12 +18,12 @@ module Textus
               callable = store.registry.rpc_callable(:intake, fetch_name)
               result =
                 begin
-                  Timeout.timeout(Textus::Refresh::FETCH_TIMEOUT_SECONDS) do
+                  Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
                     callable.call(config: { "bytes" => raw }, store: Textus::Store::View.new(store), args: {})
                   end
                 rescue Timeout::Error
                   raise UsageError.new(
-                    "fetch '#{fetch_name}' exceeded #{Textus::Refresh::FETCH_TIMEOUT_SECONDS}s timeout",
+                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS}s timeout",
                   )
                 end
               basename = key.split(".").last

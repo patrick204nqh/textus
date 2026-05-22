@@ -7,24 +7,7 @@ module Textus
       end
 
       def get(key)
-        mentry, path, = @manifest.resolve(key)
-        raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
-
-        raw = File.binread(path)
-        parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-        meta = parsed["_meta"]
-        content = parsed["content"]
-        @store.writer.enforce_name_match!(path, meta, mentry.format)
-        schema = @store.schema_for(mentry.schema)
-        Entry.for_format(mentry.format).validate_against(schema, parsed) if schema
-        envelope = Envelope.build(
-          key: key, mentry: mentry, path: path,
-          meta: meta, body: parsed["body"],
-          etag: Etag.for_bytes(raw), content: content
-        )
-        annotate_freshness!(envelope, mentry)
-        envelope = Freshness.act_on_stale(@store, mentry, key, envelope, role: "script") if envelope["stale"]
-        envelope
+        read_raw_envelope(key) || raise(UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)))
       end
 
       # Reads the current on-disk state of key as a bare envelope, skipping
@@ -80,15 +63,6 @@ module Textus
           audit_log: @store.audit_log,
           schema_for: ->(name) { @store.schema_for(name) }
         ).call
-      end
-
-      private
-
-      def annotate_freshness!(envelope, mentry)
-        result = Freshness.evaluate(mentry, envelope)
-        envelope["stale"] = (result != :fresh)
-        envelope["stale_reason"] = (result.is_a?(Hash) ? result[:reason] : nil)
-        envelope["refreshing"] = false
       end
     end
   end
