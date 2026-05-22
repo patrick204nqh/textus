@@ -10,7 +10,7 @@ authoring surface lives entirely under `.textus/`. The plugin ships:
 - a marketplace listing at `.claude-plugin/marketplace.json`
 - a `CLAUDE.md` loaded on session start
 
-Every consumer-facing file in this plugin — the three derived envelopes
+Every consumer-facing file in this plugin — the three output envelopes
 *and* every agent/skill/command leaf under `agents/`, `skills/`, `commands/`
 — is byte-copied from `.textus/zones/...` by `textus build`. The entire
 plugin layout is end-to-end textus-managed; no file under `agents/`,
@@ -21,9 +21,9 @@ plugin layout is end-to-end textus-managed; no file under `agents/`,
 ```
 voice-tools/
   .claude-plugin/
-    plugin.json              # ← published from .textus/zones/derived/plugin.json
-    marketplace.json         # ← published from .textus/zones/derived/marketplace.json
-  CLAUDE.md                  # ← published from .textus/zones/derived/claude-root.md
+    plugin.json              # ← published from .textus/zones/output/plugin.json
+    marketplace.json         # ← published from .textus/zones/output/marketplace.json
+  CLAUDE.md                  # ← published from .textus/zones/output/claude-root.md
 
   agents/
     voice-writer.md          # ← publish_each from working.agents.voice-writer
@@ -41,26 +41,26 @@ voice-tools/
       agent.yaml             # name, description, model, tools
       skill.yaml             # name, description, version
       command.yaml           # name, description
-    extensions/
-      plugin-envelope.rb     # reducer → plugin.json shape
-      marketplace-envelope.rb# reducer → marketplace.json shape
-      claude-root.rb         # reducer → CLAUDE.md template payload
-      rank-by-recency.rb     # demo reducer (kept for reference)
-      local-file.rb          # demo action (intake refresh)
+    hooks/
+      plugin_envelope.rb     # reducer → plugin.json shape
+      marketplace_envelope.rb# reducer → marketplace.json shape
+      claude_root.rb         # reducer → CLAUDE.md template payload
+      rank_by_recency.rb     # demo reducer (kept for reference)
+      local_file.rb          # demo intake handler
       build-stamp.rb         # demo :build hook (in-process)
     templates/
       claude-root.mustache   # renders CLAUDE.md from the projection payload
     zones/
-      canon/
+      identity/
         voice-tools.md         # plugin identity (name, version, description, author, repository)
         example-marketplace.md # marketplace identity (name, owner)
       working/
         agents/<name>.md       # one file per agent
         skills/<topic>/<name>.md  # nested ≥4 segments (e.g. working.skills.writing.voice-writer)
         commands/<name>.md
-      intake/
-        upstream/notes.md      # action demo (local-file)
-      derived/
+      inbox/
+        upstream/notes.md      # action demo (local_file)
+      output/
         plugin.json            # → publish_to .claude-plugin/plugin.json
         marketplace.json       # → publish_to .claude-plugin/marketplace.json
         claude-root.md         # → publish_to CLAUDE.md
@@ -71,20 +71,25 @@ voice-tools/
 
 ## How textus manages the catalog
 
-- **Canon** holds the slow-changing identity blocks (`canon.plugin` and
-  `canon.marketplace`). The `canon` zone is `writable_by: [human]` — AI and
-  scripts cannot touch it.
+- **Identity** holds the slow-changing identity blocks (`identity.plugin`
+  and `identity.marketplace`). The `identity` zone is `writable_by: [human]`
+  — AI and scripts cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
-- **Intake** is action-fed (script-only). The `intake.upstream.notes` entry
-  uses the project-local `local-file` action as a small demo.
-- **Derived** is owned by `build:auto`. Three derived entries assemble the
+- **Inbox** is action-fed (script-only). The `inbox.upstream.notes` entry
+  uses the project-local `local_file` action as a small demo. Its freshness
+  rule and a per-zone handler allowlist both live in the manifest's top-level
+  `policies:` block — see "Policies" below.
+- **Review** is the AI proposal surface. The manifest's `review.**` policy
+  declares `promote_requires: [schema_valid, human_accept]` — the contract a
+  proposal must satisfy before it can be accepted.
+- **Output** is owned by `build:auto`. Three output entries assemble the
   shipped surface:
-  - `derived.plugin` → `plugin-envelope` reducer → `.claude-plugin/plugin.json`
-  - `derived.marketplace` → `marketplace-envelope` reducer →
+  - `output.plugin` → `plugin_envelope` reducer → `.claude-plugin/plugin.json`
+  - `output.marketplace` → `marketplace_envelope` reducer →
     `.claude-plugin/marketplace.json`
-  - `derived.claude-root` → `claude-root` reducer + `claude-root.mustache`
+  - `output.claude-root` → `claude_root` reducer + `claude-root.mustache`
     template → `CLAUDE.md`
 
 The deep-nested skill paths (`working.skills.writing.voice-writer` —
@@ -104,7 +109,7 @@ textus build
 ```
 
 After the build, the three `publish_to` targets are byte-copies of the
-generated files in `.textus/zones/derived/`. For every published file
+generated files in `.textus/zones/output/`. For every published file
 (at any path — `.claude-plugin/plugin.json`, `CLAUDE.md`, `agents/*.md`, …)
 textus writes a sentinel under `.textus/sentinels/<target-rel>.textus-managed.json`
 recording the source path, sha256, and publish mode. Sentinels live in
@@ -140,6 +145,56 @@ on, mirroring the consumer paths.
 Re-run `textus build` (or the `ruby -I../../lib` invocation above) after
 editing any working-zone file and the consumer mirrors update automatically.
 
+## Policies
+
+The manifest's top-level `policies:` block declares rules that apply across
+multiple entries, matched by glob and resolved most-specific-wins per slot.
+This example ships four blocks:
+
+```yaml
+policies:
+  # Baseline: refresh every inbox.* once a day, warn on stale.
+  - match: inbox.**
+    refresh: { ttl: 24h, on_stale: warn }
+
+  # More-specific override for one entry — 12h instead of 24h.
+  - match: inbox.upstream.notes
+    refresh: { ttl: 12h }
+
+  # Guard-rail: every inbox.* must use a handler from this list.
+  - match: inbox.**
+    handler_allowlist: [local_file]
+
+  # Contract for AI proposals.
+  - match: review.**
+    promote_requires: [schema_valid, human_accept]
+```
+
+`textus policy explain inbox.upstream.notes` walks the resolution: two blocks
+contribute a `refresh` rule, the literal-match one wins; one contributes a
+`handler_allowlist`. `textus doctor` runs the `policy_ambiguity` check (no
+two blocks of equal specificity may fill the same slot) and the
+`handler_allowlist` check (every intake handler must be in its policy's
+allowlist).
+
+## Visibility verbs (0.9.2)
+
+Four read-only verbs surface the audit substrate and the policy resolution:
+
+```bash
+textus freshness                    # per-entry status (fresh/stale/never_refreshed/no_policy)
+textus audit --since=7d             # query .textus/audit.log with filters
+textus audit --correlation-id=<id>  # every row from a single request
+textus blame KEY                    # audit rows × git commit metadata
+textus policy list                  # dump the parsed policies block
+textus policy explain KEY           # which blocks match, who wins per slot
+```
+
+The `correlation_id` in audit rows is generated once per CLI invocation and
+threaded through `Application::Context` into every `put` / `delete` / `mv`
+audit row, so a single `textus accept` (which writes the target, deletes the
+review entry) leaves three rows that share one id.
+
 ## Operational verbs
 
 Three verbs you'll reach for when the catalog moves around:
@@ -147,7 +202,7 @@ Three verbs you'll reach for when the catalog moves around:
 ### `textus doctor`
 
 Health-check the whole store. Reports missing schemas/templates, broken
-extensions, illegal nested keys, sentinel drift (somebody hand-edited a
+hooks, illegal nested keys, sentinel drift (somebody hand-edited a
 published file), and audit-log corruption.
 
 ```bash
@@ -191,35 +246,35 @@ textus hook list
 
 Useful when wiring up an external runner that needs to discover declared
 `events: { build: [{ exec: ..., as: script }] }` hooks (this example's
-`derived.claude-root` declares one — see `Rakefile`'s `textus:update` task
+`output.claude-root` declares one — see `Rakefile`'s `textus:update` task
 for a working dispatcher).
 
-## AI proposals (`pending` zone)
+## AI proposals (`review` zone)
 
-The `pending` zone is the canonical write path for AI agents. The agent
+The `review` zone is the canonical write path for AI agents. The agent
 writes a *proposal* with `--as=ai` — the proposal carries the target key
 and the payload it would write. A human reviews the file like any diff,
 then runs `textus accept` to apply it. The accept step writes to the real
 target (with `--as=human`, so any zone the human can write to is fair
-game) and deletes the pending entry. The whole exchange is in
-`.textus/audit.log`: one `put` row by `ai` against the pending key, one
+game) and deletes the review entry. The whole exchange is in
+`.textus/audit.log`: one `put` row by `ai` against the review key, one
 `put` row by `human` against the real target, one `delete` row by
-`human` against the pending key.
+`human` against the review key.
 
-The manifest declares a nested pending entry so any agent can drop a
+The manifest declares a nested review entry so any agent can drop a
 proposal under it:
 
 ```yaml
-- key: pending.suggestion
-  path: pending/suggestion
-  zone: pending
+- key: review.suggestion
+  path: review/suggestion
+  zone: review
   schema: null
   owner: ai:catalog
   nested: true
 ```
 
 A live fixture lives at
-`.textus/zones/pending/suggestion/001.md` — open it to see the proposal
+`.textus/zones/review/suggestion/001.md` — open it to see the proposal
 envelope shape:
 
 ```yaml
@@ -240,16 +295,16 @@ frontmatter:               # what to write into target_key
 End-to-end, the loop is:
 
 ```bash
-# 1. AI proposes (write into pending) — replays the fixture.
-textus put pending.suggestion.001 --stdin --as=ai < proposal.json
+# 1. AI proposes (write into review) — replays the fixture.
+textus put review.suggestion.001 --stdin --as=ai < proposal.json
 
 # 2. Human reviews:
-textus list --prefix=pending
-textus get  pending.suggestion.001
+textus list --prefix=review
+textus get  review.suggestion.001
 
 # 3. Human accepts. textus writes target_key with --as=human, then
-#    deletes the pending entry. The build picks it up via publish_each.
-textus accept pending.suggestion.001 --as=human
+#    deletes the review entry. The build picks it up via publish_each.
+textus accept review.suggestion.001 --as=human
 textus build
 ```
 
@@ -267,27 +322,27 @@ Levenshtein distance against the actual key set. Same applies to `where`,
 
 ## Intake refresh
 
-`intake.upstream.notes` reads `.textus/zones/canon/voice-tools.md` through
-the in-process `local-file` action. Walk it with:
+`inbox.upstream.notes` reads `.textus/zones/identity/voice-tools.md` through
+the in-process `local_file` action. Walk it with:
 
 ```bash
-rake textus:refresh    # refresh every stale intake entry
+rake textus:refresh    # refresh every stale inbox entry
 rake textus:update     # refresh + build + dispatch external :build hooks
 ```
 
-## Project-local extensions
+## Project-local hooks
 
 Every `.rb` file in `.textus/hooks/` is auto-loaded on store boot and
 registers into an isolated per-store registry. This example wires up:
 
-- `plugin-envelope` — turns the `canon.plugin` row into a Claude
+- `plugin_envelope` — turns the `identity.plugin` row into a Claude
   `plugin.json` envelope.
-- `marketplace-envelope` — assembles `canon.marketplace` + `canon.plugin` +
+- `marketplace_envelope` — assembles `identity.marketplace` + `identity.plugin` +
   the `working.skills.*` rows into a Claude `marketplace.json` envelope.
-- `claude-root` — groups projection rows by source prefix for the CLAUDE.md
+- `claude_root` — groups projection rows by source prefix for the CLAUDE.md
   template payload.
-- `rank-by-recency`, `local-file`, `build-stamp` — kept as demos of the
-  `:reduce` / `:fetch` / `:build` / `:check` event surfaces (all expressed
+- `rank_by_recency`, `local_file`, `build-stamp` — kept as demos of the
+  `:reduce` / `:intake` / `:built` / `:check` event surfaces (all expressed
   through the unified `Textus.hook(event, name)` DSL).
 
 Inspect everything currently loaded with `textus hook list`.

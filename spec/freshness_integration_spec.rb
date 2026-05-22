@@ -18,6 +18,9 @@ RSpec.describe "Reader honors on_stale policy" do
           zone: working
           intake:
             handler: test_intake
+      policies:
+        - match: working.foo
+          refresh:
             ttl: 1s
             on_stale: #{on_stale}
     YAML
@@ -89,6 +92,9 @@ RSpec.describe "Reader honors on_stale policy" do
             zone: working
             intake:
               handler: slow_intake
+        policies:
+          - match: working.slow
+            refresh:
               ttl: 1s
               on_stale: timed_sync
               sync_budget_ms: 50

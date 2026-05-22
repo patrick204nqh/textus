@@ -11,7 +11,7 @@ Textus.reduce(:claude_root) do |rows:, **|
   }
 
   {
-    "plugin"       => rows.find { |r| r["_key"] == "canon.plugin" } || {},
+    "plugin"       => rows.find { |r| r["_key"] == "identity.plugin" } || {},
     "agents"       => by_prefix.call("working.agents."),
     "skills"       => by_prefix.call("working.skills."),
     "commands"     => by_prefix.call("working.commands."),

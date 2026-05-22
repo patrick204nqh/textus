@@ -2,19 +2,19 @@ require "fileutils"
 
 module Textus
   module Init
-    ZONES = %w[canon working intake pending derived].freeze
+    ZONES = %w[identity working inbox review output].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/2
       zones:
-        - { name: canon,   writable_by: [human] }
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: intake,  writable_by: [script] }
-        - { name: pending, writable_by: [ai, human] }
-        - { name: derived, writable_by: [build] }
+        - { name: identity, writable_by: [human] }
+        - { name: working,  writable_by: [human, ai, script] }
+        - { name: inbox,    writable_by: [script] }
+        - { name: review,   writable_by: [ai, human] }
+        - { name: output,   writable_by: [build] }
       entries:
-        - { key: canon.identity, path: canon/identity.md, zone: canon, schema: null, owner: human:self }
-        - { key: working.notes,  path: working/notes,     zone: working, schema: null, owner: human:self, nested: true }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
+        - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true }
     YAML
 
     HOOKS_README = <<~MD
@@ -42,14 +42,23 @@ module Textus
       end
       ```
 
-      The intake handler above is paired with the manifest:
+      The intake handler above is paired with a manifest entry plus a
+      top-level `policies:` block for freshness (ttl/on_stale live in
+      policies, not in the entry):
 
       ```yaml
-      - key: working.foo
-        intake:
-          handler: my_source
-          ttl: 10m
-          on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
+      entries:
+        - key: inbox.foo
+          path: inbox/foo.md
+          zone: inbox
+          intake:
+            handler: my_source
+
+      policies:
+        - match: inbox.foo
+          refresh:
+            ttl: 10m
+            on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
       ```
 
       ## Low-level primitive (always available)

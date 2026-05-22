@@ -40,7 +40,6 @@ RSpec.describe Textus::Intro do
           intake:
             handler: demo-action
             config: { foo: 1 }
-            ttl: 6h
         - key: derived.report
           path: derived/report.md
           zone: derived

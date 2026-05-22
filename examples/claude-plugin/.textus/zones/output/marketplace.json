@@ -1,12 +1,12 @@
 {
   "_meta": {
-    "generated_at": "2026-05-21T13:21:17Z",
+    "generated_at": "2026-05-22T07:41:09Z",
     "from": [
-      "canon.marketplace",
-      "canon.plugin",
+      "identity.marketplace",
+      "identity.plugin",
       "working.skills"
     ],
-    "reduce": "marketplace-envelope"
+    "reduce": "marketplace_envelope"
   },
   "$schema": "https://code.claude.com/schemas/marketplace.json",
   "name": "example-marketplace",

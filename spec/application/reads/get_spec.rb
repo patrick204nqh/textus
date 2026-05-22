@@ -34,6 +34,9 @@ RSpec.describe Textus::Application::Reads::Get do
           zone: working
           intake:
             handler: test_intake
+      policies:
+        - match: working.doc
+          refresh:
             ttl: "#{ttl}"
             on_stale: #{on_stale}
     YAML

@@ -8,6 +8,98 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.9.2 — Policies, audit verbs, zone rename (2026-05-22)
+
+### Breaking — manifest YAML
+
+- **Top-level `policies:` block added.** Replaces entry-level `intake.ttl` and
+  `intake.on_stale`. Hand-edit existing manifests (see migration recipe below);
+  no migrator ships with 0.9.2 because the gem is pre-1.0 with no known
+  outside upgraders.
+- **Default zone names renamed.** `canon → identity`, `intake → inbox`,
+  `pending → review`, `derived → output`. `working` unchanged. Hand-edit
+  the manifest + `mv` the zone directories (see recipe below).
+- Custom-named zones are unaffected.
+
+### Breaking — CLI
+
+- `textus stale` removed. Use `textus freshness`.
+
+### Added — verbs
+
+- `textus freshness [--prefix=K] [--zone=Z]` — per-entry status (ttl, age,
+  next_due_at, status: fresh|stale|never_refreshed|no_policy).
+- `textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X]
+  [--correlation-id=ID] [--limit=N]` — query `.textus/audit.log`.
+- `textus blame KEY` — audit rows joined with git commit metadata.
+- `textus policy list` — dump effective policies.
+- `textus policy explain KEY` — show per-slot winners and matching blocks.
+
+### Added — domain
+
+- `Textus::Domain::Policy::Refresh` — ttl + on_stale value, exports to
+  `Domain::Freshness::Policy`. `on_stale` vocab is `warn | sync | timed_sync`
+  (unchanged from 0.9.0).
+- `Textus::Domain::Policy::Promote` — promote_requires predicate.
+- `Textus::Domain::Policy::HandlerAllowlist` — allowed intake handlers.
+- `Textus::Domain::Policy::Matcher` — glob match + specificity ranking.
+- `Textus::Manifest::Policies` — collection over policy blocks with
+  most-specific-wins resolution.
+
+### Added — doctor checks
+
+- `policy_ambiguity` — two blocks of the same specificity matching one key.
+- `handler_allowlist` — intake handler outside its policy's allowlist.
+- `legacy_intake_fields` — `intake.ttl`/`intake.on_stale` still present in
+  raw YAML.
+
+### Unchanged
+
+- Wire protocol stays `textus/2`. Envelope shape unchanged.
+- Hook DSL, event names, role gate semantics, schema validation unchanged.
+- `on_stale:` vocabulary (`warn | sync | timed_sync`) and its semantics
+  (return-stale / block-and-refresh / try-with-deadline) are unchanged —
+  policies merely change where the value lives.
+- `:publish` hook (shipped 0.8.2) remains the extension point for custom
+  publish targets.
+
+### Migration recipe (hand-edit, no migrator ships)
+
+```sh
+# In your existing .textus/manifest.yaml:
+#   1. Rename zones[].name fields: canon→identity, intake→inbox,
+#      pending→review, derived→output.
+#   2. Rewrite every entries[].zone and entries[].path prefix accordingly.
+#   3. Move each entries[].intake.ttl / on_stale / sync_budget_ms into
+#      a new top-level policies:[] block keyed by the entry's exact key:
+#
+#        policies:
+#          - match: "inbox.news.hn"
+#            refresh: { ttl: 6h, on_stale: sync }
+
+# On disk:
+mv .textus/zones/canon   .textus/zones/identity
+mv .textus/zones/intake  .textus/zones/inbox
+mv .textus/zones/pending .textus/zones/review
+mv .textus/zones/derived .textus/zones/output
+
+# Verify:
+textus doctor
+```
+
+Find-and-replace tips for ad-hoc references in your own files:
+
+```sh
+# README snippets, CI yaml, shell scripts
+sed -i.bak \
+  -e 's/\bcanon\b/identity/g' \
+  -e 's/\bintake\b/inbox/g' \
+  -e 's/\bpending\b/review/g' \
+  -e 's/\bderived\b/output/g' \
+  -e 's/textus stale/textus freshness/g' \
+  README.md CONTRIBUTING.md
+```
+
 ## 0.9.1 — write-path layering + request Context (2026-05-22)
 
 ### Changed — internal architecture (no plugin-visible impact)

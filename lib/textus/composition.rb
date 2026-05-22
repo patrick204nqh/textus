@@ -15,6 +15,22 @@ module Textus
       Textus::Application::Reads::Get.new(ctx: ctx, orchestrator: refresh_orchestrator(ctx))
     end
 
+    def freshness(ctx)
+      Textus::Application::Reads::Freshness.new(ctx: ctx)
+    end
+
+    def audit(ctx)
+      Textus::Application::Reads::Audit.new(ctx: ctx)
+    end
+
+    def blame(ctx)
+      Textus::Application::Reads::Blame.new(ctx: ctx)
+    end
+
+    def policy_explain(ctx)
+      Textus::Application::Reads::PolicyExplain.new(ctx: ctx)
+    end
+
     def refresh_worker(ctx)
       Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
     end

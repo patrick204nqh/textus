@@ -1,13 +1,33 @@
 require "json"
 require "open3"
 
+def stale_inbox_keys
+  fresh_json, = Open3.capture2("textus", "freshness", "--zone=inbox")
+  rows = JSON.parse(fresh_json)["rows"] || []
+  rows
+    .select { |r| %w[stale never_refreshed].include?(r["status"]) }
+    .map    { |r| r["key"] }
+end
+
+def dispatch_build_hooks!
+  # Manifest-declared `events: { build: [{ exec: ... }] }` rows are
+  # advertised by textus but never invoked by it. An external runner
+  # (this Rakefile, in this example) reads the listing and dispatches.
+  hooks_json, = Open3.capture2("textus", "hook", "list")
+  JSON.parse(hooks_json)["hooks"].each do |row|
+    next unless row["exec"] && row["event"] == "build"
+
+    puts "dispatching #{row["exec"]} for #{row["key"]} (as=#{row["as"]})"
+    sh row["exec"], row["key"]
+  end
+end
+
 namespace :textus do
-  desc "Refresh every stale intake entry"
+  desc "Refresh every stale inbox entry"
   task :refresh do
-    stale_json, = Open3.capture2("textus", "stale", "--zone=intake")
-    keys = JSON.parse(stale_json).map { |row| row["key"] }
+    keys = stale_inbox_keys
     if keys.empty?
-      puts "no stale intake entries"
+      puts "no stale inbox entries"
       next
     end
     keys.each do |key|
@@ -16,19 +36,9 @@ namespace :textus do
     end
   end
 
-  desc "Refresh intake + rebuild derived + dispatch external :build hooks"
+  desc "Refresh inbox + rebuild output + dispatch external :build hooks"
   task update: %i[refresh] do
     sh "textus build | jq -c '{built: (.built | length)}'"
-
-    # Manifest-declared `events: { build: [{ exec: ... }] }` rows are
-    # advertised by textus but never invoked by it. An external runner
-    # (this Rakefile, in this example) reads the listing and dispatches.
-    hooks_json, = Open3.capture2("textus", "hook", "list")
-    JSON.parse(hooks_json)["hooks"].each do |row|
-      next unless row["exec"] && row["event"] == "build"
-
-      puts "dispatching #{row["exec"]} for #{row["key"]} (as=#{row["as"]})"
-      sh row["exec"], row["key"]
-    end
+    dispatch_build_hooks!
   end
 end

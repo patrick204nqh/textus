@@ -1,6 +1,6 @@
 ---
 last_refreshed_at: '2026-05-19T14:10:29Z'
-source_path: ".textus/zones/canon/voice.md"
+source_path: ".textus/zones/identity/voice.md"
 ---
 ---
 name: voice

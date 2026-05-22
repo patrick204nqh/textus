@@ -19,6 +19,9 @@ module Textus
       Check::AuditLog,
       Check::UnownedSchemaFields,
       Check::SchemaViolations,
+      Check::PolicyAmbiguity,
+      Check::HandlerAllowlist,
+      Check::LegacyIntakeFields,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

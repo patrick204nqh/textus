@@ -7,24 +7,27 @@ module Textus
     # plus a new file under lib/textus/cli/.
     VERBS = {
       "accept" => Verb::Accept,
+      "audit" => Verb::Audit,
+      "blame" => Verb::Blame,
       "reject" => Verb::Reject,
       "build" => Verb::Build,
       "delete" => Verb::Delete,
       "deps" => Verb::Deps,
       "doctor" => Verb::Doctor,
+      "freshness" => Verb::Freshness,
       "get" => Verb::Get,
       "hook" => Group::Hook,
       "init" => Verb::Init,
       "intro" => Verb::Intro,
       "key" => Group::Key,
       "list" => Verb::List,
+      "policy" => Group::Policy,
       "published" => Verb::Published,
       "put" => Verb::Put,
       "rdeps" => Verb::Rdeps,
       "refresh" => Verb::Refresh,
       "refresh-stale" => Verb::RefreshStale,
       "schema" => Group::Schema,
-      "stale" => Verb::Stale,
       "where" => Verb::Where,
     }.freeze
 
@@ -50,6 +53,10 @@ module Textus
                                   0
       when "--help", "-h"    then print_help
                                   0
+      when "stale"
+        raise UsageError.new(
+          "textus stale was removed in 0.9.2 — use `textus freshness` instead",
+        )
       else
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
         dispatch(klass, argv)
@@ -86,14 +93,18 @@ module Textus
           textus where KEY
           textus get KEY
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
-          textus stale [--prefix=KEY] [--zone=Z]
+          textus freshness [--prefix=KEY] [--zone=Z]
           textus refresh-stale [--prefix=KEY] [--zone=Z]
+          textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
+          textus blame KEY [--limit=N]
           textus doctor
           textus intro
 
           textus key {mv,uid,migrate}
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
+          textus policy {list,explain}
+          textus migrate {zones,policies}
       HELP
     end
   end

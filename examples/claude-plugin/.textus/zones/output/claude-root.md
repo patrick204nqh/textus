@@ -1,8 +1,8 @@
 ---
 generated:
-  at: '2026-05-21T13:21:17Z'
+  at: '2026-05-22T07:41:09Z'
   from:
-  - canon.plugin
+  - identity.plugin
   - working.agents
   - working.skills
   - working.commands
@@ -16,13 +16,13 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 → Context store: `.textus/` (textus, protocol textus/2).
 → Run `textus intro` for the full catalog shape and write flows.
 → Write authority by zone:
-    - **canon** (human ) — slow-changing identity; human-only writes
+    - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human ai script ) — active project state; humans, AI, and scripts share this surface
-    - **intake** (script ) — declared external inputs; script-refreshed via actions
-    - **pending** (ai human ) — AI proposals awaiting human accept
-    - **derived** (build ) — build-computed outputs; never hand-edited
+    - **inbox** (script ) — declared external inputs; script-refreshed via actions
+    - **review** (ai human ) — AI proposals awaiting human accept
+    - **output** (build ) — build-computed outputs; never hand-edited
 
-→ AI proposals go to `pending.*` with `--as=ai` carrying a `proposal:` block;
+→ AI proposals go to `review.*` with `--as=ai` carrying a `proposal:` block;
    a human runs `textus accept <key>` to apply.
 -->
 
@@ -52,4 +52,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-21T13:21:17Z._
+_Built at 2026-05-22T07:41:09Z._

@@ -14,7 +14,7 @@ Reference implementation in Ruby. Wire format `textus/2`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/2`. Stable; breaking changes require `textus/3`.
-- **Gem version:** semver, currently `0.9.0`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, currently `0.9.2`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -48,14 +48,16 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
   hooks/              # one .rb per hook
   sentinels/          # publish bookkeeping
   zones/
-    canon/            # human-only — identity, voice, decisions
+    identity/         # human-only — identity, voice, decisions
     working/          # human / ai / script — day-to-day catalog
-    intake/           # script — declared external inputs (actions)
-    pending/          # ai + human — proposals awaiting accept
-    derived/          # build only — computed outputs
+    inbox/            # script — declared external inputs (actions)
+    review/           # ai + human — proposals awaiting accept
+    output/           # build only — computed outputs
 ```
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `working.network.org.jane` lives at `.textus/zones/working/network/org/jane.md`.
+
+> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Upgrading a 0.9.1 store is a hand-edit (see CHANGELOG migration recipe).
 
 Read and write:
 
@@ -64,7 +66,9 @@ textus get working.network.org.jane
 textus list --zone=working
 echo '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
   | textus put working.network.org.bob --as=human --stdin
-textus stale --zone=derived
+textus freshness --zone=output       # per-entry fresh/stale/never_refreshed/no_policy
+textus policy list                   # show every policy block
+textus audit --limit=20              # query the audit log
 ```
 
 (All verbs return JSON envelopes by default; pass `--format=json` explicitly if you prefer.)
@@ -96,7 +100,10 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `where K` | Resolve a key to its filesystem path |
 | `get K` | Full envelope (frontmatter, body, uid, etag, format) |
 | `schema show K` | Schema bound to an entry |
-| `stale [--prefix=K] [--zone=Z]` | List stale derived/intake entries |
+| `freshness [--prefix=K] [--zone=Z]` | Per-entry status (fresh / stale / never_refreshed / no_policy) against `policies:` |
+| `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | Query `.textus/audit.log` |
+| `blame KEY` | Audit rows joined with git commit metadata |
+| `policy list` / `policy explain KEY` | Dump effective policies / per-slot winners for one key |
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
@@ -119,7 +126,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 
 | Verb | Purpose |
 |---|---|
-| `doctor` | 8 health checks; `ok: true` when clean |
+| `doctor` | Health checks (manifest, schemas, templates, hooks, illegal keys, sentinels, audit log, policy ambiguity, handler allowlist, legacy intake fields); `ok: true` when clean |
 | `key migrate [--dry-run]` | Rename files whose basenames violate the strict key grammar |
 
 **Scaffolding (human-only):**
@@ -135,11 +142,11 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 
 | Zone | `writable_by` | Purpose |
 |---|---|---|
-| `canon` | `[human]` | Identity, voice, decisions — slow-changing |
+| `identity` | `[human]` | Identity, voice, decisions — slow-changing |
 | `working` | `[human, ai, script]` | Active project state |
-| `intake` | `[script]` | Declared external inputs (actions) |
-| `pending` | `[ai, human]` | AI proposals; humans run `textus accept` to apply |
-| `derived` | `[build]` | Computed outputs from `textus build` |
+| `inbox` | `[script]` | Declared external inputs (actions) |
+| `review` | `[ai, human]` | AI proposals; humans run `textus accept` to apply |
+| `output` | `[build]` | Computed outputs from `textus build` |
 
 Mismatches return `write_forbidden` with a hint naming the role that *would* be allowed. Every write records the resolved role in `.textus/audit.log`.
 

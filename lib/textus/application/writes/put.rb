@@ -24,6 +24,7 @@ module Textus
             content: content,
             if_etag: if_etag,
             as: @ctx.role,
+            correlation_id: @ctx.correlation_id,
           )
 
           unless suppress_events

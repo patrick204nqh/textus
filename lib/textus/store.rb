@@ -124,9 +124,9 @@ module Textus
     # Move an entry from old_key to new_key within the same zone. Preserves
     # uid (minting one first if absent), validates both keys against the
     # manifest, refuses to clobber, and writes one mv audit row.
-    def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false)
+    def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false, correlation_id: nil)
       Mover.new(store: self, reader: @reader, writer: @writer, manifest: @manifest, audit_log: audit_log)
-           .call(old_key, new_key, as: as, dry_run: dry_run)
+           .call(old_key, new_key, as: as, dry_run: dry_run, correlation_id: correlation_id)
     end
 
     def audit_log

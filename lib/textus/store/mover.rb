@@ -12,7 +12,7 @@ module Textus
         @audit_log = audit_log
       end
 
-      def call(old_key, new_key, as: Role::DEFAULT, dry_run: false)
+      def call(old_key, new_key, as: Role::DEFAULT, dry_run: false, correlation_id: nil)
         @manifest.validate_key!(old_key)
         @manifest.validate_key!(new_key)
         raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
@@ -70,14 +70,17 @@ module Textus
         rewrite_name_for_mv!(new_mentry, new_path, new_key)
         etag_after = Etag.for_file(new_path)
 
+        extras = {
+          "from_key" => old_key, "to_key" => new_key,
+          "from_path" => old_path, "to_path" => new_path,
+          "uid" => current_uid
+        }
+        extras["correlation_id"] = correlation_id if correlation_id
+
         @audit_log.append(
           role: as, verb: "mv", key: new_key,
           etag_before: etag_before, etag_after: etag_after,
-          extras: {
-            "from_key" => old_key, "to_key" => new_key,
-            "from_path" => old_path, "to_path" => new_path,
-            "uid" => current_uid
-          }
+          extras: extras
         )
 
         new_envelope = @reader.get(new_key)

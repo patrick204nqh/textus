@@ -11,19 +11,24 @@ module Textus
     # Conventional zone purposes. Unknown zones (declared in the manifest
     # but not listed here) get no `purpose` field.
     ZONE_PURPOSES = {
-      "canon" => "slow-changing identity; human-only writes",
+      "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
+      "inbox" => "declared external inputs; script-refreshed via actions",
+      "review" => "AI proposals awaiting human accept",
+      "output" => "build-computed outputs; never hand-edited",
+      # legacy 0.9.1 zone names — kept so intro still annotates pre-rename stores
+      "canon" => "slow-changing identity; human-only writes",
       "intake" => "declared external inputs; script-refreshed via actions",
       "pending" => "AI proposals awaiting human accept",
       "derived" => "build-computed outputs; never hand-edited",
     }.freeze
 
     WRITE_FLOWS = {
-      "human" => "edit files in canon/working zones, then 'textus put KEY --as=human'",
-      "ai" => "propose changes by writing 'pending.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
+      "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
+      "ai" => "propose changes by writing 'review.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
               "a human runs 'textus accept' to apply",
-      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
-      "build" => "'textus build' computes derived entries from projections; derived files are never hand-edited",
+      "script" => "refresh inbox entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
+      "build" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
@@ -36,13 +41,16 @@ module Textus
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "accept",   "summary" => "apply a pending.* proposal; --as=human only" },
+      { "name" => "accept",   "summary" => "apply a review.* proposal; --as=human only" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key migrate'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
-      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
-      { "name" => "stale",    "summary" => "list derived/intake entries past their freshness check" },
-      { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
+      { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
+      { "name" => "refresh",  "summary" => "run an action for an inbox entry" },
+      { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
+      { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
+      { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
+      { "name" => "policy", "summary" => "inspect effective policies: 'policy list', 'policy explain KEY'" },
+      { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
     ].freeze

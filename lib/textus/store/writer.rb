@@ -21,7 +21,7 @@ module Textus
       # Pure I/O: validate, serialize, etag-check, write to disk, audit. No
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Put).
-      def write_envelope_to_disk(key, mentry:, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT)
+      def write_envelope_to_disk(key, mentry:, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, correlation_id: nil)
         _, path, = @manifest.resolve(key)
 
         meta ||= {}
@@ -51,7 +51,11 @@ module Textus
         FileUtils.mkdir_p(File.dirname(path))
         File.binwrite(path, bytes)
         etag_after = Etag.for_bytes(bytes)
-        @store.audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
+        @store.audit_log.append(
+          role: as, verb: "put", key: key,
+          etag_before: etag_before, etag_after: etag_after,
+          extras: correlation_id ? { "correlation_id" => correlation_id } : nil
+        )
         Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
@@ -125,7 +129,7 @@ module Textus
       # Pure I/O: resolve path, validate etag, delete from disk, audit. No
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Delete).
-      def delete_envelope_from_disk(key, if_etag: nil, as: Role::DEFAULT)
+      def delete_envelope_from_disk(key, if_etag: nil, as: Role::DEFAULT, correlation_id: nil)
         _, path, = @manifest.resolve(key)
         raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
@@ -133,7 +137,11 @@ module Textus
         raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
 
         File.delete(path)
-        @store.audit_log.append(role: as, verb: "delete", key: key, etag_before: etag_before, etag_after: nil)
+        @store.audit_log.append(
+          role: as, verb: "delete", key: key,
+          etag_before: etag_before, etag_after: nil,
+          extras: correlation_id ? { "correlation_id" => correlation_id } : nil
+        )
       end
 
       def accept(key, as:)
