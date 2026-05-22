@@ -29,7 +29,7 @@ module Textus
     end
 
     def writes_put(ctx)
-      Textus::Application::Writes::Put.new(ctx: ctx, bus: event_bus(ctx))
+      Textus::Application::Writes::Put.new(ctx: ctx, bus: ctx.store.bus)
     end
 
     def writes_delete(ctx)

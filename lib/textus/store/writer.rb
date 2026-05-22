@@ -10,11 +10,19 @@ module Textus
         @reader = store.reader
       end
 
+      # Backward-compat shim — orchestration now lives in Application::Writes::Put.
       def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-        @manifest.validate_key!(key)
-        mentry, path, = @manifest.resolve(key)
-        writers = @manifest.zone_writers(mentry.zone)
-        raise WriteForbidden.new(key, mentry.zone, writers: writers) unless writers.include?(as)
+        ctx = Textus::Application::Context.new(store: @store, role: as)
+        Textus::Application::Writes::Put.new(ctx: ctx, bus: @store.bus).call(
+          key, meta: meta, body: body, content: content, if_etag: if_etag, suppress_events: suppress_events
+        )
+      end
+
+      # Pure I/O: validate, serialize, etag-check, write to disk, audit. No
+      # permission check and no event firing — those are handled by the caller
+      # (Application::Writes::Put).
+      def write_envelope_to_disk(key, mentry:, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT)
+        _, path, = @manifest.resolve(key)
 
         meta ||= {}
         strategy = Entry.for_format(mentry.format)
@@ -44,12 +52,10 @@ module Textus
         File.binwrite(path, bytes)
         etag_after = Etag.for_bytes(bytes)
         @store.audit_log.append(role: as, verb: "put", key: key, etag_before: etag_before, etag_after: etag_after)
-        envelope = Envelope.build(
+        Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
         )
-        @store.fire_event(:put, key: key, envelope: envelope) unless suppress_events
-        envelope
       end
 
       def existing_uid_for(mentry, path)
