@@ -1,15 +1,15 @@
 version: textus/2
 zones:
-  - { name: canon,   writable_by: [human] }
-  - { name: working, writable_by: [human, ai, script] }
-  - { name: intake,  writable_by: [script] }
-  - { name: pending, writable_by: [ai, human] }
-  - { name: derived, writable_by: [build] }
+  - { name: identity, writable_by: [human] }
+  - { name: working,  writable_by: [human, ai, script] }
+  - { name: inbox,    writable_by: [script] }
+  - { name: review,   writable_by: [ai, human] }
+  - { name: output,   writable_by: [build] }
 
 entries:
-  # ---- canon: plugin + marketplace identity (slow-changing, human-authored) ----
-  - { key: canon.plugin,       path: canon/voice-tools.md,           zone: canon, schema: plugin, owner: human:self }
-  - { key: canon.marketplace,  path: canon/example-marketplace.md,   zone: canon, schema: null,   owner: human:self }
+  # ---- identity: plugin + marketplace identity (slow-changing, human-authored) ----
+  - { key: identity.plugin,       path: identity/voice-tools.md,           zone: identity, schema: plugin, owner: human:self }
+  - { key: identity.marketplace,  path: identity/example-marketplace.md,   zone: identity, schema: null,   owner: human:self }
 
   # ---- working: catalogued plugin content ----
   - key: working.agents
@@ -36,57 +36,56 @@ entries:
     nested: true
     publish_each: "commands/{basename}.md"
 
-  # ---- pending: AI proposals awaiting human accept ----
+  # ---- review: AI proposals awaiting human accept ----
   # An AI agent writes a proposal here with --as=ai. A human reviews it and
-  # runs `textus accept pending.<id> --as=human`, which (a) writes the
-  # proposal's `target_key` to its real home and (b) deletes the pending
-  # entry. See examples/claude-plugin/README.md → "AI proposals (pending)".
-  - key: pending.suggestion
-    path: pending/suggestion
-    zone: pending
+  # runs `textus accept review.<id> --as=human`, which (a) writes the
+  # proposal's `target_key` to its real home and (b) deletes the review
+  # entry. See examples/claude-plugin/README.md → "AI proposals (review)".
+  - key: review.suggestion
+    path: review/suggestion
+    zone: review
     schema: null
     owner: ai:catalog
     nested: true
 
-  # ---- intake: fetch-fed (textus capability demo) ----
-  - key: intake.upstream.notes
-    path: intake/upstream/notes.md
-    zone: intake
+  # ---- inbox: fetch-fed (textus capability demo) ----
+  - key: inbox.upstream.notes
+    path: inbox/upstream/notes.md
+    zone: inbox
     owner: script:local
     intake:
       handler: local_file
-      config: { path: .textus/zones/canon/voice-tools.md }
-      ttl: 12h
+      config: { path: .textus/zones/identity/voice-tools.md }
 
-  # ---- derived: machine-built ----
-  - key: derived.plugin
-    path: derived/plugin.json
-    zone: derived
+  # ---- output: machine-built ----
+  - key: output.plugin
+    path: output/plugin.json
+    zone: output
     format: json
     owner: build:auto
     projection:
-      select: [canon.plugin]
+      select: [identity.plugin]
       pluck: "*"
       reduce: plugin_envelope
     publish_to: [.claude-plugin/plugin.json]
 
-  - key: derived.marketplace
-    path: derived/marketplace.json
-    zone: derived
+  - key: output.marketplace
+    path: output/marketplace.json
+    zone: output
     format: json
     owner: build:auto
     projection:
-      select: [canon.marketplace, canon.plugin, working.skills]
+      select: [identity.marketplace, identity.plugin, working.skills]
       pluck: "*"
       reduce: marketplace_envelope
     publish_to: [.claude-plugin/marketplace.json]
 
-  - key: derived.claude-root
-    path: derived/claude-root.md
-    zone: derived
+  - key: output.claude-root
+    path: output/claude-root.md
+    zone: output
     owner: build:auto
     projection:
-      select: [canon.plugin, working.agents, working.skills, working.commands]
+      select: [identity.plugin, working.agents, working.skills, working.commands]
       pluck: "*"
       reduce: claude_root
     template: claude-root.mustache
@@ -95,3 +94,9 @@ entries:
     events:
       built:
         - { exec: bin/notify-build, as: script }
+
+policies:
+  # Freshness for the inbox demo — was per-entry intake.ttl in 0.9.1.
+  - match: inbox.upstream.notes
+    refresh:
+      ttl: 12h

@@ -2,12 +2,15 @@ require "json"
 require "open3"
 
 namespace :textus do
-  desc "Refresh every stale intake entry"
+  desc "Refresh every stale inbox entry"
   task :refresh do
-    stale_json, = Open3.capture2("textus", "stale", "--zone=intake")
-    keys = JSON.parse(stale_json).map { |row| row["key"] }
+    fresh_json, = Open3.capture2("textus", "freshness", "--zone=inbox")
+    rows = JSON.parse(fresh_json)["rows"] || []
+    keys = rows
+           .select { |r| %w[stale never_refreshed].include?(r["status"]) }
+           .map    { |r| r["key"] }
     if keys.empty?
-      puts "no stale intake entries"
+      puts "no stale inbox entries"
       next
     end
     keys.each do |key|
@@ -16,7 +19,7 @@ namespace :textus do
     end
   end
 
-  desc "Refresh intake + rebuild derived + dispatch external :build hooks"
+  desc "Refresh inbox + rebuild output + dispatch external :build hooks"
   task update: %i[refresh] do
     sh "textus build | jq -c '{built: (.built | length)}'"
 

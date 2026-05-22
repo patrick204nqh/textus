@@ -11,8 +11,13 @@ module Textus
     # Conventional zone purposes. Unknown zones (declared in the manifest
     # but not listed here) get no `purpose` field.
     ZONE_PURPOSES = {
-      "canon" => "slow-changing identity; human-only writes",
+      "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
+      "inbox" => "declared external inputs; script-refreshed via actions",
+      "review" => "AI proposals awaiting human accept",
+      "output" => "build-computed outputs; never hand-edited",
+      # legacy 0.9.1 zone names — kept so intro still annotates pre-rename stores
+      "canon" => "slow-changing identity; human-only writes",
       "intake" => "declared external inputs; script-refreshed via actions",
       "pending" => "AI proposals awaiting human accept",
       "derived" => "build-computed outputs; never hand-edited",

@@ -1,4 +1,4 @@
-# Wraps the canon.plugin row into the Claude Code plugin.json envelope.
+# Wraps the identity.plugin row into the Claude Code plugin.json envelope.
 # Strips internal `_key` and `generated` metadata before emitting.
 Textus.reduce(:plugin_envelope) do |rows:, **|
   row = rows.first || {}
