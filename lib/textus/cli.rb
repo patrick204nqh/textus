@@ -7,6 +7,7 @@ module Textus
     # plus a new file under lib/textus/cli/.
     VERBS = {
       "accept" => Verb::Accept,
+      "audit" => Verb::Audit,
       "reject" => Verb::Reject,
       "build" => Verb::Build,
       "delete" => Verb::Delete,

@@ -19,6 +19,10 @@ module Textus
       Textus::Application::Reads::Freshness.new(ctx: ctx)
     end
 
+    def audit(ctx)
+      Textus::Application::Reads::Audit.new(ctx: ctx)
+    end
+
     def refresh_worker(ctx)
       Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
     end
