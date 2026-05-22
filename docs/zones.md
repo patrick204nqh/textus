@@ -9,6 +9,7 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 1. [The mental model](#1-the-mental-model)
 2. [Roles — who is allowed to write](#2-roles--who-is-allowed-to-write)
 3. [The five default zones](#3-the-five-default-zones)
+   Names in 0.9.2+: `identity`, `working`, `inbox`, `review`, `output`.
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
 6. [Wiring data in — intake and `:intake` hooks](#6-wiring-data-in--intake-and-intake-hooks)
@@ -29,13 +30,13 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
                   │  :intake hook                         │  projection sources
                   ▼                                       ▼
             ┌──────────┐                            ┌──────────┐
-   script ─►│  intake  │                    build ─►│ derived  │─► publish
+   script ─►│  inbox   │                    build ─►│  output  │─► publish
             └──────────┘                            └──────────┘
             "pull bytes IN"                         "compute bytes OUT"
 
-                          ┌────────┐     ┌─────────┐
-                  human ─►│ canon  │  ai ►│ pending │─► accept ─► canon/working
-                          └────────┘     └─────────┘
+                          ┌──────────┐    ┌─────────┐
+                  human ─►│ identity │ ai ►│ review  │─► accept ─► identity/working
+                          └──────────┘    └─────────┘
                           ┌─────────┐
             human, ai ───►│ working │◄─── script
                           └─────────┘
@@ -76,22 +77,24 @@ You can also invent your own roles (`reviewer`, `import-bot`, `scheduler`) — s
 
 ```yaml
 zones:
-  - { name: canon,   writable_by: [human] }
-  - { name: working, writable_by: [human, ai, script] }
-  - { name: intake,  writable_by: [script] }
-  - { name: pending, writable_by: [ai, human] }
-  - { name: derived, writable_by: [build] }
+  - { name: identity, writable_by: [human] }
+  - { name: working,  writable_by: [human, ai, script] }
+  - { name: inbox,    writable_by: [script] }
+  - { name: review,   writable_by: [ai, human] }
+  - { name: output,   writable_by: [build] }
 ```
 
 | Zone | Purpose | Lifetime | Writers |
 |------|---------|----------|---------|
-| `canon` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
+| `identity` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
 | `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `ai`, `script` |
-| `intake` | Declared external inputs. Refreshed by `:intake` hooks, never edited by hand. | Refreshed on demand | `script` |
-| `pending` | AI proposals awaiting human review. | Until `accept` or rejection | `ai`, `human` |
-| `derived` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `build` |
+| `inbox` | Declared external inputs. Refreshed by `:intake` hooks, never edited by hand. | Refreshed on demand | `script` |
+| `review` | AI proposals awaiting human review. | Until `accept` or rejection | `ai`, `human` |
+| `output` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `build` |
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need.
+
+> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Run `textus migrate zones` to rename in an existing store; custom-named zones are untouched.
 
 ---
 
@@ -106,14 +109,14 @@ zones:
 
 ### Renaming defaults
 
-`canon`, `working`, etc. have no privileged status in the code — only `build` does. Rename freely:
+`identity`, `working`, etc. have no privileged status in the code — only `build` does. Rename freely:
 
 ```yaml
 zones:
-  - { name: identity,  writable_by: [human] }       # was canon
+  - { name: self,      writable_by: [human] }       # was identity
   - { name: notes,     writable_by: [human, ai] }   # was working
-  - { name: feeds,     writable_by: [importer] }    # was intake (custom role too)
-  - { name: outputs,   writable_by: [build] }       # was derived
+  - { name: feeds,     writable_by: [importer] }    # was inbox (custom role too)
+  - { name: outputs,   writable_by: [build] }       # was output
 ```
 
 ### Adding new zones
@@ -122,7 +125,7 @@ A consulting-engagement layout might want a sharper split than the defaults:
 
 ```yaml
 zones:
-  - { name: canon,       writable_by: [human] }
+  - { name: identity,    writable_by: [human] }
   - { name: research,    writable_by: [human, ai] }     # AI-assisted research notes
   - { name: deliverable, writable_by: [human] }         # human-only client-facing copy
   - { name: archive,     writable_by: [human] }         # read-mostly historical record
@@ -157,9 +160,9 @@ Each entry is a key, a path under `zones/<zone>/`, and metadata:
 
 ```yaml
 entries:
-  - key: canon.identity
-    path: canon/identity.md
-    zone: canon
+  - key: identity.self
+    path: identity/self.md
+    zone: identity
     schema: identity        # references .textus/schemas/identity.yaml
     owner: human:self
 ```
@@ -202,19 +205,24 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ## 6. Wiring data in — intake and `:intake` hooks
 
-`intake` zones are populated by `:intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result.
+`inbox` zones (formerly `intake` pre-0.9.2) are populated by `:intake` hooks. An inbox entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result. Freshness budgets live in a top-level `policies:` block, matched by glob.
 
 ```yaml
-- key: intake.upstream.notes
-  path: intake/upstream/notes.md
-  zone: intake
-  owner: script:local
-  intake:
-    handler: local-file                                # name of the :intake hook
-    config: { path: .textus/zones/canon/voice-tools.md }
-    ttl: 12h
-    on_stale: warn       # warn | sync | timed_sync (default: warn)
-    sync_budget_ms: 500  # only used when on_stale: timed_sync (default: 500)
+entries:
+  - key: inbox.upstream.notes
+    path: inbox/upstream/notes.md
+    zone: inbox
+    owner: script:local
+    intake:
+      handler: local-file                                # name of the :intake hook
+      config: { path: .textus/zones/identity/voice-tools.md }
+
+policies:
+  - match: inbox.upstream.**
+    refresh:
+      ttl: 12h
+      on_stale: warn       # warn | sync | timed_sync (default: warn)
+      sync_budget_ms: 500  # only used when on_stale: timed_sync (default: 500)
 ```
 
 #### `on_stale:` options
@@ -224,6 +232,8 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 | `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
 | `sync` | Block the `get` call and refresh in-process before returning. |
 | `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
+
+> **Pre-0.9.2 stores:** `intake.ttl`, `intake.on_stale`, and `intake.sync_budget_ms` lived on the entry itself. Manifest parsing now rejects them — run `textus migrate policies` to hoist them into a `policies:` block automatically.
 
 ### Built-in `:intake` handlers
 
@@ -256,16 +266,20 @@ end
 Then point an entry at it:
 
 ```yaml
-- key: intake.notion.roadmap
-  path: intake/notion/roadmap.md
-  zone: intake
-  intake:
-    handler: notion            # matches the hook name
-    config: { page_id: "abc123" }
-    ttl: 6h
+entries:
+  - key: inbox.notion.roadmap
+    path: inbox/notion/roadmap.md
+    zone: inbox
+    intake:
+      handler: notion            # matches the hook name
+      config: { page_id: "abc123" }
+
+policies:
+  - match: inbox.notion.**
+    refresh: { ttl: 6h, on_stale: warn }
 ```
 
-`textus refresh intake.notion.roadmap --as=script` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
+`textus refresh inbox.notion.roadmap --as=script` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
 
 ---
 
@@ -274,13 +288,13 @@ Then point an entry at it:
 A derived entry says **"compute me from these sources, render me with this template, copy me to these external paths."**
 
 ```yaml
-- key: derived.claude-root
-  path: derived/CLAUDE.md
-  zone: derived
+- key: output.claude-root
+  path: output/CLAUDE.md
+  zone: output
   format: markdown
   owner: build:auto
   projection:
-    select: [canon.identity, working.notes]    # source keys
+    select: [identity.self, working.notes]     # source keys
     pluck: "*"                                 # which fields
     reduce: identity                           # optional reducer
   template: claude-root.mustache               # in .textus/templates/
@@ -344,14 +358,14 @@ A Claude plugin repo that publishes `CLAUDE.md` from a slow-changing identity fi
 version: textus/2
 
 zones:
-  - { name: canon,   writable_by: [human] }
-  - { name: working, writable_by: [human, ai] }
-  - { name: derived, writable_by: [build] }
+  - { name: identity, writable_by: [human] }
+  - { name: working,  writable_by: [human, ai] }
+  - { name: output,   writable_by: [build] }
 
 entries:
-  - key: canon.identity
-    path: canon/identity.md
-    zone: canon
+  - key: identity.self
+    path: identity/self.md
+    zone: identity
     schema: identity
     owner: human:self
 
@@ -361,12 +375,12 @@ entries:
     nested: true
     owner: human:self
 
-  - key: derived.claude-root
-    path: derived/claude-root.md
-    zone: derived
+  - key: output.claude-root
+    path: output/claude-root.md
+    zone: output
     owner: build:auto
     projection:
-      select: [canon.identity, working.notes]
+      select: [identity.self, working.notes]
       pluck: "*"
       reduce: claude_root            # name of a :reduce hook in .textus/hooks/
     template: claude-root.mustache   # under .textus/templates/
@@ -377,15 +391,15 @@ entries:
 Day-to-day flow:
 
 ```
-$ textus put canon.identity --as=human   < new-identity.md   # edit identity
+$ textus put identity.self --as=human    < new-identity.md   # edit identity
 $ textus put working.notes.kickoff --as=human < kickoff.md   # add a note
 $ textus build                                               # rebuild CLAUDE.md
 $ git diff CLAUDE.md                                         # review and commit
 ```
 
-To layer AI proposals in, add a `pending` zone and let agents write `pending.suggestion.*` with `--as=ai`, then `textus accept pending.suggestion.<id> --as=human` promotes the proposal into `canon` or `working`.
+To layer AI proposals in, add a `review` zone and let agents write `review.suggestion.*` with `--as=ai`, then `textus accept review.suggestion.<id> --as=human` promotes the proposal into `identity` or `working`.
 
-To layer external feeds in, add an `intake` zone with `writable_by: [script]` and an entry whose `intake: handler:` points at an `:intake` hook. `textus refresh` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add an `inbox` zone with `writable_by: [script]` and an entry whose `intake: handler:` points at an `:intake` hook, plus a `policies:` block matching the entry. `textus refresh` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
 
 ---
 

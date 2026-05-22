@@ -31,10 +31,10 @@ CLI is the single entry point. It parses argv and dispatches each verb to whiche
 
 `Store` is a thin facade (~110 LOC) that holds `Manifest`, `Hooks::Registry`, `Hooks::Dispatcher`, and the lazy `Store::AuditLog`, then delegates verbs to a small set of focused collaborators:
 
-- **`Store::Reader`** — owns `get`, `list`, `where`, `uid`, `deps`, `rdeps`, `published`, `schema_envelope`, `stale`, `validate_all`. The only module that reads working-store entry files.
+- **`Store::Reader`** — owns `get`, `list`, `where`, `uid`, `deps`, `rdeps`, `published`, `schema_envelope`, `validate_all`. The only module that reads working-store entry files. (`freshness` lives in `Application::Reads::Freshness` since 0.9.2; the legacy `stale` shim was removed.)
 - **`Store::Writer`** — owns `put`, `delete`, `accept`. Handles serialization, uid minting, etag check, role gate, audit append, and event publication. The only module that writes working-store entry files.
 - **`Store::Mover`** — owns `mv` (same-zone rename) with uid preservation and one audit row.
-- **`Store::Validator`** / **`Store::Staleness`** — back the `validate_all` / `stale` reads. Take explicit collaborators (`reader:`, `manifest:`, `audit_log:`, `schema_for:`) instead of the full store.
+- **`Store::Validator`** / **`Store::Staleness`** — back the `validate_all` / `freshness` reads. Take explicit collaborators (`reader:`, `manifest:`, `audit_log:`, `schema_for:`) instead of the full store.
 
 Shared value modules and primitives consumed by Reader/Writer/Mover:
 
@@ -101,7 +101,25 @@ First-class CLI verbs that don't fit the read/write/build axes. Read-mostly; sid
 - **Store::Writer is the only module that writes to working-store entry files.** Reader reads them; Mover moves them within a zone. Init, MigrateKeys, Publisher, Builder, AuditLog write to **other** parts of `.textus/` (scaffolding, sentinels, audit log, derived targets) — they do not edit existing entry files behind the Store facade's back.
 - **`name:` frontmatter matches file basename.** Enforced on read and write.
 - **Zone semantics live in the manifest, not in directory names.** A project may rename `state/` to anything; the manifest declares which zone each entry belongs to.
-- **`stale` does not execute anything.** It walks `zone: derived` entries with a `generator:` block, compares `generated.at` against source mtimes, and returns offenders **plus their declared `command`**. Build runners execute. This is the §5.1 "dataflow oracle, not executor" boundary.
+- **`freshness` does not execute anything.** It walks every entry, matches it against the top-level `policies:` block, and returns each entry's verdict (`fresh|stale|never_refreshed|no_policy`). Build runners execute. This is the §5.1 "dataflow oracle, not executor" boundary.
+
+## Policy resolution
+
+Top-level `policies:` are parsed into a `Manifest::Policies` collection. Resolution is by key, slot-aware, most-specific-wins:
+
+```
+Manifest#policies_for(key)
+   └─► Manifest::Policies#for(key)
+          ├─► Policy::Matcher (specificity ranking)
+          └─► returns PolicySet { refresh, handler_allowlist, promote, retention }
+                                 │
+                                 ▼
+                       consumers: Refresh::Worker
+                                  Doctor checks
+                                  Reads::PolicyExplain
+```
+
+Two blocks at the same specificity filling the same slot for the same key is a manifest error reported by `doctor` (`policy_ambiguity`). Custom-named zones see no special handling — policies match against the full key.
 
 ## What this implementation deliberately leaves out
 

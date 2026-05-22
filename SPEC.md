@@ -1,6 +1,6 @@
 # textus/2 — Specification
 
-**Status:** Draft v2.0 (2026-05-22, updated for 0.9.0)
+**Status:** Draft v2.0 (2026-05-22, updated for 0.9.2)
 **Protocol identifier:** `textus/2`
 **Reference implementation:** Ruby gem `textus`
 
@@ -62,11 +62,11 @@ The root is `.textus/` at the project working directory. A typical v1.0 tree:
   templates/             # internal: Mustache templates referenced by derived entries
   parsers/               # internal: project-local parser extensions
   zones/                 # ALL user content lives here
-    canon/               # zone: canon (human-only)
+    identity/            # zone: identity (human-only)
     working/             # zone: working (human, ai, script)
-    intake/              # zone: intake (script — declared external inputs)
-    pending/             # zone: pending (ai proposals awaiting accept)
-    derived/             # zone: derived (build only — computed outputs)
+    inbox/               # zone: inbox (script — declared external inputs)
+    review/              # zone: review (ai/human — proposals awaiting accept)
+    output/              # zone: output (build only — computed outputs)
 ```
 
 Textus internals (`manifest.yaml`, `audit.log`, `role`, `schemas/`, `templates/`, `parsers/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
@@ -94,21 +94,21 @@ The manifest declares: (a) which zones exist and which roles may write to each, 
 version: textus/2
 
 zones:
-  - name: canon
+  - name: identity
     writable_by: [human]
   - name: working
     writable_by: [human, ai, script]
-  - name: intake
+  - name: inbox
     writable_by: [script]
-  - name: pending
-    writable_by: [ai]
-  - name: derived
+  - name: review
+    writable_by: [ai, human]
+  - name: output
     writable_by: [build]
 
 entries:
-  - key: canon.identity
-    path: canon/identity.md
-    zone: canon
+  - key: identity.self
+    path: identity/self.md
+    zone: identity
     schema: identity
 
   - key: working.network.org
@@ -118,12 +118,18 @@ entries:
     owner: textus:network
     nested: true
 
-  - key: derived.catalogs.people
-    path: derived/catalogs/people.md
-    zone: derived
+  - key: output.catalogs.people
+    path: output/catalogs/people.md
+    zone: output
     schema: null
     owner: textus:build
+
+policies:
+  - match: inbox.**
+    refresh: { ttl: 6h, on_stale: warn }
 ```
+
+**Note (0.9.2):** the default zone names were renamed from `canon|intake|pending|derived` to `identity|inbox|review|output` to align with one lifecycle axis. `working` is unchanged. Existing stores migrate with `textus migrate zones`. The names are conventional — the manifest is the source of truth for write permissions; rename freely.
 
 **Backward compatibility.** If the manifest omits the `zones:` block, the legacy v0.1 three-zone model is synthesized:
 
@@ -184,11 +190,11 @@ Each zone declares which **roles** may write to it via `writable_by:` in the man
 
 | Zone | `writable_by` | Use case |
 |---|---|---|
-| `canon` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
+| `identity` | `[human]` | Identity, voice, immutable principles — things only a human edits. (`canon` pre-0.9.2.) |
 | `working` | `[human, ai, script]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
-| `intake` | `[script]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or AI directly. |
-| `pending` | `[ai]` | AI-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
-| `derived` | `[build]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
+| `inbox` | `[script]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or AI directly. (`intake` pre-0.9.2.) |
+| `review` | `[ai, human]` | AI-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. (`pending` pre-0.9.2.) |
+| `output` | `[build]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. (`derived` pre-0.9.2.) |
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `writable_by` list, the write returns `write_forbidden`.
 
@@ -255,22 +261,26 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus refresh KEY --as=script` (or by `textus refresh-stale`). The declaration is data only:
 
 ```yaml
-- key: intake.calendar.events
-  zone: intake
+- key: inbox.calendar.events
+  zone: inbox
   intake:
     handler: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
-    ttl: 6h
-    on_stale: warn            # warn | sync | timed_sync (default: warn)
-    sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
+
+policies:
+  - match: inbox.calendar.**
+    refresh:
+      ttl: 6h
+      on_stale: warn            # warn | sync | timed_sync (default: warn)
+      sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
 ```
 
-`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler; `ttl` is the staleness budget. Implementations MUST reject legacy `source.from`, `source.parse`, `source.fetcher`, `source.action`, and `source.fetch` with a clear usage error pointing at the `intake:` key.
+`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`policies:`** block matched by key glob (§5.11). Implementations MUST reject legacy `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` at manifest load with a clear migration message pointing at `textus migrate policies`. Implementations MUST also reject legacy `source.from`, `source.parse`, `source.fetcher`, `source.action`, and `source.fetch` with a usage error pointing at the `intake:` key.
 
 #### `on_stale:` semantics
 
-`on_stale:` declares what happens when `textus get` (or any read path that annotates freshness) encounters a stale intake entry.
+`on_stale:` declares what happens when `textus get` (or any read path that annotates freshness) encounters a stale intake entry. The value lives on the matching policy block, not on the entry. Vocabulary unchanged across 0.9.x: `warn | sync | timed_sync`.
 
 | Value | Behaviour |
 |---|---|
@@ -433,6 +443,40 @@ The `store:` argument is always a read-only store proxy. Write attempts raise `U
 
 Each handler runs under `Timeout.timeout(2)`.
 
+### 5.11 Policies (v0.9.2)
+
+A manifest MAY declare a top-level `policies:` block — a list of rule blocks matched against entry keys by glob. Each block carries one or more slots:
+
+```yaml
+policies:
+  - match: inbox.**
+    refresh: { ttl: 6h, on_stale: warn }
+
+  - match: inbox.calendar.**
+    refresh: { ttl: 30m, on_stale: timed_sync, sync_budget_ms: 800 }
+    handler_allowlist: [ical-events]
+
+  - match: review.**
+    promote_requires: [human-review]
+```
+
+**Slots (all optional within a block):**
+
+| Slot | Type | Meaning |
+|---|---|---|
+| `refresh` | `{ ttl, on_stale, sync_budget_ms }` | Freshness budget for intake entries (formerly `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms`). `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
+| `handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
+| `promote_requires` | list of strings | Predicates a `review` entry must satisfy before `textus accept` will promote it. Implementations MAY use a built-in or hook-resolved predicate. Reserved for future enforcement; recorded today. |
+| `retention` | (reserved) | Slot reserved for future retention policy (cap by age / count). Implementations parse it but otherwise ignore. |
+
+**Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
+
+**Resolution.** For each key textus computes a `PolicySet { refresh, handler_allowlist, promote, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`policy_ambiguity`).
+
+**Read surface.** `textus policy list` dumps every block. `textus policy explain KEY` shows the resolved `PolicySet` for one key plus which block won each slot.
+
+**Migration.** `textus migrate policies` hoists every legacy entry-level `intake.ttl` / `intake.on_stale` / `intake.sync_budget_ms` into a top-level `policies:` block matched by the entry's exact key. Idempotent. Run with `--dry-run` first.
+
 ### 5.12 Storage formats (v1.2)
 
 An entry's `format:` selects a storage strategy. All strategies expose the same `parse(bytes) → {_meta, body, content}` and `serialize(meta:, body:, content:) → bytes` contract. The store, audit, etag, and projection layers operate on the parsed shape; only (de)serialization differs.
@@ -529,7 +573,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/2`.
 - `key` MUST be the canonical resolved key.
-- `zone` MUST be one of the zones declared in the manifest (`canon`, `working`, `intake`, `pending`, `derived` for the default v1.0 model; legacy v0.1 manifests synthesize `fixed`, `state`, `derived` per §4).
+- `zone` MUST be one of the zones declared in the manifest (`identity`, `working`, `inbox`, `review`, `output` for the default 0.9.2 model; legacy v0.1 manifests synthesize `fixed`, `state`, `derived` per §4).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
@@ -537,7 +581,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for `intake` entries; always `false` for other zones. (0.9.0+)
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by a `refresh:` policy slot (typically `inbox` zone); always `false` elsewhere. (0.9.0+; resolves through `policies:` since 0.9.2.)
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_refreshed"`), or `null` when `stale` is `false`. (0.9.0+)
 - `refreshing` is `true` when a `timed_sync` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, refreshing: true` SHOULD retry after a short delay. (0.9.0+)
 
@@ -575,11 +619,14 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 
 | Verb | Reads / writes | Role required |
 |---|---|---|
-| `list [--prefix=K] [--zone=Z] [--stale]` | read | any |
+| `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
 | `get K` | read | any |
 | `schema show K` | read | any |
-| `stale [--prefix=K] [--strict]` | read | any |
+| `freshness [--prefix=K] [--zone=Z]` | read | any |
+| `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
+| `blame KEY` | read | any |
+| `policy list` / `policy explain KEY` | read | any |
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
 | `hook list` | read | any |
@@ -593,10 +640,13 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
 | `schema init NAME` / `schema diff NAME` / `schema migrate NAME [--rename=OLD:NEW]` | write | `human` |
+| `migrate zones [--dry-run]` / `migrate policies [--dry-run]` | write | `human` |
 | `key migrate [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `key uid K` | read | any |
 | `hook run NAME` | write | any |
+
+**0.9.2 breaking:** `textus stale` was removed; use `textus freshness` (same input, slightly richer output shape — see below).
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -654,7 +704,7 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 - Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/3`.
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
-The reference Ruby gem follows semver independently. The current gem version is `0.9.0`, which speaks `textus/2`.
+The reference Ruby gem follows semver independently. The current gem version is `0.9.2`, which speaks `textus/2`.
 
 ## 12. Conformance fixtures
 
@@ -664,7 +714,7 @@ A conformant implementation MUST pass these fixtures (the reference test suite s
 Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --format=json` returns the canonical envelope with `etag` matching the file's sha256.
 
 **Fixture B — Role gate on write:**
-Given a manifest entry where `key: canon.identity` lives in the `canon` zone (human-only), `textus put canon.identity --stdin --as=ai` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
+Given a manifest entry where `key: identity.self` lives in the `identity` zone (human-only), `textus put identity.self --stdin --as=ai` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
 
 **Fixture C — Schema violation:**
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
