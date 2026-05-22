@@ -20,6 +20,14 @@ module Textus
       zones[zone_name] or raise UsageError.new("undeclared zone '#{zone_name}'")
     end
 
+    def permission_for(zone_name)
+      Textus::Domain::Permission.new(
+        zone: zone_name,
+        writable_by: zone_writers(zone_name),
+        readable_by: :all,
+      )
+    end
+
     def self.load(root)
       manifest_path = File.join(root, "manifest.yaml")
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
