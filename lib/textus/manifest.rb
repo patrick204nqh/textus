@@ -144,17 +144,6 @@ module Textus
 
     private
 
-    # Validates all declared entry keys; raises UsageError listing all offenders.
-    def validate_keys!
-      offenders = []
-      @entries.each do |entry|
-        validate_key!(entry.key)
-      rescue UsageError => e
-        offenders << e.message
-      end
-      raise UsageError.new("invalid manifest keys: #{offenders.join("; ")}") unless offenders.empty?
-    end
-
     def valid_segment?(seg)
       return false if seg.nil? || seg.empty?
       return false if seg.length > Key::Grammar::MAX_SEGMENT_LEN
