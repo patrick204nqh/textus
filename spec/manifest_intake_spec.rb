@@ -140,4 +140,97 @@ RSpec.describe "Manifest intake:" do
     YAML
     expect(e.on_stale).to eq(:sync)
   end
+
+  describe "#policy" do
+    it "returns a Domain::Freshness::Policy with correct attributes" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [script] }]
+        entries:
+          - key: working.news
+            path: working/news.md
+            zone: working
+            intake:
+              handler: news_handler
+              ttl: 10m
+              on_stale: timed_sync
+              sync_budget_ms: 800
+      YAML
+      p = e.policy
+      expect(p).to be_a(Textus::Domain::Freshness::Policy)
+      expect(p.ttl_seconds).to eq(600)
+      expect(p.on_stale).to eq(:timed_sync)
+      expect(p.sync_budget_ms).to eq(800)
+    end
+
+    it "returns ttl_seconds nil when ttl is not set" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [human] }]
+        entries:
+          - { key: working.x, path: working/x.md, zone: working }
+      YAML
+      expect(e.policy.ttl_seconds).to be_nil
+    end
+
+    it "parses ttl in seconds" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [script] }]
+        entries:
+          - key: working.news
+            path: working/news.md
+            zone: working
+            intake:
+              handler: news_handler
+              ttl: 120s
+      YAML
+      expect(e.policy.ttl_seconds).to eq(120)
+    end
+
+    it "parses ttl in hours" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [script] }]
+        entries:
+          - key: working.news
+            path: working/news.md
+            zone: working
+            intake:
+              handler: news_handler
+              ttl: 2h
+      YAML
+      expect(e.policy.ttl_seconds).to eq(7200)
+    end
+
+    it "parses ttl in days" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [script] }]
+        entries:
+          - key: working.news
+            path: working/news.md
+            zone: working
+            intake:
+              handler: news_handler
+              ttl: 1d
+      YAML
+      expect(e.policy.ttl_seconds).to eq(86_400)
+    end
+
+    it "parses bare integer ttl as seconds" do
+      e = load_entry(<<~YAML)
+        version: textus/2
+        zones: [{ name: working, writable_by: [script] }]
+        entries:
+          - key: working.news
+            path: working/news.md
+            zone: working
+            intake:
+              handler: news_handler
+              ttl: 300
+      YAML
+      expect(e.policy.ttl_seconds).to eq(300)
+    end
+  end
 end

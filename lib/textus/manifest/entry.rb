@@ -63,7 +63,33 @@ module Textus
         raise UsageError.new("entry '#{@key}': #{e.message}")
       end
 
+      def policy
+        @policy ||= Textus::Domain::Freshness::Policy.new(
+          ttl_seconds: parse_ttl_seconds,
+          on_stale: @on_stale,
+          sync_budget_ms: @sync_budget_ms,
+        )
+      end
+
       private
+
+      def parse_ttl_seconds
+        return nil if @ttl.nil?
+
+        str = @ttl.to_s.strip
+        return str.to_i if str.match?(/\A\d+\z/)
+
+        m = str.match(/\A(\d+)\s*([smhd])\z/)
+        return nil unless m
+
+        n = m[1].to_i
+        case m[2]
+        when "s" then n
+        when "m" then n * 60
+        when "h" then n * 3600
+        when "d" then n * 86_400
+        end
+      end
 
       def validate_inject_intro!
         return unless @inject_intro
