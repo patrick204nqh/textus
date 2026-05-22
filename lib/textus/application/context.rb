@@ -39,30 +39,6 @@ module Textus
           dry_run: @dry_run,
         )
       end
-
-      # Backward-compat for intake handlers receiving a Context
-      # that call store.put/get/delete on it. Slated for removal in 0.10.0.
-      def put(key, **opts)
-        opts[:as] ||= role
-        store.put(key, **opts)
-      end
-
-      def delete(key, **opts)
-        opts[:as] ||= role
-        store.delete(key, **opts)
-      end
-
-      def get(key, **)
-        store.get(key, **)
-      end
-
-      def list(*, **)
-        store.list(*, **)
-      end
-
-      def where(*, **)
-        store.where(*, **)
-      end
     end
   end
 end
