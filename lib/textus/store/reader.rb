@@ -17,11 +17,13 @@ module Textus
         @store.writer.enforce_name_match!(path, meta, mentry.format)
         schema = @store.schema_for(mentry.schema)
         Entry.for_format(mentry.format).validate_against(schema, parsed) if schema
-        Envelope.build(
+        envelope = Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: meta, body: parsed["body"],
           etag: Etag.for_bytes(raw), content: content
         )
+        annotate_freshness!(envelope, mentry)
+        envelope
       end
 
       def list(prefix: nil, zone: nil)
@@ -61,6 +63,15 @@ module Textus
           audit_log: @store.audit_log,
           schema_for: ->(name) { @store.schema_for(name) }
         ).call
+      end
+
+      private
+
+      def annotate_freshness!(envelope, mentry)
+        result = Freshness.evaluate(mentry, envelope)
+        envelope["stale"] = (result != :fresh)
+        envelope["stale_reason"] = (result.is_a?(Hash) ? result[:reason] : nil)
+        envelope["refreshing"] = false
       end
     end
   end
