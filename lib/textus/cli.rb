@@ -22,6 +22,7 @@ module Textus
       "put" => Verb::Put,
       "rdeps" => Verb::Rdeps,
       "refresh" => Verb::Refresh,
+      "refresh-stale" => Verb::RefreshStale,
       "schema" => Group::Schema,
       "stale" => Verb::Stale,
       "where" => Verb::Where,
@@ -86,6 +87,7 @@ module Textus
           textus get KEY
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus stale [--prefix=KEY] [--zone=Z]
+          textus refresh-stale [--prefix=KEY] [--zone=Z]
           textus doctor
           textus intro
 

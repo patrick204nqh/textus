@@ -51,6 +51,36 @@ module Textus
       envelope
     end
 
+    def self.refresh_stale(store, prefix: nil, zone: nil, as: "script")
+      stale_rows = store.stale(prefix: prefix, zone: zone)
+      refreshed = []
+      failed = []
+      skipped = []
+
+      stale_rows.each do |row|
+        key = row["key"] || row[:key]
+        reason = row["reason"] || row[:reason]
+        if reason.to_s.match?(/ttl exceeded|never refreshed/)
+          begin
+            Textus::Refresh.call(store, key, as: as)
+            refreshed << key
+          rescue Textus::Error => e
+            failed << { "key" => key, "error" => e.message }
+          end
+        else
+          skipped << { "key" => key, "reason" => reason }
+        end
+      end
+
+      {
+        "protocol" => Textus::PROTOCOL,
+        "ok" => failed.empty?,
+        "refreshed" => refreshed,
+        "failed" => failed,
+        "skipped" => skipped,
+      }
+    end
+
     # Normalize the three accepted intake return shapes into the store's
     # internal {frontmatter, body, content} representation.
     def self.normalize_action_result(res, format:)
