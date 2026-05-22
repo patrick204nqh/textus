@@ -29,7 +29,6 @@ module Textus
       "refresh" => Verb::Refresh,
       "refresh-stale" => Verb::RefreshStale,
       "schema" => Group::Schema,
-      "stale" => Verb::Stale,
       "where" => Verb::Where,
     }.freeze
 
@@ -55,6 +54,10 @@ module Textus
                                   0
       when "--help", "-h"    then print_help
                                   0
+      when "stale"
+        raise UsageError.new(
+          "textus stale was removed in 0.9.2 — use `textus freshness` instead",
+        )
       else
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
         dispatch(klass, argv)
@@ -91,7 +94,7 @@ module Textus
           textus where KEY
           textus get KEY
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
-          textus stale [--prefix=KEY] [--zone=Z]
+          textus freshness [--prefix=KEY] [--zone=Z]
           textus refresh-stale [--prefix=KEY] [--zone=Z]
           textus doctor
           textus intro

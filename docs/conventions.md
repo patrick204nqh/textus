@@ -43,7 +43,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 ## Derived entries and build runners
 
-**Always** declare `generator:` on derived entries that participate in any build pipeline. Without it, `textus stale` cannot help — the entry is just an opaque file.
+**Always** declare `generator:` on derived entries that participate in any build pipeline. Without it, `textus freshness` cannot help — the entry is just an opaque file.
 
 ```yaml
 - key: derived.catalogs.skills
@@ -61,9 +61,11 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 **The build runner is responsible for writing the `generated:` frontmatter block** when it regenerates. The gem will never synthesize it. A typical lefthook / rake / just integration looks like:
 
 ```sh
-textus stale --format=json | jq -r '.[] | .generator.command' | sort -u | while read cmd; do
-  eval "$cmd"
-done
+textus freshness --format=json \
+  | jq -r '.rows[] | select(.status == "stale") | .key' \
+  | while read key; do
+      textus refresh "$key" --as=script
+    done
 ```
 
 `generated.from` SHOULD match `generator.sources` from the manifest — they're the same list, recorded in two places so a diffable file proves what was actually consumed.
@@ -82,4 +84,4 @@ For multi-writer environments, **always pass `if_etag`** on `put`. The gem treat
 
 - **MCP servers**: a thin server that exposes `textus get` and `textus put` as tools is the recommended way to give Claude/agents access. Don't bake MCP into this gem.
 - **Vector stores**: index `body` content into a vector store if you want fuzzy retrieval. `frontmatter` stays in textus as the source of truth for deterministic facts.
-- **CI**: run `textus stale` (or `textus list` + schema validation) in CI to catch drift between derived entries and their sources.
+- **CI**: run `textus freshness` (or `textus list` + schema validation) in CI to catch drift between derived entries and their sources.

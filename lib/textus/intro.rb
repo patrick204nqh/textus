@@ -46,8 +46,8 @@ module Textus
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
       { "name" => "refresh",  "summary" => "run an action for an intake entry" },
-      { "name" => "stale",    "summary" => "list derived/intake entries past their freshness check" },
-      { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
+      { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
+      { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
     ].freeze

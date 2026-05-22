@@ -608,19 +608,25 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 
 `if_etag` is optional on `put`, required on `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted on `put`, the write is unconditional (last-writer-wins).
 
-**`textus stale` output shape:**
+**`textus freshness` output shape:**
 
 ```json
-[
-  { "key": "derived.catalogs.skills",
-    "path": "/abs/.textus/zones/derived/catalogs/skills.md",
-    "generator": { "command": "rake catalog:skills",
-                   "sources": ["working.projects", "working.network"] },
-    "reason": "source 'working.projects' modified after generated.at" }
-]
+{
+  "verb": "freshness",
+  "rows": [
+    { "key": "inbox.upstream.notes",
+      "zone": "inbox",
+      "last_refreshed_at": "2026-05-21T13:21:17Z",
+      "age_seconds": 65000,
+      "ttl_seconds": 43200,
+      "on_stale": "warn",
+      "status": "stale",
+      "next_due_at": "2026-05-22T01:21:17Z" }
+  ]
+}
 ```
 
-`textus build` consumes the stale list and executes each `generator.command` itself, writing results back through `put` under the `build` role. `--dry-run` prints the plan without executing.
+`textus freshness` replaced `textus stale` in 0.9.2. Each row reports one entry's verdict (`fresh`, `stale`, `never_refreshed`, or `no_policy`) against its matched `refresh:` policy. `textus build` consumes its own staleness signal and executes derived entries' projections under the `build` role; `--dry-run` prints the plan without executing.
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only the `human` role may invoke `accept`.
 
@@ -664,7 +670,7 @@ Given a manifest entry where `key: canon.identity` lives in the `canon` zone (hu
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `derived.catalogs.skills` with `generator.sources: [working.projects]`, and a working-zone entry under `working.projects` whose file mtime is newer than the derived entry's `generated.at` frontmatter timestamp, `textus stale --format=json` includes the derived entry with its declared `generator.command` and a `reason` field naming the stale source. Calling `textus stale` does NOT execute the command.
+Given a manifest entry `inbox.notes` matched by a `policies: [{ match: inbox.notes, refresh: { ttl: 1h } }]` block and an envelope on disk whose `_meta.last_refreshed_at` is older than `now - ttl`, `textus freshness --format=json` includes a row for `inbox.notes` with `status: "stale"`. Calling `textus freshness` does NOT trigger a refresh.
 
 **Fixture E — Projection build:**
 Given a manifest entry `derived.catalogs.skills` whose `projection` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
@@ -738,7 +744,7 @@ A `textus/2` implementation MUST:
 - [ ] Refuse writes whose resolved role is not in the target zone's `writable_by` list with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement `textus stale` per §5.1 and §9, comparing each derived entry's `generator.sources` against its `generated.at` timestamp without invoking any commands.
+- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `policies:` block, and reporting `fresh|stale|never_refreshed|no_policy` without invoking any refresh.
 - [ ] Pass the conformance fixtures A–I in §12.
 
 A `textus/2` implementation MAY:

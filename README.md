@@ -64,7 +64,7 @@ textus get working.network.org.jane
 textus list --zone=working
 echo '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
   | textus put working.network.org.bob --as=human --stdin
-textus stale --zone=derived
+textus freshness --zone=output
 ```
 
 (All verbs return JSON envelopes by default; pass `--format=json` explicitly if you prefer.)
