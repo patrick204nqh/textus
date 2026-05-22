@@ -74,13 +74,13 @@ RSpec.describe "Textus per-event sugar" do
     end
   end
 
-  describe ".refresh_started / .refresh_failed / .refresh_detached" do
+  describe ".refresh_began / .refresh_failed / .refresh_detached" do
     it "registers each lifecycle event" do
-      Textus.refresh_started(:s)  { |key:, mode:, **| [key, mode] }
+      Textus.refresh_began(:s)    { |key:, mode:, **| [key, mode] }
       Textus.refresh_failed(:f)   { |key:, error_class:, error_message:, **| [key, error_class, error_message] }
       Textus.refresh_detached(:d) { |key:, started_at:, budget_ms:, **| [key, started_at, budget_ms] }
 
-      expect(reg.pubsub_handlers(:refresh_started).map { _1[:name] }).to include(:s)
+      expect(reg.pubsub_handlers(:refresh_began).map { _1[:name] }).to include(:s)
       expect(reg.pubsub_handlers(:refresh_failed).map { _1[:name] }).to include(:f)
       expect(reg.pubsub_handlers(:refresh_detached).map { _1[:name] }).to include(:d)
     end

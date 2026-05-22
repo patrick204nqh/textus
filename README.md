@@ -100,7 +100,7 @@ All verbs accept `--format=json` and return the envelope defined in SPEC §8. Wr
 | `deps K` / `rdeps K` | Forward / reverse projection dependencies |
 | `published` | List `publish_to:` targets and their backing keys |
 | `doctor --check=schema_violations` | Validate every entry against its schema |
-| `hook list [--event=E]` | Registered hooks grouped by event (intake, reduce, check, put, deleted, refreshed, built, accepted, published, mv, reject, loaded, refresh_started, refresh_failed, refresh_detached) |
+| `hook list [--event=E]` | Registered hooks grouped by event (intake, reduce, check, put, deleted, refreshed, built, accepted, published, mv, reject, loaded, refresh_began, refresh_failed, refresh_detached) |
 
 **Write:**
 
@@ -157,7 +157,7 @@ textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectorie
 - `:reduce` — transform rows during projection (returns rows)
 - `:check` — custom doctor check (returns issues)
 - `:put`, `:deleted`, `:refreshed`, `:built`, `:accepted`, `:published`, `:mv`, `:reject`, `:loaded` — react to lifecycle events
-- `:refresh_started`, `:refresh_failed`, `:refresh_detached` — background-refresh lifecycle (0.9.0+)
+- `:refresh_began`, `:refresh_failed`, `:refresh_detached` — background-refresh lifecycle (0.9.0+)
 
 ```ruby
 # Inside .textus/hooks/local_file.rb

@@ -5,7 +5,7 @@ module Textus
         intake reduce check
         put deleted refreshed built published accepted
         mv reject loaded
-        refresh_started refresh_failed refresh_detached
+        refresh_began refresh_failed refresh_detached
       ].freeze
 
       EVENTS.each do |event|

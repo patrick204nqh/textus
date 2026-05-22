@@ -17,7 +17,7 @@ module Textus
         mv: { mode: :pubsub, args: %i[store key from_key to_key envelope] },
         reject: { mode: :pubsub, args: %i[store key target_key] },
         loaded: { mode: :pubsub, args: %i[store] },
-        refresh_started: { mode: :pubsub, args: %i[store key mode] },
+        refresh_began: { mode: :pubsub, args: %i[store key mode] },
         refresh_failed: { mode: :pubsub, args: %i[store key error_class error_message] },
         refresh_detached: { mode: :pubsub, args: %i[store key started_at budget_ms] },
       }.freeze

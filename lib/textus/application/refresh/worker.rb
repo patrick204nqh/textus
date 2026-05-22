@@ -30,7 +30,7 @@ module Textus
           callable = @store.registry.rpc_callable(:intake, mentry.intake_handler)
           write_view = store_view(writable: true, as: as)
           read_view  = store_view
-          @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync)
+          @bus.publish(:refresh_began, store: read_view, key: key, mode: :sync)
           call_intake(key, mentry, callable, write_view, read_view)
         end
 

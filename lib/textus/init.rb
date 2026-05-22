@@ -65,7 +65,7 @@ module Textus
       Events: :intake, :reduce, :check (rpc — return value used)
               :put, :deleted, :refreshed, :built, :accepted, :published,
               :mv, :reject, :loaded,
-              :refresh_started, :refresh_failed, :refresh_detached (pub-sub — return discarded)
+              :refresh_began, :refresh_failed, :refresh_detached (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

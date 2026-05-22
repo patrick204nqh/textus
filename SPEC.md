@@ -411,13 +411,13 @@ The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the au
 | :mv                 | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
 | :reject             | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
 | :loaded             | pubsub  | store:                                                    | (discarded)           | logged        |
-| :refresh_started    | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
+| :refresh_began    | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
 | :refresh_failed     | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
 | :refresh_detached   | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
 
 **New in 0.9.0:** `:intake` replaces `:fetch` as the RPC event name for intake handlers. `:deleted`, `:refreshed`, `:built`, `:accepted`, `:published` replace `:delete`, `:refresh`, `:build`, `:accept`, `:publish` respectively for all pub-sub callers. The three `:refresh_*` lifecycle events report the progress and failures of background (timed_sync) refreshes.
 
-**`:refresh_started`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
+**`:refresh_began`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
 
 **`:refresh_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
 

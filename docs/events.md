@@ -40,7 +40,7 @@ Every event is one of two kinds.
                                     :mv               → after rename
                                     :reject           → after proposal discard
                                     :loaded           → once per Store.new
-                                    :refresh_started  → before intake handler runs (0.9.0+)
+                                    :refresh_began  → before intake handler runs (0.9.0+)
                                     :refresh_failed   → intake handler raised (0.9.0+)
                                     :refresh_detached → timed_sync budget exceeded (0.9.0+)
 ```
@@ -74,7 +74,7 @@ Three additional pub-sub events observe the progress of in-process and backgroun
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
+| `:refresh_began` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
 | `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ store:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
 | `:refresh_detached` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ store:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
@@ -110,7 +110,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ```
   ┃ require entry.intake.handler           ── ABORT if missing
-  ┃ ─────────────────────────────────────► :refresh_started  (pubsub, mode: "sync"|"timed_sync")
+  ┃ ─────────────────────────────────────► :refresh_began  (pubsub, mode: "sync"|"timed_sync")
   ┃ ─────────────────────────────────────► :intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
   ┃   if handler raises:
@@ -265,7 +265,7 @@ end
 | `:mv` raises | verb still succeeds | `event_error` row |
 | `:reject` raises | verb still succeeds | `event_error` row |
 | `:loaded` raises | store still ready | `event_error` row |
-| `:refresh_started` raises | verb still succeeds | `event_error` row |
+| `:refresh_began` raises | verb still succeeds | `event_error` row |
 | `:refresh_failed` raises | verb still succeeds | `event_error` row |
 | `:refresh_detached` raises | verb still succeeds | `event_error` row |
 

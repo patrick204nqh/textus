@@ -40,7 +40,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
     Textus::Store.new(textus)
   end
 
-  it "persists the envelope and fires :refresh_started and :refreshed events on success" do
+  it "persists the envelope and fires :refresh_began and :refreshed events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.intake(:test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
@@ -55,7 +55,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       expect(envelope["body"]).to eq("hello")
 
       event_names = test_bus.events.map(&:first)
-      expect(event_names).to include(:refresh_started)
+      expect(event_names).to include(:refresh_began)
       expect(event_names).to include(:refreshed)
 
       refreshed_payload = test_bus.events.find { |name, _| name == :refreshed }.last
