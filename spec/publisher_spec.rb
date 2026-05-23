@@ -24,7 +24,7 @@ RSpec.describe Textus::Infra::Publisher do
     expect(File.binread(dst)).to eq(File.binread(src))
   end
 
-  it "writes the sentinel under <store_root>/sentinels/, not beside the target" do
+  it "writes the sentinel under <store_root>/sentinels/ with repo-relative source/target fields" do
     Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.exist?(sentinel)).to be true
     expect(File.exist?(legacy_sentinel)).to be false
