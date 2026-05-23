@@ -30,8 +30,8 @@ RSpec.describe Textus::Infra::Publisher do
     expect(File.exist?(legacy_sentinel)).to be false
 
     data = JSON.parse(File.read(sentinel))
-    expect(data["source"]).to eq(src)
-    expect(data["target"]).to eq(dst)
+    expect(data["source"]).to eq(".textus/zones/output/out.md")
+    expect(data["target"]).to eq("dst.md")
     expect(data["sha256"]).to eq(Digest::SHA256.hexdigest(File.binread(dst)))
     expect(data["mode"]).to eq("copy")
   end
