@@ -66,17 +66,7 @@ module Textus
       def parse_row(line)
         return nil if line.empty?
 
-        if line.start_with?("{")
-          JSON.parse(line)
-        else
-          # Legacy TSV (pre-0.5): read-only support retained for on-disk logs
-          # written by older textus versions. Never written by current code.
-          # Format: ts, role, verb, key, etag_before, etag_after [, json_extras]
-          fields = line.split("\t")
-          return nil if fields.length < 4
-
-          { "ts" => fields[0], "role" => fields[1], "verb" => fields[2], "key" => fields[3] }
-        end
+        JSON.parse(line)
       rescue JSON::ParserError
         nil
       end
@@ -84,25 +74,10 @@ module Textus
       def check_line(stripped, lineno)
         return nil if stripped.empty?
 
-        if stripped.start_with?("{")
-          begin
-            JSON.parse(stripped)
-            nil
-          rescue JSON::ParserError => e
-            { "lineno" => lineno, "reason" => "invalid_json", "detail" => e.message }
-          end
-        else
-          # parse_row accepts >= 4 fields for read-compat; integrity requires
-          # all 6 data columns of the legacy TSV format.
-          fields = stripped.split("\t")
-          return nil if fields.length >= 6
-
-          {
-            "lineno" => lineno,
-            "reason" => "short_tsv",
-            "detail" => "legacy TSV row has #{fields.length} fields (expected >= 6)",
-          }
-        end
+        JSON.parse(stripped)
+        nil
+      rescue JSON::ParserError => e
+        { "lineno" => lineno, "reason" => "invalid_json", "detail" => e.message }
       end
     end
   end

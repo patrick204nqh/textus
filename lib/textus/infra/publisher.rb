@@ -16,7 +16,6 @@ module Textus
         File.delete(target) if File.symlink?(target)
         FileUtils.cp(source, target)
         Store::Sentinel.write!(target: target, source: source, store_root: store_root)
-        cleanup_legacy_sentinel(target)
       end
 
       def self.refuse_if_unmanaged(target, store_root)
@@ -27,12 +26,7 @@ module Textus
       end
 
       def self.managed?(target, store_root)
-        File.exist?(Store::Sentinel.sentinel_path(target, store_root)) ||
-          File.exist?(Store::Sentinel.legacy_path(target))
-      end
-
-      def self.cleanup_legacy_sentinel(target)
-        FileUtils.rm_f(Store::Sentinel.legacy_path(target))
+        File.exist?(Store::Sentinel.sentinel_path(target, store_root))
       end
     end
   end

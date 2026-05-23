@@ -7,11 +7,8 @@ module Textus
     # Value object for sentinel files written by Infra::Publisher and inspected
     # by Doctor::Check::Sentinels. Owns the JSON shape ({source, target,
     # sha256, mode}) and the on-disk path layout (<store_root>/sentinels/
-    # <target-rel-to-repo>.textus-managed.json).
-    #
-    # Repo-relative target/source on write so example trees can be committed
-    # without leaking the author's absolute filesystem paths. Legacy absolute
-    # paths are still accepted on read.
+    # <target-rel-to-repo>.textus-managed.json). Target/source are repo-relative
+    # when the published file is under the repo root, absolute otherwise.
     class Sentinel
       SUFFIX = ".textus-managed.json".freeze
       DIR    = "sentinels".freeze
@@ -46,10 +43,6 @@ module Textus
         repo_root = File.dirname(store_root)
         rel = relative_to(target, repo_root) || File.basename(target)
         File.join(store_root, DIR, rel + SUFFIX)
-      end
-
-      def self.legacy_path(target)
-        target + SUFFIX
       end
 
       def self.rel_or_abs(path, repo_root)

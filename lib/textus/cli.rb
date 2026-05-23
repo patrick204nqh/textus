@@ -53,10 +53,6 @@ module Textus
                                   0
       when "--help", "-h"    then print_help
                                   0
-      when "stale"
-        raise UsageError.new(
-          "textus stale was removed in 0.9.2 — use `textus freshness` instead",
-        )
       else
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
         dispatch(klass, argv)
@@ -88,7 +84,7 @@ module Textus
       @stdout.puts <<~HELP
         textus #{VERSION} — reference implementation of #{PROTOCOL}
 
-        Usage (json output is the default; --format=json accepted for back-compat):
+        Usage (json output is the default):
           textus list [--prefix=KEY] [--zone=Z]
           textus where KEY
           textus get KEY
@@ -104,7 +100,6 @@ module Textus
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
           textus policy {list,explain}
-          textus migrate {zones,policies}
       HELP
     end
   end

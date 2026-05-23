@@ -34,12 +34,7 @@ module Textus
 
       raw = YAML.safe_load_file(manifest_path, aliases: false)
       unless raw["version"] == PROTOCOL
-        msg = if raw["version"] == "textus/1"
-                "manifest is textus/1; edit manifest.yaml: change 'version: textus/1' to 'version: #{PROTOCOL}'"
-              else
-                "unsupported manifest version #{raw["version"].inspect}"
-              end
-        raise BadFrontmatter.new(manifest_path, msg)
+        raise BadFrontmatter.new(manifest_path, "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}")
       end
 
       new(root, raw)
@@ -50,7 +45,6 @@ module Textus
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
 
-      reject_legacy_entry_intake_policy!(Array(raw["entries"]))
       @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!
     end
@@ -153,19 +147,6 @@ module Textus
 
     def validate_declared_keys!
       @entries.each { |e| validate_key!(e.key) }
-    end
-
-    def reject_legacy_entry_intake_policy!(raw_entries)
-      raw_entries.each do |re|
-        intake = re["intake"]
-        next unless intake.is_a?(Hash)
-        next unless intake.key?("ttl") || intake.key?("on_stale") || intake.key?("sync_budget_ms")
-
-        raise UsageError.new(
-          "entry '#{re["key"]}': intake.ttl/intake.on_stale/intake.sync_budget_ms removed in 0.9.2 — " \
-          "move into a top-level policies: block (see CHANGELOG migration recipe).",
-        )
-      end
     end
 
     def resolve_leaf_path(entry)

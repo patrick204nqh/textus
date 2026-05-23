@@ -30,12 +30,4 @@ RSpec.describe Textus::Doctor::Check::AuditLog do
                                 "subject" => a_string_matching(/audit\.log:1\z/),
                               ))
   end
-
-  it "emits audit.parse_error for a short legacy TSV row" do
-    File.write(File.join(root, "audit.log"), "2026-01-01T00:00:00Z\thuman\tput\n")
-    store = Textus::Store.new(root)
-    issues = described_class.new(store).call
-    expect(issues).to include(hash_including("code" => "audit.parse_error"))
-    expect(issues.first["message"]).to match(/expected >= 6/)
-  end
 end
