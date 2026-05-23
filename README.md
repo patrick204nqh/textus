@@ -14,7 +14,7 @@ Reference implementation in Ruby. Wire format `textus/2`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/2`. Stable; breaking changes require `textus/3`.
-- **Gem version:** semver, currently `0.9.2`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, currently `0.10.3`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -56,8 +56,6 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
 ```
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `working.network.org.jane` lives at `.textus/zones/working/network/org/jane.md`.
-
-> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Upgrading a 0.9.1 store is a hand-edit (see CHANGELOG migration recipe).
 
 Read and write:
 
@@ -164,7 +162,7 @@ textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectorie
 - `:reduce` — transform rows during projection (returns rows)
 - `:check` — custom doctor check (returns issues)
 - `:put`, `:deleted`, `:refreshed`, `:built`, `:accepted`, `:published`, `:mv`, `:reject`, `:loaded` — react to lifecycle events
-- `:refresh_began`, `:refresh_failed`, `:refresh_detached` — background-refresh lifecycle (0.9.0+)
+- `:refresh_began`, `:refresh_failed`, `:refresh_detached` — background-refresh lifecycle
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
@@ -205,7 +203,7 @@ Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintai
 bundle exec rspec
 ```
 
-240 examples; includes conformance fixtures A–I from SPEC §12.
+~490 examples; includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 

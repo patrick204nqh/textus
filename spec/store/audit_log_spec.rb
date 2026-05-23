@@ -88,16 +88,10 @@ RSpec.describe Textus::Store::AuditLog do
       expect(log.verify_integrity).to eq([])
     end
 
-    it "accepts legacy TSV rows with >= 6 fields" do
-      File.write(File.join(root, "audit.log"),
-                 "2026-01-01T00:00:00Z\thuman\tput\tworking.x\t\tsha256:abc\n")
-      expect(log.verify_integrity).to eq([])
-    end
-
-    it "flags legacy TSV rows with < 6 fields as short_tsv" do
-      File.write(File.join(root, "audit.log"), "2026-01-01T00:00:00Z\thuman\tput\n")
+    it "flags non-JSON lines as invalid_json" do
+      File.write(File.join(root, "audit.log"), "not json\n")
       issues = log.verify_integrity
-      expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "short_tsv"))
+      expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "invalid_json"))
     end
   end
 end

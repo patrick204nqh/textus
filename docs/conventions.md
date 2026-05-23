@@ -27,8 +27,6 @@ Recommended top-level layout — the spec allows alternatives, but this is what 
 
 Inside `working/`, group by **domain** (people, projects, decisions, runbooks), not by file type or date. Inside `output/`, group by **producer** (`output/catalogs/`, `output/indexes/`) so it's clear which build job owns what.
 
-> **0.9.2 rename.** Default zone names moved off historical artifact terms (`canon/intake/pending/derived`) to one lifecycle axis (`identity/inbox/review/output`); `working` is unchanged. Upgrade existing stores by hand-editing the manifest and `mv`-ing the zone directories (see 0.9.2 CHANGELOG).
-
 ## Schema design
 
 - **One schema per entry type, not per directory.** `person.yaml`, `project.yaml`, `decision.yaml` — applied across multiple subtrees if the shape matches.
@@ -79,7 +77,7 @@ textus freshness --format=json \
 
 - **Bodies are Markdown.** Headings, lists, code fences — whatever a human or agent finds useful.
 - **The schema does not validate the body.** If a field belongs in structured data, put it in frontmatter, not the body.
-- **Keep entries short.** If a project entry hits 500 lines, it probably wants to be split into sub-entries (e.g. `state.projects.acme.dashboard` + `state.projects.acme.api`) rather than one mega-document.
+- **Keep entries short.** If a project entry hits 500 lines, it probably wants to be split into sub-entries (e.g. `working.projects.acme.dashboard` + `working.projects.acme.api`) rather than one mega-document.
 
 ## Concurrency
 

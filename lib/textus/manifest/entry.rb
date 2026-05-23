@@ -28,10 +28,7 @@ module Textus
         @format = resolve_format!(raw["format"])
 
         validate_events!
-        raise UsageError.new("entry '#{@key}': 'source:' key renamed to 'intake:' in 0.9") if raw.key?("source")
-
         parse_intake!(raw["intake"])
-        reject_legacy_projection_keys!
         validate_format_matrix!
         validate_publish_each!
         validate_inject_intro!
@@ -57,21 +54,14 @@ module Textus
       end
 
       # Signal-based zone-kind predicates: derive the "kind" of a zone from its
-      # writable_by signals rather than its literal name. This keeps detection
-      # working when users rename the default zones (canon/intake/pending/derived
-      # → identity/inbox/review/output, etc.).
+      # writable_by signals rather than its literal name, so detection keeps
+      # working when users rename the default zones.
       def in_generator_zone?
         zone_writers.include?("build")
       end
 
       def in_proposal_zone?
         zone_writers.include?("ai")
-      end
-
-      # Legacy alias for in_generator_zone?. Retained because internal validation
-      # callers (and external tools) read more naturally as `derived?`.
-      def derived?
-        in_generator_zone?
       end
 
       private
@@ -85,7 +75,7 @@ module Textus
       def validate_inject_intro!
         return unless @inject_intro
 
-        unless derived?
+        unless in_generator_zone?
           raise UsageError.new(
             "entry '#{@key}': inject_intro: is only valid on derived entries",
           )
@@ -181,7 +171,7 @@ module Textus
 
         # Template-required-for-derived rules. Skipped for entries materialized by an
         # external generator: command (those produce the bytes themselves).
-        if derived? && @template.nil? && @generator.nil? &&
+        if in_generator_zone? && @template.nil? && @generator.nil? &&
            (@format == "markdown" || @format == "text") && !@nested
           raise UsageError.new("entry '#{@key}': derived #{@format} entries require a template")
         end
@@ -189,24 +179,9 @@ module Textus
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def parse_intake!(src)
-        raise UsageError.new("entry '#{@key}': source.fetch renamed to intake.handler in 0.9") if src.is_a?(Hash) && src.key?("fetch")
-
-        if src.is_a?(Hash) && (src.key?("ttl") || src.key?("on_stale") || src.key?("sync_budget_ms"))
-          raise UsageError.new(
-            "entry '#{@key}': intake.ttl/intake.on_stale/intake.sync_budget_ms removed in 0.9.2 — " \
-            "move into a top-level policies: block (see CHANGELOG migration recipe).",
-          )
-        end
-
         src ||= {}
         @intake_handler = src["handler"]
         @intake_config  = src["config"] || {}
-      end
-
-      def reject_legacy_projection_keys!
-        return unless @projection.is_a?(Hash) && @projection.key?("reducer")
-
-        raise UsageError.new("entry '#{@key}': projection.reducer renamed to projection.reduce in 0.6")
       end
 
       def validate_events!

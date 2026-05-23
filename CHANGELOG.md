@@ -8,6 +8,35 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.3 — Documentation refresh and legacy-code removal (2026-05-23)
+
+Patch release. Two pieces of work: (1) docs describe current state only — every reference to pre-0.9.2 zone names, pre-0.10.2 sentinel layout, pre-0.5 audit-log format, and other version-history annotations is stripped from user-facing docs; (2) the corresponding backward-compatibility code paths are deleted from `lib/`. The wire protocol stays `textus/2`. Callers conforming to the current SPEC are unaffected; callers carrying obsolete config now hit silent drops or parse failures instead of helpful migration messages.
+
+### Removed
+
+- **`Doctor::Check::LegacyIntakeFields`** — deleted. Manifest parsing already rejected these fields at load; the doctor check was redundant.
+- **TSV audit-log reader** in `Store::AuditLog#parse_row` and `#check_line` — pre-0.5 audit logs are no longer transparently read. Non-JSON lines surface as `invalid_json` integrity violations.
+- **Legacy sibling sentinel migration** in `Infra::Publisher` and `Store::Sentinel.legacy_path` — pre-0.10.2 stores with sibling `<target>.textus-managed.json` files are no longer recognized as managed. Fix: `rm <target>.textus-managed.json && textus build`.
+- **Manifest rename-migration rejections** — entries containing `source:`, `intake.fetch`, `intake.{ttl,on_stale,sync_budget_ms}`, or `projection.reducer` no longer raise migration hints. These obsolete fields are silently ignored by the parser.
+- **`textus/1` helpful-message branch** in `Manifest.load` — unsupported versions now produce a single generic error.
+- **`textus stale` CLI stub** — removed; calling it now returns `unknown verb: stale` like any other typo.
+- **`Manifest::Entry#derived?`** alias — both internal callers now invoke `in_generator_zone?` directly.
+- **Stale CLI help text** — `textus migrate {zones,policies}` (reverted in 0.9.2) and "`--format=json` accepted for back-compat" wording removed from `textus --help`.
+
+### Documentation
+
+- **`docs/plans/`** is now signposted in `CONTRIBUTING.md` as design history, not current documentation.
+- **README, SPEC, ARCHITECTURE, docs/zones, docs/events, docs/conventions, examples/claude-plugin/README** — stripped `(0.8.2+)`, `(0.9.0+)`, `(0.9.2)`, `(v1.0)`, `(v1.1)`, `(v1.2)`, `(v0.3)` annotations from headings, parentheticals, and inline notes. Removed "Renamed in 0.9.2" / "Pre-0.9.2 stores" / "New in 0.9.0" / "Backward compatibility (v0.5)" callouts. Example code that used pre-0.9.2 zone names (`canon`, `intake`, `pending`, `derived`) now uses current names (`identity`, `inbox`, `review`, `output`).
+- **`docs/events.md`** — header count corrected to "15 events: 3 RPC and 12 pub-sub" (previously read "12 events", with refresh\_\* mentioned in subtext); stale Linear manifest example updated to use top-level `policies:` block.
+- **SPEC.md §10.2** — removed `legacy_intake_fields` from the builtin doctor-check list.
+- **SPEC.md §11** — dropped `textus/1` back-compat acceptance from the implementation checklist; the spec no longer mentions the legacy v0.1 zone-synthesis fallback.
+- **CHANGELOG entries for past releases are unchanged** — historical record stays intact.
+
+### Tests
+
+- Removed `spec/doctor/check/legacy_intake_fields_spec.rb`.
+- Removed 4 manifest-intake migration-rejection specs and 3 publisher/audit-log legacy-format specs.
+
 ## 0.10.2 — Doctor and store cleanup (2026-05-23)
 
 Patch release. Internal cleanup: extracts `Store::Sentinel`, moves audit-log integrity into `Store::AuditLog`, surfaces previously-swallowed schema parse errors, and tidies two doctor checks. No CLI, wire-protocol, or behavioral changes for plugin authors. Sentinel JSON shape changes (repo-relative paths) are forward-compatible; legacy absolute paths are still read correctly.

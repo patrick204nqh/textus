@@ -67,12 +67,5 @@ RSpec.describe Textus::Store::AuditLog do
       log.append(role: "ai",    verb: "put", key: "y", etag_before: nil, etag_after: "e3")
       expect(log.last_writer_for("x")).to eq("human")
     end
-
-    it "transparently reads legacy TSV lines alongside new NDJSON lines" do
-      legacy = "2026-05-20T00:00:00Z\thuman\tput\tx\tNULL\tsha256:legacy\n"
-      File.write(File.join(tmp, "audit.log"), legacy)
-      log.append(role: "ai", verb: "put", key: "x", etag_before: "sha256:legacy", etag_after: "sha256:new")
-      expect(log.last_writer_for("x")).to eq("ai")
-    end
   end
 end
