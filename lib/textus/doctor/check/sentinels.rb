@@ -1,55 +1,56 @@
-require "digest"
-require "json"
-
 module Textus
   module Doctor
     class Check
       class Sentinels < Check
         def call
-          out = []
           dir = File.join(store.root, "sentinels")
-          return out unless File.directory?(dir)
+          return [] unless File.directory?(dir)
 
-          Dir.glob(File.join(dir, "**", "*.textus-managed.json")).each do |sp| # rubocop:disable Metrics/BlockLength
-            begin
-              data = JSON.parse(File.read(sp))
-            rescue JSON::ParserError => e
-              out << {
-                "code" => "sentinel.parse_error",
-                "level" => "warning",
-                "subject" => sp,
-                "message" => "sentinel is not valid JSON: #{e.message}",
-                "fix" => "delete #{sp} and re-run 'textus build' to regenerate",
-              }
-              next
-            end
-
-            target = data["target"]
-            recorded_sha = data["sha256"]
-
-            if target.nil? || !File.exist?(target)
-              out << {
-                "code" => "sentinel.orphan",
-                "level" => "warning",
-                "subject" => sp,
-                "message" => "sentinel target #{target.inspect} no longer exists",
-                "fix" => "delete #{sp} (the published file is gone) or restore the target",
-              }
-              next
-            end
-
-            current_sha = Digest::SHA256.hexdigest(File.binread(target))
-            next if recorded_sha.nil? || current_sha == recorded_sha
-
-            out << {
-              "code" => "sentinel.drift",
-              "level" => "warning",
-              "subject" => target,
-              "message" => "published file at #{target} was modified out-of-band",
-              "fix" => "re-run 'textus build' to overwrite, or copy the manual edit back into the store source",
-            }
+          repo_root = File.dirname(store.root)
+          Dir.glob(File.join(dir, "**", "*#{Textus::Store::Sentinel::SUFFIX}")).flat_map do |sentinel_path|
+            inspect_sentinel(sentinel_path, repo_root)
           end
-          out
+        end
+
+        private
+
+        def inspect_sentinel(sentinel_path, repo_root)
+          sentinel = Textus::Store::Sentinel.load(sentinel_path, repo_root)
+          return [parse_error_issue(sentinel_path)] if sentinel.nil?
+          return [orphan_issue(sentinel_path, sentinel)] if sentinel.orphan?
+          return [drift_issue(sentinel)] if sentinel.drift?
+
+          []
+        end
+
+        def parse_error_issue(sentinel_path)
+          {
+            "code" => "sentinel.parse_error",
+            "level" => "warning",
+            "subject" => sentinel_path,
+            "message" => "sentinel is not valid JSON",
+            "fix" => "delete #{sentinel_path} and re-run 'textus build' to regenerate",
+          }
+        end
+
+        def orphan_issue(sentinel_path, sentinel)
+          {
+            "code" => "sentinel.orphan",
+            "level" => "warning",
+            "subject" => sentinel_path,
+            "message" => "sentinel target #{sentinel.target.inspect} no longer exists",
+            "fix" => "delete #{sentinel_path} (the published file is gone) or restore the target",
+          }
+        end
+
+        def drift_issue(sentinel)
+          {
+            "code" => "sentinel.drift",
+            "level" => "warning",
+            "subject" => sentinel.target,
+            "message" => "published file at #{sentinel.target} was modified out-of-band",
+            "fix" => "re-run 'textus build' to overwrite, or copy the manual edit back into the store source",
+          }
         end
       end
     end
