@@ -26,6 +26,16 @@ module Textus
       meta["maintained_by"]
     end
 
+    # Returns the list of field names whose spec is a Hash but lacks the
+    # 'maintained_by' key. Used by Doctor::Check::UnownedSchemaFields.
+    def unowned_fields
+      @fields.each_with_object([]) do |(name, spec), acc|
+        next unless spec.is_a?(Hash)
+
+        acc << name if spec["maintained_by"].nil?
+      end
+    end
+
     def evolution
       raw = @raw["evolution"] || {}
       raw.each_with_object({}) do |(k, v), h|
