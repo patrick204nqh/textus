@@ -70,6 +70,10 @@ RSpec.describe Textus::Store::Sentinel do
       File.write(sentinel_path, "{not json")
       expect(described_class.load(sentinel_path, repo_root)).to be_nil
     end
+
+    it "returns nil when the sentinel file is missing" do
+      expect(described_class.load(File.join(tmp, "does-not-exist.json"), repo_root)).to be_nil
+    end
   end
 
   describe "#orphan? / #drift?" do
