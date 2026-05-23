@@ -92,6 +92,8 @@ module Textus
             { "lineno" => lineno, "reason" => "invalid_json", "detail" => e.message }
           end
         else
+          # parse_row accepts >= 4 fields for read-compat; integrity requires
+          # all 6 data columns of the legacy TSV format.
           fields = stripped.split("\t")
           return nil if fields.length >= 6
 
