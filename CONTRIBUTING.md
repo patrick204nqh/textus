@@ -8,7 +8,7 @@ textus is a young project. Bugs, missing fixtures, and rough edges are expected 
 2. Run the suite:
    ```sh
    bundle install
-   bundle exec rspec        # 240+ examples, including conformance fixtures
+   bundle exec rspec        # full suite, including conformance fixtures
    bundle exec rubocop      # zero offenses expected
    ```
 3. If you're adding a feature, add a spec. If you're fixing a bug, add the regression test first.
@@ -45,3 +45,7 @@ Maintainers tag `vX.Y.Z` on `main`. The release workflow publishes to RubyGems a
 ## Reporting security issues
 
 See [`SECURITY.md`](SECURITY.md).
+
+## Implementation plans
+
+Per-release implementation plans live under [`docs/plans/`](docs/plans/) as design history — not as current documentation. They describe what was built and how; once a release ships, the prose may drift from the code. Treat the SPEC, ARCHITECTURE, and `docs/` as current; treat `docs/plans/` as a record of the path taken.

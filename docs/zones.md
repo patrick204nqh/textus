@@ -8,8 +8,7 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 
 1. [The mental model](#1-the-mental-model)
 2. [Roles — who is allowed to write](#2-roles--who-is-allowed-to-write)
-3. [The five default zones](#3-the-five-default-zones)
-   Names in 0.9.2+: `identity`, `working`, `inbox`, `review`, `output`.
+3. [The five default zones](#3-the-five-default-zones) — `identity`, `working`, `inbox`, `review`, `output`
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
 6. [Wiring data in — intake and `:intake` hooks](#6-wiring-data-in--intake-and-intake-hooks)
@@ -94,8 +93,6 @@ zones:
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need.
 
-> **Renamed in 0.9.2.** Pre-0.9.2 defaults were `canon`, `intake`, `pending`, `derived`. `working` is unchanged. Upgrade a 0.9.1 store by hand-editing the manifest and `mv`-ing the zone directories (see the 0.9.2 CHANGELOG for the recipe); custom-named zones are untouched.
-
 ---
 
 ## 4. Defining your own zones
@@ -171,7 +168,7 @@ entries:
 
 | Field | Required | Meaning |
 |-------|----------|---------|
-| `key` | yes | Dotted identifier (`canon.identity`, `working.notes.daily`). |
+| `key` | yes | Dotted identifier (`identity.self`, `working.notes.daily`). |
 | `path` | yes | Relative path under `.textus/zones/`. |
 | `zone` | yes | Must match a declared zone. |
 | `schema` | no | YAML schema name. `null` means free-form. |
@@ -205,7 +202,7 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ## 6. Wiring data in — intake and `:intake` hooks
 
-`inbox` zones (formerly `intake` pre-0.9.2) are populated by `:intake` hooks. An inbox entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result. Freshness budgets live in a top-level `policies:` block, matched by glob.
+`inbox` zones are populated by `:intake` hooks. An inbox entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result. Freshness budgets live in a top-level `policies:` block, matched by glob.
 
 ```yaml
 entries:
@@ -233,8 +230,6 @@ policies:
 | `sync` | Block the `get` call and refresh in-process before returning. |
 | `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
 
-> **Pre-0.9.2 stores:** `intake.ttl`, `intake.on_stale`, and `intake.sync_budget_ms` lived on the entry itself. Manifest parsing now rejects them — hand-edit them into a top-level `policies:` block (see the 0.9.2 CHANGELOG for the recipe).
-
 ### Built-in `:intake` handlers
 
 Out of the box, textus ships **parsers** for common shapes — `json`, `csv`, `markdown-links`, `ical-events`, `rss`. These are not full fetchers: each expects raw bytes in `config["bytes"]` and produces structured `_meta`/body. The caller (typically an outer hook you write) is responsible for the actual I/O. This keeps textus itself free of implicit network calls (SPEC §5.4).
@@ -250,7 +245,7 @@ Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 - `{ body: }` — raw bytes; the store re-parses per `format:`
 
 ```ruby
-# .textus/hooks/notion.rb — 0.8.2+ sugar form
+# .textus/hooks/notion.rb — sugar form
 Textus.intake(:notion) do |config:, args:, **|
   page_id = config.fetch("page_id")
   body = NotionClient.new.fetch_markdown(page_id)
@@ -311,7 +306,7 @@ Textus.hook(:intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
-# 2. Per-event sugar (0.8.2+) — one event, one callback
+# 2. Per-event sugar — one event, one callback
 Textus.intake(:local_file)      { |config:, args:, **| ... }
 Textus.reduce(:rank_by_recency) { |rows:, **|          ... }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }

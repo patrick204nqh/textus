@@ -177,7 +177,7 @@ two blocks of equal specificity may fill the same slot) and the
 `handler_allowlist` check (every intake handler must be in its policy's
 allowlist).
 
-## Visibility verbs (0.9.2)
+## Visibility verbs
 
 Four read-only verbs surface the audit substrate and the policy resolution:
 

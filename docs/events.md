@@ -7,7 +7,7 @@ This is the hook-author's guide. For the normative event table see [`../SPEC.md`
 ## Table of contents
 
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
-2. [The 12 events in plain English](#2-the-12-events-in-plain-english)
+2. [The events in plain English](#2-the-events-in-plain-english)
 3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
 4. [The three definition surfaces](#4-the-three-definition-surfaces)
 5. [The `store:` proxy — what you can and can't do](#5-the-store-proxy)
@@ -40,18 +40,18 @@ Every event is one of two kinds.
                                     :mv               → after rename
                                     :reject           → after proposal discard
                                     :loaded           → once per Store.new
-                                    :refresh_began  → before intake handler runs (0.9.0+)
-                                    :refresh_failed   → intake handler raised (0.9.0+)
-                                    :refresh_detached → timed_sync budget exceeded (0.9.0+)
+                                    :refresh_began    → before intake handler runs
+                                    :refresh_failed   → intake handler raised
+                                    :refresh_detached → timed_sync budget exceeded
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
 
 ---
 
-## 2. The 12 events in plain English
+## 2. The events in plain English
 
-textus has 12 events: 3 RPC and 9 pub-sub. The 3 new `:refresh_*` lifecycle events (0.9.0+) bring the total surface to 15, but they are listed separately in §2.1.
+textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events are listed separately in §2.1.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
@@ -68,7 +68,7 @@ textus has 12 events: 3 RPC and 9 pub-sub. The 3 new `:refresh_*` lifecycle even
 | `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accepted`. Payload: `{ key:, target_key: }`. |
 | `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
 
-### 2.1 Refresh lifecycle events (0.9.0+)
+### 2.1 Refresh lifecycle events
 
 Three additional pub-sub events observe the progress of in-process and background intake refreshes.
 
@@ -218,7 +218,7 @@ Textus.hook(:intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
-# 2. Per-event sugar (0.8.2+) — one event, one callback
+# 2. Per-event sugar — one event, one callback
 Textus.intake(:local_file)       { |config:, args:, **| ... }
 Textus.reduce(:rank_by_recency)  { |rows:, **|          ... }
 Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
@@ -282,7 +282,7 @@ Pub-sub handlers can scope themselves with a `keys:` filter. Globs use `File.fnm
 ```ruby
 Textus.put(:audit_working, keys: ["working.*"])    { ... }     # working.x ✓, working.y.z ✗
 Textus.put(:audit_working_deep, keys: ["working.**"]) { ... }  # any depth ✓
-Textus.put(:audit_canon,   keys: ["canon.*", "canon.**"]) { ... }
+Textus.put(:audit_identity,   keys: ["identity.*", "identity.**"]) { ... }
 Textus.put(:audit_all)                              { ... }     # no filter → every key
 ```
 
@@ -376,18 +376,24 @@ end
 Manifest references the same name on both sides:
 
 ```yaml
-- key: intake.linear.issues
-  intake: { handler: linear, config: { team_id: "ENG" }, ttl: 1h }
+- key: inbox.linear.issues
+  zone: inbox
+  intake: { handler: linear, config: { team_id: "ENG" } }
 
-- key: derived.linear.dashboard
-  projection: { select: [intake.linear.issues], reduce: linear }
+- key: output.linear.dashboard
+  zone: output
+  projection: { select: [inbox.linear.issues], reduce: linear }
+
+policies:
+  - match: inbox.linear.**
+    refresh: { ttl: 1h, on_stale: warn }
 ```
 
 ### Audit listener — every write to a sensitive zone
 
 ```ruby
-Textus.put(:canon_audit, keys: ["canon.**"]) do |key:, envelope:, **|
-  Syslog.log(Syslog::LOG_INFO, "canon-write key=#{key} etag=#{envelope['etag']}")
+Textus.put(:identity_audit, keys: ["identity.**"]) do |key:, envelope:, **|
+  Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']}")
 end
 ```
 
@@ -402,10 +408,10 @@ end
 ### Custom doctor check — enforce a project rule
 
 ```ruby
-Textus.check(:no_drafts_in_canon) do |store:|
-  store.list(zone: "canon")
+Textus.check(:no_drafts_in_identity) do |store:|
+  store.list(zone: "identity")
        .select { |e| e["frontmatter"]["status"] == "draft" }
-       .map    { |e| { "code" => "draft_in_canon", "key" => e["key"] } }
+       .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
 end
 ```
 
