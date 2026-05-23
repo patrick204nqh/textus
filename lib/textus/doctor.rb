@@ -11,6 +11,7 @@ module Textus
     CHECKS = [
       Check::ManifestFiles,
       Check::Schemas,
+      Check::SchemaParseError,
       Check::Templates,
       Check::Hooks,
       Check::IntakeRegistration,

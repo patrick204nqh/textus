@@ -61,4 +61,43 @@ RSpec.describe Textus::Store::AuditLog do
     expect(lines.all? { |l| l.start_with?("{") }).to be true
     expect(lines.all? { |l| JSON.parse(l)["verb"] == "put" }).to be true
   end
+
+  describe "#verify_integrity" do
+    it "returns empty array for a missing log file" do
+      expect(log.verify_integrity).to eq([])
+    end
+
+    it "returns empty array for a log of well-formed NDJSON rows" do
+      log.append(role: "human", verb: "put", key: "working.x",
+                 etag_before: nil, etag_after: "sha256:abc")
+      log.append(role: "ai", verb: "put", key: "working.y",
+                 etag_before: nil, etag_after: "sha256:def")
+      expect(log.verify_integrity).to eq([])
+    end
+
+    it "flags a malformed JSON line with reason=invalid_json" do
+      log.append(role: "human", verb: "put", key: "working.x",
+                 etag_before: nil, etag_after: "sha256:abc")
+      File.open(File.join(root, "audit.log"), "a") { |f| f.puts "{not json" }
+      issues = log.verify_integrity
+      expect(issues).to contain_exactly(hash_including("lineno" => 2, "reason" => "invalid_json"))
+    end
+
+    it "skips empty lines silently" do
+      File.write(File.join(root, "audit.log"), "\n\n")
+      expect(log.verify_integrity).to eq([])
+    end
+
+    it "accepts legacy TSV rows with >= 6 fields" do
+      File.write(File.join(root, "audit.log"),
+                 "2026-01-01T00:00:00Z\thuman\tput\tworking.x\t\tsha256:abc\n")
+      expect(log.verify_integrity).to eq([])
+    end
+
+    it "flags legacy TSV rows with < 6 fields as short_tsv" do
+      File.write(File.join(root, "audit.log"), "2026-01-01T00:00:00Z\thuman\tput\n")
+      issues = log.verify_integrity
+      expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "short_tsv"))
+    end
+  end
 end

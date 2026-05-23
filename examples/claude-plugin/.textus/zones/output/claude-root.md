@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-22T07:41:09Z'
+  at: '2026-05-23T07:13:30Z'
   from:
   - identity.plugin
   - working.agents
@@ -52,4 +52,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-22T07:41:09Z._
+_Built at 2026-05-23T07:13:30Z._

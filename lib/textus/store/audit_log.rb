@@ -47,6 +47,20 @@ module Textus
         end
       end
 
+      # Returns an array of integrity-violation descriptors for the on-disk log.
+      # Each entry is { "lineno" => Integer, "reason" => String, "detail" => String }.
+      # Empty array means the log is well-formed (or doesn't exist yet).
+      def verify_integrity
+        return [] unless File.exist?(@path)
+
+        out = []
+        File.foreach(@path).with_index(1) do |line, lineno|
+          violation = check_line(line.chomp, lineno)
+          out << violation if violation
+        end
+        out
+      end
+
       private
 
       def parse_row(line)
@@ -65,6 +79,30 @@ module Textus
         end
       rescue JSON::ParserError
         nil
+      end
+
+      def check_line(stripped, lineno)
+        return nil if stripped.empty?
+
+        if stripped.start_with?("{")
+          begin
+            JSON.parse(stripped)
+            nil
+          rescue JSON::ParserError => e
+            { "lineno" => lineno, "reason" => "invalid_json", "detail" => e.message }
+          end
+        else
+          # parse_row accepts >= 4 fields for read-compat; integrity requires
+          # all 6 data columns of the legacy TSV format.
+          fields = stripped.split("\t")
+          return nil if fields.length >= 6
+
+          {
+            "lineno" => lineno,
+            "reason" => "short_tsv",
+            "detail" => "legacy TSV row has #{fields.length} fields (expected >= 6)",
+          }
+        end
       end
     end
   end

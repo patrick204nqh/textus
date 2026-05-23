@@ -8,6 +8,30 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.2 — Doctor and store cleanup (2026-05-23)
+
+Patch release. Internal cleanup: extracts `Store::Sentinel`, moves audit-log integrity into `Store::AuditLog`, surfaces previously-swallowed schema parse errors, and tidies two doctor checks. No CLI, wire-protocol, or behavioral changes for plugin authors. Sentinel JSON shape changes (repo-relative paths) are forward-compatible; legacy absolute paths are still read correctly.
+
+### Added
+
+- `Textus::Store::Sentinel` value object owning the sentinel JSON shape (`source`/`target`/`sha256`/`mode`) and the on-disk path layout. Repo-relative paths on write; legacy absolute paths still accepted on read.
+- `Textus::Store::AuditLog#verify_integrity` returns line-by-line integrity violations as `{lineno, reason, detail}` hashes.
+- `Textus::Schema#unowned_fields` returns field names whose spec lacks `maintained_by`.
+- New doctor check `schema_parse_error` (error level) surfaces YAML parse failures on `schemas/*.yaml`. Previously these were silently rescued in `UnownedSchemaFields`, leaving operators with no signal.
+
+### Changed
+
+- `Infra::Publisher` delegates sentinel I/O to `Store::Sentinel`. The sentinel JSON now stores repo-relative `source`/`target` so example trees can be committed without leaking author paths.
+- `Doctor::Check::Sentinels` delegates parse/orphan/drift detection to `Store::Sentinel`. Drops `rubocop:disable Metrics/BlockLength`.
+- `Doctor::Check::AuditLog` delegates parsing to `Store::AuditLog#verify_integrity`. Drops `rubocop:disable Metrics/BlockLength`.
+- `Doctor::Check::ManifestFiles` uses `Textus::Key::Path.resolve` instead of reimplementing leaf-path math.
+- `Doctor::Check::UnownedSchemaFields` uses `Schema#unowned_fields` instead of reaching into `schema.fields` and the raw `maintained_by` Hash key.
+- `examples/claude-plugin/.gitignore` no longer excludes `.textus/sentinels/`. The example's sentinels are now committed with repo-relative paths.
+
+### Documentation
+
+- `SPEC.md` builtin doctor-check list updated to include `schema_parse_error`, and brings the prose up to date with three checks shipped in 0.9.x/0.10.0 that were missing from the list (`policy_ambiguity`, `handler_allowlist`, `legacy_intake_fields`).
+
 ## 0.10.1 — Documentation refresh and spec hygiene (2026-05-22)
 
 Lightweight maintenance release: documentation refresh plus spec-suite hygiene. No `lib/` changes; no CLI, wire-protocol, or behavioral changes.
