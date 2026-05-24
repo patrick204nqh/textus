@@ -1,0 +1,8 @@
+{
+  "sha": "sha-skill",
+  "node_id": "n1",
+  "size": 23,
+  "url": "https://api.github.com/repos/example/repo/git/blobs/sha-skill",
+  "content": "IyBhZ2VudC1ldmFsIFNLSUxMCgpEZW1vIGNvbnRlbnQK\n",
+  "encoding": "base64"
+}
