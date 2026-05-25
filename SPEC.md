@@ -144,6 +144,18 @@ Zone names are conventional — the manifest is the source of truth for write pe
 
 For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema.
 
+**Per-entry `index_filename:`.** A nested entry MAY declare `index_filename:` to surface a single fixed basename (e.g. `SKILL.md`) per directory as the row, with the row's key segments derived from the directory path. Sibling files are not enumerated. The basename's extension MUST match the entry's `format:`. This lets entries project spec-mandated filenames whose casing would otherwise be rejected by the key-segment grammar. Example:
+
+```yaml
+- key: skills
+  path: skills
+  zone: skills
+  nested: true
+  index_filename: SKILL.md
+```
+
+A file at `.textus/zones/skills/ask/SKILL.md` enumerates as `skills.ask`; `.textus/zones/skills/ask/references/algorithm.md` is not enumerated. Resolving `skills.ask` returns the `SKILL.md` path. `index_filename:` requires `nested: true`; the value must be a bare basename (no slashes).
+
 **Per-leaf publishing (`publish_each:`).** A nested manifest entry MAY declare `publish_each:` to byte-copy every leaf to a templated repo-relative path. `publish_each:` and `publish_to:` are mutually exclusive on the same entry, and `publish_each:` requires `nested: true`. The template substitutes these variables (using `{name}` syntax):
 
 | Variable     | Value                                                                                  |

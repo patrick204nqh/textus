@@ -10,16 +10,20 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
-## 0.10.5 — tech-debt cleanup + docs polish (2026-05-25)
+## 0.10.5 — tech-debt cleanup + `index_filename:` + docs polish (2026-05-25)
 
-Patch release. Pure internal refactor — no `lib/` public API changes, no protocol bump, no manifest schema change. Targets the three highest-complexity hotspots from a tech-debt audit and removes 7 of the 19 `rubocop:disable` lines they previously carried.
+Patch release. One user-facing feature (`index_filename:` on nested manifest entries) plus internal refactors that remove 7 of 19 `rubocop:disable` suppressions. No protocol bump; existing manifests parse unchanged.
+
+### Added
+
+- **Per-entry `index_filename:` on nested manifest entries.** A nested entry MAY declare `index_filename: SKILL.md` (or any other bare basename) to surface that single file per directory as the row; the row's key segments come from the directory path, and siblings are not enumerated. Lets entries project spec-mandated filenames (e.g. agentskills.io's `SKILL.md`) whose uppercase casing would otherwise be rejected by the `[a-z0-9][a-z0-9-]*` key-segment grammar. `resolve(key)` returns the index-filename path for sub-directories. Validation: requires `nested: true`, basename only (no slashes), extension must match the entry's `format:`. New spec `spec/manifest_index_filename_spec.rb`. Documented in SPEC §4.
 
 ### Internal
 
 - **`Store::Mover#call` refactor.** Replaces an 81-line method (suppressed `Metrics/AbcSize, Metrics/MethodLength`) with an 8-line orchestrator sequenced over four named private phases — `prepare_plan`, `ensure_uid!`, `perform_move`, `record_move` — coordinated through a `MovePlan` value object. The pre-read envelope is threaded separately so `MovePlan` describes only the planned operation.
 - **`Store::Staleness#call` split.** Replaces a 70-line dual-loop method (the most aggressive suppression in the gem — `AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity, BlockLength`) with a composer + two single-purpose checks (`GeneratorCheck`, `IntakeCheck`) and a private filter method on the composer. Each new unit fits default rubocop thresholds.
 - **`Store::Writer` payload + ctx grouping.** Collapses `write_envelope_to_disk`'s 8 keyword args to 5 by introducing `Store::Writer::Payload = Data.define(:meta, :body, :content)` and reusing `Application::Context` for `role` + `correlation_id`. Applies the same `ctx:` pattern to the sibling `delete_envelope_from_disk`. The class-wide `Metrics/ParameterLists` disable is narrowed to a method-level disable on the `put` back-compat shim (which mirrors the user-facing `Store#put` 7-kwarg signature and cannot be changed).
-- **Net suppression change:** 19 `rubocop:disable` lines → 17; 7 metric-cop suppressions removed; one `ParameterLists` disable narrowed in scope. Full suite (484 examples) unchanged.
+- **Net suppression change:** 19 `rubocop:disable` lines → 17; 7 metric-cop suppressions removed; one `ParameterLists` disable narrowed in scope. Full suite unchanged.
 
 ### Documentation
 
