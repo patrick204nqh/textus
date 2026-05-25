@@ -16,8 +16,8 @@ RSpec.describe ":reject event and store.reject" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: review,   writable_by: [ai, human] }
+        - { name: identity, write_policy: [human] }
+        - { name: review,   write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity }
         - { key: review.draft,    path: review/draft.md,    zone: review }
@@ -41,7 +41,7 @@ RSpec.describe ":reject event and store.reject" do
     store = Textus::Store.new(root)
     store.put("review.draft",
               meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "proposed body", as: "ai")
+              body: "proposed body", as: "agent")
     $textus_event_log.clear
     result = store.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
@@ -62,7 +62,7 @@ RSpec.describe ":reject event and store.reject" do
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.put("review.draft", meta: { "name" => "draft" }, body: "x", as: "ai")
+    store.put("review.draft", meta: { "name" => "draft" }, body: "x", as: "agent")
     expect { store.reject("review.draft", as: "human") }
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
@@ -74,8 +74,8 @@ RSpec.describe ":reject event and store.reject" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: identity, writable_by: [human] }
-          - { name: review,   writable_by: [ai, human] }
+          - { name: identity, write_policy: [human] }
+          - { name: review,   write_policy: [agent, human] }
         entries:
           - { key: identity.t, path: identity/t.md, zone: identity }
           - { key: review.d,   path: review/d.md,   zone: review }
@@ -83,7 +83,7 @@ RSpec.describe ":reject event and store.reject" do
       store = Textus::Store.new(root)
       store.put("review.d",
                 meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
-                body: "x", as: "ai")
+                body: "x", as: "agent")
     end
 
     it "rejects a review entry via CLI and emits JSON" do

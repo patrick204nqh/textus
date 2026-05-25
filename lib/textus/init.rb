@@ -7,11 +7,11 @@ module Textus
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: intake,   writable_by: [script] }
-        - { name: review,   writable_by: [ai, human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human],               read_policy: [all] }
+        - { name: working,  write_policy: [human, agent, runner], read_policy: [all] }
+        - { name: intake,   write_policy: [runner],              read_policy: [all] }
+        - { name: review,   write_policy: [agent, human],        read_policy: [all] }
+        - { name: output,   write_policy: [builder],             read_policy: [all] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
         - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true }

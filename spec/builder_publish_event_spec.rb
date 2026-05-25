@@ -19,15 +19,15 @@ RSpec.describe "Builder fires :publish per file" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
-          - { name: output, writable_by: [build] }
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: output, write_policy: [builder] }
         entries:
           - { key: working.note, path: working/note.md, zone: working, schema: null }
           - key: output.note
             path: output/note.md
             zone: output
             schema: null
-            owner: build:auto
+            owner: builder:auto
             projection: { select: working.note }
             template: echo.mustache
             publish_to:
@@ -47,7 +47,7 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
                          .call(prefix: "output.note")
 
       expect(captured.size).to eq(2)
@@ -68,7 +68,7 @@ RSpec.describe "Builder fires :publish per file" do
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
                          .call(prefix: "output.note")
 
       expect(build_events.size).to eq(1)
@@ -81,7 +81,7 @@ RSpec.describe "Builder fires :publish per file" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: working, write_policy: [human, agent, runner] }
         entries:
           - key: working.agents
             path: working/agents
@@ -104,7 +104,7 @@ RSpec.describe "Builder fires :publish per file" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }

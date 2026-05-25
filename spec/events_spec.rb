@@ -12,7 +12,7 @@ RSpec.describe "Lifecycle events" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, writable_by: [human] }]
+      zones: [{ name: working, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
     YAML
@@ -64,7 +64,7 @@ RSpec.describe "Refresh event" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, writable_by: [script] }]
+      zones: [{ name: intake, write_policy: [runner] }]
       entries:
         - key: intake.x
           path: intake/x.md
@@ -86,13 +86,13 @@ RSpec.describe "Refresh event" do
 
   it "fires :refreshed with change=:created on first refresh" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "intake.x", as: "runner")
     expect($log).to eq([["intake.x", :created]])
   end
 
   it "fires :refreshed with change=:updated when body differs from previous" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "intake.x", as: "runner")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
       Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
@@ -100,13 +100,13 @@ RSpec.describe "Refresh event" do
     RUBY
     # Re-instantiate to reload hook file from disk (fresh registry)
     store2 = Textus::Store.new(root)
-    Textus::Refresh.call(store2, "intake.x", as: "script")
+    Textus::Refresh.call(store2, "intake.x", as: "runner")
     expect($log.last).to eq(["intake.x", :updated])
   end
 
   it "does NOT fire :refreshed when the intake bytes are identical to the previous bytes" do
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "intake.x", as: "runner")
     # Rewrite hook with same body so the log is preserved
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -116,7 +116,7 @@ RSpec.describe "Refresh event" do
     RUBY
     # Re-instantiate to reload hook file from disk
     store2 = Textus::Store.new(root)
-    Textus::Refresh.call(store2, "intake.x", as: "script")
+    Textus::Refresh.call(store2, "intake.x", as: "runner")
     # Two refreshes with identical action body (both "v1") — only the first
     # should fire :refreshed (with :created). The second matches, so no fire.
     expect($log).to eq([["intake.x", :created]])
@@ -131,7 +131,7 @@ RSpec.describe "Refresh event" do
     RUBY
     $log = []
     store = Textus::Store.new(root)
-    Textus::Refresh.call(store, "intake.x", as: "script")
+    Textus::Refresh.call(store, "intake.x", as: "runner")
     expect($log.count { |e| e[0] == :put }).to eq(0)
     expect($log.count { |e| e[0] == :refreshed }).to eq(1)
   end
@@ -148,8 +148,8 @@ RSpec.describe "Build and accept events" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
-        - { name: output,  writable_by: [build] }
+        - { name: working, write_policy: [human] }
+        - { name: output,  write_policy: [builder] }
       entries:
         - { key: working.x, path: working/x.md, zone: working }
         - key: output.summary
@@ -179,7 +179,7 @@ RSpec.describe "Build and accept events" do
 
   it "fires :built after Builder materializes an output entry" do
     store = Textus::Store.new(root)
-    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
     expect($log).to include([:built, "output.summary", ["working"]])
   end
 end
@@ -195,8 +195,8 @@ RSpec.describe "Accept event" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
-        - { name: review,  writable_by: [ai, human] }
+        - { name: working, write_policy: [human] }
+        - { name: review,  write_policy: [agent, human] }
       entries:
         - { key: working.bob, path: working/bob.md, zone: working }
         - { key: review.bob,  path: review/bob.md,  zone: review }

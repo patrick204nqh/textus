@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::UnownedSchemaFields do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries: []
     YAML
   end

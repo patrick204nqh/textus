@@ -45,7 +45,7 @@ RSpec.describe "Hooks::Dispatcher external subscription" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, writable_by: [human] }]
+      zones: [{ name: working, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
     YAML

@@ -122,7 +122,7 @@ module Textus
         File.rename(from, to)
         new_key = compute_new_key(r, renames)
         audit.append(
-          role: "script",
+          role: "runner",
           verb: "migrate-keys",
           key: new_key,
           etag_before: nil,

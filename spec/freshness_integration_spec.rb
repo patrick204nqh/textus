@@ -11,7 +11,7 @@ RSpec.describe "Reader honors on_stale policy" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.foo
           path: working/foo.md
@@ -85,7 +85,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, writable_by: [human, script] }
+          - { name: working, write_policy: [human, runner] }
         entries:
           - key: working.slow
             path: working/slow.md

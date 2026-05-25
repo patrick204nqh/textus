@@ -14,8 +14,8 @@ RSpec.describe "Manifest format: field validation" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
       #{entries_yaml}
     YAML

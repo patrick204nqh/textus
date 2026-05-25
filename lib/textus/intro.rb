@@ -20,10 +20,10 @@ module Textus
 
     WRITE_FLOWS = {
       "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
-      "ai" => "propose changes by writing 'review.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
-              "a human runs 'textus accept' to apply",
-      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
-      "build" => "'textus build' computes output entries from projections; output files are never hand-edited",
+      "agent" => "propose changes by writing 'review.*' entries with --as=agent and a 'proposal:' frontmatter block; " \
+                 "a human runs 'textus accept' to apply",
+      "runner" => "refresh intake entries with 'textus refresh KEY --as=runner' (uses the entry's declared action)",
+      "builder" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
@@ -74,7 +74,7 @@ module Textus
 
     def self.entries_for(store)
       store.manifest.entries.map do |e|
-        derived = store.manifest.zone_writers(e.zone).include?("build")
+        derived = store.manifest.zone_writers(e.zone).include?("builder")
         {
           "key" => e.key,
           "zone" => e.zone,

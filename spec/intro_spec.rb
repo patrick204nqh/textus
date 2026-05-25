@@ -20,11 +20,11 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: intake,   writable_by: [script] }
-        - { name: review,   writable_by: [ai] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: working,  write_policy: [human, agent, runner] }
+        - { name: intake,   write_policy: [runner] }
+        - { name: review,   write_policy: [agent] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
         - key: working.notes
@@ -35,14 +35,14 @@ RSpec.describe Textus::Intro do
         - key: intake.feed
           path: intake/feed.md
           zone: intake
-          owner: script:local
+          owner: runner:local
           intake:
             handler: demo-action
             config: { foo: 1 }
         - key: output.report
           path: output/report.md
           zone: output
-          owner: build:auto
+          owner: builder:auto
           projection:
             select: [working.notes]
             pluck: "*"
@@ -82,7 +82,7 @@ RSpec.describe Textus::Intro do
     expect(identity["purpose"]).to include("human-only")
 
     working = env["zones"].find { |z| z["name"] == "working" }
-    expect(working["writers"]).to include("human", "ai", "script")
+    expect(working["writers"]).to include("human", "agent", "runner")
     expect(working).to have_key("purpose")
   end
 
@@ -90,8 +90,8 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: weird,    writable_by: [human] }
+        - { name: identity, write_policy: [human] }
+        - { name: weird,    write_policy: [human] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null }
     YAML
@@ -131,8 +131,8 @@ RSpec.describe Textus::Intro do
 
   it "includes verbatim write_flows and cli_verbs" do
     env = described_class.run(store)
-    expect(env["write_flows"]).to include("human", "ai", "script", "build")
-    expect(env["write_flows"]["ai"]).to include("proposal:")
+    expect(env["write_flows"]).to include("human", "agent", "runner", "builder")
+    expect(env["write_flows"]["agent"]).to include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
     expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "hook")

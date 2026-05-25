@@ -12,8 +12,8 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
@@ -33,7 +33,7 @@ RSpec.describe "inject_intro:" do
 
   it "injects intro: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
@@ -44,7 +44,7 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
+        - { name: identity, write_policy: [human] }
       entries:
         - key: identity.bad
           path: identity/bad.md
@@ -62,8 +62,8 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
@@ -80,8 +80,8 @@ RSpec.describe "inject_intro:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
@@ -91,7 +91,7 @@ RSpec.describe "inject_intro:" do
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).not_to include("protocol=textus/3")
   end

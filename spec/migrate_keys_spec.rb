@@ -14,7 +14,7 @@ RSpec.describe Textus::MigrateKeys do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
+        - { name: working, write_policy: [human, agent, runner] }
       entries:
       #{entries_yaml}
     YAML
@@ -108,7 +108,7 @@ RSpec.describe Textus::MigrateKeys do
       expect(migrate_lines.length).to eq(1)
 
       row = migrate_lines.first
-      expect(row["role"]).to eq("script")
+      expect(row["role"]).to eq("runner")
       expect(row["verb"]).to eq("migrate-keys")
       expect(row["key"]).to eq("working.notes.some-file")
       expect(row["extras"]["from"]).to end_with("/Some_File.md")

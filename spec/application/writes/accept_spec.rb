@@ -9,8 +9,8 @@ RSpec.describe Textus::Application::Writes::Accept do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: review, writable_by: [ai, human] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: review, write_policy: [agent, human] }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true }
         - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
@@ -28,7 +28,7 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "frontmatter" => { "name" => "bob", "org" => "acme" },
                 },
                 body: "Proposed",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
       result = described_class.new(ctx: ctx, bus: store.bus).call("review.2026-05-19-add-bob")
@@ -50,9 +50,9 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
                   "frontmatter" => { "name" => "x" },
                 },
-                body: "", as: "ai")
+                body: "", as: "agent")
 
-      ctx = Textus::Application::Context.new(store: store, role: "ai")
+      ctx = Textus::Application::Context.new(store: store, role: "agent")
       expect { described_class.new(ctx: ctx, bus: store.bus).call("review.foo") }
         .to raise_error(Textus::ProposalError, /human/)
     end
@@ -68,7 +68,7 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "frontmatter" => { "name" => "alice" },
                 },
                 body: "Alice content",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human", correlation_id: "corr-accept-1")
       events = []
@@ -91,7 +91,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       store.put("review.noproposal",
                 meta: { "name" => "noproposal" },
                 body: "no proposal here",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
       expect { described_class.new(ctx: ctx, bus: store.bus).call("review.noproposal") }

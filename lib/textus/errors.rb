@@ -95,7 +95,7 @@ module Textus
         if writers && !writers.empty?
           writers.join(", ")
         else
-          "the role(s) listed in the manifest 'writable_by:'"
+          "the role(s) listed in the manifest 'write_policy:'"
         end
       details = { "key" => k, "zone" => z }
       details["writers"] = writers if writers
@@ -132,7 +132,7 @@ module Textus
         "invalid_role",
         message || "role '#{r}' is not declared in any zone",
         details: { "role" => r },
-        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].writable_by",
+        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].write_policy",
       )
     end
   end

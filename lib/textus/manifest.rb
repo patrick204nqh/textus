@@ -15,7 +15,14 @@ module Textus
     attr_reader :root, :entries, :raw
 
     def zones
-      @zones ||= Array(@raw["zones"]).to_h { |z| [z["name"], Array(z["writable_by"])] }
+      @zones ||= Array(@raw["zones"]).to_h { |z| [z["name"], Array(z["write_policy"])] }
+    end
+
+    def zone_readers
+      @zone_readers ||= Array(@raw["zones"]).to_h do |z|
+        rp = z["read_policy"]
+        [z["name"], rp.nil? ? :all : Array(rp)]
+      end
     end
 
     def zone_writers(zone_name)
@@ -25,8 +32,8 @@ module Textus
     def permission_for(zone_name)
       Textus::Domain::Permission.new(
         zone: zone_name,
-        writable_by: zone_writers(zone_name),
-        readable_by: :all,
+        write_policy: zone_writers(zone_name),
+        read_policy: zone_readers[zone_name] || :all,
       )
     end
 
@@ -57,11 +64,25 @@ module Textus
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
 
       Array(raw["zones"]).each do |z|
-        next unless (new_name = LEGACY_ZONE_RENAMES[z["name"]])
+        if (new_name = LEGACY_ZONE_RENAMES[z["name"]])
+          raise BadManifest.new(
+            "Zone '#{z["name"]}' was renamed to '#{new_name}' in textus/3. " \
+            "Run `textus migrate --to=textus/3`.",
+          )
+        end
+
+        if z.key?("writable_by")
+          raise BadManifest.new(
+            "Zone '#{z["name"]}': 'writable_by:' was renamed to 'write_policy:' in textus/3. " \
+            "Replace writable_by: with write_policy: in your manifest.",
+          )
+        end
+
+        next unless z.key?("readable_by")
 
         raise BadManifest.new(
-          "Zone '#{z["name"]}' was renamed to '#{new_name}' in textus/3. " \
-          "Run `textus migrate --to=textus/3`.",
+          "Zone '#{z["name"]}': 'readable_by:' was renamed to 'read_policy:' in textus/3. " \
+          "Replace readable_by: with read_policy: in your manifest.",
         )
       end
 

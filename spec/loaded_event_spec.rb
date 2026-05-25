@@ -12,7 +12,7 @@ RSpec.describe ":loaded event" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, writable_by: [human] }]
+      zones: [{ name: working, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
     YAML

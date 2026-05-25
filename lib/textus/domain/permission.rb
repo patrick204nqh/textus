@@ -1,14 +1,14 @@
 module Textus
   module Domain
-    Permission = Data.define(:zone, :writable_by, :readable_by) do
+    Permission = Data.define(:zone, :write_policy, :read_policy) do
       def allows_write?(role)
-        writable_by.include?(role.to_s)
+        write_policy.include?(role.to_s)
       end
 
       def allows_read?(role)
-        return true if readable_by == :all
+        return true if [:all, ["all"]].include?(read_policy)
 
-        readable_by.include?(role.to_s)
+        read_policy.include?(role.to_s)
       end
     end
   end

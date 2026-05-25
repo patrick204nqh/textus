@@ -21,10 +21,10 @@ RSpec.describe "textus/3 conformance" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, agent, runner] }
-        - { name: output,   writable_by: [build] }
-        - { name: intake,   writable_by: [runner] }
+        - { name: identity, write_policy: [human] }
+        - { name: working,  write_policy: [human, agent, runner] }
+        - { name: output,   write_policy: [builder] }
+        - { name: intake,   write_policy: [runner] }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
@@ -214,8 +214,8 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: identity, writable_by: [human] }
-          - { name: working,  writable_by: [human, agent, runner] }
+          - { name: identity, write_policy: [human] }
+          - { name: working,  write_policy: [human, agent, runner] }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick }
       YAML

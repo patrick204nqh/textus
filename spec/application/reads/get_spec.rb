@@ -11,7 +11,7 @@ RSpec.describe Textus::Application::Reads::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working }
     YAML
@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Reads::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.doc
           path: working/doc.md
@@ -72,7 +72,7 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
 
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
       envelope = use_case.call("working.doc")
 
@@ -87,7 +87,7 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_no_intake(root)
       # Do NOT write the file — leave the zone dir empty.
 
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
       result = use_case.call("working.doc")
 
@@ -100,7 +100,7 @@ RSpec.describe Textus::Application::Reads::Get do
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
 
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
       envelope = use_case.call("working.doc")
 

@@ -9,8 +9,8 @@ RSpec.describe Textus::Application::Writes::Put do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, runner] }
+        - { name: identity,   write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
         - { key: identity.bar,   path: identity/bar.md,   zone: identity }
@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "writes the envelope when role has permission" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       bus = Textus::Infra::EventBus.new(registry: store.registry)
 
       envelope = described_class.new(ctx: ctx, bus: bus).call(
@@ -38,7 +38,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "raises WriteForbidden when role lacks permission" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       bus = Textus::Infra::EventBus.new(registry: store.registry)
 
       expect do
@@ -50,7 +50,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "fires :put event with key, envelope, and correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "script", correlation_id: "corr-1")
+      ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "corr-1")
       events = []
       store.bus.subscribe(:put, :capture) do |key:, correlation_id:, **|
         events << [:put, key, correlation_id]

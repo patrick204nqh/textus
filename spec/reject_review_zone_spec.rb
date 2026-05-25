@@ -15,8 +15,8 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: review,   writable_by: [ai, human] }
+        - { name: identity, write_policy: [human] }
+        - { name: review,   write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity }
         - { key: review.draft,    path: review/draft.md,    zone: review }
@@ -25,7 +25,7 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     store = Textus::Store.new(root)
     store.put("review.draft",
               meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "proposed body", as: "ai")
+              body: "proposed body", as: "agent")
 
     result = store.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
@@ -41,8 +41,8 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: pending,  writable_by: [human] }
+        - { name: identity, write_policy: [human] }
+        - { name: pending,  write_policy: [human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity }
         - { key: pending.draft,   path: pending/draft.md,   zone: pending }

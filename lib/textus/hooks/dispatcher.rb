@@ -35,7 +35,7 @@ module Textus
         extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
         extras["pending_key"] = kwargs[:pending_key] if kwargs.key?(:pending_key)
         @audit_log.append(
-          role: "script", verb: "event_error", key: key,
+          role: "runner", verb: "event_error", key: key,
           etag_before: nil, etag_after: nil, extras: extras
         )
       end

@@ -21,15 +21,15 @@ RSpec.describe Textus::Application::Writes::Build do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
         - key: output.catalogs.people
           path: output/catalogs/people.md
           zone: output
           schema: null
-          owner: build:auto
+          owner: builder:auto
           projection: { select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
@@ -67,7 +67,7 @@ RSpec.describe Textus::Application::Writes::Build do
       captured << { key: key, correlation_id: correlation_id }
     end
 
-    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-test-123")
+    ctx = Textus::Application::Context.new(store: store, role: "builder", correlation_id: "cid-test-123")
     Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
 
     expect(captured.size).to eq(1)
@@ -81,7 +81,7 @@ RSpec.describe Textus::Application::Writes::Build do
       captured << { key: key, correlation_id: correlation_id, target: target }
     end
 
-    ctx = Textus::Application::Context.new(store: store, role: "build", correlation_id: "cid-pub-456")
+    ctx = Textus::Application::Context.new(store: store, role: "builder", correlation_id: "cid-pub-456")
     Textus::Application::Writes::Build.new(ctx: ctx, bus: store.bus).call
 
     expect(captured).not_to be_empty

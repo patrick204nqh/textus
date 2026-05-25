@@ -13,8 +13,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, runner] }
+        - { name: identity,   write_policy: [human] }
       entries:
         - { key: working.doc,   path: working/doc.md,   zone: working }
         - { key: working.stale, path: working/stale.md, zone: working }

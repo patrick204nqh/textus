@@ -20,7 +20,7 @@ RSpec.describe Textus::CLI::Verb::Blame do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working }
     YAML

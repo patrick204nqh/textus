@@ -56,14 +56,14 @@ module Textus
       end
 
       # Signal-based zone-kind predicates: derive the "kind" of a zone from its
-      # writable_by signals rather than its literal name, so detection keeps
+      # write_policy signals rather than its literal name, so detection keeps
       # working when users rename the default zones.
       def in_generator_zone?
-        zone_writers.include?("build")
+        zone_writers.include?("builder")
       end
 
       def in_proposal_zone?
-        zone_writers.include?("ai")
+        zone_writers.include?("agent")
       end
 
       private

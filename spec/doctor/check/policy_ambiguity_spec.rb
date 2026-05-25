@@ -16,7 +16,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
       policies:
@@ -34,7 +34,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
       policies:
@@ -58,7 +58,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
       policies:

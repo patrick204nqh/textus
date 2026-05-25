@@ -3,7 +3,7 @@ require "fileutils"
 require "tmpdir"
 
 # Regression test for Staleness: it must detect generator-kind zones via the
-# writable_by: [build] signal, not via the literal zone name "derived". Prior
+# write_policy: [builder] signal, not via the literal zone name "derived". Prior
 # to signal-based detection, post-0.9.2 default `output` zones were skipped
 # entirely.
 RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" do
@@ -15,8 +15,8 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
-        - { name: output,  writable_by: [build] }
+        - { name: working, write_policy: [human] }
+        - { name: output,  write_policy: [builder] }
       entries:
         - key: working.src
           path: working/src.md
@@ -57,8 +57,8 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
-        - { name: derived, writable_by: [human] }
+        - { name: working, write_policy: [human] }
+        - { name: derived, write_policy: [human] }
       entries:
         - key: working.src
           path: working/src.md

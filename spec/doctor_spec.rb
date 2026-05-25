@@ -14,8 +14,8 @@ RSpec.describe Textus::Doctor do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
         - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
         - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
@@ -175,7 +175,7 @@ RSpec.describe Textus::Doctor do
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: working, write_policy: [human, agent, runner] }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
       YAML
@@ -192,7 +192,7 @@ RSpec.describe Textus::Doctor do
       # Write full_name as ai — violates maintained_by: human
       ra_store.put("working.people.alice",
                    meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
-                   body: "", as: "ai")
+                   body: "", as: "agent")
 
       res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])
       codes = res["issues"].map { |i| i["code"] }

@@ -10,7 +10,7 @@ RSpec.describe Textus::Refresh do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, writable_by: [script] }]
+      zones: [{ name: intake, write_policy: [runner] }]
       entries:
         - key: intake.repos
           path: intake/repos.md
@@ -32,7 +32,7 @@ RSpec.describe Textus::Refresh do
 
   it "invokes the action, writes the entry under role=script, returns the envelope" do
     store = Textus::Store.new(root)
-    env = described_class.call(store, "intake.repos", as: "script")
+    env = described_class.call(store, "intake.repos", as: "runner")
     expect(env["body"]).to eq("hello")
     expect(env["zone"]).to eq("intake")
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
@@ -40,7 +40,7 @@ RSpec.describe Textus::Refresh do
 
   it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    expect { described_class.call(store, "intake.manual", as: "script") }
+    expect { described_class.call(store, "intake.manual", as: "runner") }
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
@@ -51,7 +51,7 @@ RSpec.describe Textus::Refresh do
     store = Textus::Store.new(root)
     # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
     allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
-    expect { described_class.call(store, "intake.repos", as: "script") }
+    expect { described_class.call(store, "intake.repos", as: "runner") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
 
@@ -59,7 +59,7 @@ RSpec.describe Textus::Refresh do
     it "accepts {content:} for a format: json entry and writes valid JSON" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, writable_by: [script] }]
+        zones: [{ name: intake, write_policy: [runner] }]
         entries:
           - key: intake.repos
             path: intake/repos.json
@@ -73,7 +73,7 @@ RSpec.describe Textus::Refresh do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = described_class.call(store, "intake.repos", as: "script")
+      env = described_class.call(store, "intake.repos", as: "runner")
       expect(env["format"]).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
       parsed = JSON.parse(File.read(path))
@@ -84,7 +84,7 @@ RSpec.describe Textus::Refresh do
     it "accepts {body:} for a format: text entry and writes bytes verbatim" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, writable_by: [script] }]
+        zones: [{ name: intake, write_policy: [runner] }]
         entries:
           - key: intake.notes
             path: intake/notes.txt
@@ -98,7 +98,7 @@ RSpec.describe Textus::Refresh do
         end
       RUBY
       store = Textus::Store.new(root)
-      described_class.call(store, "intake.notes", as: "script")
+      described_class.call(store, "intake.notes", as: "runner")
       expect(File.read(File.join(root, "zones/intake/notes.txt"))).to eq("raw bytes\nline 2\n")
     end
   end
@@ -108,7 +108,7 @@ RSpec.describe Textus::Refresh do
       Textus.hook(:intake, :stub_fetch) { |config:, store:, args:| raise "network down" }
     RUBY
     store = Textus::Store.new(root)
-    expect { described_class.call(store, "intake.repos", as: "script") }
+    expect { described_class.call(store, "intake.repos", as: "runner") }
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 end

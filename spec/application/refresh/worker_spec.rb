@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, writable_by: [script] }
+        - { name: intake, write_policy: [runner] }
       entries:
         - key: intake.item
           path: intake/item.md
@@ -47,7 +47,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
       envelope = worker.run("intake.item")
@@ -72,7 +72,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
       expect do
@@ -94,7 +94,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: plain, writable_by: [human] }
+          - { name: plain, write_policy: [human] }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain }
       YAML
