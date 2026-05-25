@@ -5,7 +5,7 @@ module Textus
         self.cli_name = "key"
         subcommands["mv"]      = Verb::Mv
         subcommands["uid"]     = Verb::Uid
-        subcommands["migrate"] = Verb::MigrateKeys
+        subcommands["normalize"] = Verb::KeyNormalize
       end
     end
   end

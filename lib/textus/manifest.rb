@@ -183,7 +183,7 @@ module Textus
 
       illegal = segs.find { |s| !valid_segment?(s) }
       if illegal
-        warn("textus: skipping illegal key segment '#{illegal}' at #{path} — run 'textus key migrate --dry-run'")
+        warn("textus: skipping illegal key segment '#{illegal}' at #{path} — run 'textus key normalize --dry-run'")
         return nil
       end
 

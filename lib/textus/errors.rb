@@ -172,4 +172,16 @@ module Textus
   class ProposalError < Error
     def initialize(m) = super("proposal_error", m)
   end
+
+  class CommandRenamed < Error
+    def initialize(old_form, new_form)
+      super(
+        "command_renamed",
+        "`textus #{old_form}` was renamed in textus/3 — use `textus #{new_form}`",
+        details: { "old" => old_form, "new" => new_form },
+        hint: "Use `textus #{new_form}` instead.",
+        exit_code: 2,
+      )
+    end
+  end
 end
