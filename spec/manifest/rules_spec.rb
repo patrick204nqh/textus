@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Rules do
   let(:raw) do
     [
-      { "match" => "intake.**",       "handler_allowlist" => ["http_get"] },
+      { "match" => "intake.**",       "intake_handler_allowlist" => ["http_get"] },
       { "match" => "intake.news.*",   "refresh" => { "ttl" => "6h", "on_stale" => "sync" } },
       { "match" => "review.**", "promote_requires" => ["schema_valid"] },
     ]
@@ -36,6 +36,20 @@ RSpec.describe Textus::Manifest::Rules do
       set = described_class.parse(raw2).for("intake.news.hn")
       expect(set.refresh.ttl_seconds).to eq(6 * 3600)
       expect(set.refresh.on_stale).to eq(:sync)
+    end
+
+    describe "textus/3 intake_handler_allowlist rename" do
+      it "rejects legacy handler_allowlist: key with migration hint" do
+        raw = [{ "match" => "intake.x.*", "handler_allowlist" => ["ical-events"] }]
+        expect { described_class.parse(raw) }
+          .to raise_error(Textus::BadManifest, /handler_allowlist.*intake_handler_allowlist/)
+      end
+
+      it "reads intake_handler_allowlist: from rule hash" do
+        raw = [{ "match" => "intake.x.*", "intake_handler_allowlist" => ["ical-events"] }]
+        set = described_class.parse(raw).for("intake.x.cal")
+        expect(set.handler_allowlist.allows?("ical-events")).to be true
+      end
     end
   end
 end

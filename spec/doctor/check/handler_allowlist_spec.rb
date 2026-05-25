@@ -25,7 +25,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
             handler: local_file
       rules:
         - match: intake.*
-          handler_allowlist: [local_file, json]
+          intake_handler_allowlist: [local_file, json]
     YAML
 
     with_store(manifest) do |store|
@@ -47,7 +47,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
             handler: shady_handler
       rules:
         - match: intake.*
-          handler_allowlist: [local_file, json]
+          intake_handler_allowlist: [local_file, json]
     YAML
 
     with_store(manifest) do |store|

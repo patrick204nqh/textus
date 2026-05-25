@@ -17,7 +17,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
           refresh: { ttl: 1h, on_stale: warn }
         - match: working.doc
           refresh: { ttl: 5m, on_stale: sync }
-          handler_allowlist: [src_a, src_b]
+          intake_handler_allowlist: [src_a, src_b]
         - match: "**"
           promote_requires: [schema_valid]
     YAML
