@@ -10,6 +10,10 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`Doctor::Check::IllegalKeys` now honors `index_filename:`.** Previously the doctor walked every file and directory under a nested entry and flagged any whose basename failed the `[a-z0-9][a-z0-9-]*` segment regex — including `SKILL.md` itself and unrelated siblings like `references/foo.md`. With this fix, when an entry declares `index_filename:`, only the parent-directory segments leading to each matching index file are validated; sibling files and unrelated subtrees are not enumerated and are not flagged. `manifest.enumerate` already filtered correctly via the new glob; this brings the doctor check into parity. Two new specs in `spec/doctor_spec.rb` cover (a) `SKILL.md` is not flagged, (b) sibling `references/` files are not flagged. The pre-existing illegal-parent-segment case (e.g. `Bad_Name/SKILL.md`) still reports `key.illegal`.
+
 ## 0.10.5 — tech-debt cleanup + `index_filename:` + docs polish (2026-05-25)
 
 Patch release. One user-facing feature (`index_filename:` on nested manifest entries) plus internal refactors that remove 7 of 19 `rubocop:disable` suppressions. No protocol bump; existing manifests parse unchanged.
