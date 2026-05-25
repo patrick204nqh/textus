@@ -60,8 +60,8 @@ The intake entry lands at `intake.skills.agent-eval`. The `:refreshed` listener 
 
 4. **Public repos only as written.** The hook does not send an `Authorization` header. For private repos or to dodge unauthenticated rate limits, extend `TextusRecipes::GithubFolder::DEFAULT_FETCHER` to inject a `Bearer` token from `ENV`.
 
-5. **Hook is not bundled with the skill.** Pulling a skill folder fetches its *content*, not the hook that processes it. If you want a true self-contained skill bundle (entries + their own intake handler), that's a different architecture — see `docs/plans/adr-0.10.4-skill-bundle-deferral.md`.
+5. **Hook is not bundled with the skill.** Pulling a skill folder fetches its *content*, not the hook that processes it. If you want a true self-contained skill bundle (entries + their own intake handler), that's a different architecture — see `docs/architecture/decisions/0001-skill-bundle-deferral.md`.
 
 ## When to graduate to first-class support
 
-If you find yourself copy-pasting the fanout listener for a third or fourth use case, that's the signal to revisit the deferral and promote intake-returns-N-entries into the worker. The ADR (`docs/plans/adr-0.10.4-skill-bundle-deferral.md`) captures the criteria.
+If you find yourself copy-pasting the fanout listener for a third or fourth use case, that's the signal to revisit the deferral and promote intake-returns-N-entries into the worker. The ADR (`docs/architecture/decisions/0001-skill-bundle-deferral.md`) captures the criteria.

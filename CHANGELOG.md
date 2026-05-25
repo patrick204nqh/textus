@@ -18,7 +18,7 @@ Patch release. Ships a working "pull a GitHub folder as a skill bundle, fan it o
 - **`examples/claude-plugin/recipes/skill_fanout.rb`** — `Textus.refreshed(:skill_fanout, keys: "intake.skills.*")` listener that fans a bundle out into `vendor.skills.<slug>.*` derived entries with reconciliation: orphaned children whose source path disappeared upstream are deleted. Inner writes use `suppress_events: true` to prevent recursion.
 - **`examples/claude-plugin/recipes/README.md`** — explains that files in `recipes/` are opt-in and do not auto-load (they live outside `.textus/hooks/`).
 - **`docs/recipe-github-skill-bundle.md`** — end-to-end recipe: manifest snippet, copy commands, caveats (30s timeout, recursion guard, public-repos-only, hook-not-bundled-with-content).
-- **`docs/plans/adr-0.10.4-skill-bundle-deferral.md`** — Architecture Decision Record documenting the friction in the current primitives, the three-option design space (status quo, intake-returns-N-entries, hooks-as-content), the choice to stay at status quo, and the explicit criteria for revisiting.
+- **`docs/architecture/decisions/0001-skill-bundle-deferral.md`** — Architecture Decision Record documenting the friction in the current primitives, the three-option design space (status quo, intake-returns-N-entries, hooks-as-content), the choice to stay at status quo, and the explicit criteria for revisiting. First entry under the new `docs/architecture/decisions/` ADR home.
 - **`spec/examples/`** — new spec subdirectory with hermetic unit tests for both recipe files. Tests use captured GitHub API fixtures under `spec/examples/fixtures/`; no network access in CI.
 
 ### Documentation
