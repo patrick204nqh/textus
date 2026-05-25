@@ -38,13 +38,7 @@ RSpec.describe Textus::Manifest::Rules do
       expect(set.refresh.on_stale).to eq(:sync)
     end
 
-    describe "textus/3 intake_handler_allowlist rename" do
-      it "rejects legacy handler_allowlist: key with migration hint" do
-        raw = [{ "match" => "intake.x.*", "handler_allowlist" => ["ical-events"] }]
-        expect { described_class.parse(raw) }
-          .to raise_error(Textus::BadManifest, /handler_allowlist.*intake_handler_allowlist/)
-      end
-
+    describe "intake_handler_allowlist" do
       it "reads intake_handler_allowlist: from rule hash" do
         raw = [{ "match" => "intake.x.*", "intake_handler_allowlist" => ["ical-events"] }]
         set = described_class.parse(raw).for("intake.x.cal")
@@ -52,13 +46,7 @@ RSpec.describe Textus::Manifest::Rules do
       end
     end
 
-    describe "textus/3 promotion rename" do
-      it "rejects legacy promote_requires: with hint" do
-        raw = [{ "match" => "review.**", "promote_requires" => ["schema_valid"] }]
-        expect { described_class.parse(raw) }
-          .to raise_error(Textus::BadManifest, /promote_requires.*promotion.*requires/i)
-      end
-
+    describe "promotion" do
       it "parses promotion: { requires: [...] }" do
         raw = [{ "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } }]
         set = described_class.parse(raw).for("review.x")

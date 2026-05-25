@@ -48,18 +48,6 @@ module Textus
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
-          if raw.key?("handler_allowlist")
-            raise Textus::BadManifest.new(
-              "'handler_allowlist:' was renamed to 'intake_handler_allowlist:' in textus/3.",
-              hint: "Run `textus migrate --to=textus/3`.",
-            )
-          end
-          if raw.key?("promote_requires")
-            raise Textus::BadManifest.new(
-              "'promote_requires:' was renamed to 'promotion: { requires: [...] }' in textus/3.",
-              hint: "Run `textus migrate --to=textus/3`.",
-            )
-          end
           @refresh = parse_refresh(raw["refresh"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @promote = parse_promotion(raw["promotion"])
