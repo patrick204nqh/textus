@@ -1,0 +1,47 @@
+require "yaml"
+
+module Textus
+  module Doctor
+    class Check
+      # Runs as a standalone module (Check::ProtocolVersion.run(root:)) and also
+      # as a class-based doctor check (ProtocolVersion.new(store).call).
+      class ProtocolVersion < Check
+        # Standalone interface: root is the project root (parent of .textus/).
+        def self.run(root:)
+          path = File.join(root, ".textus/manifest.yaml")
+          return [] unless File.exist?(path)
+
+          doc = YAML.safe_load_file(path, aliases: false) || {}
+          version = doc["version"]
+          return [] if version == "textus/3"
+
+          [{
+            "code" => "protocol_mismatch",
+            "severity" => "error",
+            "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
+            "hint" => "Run `textus migrate --to=textus/3` to upgrade.",
+          }]
+        end
+
+        # Doctor check interface: store.root is the .textus/ directory itself,
+        # so manifest.yaml lives directly inside it.
+        def call
+          path = File.join(store.root, "manifest.yaml")
+          return [] unless File.exist?(path)
+
+          doc = YAML.safe_load_file(path, aliases: false) || {}
+          version = doc["version"]
+          return [] if version == "textus/3"
+
+          [{
+            "code" => "protocol_mismatch",
+            "level" => "error",
+            "subject" => path,
+            "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
+            "fix" => "Run `textus migrate --to=textus/3` to upgrade.",
+          }]
+        end
+      end
+    end
+  end
+end

@@ -9,6 +9,7 @@ module Textus
     DOCTOR_CHECK_TIMEOUT_SECONDS = 2
 
     CHECKS = [
+      Check::ProtocolVersion,
       Check::ManifestFiles,
       Check::Schemas,
       Check::SchemaParseError,
