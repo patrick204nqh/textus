@@ -12,7 +12,7 @@ RSpec.describe "registered doctor_check invocation" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
       File.write(File.join(root, "hooks/org_rules.rb"), <<~RUBY)
-        Textus.hook(:check, :org_rules) do |store:|
+        Textus.on(:check, :org_rules) do |store:|
           [{ "code" => "org.bad_naming", "level" => "warning",
              "subject" => "test", "message" => "fake issue", "fix" => "n/a" }]
         end
@@ -30,7 +30,7 @@ RSpec.describe "registered doctor_check invocation" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
-        Textus.hook(:check, :boom) { |store:| raise "kaboom" }
+        Textus.on(:check, :boom) { |store:| raise "kaboom" }
       RUBY
 
       store = Textus::Store.new(root)
@@ -46,7 +46,7 @@ RSpec.describe "registered doctor_check invocation" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
-        Textus.hook(:check, :slow) { |store:| :unreached }
+        Textus.on(:check, :slow) { |store:| :unreached }
       RUBY
 
       allow(Timeout).to receive(:timeout).and_call_original

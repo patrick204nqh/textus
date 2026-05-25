@@ -1,17 +1,10 @@
 module Textus
   module Hooks
     module Dsl
-      EVENTS = %i[
-        intake reduce check
-        put deleted refreshed built published accepted
-        mv reject loaded
-        refresh_began refresh_failed refresh_detached
-      ].freeze
+      def on(event, name, **, &blk)
+        raise UsageError.new("hook needs a block") unless blk
 
-      EVENTS.each do |event|
-        define_method(event) do |name, **opts, &blk|
-          Loader.current_registry.register(event, name, **opts, &blk)
-        end
+        Loader.current_registry.register(event, name, **, &blk)
       end
     end
   end

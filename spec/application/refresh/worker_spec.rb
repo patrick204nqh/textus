@@ -43,7 +43,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
   it "persists the envelope and fires :refresh_began and :refreshed events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.intake(:test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+        Textus.on(:intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
       RUBY
 
       store = build_store(root, intake_body: hook_body)
@@ -68,7 +68,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
   it "fires :refresh_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.intake(:test_intake) { |store:, config:, args:| raise "something went wrong" }
+        Textus.on(:intake, :test_intake) { |store:, config:, args:| raise "something went wrong" }
       RUBY
 
       store = build_store(root, intake_body: hook_body)

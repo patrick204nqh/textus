@@ -19,12 +19,12 @@ RSpec.describe "Hook loader subdirectory support" do
 
       File.write(
         File.join(textus, "hooks", "intake", "nested_intake.rb"),
-        'Textus.intake(:nested_intake) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } }',
+        'Textus.on(:intake, :nested_intake) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } }',
       )
 
       File.write(
         File.join(textus, "hooks", "reduce", "nested_reduce.rb"),
-        "Textus.reduce(:nested_reduce) { |rows:, **| rows.reverse }",
+        "Textus.on(:reduce, :nested_reduce) { |rows:, **| rows.reverse }",
       )
 
       store = Textus::Store.new(textus)
@@ -43,7 +43,7 @@ RSpec.describe "Hook loader subdirectory support" do
 
       File.write(
         File.join(textus, "hooks", "flat.rb"),
-        'Textus.intake(:flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } }',
+        'Textus.on(:intake, :flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } }',
       )
 
       store = Textus::Store.new(textus)

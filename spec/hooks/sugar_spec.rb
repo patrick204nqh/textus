@@ -1,13 +1,13 @@
 require "spec_helper"
 
-RSpec.describe "Textus per-event sugar" do
+RSpec.describe "Textus.on — full event coverage" do
   let(:reg) { Textus::Hooks::Registry.new }
 
   around { |ex| Textus.with_registry(reg) { ex.run } }
 
-  describe ".intake" do
+  describe ":intake" do
     it "registers an intake hook by name" do
-      Textus.intake(:local_file) do |config:, args:, **|
+      Textus.on(:intake, :local_file) do |config:, args:, **|
         [config, args]
         { _meta: {}, body: "ok" }
       end
@@ -16,7 +16,7 @@ RSpec.describe "Textus per-event sugar" do
     end
 
     it "accepts a string name and normalizes to a symbol" do
-      Textus.intake("from_string") do |config:, args:, **|
+      Textus.on(:intake, "from_string") do |config:, args:, **|
         [config, args]
         { _meta: {}, body: "s" }
       end
@@ -26,22 +26,22 @@ RSpec.describe "Textus per-event sugar" do
     it "raises outside with_registry" do
       Thread.new do
         expect do
-          Textus.intake(:naked) { |config:, args:, **| [config, args] }
+          Textus.on(:intake, :naked) { |config:, args:, **| [config, args] }
         end.to raise_error(Textus::UsageError, /no active registry/)
       end.join
     end
   end
 
-  describe ".reduce" do
+  describe ":reduce" do
     it "registers a reduce hook" do
-      Textus.reduce(:top2) { |rows:, **| rows.first(2) } # rubocop:disable Lint/UnexpectedBlockArity
+      Textus.on(:reduce, :top2) { |rows:, **| rows.first(2) }
       expect(reg.rpc_callable(:reduce, :top2).call(store: nil, rows: [1, 2, 3], config: nil)).to eq([1, 2])
     end
   end
 
-  describe ".check" do
+  describe ":check" do
     it "registers a doctor check" do
-      Textus.check(:always_ok) do |store:|
+      Textus.on(:check, :always_ok) do |store:|
         [store]
         []
       end
@@ -49,22 +49,22 @@ RSpec.describe "Textus per-event sugar" do
     end
   end
 
-  describe ".put with keys: filter" do
+  describe ":put with keys: filter" do
     it "registers a pub-sub put hook with key filter" do
       captured = []
-      Textus.put(:tap, keys: ["working.*"]) { |key:, **| captured << key }
+      Textus.on(:put, :tap, keys: ["working.*"]) { |key:, **| captured << key }
       reg.listeners(:put, key: "working.x").first[:callable].call(store: nil, key: "working.x", envelope: {})
       expect(captured).to eq(["working.x"])
     end
   end
 
-  describe ".deleted / .refreshed / .built / .accepted / .published" do
+  describe ":deleted / :refreshed / :built / :accepted / :published" do
     it "registers each pub-sub event" do
-      Textus.deleted(:d)   { |key:, **| key }
-      Textus.refreshed(:r) { |key:, envelope:, change:, **| [key, envelope, change] }
-      Textus.built(:b)     { |key:, envelope:, sources:, **| [key, envelope, sources] }
-      Textus.accepted(:a)  { |key:, target_key:, **| [key, target_key] }
-      Textus.published(:p) { |key:, envelope:, source:, target:, **| [key, envelope, source, target] }
+      Textus.on(:deleted,   :d) { |key:, **| key }
+      Textus.on(:refreshed, :r) { |key:, envelope:, change:, **| [key, envelope, change] }
+      Textus.on(:built,     :b) { |key:, envelope:, sources:, **| [key, envelope, sources] }
+      Textus.on(:accepted,  :a) { |key:, target_key:, **| [key, target_key] }
+      Textus.on(:published, :p) { |key:, envelope:, source:, target:, **| [key, envelope, source, target] }
 
       expect(reg.pubsub_handlers(:deleted).map { _1[:name] }).to include(:d)
       expect(reg.pubsub_handlers(:refreshed).map { _1[:name] }).to include(:r)
@@ -74,11 +74,11 @@ RSpec.describe "Textus per-event sugar" do
     end
   end
 
-  describe ".refresh_began / .refresh_failed / .refresh_detached" do
+  describe ":refresh_began / :refresh_failed / :refresh_detached" do
     it "registers each lifecycle event" do
-      Textus.refresh_began(:s)    { |key:, mode:, **| [key, mode] }
-      Textus.refresh_failed(:f)   { |key:, error_class:, error_message:, **| [key, error_class, error_message] }
-      Textus.refresh_detached(:d) { |key:, started_at:, budget_ms:, **| [key, started_at, budget_ms] }
+      Textus.on(:refresh_began,    :s) { |key:, mode:, **| [key, mode] }
+      Textus.on(:refresh_failed,   :f) { |key:, error_class:, error_message:, **| [key, error_class, error_message] }
+      Textus.on(:refresh_detached, :d) { |key:, started_at:, budget_ms:, **| [key, started_at, budget_ms] }
 
       expect(reg.pubsub_handlers(:refresh_began).map { _1[:name] }).to include(:s)
       expect(reg.pubsub_handlers(:refresh_failed).map { _1[:name] }).to include(:f)

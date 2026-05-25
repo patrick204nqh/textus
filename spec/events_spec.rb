@@ -18,8 +18,8 @@ RSpec.describe "Lifecycle events" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:put,     :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
-      Textus.hook(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
+      Textus.on(:put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
+      Textus.on(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -44,7 +44,7 @@ RSpec.describe "Lifecycle events" do
 
   it "logs hook errors to audit log but does not abort the write" do
     File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
-      Textus.hook(:put, :boom) { |key:, envelope:, store:| raise "bang" }
+      Textus.on(:put, :boom) { |key:, envelope:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
     env = store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
@@ -73,8 +73,8 @@ RSpec.describe "Refresh event" do
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.on(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+      Textus.on(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     $log = []
   end
@@ -95,8 +95,8 @@ RSpec.describe "Refresh event" do
     Textus::Refresh.call(store, "intake.x", as: "runner")
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.on(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
+      Textus.on(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload hook file from disk (fresh registry)
     store2 = Textus::Store.new(root)
@@ -111,8 +111,8 @@ RSpec.describe "Refresh event" do
     # across reload (using ||=) instead of being reset to [].
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log ||= []
-      Textus.hook(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-      Textus.hook(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+      Textus.on(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+      Textus.on(:refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
     RUBY
     # Re-instantiate to reload hook file from disk
     store2 = Textus::Store.new(root)
@@ -125,9 +125,9 @@ RSpec.describe "Refresh event" do
   it "does NOT double-fire :put when refresh writes (suppress_events:)" do
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:intake,   :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-      Textus.hook(:put,      :p) { |key:, envelope:, store:| $log << [:put, key] }
-      Textus.hook(:refreshed, :r) { |key:, envelope:, store:, change:| $log << [:refreshed, key, change] }
+      Textus.on(:intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
+      Textus.on(:put, :p) { |key:, envelope:, store:| $log << [:put, key] }
+      Textus.on(:refreshed, :r) { |key:, envelope:, store:, change:| $log << [:refreshed, key, change] }
     RUBY
     $log = []
     store = Textus::Store.new(root)
@@ -166,7 +166,7 @@ RSpec.describe "Build and accept events" do
     File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:built, :t) do |key:, envelope:, store:, sources:|
+      Textus.on(:built, :t) do |key:, envelope:, store:, sources:|
         $log << [:built, key, sources]
       end
     RUBY
@@ -215,7 +215,7 @@ RSpec.describe "Accept event" do
     MD
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $log = []
-      Textus.hook(:accepted, :t) do |key:, target_key:, store:|
+      Textus.on(:accepted, :t) do |key:, target_key:, store:|
         $log << [:accepted, key, target_key]
       end
     RUBY
@@ -235,7 +235,7 @@ RSpec.describe "Accept event" do
 
   it "records both target_key and key when an :accepted hook fails" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-      Textus.hook(:accepted, :boom) { |key:, target_key:, store:| raise "bang" }
+      Textus.on(:accepted, :boom) { |key:, target_key:, store:| raise "bang" }
     RUBY
     store = Textus::Store.new(root)
     store.accept("review.bob", as: "human")

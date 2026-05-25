@@ -24,10 +24,10 @@ RSpec.describe ":reject event and store.reject" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:reject, :log_reject) do |key:, target_key:, store:|
+      Textus.on(:reject, :log_reject) do |key:, target_key:, store:|
         $textus_event_log << [:reject, key, target_key]
       end
-      Textus.hook(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
+      Textus.on(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
     RUBY
     $textus_event_log = []
   end

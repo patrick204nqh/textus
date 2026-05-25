@@ -54,13 +54,13 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.hook(:intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
-      Textus.hook(:reduce, :alpha)           { |store:, rows:, config:| rows }
-      Textus.hook(:built, :stamp_log)        { |store:, key:, envelope:, sources:| }
-      Textus.hook(:check, :smoke)            { |store:| [] }
+      Textus.on(:intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
+      Textus.on(:reduce, :alpha)           { |store:, rows:, config:| rows }
+      Textus.on(:built, :stamp_log)        { |store:, key:, envelope:, sources:| }
+      Textus.on(:check, :smoke)            { |store:| [] }
     RUBY
   end
 

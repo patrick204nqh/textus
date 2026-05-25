@@ -42,7 +42,7 @@ RSpec.describe Textus::Application::Reads::Get do
     YAML
 
     File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
-      Textus.intake(:test_intake) { |store:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
+      Textus.on(:intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
     RUBY
 
     Textus::Store.new(textus)

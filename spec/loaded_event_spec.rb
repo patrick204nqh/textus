@@ -18,8 +18,8 @@ RSpec.describe ":loaded event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:loaded, :log_loaded) { |store:| $textus_event_log << [:loaded, store.store.list.length] }
-      Textus.hook(:put,    :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
+      Textus.on(:loaded, :log_loaded) { |store:| $textus_event_log << [:loaded, store.store.list.length] }
+      Textus.on(:put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
     RUBY
     $textus_event_log = []
   end
