@@ -9,7 +9,6 @@
 # Pair with skill_fanout.rb to fan the bundle out into per-file derived
 # entries.
 
-require "base64"
 require "json"
 require "net/http"
 require "time"
@@ -44,7 +43,7 @@ module TextusRecipes
         end
 
         rel = entry["path"].sub(prefix, "")
-        files[rel] = Base64.decode64(blob["content"]).force_encoding(Encoding::UTF_8)
+        files[rel] = blob["content"].unpack1("m").force_encoding(Encoding::UTF_8)
       end
       files
     end
