@@ -132,7 +132,7 @@ module Textus
       # Pure I/O: resolve path, validate etag, delete from disk, audit. No
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Delete).
-      def delete_envelope_from_disk(key, if_etag: nil, as: Role::DEFAULT, correlation_id: nil)
+      def delete_envelope_from_disk(key, ctx:, if_etag: nil)
         _, path, = @manifest.resolve(key)
         raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
@@ -141,9 +141,9 @@ module Textus
 
         File.delete(path)
         @store.audit_log.append(
-          role: as, verb: "delete", key: key,
+          role: ctx.role, verb: "delete", key: key,
           etag_before: etag_before, etag_after: nil,
-          extras: correlation_id ? { "correlation_id" => correlation_id } : nil
+          extras: ctx.correlation_id ? { "correlation_id" => ctx.correlation_id } : nil
         )
       end
 
