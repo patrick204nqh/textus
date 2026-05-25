@@ -90,6 +90,47 @@ RSpec.describe Textus::Doctor do
     expect(issue["fix"]).to include("key migrate")
   end
 
+  context "with index_filename on a nested entry" do
+    before do
+      FileUtils.mkdir_p(File.join(root, "zones/skills/ask/references"))
+      FileUtils.mkdir_p(File.join(root, "zones/skills/Bad_Name"))
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/2
+        zones:
+          - { name: working, writable_by: [human, ai, script] }
+          - { name: skills, writable_by: [human] }
+          - { name: output, writable_by: [build] }
+        entries:
+          - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
+          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
+          - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }
+      YAML
+    end
+
+    it "does not flag SKILL.md (uppercase index filename) as illegal" do
+      File.write(File.join(root, "zones/skills/ask/SKILL.md"), "---\nname: ask\n---\nbody")
+      res = doctor
+      illegal = res["issues"].select { |i| i["code"] == "key.illegal" }
+      expect(illegal).to be_empty
+    end
+
+    it "does not flag sibling files under references/ that aren't enumerated" do
+      File.write(File.join(root, "zones/skills/ask/SKILL.md"), "---\nname: ask\n---\n")
+      File.write(File.join(root, "zones/skills/ask/references/Bad_Sibling.md"), "---\n---\n")
+      res = doctor
+      bad = res["issues"].select { |i| i["code"] == "key.illegal" && i["message"].include?("Bad_Sibling") }
+      expect(bad).to be_empty
+    end
+
+    it "still flags a parent directory whose name is an illegal segment" do
+      File.write(File.join(root, "zones/skills/Bad_Name/SKILL.md"), "---\nname: bad\n---\n")
+      res = doctor
+      issue = res["issues"].find { |i| i["code"] == "key.illegal" }
+      expect(issue).not_to be_nil
+      expect(issue["proposed_key"]).to eq("bad-name")
+    end
+  end
+
   it "reports sentinel.orphan when a sentinel's target is missing" do
     FileUtils.mkdir_p(File.join(root, "sentinels"))
     File.write(File.join(root, "sentinels/missing.md.textus-managed.json"), JSON.generate(
