@@ -15,6 +15,8 @@ module Textus
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
           action = proposal["action"] || "put"
 
+          evaluate_promotion!(env, target)
+
           case action
           when "put"
             # Nested proposal "frontmatter" — the meta to write to the accepted
@@ -37,6 +39,22 @@ module Textus
                        correlation_id: @ctx.correlation_id)
 
           { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
+        end
+
+        private
+
+        def evaluate_promotion!(env, target_key)
+          rules = @ctx.store.manifest.rules_for(target_key)
+          promote = rules.promote
+          return if promote.nil? || promote.requires.empty?
+
+          policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
+          result = policy.evaluate(entry: env, store: @ctx.store)
+          return if result.ok?
+
+          raise ProposalError.new(
+            "promotion gate failed: #{result.reasons.join("; ")}",
+          )
         end
       end
     end

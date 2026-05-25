@@ -54,9 +54,15 @@ module Textus
               hint: "Run `textus migrate --to=textus/3`.",
             )
           end
+          if raw.key?("promote_requires")
+            raise Textus::BadManifest.new(
+              "'promote_requires:' was renamed to 'promotion: { requires: [...] }' in textus/3.",
+              hint: "Run `textus migrate --to=textus/3`.",
+            )
+          end
           @refresh = parse_refresh(raw["refresh"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
-          @promote = parse_promote(raw["promote_requires"])
+          @promote = parse_promotion(raw["promotion"])
           @retention = raw["retention"] # reserved — passthrough only
         end
 
@@ -78,10 +84,12 @@ module Textus
           Textus::Domain::Policy::HandlerAllowlist.new(handlers: arr)
         end
 
-        def parse_promote(arr)
-          return nil if arr.nil?
+        def parse_promotion(h)
+          return nil if h.nil?
 
-          Textus::Domain::Policy::Promote.new(requires: arr)
+          raise Textus::BadManifest.new("promotion: must be a hash with a 'requires:' array") unless h.is_a?(Hash) && h.key?("requires")
+
+          Textus::Domain::Policy::Promote.new(requires: Array(h["requires"]))
         end
       end
     end

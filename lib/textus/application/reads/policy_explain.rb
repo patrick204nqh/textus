@@ -29,7 +29,7 @@ module Textus
                 on_stale: winners.refresh.on_stale,
               },
               handler_allowlist: winners.handler_allowlist&.handlers,
-              promote_requires: winners.promote&.requires,
+              promotion: winners.promote && { requires: winners.promote.requires },
             },
           }
         end

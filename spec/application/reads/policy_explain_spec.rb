@@ -19,7 +19,8 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
           refresh: { ttl: 5m, on_stale: sync }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
-          promote_requires: [schema_valid]
+          promotion:
+            requires: [schema_valid]
     YAML
     Textus::Store.new(textus)
   end
@@ -46,7 +47,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
       expect(result[:effective][:refresh][:ttl_seconds]).to eq(300)
       expect(result[:effective][:refresh][:on_stale]).to eq(:sync)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
-      expect(result[:effective][:promote_requires]).to eq([:schema_valid])
+      expect(result[:effective][:promotion]).to eq({ requires: [:schema_valid] })
     end
   end
 
@@ -67,7 +68,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:refresh]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
-      expect(result[:effective][:promote_requires]).to be_nil
+      expect(result[:effective][:promotion]).to be_nil
     end
   end
 end

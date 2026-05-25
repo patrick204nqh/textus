@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Rules do
     [
       { "match" => "intake.**",       "intake_handler_allowlist" => ["http_get"] },
       { "match" => "intake.news.*",   "refresh" => { "ttl" => "6h", "on_stale" => "sync" } },
-      { "match" => "review.**", "promote_requires" => ["schema_valid"] },
+      { "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } },
     ]
   end
 
@@ -49,6 +49,20 @@ RSpec.describe Textus::Manifest::Rules do
         raw = [{ "match" => "intake.x.*", "intake_handler_allowlist" => ["ical-events"] }]
         set = described_class.parse(raw).for("intake.x.cal")
         expect(set.handler_allowlist.allows?("ical-events")).to be true
+      end
+    end
+
+    describe "textus/3 promotion rename" do
+      it "rejects legacy promote_requires: with hint" do
+        raw = [{ "match" => "review.**", "promote_requires" => ["schema_valid"] }]
+        expect { described_class.parse(raw) }
+          .to raise_error(Textus::BadManifest, /promote_requires.*promotion.*requires/i)
+      end
+
+      it "parses promotion: { requires: [...] }" do
+        raw = [{ "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } }]
+        set = described_class.parse(raw).for("review.x")
+        expect(set.promote.requires).to include(:schema_valid)
       end
     end
   end
