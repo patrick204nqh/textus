@@ -44,34 +44,66 @@ The `owner:` field in the manifest is **advisory metadata**, not an ACL. Use it 
 
 Tooling around `git blame` or audit logs may filter on owner; the gem itself only echoes it back in envelopes.
 
-## Derived entries and build runners
+## Derived entries
 
-**Always** declare `generator:` on derived entries that participate in any build pipeline. Without it, `textus freshness` cannot help — the entry is just an opaque file.
+textus supports two shapes for derived entries:
+
+**`projection:`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
+
+```yaml
+- key: output.catalogs.people
+  path: output/catalogs/people.md
+  zone: output
+  schema: null
+  owner: build:catalog-people
+  projection:
+    select: working.network.org   # prefix or list of prefixes
+    pluck:  [name, relationship, org]
+    sort_by: name
+  template: people.mustache       # under .textus/templates/
+  publish_to: [docs/people.md]    # optional repo-relative byte-copy targets
+```
+
+**`generator:`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `textus freshness` can compare source mtimes against the file's `_meta.generated.at`.
 
 ```yaml
 - key: output.catalogs.skills
-  path: output/catalogs/skills
+  path: output/catalogs/skills.md
   zone: output
-  schema: null
   owner: build:catalog-skills
   generator:
-    command: "rake catalog:skills"
-    sources:
-      - working.projects
-      - working.network
+    command: "rake catalog:skills"   # informational; the runner invokes it
+    sources: [working.projects, working.network]
 ```
 
-**The build runner is responsible for writing the `generated:` frontmatter block** when it regenerates. The gem will never synthesize it. A typical lefthook / rake / just integration looks like:
+The build runner is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `generator.sources` — same list, recorded twice so a diff proves what was consumed.
+
+Full contract for both shapes is in [`../SPEC.md` §5.2 and §5.2.1](../SPEC.md). Reducers (`projection.reduce:`) and per-leaf publishing (`publish_each:`) are also covered there.
+
+## Intake and freshness
+
+External inputs land via `:intake` hooks, not shell commands. Each inbox entry names a registered handler; refresh is on demand:
 
 ```sh
-textus freshness --format=json \
-  | jq -r '.rows[] | select(.status == "stale") | .key' \
-  | while read key; do
-      textus refresh "$key" --as=script
-    done
+textus refresh inbox.notion.roadmap --as=script
+textus refresh-stale --zone=inbox --as=script   # everything past its TTL
 ```
 
-`generated.from` SHOULD match `generator.sources` from the manifest — they're the same list, recorded in two places so a diffable file proves what was actually consumed.
+Freshness budgets live in the top-level `policies:` block, matched by glob:
+
+```yaml
+policies:
+  - match: inbox.notion.**
+    refresh: { ttl: 6h, on_stale: warn }   # warn | sync | timed_sync
+```
+
+A typical scheduled-refresh integration shells the `refresh-stale` sweep itself:
+
+```sh
+textus refresh-stale --zone=inbox --as=script   # in cron / CI
+```
+
+See [`./zones.md` §6](zones.md) for the full intake contract and [`./events.md`](events.md) for writing custom handlers.
 
 ## Body content
 

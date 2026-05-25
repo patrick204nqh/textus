@@ -8,6 +8,15 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## [Unreleased]
+
+### Documentation
+
+- **SPEC.md §5.2.1 added.** Documents the `generator:` field — the externally-generated-derived-entry shape (build runner produces the file; textus tracks `sources:` for staleness via `_meta.generated.at`). The field was always parsed and tested but had no spec coverage. Clarifies that textus never executes `command:` — consistent with §2 "Not an executor."
+- **README.md trimmed.** Removed the duplicated "CLI verbs" and "Zones and roles" tables; readers are pointed at SPEC §5 / §9 and `docs/zones.md` for the canonical surfaces. README narrative kept.
+- **docs/conventions.md** now covers both derived-entry shapes (`projection:` for declarative compute inside textus; `generator:` for external build tools) and the current intake / freshness model (top-level `policies:` + `textus refresh-stale`). Replaces a stale section that described a pre-0.4 build-runner pattern.
+- **CONTRIBUTING.md** sources-of-truth pointer updated. Per-release implementation plans are kept locally by maintainers and no longer signposted in public docs.
+
 ## 0.10.4 — GitHub folder intake recipe + skill-bundle deferral ADR (2026-05-24)
 
 Patch release. Ships a working "pull a GitHub folder as a skill bundle, fan it out to derived entries" pattern as opt-in example hooks under `examples/claude-plugin/recipes/`, with hermetic specs and user-facing docs. Captures the design decision to defer first-class skill-bundle support to a future release. No `lib/` changes; CLI, wire protocol, event surface, manifest schema, and doctor checks are all unchanged.
@@ -42,7 +51,7 @@ Patch release. Two pieces of work: (1) docs describe current state only — ever
 
 ### Documentation
 
-- **`docs/plans/`** is now signposted in `CONTRIBUTING.md` as design history, not current documentation.
+- **`CONTRIBUTING.md`** now points readers at SPEC / ARCHITECTURE / `docs/` / CHANGELOG as the sources of truth. Per-release implementation plans are kept locally by maintainers and are no longer signposted in public docs.
 - **README, SPEC, ARCHITECTURE, docs/zones, docs/events, docs/conventions, examples/claude-plugin/README** — stripped `(0.8.2+)`, `(0.9.0+)`, `(0.9.2)`, `(v1.0)`, `(v1.1)`, `(v1.2)`, `(v0.3)` annotations from headings, parentheticals, and inline notes. Removed "Renamed in 0.9.2" / "Pre-0.9.2 stores" / "New in 0.9.0" / "Backward compatibility (v0.5)" callouts. Example code that used pre-0.9.2 zone names (`canon`, `intake`, `pending`, `derived`) now uses current names (`identity`, `inbox`, `review`, `output`).
 - **`docs/events.md`** — header count corrected to "15 events: 3 RPC and 12 pub-sub" (previously read "12 events", with refresh\_\* mentioned in subtext); stale Linear manifest example updated to use top-level `policies:` block.
 - **SPEC.md §10.2** — removed `legacy_intake_fields` from the builtin doctor-check list.
