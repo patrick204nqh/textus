@@ -7,6 +7,7 @@ loader.inflector.inflect(
   "cli" => "CLI",
   "json" => "Json",
   "yaml" => "Yaml",
+  "hook_dsl_scanner" => "HookDSLScanner",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.setup
