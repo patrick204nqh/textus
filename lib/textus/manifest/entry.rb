@@ -213,18 +213,6 @@ module Textus
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def parse_compute!(raw)
-        if raw.key?("projection")
-          raise BadManifest.new(
-            "entry '#{@key}': projection: was renamed in textus/3 — use compute: { kind: projection, ... }",
-          )
-        end
-
-        if raw.key?("generator")
-          raise BadManifest.new(
-            "entry '#{@key}': generator: was renamed in textus/3 — use compute: { kind: external, ... }",
-          )
-        end
-
         src = raw["compute"]
         unless src
           @compute = nil
@@ -237,12 +225,6 @@ module Textus
         unless COMPUTE_KINDS.include?(kind)
           raise BadManifest.new(
             "entry '#{@key}': compute.kind must be one of #{COMPUTE_KINDS.join(", ")} (got #{kind.inspect})",
-          )
-        end
-
-        if src.key?("reduce")
-          raise BadManifest.new(
-            "entry '#{@key}': compute.reduce: was renamed to transform: in textus/3 — use transform: instead of reduce:",
           )
         end
 
