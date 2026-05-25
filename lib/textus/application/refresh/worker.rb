@@ -27,9 +27,9 @@ module Textus
         end
 
         def fetch_with_bus(key, mentry)
-          callable = @ctx.store.registry.rpc_callable(:intake, mentry.intake_handler)
-          @bus.publish(:refresh_began, store: read_view, key: key, mode: :sync,
-                                       correlation_id: @ctx.correlation_id)
+          callable = @ctx.store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)
+          @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
+                                         correlation_id: @ctx.correlation_id)
           call_intake(key, mentry, callable)
         end
 
@@ -61,8 +61,8 @@ module Textus
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged
-            @bus.publish(:refreshed, store: read_view, key: key, envelope: envelope, change: change,
-                                     correlation_id: @ctx.correlation_id)
+            @bus.publish(:entry_refreshed, store: read_view, key: key, envelope: envelope, change: change,
+                                           correlation_id: @ctx.correlation_id)
           end
           envelope
         end

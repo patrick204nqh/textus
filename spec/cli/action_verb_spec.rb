@@ -25,7 +25,7 @@ RSpec.describe "textus action verb" do
       Textus::Init.run(root)
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
-        Textus.on(:intake, :sync_demo) do |store:, config:, args:|
+        Textus.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
           # `store:` is an Application::Context; .store is the underlying Store.
           ctx = store
           ctx.store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok", as: ctx.role)
@@ -69,7 +69,7 @@ RSpec.describe "textus action verb" do
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
-        Textus.on(:intake, :slow) { |store:, config:, args:| sleep 5 }
+        Textus.on(:resolve_intake, :slow) { |store:, config:, args:| sleep 5 }
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original
       allow(Timeout).to receive(:timeout)

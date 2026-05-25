@@ -41,7 +41,7 @@ RSpec.describe "Reader honors on_stale policy" do
   it "warn: returns stale envelope with flag, does NOT refresh" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:intake, :test_intake) do |store:, config:, args:|
+        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
           Thread.current[:refresh_count] ||= 0
           Thread.current[:refresh_count] += 1
           { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
@@ -62,7 +62,7 @@ RSpec.describe "Reader honors on_stale policy" do
   it "sync: blocks for refresh, returns fresh envelope" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:intake, :test_intake) do |store:, config:, args:|
+        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
           { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh body" }
         end
       RUBY
@@ -109,7 +109,7 @@ RSpec.describe "Reader honors on_stale policy" do
       MD
 
       File.write(File.join(textus, "hooks", "slow_intake.rb"), <<~RUBY)
-        Textus.on(:intake, :slow_intake) do |store:, config:, args:|
+        Textus.on(:resolve_intake, :slow_intake) do |store:, config:, args:|
           sleep 0.5
           { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
         end

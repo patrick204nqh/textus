@@ -5,7 +5,7 @@ require "tmpdir"
 require "stringio"
 require "json"
 
-RSpec.describe ":reject event and store.reject" do
+RSpec.describe ":proposal_rejected event and store.reject" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -24,10 +24,10 @@ RSpec.describe ":reject event and store.reject" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:reject, :log_reject) do |key:, target_key:, store:|
-        $textus_event_log << [:reject, key, target_key]
+      Textus.on(:proposal_rejected, :log_reject) do |key:, target_key:, store:|
+        $textus_event_log << [:proposal_rejected, key, target_key]
       end
-      Textus.on(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
+      Textus.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -46,7 +46,7 @@ RSpec.describe ":reject event and store.reject" do
     result = store.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
-    reject_events = $textus_event_log.select { |e| e[0] == :reject }
+    reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
     expect(reject_events.length).to eq(1)
     expect(reject_events.first[1]).to eq("review.draft")
     expect(reject_events.first[2]).to eq("identity.target")

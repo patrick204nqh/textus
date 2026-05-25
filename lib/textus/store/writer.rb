@@ -163,7 +163,7 @@ module Textus
         target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
 
         delete(pending_key, as: as)
-        @store.fire_event(:reject, key: pending_key, target_key: target_key)
+        @store.fire_event(:proposal_rejected, key: pending_key, target_key: target_key)
         { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
       end
     end

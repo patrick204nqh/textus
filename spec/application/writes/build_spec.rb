@@ -61,9 +61,9 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(body).to include("- bob (y)")
   end
 
-  it "fires :built exactly once per output entry with correlation_id" do
+  it "fires :build_completed exactly once per output entry with correlation_id" do
     captured = []
-    store.registry.register(:built, :capture) do |key:, correlation_id:, **|
+    store.registry.register(:build_completed, :capture) do |key:, correlation_id:, **|
       captured << { key: key, correlation_id: correlation_id }
     end
 
@@ -75,9 +75,9 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(captured.first[:correlation_id]).to eq("cid-test-123")
   end
 
-  it "fires :published with correlation_id for each publish_to target" do
+  it "fires :file_published with correlation_id for each publish_to target" do
     captured = []
-    store.registry.register(:published, :capture) do |key:, correlation_id:, target:, **|
+    store.registry.register(:file_published, :capture) do |key:, correlation_id:, target:, **|
       captured << { key: key, correlation_id: correlation_id, target: target }
     end
 

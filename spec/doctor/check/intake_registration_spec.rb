@@ -40,7 +40,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
         entries: []
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
-        Textus.on(:intake, :orphan_handler) { |store:, config:, args:| { _meta: {}, body: "" } }
+        Textus.on(:resolve_intake, :orphan_handler) { |store:, config:, args:| { _meta: {}, body: "" } }
       RUBY
 
       store = Textus::Store.new(textus)

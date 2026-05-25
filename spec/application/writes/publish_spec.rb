@@ -40,7 +40,7 @@ RSpec.describe Textus::Application::Writes::Publish do
 
       ctx = Textus::Application::Context.new(store: store, role: "human", correlation_id: "pub-1")
       events = []
-      store.bus.subscribe(:published, :capture_publish) do |key:, correlation_id:, **|
+      store.bus.subscribe(:file_published, :capture_publish) do |key:, correlation_id:, **|
         events << { key: key, correlation_id: correlation_id }
       end
 
@@ -52,7 +52,7 @@ RSpec.describe Textus::Application::Writes::Publish do
     end
   end
 
-  it "includes source and target in the :published event" do
+  it "includes source and target in the :file_published event" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       store = build_store(textus)
@@ -63,7 +63,7 @@ RSpec.describe Textus::Application::Writes::Publish do
 
       ctx = Textus::Application::Context.new(store: store, role: "human", correlation_id: "pub-2")
       events = []
-      store.bus.subscribe(:published, :capture_paths) do |source:, target:, **|
+      store.bus.subscribe(:file_published, :capture_paths) do |source:, target:, **|
         events << { source: source, target: target }
       end
 

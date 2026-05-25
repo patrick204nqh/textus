@@ -54,13 +54,13 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.on(:intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.on(:intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.on(:intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.on(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
-      Textus.on(:reduce, :alpha)           { |store:, rows:, config:| rows }
-      Textus.on(:built, :stamp_log)        { |store:, key:, envelope:, sources:| }
-      Textus.on(:check, :smoke)            { |store:| [] }
+      Textus.on(:resolve_intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:resolve_intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:resolve_intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:transform_rows, :rank_by_recency) { |store:, rows:, config:| rows }
+      Textus.on(:transform_rows, :alpha)           { |store:, rows:, config:| rows }
+      Textus.on(:build_completed, :stamp_log)        { |store:, key:, envelope:, sources:| }
+      Textus.on(:validate, :smoke)            { |store:| [] }
     RUBY
   end
 
@@ -122,12 +122,12 @@ RSpec.describe Textus::Intro do
   it "lists hooks grouped by event, sorted alphabetically" do
     env = described_class.run(store)
     ext = env["hooks"]
-    expect(ext["reduce"]).to eq(%w[alpha rank_by_recency])
+    expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
     # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["intake"]).to include("apple", "demo-action", "zebra")
-    expect(ext["intake"]).to eq(ext["intake"].sort)
-    expect(ext["built"]).to eq(["stamp_log"])
-    expect(ext["check"]).to include("smoke")
+    expect(ext["resolve_intake"]).to include("apple", "demo-action", "zebra")
+    expect(ext["resolve_intake"]).to eq(ext["resolve_intake"].sort)
+    expect(ext["build_completed"]).to eq(["stamp_log"])
+    expect(ext["validate"]).to include("smoke")
   end
 
   it "includes verbatim write_flows and cli_verbs" do

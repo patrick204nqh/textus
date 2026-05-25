@@ -26,14 +26,14 @@ RSpec.describe Textus::Application::Writes::Delete do
 
       ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "del-1")
       events = []
-      store.bus.subscribe(:deleted, :capture) do |key:, correlation_id:, **|
-        events << [:deleted, key, correlation_id]
+      store.bus.subscribe(:entry_deleted, :capture) do |key:, correlation_id:, **|
+        events << [:entry_deleted, key, correlation_id]
       end
 
       described_class.new(ctx: ctx, bus: store.bus).call("working.foo")
 
       expect(File.exist?(File.join(textus, "zones", "working", "foo.md"))).to be(false)
-      expect(events).to include([:deleted, "working.foo", "del-1"])
+      expect(events).to include([:entry_deleted, "working.foo", "del-1"])
     end
   end
 

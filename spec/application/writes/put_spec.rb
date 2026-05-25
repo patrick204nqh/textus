@@ -47,18 +47,18 @@ RSpec.describe Textus::Application::Writes::Put do
     end
   end
 
-  it "fires :put event with key, envelope, and correlation_id" do
+  it "fires :entry_put event with key, envelope, and correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "corr-1")
       events = []
-      store.bus.subscribe(:put, :capture) do |key:, correlation_id:, **|
-        events << [:put, key, correlation_id]
+      store.bus.subscribe(:entry_put, :capture) do |key:, correlation_id:, **|
+        events << [:entry_put, key, correlation_id]
       end
 
       described_class.new(ctx: ctx, bus: store.bus).call("working.foo", meta: {}, body: "x")
 
-      expect(events).to include([:put, "working.foo", "corr-1"])
+      expect(events).to include([:entry_put, "working.foo", "corr-1"])
     end
   end
 end

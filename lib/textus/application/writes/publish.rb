@@ -13,7 +13,7 @@ module Textus
             target: target,
             store_root: @ctx.store.root,
           )
-          @bus.publish(:published,
+          @bus.publish(:file_published,
                        key: key,
                        source: source,
                        target: target,

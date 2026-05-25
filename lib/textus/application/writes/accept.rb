@@ -32,7 +32,7 @@ module Textus
 
           Composition.writes_delete(@ctx).call(pending_key)
 
-          @bus.publish(:accepted,
+          @bus.publish(:proposal_accepted,
                        store: @ctx.with_role(@ctx.role),
                        key: pending_key,
                        target_key: target,

@@ -53,8 +53,8 @@ module Textus
     def run_registered_checks(store)
       out = []
       view = Application::Context.new(store: store, role: "human")
-      store.registry.rpc_names(:check).each do |name|
-        callable = store.registry.rpc_callable(:check, name)
+      store.registry.rpc_names(:validate).each do |name|
+        callable = store.registry.rpc_callable(:validate, name)
         begin
           result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: view) }
           if result.is_a?(Array)
@@ -71,7 +71,7 @@ module Textus
         rescue StandardError => e
           out << fail_issue(name, code: "doctor_check.failed",
                                   message: "#{e.class}: #{e.message}",
-                                  fix: "fix the :check hook in .textus/hooks/")
+                                  fix: "fix the :validate hook in .textus/hooks/")
         end
       end
       out

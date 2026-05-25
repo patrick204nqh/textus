@@ -49,7 +49,7 @@ RSpec.describe Textus::Projection do
   end
 
   it "applies a reducer before sort/limit" do
-    store.registry.register(:reduce, :score) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :score) do |store:, rows:, config:|
       _ = config
       _ = store
       rows.map { |r| r.merge("score" => r["name"].length) }
@@ -65,7 +65,7 @@ RSpec.describe Textus::Projection do
   end
 
   it "raises UsageError when a reducer exceeds 2s timeout" do
-    store.registry.register(:reduce, :slow) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :slow) do |store:, rows:, config:|
       _ = rows
       _ = config
       _ = store
@@ -75,6 +75,6 @@ RSpec.describe Textus::Projection do
                                     "select" => "working.people",
                                     "transform" => "slow",
                                   })
-    expect { proj.run }.to raise_error(Textus::UsageError, /reduce 'slow' exceeded 2s timeout/)
+    expect { proj.run }.to raise_error(Textus::UsageError, /transform_rows 'slow' exceeded 2s timeout/)
   end
 end

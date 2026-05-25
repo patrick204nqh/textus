@@ -28,16 +28,16 @@ module Textus
       ## DSL
 
       ```ruby
-      Textus.on(:intake, :my_source) do |config:, args:, **|
+      Textus.on(:resolve_intake, :my_source) do |config:, args:, **|
         { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
       end
 
-      Textus.on(:reduce, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
-      Textus.on(:check,  :my_check)  { |store:, **| { ok: true } }
-      Textus.on(:put,    :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
+      Textus.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
+      Textus.on(:validate,       :my_check)  { |store:, **| [] }
+      Textus.on(:entry_put,      :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
 
       # Run a side-effect every time textus writes a file to your repo:
-      Textus.on(:published, :notify) do |key:, target:, **|
+      Textus.on(:file_published, :notify) do |key:, target:, **|
         warn "wrote \#{target} (from \#{key})"
       end
       ```
@@ -61,10 +61,11 @@ module Textus
             on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
       ```
 
-      Events: :intake, :reduce, :check (rpc — return value used)
-              :put, :deleted, :refreshed, :built, :accepted, :published,
-              :mv, :reject, :loaded,
-              :refresh_began, :refresh_failed, :refresh_detached (pub-sub — return discarded)
+      Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
+              :entry_put, :entry_deleted, :entry_refreshed, :entry_renamed,
+              :build_completed, :proposal_accepted, :proposal_rejected,
+              :file_published, :store_loaded,
+              :refresh_started, :refresh_failed, :refresh_backgrounded (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

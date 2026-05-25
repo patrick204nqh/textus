@@ -39,13 +39,13 @@ module Textus
 
     def apply_reducer(rows)
       name = @spec["transform"] or return rows
-      callable = @store.registry.rpc_callable(:reduce, name)
+      callable = @store.registry.rpc_callable(:transform_rows, name)
       view = Application::Context.new(store: @store, role: "human")
       Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
         callable.call(store: view, rows: rows, config: @spec["transform_config"] || {})
       end
     rescue Timeout::Error
-      raise UsageError.new("reduce '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
+      raise UsageError.new("transform_rows '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
     end
 
     def collect_keys

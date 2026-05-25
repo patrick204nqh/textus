@@ -112,7 +112,7 @@ module Textus
         )
         new_envelope = @reader.get(plan.new_key)
         @store.fire_event(
-          :mv,
+          :entry_renamed,
           key: plan.new_key, from_key: plan.old_key, to_key: plan.new_key,
           envelope: new_envelope
         )

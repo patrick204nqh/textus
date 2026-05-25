@@ -25,7 +25,7 @@ module Textus
           )
 
           unless suppress_events
-            @bus.publish(:put,
+            @bus.publish(:entry_put,
                          store: @ctx.with_role(@ctx.role),
                          key: key,
                          envelope: envelope,

@@ -6,33 +6,33 @@ RSpec.describe "Built-in hooks" do
 
   before { Textus.with_registry(reg) { Textus::Hooks::Builtin.register_all } }
 
-  it "registers json, csv, markdown-links, ical-events, rss as :intake hooks" do
-    expect(reg.rpc_names(:intake)).to contain_exactly(:json, :csv, :"markdown-links", :"ical-events", :rss)
+  it "registers json, csv, markdown-links, ical-events, rss as :resolve_intake hooks" do
+    expect(reg.rpc_names(:resolve_intake)).to contain_exactly(:json, :csv, :"markdown-links", :"ical-events", :rss)
   end
 
-  it "json intake hook parses JSON bytes from config['bytes']" do
-    out = reg.rpc_callable(:intake, :json).call(store: nil, config: { "bytes" => '{"a":1}' }, args: {})
+  it "json resolve_intake hook parses JSON bytes from config['bytes']" do
+    out = reg.rpc_callable(:resolve_intake, :json).call(store: nil, config: { "bytes" => '{"a":1}' }, args: {})
     expect(out[:_meta]).to eq({})
     expect(YAML.safe_load(out[:body])).to eq({ "a" => 1 })
   end
 
-  it "csv intake hook parses CSV into array-of-hashes" do
-    out = reg.rpc_callable(:intake, :csv).call(store: nil, config: { "bytes" => "name,age\nalice,30\nbob,40\n" }, args: {})
+  it "csv resolve_intake hook parses CSV into array-of-hashes" do
+    out = reg.rpc_callable(:resolve_intake, :csv).call(store: nil, config: { "bytes" => "name,age\nalice,30\nbob,40\n" }, args: {})
     expect(YAML.safe_load(out[:body])).to eq(
       [{ "name" => "alice", "age" => "30" }, { "name" => "bob", "age" => "40" }],
     )
   end
 
-  it "markdown-links intake hook extracts text/href pairs" do
+  it "markdown-links resolve_intake hook extracts text/href pairs" do
     md = "see [openai](https://openai.com) and [google](https://google.com)"
-    out = reg.rpc_callable(:intake, :"markdown-links").call(store: nil, config: { "bytes" => md }, args: {})
+    out = reg.rpc_callable(:resolve_intake, :"markdown-links").call(store: nil, config: { "bytes" => md }, args: {})
     expect(YAML.safe_load(out[:body])).to contain_exactly(
       { "text" => "openai", "href" => "https://openai.com" },
       { "text" => "google", "href" => "https://google.com" },
     )
   end
 
-  it "ical-events intake hook extracts VEVENT blocks" do
+  it "ical-events resolve_intake hook extracts VEVENT blocks" do
     ics = <<~ICS
       BEGIN:VEVENT
       SUMMARY:Hello
@@ -43,7 +43,7 @@ RSpec.describe "Built-in hooks" do
       LOCATION:Earth
       END:VEVENT
     ICS
-    out = reg.rpc_callable(:intake, :"ical-events").call(store: nil, config: { "bytes" => ics }, args: {})
+    out = reg.rpc_callable(:resolve_intake, :"ical-events").call(store: nil, config: { "bytes" => ics }, args: {})
     events = YAML.safe_load(out[:body])
     expect(events).to eq([
                            { "summary" => "Hello", "dtstart" => "20240101T000000Z" },
@@ -51,14 +51,14 @@ RSpec.describe "Built-in hooks" do
                          ])
   end
 
-  it "rss intake hook extracts item title/link/pubDate" do
+  it "rss resolve_intake hook extracts item title/link/pubDate" do
     rss = <<~XML
       <rss><channel>
         <item><title>One</title><link>https://a</link><pubDate>now</pubDate></item>
         <item><title>Two</title><link>https://b</link><pubDate>later</pubDate></item>
       </channel></rss>
     XML
-    out = reg.rpc_callable(:intake, :rss).call(store: nil, config: { "bytes" => rss }, args: {})
+    out = reg.rpc_callable(:resolve_intake, :rss).call(store: nil, config: { "bytes" => rss }, args: {})
     expect(YAML.safe_load(out[:body])).to eq([
                                                { "title" => "One", "link" => "https://a", "pubDate" => "now" },
                                                { "title" => "Two", "link" => "https://b", "pubDate" => "later" },

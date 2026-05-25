@@ -21,7 +21,7 @@ RSpec.describe Textus::Refresh do
           zone: intake
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.on(:intake, :stub_fetch) do |config:, store:, args:|
+      Textus.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
         {
           _meta: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
           body: config["word"]
@@ -46,7 +46,7 @@ RSpec.describe Textus::Refresh do
 
   it "wraps intake in a timeout" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.on(:intake, :stub_fetch) { |config:, store:, args:| sleep 100 }
+      Textus.on(:resolve_intake, :stub_fetch) { |config:, store:, args:| sleep 100 }
     RUBY
     store = Textus::Store.new(root)
     # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
@@ -68,7 +68,7 @@ RSpec.describe Textus::Refresh do
             intake: { handler: stub_fetch, config: {} }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.on(:intake, :stub_fetch) do |config:, store:, args:|
+        Textus.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
           { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
         end
       RUBY
@@ -93,7 +93,7 @@ RSpec.describe Textus::Refresh do
             intake: { handler: stub_fetch, config: { msg: hello } }
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-        Textus.on(:intake, :stub_fetch) do |config:, store:, args:|
+        Textus.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
           { body: "raw bytes\\nline 2\\n" }
         end
       RUBY
@@ -105,7 +105,7 @@ RSpec.describe Textus::Refresh do
 
   it "wraps intake exceptions with the handler name" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
-      Textus.on(:intake, :stub_fetch) { |config:, store:, args:| raise "network down" }
+      Textus.on(:resolve_intake, :stub_fetch) { |config:, store:, args:| raise "network down" }
     RUBY
     store = Textus::Store.new(root)
     expect { described_class.call(store, "intake.repos", as: "runner") }

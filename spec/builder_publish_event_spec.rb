@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe "Builder fires :publish per file" do
+RSpec.describe "Builder fires :file_published per file" do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
@@ -14,7 +14,7 @@ RSpec.describe "Builder fires :publish per file" do
     FileUtils.mkdir_p(File.join(root, "templates"))
   end
 
-  describe "publish_to: fires :publish once per target path" do
+  describe "publish_to: fires :file_published once per target path" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -40,9 +40,9 @@ RSpec.describe "Builder fires :publish per file" do
                  "---\nkey: working.note\n---\nbody\n")
     end
 
-    it "fires :publish once per publish_to target with correct key/source/target" do
+    it "fires :file_published once per publish_to target with correct key/source/target" do
       captured = []
-      store.registry.register(:published, :capture) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:file_published, :capture) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
@@ -61,9 +61,9 @@ RSpec.describe "Builder fires :publish per file" do
       expect(sources).to all(end_with("output/note.md"))
     end
 
-    it "fires :build exactly once per output entry regardless of publish_to count" do
+    it "fires :build_completed exactly once per output entry regardless of publish_to count" do
       build_events = []
-      store.registry.register(:built, :capture_build) do |key:, envelope:, sources:, **|
+      store.registry.register(:build_completed, :capture_build) do |key:, envelope:, sources:, **|
         _ = envelope
         build_events << { key: key, sources: sources }
       end
@@ -76,7 +76,7 @@ RSpec.describe "Builder fires :publish per file" do
     end
   end
 
-  describe "publish_each: fires :publish once per leaf" do
+  describe "publish_each: fires :file_published once per leaf" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -97,9 +97,9 @@ RSpec.describe "Builder fires :publish per file" do
                  "---\nname: beta\n---\nbody\n")
     end
 
-    it "fires :publish once per leaf with the correct leaf key and target" do
+    it "fires :file_published once per leaf with the correct leaf key and target" do
       captured = []
-      store.registry.register(:published, :capture_leaf) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:file_published, :capture_leaf) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end

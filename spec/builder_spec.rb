@@ -84,7 +84,7 @@ RSpec.describe Textus::Application::Writes::Build do
 
     # Reducer used by the YAML pipeline — returns a Hash so the structured-format
     # path uses it as the payload base.
-    store.registry.register(:reduce, :envelope) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :envelope) do |store:, rows:, config:|
       _ = config
       _ = store
       { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }

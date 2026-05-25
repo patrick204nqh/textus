@@ -5,16 +5,16 @@ RSpec.describe "Textus.on DSL" do
 
   it "registers RPC handlers via Textus.on" do
     Textus.with_registry(registry) do
-      Textus.on(:intake, :my_handler) { |**| { _meta: {}, body: "ok" } }
+      Textus.on(:resolve_intake, :my_handler) { |**| { _meta: {}, body: "ok" } }
     end
-    expect(registry.rpc_names(:intake)).to include(:my_handler)
+    expect(registry.rpc_names(:resolve_intake)).to include(:my_handler)
   end
 
   it "registers pub-sub listeners via Textus.on with keys:" do
     Textus.with_registry(registry) do
-      Textus.on(:put, :my_listener, keys: ["working.*"]) { |**| nil }
+      Textus.on(:entry_put, :my_listener, keys: ["working.*"]) { |**| nil }
     end
-    expect(registry.pubsub_handlers(:put).map { |h| h[:name] }).to include(:my_listener)
+    expect(registry.pubsub_handlers(:entry_put).map { |h| h[:name] }).to include(:my_listener)
   end
 
   it "no longer responds to Textus.intake (sugar removed)" do

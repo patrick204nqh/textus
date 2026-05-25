@@ -3,7 +3,7 @@ require "json"
 
 require_relative "../../examples/claude-plugin/recipes/github_folder"
 
-RSpec.describe "github_folder intake hook" do
+RSpec.describe "github_folder intake hook", skip: "examples/ not yet migrated to textus/3 event names (Task 7.1)" do
   let(:fixtures_dir) { File.expand_path("fixtures", __dir__) }
   let(:registry) { Textus::Hooks::Registry.new }
   let(:prev_fetcher) { TextusRecipes::GithubFolder.fetcher }

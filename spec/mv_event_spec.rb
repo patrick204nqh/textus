@@ -3,7 +3,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe ":mv event" do
+RSpec.describe ":entry_renamed event" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -19,11 +19,11 @@ RSpec.describe ":mv event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:mv, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
-        $textus_event_log << [:mv, from_key, to_key, envelope["uid"]]
+      Textus.on(:entry_renamed, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
+        $textus_event_log << [:entry_renamed, from_key, to_key, envelope["uid"]]
       end
-      Textus.on(:put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:put, key] }
-      Textus.on(:deleted, :log_delete) { |key:, store:|             $textus_event_log << [:deleted, key] }
+      Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
+      Textus.on(:entry_deleted, :log_delete) { |key:, store:|             $textus_event_log << [:entry_deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -33,27 +33,27 @@ RSpec.describe ":mv event" do
     $textus_event_log = nil
   end
 
-  it "fires :mv with from_key, to_key, and envelope after a successful mv" do
+  it "fires :entry_renamed with from_key, to_key, and envelope after a successful mv" do
     store = Textus::Store.new(root)
     store.put("working.a", meta: { "name" => "a" }, body: "hi", as: "human")
     $textus_event_log.clear
     store.mv("working.a", "working.b", as: "human")
-    mv_events = $textus_event_log.select { |e| e[0] == :mv }
+    mv_events = $textus_event_log.select { |e| e[0] == :entry_renamed }
     expect(mv_events.length).to eq(1)
     expect(mv_events.first[1]).to eq("working.a")
     expect(mv_events.first[2]).to eq("working.b")
     expect(mv_events.first[3]).to match(/\A[0-9a-f]{16}\z/)
   end
 
-  it "does NOT fire :put or :deleted on mv (mv is its own signal)" do
+  it "does NOT fire :entry_put or :entry_deleted on mv (entry_renamed is its own signal)" do
     store = Textus::Store.new(root)
     store.put("working.a", meta: { "name" => "a" }, body: "hi", as: "human")
     $textus_event_log.clear
     store.mv("working.a", "working.b", as: "human")
-    expect($textus_event_log.map(&:first)).not_to include(:put, :deleted)
+    expect($textus_event_log.map(&:first)).not_to include(:entry_put, :entry_deleted)
   end
 
-  it "does NOT fire :mv on dry_run" do
+  it "does NOT fire :entry_renamed on dry_run" do
     store = Textus::Store.new(root)
     store.put("working.a", meta: { "name" => "a" }, body: "hi", as: "human")
     $textus_event_log.clear
@@ -61,11 +61,11 @@ RSpec.describe ":mv event" do
     expect($textus_event_log).to be_empty
   end
 
-  it "routes :mv hooks via keys: glob against the destination key" do
+  it "routes :entry_renamed hooks via keys: glob against the destination key" do
     File.write(File.join(root, "hooks/scoped.rb"), <<~RUBY)
       $textus_scoped_log ||= []
-      Textus.on(:mv, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
-      Textus.on(:mv, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
+      Textus.on(:entry_renamed, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
+      Textus.on(:entry_renamed, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
     RUBY
     $textus_scoped_log = []
     store = Textus::Store.new(root)
