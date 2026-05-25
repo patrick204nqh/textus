@@ -11,7 +11,7 @@ RSpec.describe "textus action verb" do
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, agent, runner] }
-        - { name: inbox,    writable_by: [runner] }
+        - { name: intake,   writable_by: [runner] }
         - { name: review,   writable_by: [agent, human] }
         - { name: output,   writable_by: [builder] }
       entries:

@@ -2,14 +2,14 @@ require "fileutils"
 
 module Textus
   module Init
-    ZONES = %w[identity working inbox review output].freeze
+    ZONES = %w[identity working intake review output].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }
-        - { name: inbox,    writable_by: [script] }
+        - { name: intake,   writable_by: [script] }
         - { name: review,   writable_by: [ai, human] }
         - { name: output,   writable_by: [build] }
       entries:
@@ -48,14 +48,14 @@ module Textus
 
       ```yaml
       entries:
-        - key: inbox.foo
-          path: inbox/foo.md
-          zone: inbox
+        - key: intake.foo
+          path: intake/foo.md
+          zone: intake
           intake:
             handler: my_source
 
       policies:
-        - match: inbox.foo
+        - match: intake.foo
           refresh:
             ttl: 10m
             on_stale: timed_sync   # warn | sync | timed_sync (default: warn)

@@ -10,7 +10,7 @@ RSpec.describe Textus::Intro do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
@@ -22,7 +22,7 @@ RSpec.describe Textus::Intro do
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }
-        - { name: inbox,    writable_by: [script] }
+        - { name: intake,   writable_by: [script] }
         - { name: review,   writable_by: [ai] }
         - { name: output,   writable_by: [build] }
       entries:
@@ -32,9 +32,9 @@ RSpec.describe Textus::Intro do
           zone: working
           schema: null
           nested: true
-        - key: inbox.feed
-          path: inbox/feed.md
-          zone: inbox
+        - key: intake.feed
+          path: intake/feed.md
+          zone: intake
           owner: script:local
           intake:
             handler: demo-action
@@ -76,7 +76,7 @@ RSpec.describe Textus::Intro do
   it "lists zones with writers and purposes for known zones" do
     env = described_class.run(store)
     names = env["zones"].map { |z| z["name"] }
-    expect(names).to contain_exactly("identity", "working", "inbox", "review", "output")
+    expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
     identity = env["zones"].find { |z| z["name"] == "identity" }
     expect(identity["writers"]).to eq(["human"])
     expect(identity["purpose"]).to include("human-only")
@@ -108,8 +108,8 @@ RSpec.describe Textus::Intro do
     expect(by_key["identity.self"]["derived"]).to be false
     expect(by_key["identity.self"]["intake"]).to be false
 
-    expect(by_key["inbox.feed"]["intake"]).to be true
-    expect(by_key["inbox.feed"]["derived"]).to be false
+    expect(by_key["intake.feed"]["intake"]).to be true
+    expect(by_key["intake.feed"]["derived"]).to be false
 
     expect(by_key["output.report"]["derived"]).to be true
     expect(by_key["output.report"]["publish_to"]).to eq(["REPORT.md"])

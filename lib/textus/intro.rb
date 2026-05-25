@@ -13,7 +13,7 @@ module Textus
     ZONE_PURPOSES = {
       "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
-      "inbox" => "declared external inputs; script-refreshed via actions",
+      "intake" => "declared external inputs; script-refreshed via actions",
       "review" => "AI proposals awaiting human accept",
       "output" => "build-computed outputs; never hand-edited",
     }.freeze
@@ -22,7 +22,7 @@ module Textus
       "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
       "ai" => "propose changes by writing 'review.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
               "a human runs 'textus accept' to apply",
-      "script" => "refresh inbox entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
+      "script" => "refresh intake entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
       "build" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
@@ -40,7 +40,7 @@ module Textus
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key migrate'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run an action for an inbox entry" },
+      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },

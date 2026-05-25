@@ -16,7 +16,7 @@ RSpec.describe "textus/3 conformance" do
     FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/output/catalogs"))
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/inbox/calendar"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -24,22 +24,22 @@ RSpec.describe "textus/3 conformance" do
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, agent, runner] }
         - { name: output,   writable_by: [build] }
-        - { name: inbox,    writable_by: [runner] }
+        - { name: intake,   writable_by: [runner] }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true }
         - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
-        - key: inbox.calendar.events
-          path: inbox/calendar/events
-          zone: inbox
+        - key: intake.calendar.events
+          path: intake/calendar/events
+          zone: intake
           schema: null
           owner: runner:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
       policies:
-        - match: inbox.calendar.events
+        - match: intake.calendar.events
           refresh:
             ttl: 1s
             on_stale: warn
@@ -159,7 +159,7 @@ RSpec.describe "textus/3 conformance" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "inbox.calendar.events", "--fetch=ical-events",
+        ["put", "intake.calendar.events", "--fetch=ical-events",
          "--stdin", "--as=runner", "--format=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
@@ -171,40 +171,40 @@ RSpec.describe "textus/3 conformance" do
     end
   end
 
-  describe "inbox staleness via TTL" do
-    it "flags inbox entries that were never refreshed" do
-      rows = store.stale(zone: "inbox")
+  describe "intake staleness via TTL" do
+    it "flags intake entries that were never refreshed" do
+      rows = store.stale(zone: "intake")
       expect(rows.length).to eq(1)
-      expect(rows.first["key"]).to eq("inbox.calendar.events")
+      expect(rows.first["key"]).to eq("intake.calendar.events")
       expect(rows.first["reason"]).to match(/never refreshed/)
     end
 
-    it "flags inbox entries past their TTL" do
-      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
+    it "flags intake entries past their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
       stale_time = (Time.now - 10).utc.iso8601
-      File.write(inbox_path, <<~MD)
+      File.write(intake_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{stale_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "inbox")
+      rows = store.stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
 
-    it "does not flag inbox entries within their TTL" do
-      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
+    it "does not flag intake entries within their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
-      File.write(inbox_path, <<~MD)
+      File.write(intake_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{fresh_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "inbox")
+      rows = store.stale(zone: "intake")
       expect(rows).to be_empty
     end
   end
