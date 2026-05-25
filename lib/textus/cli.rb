@@ -8,6 +8,7 @@ module Textus
     VERBS = {
       "accept" => Verb::Accept,
       "audit" => Verb::Audit,
+      "audit-rewrite-legacy-roles" => Verb::AuditRewriteLegacyRoles,
       "blame" => Verb::Blame,
       "reject" => Verb::Reject,
       "build" => Verb::Build,
@@ -100,6 +101,9 @@ module Textus
           textus rule {list,explain}
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
+
+        One-shot (0.12.0 only; removed in 0.13.0):
+          textus audit-rewrite-legacy-roles
       HELP
     end
   end
