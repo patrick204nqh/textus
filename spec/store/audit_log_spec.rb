@@ -94,4 +94,23 @@ RSpec.describe Textus::Store::AuditLog do
       expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "invalid_json"))
     end
   end
+
+  describe "textus/3 role canonicalization" do
+    it "writes canonical role names verbatim for new rows" do
+      log.append(role: "agent", verb: "put", key: "working.x",
+                 etag_before: nil, etag_after: "sha256:0")
+      row = JSON.parse(File.read(File.join(root, "audit.log")).lines.last)
+      expect(row["role"]).to eq("agent")
+    end
+
+    it "reads legacy ai/script/build rows verbatim without rewriting" do
+      File.write(
+        File.join(root, "audit.log"),
+        JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
+                      "verb" => "put", "key" => "working.x",
+                      "etag_before" => nil, "etag_after" => "sha256:0") + "\n",
+      )
+      expect(log.last_writer_for("working.x")).to eq("ai")
+    end
+  end
 end
