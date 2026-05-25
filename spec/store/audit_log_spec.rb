@@ -103,14 +103,26 @@ RSpec.describe Textus::Store::AuditLog do
       expect(row["role"]).to eq("agent")
     end
 
-    it "reads legacy ai/script/build rows verbatim without rewriting" do
+    it "raises LegacyAuditRoles on read when an ai/script/build row is encountered" do
       File.write(
         File.join(root, "audit.log"),
         JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
                       "verb" => "put", "key" => "working.x",
                       "etag_before" => nil, "etag_after" => "sha256:0") + "\n",
       )
-      expect(log.last_writer_for("working.x")).to eq("ai")
+      log = described_class.new(root)
+      expect { log.last_writer_for("working.x") }
+        .to raise_error(Textus::LegacyAuditRoles, /legacy role "ai"/)
+    end
+
+    it "raises pointing at the line number when legacy role is mid-file" do
+      rows = [
+        { "role" => "human",  "verb" => "put", "key" => "k", "ts" => "x", "etag_before" => nil, "etag_after" => "a" },
+        { "role" => "build",  "verb" => "put", "key" => "k", "ts" => "x", "etag_before" => nil, "etag_after" => "b" },
+      ]
+      File.write(File.join(root, "audit.log"), rows.map { |r| JSON.generate(r) }.join("\n") + "\n")
+      expect { described_class.new(root).last_writer_for("k") }
+        .to raise_error(Textus::LegacyAuditRoles, /line 2/)
     end
   end
 end
