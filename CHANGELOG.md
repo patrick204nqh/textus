@@ -10,6 +10,17 @@ is additive within a major; a new major would change the wire string.
 
 ## [Unreleased]
 
+## 0.10.5 — tech-debt cleanup + docs polish (2026-05-25)
+
+Patch release. Pure internal refactor — no `lib/` public API changes, no protocol bump, no manifest schema change. Targets the three highest-complexity hotspots from a tech-debt audit and removes 7 of the 19 `rubocop:disable` lines they previously carried.
+
+### Internal
+
+- **`Store::Mover#call` refactor.** Replaces an 81-line method (suppressed `Metrics/AbcSize, Metrics/MethodLength`) with an 8-line orchestrator sequenced over four named private phases — `prepare_plan`, `ensure_uid!`, `perform_move`, `record_move` — coordinated through a `MovePlan` value object. The pre-read envelope is threaded separately so `MovePlan` describes only the planned operation.
+- **`Store::Staleness#call` split.** Replaces a 70-line dual-loop method (the most aggressive suppression in the gem — `AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity, BlockLength`) with a composer + two single-purpose checks (`GeneratorCheck`, `IntakeCheck`) and a private filter method on the composer. Each new unit fits default rubocop thresholds.
+- **`Store::Writer` payload + ctx grouping.** Collapses `write_envelope_to_disk`'s 8 keyword args to 5 by introducing `Store::Writer::Payload = Data.define(:meta, :body, :content)` and reusing `Application::Context` for `role` + `correlation_id`. Applies the same `ctx:` pattern to the sibling `delete_envelope_from_disk`. The class-wide `Metrics/ParameterLists` disable is narrowed to a method-level disable on the `put` back-compat shim (which mirrors the user-facing `Store#put` 7-kwarg signature and cannot be changed).
+- **Net suppression change:** 19 `rubocop:disable` lines → 17; 7 metric-cop suppressions removed; one `ParameterLists` disable narrowed in scope. Full suite (484 examples) unchanged.
+
 ### Documentation
 
 - **SPEC.md §5.2.1 added.** Documents the `generator:` field — the externally-generated-derived-entry shape (build runner produces the file; textus tracks `sources:` for staleness via `_meta.generated.at`). The field was always parsed and tested but had no spec coverage. Clarifies that textus never executes `command:` — consistent with §2 "Not an executor."
