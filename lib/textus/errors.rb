@@ -121,11 +121,12 @@ module Textus
   end
 
   class InvalidRole < Error
-    def initialize(r)
+    def initialize(r, message: nil)
       super(
-        "invalid_role", "role '#{r}' is not declared in any zone",
+        "invalid_role",
+        message || "role '#{r}' is not declared in any zone",
         details: { "role" => r },
-        hint: "valid roles are declared in .textus/manifest.yaml under zones[].writable_by",
+        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].writable_by",
       )
     end
   end
