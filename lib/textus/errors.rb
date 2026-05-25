@@ -61,6 +61,12 @@ module Textus
     end
   end
 
+  class BadManifest < Error
+    def initialize(m, hint: nil)
+      super("bad_manifest", m, hint: hint)
+    end
+  end
+
   class BadContent < Error
     def initialize(path, m)
       super(

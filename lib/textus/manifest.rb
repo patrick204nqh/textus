@@ -10,6 +10,8 @@ module Textus
       ".txt" => "text",
     }.freeze
 
+    LEGACY_ZONE_RENAMES = { "inbox" => "intake" }.freeze
+
     attr_reader :root, :entries, :raw
 
     def zones
@@ -28,6 +30,15 @@ module Textus
       )
     end
 
+    def self.parse(yaml_text, root: ".")
+      raw = YAML.safe_load(yaml_text, aliases: false)
+      unless raw["version"] == PROTOCOL
+        raise BadFrontmatter.new("<string>", "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}")
+      end
+
+      new(root, raw)
+    end
+
     def self.load(root)
       manifest_path = File.join(root, "manifest.yaml")
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
@@ -44,6 +55,15 @@ module Textus
       @root = root
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
+
+      Array(raw["zones"]).each do |z|
+        next unless (new_name = LEGACY_ZONE_RENAMES[z["name"]])
+
+        raise BadManifest.new(
+          "Zone '#{z["name"]}' was renamed to '#{new_name}' in textus/3. " \
+          "Run `textus migrate --to=textus/3`.",
+        )
+      end
 
       @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!
