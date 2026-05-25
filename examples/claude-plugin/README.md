@@ -99,7 +99,7 @@ four key segments below `working`) exercise textus's nested-tree resolver.
 
 ```bash
 ruby -I../../lib -rtextus -e \
-  'store = Textus::Store.discover(Dir.pwd); ctx = Textus::Composition.context(store, role: "build"); puts JSON.pretty_generate(Textus::Composition.writes_build(ctx).call)'
+  'store = Textus::Store.discover(Dir.pwd); ctx = Textus::Composition.context(store, role: "builder"); puts JSON.pretty_generate(Textus::Composition.writes_build(ctx).call)'
 ```
 
 Or with the CLI on PATH:

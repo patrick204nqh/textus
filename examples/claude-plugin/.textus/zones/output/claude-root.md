@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-23T07:13:30Z'
+  at: '2026-05-25T11:44:44Z'
   from:
   - identity.plugin
   - working.agents
@@ -13,16 +13,16 @@ start. It is the projection of textus over `.textus/zones/...`. Do not
 edit by hand — edit the source under `.textus/zones/working/...` and run
 `textus build`.
 
-→ Context store: `.textus/` (textus, protocol textus/2).
+→ Context store: `.textus/` (textus, protocol textus/3).
 → Run `textus intro` for the full catalog shape and write flows.
 → Write authority by zone:
     - **identity** (human ) — slow-changing identity; human-only writes
-    - **working** (human ai script ) — active project state; humans, AI, and scripts share this surface
-    - **inbox** (script ) — declared external inputs; script-refreshed via actions
-    - **review** (ai human ) — AI proposals awaiting human accept
-    - **output** (build ) — build-computed outputs; never hand-edited
+    - **working** (human agent runner ) — active project state; humans, AI, and scripts share this surface
+    - **intake** (runner ) — declared external inputs; script-refreshed via actions
+    - **review** (agent human ) — AI proposals awaiting human accept
+    - **output** (builder ) — build-computed outputs; never hand-edited
 
-→ AI proposals go to `review.*` with `--as=ai` carrying a `proposal:` block;
+→ AI proposals go to `review.*` with `--as=agent` carrying a `proposal:` block;
    a human runs `textus accept <key>` to apply.
 -->
 
@@ -52,4 +52,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-23T07:13:30Z._
+_Built at 2026-05-25T11:44:44Z._
