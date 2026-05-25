@@ -77,6 +77,17 @@ module Textus
     end
   end
 
+  class LegacyAuditRoles < Error
+    def initialize(role:, line:, path:)
+      super(
+        "legacy_audit_roles",
+        "audit log contains legacy role #{role.inspect} (textus/2 vocabulary) on line #{line} of #{path}",
+        details: { "role" => role, "line" => line, "path" => path },
+        hint: "Run `textus audit-rewrite-legacy-roles` to rewrite the log in place (one-shot; 0.12.0 only).",
+      )
+    end
+  end
+
   class SchemaViolation < Error
     def initialize(d)
       hint =
