@@ -207,7 +207,7 @@ published file), and audit-log corruption.
 
 ```bash
 textus doctor
-# → { "protocol": "textus/2", "ok": true, "issues": [],
+# → { "protocol": "textus/3", "ok": true, "issues": [],
 #     "summary": { "error": 0, "warning": 0, "info": 0 } }
 ```
 
