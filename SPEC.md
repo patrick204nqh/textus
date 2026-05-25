@@ -1,7 +1,7 @@
-# textus/2 — Specification
+# textus/3 — Specification
 
-**Status:** Draft v2.0
-**Protocol identifier:** `textus/2`
+**Status:** Draft v3.0
+**Protocol identifier:** `textus/3`
 **Reference implementation:** Ruby gem `textus`
 
 > *textus* — Latin for "the fabric a text is woven from," same root as *context* (from *con-texere*, "to weave together"). This spec defines a storage shape and wire protocol for that fabric.
@@ -10,20 +10,31 @@
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol that lets humans, scripts, and AI agents read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
+A storage convention and JSON wire protocol that lets humans, agents, and runners read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
 
-The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/build/...` `--format=json`) returns a versioned envelope any caller can parse without knowing Markdown.
+The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/build/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
 You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, gated, computed, and published. The contents are entirely yours.
 
-### 1.1 The five layers
+### 1.1 Vocabulary axes
+
+textus/3 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
+
+- **Actor** — who is interacting: `human`, `agent`, `runner`, `builder`.
+- **Place** — where data lives: zones such as `identity`, `working`, `intake`, `review`, `output`.
+- **Thing** — what is stored: entries, fields, keys.
+- **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `refresh`, `build`, …).
+- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_put`, `:build_completed`, …).
+- **Rule** — constraints declared in the top-level `rules:` array of the manifest.
+
+### 1.2 The five layers
 
 textus is organized as five composable layers. Each layer has a single responsibility; later layers build on earlier ones.
 
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (the `inbox` zone in the default scaffold; any zone writable by `script`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
+| L2 | **Sources** | Declared external inputs (the `intake` zone in the default scaffold; any zone writable by `runner`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external runners fetch and pipe results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
 | L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish_to:`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/sentinels/<target-rel-path>.textus-managed.json` records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -31,10 +42,10 @@ textus is organized as five composable layers. Each layer has a single responsib
 ## 2. Goals and non-goals
 
 **Goals**
-- Stable wire format (`textus/2`) any language can speak.
+- Stable wire format (`textus/3`) any language can speak.
 - Deterministic read/write of structured Markdown via a CLI returning JSON.
 - Schema-validated frontmatter using YAML schemas as data.
-- Role-based write gates (humans, scripts, AI, build runners get different permissions per zone).
+- Role-based write gates (humans, agents, runners, builders get different permissions per zone).
 - Optimistic concurrency via ETags.
 - Pure declarative compute: derived entries computed from projections + Mustache, no shell-out.
 - Publish derived entries to well-known paths as body-only plain files.
@@ -63,10 +74,10 @@ The root is `.textus/` at the project working directory. A typical tree:
   parsers/               # internal: project-local parser extensions
   zones/                 # ALL user content lives here
     identity/            # zone: identity (human-only)
-    working/             # zone: working (human, ai, script)
-    inbox/               # zone: inbox (script — declared external inputs)
-    review/              # zone: review (ai/human — proposals awaiting accept)
-    output/              # zone: output (build only — computed outputs)
+    working/             # zone: working (human, agent, runner)
+    intake/              # zone: intake (runner — declared external inputs)
+    review/              # zone: review (agent/human — proposals awaiting accept)
+    output/              # zone: output (builder only — computed outputs)
 ```
 
 Textus internals (`manifest.yaml`, `audit.log`, `role`, `schemas/`, `templates/`, `parsers/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
@@ -91,19 +102,19 @@ The manifest declares: (a) which zones exist and which roles may write to each, 
 
 ```yaml
 # .textus/manifest.yaml
-version: textus/2
+version: textus/3
 
 zones:
   - name: identity
-    writable_by: [human]
+    write_policy: [human]
   - name: working
-    writable_by: [human, ai, script]
-  - name: inbox
-    writable_by: [script]
+    write_policy: [human, agent, runner]
+  - name: intake
+    write_policy: [runner]
   - name: review
-    writable_by: [ai, human]
+    write_policy: [agent, human]
   - name: output
-    writable_by: [build]
+    write_policy: [builder]
 
 entries:
   - key: identity.self
@@ -124,8 +135,8 @@ entries:
     schema: null
     owner: textus:build
 
-policies:
-  - match: inbox.**
+rules:
+  - match: intake.**
     refresh: { ttl: 6h, on_stale: warn }
 ```
 
@@ -184,17 +195,17 @@ A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/work
 
 ## 5. Zones and role-based write gates
 
-Each zone declares which **roles** may write to it via `writable_by:` in the manifest. Reads are unrestricted across all zones; only writes are gated.
+Each zone declares which **roles** may write to it via `write_policy:` in the manifest. An optional `read_policy:` (default `[all]`) gates reads. Writes are gated; reads are unrestricted by default.
 
-| Zone | `writable_by` | Use case |
+| Zone | `write_policy` | Use case |
 |---|---|---|
 | `identity` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
-| `working` | `[human, ai, script]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
-| `inbox` | `[script]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or AI directly. |
-| `review` | `[ai, human]` | AI-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
-| `output` | `[build]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
+| `working` | `[human, agent, runner]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
+| `intake` | `[runner]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or agents directly. |
+| `review` | `[agent, human]` | Agent-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
+| `output` | `[builder]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
 
-A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `writable_by` list, the write returns `write_forbidden`.
+A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `write_policy` list, the write returns `write_forbidden`.
 
 ### 5.1 Role resolution
 
@@ -205,29 +216,44 @@ The effective role for any CLI invocation is resolved in this order; the first m
 3. `.textus/role` file (one line, role name) at the project root.
 4. Default: `human`.
 
-Recognized roles: `human`, `ai`, `script`, `build`. Unknown roles are rejected with `invalid_role`. The roles list is intentionally open-ended: a future minor revision MAY introduce additional roles without breaking the wire string.
+**Canonical actors (textus/3):**
+
+| Actor | Meaning |
+|---|---|
+| `human` | Interactive user at a terminal. |
+| `agent` | Long-running AI or LLM process. (was `ai` in textus/2 — rejected with hint: rename to `agent`) |
+| `runner` | Scheduled or one-shot automation script. (was `script` in textus/2 — rejected with hint: rename to `runner`) |
+| `builder` | Build/derive output (catalogs, indexes). (was `build` in textus/2 — rejected with hint: rename to `builder`) |
+
+The legacy names `ai`, `script`, and `build` are rejected with `invalid_role` and a one-line migration hint. Unknown non-legacy roles are also rejected with `invalid_role`.
 
 Every successful write records the resolved role and a wall-clock timestamp in `.textus/audit.log`, so reviewers can later distinguish a human edit from an agent edit even though both live in the same file.
 
 ### 5.2 Compute layer (derived entries)
 
-Derived entries live in a zone whose `writable_by:` list includes `build` — `output` in the default scaffold. They are not authored by hand; their body is produced by projecting over other entries. A derived entry's frontmatter declares a `projection` block:
+Derived entries live in a zone whose `write_policy:` list includes `builder` — `output` in the default scaffold. They are not authored by hand; their body is produced by projecting over other entries. A derived entry declares a `compute:` block with a `kind:` discriminator.
+
+#### 5.2.1 Projection compute (`kind: projection`)
 
 ```yaml
 - key: output.catalogs.people
   zone: output
-  projection:
+  compute:
+    kind: projection
     select: working.network.org    # prefix OR [list of prefixes]
     pluck:  [name, relationship, org]
     sort_by: name                  # optional
     limit: 1000                    # default 1000, max 1000
     format: yaml-list-in-md        # one of: list, hash, yaml-list-in-md, json, markdown-table
+    transform: rank_by_recency     # optional — names a :transform_rows hook
   template: people.mustache        # optional; if absent, format determines body
 ```
 
 `select` is either a single dotted-key prefix or a list of prefixes. Every entry whose key starts with one of those prefixes is included. `pluck` names the frontmatter fields to retain in the projection result. `sort_by` is optional; when absent, entries are sorted by key. `limit` is bounded at 1000 entries (hard cap); requests above 1000 are rejected.
 
 `format` controls the body serialization when no template is supplied. Permitted values: `list`, `hash`, `yaml-list-in-md`, `json`, `markdown-table`.
+
+`transform:` (optional) names a registered `:transform_rows` hook (see §5.10). The hook receives the projected rows array and may reorder, filter, or augment before serialization.
 
 If `template` is given, it names a Mustache template under `.textus/templates/`. textus implements a deliberately restricted Mustache subset:
 
@@ -238,16 +264,17 @@ If `template` is given, it names a Mustache template under `.textus/templates/`.
 
 No partials. No lambdas. No HTML escaping (output is raw text, intended for Markdown). Template recursion depth is bounded at 8; exceeding the limit is an error.
 
-### 5.2.1 Externally-generated derived entries (`generator:`)
+#### 5.2.2 External compute (`kind: external`)
 
-A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `generator:` instead of `projection:`. textus does **not** execute the command (consistent with §2); the external runner is responsible for writing the file. textus records `sources:` so `textus freshness` can compare source mtimes against the derived file's `_meta.generated.at` and report staleness.
+A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `compute: { kind: external, ... }`. textus does **not** execute the command (consistent with §2); the external runner is responsible for writing the file. textus records `sources:` so `textus freshness` can compare source mtimes against the derived file's `_meta.generated.at` and report staleness.
 
 ```yaml
 - key: output.catalogs.skills
   path: output/catalogs/skills.md
   zone: output
   owner: build:catalog-skills
-  generator:
+  compute:
+    kind: external
     command: "rake catalog:skills"   # informational; the runner invokes it
     sources:                          # dotted keys OR repo-relative paths
       - working.projects
@@ -258,7 +285,7 @@ A derived entry that is produced by a build tool *outside* textus — `rake`, `j
 
 **`command:`** is recorded in the staleness row's `generator` field but never executed. It exists so `textus freshness` output can carry a hint about how to refresh.
 
-**Freshness contract.** An entry with `generator:` is reported by `textus freshness` as `stale` when:
+**Freshness contract.** An entry with `compute: { kind: external }` is reported by `textus freshness` as `stale` when:
 - The derived file does not exist, OR
 - `_meta.generated.at` is missing or unparseable, OR
 - Any `sources:` element has been modified after `_meta.generated.at`.
@@ -272,9 +299,9 @@ generated:
   from: [working.projects, working.network]
 ```
 
-`generated.from` SHOULD match `generator.sources` — they're the same list, recorded twice so a diff proves what was actually consumed.
+`generated.from` SHOULD match `compute.sources` — they're the same list, recorded twice so a diff proves what was actually consumed.
 
-`generator:` and `projection:` are alternatives — typically only one is set per entry. Templates are not required when `generator:` is declared: the runner produces the bytes directly.
+`kind: external` and `kind: projection` are alternatives — exactly one per entry. Templates are not required for `kind: external`: the runner produces the bytes directly.
 
 ### 5.3 Publish layer (`publish_to:`)
 
@@ -294,25 +321,25 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 
 ### 5.4 Intake (declared, refreshed via registered intake handler)
 
-Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus refresh KEY --as=script` (or by `textus refresh-stale`). The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus refresh KEY --as=runner` (or by `textus refresh stale`). The declaration is data only:
 
 ```yaml
-- key: inbox.calendar.events
-  zone: inbox
+- key: intake.calendar.events
+  zone: intake
   intake:
     handler: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
 
-policies:
-  - match: inbox.calendar.**
+rules:
+  - match: intake.calendar.**
     refresh:
       ttl: 6h
       on_stale: warn            # warn | sync | timed_sync (default: warn)
       sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
 ```
 
-`handler` names a registered `:intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`policies:`** block matched by key glob (§5.11).
+`handler` names a registered `:resolve_intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`rules:`** block matched by key glob (§5.11).
 
 #### `on_stale:` semantics
 
@@ -322,7 +349,7 @@ policies:
 |---|---|
 | `warn` (default) | Return the entry immediately with `stale: true`, `stale_reason:` populated, and `refreshing: false`. No blocking. |
 | `sync` | Block the `get` call, run the intake handler in-process, write the refreshed result, then return the fresh envelope. The caller waits. |
-| `timed_sync` | Like `sync`, but with a `sync_budget_ms` deadline (default 500 ms). If the handler finishes within the budget the fresh envelope is returned. If it does not finish in time, return the stale envelope (with `stale: true`, `refreshing: true`) and let the refresh complete in the background. Fires `:refresh_detached` when the deadline is exceeded. |
+| `timed_sync` | Like `sync`, but with a `sync_budget_ms` deadline (default 500 ms). If the handler finishes within the budget the fresh envelope is returned. If it does not finish in time, return the stale envelope (with `stale: true`, `refreshing: true`) and let the refresh complete in the background. Fires `:refresh_backgrounded` when the deadline is exceeded. |
 
 > **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does.
 
@@ -336,14 +363,14 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=script` resolves the entry's `intake.handler`, invokes the registered `:intake` hook with `(config:, store:, args: {})`, and writes the result under role `script`.
-2. **External runner** — a cron job or agent harness reads `textus list --zone=inbox --stale --format=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=script --stdin`. The CLI verb `textus refresh-stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
+1. **In-process** — `textus refresh KEY --as=runner` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(config:, store:, args: {})`, and writes the result under role `runner`.
+2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=runner --stdin`. The CLI verb `textus refresh stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
-Both paths share the same role gate, audit-log entry, and `:refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+Both paths share the same role gate, audit-log entry, and `:entry_refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
-Proposal entries are full patches authored into a zone whose `writable_by:` list includes `ai` — `review` in the default scaffold — typically by agents or scripts. The entry's frontmatter describes the patch it proposes against another zone:
+Proposal entries are full patches authored into a zone whose `write_policy:` list includes `agent` — `review` in the default scaffold — typically by agents or runners. The entry's frontmatter describes the patch it proposes against another zone:
 
 ```yaml
 ---
@@ -360,7 +387,7 @@ Proposed body content.
 
 `proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content.
 
-`textus accept <proposal-key>` is **human-only**: the resolved role must be `human`. It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. Agents and scripts can propose but cannot accept.
+`textus accept <proposal-key>` is **human-only**: the resolved role must be `human`. It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. Agents and runners can propose but cannot accept.
 
 ### 5.6 Audit log
 
@@ -395,11 +422,11 @@ Schemas may declare per-field ownership and version history. The `fields:` and `
 ```yaml
 fields:
   full_name: { type: string, maintained_by: human }
-  embedding: { type: array,  maintained_by: ai }
-  updated_at: { type: time,  maintained_by: script }
+  embedding: { type: array,  maintained_by: agent }
+  updated_at: { type: time,  maintained_by: runner }
 ```
 
-`maintained_by` values are free-form strings. The recognized set is `human | ai | script | build | derived`. Unrecognized values do not affect role-authority validation; they pass through unchanged.
+`maintained_by` values are free-form strings. The recognized set is `human | agent | runner | builder | derived`. Unrecognized values do not affect role-authority validation; they pass through unchanged.
 
 **`evolution:` block** — top-level, declares the schema's history and migration intent:
 
@@ -415,61 +442,62 @@ evolution:
 
 **Defaults:** when `fields:` and `evolution:` are absent, `schema.maintained_by(field)` returns `nil` for every field and `schema.evolution` returns `{}`.
 
-**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over AI/script-managed data — humans curating canon over AI-written embeddings is a feature, not a bug. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
+**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over agent/runner-managed data — humans curating canon over agent-written embeddings is a feature, not a bug. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
-### 5.9 Reducers
+### 5.9 Row transforms
 
-Reducers are RPC hooks on the `:reduce` event. See §5.10.
+Row transforms are RPC hooks on the `:transform_rows` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single hook verb: `Textus.hook(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
+textus has a single hook registration verb: `Textus.on(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
 
-The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path. Files are loaded in alphabetical order by full path.
+The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path.
 
-#### Sugar surface
-
-Per-event methods are provided for ergonomics. They delegate to the same registry as `Textus.hook`.
+#### Registration DSL
 
 ```ruby
-Textus.intake(:my_source)        { |config:, args:, **|  … }
-Textus.reduce(:rank_by_recency)  { |rows:, **|            … }
-Textus.check(:storage_writable)  { |store:|               … }
-Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+# Canonical form — works for every event:
+Textus.on(:resolve_intake,  :my_source)              { |config:, args:, **|  … }
+Textus.on(:transform_rows,  :rank_by_recency)         { |rows:, **|            … }
+Textus.on(:validate,        :storage_writable)        { |store:|               … }
+Textus.on(:entry_put,       :audit, keys: ["working.*"]) { |key:, envelope:, **| … }
+Textus.on(:file_published,  :git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
 ```
 
-The primitive `Textus.hook(:event, :name, &blk)` remains supported and is the authoritative entry point; sugar methods are thin wrappers.
+`Textus.on` is the sole entry point; there is no separate `Textus.hook` primitive.
 
-| Event               | Mode    | Args                                                      | Return                | Failure       |
-|---------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| :intake             | rpc     | store:, config:, args:                                    | {_meta:, body:}       | aborts op     |
-| :reduce             | rpc     | store:, rows:, config:                                    | rows array            | aborts op     |
-| :check              | rpc     | store:                                                    | issues array          | aborts doctor |
-| :put                | pubsub  | store:, key:, envelope:                                   | (discarded)           | logged        |
-| :deleted            | pubsub  | store:, key:                                              | (discarded)           | logged        |
-| :refreshed          | pubsub  | store:, key:, envelope:, change:                          | (discarded)           | logged        |
-| :built              | pubsub  | store:, key:, envelope:, sources:                         | (discarded)           | logged        |
-| :accepted           | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| :published          | pubsub  | store:, key:, envelope:, source:, target:                 | (discarded)           | logged        |
-| :mv                 | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
-| :reject             | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| :loaded             | pubsub  | store:                                                    | (discarded)           | logged        |
-| :refresh_began    | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
-| :refresh_failed     | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
-| :refresh_detached   | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
+#### Event table
+
+| Event                   | Mode    | Args                                                      | Return                | Failure       |
+|-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
+| `:resolve_intake`       | rpc     | store:, config:, args:                                    | {_meta:, body:}       | aborts op     |
+| `:transform_rows`       | rpc     | store:, rows:, config:                                    | rows array            | aborts op     |
+| `:validate`             | rpc     | store:                                                    | issues array          | aborts doctor |
+| `:entry_put`            | pubsub  | store:, key:, envelope:                                   | (discarded)           | logged        |
+| `:entry_deleted`        | pubsub  | store:, key:                                              | (discarded)           | logged        |
+| `:entry_refreshed`      | pubsub  | store:, key:, envelope:, change:                          | (discarded)           | logged        |
+| `:build_completed`      | pubsub  | store:, key:, envelope:, sources:                         | (discarded)           | logged        |
+| `:proposal_accepted`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
+| `:file_published`       | pubsub  | store:, key:, envelope:, source:, target:                 | (discarded)           | logged        |
+| `:entry_renamed`        | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
+| `:proposal_rejected`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
+| `:store_loaded`         | pubsub  | store:                                                    | (discarded)           | logged        |
+| `:refresh_started`      | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
+| `:refresh_failed`       | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
+| `:refresh_backgrounded` | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
 
 The three `:refresh_*` lifecycle events report the progress and failures of background (timed_sync) refreshes.
 
-**`:refresh_began`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
+**`:refresh_started`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
 
 **`:refresh_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
 
-**`:refresh_detached`** fires when a `timed_sync` refresh exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
+**`:refresh_backgrounded`** fires when a `timed_sync` refresh exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
 
-**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:mv`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:reject`, `key:` is the pending key being rejected. For `:loaded`, no key — the event observes store readiness, not an entry.
+**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
 
-**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `projection.reduce: NAME`). Failure or timeout aborts the calling operation.
+**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `compute.transform: NAME`). Failure or timeout aborts the calling operation.
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
 
@@ -477,21 +505,22 @@ The `store:` argument is always a read-only store proxy. Write attempts raise `U
 
 Each handler runs under `Timeout.timeout(2)`.
 
-### 5.11 Policies
+### 5.11 Rules
 
-A manifest MAY declare a top-level `policies:` block — a list of rule blocks matched against entry keys by glob. Each block carries one or more slots:
+A manifest MAY declare a top-level `rules:` block — a list of rule blocks matched against entry keys by glob. Each block carries one or more slots:
 
 ```yaml
-policies:
-  - match: inbox.**
+rules:
+  - match: intake.**
     refresh: { ttl: 6h, on_stale: warn }
 
-  - match: inbox.calendar.**
+  - match: intake.calendar.**
     refresh: { ttl: 30m, on_stale: timed_sync, sync_budget_ms: 800 }
-    handler_allowlist: [ical-events]
+    intake_handler_allowlist: [ical-events]
 
   - match: review.**
-    promote_requires: [human-review]
+    promotion:
+      requires: [schema_valid, human_accept]
 ```
 
 **Slots (all optional within a block):**
@@ -499,15 +528,15 @@ policies:
 | Slot | Type | Meaning |
 |---|---|---|
 | `refresh` | `{ ttl, on_stale, sync_budget_ms }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
-| `handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
-| `promote_requires` | list of strings | Predicates a `review` entry must satisfy before `textus accept` will promote it. Implementations MAY use a built-in or hook-resolved predicate. Reserved for future enforcement; recorded today. |
+| `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
+| `promotion` | `{ requires: [...] }` | Predicates a `review` entry must satisfy before `textus accept` will promote it. Built-in predicates: `schema_valid` (entry passes schema validation) and `human_accept` (the accepting role must be `human`). Additional predicates may be registered via `:validate` hooks. Enforced — `textus accept` refuses if any predicate fails. |
 | `retention` | (reserved) | Slot reserved for future retention policy (cap by age / count). Implementations parse it but otherwise ignore. |
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 
-**Resolution.** For each key textus computes a `PolicySet { refresh, handler_allowlist, promote, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`policy_ambiguity`).
+**Resolution.** For each key textus computes a `RuleSet { refresh, intake_handler_allowlist, promotion, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus policy list` dumps every block. `textus policy explain KEY` shows the resolved `PolicySet` for one key plus which block won each slot.
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key plus which block won each slot.
 
 ### 5.12 Storage formats
 
@@ -523,7 +552,7 @@ An entry's `format:` selects a storage strategy. All strategies expose the same 
 **`_meta` convention.** Derived structured entries (json, yaml) embed a `_meta` hash as the first top-level key. Builder-injected keys appear in a fixed order for etag stability:
 
 ```
-generated_at, from, template, reducer
+generated_at, from, template, transform
 ```
 
 Keys with `nil` values are omitted. User-shaped content (or the reducer's hash) follows `_meta`. The etag (§10) is the sha256 of the on-disk bytes regardless of format; key ordering MUST therefore be deterministic, which Ruby's `Hash` and `JSON.generate` / `YAML.dump` honor via insertion order.
@@ -581,11 +610,11 @@ Entries in `zone: derived` SHOULD additionally carry the `generated:` block defi
 
 ## 8. Envelope (the wire format)
 
-Every successful CLI response (`--format=json`) is a single JSON envelope:
+Every successful CLI response (`--output=json`) is a single JSON envelope:
 
 ```json
 {
-  "protocol": "textus/2",
+  "protocol": "textus/3",
   "key": "working.network.org.jane",
   "zone": "working",
   "owner": "textus:network",
@@ -603,9 +632,9 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 ```
 
 **Field rules:**
-- `protocol` MUST be the exact string `textus/2`.
+- `protocol` MUST be the exact string `textus/3`.
 - `key` MUST be the canonical resolved key.
-- `zone` MUST be one of the zones declared in the manifest (`identity`, `working`, `inbox`, `review`, `output` in the default scaffold).
+- `zone` MUST be one of the zones declared in the manifest (`identity`, `working`, `intake`, `review`, `output` in the default scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
@@ -613,7 +642,7 @@ Every successful CLI response (`--format=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by a `refresh:` policy slot (typically `inbox` zone); always `false` elsewhere.
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by a `refresh:` rule slot (typically `intake` zone); always `false` elsewhere.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_refreshed"`), or `null` when `stale` is `false`.
 - `refreshing` is `true` when a `timed_sync` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, refreshing: true` SHOULD retry after a short delay.
 
@@ -623,11 +652,11 @@ Errors use a distinct envelope:
 
 ```json
 {
-  "protocol": "textus/2",
+  "protocol": "textus/3",
   "ok": false,
   "code": "write_forbidden",
-  "message": "zone 'identity' is not writable by role 'ai' for key 'identity.self'",
-  "details": { "key": "identity.self", "zone": "identity", "role": "ai" }
+  "message": "zone 'identity' is not writable by role 'agent' for key 'identity.self'",
+  "details": { "key": "identity.self", "zone": "identity", "role": "agent" }
 }
 ```
 
@@ -638,7 +667,7 @@ Errors use a distinct envelope:
 | `unknown_key` | Key does not resolve | 1 |
 | `bad_frontmatter` | YAML parse failed or `name:` mismatch | 1 |
 | `schema_violation` | Required field missing or wrong type | 1 |
-| `write_forbidden` | Resolved role is not in the zone's `writable_by` | 1 |
+| `write_forbidden` | Resolved role is not in the zone's `write_policy` | 1 |
 | `etag_mismatch` | Concurrent write detected | 1 |
 | `io_error` | Filesystem failure | 64 |
 | `usage` | CLI argument error | 2 |
@@ -647,7 +676,7 @@ Errors use a distinct envelope:
 
 The reference binary is `textus`. Conforming implementations MAY use any binary name; the protocol is in the JSON.
 
-All verbs accept `--format=json` and emit a canonical envelope (success or error). Write verbs require `--as=<role>`; the role must satisfy the target zone's write gate (§5).
+All verbs accept `--output=json` and emit a canonical envelope (success or error). Write verbs require `--as=<role>`; the role must satisfy the target zone's write gate (§5). The per-entry `format:` field in the manifest is unchanged — `--output` controls only the CLI envelope rendering.
 
 | Verb | Reads / writes | Role required |
 |---|---|---|
@@ -658,24 +687,25 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 | `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
 | `blame KEY` | read | any |
-| `policy list` / `policy explain KEY` | read | any |
+| `rule list` / `rule explain KEY` | read | any |
 | `deps K` / `rdeps K` | read | any |
 | `published` | read | any |
 | `hook list` | read | any |
-| `doctor [--check=NAME[,NAME]] [--format=json]` | read | any |
-| `intro [--format=json]` | read | any |
+| `hook run NAME` | write | any |
+| `doctor [--check=NAME[,NAME]] [--output=json]` | read | any |
+| `intro [--output=json]` | read | any |
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
-| `refresh K --as=script` | write | per zone (typically `script`) |
-| `refresh-stale [--prefix=K] [--zone=Z] [--as=script]` | write | per zone (typically `script`) |
-| `build [--prefix=K] [--dry-run]` | write | `build` (default) |
+| `refresh KEY --as=runner` | write | per zone (typically `runner`) |
+| `refresh stale [--prefix=K] [--zone=Z] [--as=runner]` | write | per zone (typically `runner`) |
+| `build [--prefix=K] [--dry-run]` | write | `builder` (default) |
 | `accept K --as=human` | write | `human` |
 | `init` | write | `human` |
-| `schema init NAME` / `schema diff NAME` / `schema migrate NAME [--rename=OLD:NEW]` | write | `human` |
-| `key migrate [--dry-run\|--write]` | write (with `--write`) | `human` |
+| `schema {show,init,diff,migrate}` | read/write | `human` for writes |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
+| `key normalize [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `key uid K` | read | any |
-| `hook run NAME` | write | any |
+| `migrate --to=textus/3` | write | `human` |
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -693,8 +723,8 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 {
   "verb": "freshness",
   "rows": [
-    { "key": "inbox.upstream.notes",
-      "zone": "inbox",
+    { "key": "intake.upstream.notes",
+      "zone": "intake",
       "last_refreshed_at": "2026-05-21T13:21:17Z",
       "age_seconds": 65000,
       "ttl_seconds": 43200,
@@ -705,7 +735,7 @@ All verbs accept `--format=json` and emit a canonical envelope (success or error
 }
 ```
 
-Each row reports one entry's verdict (`fresh`, `stale`, `never_refreshed`, or `no_policy`) against its matched `refresh:` policy. `textus build` consumes its own staleness signal and executes derived entries' projections under the `build` role; `--dry-run` prints the plan without executing.
+Each row reports one entry's verdict (`fresh`, `stale`, `never_refreshed`, or `no_policy`) against its matched `refresh:` rule. `textus build` consumes its own staleness signal and executes derived entries' projections under the `builder` role; `--dry-run` prints the plan without executing.
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only the `human` role may invoke `accept`.
 
@@ -723,35 +753,35 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/2", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `policy_ambiguity`, `handler_allowlist`. Additional registered `:check` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `intake_handler_allowlist`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 
-- The current wire string is `textus/2`.
-- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/2`.
-- Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/3`.
+- The current wire string is `textus/3`.
+- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/3`.
+- Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/4`.
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
-The reference Ruby gem follows semver independently and speaks `textus/2`.
+The reference Ruby gem follows semver independently and speaks `textus/3`.
 
 ## 12. Conformance fixtures
 
 A conformant implementation MUST pass these fixtures (the reference test suite ships a YAML file listing inputs and expected envelopes):
 
 **Fixture A — Resolve and read:**
-Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --format=json` returns the canonical envelope with `etag` matching the file's sha256.
+Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --output=json` returns the canonical envelope with `etag` matching the file's sha256.
 
 **Fixture B — Role gate on write:**
-Given a manifest entry where `key: identity.self` lives in the `identity` zone (human-only), `textus put identity.self --stdin --as=ai` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
+Given a manifest entry where `key: identity.self` lives in the `identity` zone (human-only), `textus put identity.self --stdin --as=agent` (with any valid input) returns the error envelope with `code: "write_forbidden"` and exit code 1.
 
 **Fixture C — Schema violation:**
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `inbox.notes` matched by a `policies: [{ match: inbox.notes, refresh: { ttl: 1h } }]` block and an envelope on disk whose `_meta.last_refreshed_at` is older than `now - ttl`, `textus freshness --format=json` includes a row for `inbox.notes` with `status: "stale"`. Calling `textus freshness` does NOT trigger a refresh.
+Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, refresh: { ttl: 1h } }]` block and an envelope on disk whose `_meta.last_refreshed_at` is older than `now - ttl`, `textus freshness --output=json` includes a row for `intake.notes` with `status: "stale"`. Calling `textus freshness` does NOT trigger a refresh.
 
 **Fixture E — Projection build:**
-Given a manifest entry `derived.catalogs.skills` whose `projection` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
+Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
 
 **Fixture F — Mustache render:**
 Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
@@ -769,13 +799,13 @@ Given a review entry `review.identity.self.patch` proposing a change to `identit
 
 - **Why not MCP?** MCP is a transport; textus is a data model. The two compose: a 50-line MCP server can wrap `textus get/put` as tools. textus exists because the *shape* of agent-readable project memory deserves a standalone spec, separate from how it's served.
 
-- **Why doesn't textus execute generator commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/2` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. Build runners stay the executor; textus stays a data tool.
+- **Why doesn't textus execute generator commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/3` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. Build runners stay the executor; textus stays a data tool.
 
 - **Why not plain Markdown vaults (Obsidian / Foam)?** No schema enforcement, no write-gating, no addressable wire format. Fine for human notes; underspecified for agents that must act on the contents deterministically.
 
 - **Why not Notion / Coda?** Closed, hosted, lossy export. textus is local-first, plain-files, diffable in git.
 
-- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/2`.
+- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/3`.
 
 - **Why not a database (SQLite, kv store)?** textus's whole point is that the storage is plain files agents and humans both read. A binary store loses git-diff, grep, and editor support.
 
@@ -792,7 +822,7 @@ Textus internals are organized into four layers. The dependency rule is one-way 
 
 The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
 
-Plugin authors interact only with the Hook DSL (`Textus.intake`, `Textus.refreshed`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
+Plugin authors interact only with the Hook DSL (`Textus.on(:resolve_intake, ...)`, `Textus.on(:entry_refreshed, ...)`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
 
 Both read and write paths flow through the application layer:
 
@@ -803,7 +833,7 @@ Both read and write paths flow through the application layer:
 
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
-## 14. Open questions (v2.x scope)
+## 14. Open questions (v3.x scope)
 
 - **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
 - **Schema imports:** can one schema reference another (`type: $ref: person`)?
@@ -812,26 +842,76 @@ See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
 ## 15. Implementation checklist
 
-A `textus/2` implementation MUST:
+A `textus/3` implementation MUST:
 
-- [ ] Parse `.textus/manifest.yaml` and accept `version: textus/2`.
+- [ ] Parse `.textus/manifest.yaml` and accept `version: textus/3`.
 - [ ] Resolve keys via longest-prefix match against manifest entries.
 - [ ] Read `_meta` + body from `.md` files; validate against the named schema.
 - [ ] Read `_meta` from the top-level `_meta` hash in `.json` / `.yaml` files; validate against the named schema.
 - [ ] Compute `sha256:<hex>` etags over raw file bytes.
-- [ ] Refuse writes whose resolved role is not in the target zone's `writable_by` list with `write_forbidden`.
+- [ ] Refuse writes whose resolved role is not in the target zone's `write_policy` list with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `policies:` block, and reporting `fresh|stale|never_refreshed|no_policy` without invoking any refresh.
+- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|stale|never_refreshed|no_policy` without invoking any refresh.
 - [ ] Pass the conformance fixtures A–I in §12.
 
-A `textus/2` implementation MAY:
+A `textus/3` implementation MAY:
 
 - Add additional CLI verbs (e.g. `move`, vendor-specific reporters) beyond the current set in §9.
-- Provide alternate output formats (`--format=yaml`, `--format=table`) for human use.
+- Provide alternate output formats (`--output=yaml`, `--output=table`) for human use.
 - Support additional schema field types beyond §6, marked as `vendor:<name>` extensions.
+
+## 16. Migrating from textus/2
+
+Run `textus migrate --to=textus/3` to upgrade an existing store. The command performs the following steps automatically:
+
+1. Rewrites `manifest.yaml`: `version: textus/2` → `textus/3`, `writable_by:` → `write_policy:`, `policies:` → `rules:`, `handler_allowlist:` → `intake_handler_allowlist:`, `promote_requires:` → `promotion: { requires: [...] }`.
+2. Renames the `inbox/` zone directory to `intake/` and updates all manifest `zone:` references accordingly.
+3. Rewrites `audit.log` entries for legacy role names (`ai`→`agent`, `script`→`runner`, `build`→`builder`), marking the conversion with a sentinel log line.
+4. Sweeps frontmatter `owner:` fields that reference legacy role tokens.
+5. Scans `.textus/hooks/**/*.rb` for legacy DSL calls (`Textus.hook`, `Textus.intake`, `Textus.reduce`, `Textus.check`, `Textus.put`, `Textus.published`) and reports findings — **hook files are not rewritten automatically** because renaming a hook event is a semantic change that requires human review.
+
+**Vocabulary summary:**
+
+| Category | textus/2 | textus/3 |
+|---|---|---|
+| Actor | `ai` | `agent` |
+| Actor | `script` | `runner` |
+| Actor | `build` | `builder` |
+| Zone | `inbox` | `intake` |
+| Manifest | `writable_by:` | `write_policy:` |
+| Manifest | `policies:` | `rules:` |
+| Manifest | `handler_allowlist:` | `intake_handler_allowlist:` |
+| Manifest | `promote_requires:` | `promotion: { requires: [...] }` |
+| Manifest | `projection:` | `compute: { kind: projection, ... }` |
+| Manifest | `generator:` | `compute: { kind: external, ... }` |
+| Hook event | `:intake` | `:resolve_intake` |
+| Hook event | `:reduce` | `:transform_rows` |
+| Hook event | `:check` | `:validate` |
+| Hook event | `:put` | `:entry_put` |
+| Hook event | `:deleted` | `:entry_deleted` |
+| Hook event | `:refreshed` | `:entry_refreshed` |
+| Hook event | `:built` | `:build_completed` |
+| Hook event | `:accepted` | `:proposal_accepted` |
+| Hook event | `:reject` | `:proposal_rejected` |
+| Hook event | `:published` | `:file_published` |
+| Hook event | `:mv` | `:entry_renamed` |
+| Hook event | `:loaded` | `:store_loaded` |
+| Hook event | `:refresh_began` | `:refresh_started` |
+| Hook event | `:refresh_detached` | `:refresh_backgrounded` |
+| Hook event | `:refresh_failed` | `:refresh_failed` (unchanged) |
+| Hook DSL | `Textus.hook(ev, name)` / sugar | `Textus.on(ev, name)` |
+| Compute field | `projection.reduce:` | `compute.transform:` |
+| `_meta` key | `reducer` | `transform` |
+| CLI flag | `--format=json` (envelope) | `--output=json` |
+| CLI verb | `refresh-stale` | `refresh stale` |
+| CLI verb | `policy list/explain` | `rule list/explain` |
+
+**Notes on hook migration.** The scanner (`textus migrate --to=textus/3 --scan-hooks`) reports each file and call site that uses a legacy event name or DSL method. No automatic rewrite is performed. Update each hook to use `Textus.on(:new_event_name, ...)` before re-enabling the hook.
+
+**textus doctor refuses textus/2 stores.** The doctor check `protocol_version` emits an `error`-level issue when `manifest.yaml` carries `version: textus/2`. Run `textus migrate --to=textus/3` first, then re-run `textus doctor`.
 
 ---
 
-**Spec word count target:** <2500 words (allowance widened from 2000 to fit Level-A/B derived provenance + staleness in v1).
-**Reviewed against community-testing checklist (idea file §"Community-testing"):** ✅ <2500 words; ✅ implementable in a day in TS/Python (four concepts: manifest, schema, envelope, staleness check); ✅ conformance fixtures A–I; ✅ "Why not X?" section present (incl. why no execution); ✅ name picked.
+**Spec word count target:** <2700 words (allowance widened to fit vocabulary axes intro + migration section).
+**Reviewed against community-testing checklist (idea file §"Community-testing"):** ✅ implementable in a day in TS/Python (four concepts: manifest, schema, envelope, staleness check); ✅ conformance fixtures A–I; ✅ "Why not X?" section present (incl. why no execution); ✅ name picked.
