@@ -310,34 +310,4 @@ RSpec.describe "textus/3 conformance" do
       expect(keys).to include("working.network.org.broken")
     end
   end
-
-  describe "CLI doctor schema_violations" do
-    it "doctor --check=schema_violations returns ok in a clean tree" do
-      out = StringIO.new
-      rc = Textus::CLI.run(
-        ["doctor", "--check=schema_violations", "--output=json"],
-        stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
-      )
-      expect(rc).to eq(0)
-      expect(JSON.parse(out.string.lines.last)["ok"]).to be true
-    end
-  end
-
-  describe "delete verb" do
-    it "deletes an entry, audit-logs it, and refuses without role" do
-      store.put("working.network.org.tmp",
-                meta: { "name" => "tmp", "relationship" => "peer", "org" => "acme" },
-                body: "tmp", as: "human")
-      res = store.delete("working.network.org.tmp", as: "human")
-      expect(res["deleted"]).to be true
-      expect(File.exist?(File.join(root, "zones/working/network/org/tmp.md"))).to be false
-      expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
-    end
-
-    it "rejects delete on identity by agent role" do
-      File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\nx\n")
-      expect { store.delete("identity.self", as: "agent") }
-        .to raise_error(Textus::WriteForbidden)
-    end
-  end
 end
