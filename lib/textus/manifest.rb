@@ -1,4 +1,5 @@
 require "yaml"
+require_relative "manifest/schema"
 
 module Textus
   class Manifest
@@ -62,6 +63,8 @@ module Textus
       @root = root
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
+
+      Schema.validate!(raw)
 
       Array(raw["zones"]).each do |z|
         if (new_name = LEGACY_ZONE_RENAMES[z["name"]])
