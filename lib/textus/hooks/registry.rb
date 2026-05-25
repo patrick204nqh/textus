@@ -22,24 +22,6 @@ module Textus
         refresh_backgrounded: { mode: :pubsub, args: %i[store key started_at budget_ms] },
       }.freeze
 
-      LEGACY_EVENT_RENAMES = {
-        intake: :resolve_intake,
-        reduce: :transform_rows,
-        check: :validate,
-        put: :entry_put,
-        deleted: :entry_deleted,
-        refreshed: :entry_refreshed,
-        built: :build_completed,
-        accepted: :proposal_accepted,
-        reject: :proposal_rejected,
-        published: :file_published,
-        mv: :entry_renamed,
-        loaded: :store_loaded,
-        refresh_began: :refresh_started,
-        refresh_detached: :refresh_backgrounded,
-        # refresh_failed kept — same name
-      }.freeze
-
       def initialize(dispatcher: nil)
         @rpc        = Hash.new { |h, k| h[k] = {} }   # event => { name => callable }
         @pubsub     = Hash.new { |h, k| h[k] = [] }   # event => [{name:, callable:, keys:}]
@@ -48,12 +30,6 @@ module Textus
 
       def register(event, name, keys: nil, &blk)
         event_sym = event.to_sym
-        if (new_event = LEGACY_EVENT_RENAMES[event_sym])
-          raise UsageError.new(
-            "hook event :#{event_sym} was renamed to :#{new_event} in textus/3. " \
-            "Update your hook registration.",
-          )
-        end
         spec = EVENTS[event_sym] or raise UsageError.new("unknown event: #{event}")
         shape_check!(event_sym, spec, blk)
         name = name.to_sym
