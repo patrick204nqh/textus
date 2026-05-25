@@ -34,7 +34,7 @@ module Textus
       msg += "; did you mean: #{@suggestions.join(", ")}" unless @suggestions.empty?
       hint =
         if @suggestions.empty?
-          "run 'textus list --format=json' to see all keys"
+          "run 'textus list --output=json' to see all keys"
         else
           "did you mean: #{@suggestions.join(", ")}"
         end
@@ -180,6 +180,18 @@ module Textus
         "`textus #{old_form}` was renamed in textus/3 — use `textus #{new_form}`",
         details: { "old" => old_form, "new" => new_form },
         hint: "Use `textus #{new_form}` instead.",
+        exit_code: 2,
+      )
+    end
+  end
+
+  class FlagRenamed < Error
+    def initialize(old_flag, new_flag)
+      super(
+        "flag_renamed",
+        "#{old_flag} was renamed in textus/3 — use #{new_flag}",
+        details: { "old" => old_flag, "new" => new_flag },
+        hint: "Use #{new_flag} instead.",
         exit_code: 2,
       )
     end

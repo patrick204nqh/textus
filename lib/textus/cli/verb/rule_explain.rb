@@ -1,7 +1,7 @@
 module Textus
   class CLI
     class Verb
-      class PolicyExplain < Verb
+      class RuleExplain < Verb
         def call(store)
           key = positional.shift or raise UsageError.new("policy explain requires a KEY")
           ctx = context_for(store)

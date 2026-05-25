@@ -15,7 +15,8 @@ module Textus
           @raw_argv.each do |tok|
             case tok
             when /\A--as=(.+)\z/         then as_flag = ::Regexp.last_match(1)
-            when /\A--format=/           then next
+            when /\A--output=/           then next
+            when /\A--format=/           then raise FlagRenamed.new("--format", "--output")
             when /\A--([\w-]+)=(.*)\z/   then args[::Regexp.last_match(1)] = ::Regexp.last_match(2)
             else
               raise UsageError.new("unknown arg to 'hook run #{name}': #{tok}")

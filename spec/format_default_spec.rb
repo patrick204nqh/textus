@@ -19,19 +19,29 @@ RSpec.describe "CLI default format" do
     [rc, out.string]
   end
 
-  it "list works without --format=json" do
+  it "list works without --output=json" do
     rc, out = run_cli(["list"])
     expect(rc).to eq(0)
     expect { JSON.parse(out.lines.last) }.not_to raise_error
   end
 
-  it "get rejects unsupported formats" do
-    rc, = run_cli(["get", "identity.self", "--format=yaml"])
+  it "get rejects unsupported output formats" do
+    rc, out = run_cli(["get", "identity.self", "--output=yaml"])
     expect(rc).not_to eq(0)
+    parsed = JSON.parse(out.lines.last)
+    expect(parsed["code"]).to eq("usage")
   end
 
-  it "get still accepts --format=json for back-compat" do
-    _rc, out = run_cli(["get", "identity.self", "--format=json"])
+  it "get rejects legacy --format flag with FlagRenamed envelope" do
+    rc, out = run_cli(["get", "identity.self", "--format=json"])
+    expect(rc).not_to eq(0)
+    parsed = JSON.parse(out.lines.last)
+    expect(parsed["code"]).to eq("flag_renamed")
+    expect(parsed["message"]).to match(/--format.*--output/)
+  end
+
+  it "get accepts --output=json" do
+    _rc, out = run_cli(["get", "identity.self", "--output=json"])
     parsed = JSON.parse(out.lines.last)
     expect(parsed["code"]).to eq("unknown_key")
   end

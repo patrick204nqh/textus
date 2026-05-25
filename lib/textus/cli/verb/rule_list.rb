@@ -1,7 +1,7 @@
 module Textus
   class CLI
     class Verb
-      class PolicyList < Verb
+      class RuleList < Verb
         def call(store)
           policies = store.manifest.rules.blocks.map do |b|
             row = { "match" => b.match }

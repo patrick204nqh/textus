@@ -160,7 +160,7 @@ RSpec.describe "textus/3 conformance" do
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
         ["put", "intake.calendar.events", "--fetch=ical-events",
-         "--stdin", "--as=runner", "--format=json"],
+         "--stdin", "--as=runner", "--output=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
       )
@@ -241,7 +241,7 @@ RSpec.describe "textus/3 conformance" do
     it "emits a textus/3 envelope for `get`" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["get", "working.network.org.jane", "--format=json"],
+        ["get", "working.network.org.jane", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
@@ -253,7 +253,7 @@ RSpec.describe "textus/3 conformance" do
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["put", "working.network.org.jane", "--stdin", "--format=json"],
+        ["put", "working.network.org.jane", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
                               "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
                               "body" => "updated\n",
@@ -271,7 +271,7 @@ RSpec.describe "textus/3 conformance" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["delete", "working.network.org.jane", "--as=human", "--format=json"],
+        ["delete", "working.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
@@ -281,7 +281,7 @@ RSpec.describe "textus/3 conformance" do
     it "validate-all verb is removed in v0.5; doctor --check=schema_violations replaces it" do
       out = StringIO.new
       err = StringIO.new
-      rc = Textus::CLI.run(["validate-all", "--format=json"],
+      rc = Textus::CLI.run(["validate-all", "--output=json"],
                            stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
       expect(rc).not_to eq(0)
       expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")
@@ -315,7 +315,7 @@ RSpec.describe "textus/3 conformance" do
     it "doctor --check=schema_violations returns ok in a clean tree" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["doctor", "--check=schema_violations", "--format=json"],
+        ["doctor", "--check=schema_violations", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)

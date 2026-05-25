@@ -142,7 +142,7 @@ RSpec.describe Textus::Intro do
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(["intro", "--format=json"],
+    code = Textus::CLI.run(["intro", "--output=json"],
                            stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)

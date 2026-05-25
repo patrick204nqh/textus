@@ -34,13 +34,13 @@ RSpec.describe "CLI hook verbs" do
   end
 
   it "textus refresh KEY invokes the fetch hook" do
-    rc, line = run_cli(["refresh", "intake.x", "--as=runner", "--format=json"])
+    rc, line = run_cli(["refresh", "intake.x", "--as=runner", "--output=json"])
     expect(rc).to eq(0)
     expect(JSON.parse(line)["body"]).to eq("ok")
   end
 
   it "textus hook list returns hooks grouped by event" do
-    rc, line = run_cli(["hook", "list", "--format=json"])
+    rc, line = run_cli(["hook", "list", "--output=json"])
     expect(rc).to eq(0)
     payload = JSON.parse(line)
     by_event = payload["hooks"].group_by { |e| e["event"] }
@@ -51,7 +51,7 @@ RSpec.describe "CLI hook verbs" do
   end
 
   it "textus hook list --event=entry_put filters" do
-    _rc, line = run_cli(["hook", "list", "--event=entry_put", "--format=json"])
+    _rc, line = run_cli(["hook", "list", "--event=entry_put", "--output=json"])
     expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("entry_put"))
   end
 
@@ -67,14 +67,14 @@ RSpec.describe "CLI hook verbs" do
     RUBY
     out = StringIO.new
     rc = Textus::CLI.run(
-      ["put", "working.j", "--stdin", "--fetch=jbytes", "--as=human", "--format=json"],
+      ["put", "working.j", "--stdin", "--fetch=jbytes", "--as=human", "--output=json"],
       stdin: StringIO.new('{"a":1}'), stdout: out, stderr: StringIO.new, cwd: tmp,
     )
     expect(rc).to eq(0)
   end
 
   it "removed: textus extensions list exits with usage error" do
-    rc, line = run_cli(["extensions", "list", "--format=json"])
+    rc, line = run_cli(["extensions", "list", "--output=json"])
     expect(rc).not_to eq(0)
     expect(JSON.parse(line)["code"]).to eq("usage")
   end
