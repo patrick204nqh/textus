@@ -25,9 +25,8 @@ a textus/2 store (gem versions ≤ 0.10.x), first install textus 0.11.x and run:
 
     textus migrate --to=textus/3
 
-Then upgrade to 0.12.0. If your `.textus/audit.log` contains pre-0.11.0 rows
-with `role: ai|script|build`, also run `textus audit-rewrite-legacy-roles`
-once (one-shot verb; removed in 0.13.0).
+Then upgrade to 0.12.0. Pre-0.11.0 audit-log rows with `role: ai|script|build`
+are tolerated verbatim by the reader — no rewrite step required.
 
 ## Install
 
