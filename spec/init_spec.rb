@@ -70,4 +70,13 @@ RSpec.describe Textus::Init do
       end
     end
   end
+
+  it "does not scaffold legacy inbox/ directory or zone" do
+    Dir.mktmpdir do |root|
+      target = File.join(root, ".textus")
+      Textus::Init.run(target)
+      expect(File.directory?(File.join(target, "zones", "inbox"))).to be false
+      expect(File.read(File.join(target, "manifest.yaml"))).not_to include("inbox")
+    end
+  end
 end
