@@ -7,7 +7,7 @@ module Textus
       attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
                   :projection, :template, :publish_to, :publish_each,
                   :intake_handler, :intake_config,
-                  :events, :inject_intro
+                  :events, :inject_intro, :index_filename
 
       def initialize(manifest, raw)
         @manifest = manifest
@@ -25,6 +25,7 @@ module Textus
         @publish_each = raw["publish_each"]
         @events = raw["events"] || {}
         @inject_intro = raw["inject_intro"] == true
+        @index_filename = raw["index_filename"]
         @format = resolve_format!(raw["format"])
 
         validate_events!
@@ -32,6 +33,7 @@ module Textus
         validate_format_matrix!
         validate_publish_each!
         validate_inject_intro!
+        validate_index_filename!
       end
 
       # Resolves the per-leaf target path (relative to repo root) for a full
@@ -65,6 +67,37 @@ module Textus
       end
 
       private
+
+      # `index_filename:` makes a nested entry treat a fixed basename (e.g.
+      # `SKILL.md`) as the per-directory row. The directory path becomes the
+      # key suffix; sibling files are not enumerated. Allows projecting
+      # spec-mandated filenames that would otherwise be rejected by the
+      # lowercase-only key segment grammar.
+      def validate_index_filename!
+        return if @index_filename.nil?
+
+        raise UsageError.new("entry '#{@key}': index_filename requires nested: true") unless @nested
+        unless @index_filename.is_a?(String) && !@index_filename.empty?
+          raise UsageError.new("entry '#{@key}': index_filename must be a non-empty string")
+        end
+        if @index_filename.include?("/") || File.basename(@index_filename) != @index_filename
+          raise UsageError.new("entry '#{@key}': index_filename must be a bare basename (no slashes)")
+        end
+
+        ext = File.extname(@index_filename)
+        inferred = Manifest::EXT_TO_FORMAT[ext]
+        if inferred.nil?
+          raise UsageError.new(
+            "entry '#{@key}': index_filename #{@index_filename.inspect} has unknown extension #{ext.inspect}",
+          )
+        end
+        return if inferred == @format
+
+        raise UsageError.new(
+          "entry '#{@key}': index_filename extension #{ext.inspect} implies format #{inferred.inspect}, " \
+          "but entry format is #{@format.inspect}",
+        )
+      end
 
       def zone_writers
         @manifest.zone_writers(@zone)

@@ -8,6 +8,12 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## [Unreleased]
+
+### Added
+
+- **Per-entry `index_filename:` on nested manifest entries.** A nested entry MAY declare `index_filename: SKILL.md` (or any other bare basename) to surface that single file per directory as the row; the row's key segments come from the directory path, and siblings are not enumerated. Lets entries project spec-mandated filenames (e.g. agentskills.io's `SKILL.md`) whose uppercase casing would otherwise be rejected by the `[a-z0-9][a-z0-9-]*` key-segment grammar. `resolve(key)` returns the index-filename path for sub-directories. Validation: requires `nested: true`, basename only (no slashes), extension must match the entry's `format:`. New spec `spec/manifest_index_filename_spec.rb`. Documented in SPEC §4.
+
 ## 0.10.4 — GitHub folder intake recipe + skill-bundle deferral ADR (2026-05-24)
 
 Patch release. Ships a working "pull a GitHub folder as a skill bundle, fan it out to derived entries" pattern as opt-in example hooks under `examples/claude-plugin/recipes/`, with hermetic specs and user-facing docs. Captures the design decision to defer first-class skill-bundle support to a future release. No `lib/` changes; CLI, wire protocol, event surface, manifest schema, and doctor checks are all unchanged.
