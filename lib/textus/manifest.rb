@@ -11,6 +11,15 @@ module Textus
       ".txt" => "text",
     }.freeze
 
+    TEXTUS_2_HINT = "Install textus 0.11.x to run the migrator, then upgrade to this version. " \
+                    "See https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md#0110".freeze
+
+    def self.version_hint_for(version)
+      version == "textus/2" ? TEXTUS_2_HINT : nil
+    end
+
+    private_class_method :version_hint_for
+
     attr_reader :root, :entries, :raw
 
     def zones
@@ -39,7 +48,11 @@ module Textus
     def self.parse(yaml_text, root: ".")
       raw = YAML.safe_load(yaml_text, aliases: false)
       unless raw["version"] == PROTOCOL
-        raise BadFrontmatter.new("<string>", "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}")
+        raise BadFrontmatter.new(
+          "<string>",
+          "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}",
+          hint: version_hint_for(raw["version"]),
+        )
       end
 
       new(root, raw)
@@ -51,7 +64,11 @@ module Textus
 
       raw = YAML.safe_load_file(manifest_path, aliases: false)
       unless raw["version"] == PROTOCOL
-        raise BadFrontmatter.new(manifest_path, "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}")
+        raise BadFrontmatter.new(
+          manifest_path,
+          "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}",
+          hint: version_hint_for(raw["version"]),
+        )
       end
 
       new(root, raw)
