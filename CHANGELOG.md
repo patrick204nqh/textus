@@ -9,6 +9,47 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.12.0 — legacy sweep (2026-05-25)
+
+### Removed (breaking)
+- `Role::LEGACY_RENAMES` (`ai`/`script`/`build` → friendly error). Legacy role
+  names now fail with the generic `InvalidRole` error.
+- `Manifest::LEGACY_ZONE_RENAMES` (`inbox` → friendly error).
+- `Hooks::Registry::LEGACY_EVENT_RENAMES` (14 legacy event names → friendly
+  error). Legacy events now fail with `unknown event: <name>`.
+- `CLI::LEGACY_VERB_RENAMES` / `CLI::LEGACY_GROUP_RENAMES` and the
+  `CommandRenamed` error class.
+- `textus migrate --to=textus/3` verb and `lib/textus/migration/**` (eight
+  files, ~924 lines).
+- Eight ad-hoc legacy-key guards in `manifest.rb` / `manifest/entry.rb` /
+  `manifest/rules.rb`.
+
+### Added
+- `Manifest::Schema.validate!` — strict-unknown-keys parser. Manifests with
+  any unrecognized key fail uniformly with `unknown key 'X' at '<jsonpath>'`.
+- `textus audit-rewrite-legacy-roles` — **one-shot** verb that rewrites
+  legacy audit-log role values to canonical names (`ai`→`agent`,
+  `script`→`runner`, `build`→`builder`). Idempotent (marker line). Scheduled
+  for removal in 0.13.0.
+- `LegacyAuditRoles` error class, raised by the audit reader when legacy
+  role values are encountered in `.textus/audit.log`.
+- ADR 0003 documenting the sweep and the 0.11.x stepping-stone path.
+
+### Changed
+- `Doctor::Check::ProtocolVersion` hint no longer suggests `textus migrate`
+  (the verb is gone); points at 0.11.x docs instead.
+- Test suite consolidated: five batches of disciplined deletions/merges
+  (−4 files, −134 LOC from the post-P6 peak). Net effect across the release:
+  test suite grew +8.2% LOC to cover new behavior (schema walker, strict
+  audit reader, audit-rewrite verb).
+
+### Migration
+- **From textus/2 (gem ≤0.10.x):** install textus 0.11.x first; run
+  `textus migrate --to=textus/3`; then upgrade to 0.12.0.
+- **From 0.11.x:** drop-in upgrade, except: if your `.textus/audit.log`
+  contains pre-0.11.0 rows with `role: ai|script|build`, run
+  `textus audit-rewrite-legacy-roles` once.
+
 ## 0.11.0 — textus/3 vocabulary redesign (2026-05-25)
 
 **BREAKING:** Protocol bumps to `textus/3`. Stores authored on 0.10.x must run `textus migrate --to=textus/3` before installing 0.11.0. `textus doctor` refuses to operate on un-migrated stores.
