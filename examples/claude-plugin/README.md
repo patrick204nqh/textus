@@ -42,14 +42,14 @@ voice-tools/
       skill.yaml             # name, description, version
       command.yaml           # name, description
     hooks/
-      plugin_envelope.rb     # reducer → plugin.json shape
-      marketplace_envelope.rb# reducer → marketplace.json shape
-      claude_root.rb         # reducer → CLAUDE.md template payload
-      rank_by_recency.rb     # demo reducer (kept for reference)
+      plugin_envelope.rb     # transform → plugin.json shape
+      marketplace_envelope.rb# transform → marketplace.json shape
+      claude_root.rb         # transform → CLAUDE.md template payload
+      rank_by_recency.rb     # demo transform (kept for reference)
       local_file.rb          # demo intake handler
-      build-stamp.rb         # demo :build hook (in-process)
+      build-stamp.rb         # demo :built hook (in-process)
     templates/
-      claude-root.mustache   # renders CLAUDE.md from the projection payload
+      claude-root.mustache   # renders CLAUDE.md from the compute payload
     zones/
       identity/
         voice-tools.md         # plugin identity (name, version, description, author, repository)
@@ -58,7 +58,7 @@ voice-tools/
         agents/<name>.md       # one file per agent
         skills/<topic>/<name>.md  # nested ≥4 segments (e.g. working.skills.writing.voice-writer)
         commands/<name>.md
-      inbox/
+      intake/
         upstream/notes.md      # action demo (local_file)
       output/
         plugin.json            # → publish_to .claude-plugin/plugin.json
@@ -72,24 +72,24 @@ voice-tools/
 ## How textus manages the catalog
 
 - **Identity** holds the slow-changing identity blocks (`identity.plugin`
-  and `identity.marketplace`). The `identity` zone is `writable_by: [human]`
-  — AI and scripts cannot touch it.
+  and `identity.marketplace`). The `identity` zone is `write_policy: [human]`
+  — agents and runners cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
-- **Inbox** is action-fed (script-only). The `inbox.upstream.notes` entry
+- **Intake** is action-fed (runner-only). The `intake.upstream.notes` entry
   uses the project-local `local_file` action as a small demo. Its freshness
   rule and a per-zone handler allowlist both live in the manifest's top-level
-  `policies:` block — see "Policies" below.
-- **Review** is the AI proposal surface. The manifest's `review.**` policy
-  declares `promote_requires: [schema_valid, human_accept]` — the contract a
-  proposal must satisfy before it can be accepted.
-- **Output** is owned by `build:auto`. Three output entries assemble the
+  `rules:` block — see "Policies" below.
+- **Review** is the AI proposal surface. The manifest's `review.**` rule
+  declares `promotion: { requires: [schema_valid, human_accept] }` — the
+  contract a proposal must satisfy before it can be accepted.
+- **Output** is owned by `builder:auto`. Three output entries assemble the
   shipped surface:
-  - `output.plugin` → `plugin_envelope` reducer → `.claude-plugin/plugin.json`
-  - `output.marketplace` → `marketplace_envelope` reducer →
+  - `output.plugin` → `plugin_envelope` transform → `.claude-plugin/plugin.json`
+  - `output.marketplace` → `marketplace_envelope` transform →
     `.claude-plugin/marketplace.json`
-  - `output.claude-root` → `claude_root` reducer + `claude-root.mustache`
+  - `output.claude-root` → `claude_root` transform + `claude-root.mustache`
     template → `CLAUDE.md`
 
 The deep-nested skill paths (`working.skills.writing.voice-writer` —
@@ -147,34 +147,34 @@ editing any working-zone file and the consumer mirrors update automatically.
 
 ## Policies
 
-The manifest's top-level `policies:` block declares rules that apply across
+The manifest's top-level `rules:` block declares rules that apply across
 multiple entries, matched by glob and resolved most-specific-wins per slot.
 This example ships four blocks:
 
 ```yaml
-policies:
-  # Baseline: refresh every inbox.* once a day, warn on stale.
-  - match: inbox.**
+rules:
+  # Baseline: refresh every intake.* once a day, warn on stale.
+  - match: intake.**
     refresh: { ttl: 24h, on_stale: warn }
 
   # More-specific override for one entry — 12h instead of 24h.
-  - match: inbox.upstream.notes
+  - match: intake.upstream.notes
     refresh: { ttl: 12h }
 
-  # Guard-rail: every inbox.* must use a handler from this list.
-  - match: inbox.**
-    handler_allowlist: [local_file]
+  # Guard-rail: every intake.* must use a handler from this list.
+  - match: intake.**
+    intake_handler_allowlist: [local_file]
 
   # Contract for AI proposals.
   - match: review.**
-    promote_requires: [schema_valid, human_accept]
+    promotion: { requires: [schema_valid, human_accept] }
 ```
 
-`textus policy explain inbox.upstream.notes` walks the resolution: two blocks
-contribute a `refresh` rule, the literal-match one wins; one contributes a
-`handler_allowlist`. `textus doctor` runs the `policy_ambiguity` check (no
-two blocks of equal specificity may fill the same slot) and the
-`handler_allowlist` check (every intake handler must be in its policy's
+`textus rule explain intake.upstream.notes` walks the resolution: two blocks
+contribute a `refresh` rule, the literal-match one wins; one contributes an
+`intake_handler_allowlist`. `textus doctor` runs the `rule_ambiguity` check
+(no two blocks of equal specificity may fill the same slot) and the
+`intake_handler_allowlist` check (every intake handler must be in its rule's
 allowlist).
 
 ## Visibility verbs
@@ -182,12 +182,12 @@ allowlist).
 Four read-only verbs surface the audit substrate and the policy resolution:
 
 ```bash
-textus freshness                    # per-entry status (fresh/stale/never_refreshed/no_policy)
+textus freshness                    # per-entry status (fresh/stale/never_refreshed/no_rule)
 textus audit --since=7d             # query .textus/audit.log with filters
 textus audit --correlation-id=<id>  # every row from a single request
 textus blame KEY                    # audit rows × git commit metadata
-textus policy list                  # dump the parsed policies block
-textus policy explain KEY           # which blocks match, who wins per slot
+textus rule list                    # dump the parsed rules block
+textus rule explain KEY             # which blocks match, who wins per slot
 ```
 
 The `correlation_id` in audit rows is generated once per CLI invocation and
@@ -245,19 +245,19 @@ textus hook list
 ```
 
 Useful when wiring up an external runner that needs to discover declared
-`events: { build: [{ exec: ..., as: script }] }` hooks (this example's
+`events: { build: [{ exec: ..., as: runner }] }` hooks (this example's
 `output.claude-root` declares one — see `Rakefile`'s `textus:update` task
 for a working dispatcher).
 
 ## AI proposals (`review` zone)
 
 The `review` zone is the canonical write path for AI agents. The agent
-writes a *proposal* with `--as=ai` — the proposal carries the target key
+writes a *proposal* with `--as=agent` — the proposal carries the target key
 and the payload it would write. A human reviews the file like any diff,
 then runs `textus accept` to apply it. The accept step writes to the real
 target (with `--as=human`, so any zone the human can write to is fair
 game) and deletes the review entry. The whole exchange is in
-`.textus/audit.log`: one `put` row by `ai` against the review key, one
+`.textus/audit.log`: one `put` row by `agent` against the review key, one
 `put` row by `human` against the real target, one `delete` row by
 `human` against the review key.
 
@@ -296,7 +296,7 @@ End-to-end, the loop is:
 
 ```bash
 # 1. AI proposes (write into review) — replays the fixture.
-textus put review.suggestion.001 --stdin --as=ai < proposal.json
+textus put review.suggestion.001 --stdin --as=agent < proposal.json
 
 # 2. Human reviews:
 textus list --prefix=review
@@ -318,15 +318,15 @@ added to the catalog (it isn't otherwise wired up).
 `textus get working.skills.editorail.voice-writer` (typo'd) reports the
 top suggestions via the `did you mean:` hint, ranked by shared prefix and
 Levenshtein distance against the actual key set. Same applies to `where`,
-`put`, `delete`, and `mv`.
+`put`, `delete`, and `key mv`.
 
 ## Intake refresh
 
-`inbox.upstream.notes` reads `.textus/zones/identity/voice-tools.md` through
+`intake.upstream.notes` reads `.textus/zones/identity/voice-tools.md` through
 the in-process `local_file` action. Walk it with:
 
 ```bash
-rake textus:refresh    # refresh every stale inbox entry
+rake textus:refresh    # refresh every stale intake entry
 rake textus:update     # refresh + build + dispatch external :build hooks
 ```
 
@@ -339,10 +339,10 @@ registers into an isolated per-store registry. This example wires up:
   `plugin.json` envelope.
 - `marketplace_envelope` — assembles `identity.marketplace` + `identity.plugin` +
   the `working.skills.*` rows into a Claude `marketplace.json` envelope.
-- `claude_root` — groups projection rows by source prefix for the CLAUDE.md
+- `claude_root` — groups compute rows by source prefix for the CLAUDE.md
   template payload.
 - `rank_by_recency`, `local_file`, `build-stamp` — kept as demos of the
-  `:reduce` / `:intake` / `:built` / `:check` event surfaces (all expressed
-  through the unified `Textus.hook(event, name)` DSL).
+  `:transform_rows` / `:resolve_intake` / `:built` / `:validate` event
+  surfaces (all expressed through the unified `Textus.on(event, name)` DSL).
 
 Inspect everything currently loaded with `textus hook list`.
