@@ -10,7 +10,7 @@ RSpec.describe Textus::Intro do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
@@ -18,13 +18,13 @@ RSpec.describe Textus::Intro do
     FileUtils.mkdir_p(File.join(root, "hooks"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: inbox,    writable_by: [script] }
-        - { name: review,   writable_by: [ai] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: working,  write_policy: [human, agent, runner] }
+        - { name: intake,   write_policy: [runner] }
+        - { name: review,   write_policy: [agent] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
         - key: working.notes
@@ -32,18 +32,19 @@ RSpec.describe Textus::Intro do
           zone: working
           schema: null
           nested: true
-        - key: inbox.feed
-          path: inbox/feed.md
-          zone: inbox
-          owner: script:local
+        - key: intake.feed
+          path: intake/feed.md
+          zone: intake
+          owner: runner:local
           intake:
             handler: demo-action
             config: { foo: 1 }
         - key: output.report
           path: output/report.md
           zone: output
-          owner: build:auto
-          projection:
+          owner: builder:auto
+          compute:
+            kind: projection
             select: [working.notes]
             pluck: "*"
           template: report.mustache
@@ -53,13 +54,13 @@ RSpec.describe Textus::Intro do
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
-      Textus.hook(:intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
-      Textus.hook(:reduce, :rank_by_recency) { |store:, rows:, config:| rows }
-      Textus.hook(:reduce, :alpha)           { |store:, rows:, config:| rows }
-      Textus.hook(:built, :stamp_log)        { |store:, key:, envelope:, sources:| }
-      Textus.hook(:check, :smoke)            { |store:| [] }
+      Textus.on(:resolve_intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:resolve_intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:resolve_intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
+      Textus.on(:transform_rows, :rank_by_recency) { |store:, rows:, config:| rows }
+      Textus.on(:transform_rows, :alpha)           { |store:, rows:, config:| rows }
+      Textus.on(:build_completed, :stamp_log)        { |store:, key:, envelope:, sources:| }
+      Textus.on(:validate, :smoke)            { |store:| [] }
     RUBY
   end
 
@@ -69,29 +70,29 @@ RSpec.describe Textus::Intro do
 
   it "returns an envelope with protocol + store_root" do
     env = described_class.run(store)
-    expect(env["protocol"]).to eq("textus/2")
+    expect(env["protocol"]).to eq("textus/3")
     expect(env["store_root"]).to eq(root)
   end
 
   it "lists zones with writers and purposes for known zones" do
     env = described_class.run(store)
     names = env["zones"].map { |z| z["name"] }
-    expect(names).to contain_exactly("identity", "working", "inbox", "review", "output")
+    expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
     identity = env["zones"].find { |z| z["name"] == "identity" }
     expect(identity["writers"]).to eq(["human"])
     expect(identity["purpose"]).to include("human-only")
 
     working = env["zones"].find { |z| z["name"] == "working" }
-    expect(working["writers"]).to include("human", "ai", "script")
+    expect(working["writers"]).to include("human", "agent", "runner")
     expect(working).to have_key("purpose")
   end
 
   it "omits purpose for unknown zone names" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: weird,    writable_by: [human] }
+        - { name: identity, write_policy: [human] }
+        - { name: weird,    write_policy: [human] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null }
     YAML
@@ -108,8 +109,8 @@ RSpec.describe Textus::Intro do
     expect(by_key["identity.self"]["derived"]).to be false
     expect(by_key["identity.self"]["intake"]).to be false
 
-    expect(by_key["inbox.feed"]["intake"]).to be true
-    expect(by_key["inbox.feed"]["derived"]).to be false
+    expect(by_key["intake.feed"]["intake"]).to be true
+    expect(by_key["intake.feed"]["derived"]).to be false
 
     expect(by_key["output.report"]["derived"]).to be true
     expect(by_key["output.report"]["publish_to"]).to eq(["REPORT.md"])
@@ -121,18 +122,18 @@ RSpec.describe Textus::Intro do
   it "lists hooks grouped by event, sorted alphabetically" do
     env = described_class.run(store)
     ext = env["hooks"]
-    expect(ext["reduce"]).to eq(%w[alpha rank_by_recency])
+    expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
     # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["intake"]).to include("apple", "demo-action", "zebra")
-    expect(ext["intake"]).to eq(ext["intake"].sort)
-    expect(ext["built"]).to eq(["stamp_log"])
-    expect(ext["check"]).to include("smoke")
+    expect(ext["resolve_intake"]).to include("apple", "demo-action", "zebra")
+    expect(ext["resolve_intake"]).to eq(ext["resolve_intake"].sort)
+    expect(ext["build_completed"]).to eq(["stamp_log"])
+    expect(ext["validate"]).to include("smoke")
   end
 
   it "includes verbatim write_flows and cli_verbs" do
     env = described_class.run(store)
-    expect(env["write_flows"]).to include("human", "ai", "script", "build")
-    expect(env["write_flows"]["ai"]).to include("proposal:")
+    expect(env["write_flows"]).to include("human", "agent", "runner", "builder")
+    expect(env["write_flows"]["agent"]).to include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
     expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "hook")
@@ -141,11 +142,11 @@ RSpec.describe Textus::Intro do
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(["intro", "--format=json"],
+    code = Textus::CLI.run(["intro", "--output=json"],
                            stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
-    expect(parsed["protocol"]).to eq("textus/2")
+    expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["zones"].length).to eq(5)
     expect(parsed["cli_verbs"]).to be_an(Array)
   end

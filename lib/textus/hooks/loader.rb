@@ -19,8 +19,7 @@ module Textus
     end
   end
 
-  # Public DSL — unchanged surface
+  # Public DSL
   def self.with_registry(registry, &) = Hooks::Loader.with_registry(registry, &)
   def self.current_registry           = Hooks::Loader.current_registry
-  def self.hook(event, name, **, &)   = Hooks::Loader.current_registry.register(event, name, **, &)
 end

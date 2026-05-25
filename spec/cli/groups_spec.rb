@@ -17,10 +17,10 @@ RSpec.describe "CLI subcommand groups" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: archive, writable_by: [human] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: archive, write_policy: [human] }
       entries:
         - { key: working.note, path: working/note.md, zone: working }
     YAML
@@ -41,9 +41,9 @@ RSpec.describe "CLI subcommand groups" do
   describe "textus key mv OLD NEW" do
     it "works and prints no deprecation warning" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: working, write_policy: [human, agent, runner] }
         entries:
           - { key: working.note, path: working/note.md, zone: working }
           - { key: working.memo, path: working/memo.md, zone: working }
@@ -85,7 +85,7 @@ RSpec.describe "CLI subcommand groups" do
       run(["key"])
       err = JSON.parse(stdout.string)
       expect(err["code"]).to eq("usage")
-      expect(stderr.string).to match(/key requires a subcommand:.*mv.*uid.*migrate/i)
+      expect(stderr.string).to match(/key requires a subcommand:.*mv.*uid.*normalize/i)
     end
   end
 

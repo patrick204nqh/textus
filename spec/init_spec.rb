@@ -10,7 +10,7 @@ RSpec.describe Textus::Init do
     Textus::Init.run(root)
     expect(File.exist?(File.join(root, "manifest.yaml"))).to be true
     expect(File.directory?(File.join(root, "schemas"))).to be true
-    expect(File.read(File.join(root, "manifest.yaml"))).to include("version: textus/2")
+    expect(File.read(File.join(root, "manifest.yaml"))).to include("version: textus/3")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
@@ -29,7 +29,7 @@ RSpec.describe Textus::Init do
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
     expect(File.directory?(File.join(target, "hooks"))).to be true
-    expect(File.read(File.join(target, "hooks", "README.md"))).to include("Textus.hook")
+    expect(File.read(File.join(target, "hooks", "README.md"))).to include("Textus.on")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
@@ -49,7 +49,7 @@ RSpec.describe Textus::Init do
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
     manifest = File.read(File.join(target, "manifest.yaml"))
-    %w[identity working inbox review output].each do |z|
+    %w[identity working intake review output].each do |z|
       expect(manifest).to include("name: #{z}"), "manifest should declare zone #{z}"
       expect(File.directory?(File.join(target, "zones", z))).to be(true), "zones/#{z}/ should exist"
       expect(File.exist?(File.join(target, "zones", z, ".gitkeep"))).to be true
@@ -58,16 +58,25 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "scaffolds zones with the 0.9.2 default names" do
+  it "scaffolds zones with the canonical names" do
     Dir.mktmpdir do |root|
       target = File.join(root, ".textus")
       Textus::Init.run(target)
       yaml = YAML.load_file(File.join(target, "manifest.yaml"))
       names = yaml["zones"].map { |z| z["name"] }
-      expect(names).to eq(%w[identity working inbox review output])
-      %w[identity working inbox review output].each do |z|
+      expect(names).to eq(%w[identity working intake review output])
+      %w[identity working intake review output].each do |z|
         expect(Dir.exist?(File.join(target, "zones", z))).to be(true)
       end
+    end
+  end
+
+  it "does not scaffold legacy inbox/ directory or zone" do
+    Dir.mktmpdir do |root|
+      target = File.join(root, ".textus")
+      Textus::Init.run(target)
+      expect(File.directory?(File.join(target, "zones", "inbox"))).to be false
+      expect(File.read(File.join(target, "manifest.yaml"))).not_to include("inbox")
     end
   end
 end

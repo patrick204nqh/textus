@@ -103,7 +103,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
       expect(spawner_calls).to include("slow.key")
-      expect(fake_bus.published.map(&:first)).to include(:refresh_detached)
+      expect(fake_bus.published.map(&:first)).to include(:refresh_backgrounded)
     end
 
     it "returns Outcome::Refreshed when worker finishes within budget" do

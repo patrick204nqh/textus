@@ -12,10 +12,10 @@ RSpec.describe "textus mv" do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
     FileUtils.mkdir_p(File.join(root, "zones/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: identity,   write_policy: [human] }
       entries:
         - { key: working.notes, path: working/notes, zone: working, nested: true }
         - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true }
@@ -101,7 +101,7 @@ RSpec.describe "textus mv" do
     out = StringIO.new
     err = StringIO.new
     code = Textus::CLI.run(
-      ["key", "mv", "working.notes.alpha", "working.notes.beta", "--as=human", "--format=json"],
+      ["key", "mv", "working.notes.alpha", "working.notes.beta", "--as=human", "--output=json"],
       stdin: StringIO.new, stdout: out, stderr: err, cwd: File.dirname(root),
     )
     expect(code).to eq(0), "stdout=#{out.string} stderr=#{err.string}"

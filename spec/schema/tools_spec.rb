@@ -10,9 +10,9 @@ RSpec.describe Textus::Schema::Tools do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
+        - { name: working, write_policy: [human, agent, runner] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
     YAML

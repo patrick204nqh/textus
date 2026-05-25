@@ -9,7 +9,7 @@ RSpec.describe Textus::Application::Writes::Build do
 
   let(:store) { Textus::Store.new(root) }
   let(:build_use_case) do
-    ctx = Textus::Composition.context(store, role: "build")
+    ctx = Textus::Composition.context(store, role: "builder")
     Textus::Composition.writes_build(ctx)
   end
 
@@ -19,18 +19,18 @@ RSpec.describe Textus::Application::Writes::Build do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
         - key: output.catalogs.people
           path: output/catalogs/people.md
           zone: output
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
         - key: output.people-json
@@ -38,30 +38,30 @@ RSpec.describe Textus::Application::Writes::Build do
           zone: output
           format: json
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
         - key: output.people-yaml
           path: output/people.yaml
           zone: output
           format: yaml
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], reduce: envelope }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], transform: envelope }
         - key: output.people-json-tpl
           path: output/people-tpl.json
           zone: output
           format: json
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.json.mustache
         - key: output.people-bad-tpl
           path: output/people-bad.json
           zone: output
           format: json
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people-bad.json.mustache
     YAML
 
@@ -84,10 +84,10 @@ RSpec.describe Textus::Application::Writes::Build do
 
     # Reducer used by the YAML pipeline — returns a Hash so the structured-format
     # path uses it as the payload base.
-    store.registry.register(:reduce, :envelope) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :envelope) do |store:, rows:, config:|
       _ = config
       _ = store
-      { "protocol" => "textus/2", "people" => rows.sort_by { |r| r["name"].to_s } }
+      { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }
     end
   end
 
@@ -129,7 +129,7 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(parsed.keys.first).to eq("_meta")
     expect(parsed["_meta"].keys).to eq(%w[generated_at from reduce])
     expect(parsed["_meta"]["reduce"]).to eq("envelope")
-    expect(parsed["protocol"]).to eq("textus/2")
+    expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["people"].map { |r| r["name"] }).to contain_exactly("alice", "bob")
   end
 

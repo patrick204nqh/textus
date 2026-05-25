@@ -1,9 +1,9 @@
 module Textus
   class CLI
     class Verb
-      class PolicyList < Verb
+      class RuleList < Verb
         def call(store)
-          policies = store.manifest.policies.blocks.map do |b|
+          policies = store.manifest.rules.blocks.map do |b|
             row = { "match" => b.match }
             if b.refresh
               row["refresh"] = {
@@ -13,7 +13,7 @@ module Textus
               }
             end
             row["handler_allowlist"] = b.handler_allowlist.handlers if b.handler_allowlist
-            row["promote_requires"] = b.promote.requires if b.promote
+            row["promotion"] = { "requires" => b.promote.requires } if b.promote
             row["retention"] = b.retention if b.retention
             row
           end

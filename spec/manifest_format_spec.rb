@@ -12,10 +12,10 @@ RSpec.describe "Manifest format: field validation" do
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
       #{entries_yaml}
     YAML
@@ -58,7 +58,7 @@ RSpec.describe "Manifest format: field validation" do
       - key: output.x
         path: output/x.md
         zone: output
-        projection: { select: [working] }
+        compute: { kind: projection, select: [working] }
     YAML
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /derived markdown entries require a template/)
@@ -69,7 +69,7 @@ RSpec.describe "Manifest format: field validation" do
       - key: output.x
         path: output/x.json
         zone: output
-        projection: { select: [working] }
+        compute: { kind: projection, select: [working] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error
   end

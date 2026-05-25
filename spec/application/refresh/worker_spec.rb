@@ -21,17 +21,17 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
   def build_store(root, intake_body:)
     textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "inbox"))
+    FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: inbox, writable_by: [script] }
+        - { name: intake, write_policy: [runner] }
       entries:
-        - key: inbox.item
-          path: inbox/item.md
-          zone: inbox
+        - key: intake.item
+          path: intake/item.md
+          zone: intake
           intake: { handler: test_intake }
     YAML
 
@@ -40,48 +40,48 @@ RSpec.describe Textus::Application::Refresh::Worker do
     Textus::Store.new(textus)
   end
 
-  it "persists the envelope and fires :refresh_began and :refreshed events on success" do
+  it "persists the envelope and fires :refresh_started and :entry_refreshed events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.intake(:test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+        Textus.on(:resolve_intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
-      envelope = worker.run("inbox.item")
+      envelope = worker.run("intake.item")
 
       expect(envelope).not_to be_nil
       expect(envelope["body"]).to eq("hello")
 
       event_names = test_bus.events.map(&:first)
-      expect(event_names).to include(:refresh_began)
-      expect(event_names).to include(:refreshed)
+      expect(event_names).to include(:refresh_started)
+      expect(event_names).to include(:entry_refreshed)
 
-      refreshed_payload = test_bus.events.find { |name, _| name == :refreshed }.last
+      refreshed_payload = test_bus.events.find { |name, _| name == :entry_refreshed }.last
       expect(refreshed_payload[:change]).to eq(:created)
-      expect(refreshed_payload[:key]).to eq("inbox.item")
+      expect(refreshed_payload[:key]).to eq("intake.item")
     end
   end
 
   it "fires :refresh_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.intake(:test_intake) { |store:, config:, args:| raise "something went wrong" }
+        Textus.on(:resolve_intake, :test_intake) { |store:, config:, args:| raise "something went wrong" }
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
       worker = described_class.new(ctx: ctx, bus: test_bus)
 
       expect do
-        worker.run("inbox.item")
+        worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
       failed_events = test_bus.events.filter { |ev| ev.first == :refresh_failed }
       expect(failed_events).not_to be_empty
-      expect(failed_events.first.last[:key]).to eq("inbox.item")
+      expect(failed_events.first.last[:key]).to eq("intake.item")
     end
   end
 
@@ -92,9 +92,9 @@ RSpec.describe Textus::Application::Refresh::Worker do
       FileUtils.mkdir_p(File.join(textus, "hooks"))
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: plain, writable_by: [human] }
+          - { name: plain, write_policy: [human] }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain }
       YAML

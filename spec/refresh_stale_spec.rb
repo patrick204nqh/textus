@@ -11,9 +11,9 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.fresh
           path: working/fresh.md
@@ -25,7 +25,7 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
           zone: working
           intake:
             handler: counter
-      policies:
+      rules:
         - match: working.fresh
           refresh:
             ttl: 1h
@@ -53,7 +53,7 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
     MD
 
     File.write(File.join(textus, "hooks", "counter.rb"), <<~RUBY)
-      Textus.intake(:counter) do |store:, config:, args:|
+      Textus.on(:resolve_intake, :counter) do |store:, config:, args:|
         { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
       end
     RUBY

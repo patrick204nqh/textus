@@ -6,10 +6,10 @@ RSpec.describe Textus::Application::Context do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, runner] }
+        - { name: identity,   write_policy: [human] }
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -17,9 +17,9 @@ RSpec.describe Textus::Application::Context do
   it "carries store, role, correlation_id, and clock" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = described_class.new(store: store, role: "script", correlation_id: "abc-123")
+      ctx = described_class.new(store: store, role: "runner", correlation_id: "abc-123")
       expect(ctx.store).to equal(store)
-      expect(ctx.role).to eq("script")
+      expect(ctx.role).to eq("runner")
       expect(ctx.correlation_id).to eq("abc-123")
     end
   end
@@ -36,7 +36,7 @@ RSpec.describe Textus::Application::Context do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx_human  = described_class.new(store: store, role: "human")
-      ctx_script = described_class.new(store: store, role: "script")
+      ctx_script = described_class.new(store: store, role: "runner")
       expect(ctx_human.can_write?("working")).to be(true)
       expect(ctx_script.can_write?("working")).to be(true)
       expect(ctx_human.can_write?("identity")).to be(true)

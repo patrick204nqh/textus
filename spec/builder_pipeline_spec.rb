@@ -6,7 +6,7 @@ RSpec.describe Textus::Builder::Renderer::Markdown do
     instance_double(
       Textus::Manifest::Entry,
       format: "markdown", template: "tpl.md.mustache",
-      projection: { "select" => ["working.*"] }, inject_intro: false
+      projection: { "kind" => "projection", "select" => ["working.*"] }, inject_intro: false
     )
   end
 

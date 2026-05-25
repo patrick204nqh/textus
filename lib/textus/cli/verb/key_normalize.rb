@@ -1,7 +1,7 @@
 module Textus
   class CLI
     class Verb
-      class MigrateKeys < Verb
+      class KeyNormalize < Verb
         option :write, "--write"
         option :dry_run, "--dry-run"
 

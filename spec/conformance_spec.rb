@@ -4,8 +4,8 @@ require "json"
 require "stringio"
 require "digest"
 
-# Conformance fixtures A–D from textus/2 §12, plus CLI smoke tests.
-RSpec.describe "textus/2 conformance" do
+# Conformance fixtures A–D from textus/3 §12, plus CLI smoke tests.
+RSpec.describe "textus/3 conformance" do
   let(:tmp)  { Dir.mktmpdir("textus-spec") }
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
@@ -16,30 +16,30 @@ RSpec.describe "textus/2 conformance" do
     FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/output/catalogs"))
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/inbox/calendar"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: output,   writable_by: [build] }
-        - { name: inbox,    writable_by: [script] }
+        - { name: identity, write_policy: [human] }
+        - { name: working,  write_policy: [human, agent, runner] }
+        - { name: output,   write_policy: [builder] }
+        - { name: intake,   write_policy: [runner] }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true }
-        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
-        - key: inbox.calendar.events
-          path: inbox/calendar/events
-          zone: inbox
+        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
+        - key: intake.calendar.events
+          path: intake/calendar/events
+          zone: intake
           schema: null
-          owner: script:cron
+          owner: runner:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
-      policies:
-        - match: inbox.calendar.events
+      rules:
+        - match: intake.calendar.events
           refresh:
             ttl: 1s
             on_stale: warn
@@ -78,7 +78,7 @@ RSpec.describe "textus/2 conformance" do
     it "returns the canonical envelope with a matching sha256 etag" do
       env = store.get("working.network.org.jane")
 
-      expect(env["protocol"]).to eq("textus/2")
+      expect(env["protocol"]).to eq("textus/3")
       expect(env["key"]).to eq("working.network.org.jane")
       expect(env["zone"]).to eq("working")
       expect(env["owner"]).to eq("human:patrick")
@@ -97,10 +97,10 @@ RSpec.describe "textus/2 conformance" do
   end
 
   describe "Fixture B — role gate on write" do
-    it "raises WriteForbidden when an AI tries to write identity" do
+    it "raises WriteForbidden when an agent tries to write identity" do
       expect do
         store.put("identity.self",
-                  meta: { "name" => "self" }, body: "n/a", as: "ai")
+                  meta: { "name" => "self" }, body: "n/a", as: "agent")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
@@ -159,8 +159,8 @@ RSpec.describe "textus/2 conformance" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "inbox.calendar.events", "--fetch=ical-events",
-         "--stdin", "--as=script", "--format=json"],
+        ["put", "intake.calendar.events", "--fetch=ical-events",
+         "--stdin", "--as=runner", "--output=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
       )
@@ -171,40 +171,40 @@ RSpec.describe "textus/2 conformance" do
     end
   end
 
-  describe "inbox staleness via TTL" do
-    it "flags inbox entries that were never refreshed" do
-      rows = store.stale(zone: "inbox")
+  describe "intake staleness via TTL" do
+    it "flags intake entries that were never refreshed" do
+      rows = store.stale(zone: "intake")
       expect(rows.length).to eq(1)
-      expect(rows.first["key"]).to eq("inbox.calendar.events")
+      expect(rows.first["key"]).to eq("intake.calendar.events")
       expect(rows.first["reason"]).to match(/never refreshed/)
     end
 
-    it "flags inbox entries past their TTL" do
-      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
+    it "flags intake entries past their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
       stale_time = (Time.now - 10).utc.iso8601
-      File.write(inbox_path, <<~MD)
+      File.write(intake_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{stale_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "inbox")
+      rows = store.stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
 
-    it "does not flag inbox entries within their TTL" do
-      inbox_path = File.join(root, "zones/inbox/calendar/events.md")
+    it "does not flag intake entries within their TTL" do
+      intake_path = File.join(root, "zones/intake/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
-      File.write(inbox_path, <<~MD)
+      File.write(intake_path, <<~MD)
         ---
         name: events
         last_refreshed_at: "#{fresh_time}"
         ---
         body
       MD
-      rows = store.stale(zone: "inbox")
+      rows = store.stale(zone: "intake")
       expect(rows).to be_empty
     end
   end
@@ -212,10 +212,10 @@ RSpec.describe "textus/2 conformance" do
   describe "zones block" do
     it "parses declared zones with writable_by" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: identity, writable_by: [human] }
-          - { name: working,  writable_by: [human, ai, script] }
+          - { name: identity, write_policy: [human] }
+          - { name: working,  write_policy: [human, agent, runner] }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick }
       YAML
@@ -223,12 +223,12 @@ RSpec.describe "textus/2 conformance" do
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
       expect(m.zone_writers("identity")).to eq(["human"])
-      expect(m.zone_writers("working")).to contain_exactly("human", "ai", "script")
+      expect(m.zone_writers("working")).to contain_exactly("human", "agent", "runner")
     end
 
     it "raises BadFrontmatter if zones block is absent" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         entries:
           - { key: state.x, path: state/x.md, zone: state, schema: null, owner: o }
       YAML
@@ -238,22 +238,22 @@ RSpec.describe "textus/2 conformance" do
   end
 
   describe "CLI" do
-    it "emits a textus/2 envelope for `get`" do
+    it "emits a textus/3 envelope for `get`" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["get", "working.network.org.jane", "--format=json"],
+        ["get", "working.network.org.jane", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
-      expect(env["protocol"]).to eq("textus/2")
+      expect(env["protocol"]).to eq("textus/3")
       expect(env["key"]).to eq("working.network.org.jane")
     end
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["put", "working.network.org.jane", "--stdin", "--format=json"],
+        ["put", "working.network.org.jane", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
                               "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
                               "body" => "updated\n",
@@ -271,7 +271,7 @@ RSpec.describe "textus/2 conformance" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["delete", "working.network.org.jane", "--as=human", "--format=json"],
+        ["delete", "working.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
@@ -281,7 +281,7 @@ RSpec.describe "textus/2 conformance" do
     it "validate-all verb is removed in v0.5; doctor --check=schema_violations replaces it" do
       out = StringIO.new
       err = StringIO.new
-      rc = Textus::CLI.run(["validate-all", "--format=json"],
+      rc = Textus::CLI.run(["validate-all", "--output=json"],
                            stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
       expect(rc).not_to eq(0)
       expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")
@@ -315,7 +315,7 @@ RSpec.describe "textus/2 conformance" do
     it "doctor --check=schema_violations returns ok in a clean tree" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["doctor", "--check=schema_violations", "--format=json"],
+        ["doctor", "--check=schema_violations", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
@@ -334,9 +334,9 @@ RSpec.describe "textus/2 conformance" do
       expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
     end
 
-    it "rejects delete on identity by ai role" do
+    it "rejects delete on identity by agent role" do
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\nx\n")
-      expect { store.delete("identity.self", as: "ai") }
+      expect { store.delete("identity.self", as: "agent") }
         .to raise_error(Textus::WriteForbidden)
     end
   end

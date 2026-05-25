@@ -12,9 +12,9 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries: []
     YAML
     FileUtils.mkdir_p(sentinels_dir)

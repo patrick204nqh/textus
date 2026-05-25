@@ -12,9 +12,9 @@ RSpec.describe "Role authority via schema.maintained_by" do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
+        - { name: working, write_policy: [human, agent, runner] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
     YAML
@@ -33,14 +33,14 @@ RSpec.describe "Role authority via schema.maintained_by" do
   it "flags fields written by the wrong role" do
     store.put("working.people.alice",
               meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
-              body: "", as: "ai")
+              body: "", as: "agent")
     res = store.validate_all
     codes = res["violations"].map { |v| v["code"] }
     expect(codes).to include("role_authority")
     bad = res["violations"].find { |v| v["code"] == "role_authority" }
     expect(bad["field"]).to eq("full_name")
     expect(bad["expected"]).to eq("human")
-    expect(bad["last_writer"]).to eq("ai")
+    expect(bad["last_writer"]).to eq("agent")
   end
 
   it "allows human to override ai-owned fields" do

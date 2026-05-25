@@ -7,10 +7,10 @@ RSpec.describe Textus::Application::Writes::Accept do
     FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: review, writable_by: [ai, human] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: review, write_policy: [agent, human] }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true }
         - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
@@ -28,7 +28,7 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "frontmatter" => { "name" => "bob", "org" => "acme" },
                 },
                 body: "Proposed",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
       result = described_class.new(ctx: ctx, bus: store.bus).call("review.2026-05-19-add-bob")
@@ -50,9 +50,9 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
                   "frontmatter" => { "name" => "x" },
                 },
-                body: "", as: "ai")
+                body: "", as: "agent")
 
-      ctx = Textus::Application::Context.new(store: store, role: "ai")
+      ctx = Textus::Application::Context.new(store: store, role: "agent")
       expect { described_class.new(ctx: ctx, bus: store.bus).call("review.foo") }
         .to raise_error(Textus::ProposalError, /human/)
     end
@@ -68,11 +68,11 @@ RSpec.describe Textus::Application::Writes::Accept do
                   "frontmatter" => { "name" => "alice" },
                 },
                 body: "Alice content",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human", correlation_id: "corr-accept-1")
       events = []
-      store.bus.subscribe(:accepted, :capture_accept) do |key:, target_key:, correlation_id:, **|
+      store.bus.subscribe(:proposal_accepted, :capture_accept) do |key:, target_key:, correlation_id:, **|
         events << { key: key, target_key: target_key, correlation_id: correlation_id }
       end
 
@@ -91,11 +91,110 @@ RSpec.describe Textus::Application::Writes::Accept do
       store.put("review.noproposal",
                 meta: { "name" => "noproposal" },
                 body: "no proposal here",
-                as: "ai")
+                as: "agent")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
       expect { described_class.new(ctx: ctx, bus: store.bus).call("review.noproposal") }
         .to raise_error(Textus::ProposalError, /no proposal block/)
+    end
+  end
+
+  describe "promotion gate" do
+    def build_store_with_promotion(textus_dir)
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
+      FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
+      File.write(File.join(textus_dir, "schemas", "org-member.yaml"), <<~YAML)
+        name: org-member
+        required: [name, org]
+        optional: []
+        fields: {}
+      YAML
+      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: review, write_policy: [agent, human] }
+        entries:
+          - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true }
+          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
+        rules:
+          - match: "working.network.org.**"
+            promotion:
+              requires: [schema_valid]
+      YAML
+      Textus::Store.new(textus_dir)
+    end
+
+    it "passes the gate when schema_valid predicate succeeds (all required fields present)" do
+      Dir.mktmpdir do |root|
+        store = build_store_with_promotion(File.join(root, ".textus"))
+        store.put("review.valid-proposal",
+                  meta: {
+                    "name" => "valid-proposal",
+                    "proposal" => { "target_key" => "working.network.org.carol", "action" => "put" },
+                    "frontmatter" => { "name" => "carol", "org" => "acme" },
+                  },
+                  body: "Proposed",
+                  as: "agent")
+
+        ctx = Textus::Application::Context.new(store: store, role: "human")
+        result = described_class.new(ctx: ctx, bus: store.bus).call("review.valid-proposal")
+        expect(result["accepted"]).to eq("review.valid-proposal")
+      end
+    end
+
+    it "raises ProposalError when schema_valid predicate fails (missing required field)" do
+      Dir.mktmpdir do |root|
+        store = build_store_with_promotion(File.join(root, ".textus"))
+        store.put("review.bad-proposal",
+                  meta: {
+                    "name" => "bad-proposal",
+                    "proposal" => { "target_key" => "working.network.org.dave", "action" => "put" },
+                    "frontmatter" => { "name" => "dave" }, # missing required 'org'
+                  },
+                  body: "Proposed",
+                  as: "agent")
+
+        ctx = Textus::Application::Context.new(store: store, role: "human")
+        expect { described_class.new(ctx: ctx, bus: store.bus).call("review.bad-proposal") }
+          .to raise_error(Textus::ProposalError, /promotion gate failed/i)
+      end
+    end
+
+    def build_human_accept_store(textus_dir)
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
+      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: review, write_policy: [agent, human] }
+        entries:
+          - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true }
+          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
+        rules:
+          - match: "working.network.org.**"
+            promotion:
+              requires: [human_accept]
+      YAML
+      Textus::Store.new(textus_dir)
+    end
+
+    it "human_accept predicate passes when role is human" do
+      Dir.mktmpdir do |root|
+        store = build_human_accept_store(File.join(root, ".textus"))
+        store.put("review.ha-proposal",
+                  meta: {
+                    "name" => "ha-proposal",
+                    "proposal" => { "target_key" => "working.network.org.eve", "action" => "put" },
+                    "frontmatter" => { "name" => "eve" },
+                  },
+                  body: "Proposed", as: "agent")
+        ctx = Textus::Application::Context.new(store: store, role: "human")
+        result = described_class.new(ctx: ctx, bus: store.bus).call("review.ha-proposal")
+        expect(result["accepted"]).to eq("review.ha-proposal")
+      end
     end
   end
 end

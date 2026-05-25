@@ -10,16 +10,16 @@ RSpec.describe "inject_intro:" do
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
           path: output/root.md
           zone: output
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
           inject_intro: true
     YAML
@@ -33,18 +33,18 @@ RSpec.describe "inject_intro:" do
 
   it "injects intro: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
     body = File.read(File.join(root, "zones/output/root.md"))
-    expect(body).to include("protocol=textus/2")
+    expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
     expect(body).to include("zone:output/")
   end
 
   it "raises on inject_intro: on a non-derived entry" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
+        - { name: identity, write_policy: [human] }
       entries:
         - key: identity.bad
           path: identity/bad.md
@@ -60,17 +60,17 @@ RSpec.describe "inject_intro:" do
     # JSON derived entries do not require a template (template is an escape
     # hatch). inject_intro: on a templateless derived entry must still raise.
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
           path: output/root.json
           zone: output
           format: json
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           inject_intro: true
     YAML
     expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*template/)
@@ -78,21 +78,21 @@ RSpec.describe "inject_intro:" do
 
   it "does not inject intro: when flag is absent" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
         - key: output.root
           path: output/root.md
           zone: output
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+    Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
     body = File.read(File.join(root, "zones/output/root.md"))
-    expect(body).not_to include("protocol=textus/2")
+    expect(body).not_to include("protocol=textus/3")
   end
 end

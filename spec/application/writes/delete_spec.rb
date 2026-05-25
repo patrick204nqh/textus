@@ -7,10 +7,10 @@ RSpec.describe Textus::Application::Writes::Delete do
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "identity"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, runner] }
+        - { name: identity,   write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
         - { key: identity.bar,   path: identity/bar.md,   zone: identity }
@@ -24,16 +24,16 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "working", "foo.md"), "---\nkey: working.foo\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "script", correlation_id: "del-1")
+      ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "del-1")
       events = []
-      store.bus.subscribe(:deleted, :capture) do |key:, correlation_id:, **|
-        events << [:deleted, key, correlation_id]
+      store.bus.subscribe(:entry_deleted, :capture) do |key:, correlation_id:, **|
+        events << [:entry_deleted, key, correlation_id]
       end
 
       described_class.new(ctx: ctx, bus: store.bus).call("working.foo")
 
       expect(File.exist?(File.join(textus, "zones", "working", "foo.md"))).to be(false)
-      expect(events).to include([:deleted, "working.foo", "del-1"])
+      expect(events).to include([:entry_deleted, "working.foo", "del-1"])
     end
   end
 
@@ -43,7 +43,7 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "script")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
 
       expect do
         described_class.new(ctx: ctx, bus: store.bus).call("identity.bar")

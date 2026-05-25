@@ -1,18 +1,18 @@
 module Textus
   module Doctor
     class Check
-      # Flags entries whose key is matched by two or more policy blocks of the
+      # Flags entries whose key is matched by two or more rule blocks of the
       # SAME specificity in the same slot (refresh / handler_allowlist /
       # promote). Ties are non-deterministic in the parser's pick step, so
       # they're a configuration smell — surface them.
-      class PolicyAmbiguity < Check
+      class RuleAmbiguity < Check
         SLOTS = %i[refresh handler_allowlist promote].freeze
 
         def call
           out = []
-          policies = store.manifest.policies
+          rules = store.manifest.rules
           store.manifest.entries.each do |mentry|
-            matches = policies.explain(mentry.key)
+            matches = rules.explain(mentry.key)
             next if matches.length < 2
 
             SLOTS.each { |slot| out.concat(ambiguities_for(mentry, slot, matches)) }
@@ -34,10 +34,10 @@ module Textus
         def issue_for(mentry, slot, group)
           globs = group.map(&:match).sort
           {
-            "code" => "policy.ambiguity",
+            "code" => "rule.ambiguity",
             "level" => "warning",
             "subject" => mentry.key,
-            "message" => "entry '#{mentry.key}' matches #{group.length} policy blocks at the same " \
+            "message" => "entry '#{mentry.key}' matches #{group.length} rule blocks at the same " \
                          "specificity for #{slot}: #{globs.join(", ")}",
             "fix" => "narrow one of the conflicting match: globs in .textus/manifest.yaml so a single " \
                      "block wins for this key",

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
+RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   def with_store(manifest_yaml)
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
@@ -14,12 +14,12 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
 
   it "returns no issues when each slot has a single winner" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
-      policies:
+      rules:
         - match: working.foo
           refresh: { ttl: 10m }
     YAML
@@ -29,15 +29,15 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
     end
   end
 
-  it "warns when two policies of equal specificity carry the same slot" do
+  it "warns when two rules of equal specificity carry the same slot" do
     # Both globs (`working.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
-      policies:
+      rules:
         - match: working.*
           refresh: { ttl: 10m }
         - match: "*.foo"
@@ -46,7 +46,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
 
     with_store(manifest) do |store|
       issues = described_class.new(store).call
-      ambig = issues.find { |i| i["code"] == "policy.ambiguity" }
+      ambig = issues.find { |i| i["code"] == "rule.ambiguity" }
       expect(ambig).not_to be_nil
       expect(ambig["subject"]).to eq("working.foo")
       expect(ambig["level"]).to eq("warning")
@@ -56,12 +56,12 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
 
   it "does not warn when one block dominates by specificity" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human] }
+        - { name: working, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
-      policies:
+      rules:
         - match: working.*
           refresh: { ttl: 10m }
         - match: working.foo

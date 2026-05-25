@@ -5,7 +5,7 @@ require "tmpdir"
 require "stringio"
 require "json"
 
-RSpec.describe ":reject event and store.reject" do
+RSpec.describe ":proposal_rejected event and store.reject" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -14,20 +14,20 @@ RSpec.describe ":reject event and store.reject" do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: review,   writable_by: [ai, human] }
+        - { name: identity, write_policy: [human] }
+        - { name: review,   write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity }
         - { key: review.draft,    path: review/draft.md,    zone: review }
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook(:reject, :log_reject) do |key:, target_key:, store:|
-        $textus_event_log << [:reject, key, target_key]
+      Textus.on(:proposal_rejected, :log_reject) do |key:, target_key:, store:|
+        $textus_event_log << [:proposal_rejected, key, target_key]
       end
-      Textus.hook(:deleted, :log_delete) { |key:, store:| $textus_event_log << [:deleted, key] }
+      Textus.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -41,12 +41,12 @@ RSpec.describe ":reject event and store.reject" do
     store = Textus::Store.new(root)
     store.put("review.draft",
               meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "proposed body", as: "ai")
+              body: "proposed body", as: "agent")
     $textus_event_log.clear
     result = store.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
-    reject_events = $textus_event_log.select { |e| e[0] == :reject }
+    reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
     expect(reject_events.length).to eq(1)
     expect(reject_events.first[1]).to eq("review.draft")
     expect(reject_events.first[2]).to eq("identity.target")
@@ -62,7 +62,7 @@ RSpec.describe ":reject event and store.reject" do
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.put("review.draft", meta: { "name" => "draft" }, body: "x", as: "ai")
+    store.put("review.draft", meta: { "name" => "draft" }, body: "x", as: "agent")
     expect { store.reject("review.draft", as: "human") }
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
@@ -72,10 +72,10 @@ RSpec.describe ":reject event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "zones/review"))
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: identity, writable_by: [human] }
-          - { name: review,   writable_by: [ai, human] }
+          - { name: identity, write_policy: [human] }
+          - { name: review,   write_policy: [agent, human] }
         entries:
           - { key: identity.t, path: identity/t.md, zone: identity }
           - { key: review.d,   path: review/d.md,   zone: review }
@@ -83,7 +83,7 @@ RSpec.describe ":reject event and store.reject" do
       store = Textus::Store.new(root)
       store.put("review.d",
                 meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
-                body: "x", as: "ai")
+                body: "x", as: "agent")
     end
 
     it "rejects a review entry via CLI and emits JSON" do

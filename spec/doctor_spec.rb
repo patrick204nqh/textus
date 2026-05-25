@@ -12,10 +12,10 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
         - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
         - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
@@ -38,7 +38,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports a clean store as ok: true with no error-level issues" do
     res = doctor
-    expect(res["protocol"]).to eq("textus/2")
+    expect(res["protocol"]).to eq("textus/3")
     expect(res["ok"]).to be true
     expect(res["issues"].any? { |i| i["level"] == "error" }).to be false
   end
@@ -87,7 +87,7 @@ RSpec.describe Textus::Doctor do
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
     expect(issue).not_to be_nil
     expect(issue["proposed_key"]).to eq("bad-name")
-    expect(issue["fix"]).to include("key migrate")
+    expect(issue["fix"]).to include("key normalize")
   end
 
   context "with index_filename on a nested entry" do
@@ -95,11 +95,11 @@ RSpec.describe Textus::Doctor do
       FileUtils.mkdir_p(File.join(root, "zones/skills/ask/references"))
       FileUtils.mkdir_p(File.join(root, "zones/skills/Bad_Name"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
-          - { name: skills, writable_by: [human] }
-          - { name: output, writable_by: [build] }
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: skills, write_policy: [human] }
+          - { name: output, write_policy: [builder] }
         entries:
           - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
           - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
@@ -193,7 +193,7 @@ RSpec.describe Textus::Doctor do
   it "reports hook.check_failed with a fix hint pointing to .textus/hooks/" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
-      Textus.hook(:check, :bad_check) { |store:| raise "boom in check" }
+      Textus.on(:validate, :bad_check) { |store:| raise "boom in check" }
     RUBY
     store = Textus::Store.new(root)
     res = described_class.run(store)
@@ -214,9 +214,9 @@ RSpec.describe Textus::Doctor do
       FileUtils.mkdir_p(File.join(ra_root, "zones/working/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: working, write_policy: [human, agent, runner] }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
       YAML
@@ -233,7 +233,7 @@ RSpec.describe Textus::Doctor do
       # Write full_name as ai — violates maintained_by: human
       ra_store.put("working.people.alice",
                    meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
-                   body: "", as: "ai")
+                   body: "", as: "agent")
 
       res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])
       codes = res["issues"].map { |i| i["code"] }

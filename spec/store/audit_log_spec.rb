@@ -25,16 +25,16 @@ RSpec.describe Textus::Store::AuditLog do
   end
 
   it "returns the most recent role that wrote a key" do
-    log.append(role: "ai",    verb: "put", key: "working.x", etag_before: nil, etag_after: "a")
+    log.append(role: "agent", verb: "put", key: "working.x", etag_before: nil, etag_after: "a")
     log.append(role: "human", verb: "put", key: "working.x", etag_before: "a", etag_after: "b")
-    log.append(role: "ai",    verb: "put", key: "working.y", etag_before: nil, etag_after: "c")
+    log.append(role: "agent", verb: "put", key: "working.y", etag_before: nil, etag_after: "c")
     expect(log.last_writer_for("working.x")).to eq("human")
-    expect(log.last_writer_for("working.y")).to eq("ai")
+    expect(log.last_writer_for("working.y")).to eq("agent")
     expect(log.last_writer_for("missing")).to be_nil
   end
 
   it "appends an event_error row with extras sub-object" do
-    log.append(role: "script", verb: "event_error", key: "working.x",
+    log.append(role: "runner", verb: "event_error", key: "working.x",
                etag_before: nil, etag_after: nil,
                extras: { "event" => "put", "hook" => "boom", "error" => "boom!" })
     parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)
@@ -51,7 +51,7 @@ RSpec.describe Textus::Store::AuditLog do
   it "is safe under concurrent writes (smoke test)" do
     threads = 20.times.map do |i|
       Thread.new do
-        log.append(role: "ai", verb: "put", key: "working.k#{i}",
+        log.append(role: "agent", verb: "put", key: "working.k#{i}",
                    etag_before: nil, etag_after: "sha256:#{i}")
       end
     end
@@ -70,7 +70,7 @@ RSpec.describe Textus::Store::AuditLog do
     it "returns empty array for a log of well-formed NDJSON rows" do
       log.append(role: "human", verb: "put", key: "working.x",
                  etag_before: nil, etag_after: "sha256:abc")
-      log.append(role: "ai", verb: "put", key: "working.y",
+      log.append(role: "agent", verb: "put", key: "working.y",
                  etag_before: nil, etag_after: "sha256:def")
       expect(log.verify_integrity).to eq([])
     end
@@ -92,6 +92,25 @@ RSpec.describe Textus::Store::AuditLog do
       File.write(File.join(root, "audit.log"), "not json\n")
       issues = log.verify_integrity
       expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "invalid_json"))
+    end
+  end
+
+  describe "textus/3 role canonicalization" do
+    it "writes canonical role names verbatim for new rows" do
+      log.append(role: "agent", verb: "put", key: "working.x",
+                 etag_before: nil, etag_after: "sha256:0")
+      row = JSON.parse(File.read(File.join(root, "audit.log")).lines.last)
+      expect(row["role"]).to eq("agent")
+    end
+
+    it "reads legacy ai/script/build rows verbatim without rewriting" do
+      File.write(
+        File.join(root, "audit.log"),
+        JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
+                      "verb" => "put", "key" => "working.x",
+                      "etag_before" => nil, "etag_after" => "sha256:0") + "\n",
+      )
+      expect(log.last_writer_for("working.x")).to eq("ai")
     end
   end
 end

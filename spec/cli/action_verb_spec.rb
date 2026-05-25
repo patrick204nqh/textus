@@ -7,13 +7,13 @@ require "fileutils"
 RSpec.describe "textus action verb" do
   def custom_manifest_with_demo!(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: inbox,    writable_by: [script] }
-        - { name: review,   writable_by: [ai, human] }
-        - { name: output,   writable_by: [build] }
+        - { name: identity, write_policy: [human] }
+        - { name: working,  write_policy: [human, agent, runner] }
+        - { name: intake,   write_policy: [runner] }
+        - { name: review,   write_policy: [agent, human] }
+        - { name: output,   write_policy: [builder] }
       entries:
         - { key: working.demo, path: working/demo.md, zone: working }
     YAML
@@ -25,7 +25,7 @@ RSpec.describe "textus action verb" do
       Textus::Init.run(root)
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
-        Textus.hook(:intake, :sync_demo) do |store:, config:, args:|
+        Textus.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
           # `store:` is an Application::Context; .store is the underlying Store.
           ctx = store
           ctx.store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok", as: ctx.role)
@@ -69,7 +69,7 @@ RSpec.describe "textus action verb" do
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
-        Textus.hook(:intake, :slow) { |store:, config:, args:| sleep 5 }
+        Textus.on(:resolve_intake, :slow) { |store:, config:, args:| sleep 5 }
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original
       allow(Timeout).to receive(:timeout)
@@ -77,7 +77,7 @@ RSpec.describe "textus action verb" do
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "hook", "run", "slow", "--as=script"],
+        ["--root=#{root}", "hook", "run", "slow", "--as=runner"],
         stdin: StringIO.new(""), stdout: out, stderr: StringIO.new, cwd: dir,
       )
       expect(rc).not_to eq(0)

@@ -24,7 +24,7 @@ RSpec.describe Textus::Store::AuditLog do
 
   it "carries extras as a sub-object when present" do
     log.append(
-      role: "script", verb: "event_error", key: "-",
+      role: "runner", verb: "event_error", key: "-",
       etag_before: nil, etag_after: nil,
       extras: { "event" => "put", "hook" => "h", "error" => "boom" }
     )
@@ -62,9 +62,9 @@ RSpec.describe Textus::Store::AuditLog do
 
   describe "#last_writer_for" do
     it "returns the role of the last writer for a key (NDJSON lines)" do
-      log.append(role: "ai",    verb: "put", key: "x", etag_before: nil, etag_after: "e1")
+      log.append(role: "agent", verb: "put", key: "x", etag_before: nil, etag_after: "e1")
       log.append(role: "human", verb: "put", key: "x", etag_before: "e1", etag_after: "e2")
-      log.append(role: "ai",    verb: "put", key: "y", etag_before: nil, etag_after: "e3")
+      log.append(role: "agent", verb: "put", key: "y", etag_before: nil, etag_after: "e3")
       expect(log.last_writer_for("x")).to eq("human")
     end
   end

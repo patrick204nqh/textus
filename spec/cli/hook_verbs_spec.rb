@@ -8,22 +8,22 @@ RSpec.describe "CLI hook verbs" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/inbox"))
+    FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
-      zones: [{ name: inbox, writable_by: [script] }]
+      version: textus/3
+      zones: [{ name: intake, write_policy: [runner] }]
       entries:
-        - key: inbox.x
-          path: inbox/x.md
-          zone: inbox
+        - key: intake.x
+          path: intake/x.md
+          zone: intake
           intake: { handler: stub }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-      Textus.hook(:intake, :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
-      Textus.hook(:reduce, :r)    { |store:, rows:, config:| rows }
-      Textus.hook(:put,    :h)    { |store:, key:, envelope:| }
-      Textus.hook(:check,  :dc)   { |store:| [] }
+      Textus.on(:resolve_intake, :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
+      Textus.on(:transform_rows, :r)    { |store:, rows:, config:| rows }
+      Textus.on(:entry_put, :h)         { |store:, key:, envelope:| }
+      Textus.on(:validate, :dc)         { |store:| [] }
     RUBY
   end
 
@@ -34,47 +34,47 @@ RSpec.describe "CLI hook verbs" do
   end
 
   it "textus refresh KEY invokes the fetch hook" do
-    rc, line = run_cli(["refresh", "inbox.x", "--as=script", "--format=json"])
+    rc, line = run_cli(["refresh", "intake.x", "--as=runner", "--output=json"])
     expect(rc).to eq(0)
     expect(JSON.parse(line)["body"]).to eq("ok")
   end
 
   it "textus hook list returns hooks grouped by event" do
-    rc, line = run_cli(["hook", "list", "--format=json"])
+    rc, line = run_cli(["hook", "list", "--output=json"])
     expect(rc).to eq(0)
     payload = JSON.parse(line)
     by_event = payload["hooks"].group_by { |e| e["event"] }
-    expect(by_event["intake"].map { |e| e["name"] }).to include("stub")
-    expect(by_event["reduce"].map { |e| e["name"] }).to include("r")
-    expect(by_event["put"].map { |e| e["name"] }).to include("h")
-    expect(by_event["check"].map { |e| e["name"] }).to include("dc")
+    expect(by_event["resolve_intake"].map { |e| e["name"] }).to include("stub")
+    expect(by_event["transform_rows"].map { |e| e["name"] }).to include("r")
+    expect(by_event["entry_put"].map { |e| e["name"] }).to include("h")
+    expect(by_event["validate"].map { |e| e["name"] }).to include("dc")
   end
 
-  it "textus hook list --event=put filters" do
-    _rc, line = run_cli(["hook", "list", "--event=put", "--format=json"])
-    expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("put"))
+  it "textus hook list --event=entry_put filters" do
+    _rc, line = run_cli(["hook", "list", "--event=entry_put", "--output=json"])
+    expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("entry_put"))
   end
 
   it "textus put --fetch=NAME applies the fetch hook to stdin bytes" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
-      zones: [{ name: working, writable_by: [human, script] }]
+      version: textus/3
+      zones: [{ name: working, write_policy: [human, runner] }]
       entries: [{ key: working.j, path: working/j.md, zone: working }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
-      Textus.hook(:intake, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
+      Textus.on(:resolve_intake, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
     RUBY
     out = StringIO.new
     rc = Textus::CLI.run(
-      ["put", "working.j", "--stdin", "--fetch=jbytes", "--as=human", "--format=json"],
+      ["put", "working.j", "--stdin", "--fetch=jbytes", "--as=human", "--output=json"],
       stdin: StringIO.new('{"a":1}'), stdout: out, stderr: StringIO.new, cwd: tmp,
     )
     expect(rc).to eq(0)
   end
 
   it "removed: textus extensions list exits with usage error" do
-    rc, line = run_cli(["extensions", "list", "--format=json"])
+    rc, line = run_cli(["extensions", "list", "--output=json"])
     expect(rc).not_to eq(0)
     expect(JSON.parse(line)["code"]).to eq("usage")
   end

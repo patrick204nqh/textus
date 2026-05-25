@@ -15,21 +15,31 @@ RSpec.describe Textus::CLI::Verb do
     end
 
     v = klass.new(**io)
-    v.parse(["--prefix=a.b", "--zone=working", "--format=json"])
+    v.parse(["--prefix=a.b", "--zone=working", "--output=json"])
     result = v.call(:fake_store)
     expect(result).to eq("prefix" => "a.b", "zone" => "working")
   end
 
-  it "rejects --format values other than json" do
+  it "rejects --output values other than json" do
     klass = Class.new(described_class) do
       def self.name = "X"
       def call(_) = {}
     end
     v = klass.new(**io)
-    expect { v.parse(["--format=yaml"]) }.to raise_error(Textus::UsageError, /only --format=json/)
+    expect { v.parse(["--output=yaml"]) }.to raise_error(Textus::UsageError, /only --output=json/)
   end
 
-  it "defaults --format to json when omitted" do
+  it "rejects legacy --format flag with FlagRenamed" do
+    klass = Class.new(described_class) do
+      def self.name = "FR"
+      def call(_) = {}
+    end
+    v = klass.new(**io)
+    expect { v.parse(["--format=json"]) }
+      .to raise_error(Textus::FlagRenamed, /--format.*--output/)
+  end
+
+  it "defaults --output to json when omitted" do
     klass = Class.new(described_class) do
       def self.name = "Y"
       def call(_) = {}
@@ -44,7 +54,7 @@ RSpec.describe Textus::CLI::Verb do
       def call(_) = positional
     end
     v = klass.new(**io)
-    v.parse(["alpha", "--format=json", "beta"])
+    v.parse(["alpha", "--output=json", "beta"])
     expect(v.positional).to eq(%w[alpha beta])
   end
 

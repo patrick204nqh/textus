@@ -19,12 +19,12 @@ RSpec.describe Textus::CLI::Verb::Freshness do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
+        - { name: working, write_policy: [human, runner] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working }
-      policies:
+      rules:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }
     YAML

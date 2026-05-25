@@ -2,7 +2,7 @@
 #   - identity.marketplace       → name, owner
 #   - identity.plugin            → plugin name/description for the single listing
 #   - working.skills.<...>       → the per-skill source paths under ./skills/
-Textus.reduce(:marketplace_envelope) do |rows:, **|
+Textus.on(:transform_rows, :marketplace_envelope) do |rows:, **|
   market = rows.find { |r| r["_key"] == "identity.marketplace" } || {}
   plugin = rows.find { |r| r["_key"] == "identity.plugin" } || {}
   skills = rows

@@ -10,9 +10,9 @@ RSpec.describe "Textus UID" do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
+        - { name: working, write_policy: [human, agent, runner] }
       entries:
         - { key: working.md,   path: working/md.md,   zone: working }
         - { key: working.j,    path: working/j.json,  zone: working }

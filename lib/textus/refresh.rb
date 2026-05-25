@@ -5,7 +5,7 @@ module Textus
       Textus::Composition.refresh_worker(ctx).run(key)
     end
 
-    def self.refresh_stale(store, prefix: nil, zone: nil, as: "script")
+    def self.refresh_stale(store, prefix: nil, zone: nil, as: "runner")
       ctx = Textus::Composition.context(store, role: as)
       Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
     end

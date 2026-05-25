@@ -13,18 +13,18 @@ RSpec.describe Textus::Dependencies do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
-        - { name: output, writable_by: [build] }
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
         - key: output.catalogs.people
           path: output/catalogs/people.md
           zone: output
           schema: null
-          owner: build:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
     YAML

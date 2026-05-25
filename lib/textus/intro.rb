@@ -13,17 +13,17 @@ module Textus
     ZONE_PURPOSES = {
       "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
-      "inbox" => "declared external inputs; script-refreshed via actions",
+      "intake" => "declared external inputs; script-refreshed via actions",
       "review" => "AI proposals awaiting human accept",
       "output" => "build-computed outputs; never hand-edited",
     }.freeze
 
     WRITE_FLOWS = {
       "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
-      "ai" => "propose changes by writing 'review.*' entries with --as=ai and a 'proposal:' frontmatter block; " \
-              "a human runs 'textus accept' to apply",
-      "script" => "refresh inbox entries with 'textus refresh KEY --as=script' (uses the entry's declared action)",
-      "build" => "'textus build' computes output entries from projections; output files are never hand-edited",
+      "agent" => "propose changes by writing 'review.*' entries with --as=agent and a 'proposal:' frontmatter block; " \
+                 "a human runs 'textus accept' to apply",
+      "runner" => "refresh intake entries with 'textus refresh KEY --as=runner' (uses the entry's declared action)",
+      "builder" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
@@ -37,14 +37,14 @@ module Textus
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
       { "name" => "accept",   "summary" => "apply a review.* proposal; --as=human only" },
-      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key migrate'" },
+      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key normalize'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run an action for an inbox entry" },
+      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
-      { "name" => "policy", "summary" => "inspect effective policies: 'policy list', 'policy explain KEY'" },
+      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
       { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
@@ -74,7 +74,7 @@ module Textus
 
     def self.entries_for(store)
       store.manifest.entries.map do |e|
-        derived = store.manifest.zone_writers(e.zone).include?("build")
+        derived = store.manifest.zone_writers(e.zone).include?("builder")
         {
           "key" => e.key,
           "zone" => e.zone,

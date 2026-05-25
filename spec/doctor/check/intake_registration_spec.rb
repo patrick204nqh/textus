@@ -8,9 +8,9 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "zones", "working"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, script] }
+          - { name: working, write_policy: [human, runner] }
         entries:
           - key: working.foo
             path: working/foo.md
@@ -34,13 +34,13 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       FileUtils.mkdir_p(File.join(textus, "zones", "working"))
       FileUtils.mkdir_p(File.join(textus, "hooks"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, script] }
+          - { name: working, write_policy: [human, runner] }
         entries: []
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
-        Textus.intake(:orphan_handler) { |store:, config:, args:| { _meta: {}, body: "" } }
+        Textus.on(:resolve_intake, :orphan_handler) { |store:, config:, args:| { _meta: {}, body: "" } }
       RUBY
 
       store = Textus::Store.new(textus)

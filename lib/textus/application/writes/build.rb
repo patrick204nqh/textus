@@ -5,8 +5,8 @@ module Textus
     module Writes
       # Materializes generator-zone entries (template + projection) onto disk
       # and copies the result to any configured `publish_to` / `publish_each`
-      # targets. Fires `:built` and `:published` events on the bus, tagged with
-      # the request's correlation_id for traceability.
+      # targets. Fires `:build_completed` and `:file_published` events on the bus,
+      # tagged with the request's correlation_id for traceability.
       class Build
         def initialize(ctx:, bus:)
           @ctx = ctx
@@ -59,7 +59,7 @@ module Textus
           end
 
           Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: root)
-          publish_event(:published,
+          publish_event(:file_published,
                         key: row[:key],
                         envelope: store.get(row[:key]),
                         source: row[:path],
@@ -91,14 +91,14 @@ module Textus
           mentry.publish_to.each do |rel|
             target_abs = File.join(repo_root, rel)
             Textus::Infra::Publisher.publish(source: target_path, target: target_abs, store_root: root)
-            publish_event(:published,
+            publish_event(:file_published,
                           key: mentry.key,
                           envelope: envelope,
                           source: target_path,
                           target: target_abs)
           end
 
-          publish_event(:built,
+          publish_event(:build_completed,
                         key: mentry.key,
                         envelope: envelope,
                         sources: Array(mentry.projection&.fetch("select", nil)).compact)

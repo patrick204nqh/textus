@@ -10,7 +10,7 @@ module Textus
         from = Array(mentry.projection&.fetch("select", nil)).compact
         meta["from"] = from unless from.empty?
         meta["template"] = mentry.template if mentry.template
-        reduce = mentry.projection&.dig("reduce")
+        reduce = mentry.projection&.dig("transform")
         meta["reduce"] = reduce if reduce
 
         out = { "_meta" => meta }

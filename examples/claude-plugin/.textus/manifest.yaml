@@ -1,122 +1,142 @@
-version: textus/2
+---
+version: textus/3
 zones:
-  - { name: identity, writable_by: [human] }
-  - { name: working,  writable_by: [human, ai, script] }
-  - { name: inbox,    writable_by: [script] }
-  - { name: review,   writable_by: [ai, human] }
-  - { name: output,   writable_by: [build] }
-
+- name: identity
+  write_policy:
+  - human
+  read_policy:
+  - all
+- name: working
+  write_policy:
+  - human
+  - agent
+  - runner
+  read_policy:
+  - all
+- name: intake
+  write_policy:
+  - runner
+  read_policy:
+  - all
+- name: review
+  write_policy:
+  - agent
+  - human
+  read_policy:
+  - all
+- name: output
+  write_policy:
+  - builder
+  read_policy:
+  - all
 entries:
-  # ---- identity: plugin + marketplace identity (slow-changing, human-authored) ----
-  - { key: identity.plugin,       path: identity/voice-tools.md,           zone: identity, schema: plugin, owner: human:self }
-  - { key: identity.marketplace,  path: identity/example-marketplace.md,   zone: identity, schema: null,   owner: human:self }
-
-  # ---- working: catalogued plugin content ----
-  - key: working.agents
-    path: working/agents
-    zone: working
-    schema: agent
-    owner: human:self
-    nested: true
-    publish_each: "agents/{basename}.md"
-
-  - key: working.skills
-    path: working/skills
-    zone: working
-    schema: skill
-    owner: human:self
-    nested: true     # supports working.skills.writing.voice-writer (≥4 segments)
-    publish_each: "skills/{basename}/SKILL.md"
-
-  - key: working.commands
-    path: working/commands
-    zone: working
-    schema: command
-    owner: human:self
-    nested: true
-    publish_each: "commands/{basename}.md"
-
-  # ---- review: AI proposals awaiting human accept ----
-  # An AI agent writes a proposal here with --as=ai. A human reviews it and
-  # runs `textus accept review.<id> --as=human`, which (a) writes the
-  # proposal's `target_key` to its real home and (b) deletes the review
-  # entry. See examples/claude-plugin/README.md → "AI proposals (review)".
-  - key: review.suggestion
-    path: review/suggestion
-    zone: review
-    schema: null
-    owner: ai:catalog
-    nested: true
-
-  # ---- inbox: fetch-fed (textus capability demo) ----
-  - key: inbox.upstream.notes
-    path: inbox/upstream/notes.md
-    zone: inbox
-    owner: script:local
-    intake:
-      handler: local_file
-      config: { path: .textus/zones/identity/voice-tools.md }
-
-  # ---- output: machine-built ----
-  - key: output.plugin
-    path: output/plugin.json
-    zone: output
-    format: json
-    owner: build:auto
-    projection:
-      select: [identity.plugin]
-      pluck: "*"
-      reduce: plugin_envelope
-    publish_to: [.claude-plugin/plugin.json]
-
-  - key: output.marketplace
-    path: output/marketplace.json
-    zone: output
-    format: json
-    owner: build:auto
-    projection:
-      select: [identity.marketplace, identity.plugin, working.skills]
-      pluck: "*"
-      reduce: marketplace_envelope
-    publish_to: [.claude-plugin/marketplace.json]
-
-  - key: output.claude-root
-    path: output/claude-root.md
-    zone: output
-    owner: build:auto
-    projection:
-      select: [identity.plugin, working.agents, working.skills, working.commands]
-      pluck: "*"
-      reduce: claude_root
-    template: claude-root.mustache
-    inject_intro: true
-    publish_to: [CLAUDE.md]
-    events:
-      built:
-        - { exec: bin/notify-build, as: script }
-
-policies:
-  # Baseline freshness for every inbox.* entry: refresh once a day, warn on stale.
-  # The more-specific block below overrides this for inbox.upstream.notes.
-  - match: inbox.**
-    refresh:
-      ttl: 24h
-      on_stale: warn
-
-  # Per-entry override — more-specific match wins per slot (Policy::Matcher).
-  - match: inbox.upstream.notes
-    refresh:
-      ttl: 12h
-
-  # Guard-rail: every inbox entry must use one of the handlers in this allowlist.
-  # `textus doctor` (check: handler_allowlist) fails if anyone wires up a new
-  # intake handler that isn't on the list.
-  - match: inbox.**
-    handler_allowlist: [local_file]
-
-  # Contract for proposals: a review.* proposal is only "promote-ready" when
-  # it validates against its target's schema AND a human has accepted it.
-  # `human_accept` is enforced today by the role gate on `textus accept`;
-  # `schema_valid` is documentary in 0.9.2 (reserved for `doctor` to enforce).
-  - match: review.**
-    promote_requires: [schema_valid, human_accept]
+- key: identity.plugin
+  path: identity/voice-tools.md
+  zone: identity
+  schema: plugin
+  owner: human:self
+- key: identity.marketplace
+  path: identity/example-marketplace.md
+  zone: identity
+  schema:
+  owner: human:self
+- key: working.agents
+  path: working/agents
+  zone: working
+  schema: agent
+  owner: human:self
+  nested: true
+  publish_each: agents/{basename}.md
+- key: working.skills
+  path: working/skills
+  zone: working
+  schema: skill
+  owner: human:self
+  nested: true
+  publish_each: skills/{basename}/SKILL.md
+- key: working.commands
+  path: working/commands
+  zone: working
+  schema: command
+  owner: human:self
+  nested: true
+  publish_each: commands/{basename}.md
+- key: review.suggestion
+  path: review/suggestion
+  zone: review
+  schema:
+  owner: agent:catalog
+  nested: true
+- key: intake.upstream.notes
+  path: intake/upstream/notes.md
+  zone: intake
+  owner: runner:local
+  intake:
+    handler: local_file
+    config:
+      path: ".textus/zones/identity/voice-tools.md"
+- key: output.plugin
+  path: output/plugin.json
+  zone: output
+  format: json
+  owner: builder:auto
+  publish_to:
+  - ".claude-plugin/plugin.json"
+  compute:
+    select:
+    - identity.plugin
+    pluck: "*"
+    kind: projection
+    transform: plugin_envelope
+- key: output.marketplace
+  path: output/marketplace.json
+  zone: output
+  format: json
+  owner: builder:auto
+  publish_to:
+  - ".claude-plugin/marketplace.json"
+  compute:
+    select:
+    - identity.marketplace
+    - identity.plugin
+    - working.skills
+    pluck: "*"
+    kind: projection
+    transform: marketplace_envelope
+- key: output.claude-root
+  path: output/claude-root.md
+  zone: output
+  owner: builder:auto
+  template: claude-root.mustache
+  inject_intro: true
+  publish_to:
+  - CLAUDE.md
+  events:
+    build_completed:
+    - exec: bin/notify-build
+      as: runner
+  compute:
+    select:
+    - identity.plugin
+    - working.agents
+    - working.skills
+    - working.commands
+    pluck: "*"
+    kind: projection
+    transform: claude_root
+rules:
+- match: intake.**
+  refresh:
+    ttl: 24h
+    on_stale: warn
+- match: intake.upstream.notes
+  refresh:
+    ttl: 12h
+- match: intake.**
+  intake_handler_allowlist:
+  - local_file
+- match: review.**
+  promotion:
+    requires:
+    - schema_valid
+    - human_accept

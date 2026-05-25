@@ -4,10 +4,12 @@ module Textus
       PUBLISH_EACH_VARS = %w[leaf basename key ext].freeze
       PUBLISH_EACH_VAR_RE = /\{([a-z]+)\}/
 
+      COMPUTE_KINDS = %w[projection external].freeze
+
       attr_reader :key, :path, :zone, :schema, :owner, :nested, :generator, :raw, :format,
                   :projection, :template, :publish_to, :publish_each,
                   :intake_handler, :intake_config,
-                  :events, :inject_intro, :index_filename
+                  :events, :inject_intro, :index_filename, :compute
 
       def initialize(manifest, raw)
         @manifest = manifest
@@ -18,8 +20,7 @@ module Textus
         @schema = raw["schema"]
         @owner = raw["owner"]
         @nested = raw["nested"] == true
-        @generator = raw["generator"]
-        @projection = raw["projection"]
+        parse_compute!(raw)
         @template = raw["template"]
         @publish_to = Array(raw["publish_to"])
         @publish_each = raw["publish_each"]
@@ -56,14 +57,14 @@ module Textus
       end
 
       # Signal-based zone-kind predicates: derive the "kind" of a zone from its
-      # writable_by signals rather than its literal name, so detection keeps
+      # write_policy signals rather than its literal name, so detection keeps
       # working when users rename the default zones.
       def in_generator_zone?
-        zone_writers.include?("build")
+        zone_writers.include?("builder")
       end
 
       def in_proposal_zone?
-        zone_writers.include?("ai")
+        zone_writers.include?("agent")
       end
 
       private
@@ -210,6 +211,50 @@ module Textus
         end
       end
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+      def parse_compute!(raw)
+        if raw.key?("projection")
+          raise BadManifest.new(
+            "entry '#{@key}': projection: was renamed in textus/3 — use compute: { kind: projection, ... }",
+          )
+        end
+
+        if raw.key?("generator")
+          raise BadManifest.new(
+            "entry '#{@key}': generator: was renamed in textus/3 — use compute: { kind: external, ... }",
+          )
+        end
+
+        src = raw["compute"]
+        unless src
+          @compute = nil
+          @projection = nil
+          @generator = nil
+          return
+        end
+
+        kind = src["kind"]
+        unless COMPUTE_KINDS.include?(kind)
+          raise BadManifest.new(
+            "entry '#{@key}': compute.kind must be one of #{COMPUTE_KINDS.join(", ")} (got #{kind.inspect})",
+          )
+        end
+
+        if src.key?("reduce")
+          raise BadManifest.new(
+            "entry '#{@key}': compute.reduce: was renamed to transform: in textus/3 — use transform: instead of reduce:",
+          )
+        end
+
+        @compute = src.freeze
+        if kind == "projection"
+          @projection = @compute
+          @generator  = nil
+        else
+          @generator  = @compute
+          @projection = nil
+        end
+      end
 
       def parse_intake!(src)
         src ||= {}

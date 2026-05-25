@@ -41,9 +41,10 @@ module Textus
           self.class.options.each do |name, optspec|
             o.on(optspec) { |v| public_send(:"#{name}=", v) }
           end
-          o.on("--format=FMT") { |v| fmt = v }
+          o.on("--output=FMT") { |v| fmt = v }
+          o.on("--format=FMT") { |_v| raise FlagRenamed.new("--format", "--output") }
         end.permute!(argv)
-        raise UsageError.new("only --format=json is supported in v1") unless fmt == "json"
+        raise UsageError.new("only --output=json is supported in v1") unless fmt == "json"
 
         @positional = argv.dup
       end

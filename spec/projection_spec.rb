@@ -10,9 +10,9 @@ RSpec.describe Textus::Projection do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, ai, script] }
+        - { name: working, write_policy: [human, agent, runner] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
     YAML
@@ -49,7 +49,7 @@ RSpec.describe Textus::Projection do
   end
 
   it "applies a reducer before sort/limit" do
-    store.registry.register(:reduce, :score) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :score) do |store:, rows:, config:|
       _ = config
       _ = store
       rows.map { |r| r.merge("score" => r["name"].length) }
@@ -57,7 +57,7 @@ RSpec.describe Textus::Projection do
     proj = Textus::Projection.new(store, {
                                     "select" => "working.people",
                                     "pluck" => ["name"],
-                                    "reduce" => "score",
+                                    "transform" => "score",
                                     "sort_by" => "score",
                                   })
     out = proj.run
@@ -65,7 +65,7 @@ RSpec.describe Textus::Projection do
   end
 
   it "raises UsageError when a reducer exceeds 2s timeout" do
-    store.registry.register(:reduce, :slow) do |store:, rows:, config:|
+    store.registry.register(:transform_rows, :slow) do |store:, rows:, config:|
       _ = rows
       _ = config
       _ = store
@@ -73,8 +73,8 @@ RSpec.describe Textus::Projection do
     end
     proj = Textus::Projection.new(store, {
                                     "select" => "working.people",
-                                    "reduce" => "slow",
+                                    "transform" => "slow",
                                   })
-    expect { proj.run }.to raise_error(Textus::UsageError, /reduce 'slow' exceeded 2s timeout/)
+    expect { proj.run }.to raise_error(Textus::UsageError, /transform_rows 'slow' exceeded 2s timeout/)
   end
 end

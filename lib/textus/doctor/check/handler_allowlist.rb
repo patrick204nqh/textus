@@ -11,7 +11,7 @@ module Textus
             handler = mentry.intake_handler
             next if handler.nil?
 
-            allow = store.manifest.policies_for(mentry.key).handler_allowlist
+            allow = store.manifest.rules_for(mentry.key).handler_allowlist
             next if allow.nil?
             next if allow.allows?(handler)
 

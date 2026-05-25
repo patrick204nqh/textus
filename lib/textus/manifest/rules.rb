@@ -1,8 +1,8 @@
 module Textus
   class Manifest
-    class Policies
-      PolicySet = Data.define(:refresh, :handler_allowlist, :promote, :retention)
-      EMPTY_SET = PolicySet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
+    class Rules
+      RuleSet = Data.define(:refresh, :handler_allowlist, :promote, :retention)
+      EMPTY_SET = RuleSet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -21,7 +21,7 @@ module Textus
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
-        PolicySet.new(
+        RuleSet.new(
           refresh: pick(slots[:refresh], :refresh, key),
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           promote: pick(slots[:promote], :promote, key),
@@ -47,10 +47,22 @@ module Textus
         attr_reader :match, :refresh, :handler_allowlist, :promote, :retention
 
         def initialize(raw)
-          @match = raw["match"] or raise Textus::UsageError.new("policy block missing match:")
+          @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
+          if raw.key?("handler_allowlist")
+            raise Textus::BadManifest.new(
+              "'handler_allowlist:' was renamed to 'intake_handler_allowlist:' in textus/3.",
+              hint: "Run `textus migrate --to=textus/3`.",
+            )
+          end
+          if raw.key?("promote_requires")
+            raise Textus::BadManifest.new(
+              "'promote_requires:' was renamed to 'promotion: { requires: [...] }' in textus/3.",
+              hint: "Run `textus migrate --to=textus/3`.",
+            )
+          end
           @refresh = parse_refresh(raw["refresh"])
-          @handler_allowlist = parse_handler_allowlist(raw["handler_allowlist"])
-          @promote = parse_promote(raw["promote_requires"])
+          @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
+          @promote = parse_promotion(raw["promotion"])
           @retention = raw["retention"] # reserved — passthrough only
         end
 
@@ -72,10 +84,12 @@ module Textus
           Textus::Domain::Policy::HandlerAllowlist.new(handlers: arr)
         end
 
-        def parse_promote(arr)
-          return nil if arr.nil?
+        def parse_promotion(h)
+          return nil if h.nil?
 
-          Textus::Domain::Policy::Promote.new(requires: arr)
+          raise Textus::BadManifest.new("promotion: must be a hash with a 'requires:' array") unless h.is_a?(Hash) && h.key?("requires")
+
+          Textus::Domain::Policy::Promote.new(requires: Array(h["requires"]))
         end
       end
     end

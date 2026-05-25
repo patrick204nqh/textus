@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe "Builder fires :publish per file" do
+RSpec.describe "Builder fires :file_published per file" do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
@@ -14,21 +14,21 @@ RSpec.describe "Builder fires :publish per file" do
     FileUtils.mkdir_p(File.join(root, "templates"))
   end
 
-  describe "publish_to: fires :publish once per target path" do
+  describe "publish_to: fires :file_published once per target path" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
-          - { name: output, writable_by: [build] }
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: output, write_policy: [builder] }
         entries:
           - { key: working.note, path: working/note.md, zone: working, schema: null }
           - key: output.note
             path: output/note.md
             zone: output
             schema: null
-            owner: build:auto
-            projection: { select: working.note }
+            owner: builder:auto
+            compute: { kind: projection, select: working.note }
             template: echo.mustache
             publish_to:
               - out/one.md
@@ -40,14 +40,14 @@ RSpec.describe "Builder fires :publish per file" do
                  "---\nkey: working.note\n---\nbody\n")
     end
 
-    it "fires :publish once per publish_to target with correct key/source/target" do
+    it "fires :file_published once per publish_to target with correct key/source/target" do
       captured = []
-      store.registry.register(:published, :capture) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:file_published, :capture) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
                          .call(prefix: "output.note")
 
       expect(captured.size).to eq(2)
@@ -61,14 +61,14 @@ RSpec.describe "Builder fires :publish per file" do
       expect(sources).to all(end_with("output/note.md"))
     end
 
-    it "fires :build exactly once per output entry regardless of publish_to count" do
+    it "fires :build_completed exactly once per output entry regardless of publish_to count" do
       build_events = []
-      store.registry.register(:built, :capture_build) do |key:, envelope:, sources:, **|
+      store.registry.register(:build_completed, :capture_build) do |key:, envelope:, sources:, **|
         _ = envelope
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build"))
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
                          .call(prefix: "output.note")
 
       expect(build_events.size).to eq(1)
@@ -76,12 +76,12 @@ RSpec.describe "Builder fires :publish per file" do
     end
   end
 
-  describe "publish_each: fires :publish once per leaf" do
+  describe "publish_each: fires :file_published once per leaf" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
-          - { name: working, writable_by: [human, ai, script] }
+          - { name: working, write_policy: [human, agent, runner] }
         entries:
           - key: working.agents
             path: working/agents
@@ -97,14 +97,14 @@ RSpec.describe "Builder fires :publish per file" do
                  "---\nname: beta\n---\nbody\n")
     end
 
-    it "fires :publish once per leaf with the correct leaf key and target" do
+    it "fires :file_published once per leaf with the correct leaf key and target" do
       captured = []
-      store.registry.register(:published, :capture_leaf) do |key:, envelope:, source:, target:, **|
+      store.registry.register(:file_published, :capture_leaf) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "build")).call
+      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }

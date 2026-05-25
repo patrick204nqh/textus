@@ -34,7 +34,7 @@ module Textus
       msg += "; did you mean: #{@suggestions.join(", ")}" unless @suggestions.empty?
       hint =
         if @suggestions.empty?
-          "run 'textus list --format=json' to see all keys"
+          "run 'textus list --output=json' to see all keys"
         else
           "did you mean: #{@suggestions.join(", ")}"
         end
@@ -58,6 +58,12 @@ module Textus
       else
         "open #{path} and check the YAML frontmatter for syntax errors"
       end
+    end
+  end
+
+  class BadManifest < Error
+    def initialize(m, hint: nil)
+      super("bad_manifest", m, hint: hint)
     end
   end
 
@@ -89,7 +95,7 @@ module Textus
         if writers && !writers.empty?
           writers.join(", ")
         else
-          "the role(s) listed in the manifest 'writable_by:'"
+          "the role(s) listed in the manifest 'write_policy:'"
         end
       details = { "key" => k, "zone" => z }
       details["writers"] = writers if writers
@@ -121,11 +127,12 @@ module Textus
   end
 
   class InvalidRole < Error
-    def initialize(r)
+    def initialize(r, message: nil)
       super(
-        "invalid_role", "role '#{r}' is not declared in any zone",
+        "invalid_role",
+        message || "role '#{r}' is not declared in any zone",
         details: { "role" => r },
-        hint: "valid roles are declared in .textus/manifest.yaml under zones[].writable_by",
+        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].write_policy",
       )
     end
   end
@@ -164,5 +171,29 @@ module Textus
 
   class ProposalError < Error
     def initialize(m) = super("proposal_error", m)
+  end
+
+  class CommandRenamed < Error
+    def initialize(old_form, new_form)
+      super(
+        "command_renamed",
+        "`textus #{old_form}` was renamed in textus/3 — use `textus #{new_form}`",
+        details: { "old" => old_form, "new" => new_form },
+        hint: "Use `textus #{new_form}` instead.",
+        exit_code: 2,
+      )
+    end
+  end
+
+  class FlagRenamed < Error
+    def initialize(old_flag, new_flag)
+      super(
+        "flag_renamed",
+        "#{old_flag} was renamed in textus/3 — use #{new_flag}",
+        details: { "old" => old_flag, "new" => new_flag },
+        hint: "Use #{new_flag} instead.",
+        exit_code: 2,
+      )
+    end
   end
 end

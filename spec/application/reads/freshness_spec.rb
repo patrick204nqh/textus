@@ -11,15 +11,15 @@ RSpec.describe Textus::Application::Reads::Freshness do
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
-        - { name: working, writable_by: [human, script] }
-        - { name: identity,   writable_by: [human] }
+        - { name: working, write_policy: [human, runner] }
+        - { name: identity,   write_policy: [human] }
       entries:
         - { key: working.doc,   path: working/doc.md,   zone: working }
         - { key: working.stale, path: working/stale.md, zone: working }
         - { key: identity.note,    path: identity/note.md,    zone: identity }
-      policies:
+      rules:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }
         - match: working.stale

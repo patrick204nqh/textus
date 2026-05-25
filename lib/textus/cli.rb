@@ -21,14 +21,27 @@ module Textus
       "intro" => Verb::Intro,
       "key" => Group::Key,
       "list" => Verb::List,
-      "policy" => Group::Policy,
+      "migrate" => Verb::Migrate,
       "published" => Verb::Published,
       "put" => Verb::Put,
       "rdeps" => Verb::Rdeps,
-      "refresh" => Verb::Refresh,
-      "refresh-stale" => Verb::RefreshStale,
+      "refresh" => Group::Refresh,
+      "rule" => Group::Rule,
       "schema" => Group::Schema,
       "where" => Verb::Where,
+    }.freeze
+
+    # Legacy top-level verb renames: these are rejected with a CommandRenamed error.
+    LEGACY_VERB_RENAMES = {
+      "mv" => "key mv",
+      "refresh-stale" => "refresh stale",
+    }.freeze
+
+    # Legacy group+subcommand renames (matched against [verb, subverb]).
+    LEGACY_GROUP_RENAMES = {
+      %w[policy list] => "rule list",
+      %w[policy explain] => "rule explain",
+      %w[key migrate] => "key normalize",
     }.freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
@@ -54,6 +67,17 @@ module Textus
       when "--help", "-h"    then print_help
                                   0
       else
+        # Check for legacy top-level verb renames first.
+        if (new_form = LEGACY_VERB_RENAMES[verb])
+          raise CommandRenamed.new(verb, new_form)
+        end
+
+        # Check for legacy group+subcommand renames.
+        subverb = argv.first
+        if subverb && (new_form = LEGACY_GROUP_RENAMES[[verb, subverb]])
+          raise CommandRenamed.new("#{verb} #{subverb}", new_form)
+        end
+
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
         dispatch(klass, argv)
       end
@@ -90,16 +114,18 @@ module Textus
           textus get KEY
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus freshness [--prefix=KEY] [--zone=Z]
-          textus refresh-stale [--prefix=KEY] [--zone=Z]
+          textus refresh KEY
+          textus refresh stale [--prefix=KEY] [--zone=Z]
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor
+          textus migrate --to=textus/3 [--dry-run]
           textus intro
 
-          textus key {mv,uid,migrate}
+          textus key {mv,uid,normalize}
+          textus rule {list,explain}
           textus schema {show,init,diff,migrate}
           textus hook {list,run}
-          textus policy {list,explain}
       HELP
     end
   end
