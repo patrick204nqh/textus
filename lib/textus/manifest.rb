@@ -1,4 +1,5 @@
 require "yaml"
+require_relative "manifest/schema"
 
 module Textus
   class Manifest
@@ -9,8 +10,6 @@ module Textus
       ".yml" => "yaml",
       ".txt" => "text",
     }.freeze
-
-    LEGACY_ZONE_RENAMES = { "inbox" => "intake" }.freeze
 
     attr_reader :root, :entries, :raw
 
@@ -63,35 +62,7 @@ module Textus
       @raw = raw
       raise BadFrontmatter.new(File.join(root, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
 
-      Array(raw["zones"]).each do |z|
-        if (new_name = LEGACY_ZONE_RENAMES[z["name"]])
-          raise BadManifest.new(
-            "Zone '#{z["name"]}' was renamed to '#{new_name}' in textus/3. " \
-            "Run `textus migrate --to=textus/3`.",
-          )
-        end
-
-        if z.key?("writable_by")
-          raise BadManifest.new(
-            "Zone '#{z["name"]}': 'writable_by:' was renamed to 'write_policy:' in textus/3. " \
-            "Replace writable_by: with write_policy: in your manifest.",
-          )
-        end
-
-        next unless z.key?("readable_by")
-
-        raise BadManifest.new(
-          "Zone '#{z["name"]}': 'readable_by:' was renamed to 'read_policy:' in textus/3. " \
-          "Replace readable_by: with read_policy: in your manifest.",
-        )
-      end
-
-      if raw.key?("policies")
-        raise BadManifest.new(
-          "'policies:' was renamed to 'rules:' in textus/3. " \
-          "Replace policies: with rules: in your manifest.",
-        )
-      end
+      Schema.validate!(raw)
 
       @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!

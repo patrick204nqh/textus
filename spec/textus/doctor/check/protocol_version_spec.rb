@@ -22,6 +22,7 @@ RSpec.describe Textus::Doctor::Check::ProtocolVersion do
     File.write(File.join(tmp, ".textus/manifest.yaml"), "version: textus/2\nzones: []\nentries: []\n")
     issues = described_class.run(root: tmp)
     expect(issues.first["code"]).to eq("protocol_mismatch")
-    expect(issues.first["hint"]).to include("textus migrate --to=textus/3")
+    expect(issues.first["hint"]).to match(/0\.11\.x/)
+    expect(issues.first["hint"]).not_to match(/textus migrate/)
   end
 end

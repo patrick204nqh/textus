@@ -221,11 +221,11 @@ The effective role for any CLI invocation is resolved in this order; the first m
 | Actor | Meaning |
 |---|---|
 | `human` | Interactive user at a terminal. |
-| `agent` | Long-running AI or LLM process. (was `ai` in textus/2 — rejected with hint: rename to `agent`) |
-| `runner` | Scheduled or one-shot automation script. (was `script` in textus/2 — rejected with hint: rename to `runner`) |
-| `builder` | Build/derive output (catalogs, indexes). (was `build` in textus/2 — rejected with hint: rename to `builder`) |
+| `agent` | Long-running AI or LLM process. |
+| `runner` | Scheduled or one-shot automation script. |
+| `builder` | Build/derive output (catalogs, indexes). |
 
-The legacy names `ai`, `script`, and `build` are rejected with `invalid_role` and a one-line migration hint. Unknown non-legacy roles are also rejected with `invalid_role`.
+Unknown role values are rejected with `invalid_role`.
 
 Every successful write records the resolved role and a wall-clock timestamp in `.textus/audit.log`, so reviewers can later distinguish a human edit from an agent edit even though both live in the same file.
 
@@ -705,7 +705,6 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `key normalize [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `key uid K` | read | any |
-| `migrate --to=textus/3` | write | `human` |
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -863,15 +862,16 @@ A `textus/3` implementation MAY:
 
 ## 16. Migrating from textus/2
 
-Run `textus migrate --to=textus/3` to upgrade an existing store. The command performs the following steps automatically:
+textus 0.12.0 does not ship a built-in migrator. Upgrade path:
 
-1. Rewrites `manifest.yaml`: `version: textus/2` → `textus/3`, `writable_by:` → `write_policy:`, `policies:` → `rules:`, `handler_allowlist:` → `intake_handler_allowlist:`, `promote_requires:` → `promotion: { requires: [...] }`.
-2. Renames the `inbox/` zone directory to `intake/` and updates all manifest `zone:` references accordingly.
-3. Rewrites `audit.log` entries for legacy role names (`ai`→`agent`, `script`→`runner`, `build`→`builder`), marking the conversion with a sentinel log line.
-4. Sweeps frontmatter `owner:` fields that reference legacy role tokens.
-5. Scans `.textus/hooks/**/*.rb` for legacy DSL calls (`Textus.hook`, `Textus.intake`, `Textus.reduce`, `Textus.check`, `Textus.put`, `Textus.published`) and reports findings — **hook files are not rewritten automatically** because renaming a hook event is a semantic change that requires human review.
+1. Install textus **0.11.x** first.
+2. Run `textus migrate --to=textus/3` (available in 0.11.x only). This rewrites `manifest.yaml`, renames the `inbox/` zone directory to `intake/`, sweeps frontmatter `owner:` fields, writes an audit-log marker, and reports legacy hook-DSL call sites for manual review.
+3. Upgrade to textus **0.12.0**.
+4. If `.textus/audit.log` contains pre-0.11.0 rows with `role: ai|script|build`, run `textus audit-rewrite-legacy-roles` once (one-shot verb; removed in 0.13.0).
 
-**Vocabulary summary:**
+**textus doctor refuses textus/2 stores.** The doctor check `protocol_version` emits an `error`-level issue when `manifest.yaml` carries `version: textus/2`. Install 0.11.x and migrate before upgrading to 0.12.0.
+
+**Vocabulary summary** (textus/2 → textus/3 rename table, for reference):
 
 | Category | textus/2 | textus/3 |
 |---|---|---|
@@ -907,9 +907,7 @@ Run `textus migrate --to=textus/3` to upgrade an existing store. The command per
 | CLI verb | `refresh-stale` | `refresh stale` |
 | CLI verb | `policy list/explain` | `rule list/explain` |
 
-**Notes on hook migration.** The scanner (`textus migrate --to=textus/3 --scan-hooks`) reports each file and call site that uses a legacy event name or DSL method. No automatic rewrite is performed. Update each hook to use `Textus.on(:new_event_name, ...)` before re-enabling the hook.
-
-**textus doctor refuses textus/2 stores.** The doctor check `protocol_version` emits an `error`-level issue when `manifest.yaml` carries `version: textus/2`. Run `textus migrate --to=textus/3` first, then re-run `textus doctor`.
+**Notes on hook migration.** The 0.11.x migrator scanner reports each file and call site that uses a legacy event name or DSL method. No automatic rewrite is performed. Update each hook to use `Textus.on(:new_event_name, ...)` before re-enabling the hook. See CHANGELOG §0.11.0 for the full event rename table.
 
 ---
 

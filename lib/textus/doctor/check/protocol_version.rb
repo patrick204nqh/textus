@@ -19,7 +19,7 @@ module Textus
             "code" => "protocol_mismatch",
             "severity" => "error",
             "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
-            "hint" => "Run `textus migrate --to=textus/3` to upgrade.",
+            "hint" => "Install textus 0.11.x to run the migrator, then upgrade to this version. See https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md#0110",
           }]
         end
 
@@ -38,7 +38,7 @@ module Textus
             "level" => "error",
             "subject" => path,
             "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
-            "fix" => "Run `textus migrate --to=textus/3` to upgrade.",
+            "fix" => "Install textus 0.11.x to run the migrator, then upgrade to this version. See https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md#0110",
           }]
         end
       end

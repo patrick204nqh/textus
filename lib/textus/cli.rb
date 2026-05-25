@@ -21,7 +21,6 @@ module Textus
       "intro" => Verb::Intro,
       "key" => Group::Key,
       "list" => Verb::List,
-      "migrate" => Verb::Migrate,
       "published" => Verb::Published,
       "put" => Verb::Put,
       "rdeps" => Verb::Rdeps,
@@ -29,19 +28,6 @@ module Textus
       "rule" => Group::Rule,
       "schema" => Group::Schema,
       "where" => Verb::Where,
-    }.freeze
-
-    # Legacy top-level verb renames: these are rejected with a CommandRenamed error.
-    LEGACY_VERB_RENAMES = {
-      "mv" => "key mv",
-      "refresh-stale" => "refresh stale",
-    }.freeze
-
-    # Legacy group+subcommand renames (matched against [verb, subverb]).
-    LEGACY_GROUP_RENAMES = {
-      %w[policy list] => "rule list",
-      %w[policy explain] => "rule explain",
-      %w[key migrate] => "key normalize",
     }.freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
@@ -67,17 +53,6 @@ module Textus
       when "--help", "-h"    then print_help
                                   0
       else
-        # Check for legacy top-level verb renames first.
-        if (new_form = LEGACY_VERB_RENAMES[verb])
-          raise CommandRenamed.new(verb, new_form)
-        end
-
-        # Check for legacy group+subcommand renames.
-        subverb = argv.first
-        if subverb && (new_form = LEGACY_GROUP_RENAMES[[verb, subverb]])
-          raise CommandRenamed.new("#{verb} #{subverb}", new_form)
-        end
-
         klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
         dispatch(klass, argv)
       end
@@ -119,7 +94,6 @@ module Textus
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor
-          textus migrate --to=textus/3 [--dry-run]
           textus intro
 
           textus key {mv,uid,normalize}

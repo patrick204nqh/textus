@@ -18,15 +18,15 @@ Two versions, deliberately independent:
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
-## Migrating from 0.10.x
+### Upgrading from textus/2
 
-If you are upgrading from a store authored on textus 0.10.x (protocol `textus/2`), run the one-shot migrator before installing 0.11.0:
+textus 0.12.0 does not include a built-in migrator. If you are upgrading from
+a textus/2 store (gem versions ≤ 0.10.x), first install textus 0.11.x and run:
 
-```sh
-textus migrate --to=textus/3
-```
+    textus migrate --to=textus/3
 
-This rewrites your manifest YAML, renames the `inbox` zone directory to `intake`, updates frontmatter owner fields across `.md`/`.json`/`.yaml` files, writes an audit-log marker, and runs a hook DSL scanner that reports old call sites for human review. See [CHANGELOG §0.11.0](CHANGELOG.md) for the full rename table.
+Then upgrade to 0.12.0. Pre-0.11.0 audit-log rows with `role: ai|script|build`
+are tolerated verbatim by the reader — no rewrite step required.
 
 ## Install
 
