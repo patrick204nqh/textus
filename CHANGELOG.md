@@ -27,12 +27,6 @@ tracks both additive improvements and breaking protocol bumps independently.
 ### Added
 - `Manifest::Schema.validate!` — strict-unknown-keys parser. Manifests with
   any unrecognized key fail uniformly with `unknown key 'X' at '<jsonpath>'`.
-- `textus audit-rewrite-legacy-roles` — **one-shot** verb that rewrites
-  legacy audit-log role values to canonical names (`ai`→`agent`,
-  `script`→`runner`, `build`→`builder`). Idempotent (marker line). Scheduled
-  for removal in 0.13.0.
-- `LegacyAuditRoles` error class, raised by the audit reader when legacy
-  role values are encountered in `.textus/audit.log`.
 - ADR 0003 documenting the sweep and the 0.11.x stepping-stone path.
 
 ### Changed
@@ -40,15 +34,13 @@ tracks both additive improvements and breaking protocol bumps independently.
   (the verb is gone); points at 0.11.x docs instead.
 - Test suite consolidated: five batches of disciplined deletions/merges
   (−4 files, −134 LOC from the post-P6 peak). Net effect across the release:
-  test suite grew +8.2% LOC to cover new behavior (schema walker, strict
-  audit reader, audit-rewrite verb).
+  test suite grew +8.2% LOC to cover new behavior (schema walker, permissive
+  audit-log tolerance).
 
 ### Migration
 - **From textus/2 (gem ≤0.10.x):** install textus 0.11.x first; run
   `textus migrate --to=textus/3`; then upgrade to 0.12.0.
-- **From 0.11.x:** drop-in upgrade, except: if your `.textus/audit.log`
-  contains pre-0.11.0 rows with `role: ai|script|build`, run
-  `textus audit-rewrite-legacy-roles` once.
+- **From 0.11.x:** drop-in upgrade.
 
 ## 0.11.0 — textus/3 vocabulary redesign (2026-05-25)
 

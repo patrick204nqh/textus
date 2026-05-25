@@ -25,9 +25,10 @@ That layer was load-bearing for the cutover. v0.12.0 deletes all of it.
    `Manifest::Schema.validate!` walker that emits `unknown key 'X' at '<path>'`.
 3. Delete `lib/textus/migration/**` and `lib/textus/cli/verb/migrate.rb`
    (eight files, ~924 lines removed).
-4. Make the audit-log reader strict on legacy `ai`/`script`/`build` role
-   values. Ship one temporary verb, `textus audit-rewrite-legacy-roles`, to
-   rewrite history in place. Verb is documented for 0.13.0 removal.
+4. Keep the audit-log reader permissive on legacy `ai`/`script`/`build` role
+   values. Pre-0.11.0 audit history is tolerated verbatim indefinitely (the
+   reader returns whatever string is in the row; new writes always use
+   canonical roles). No rewrite tooling ships in this release.
 5. Late upgraders from textus/2 must install 0.11.x first. The
    `protocol_version` doctor check refuses textus/2 stores with a hint that
    points at the 0.11.x docs.
@@ -42,9 +43,8 @@ per concern.
 110 files / 8428 LOC (+8 files, +640 LOC; +8.2%). The plan originally targeted
 a 25-40% LOC reduction; that was based on an inflated baseline estimate of
 9093 LOC at plan-write time. The actual baseline was smaller, and the new
-behavior introduced in P1-P6 (the schema walker, strict audit reader, the
-new one-shot verb, the `LegacyAuditRoles` raise paths) needed coverage that
-outweighed the legacy-test deletions.
+behavior introduced in P1-P6 (the schema walker, permissive audit-log
+tolerance) needed coverage that outweighed the legacy-test deletions.
 
 **Phase 7 cleanup delivered modest but disciplined reduction:** from post-P6
 peak of 8562 LOC down to 8428 LOC (-134 LOC, -1.6% in five batches).
@@ -62,11 +62,6 @@ coincidence now surface as "unknown key" rather than a misleading rename hint.
 0.12.0. The 0.11.x stepping-stone is documented in `CHANGELOG.md` and in
 `textus doctor`'s output.
 
-**Temporary verb:** `textus audit-rewrite-legacy-roles` is the only piece of
-compatibility code introduced in 0.12.0. It is single-purpose, kebab-cased
-(deliberately inconsistent with other verbs as a signal), and scheduled for
-0.13.0 removal.
-
 ## Alternatives considered
 
 - *Keep the migrator one minor longer.* Rejected: every consumer who needed
@@ -75,9 +70,13 @@ compatibility code introduced in 0.12.0. It is single-purpose, kebab-cased
 - *Permissive manifest parser (accept-and-ignore unknown keys).* Rejected:
   silent acceptance of typos is the failure mode that legacy compat hints
   were *itself* trying to fix.
-- *Group `audit` into a subcommand structure (`audit tail` / `audit rewrite-…`).*
-  Rejected: breaks the existing `textus audit` CLI surface for the sake of
-  one temporary verb.
+- *Strict audit reader + one-shot `textus audit-rewrite-legacy-roles` verb.*
+  Considered and briefly implemented during this branch. Rejected on
+  reconsideration: the verb added ~95 LOC of compat surface scheduled for
+  0.13.0 removal — the same kind of debt v0.12.0 set out to eliminate.
+  The 0.11.x stepping-stone story already handles the rare case where a
+  user has unmigrated legacy rows: read tolerance is three lines of code,
+  rewrite tooling is a release commitment.
 - *Drop Phase 7 cleanup entirely once the inflated target was identified.*
   Rejected: the 1.6% reduction is real value, the verifications during P7
   surfaced two genuinely redundant test files that would have continued
