@@ -28,7 +28,7 @@ module Textus
         end
 
         def default_shape(mentry, data)
-          if mentry.projection && mentry.projection["reduce"] && data.is_a?(Hash) && !data.key?("entries")
+          if mentry.projection && mentry.projection["transform"] && data.is_a?(Hash) && !data.key?("entries")
             data
           elsif data.is_a?(Hash) && data["entries"].is_a?(Array)
             { "entries" => data["entries"] }

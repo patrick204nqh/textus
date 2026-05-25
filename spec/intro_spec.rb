@@ -43,7 +43,8 @@ RSpec.describe Textus::Intro do
           path: output/report.md
           zone: output
           owner: builder:auto
-          projection:
+          compute:
+            kind: projection
             select: [working.notes]
             pluck: "*"
           template: report.mustache

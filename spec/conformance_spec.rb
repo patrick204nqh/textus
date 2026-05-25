@@ -29,7 +29,7 @@ RSpec.describe "textus/3 conformance" do
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true }
-        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
+        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
         - key: intake.calendar.events
           path: intake/calendar/events
           zone: intake

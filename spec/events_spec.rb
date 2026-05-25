@@ -156,7 +156,8 @@ RSpec.describe "Build and accept events" do
           path: output/summary.md
           zone: output
           template: summary.mustache
-          projection:
+          compute:
+            kind: projection
             select: [working]
             pluck: [name]
     YAML

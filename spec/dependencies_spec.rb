@@ -24,7 +24,7 @@ RSpec.describe Textus::Dependencies do
           zone: output
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
     YAML

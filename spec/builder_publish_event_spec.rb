@@ -28,7 +28,7 @@ RSpec.describe "Builder fires :publish per file" do
             zone: output
             schema: null
             owner: builder:auto
-            projection: { select: working.note }
+            compute: { kind: projection, select: working.note }
             template: echo.mustache
             publish_to:
               - out/one.md

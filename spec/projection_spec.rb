@@ -57,7 +57,7 @@ RSpec.describe Textus::Projection do
     proj = Textus::Projection.new(store, {
                                     "select" => "working.people",
                                     "pluck" => ["name"],
-                                    "reduce" => "score",
+                                    "transform" => "score",
                                     "sort_by" => "score",
                                   })
     out = proj.run
@@ -73,7 +73,7 @@ RSpec.describe Textus::Projection do
     end
     proj = Textus::Projection.new(store, {
                                     "select" => "working.people",
-                                    "reduce" => "slow",
+                                    "transform" => "slow",
                                   })
     expect { proj.run }.to raise_error(Textus::UsageError, /reduce 'slow' exceeded 2s timeout/)
   end

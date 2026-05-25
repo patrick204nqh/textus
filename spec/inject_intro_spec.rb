@@ -19,7 +19,7 @@ RSpec.describe "inject_intro:" do
         - key: output.root
           path: output/root.md
           zone: output
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
           inject_intro: true
     YAML
@@ -70,7 +70,7 @@ RSpec.describe "inject_intro:" do
           path: output/root.json
           zone: output
           format: json
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           inject_intro: true
     YAML
     expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*template/)
@@ -87,7 +87,7 @@ RSpec.describe "inject_intro:" do
         - key: output.root
           path: output/root.md
           zone: output
-          projection: { select: [identity.id], pluck: "*" }
+          compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
     YAML
     store = Textus::Store.new(root)

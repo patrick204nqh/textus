@@ -24,7 +24,8 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
         - key: output.catalog
           path: output/catalog.md
           zone: output
-          generator:
+          compute:
+            kind: external
             command: "rake catalog"
             sources: [working.src]
     YAML
@@ -66,7 +67,8 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
         - key: derived.note
           path: derived/note.md
           zone: derived
-          generator:
+          compute:
+            kind: external
             command: "echo"
             sources: [working.src]
     YAML

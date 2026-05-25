@@ -30,7 +30,7 @@ RSpec.describe Textus::Application::Writes::Build do
           zone: output
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.mustache
           publish_to: [PEOPLE.md]
         - key: output.people-json
@@ -39,21 +39,21 @@ RSpec.describe Textus::Application::Writes::Build do
           format: json
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
         - key: output.people-yaml
           path: output/people.yaml
           zone: output
           format: yaml
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], reduce: envelope }
+          compute: { kind: projection, select: working.people, pluck: [name, org], transform: envelope }
         - key: output.people-json-tpl
           path: output/people-tpl.json
           zone: output
           format: json
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.json.mustache
         - key: output.people-bad-tpl
           path: output/people-bad.json
@@ -61,7 +61,7 @@ RSpec.describe Textus::Application::Writes::Build do
           format: json
           schema: null
           owner: builder:auto
-          projection: { select: working.people, pluck: [name, org], sort_by: name }
+          compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people-bad.json.mustache
     YAML
 
