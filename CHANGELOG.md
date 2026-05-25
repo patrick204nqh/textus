@@ -9,6 +9,15 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.12.1 — textus/2 hint fix (2026-05-26)
+
+### Fixed
+- Manifest parser now points textus/2 stores at the 0.11.x stepping-stone
+  migrator instead of the misleading "check YAML frontmatter for syntax errors"
+  hint. The protocol_version doctor check carried the correct hint already, but
+  was unreachable on textus/2 stores because `Store.discover` → `Manifest.load`
+  raises before doctor checks run. Surfaced by v0.12.0 release smoke testing.
+
 ## 0.12.0 — legacy sweep (2026-05-25)
 
 ### Removed (breaking)
