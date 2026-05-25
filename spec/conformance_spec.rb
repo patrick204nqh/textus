@@ -22,19 +22,19 @@ RSpec.describe "textus/3 conformance" do
       version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
+        - { name: working,  writable_by: [human, agent, runner] }
         - { name: output,   writable_by: [build] }
-        - { name: inbox,    writable_by: [script] }
+        - { name: inbox,    writable_by: [runner] }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick }
         - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true }
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true }
-        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: build:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
+        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, generator: { command: "rake catalog:skills", sources: [working.projects] } }
         - key: inbox.calendar.events
           path: inbox/calendar/events
           zone: inbox
           schema: null
-          owner: script:cron
+          owner: runner:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
@@ -97,10 +97,10 @@ RSpec.describe "textus/3 conformance" do
   end
 
   describe "Fixture B — role gate on write" do
-    it "raises WriteForbidden when an AI tries to write identity" do
+    it "raises WriteForbidden when an agent tries to write identity" do
       expect do
         store.put("identity.self",
-                  meta: { "name" => "self" }, body: "n/a", as: "ai")
+                  meta: { "name" => "self" }, body: "n/a", as: "agent")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
@@ -160,7 +160,7 @@ RSpec.describe "textus/3 conformance" do
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
         ["put", "inbox.calendar.events", "--fetch=ical-events",
-         "--stdin", "--as=script", "--format=json"],
+         "--stdin", "--as=runner", "--format=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
       )
@@ -215,7 +215,7 @@ RSpec.describe "textus/3 conformance" do
         version: textus/3
         zones:
           - { name: identity, writable_by: [human] }
-          - { name: working,  writable_by: [human, ai, script] }
+          - { name: working,  writable_by: [human, agent, runner] }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick }
       YAML
@@ -223,7 +223,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
       expect(m.zone_writers("identity")).to eq(["human"])
-      expect(m.zone_writers("working")).to contain_exactly("human", "ai", "script")
+      expect(m.zone_writers("working")).to contain_exactly("human", "agent", "runner")
     end
 
     it "raises BadFrontmatter if zones block is absent" do
@@ -334,9 +334,9 @@ RSpec.describe "textus/3 conformance" do
       expect(File.read(File.join(root, "audit.log"))).to match(/"verb":"delete"/)
     end
 
-    it "rejects delete on identity by ai role" do
+    it "rejects delete on identity by agent role" do
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\nx\n")
-      expect { store.delete("identity.self", as: "ai") }
+      expect { store.delete("identity.self", as: "agent") }
         .to raise_error(Textus::WriteForbidden)
     end
   end

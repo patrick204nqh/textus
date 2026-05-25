@@ -10,10 +10,10 @@ RSpec.describe "textus action verb" do
       version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
-        - { name: working,  writable_by: [human, ai, script] }
-        - { name: inbox,    writable_by: [script] }
-        - { name: review,   writable_by: [ai, human] }
-        - { name: output,   writable_by: [build] }
+        - { name: working,  writable_by: [human, agent, runner] }
+        - { name: inbox,    writable_by: [runner] }
+        - { name: review,   writable_by: [agent, human] }
+        - { name: output,   writable_by: [builder] }
       entries:
         - { key: working.demo, path: working/demo.md, zone: working }
     YAML
@@ -77,7 +77,7 @@ RSpec.describe "textus action verb" do
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "hook", "run", "slow", "--as=script"],
+        ["--root=#{root}", "hook", "run", "slow", "--as=runner"],
         stdin: StringIO.new(""), stdout: out, stderr: StringIO.new, cwd: dir,
       )
       expect(rc).not_to eq(0)

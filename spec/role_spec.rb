@@ -10,16 +10,16 @@ RSpec.describe Textus::Role do
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   it "uses --as flag if given" do
-    expect(Textus::Role.resolve(flag: "ai", env: {}, root: root)).to eq("ai")
+    expect(Textus::Role.resolve(flag: "agent", env: {}, root: root)).to eq("agent")
   end
 
   it "falls back to TEXTUS_ROLE env" do
-    expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "script" }, root: root)).to eq("script")
+    expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "runner" }, root: root)).to eq("runner")
   end
 
   it "falls back to .textus/role file" do
-    File.write(File.join(root, "role"), "ai\n")
-    expect(Textus::Role.resolve(flag: nil, env: {}, root: root)).to eq("ai")
+    File.write(File.join(root, "role"), "agent\n")
+    expect(Textus::Role.resolve(flag: nil, env: {}, root: root)).to eq("agent")
   end
 
   it "defaults to human" do
