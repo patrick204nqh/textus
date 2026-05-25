@@ -8,6 +8,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 (currently `textus/2`, embedded in every envelope as `protocol`). The protocol
 is additive within a major; a new major would change the wire string.
 
+## 0.10.4 — GitHub folder intake recipe + skill-bundle deferral ADR (2026-05-24)
+
+Patch release. Ships a working "pull a GitHub folder as a skill bundle, fan it out to derived entries" pattern as opt-in example hooks under `examples/claude-plugin/recipes/`, with hermetic specs and user-facing docs. Captures the design decision to defer first-class skill-bundle support to a future release. No `lib/` changes; CLI, wire protocol, event surface, manifest schema, and doctor checks are all unchanged.
+
+### Added
+
+- **`examples/claude-plugin/recipes/github_folder.rb`** — `Textus.intake(:github_folder)` handler that fetches a folder from a public GitHub repo via the REST tree + blob endpoints and returns a single entry whose `content.files` is a `{ relative_path => bytes }` hash. Uses Ruby stdlib (`net/http`, `json`, `base64`); no new gem dependencies. Fetcher is injectable for testability.
+- **`examples/claude-plugin/recipes/skill_fanout.rb`** — `Textus.refreshed(:skill_fanout, keys: "intake.skills.*")` listener that fans a bundle out into `vendor.skills.<slug>.*` derived entries with reconciliation: orphaned children whose source path disappeared upstream are deleted. Inner writes use `suppress_events: true` to prevent recursion.
+- **`examples/claude-plugin/recipes/README.md`** — explains that files in `recipes/` are opt-in and do not auto-load (they live outside `.textus/hooks/`).
+- **`docs/recipe-github-skill-bundle.md`** — end-to-end recipe: manifest snippet, copy commands, caveats (30s timeout, recursion guard, public-repos-only, hook-not-bundled-with-content).
+- **`docs/architecture/decisions/0001-skill-bundle-deferral.md`** — Architecture Decision Record documenting the friction in the current primitives, the three-option design space (status quo, intake-returns-N-entries, hooks-as-content), the choice to stay at status quo, and the explicit criteria for revisiting. First entry under the new `docs/architecture/decisions/` ADR home.
+- **`spec/examples/`** — new spec subdirectory with hermetic unit tests for both recipe files. Tests use captured GitHub API fixtures under `spec/examples/fixtures/`; no network access in CI.
+
+### Documentation
+
+- The "Recipes" concept is introduced as a deliberately opt-in pattern: example code that demonstrates how to build on textus primitives without committing the core surface to the underlying responsibility. The ADR explains why this is preferable to promoting the recipe into a builtin or a new CLI verb today.
+
 ## 0.10.3 — Documentation refresh and legacy-code removal (2026-05-23)
 
 Patch release. Two pieces of work: (1) docs describe current state only — every reference to pre-0.9.2 zone names, pre-0.10.2 sentinel layout, pre-0.5 audit-log format, and other version-history annotations is stripped from user-facing docs; (2) the corresponding backward-compatibility code paths are deleted from `lib/`. The wire protocol stays `textus/2`. Callers conforming to the current SPEC are unaffected; callers carrying obsolete config now hit silent drops or parse failures instead of helpful migration messages.
