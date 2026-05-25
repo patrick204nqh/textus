@@ -21,6 +21,7 @@ module Textus
       "intro" => Verb::Intro,
       "key" => Group::Key,
       "list" => Verb::List,
+      "migrate" => Verb::Migrate,
       "published" => Verb::Published,
       "put" => Verb::Put,
       "rdeps" => Verb::Rdeps,
@@ -118,6 +119,7 @@ module Textus
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor
+          textus migrate --to=textus/3 [--dry-run]
           textus intro
 
           textus key {mv,uid,normalize}
