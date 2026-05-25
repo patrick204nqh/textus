@@ -13,7 +13,7 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
         - { name: output,  writable_by: [build] }
@@ -55,7 +55,7 @@ RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" 
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
         - { name: derived, writable_by: [human] }

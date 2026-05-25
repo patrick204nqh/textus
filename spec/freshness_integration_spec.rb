@@ -9,7 +9,7 @@ RSpec.describe "Reader honors on_stale policy" do
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
       entries:
@@ -83,7 +83,7 @@ RSpec.describe "Reader honors on_stale policy" do
       FileUtils.mkdir_p(File.join(textus, "hooks"))
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: working, writable_by: [human, script] }
         entries:

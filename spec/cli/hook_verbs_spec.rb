@@ -11,7 +11,7 @@ RSpec.describe "CLI hook verbs" do
     FileUtils.mkdir_p(File.join(root, "zones/inbox"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: inbox, writable_by: [script] }]
       entries:
         - key: inbox.x
@@ -58,7 +58,7 @@ RSpec.describe "CLI hook verbs" do
   it "textus put --fetch=NAME applies the fetch hook to stdin bytes" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [human, script] }]
       entries: [{ key: working.j, path: working/j.md, zone: working }]
     YAML

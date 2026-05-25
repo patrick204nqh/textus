@@ -25,7 +25,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: inbox, writable_by: [script] }
       entries:
@@ -92,7 +92,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       FileUtils.mkdir_p(File.join(textus, "hooks"))
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: plain, writable_by: [human] }
         entries:

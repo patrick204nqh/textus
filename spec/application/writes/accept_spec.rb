@@ -7,7 +7,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: review, writable_by: [ai, human] }

@@ -4,8 +4,8 @@ require "json"
 require "stringio"
 require "digest"
 
-# Conformance fixtures A–D from textus/2 §12, plus CLI smoke tests.
-RSpec.describe "textus/2 conformance" do
+# Conformance fixtures A–D from textus/3 §12, plus CLI smoke tests.
+RSpec.describe "textus/3 conformance" do
   let(:tmp)  { Dir.mktmpdir("textus-spec") }
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
@@ -19,7 +19,7 @@ RSpec.describe "textus/2 conformance" do
     FileUtils.mkdir_p(File.join(root, "zones/inbox/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }
@@ -78,7 +78,7 @@ RSpec.describe "textus/2 conformance" do
     it "returns the canonical envelope with a matching sha256 etag" do
       env = store.get("working.network.org.jane")
 
-      expect(env["protocol"]).to eq("textus/2")
+      expect(env["protocol"]).to eq("textus/3")
       expect(env["key"]).to eq("working.network.org.jane")
       expect(env["zone"]).to eq("working")
       expect(env["owner"]).to eq("human:patrick")
@@ -212,7 +212,7 @@ RSpec.describe "textus/2 conformance" do
   describe "zones block" do
     it "parses declared zones with writable_by" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: identity, writable_by: [human] }
           - { name: working,  writable_by: [human, ai, script] }
@@ -228,7 +228,7 @@ RSpec.describe "textus/2 conformance" do
 
     it "raises BadFrontmatter if zones block is absent" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         entries:
           - { key: state.x, path: state/x.md, zone: state, schema: null, owner: o }
       YAML
@@ -238,7 +238,7 @@ RSpec.describe "textus/2 conformance" do
   end
 
   describe "CLI" do
-    it "emits a textus/2 envelope for `get`" do
+    it "emits a textus/3 envelope for `get`" do
       out = StringIO.new
       rc = Textus::CLI.run(
         ["get", "working.network.org.jane", "--format=json"],
@@ -246,7 +246,7 @@ RSpec.describe "textus/2 conformance" do
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
-      expect(env["protocol"]).to eq("textus/2")
+      expect(env["protocol"]).to eq("textus/3")
       expect(env["key"]).to eq("working.network.org.jane")
     end
 

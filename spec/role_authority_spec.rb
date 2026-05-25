@@ -12,7 +12,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, ai, script] }
       entries:

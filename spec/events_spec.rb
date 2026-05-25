@@ -11,7 +11,7 @@ RSpec.describe "Lifecycle events" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
@@ -63,7 +63,7 @@ RSpec.describe "Refresh event" do
     FileUtils.mkdir_p(File.join(root, "zones/inbox"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: inbox, writable_by: [script] }]
       entries:
         - key: inbox.x
@@ -146,7 +146,7 @@ RSpec.describe "Build and accept events" do
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
         - { name: output,  writable_by: [build] }
@@ -193,7 +193,7 @@ RSpec.describe "Accept event" do
     FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
         - { name: review,  writable_by: [ai, human] }

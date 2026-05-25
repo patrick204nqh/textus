@@ -11,7 +11,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
         - { name: identity,   writable_by: [human] }

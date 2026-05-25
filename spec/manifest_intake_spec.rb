@@ -22,7 +22,7 @@ RSpec.describe "Manifest intake:" do
 
   it "parses intake.handler and intake.config" do
     e = load_entry(<<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [script] }]
       entries:
         - key: working.news
@@ -38,7 +38,7 @@ RSpec.describe "Manifest intake:" do
 
   it "exposes refresh policy via Manifest#policies_for(key)" do
     m = load_manifest(<<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [script] }]
       entries:
         - key: working.news
@@ -62,7 +62,7 @@ RSpec.describe "Manifest intake:" do
 
   it "returns an empty PolicySet for keys with no matching refresh policy" do
     m = load_manifest(<<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
@@ -72,7 +72,7 @@ RSpec.describe "Manifest intake:" do
 
   it "defaults intake_config to {} when no intake block is present" do
     e = load_entry(<<~YAML)
-      version: textus/2
+      version: textus/3
       zones: [{ name: working, writable_by: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }

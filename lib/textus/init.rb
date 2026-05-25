@@ -5,7 +5,7 @@ module Textus
     ZONES = %w[identity working inbox review output].freeze
 
     DEFAULT_MANIFEST = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }

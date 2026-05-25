@@ -7,7 +7,7 @@ require "fileutils"
 RSpec.describe "textus action verb" do
   def custom_manifest_with_demo!(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }

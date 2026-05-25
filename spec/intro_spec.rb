@@ -18,7 +18,7 @@ RSpec.describe Textus::Intro do
     FileUtils.mkdir_p(File.join(root, "hooks"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: working,  writable_by: [human, ai, script] }
@@ -69,7 +69,7 @@ RSpec.describe Textus::Intro do
 
   it "returns an envelope with protocol + store_root" do
     env = described_class.run(store)
-    expect(env["protocol"]).to eq("textus/2")
+    expect(env["protocol"]).to eq("textus/3")
     expect(env["store_root"]).to eq(root)
   end
 
@@ -88,7 +88,7 @@ RSpec.describe Textus::Intro do
 
   it "omits purpose for unknown zone names" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: weird,    writable_by: [human] }
@@ -145,7 +145,7 @@ RSpec.describe Textus::Intro do
                            stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
-    expect(parsed["protocol"]).to eq("textus/2")
+    expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["zones"].length).to eq(5)
     expect(parsed["cli_verbs"]).to be_an(Array)
   end

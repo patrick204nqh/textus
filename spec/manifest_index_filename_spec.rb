@@ -17,7 +17,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: skills, writable_by: [human] }
       entries:

@@ -14,7 +14,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
 
   it "returns no issues when each slot has a single winner" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
       entries:
@@ -32,7 +32,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
   it "warns when two policies of equal specificity carry the same slot" do
     # Both globs (`working.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
       entries:
@@ -56,7 +56,7 @@ RSpec.describe Textus::Doctor::Check::PolicyAmbiguity do
 
   it "does not warn when one block dominates by specificity" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human] }
       entries:

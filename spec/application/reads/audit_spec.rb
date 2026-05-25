@@ -10,7 +10,7 @@ RSpec.describe Textus::Application::Reads::Audit do
     FileUtils.mkdir_p(File.join(textus, "zones", "working"))
     FileUtils.mkdir_p(File.join(textus, "zones", "identity"))
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
         - { name: identity,   writable_by: [human] }

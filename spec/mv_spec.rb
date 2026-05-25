@@ -12,7 +12,7 @@ RSpec.describe "textus mv" do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
     FileUtils.mkdir_p(File.join(root, "zones/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: identity,   writable_by: [human] }

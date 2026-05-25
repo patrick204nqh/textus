@@ -7,7 +7,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
     textus = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus, "zones", "working"))
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
       entries:
@@ -55,7 +55,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "zones", "working"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: working, writable_by: [human, script] }
         entries:

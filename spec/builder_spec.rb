@@ -19,7 +19,7 @@ RSpec.describe Textus::Application::Writes::Build do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: output, writable_by: [build] }
@@ -87,7 +87,7 @@ RSpec.describe Textus::Application::Writes::Build do
     store.registry.register(:reduce, :envelope) do |store:, rows:, config:|
       _ = config
       _ = store
-      { "protocol" => "textus/2", "people" => rows.sort_by { |r| r["name"].to_s } }
+      { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }
     end
   end
 
@@ -129,7 +129,7 @@ RSpec.describe Textus::Application::Writes::Build do
     expect(parsed.keys.first).to eq("_meta")
     expect(parsed["_meta"].keys).to eq(%w[generated_at from reduce])
     expect(parsed["_meta"]["reduce"]).to eq("envelope")
-    expect(parsed["protocol"]).to eq("textus/2")
+    expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["people"].map { |r| r["name"] }).to contain_exactly("alice", "bob")
   end
 

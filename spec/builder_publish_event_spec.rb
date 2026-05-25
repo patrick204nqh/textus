@@ -17,7 +17,7 @@ RSpec.describe "Builder fires :publish per file" do
   describe "publish_to: fires :publish once per target path" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: working, writable_by: [human, ai, script] }
           - { name: output, writable_by: [build] }
@@ -79,7 +79,7 @@ RSpec.describe "Builder fires :publish per file" do
   describe "publish_each: fires :publish once per leaf" do
     before do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: working, writable_by: [human, ai, script] }
         entries:

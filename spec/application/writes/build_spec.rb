@@ -19,7 +19,7 @@ RSpec.describe Textus::Application::Writes::Build do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, ai, script] }
         - { name: output, writable_by: [build] }

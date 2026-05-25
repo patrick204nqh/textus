@@ -6,7 +6,7 @@ RSpec.describe Textus::Application::Context do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
         - { name: identity,   writable_by: [human] }

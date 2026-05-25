@@ -14,7 +14,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
 
   it "is silent when the declared handler is in the allowlist" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: inbox, writable_by: [script] }
       entries:
@@ -36,7 +36,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
 
   it "fails when the declared handler is not in the allowlist" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: inbox, writable_by: [script] }
       entries:
@@ -63,7 +63,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
 
   it "is silent when no allowlist policy applies" do
     manifest = <<~YAML
-      version: textus/2
+      version: textus/3
       zones:
         - { name: inbox, writable_by: [script] }
       entries:

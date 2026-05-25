@@ -7,7 +7,7 @@ RSpec.describe Textus::Application::Writes::Delete do
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "identity"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
         - { name: identity,   writable_by: [human] }

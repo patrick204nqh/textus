@@ -7,7 +7,7 @@ RSpec.describe "correlation_id in audit rows" do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: working, writable_by: [human, script] }
       entries:
@@ -61,7 +61,7 @@ RSpec.describe "correlation_id in audit rows" do
     Dir.mktmpdir do |root|
       FileUtils.mkdir_p(File.join(root, ".textus", "zones", "working"))
       File.write(File.join(root, ".textus", "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: working, writable_by: [human] }
         entries:

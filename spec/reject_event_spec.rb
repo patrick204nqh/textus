@@ -14,7 +14,7 @@ RSpec.describe ":reject event and store.reject" do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/2
+      version: textus/3
       zones:
         - { name: identity, writable_by: [human] }
         - { name: review,   writable_by: [ai, human] }
@@ -72,7 +72,7 @@ RSpec.describe ":reject event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "zones/review"))
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/2
+        version: textus/3
         zones:
           - { name: identity, writable_by: [human] }
           - { name: review,   writable_by: [ai, human] }
