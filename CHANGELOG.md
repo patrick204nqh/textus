@@ -5,10 +5,65 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 The **gem version** (`0.x.y`) is distinct from the **protocol version**
-(currently `textus/2`, embedded in every envelope as `protocol`). The protocol
-is additive within a major; a new major would change the wire string.
+(currently `textus/3`, embedded in every envelope as `protocol`). A protocol
+bump is a breaking change that requires a store migration; the gem version
+tracks both additive improvements and breaking protocol bumps independently.
 
-## [Unreleased]
+## 0.11.0 — textus/3 vocabulary redesign (2026-05-25)
+
+**BREAKING:** Protocol bumps to `textus/3`. Stores authored on 0.10.x must run `textus migrate --to=textus/3` before installing 0.11.0. `textus doctor` refuses to operate on un-migrated stores.
+
+### Renamed — actors
+
+- `ai` → `agent`, `script` → `runner`, `build` → `builder`. `Role.resolve` rejects legacy names with a one-line migration hint pointing at `--as=<new>`.
+
+### Renamed — zone
+
+- `inbox` → `intake`. Directory rename + key prefix update + manifest field handled by the migrator.
+
+### Renamed — manifest schema
+
+- `writable_by:` → `write_policy:`; new explicit `read_policy:` on zones (default `[all]`).
+- `policies:` (top-level) → `rules:`. Class rename: `Manifest::Policies` → `Manifest::Rules`.
+- `projection:` and `generator:` unified under `compute: { kind: projection|external, ... }`.
+- `reduce:` (inside compute/projection) → `transform:`.
+- `handler_allowlist:` → `intake_handler_allowlist:`.
+- `promote_requires:` (reserved in textus/2) → `promotion: { requires: [...] }` and is now **enforced** during `textus accept`.
+
+### Renamed — hook events
+
+- RPC: `:intake` → `:resolve_intake`, `:reduce` → `:transform_rows`, `:check` → `:validate`.
+- Pub-sub (object_pasttense): `:put` → `:entry_put`, `:deleted` → `:entry_deleted`, `:built` → `:build_completed`, `:mv` → `:entry_renamed`, `:accepted` → `:proposal_accepted`, `:reject` → `:proposal_rejected`, `:published` → `:file_published`, `:loaded` → `:store_loaded`, `:refreshed` → `:entry_refreshed`, `:refresh_began` → `:refresh_started`, `:refresh_detached` → `:refresh_backgrounded`. `:refresh_failed` kept.
+- DSL: single `Textus.on(event, name, **opts) { ... }`. Sugar methods (`Textus.intake`, `Textus.reduce`, `Textus.check`, etc.) and the generic `Textus.hook(...)` form removed.
+
+### Renamed — CLI
+
+- Namespaced: `textus key mv`, `textus key normalize` (was `key migrate`), `textus rule list` (was `policy list`), `textus rule explain` (was `policy explain`), `textus refresh stale` (was `refresh-stale`).
+- Top-level mutator `textus mv` removed (use `textus key mv`).
+- Envelope-render flag `--format=json` → `--output=json`. Entry-level `format:` in the manifest is unchanged.
+- Legacy spellings emit a `CommandRenamed` envelope (`code: "command_renamed"`); legacy flags emit `FlagRenamed`.
+
+### Added
+
+- `textus migrate --to=textus/3`: idempotent one-shot migrator (manifest YAML rewrite, zone directory rename `inbox` → `intake`, frontmatter owner sweep across `.md`/`.json`/`.yaml`, audit-log marker, hook DSL scanner that reports old call sites).
+- `textus doctor` check `protocol_version`: refuses textus/2 stores.
+- `promotion.requires` predicates: `schema_valid`, `human_accept`. Enforced by `textus accept` for matching rules.
+
+### Internal
+
+- `Manifest::Policies` → `Manifest::Rules` (class + file + accessor + doctor check).
+- New errors: `Textus::BadManifest`, `Textus::CommandRenamed`, `Textus::FlagRenamed`.
+- Two new domain classes under `Textus::Domain::Policy::Predicates::` for promotion gating.
+- Migration toolkit under `Textus::Migration::V3::`.
+
+### Migration notes for 0.10.x users
+
+1. Update `Gemfile`: `gem "textus", "~> 0.11"`.
+2. `bundle update textus`.
+3. `cd` to each textus store and run `textus migrate --to=textus/3`.
+4. Review the hook-scanner findings printed at the end of the migrate output. For each call site, replace `Textus.X(:name) { ... }` with the canonical `Textus.on(:Y, :name) { ... }` per the event rename table above.
+5. Run `textus doctor` — should report `ok: true`.
+6. Commit the rewritten `.textus/` directory (manifest, audit marker, possibly renamed zone dir).
 
 ## 0.10.5 — tech-debt cleanup + `index_filename:` + docs polish (2026-05-25)
 
