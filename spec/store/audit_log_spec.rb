@@ -103,26 +103,19 @@ RSpec.describe Textus::Store::AuditLog do
       expect(row["role"]).to eq("agent")
     end
 
-    it "raises LegacyAuditRoles on read when an ai/script/build row is encountered" do
+    it "tolerates pre-0.11.0 legacy role values (ai/script/build) verbatim" do
+      # Audit history can contain legacy role values from before the textus/3
+      # vocabulary rename. The reader returns them verbatim — anyone reading
+      # historical rows is responsible for normalization. New writes always use
+      # canonical roles.
       File.write(
-        File.join(root, "audit.log"),
+        File.join(tmp, "audit.log"),
         JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
                       "verb" => "put", "key" => "working.x",
                       "etag_before" => nil, "etag_after" => "sha256:0") + "\n",
       )
-      log = described_class.new(root)
-      expect { log.last_writer_for("working.x") }
-        .to raise_error(Textus::LegacyAuditRoles, /legacy role "ai"/)
-    end
-
-    it "raises pointing at the line number when legacy role is mid-file" do
-      rows = [
-        { "role" => "human",  "verb" => "put", "key" => "k", "ts" => "x", "etag_before" => nil, "etag_after" => "a" },
-        { "role" => "build",  "verb" => "put", "key" => "k", "ts" => "x", "etag_before" => nil, "etag_after" => "b" },
-      ]
-      File.write(File.join(root, "audit.log"), rows.map { |r| JSON.generate(r) }.join("\n") + "\n")
-      expect { described_class.new(root).last_writer_for("k") }
-        .to raise_error(Textus::LegacyAuditRoles, /line 2/)
+      log = described_class.new(tmp)
+      expect(log.last_writer_for("working.x")).to eq("ai")
     end
   end
 end

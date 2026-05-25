@@ -4,8 +4,6 @@ require "time"
 module Textus
   class Store
     class AuditLog
-      LEGACY_ROLES = %w[ai script build].freeze
-
       def initialize(root)
         @path = File.join(root, "audit.log")
       end
@@ -14,8 +12,8 @@ module Textus
         return nil unless File.exist?(@path)
 
         last_role = nil
-        File.foreach(@path).with_index(1) do |line, lineno|
-          parsed = parse_row(line.chomp, lineno: lineno)
+        File.foreach(@path) do |line|
+          parsed = parse_row(line.chomp)
           next unless parsed
           next unless parsed["key"] == key
           next unless %w[put delete].include?(parsed["verb"])
@@ -65,13 +63,10 @@ module Textus
 
       private
 
-      def parse_row(line, lineno: nil)
+      def parse_row(line)
         return nil if line.empty?
 
-        row = JSON.parse(line)
-        raise LegacyAuditRoles.new(role: row["role"], line: lineno, path: @path) if LEGACY_ROLES.include?(row["role"])
-
-        row
+        JSON.parse(line)
       rescue JSON::ParserError
         nil
       end
