@@ -12,7 +12,7 @@ module Textus
           envelope = @ctx.store.reader.read_raw_envelope(key)
           return nil if envelope.nil?
 
-          policy_set = @ctx.store.manifest.policies_for(key)
+          policy_set = @ctx.store.manifest.rules_for(key)
           refresh_policy = policy_set.refresh
           return annotate_fresh(envelope) if refresh_policy.nil?
 

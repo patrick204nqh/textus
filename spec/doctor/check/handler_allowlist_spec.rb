@@ -23,7 +23,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
           zone: intake
           intake:
             handler: local_file
-      policies:
+      rules:
         - match: intake.*
           handler_allowlist: [local_file, json]
     YAML
@@ -45,7 +45,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
           zone: intake
           intake:
             handler: shady_handler
-      policies:
+      rules:
         - match: intake.*
           handler_allowlist: [local_file, json]
     YAML

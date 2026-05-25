@@ -1,8 +1,8 @@
 module Textus
   class Manifest
-    class Policies
-      PolicySet = Data.define(:refresh, :handler_allowlist, :promote, :retention)
-      EMPTY_SET = PolicySet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
+    class Rules
+      RuleSet = Data.define(:refresh, :handler_allowlist, :promote, :retention)
+      EMPTY_SET = RuleSet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -21,7 +21,7 @@ module Textus
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
-        PolicySet.new(
+        RuleSet.new(
           refresh: pick(slots[:refresh], :refresh, key),
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           promote: pick(slots[:promote], :promote, key),
@@ -47,7 +47,7 @@ module Textus
         attr_reader :match, :refresh, :handler_allowlist, :promote, :retention
 
         def initialize(raw)
-          @match = raw["match"] or raise Textus::UsageError.new("policy block missing match:")
+          @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
           @refresh = parse_refresh(raw["refresh"])
           @handler_allowlist = parse_handler_allowlist(raw["handler_allowlist"])
           @promote = parse_promote(raw["promote_requires"])

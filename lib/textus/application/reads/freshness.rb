@@ -4,7 +4,7 @@ module Textus
   module Application
     module Reads
       # Per-entry freshness report. Walks every entry declared in the manifest,
-      # consults `policies_for(key)` for a refresh policy, and reports the
+      # consults `rules_for(key)` for a refresh rule, and reports the
       # current status. Status is one of :fresh, :stale, :never_refreshed, or
       # :no_policy.
       class Freshness
@@ -27,7 +27,7 @@ module Textus
         private
 
         def row_for(mentry)
-          set = @ctx.store.manifest.policies_for(mentry.key)
+          set = @ctx.store.manifest.rules_for(mentry.key)
           refresh = set.refresh
           envelope = safe_get(mentry.key)
           last = envelope&.dig("_meta", "last_refreshed_at")

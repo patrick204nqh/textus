@@ -13,7 +13,7 @@ module Textus
         def rows_for(mentry)
           return [] unless mentry.intake_handler
 
-          ttl = @manifest.policies_for(mentry.key).refresh&.ttl_seconds
+          ttl = @manifest.rules_for(mentry.key).refresh&.ttl_seconds
           return [] unless ttl
 
           path = Textus::Key::Path.resolve(@manifest, mentry)

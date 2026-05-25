@@ -9,7 +9,7 @@ module Textus
         end
 
         def call(key:)
-          policies = @ctx.store.manifest.policies
+          policies = @ctx.store.manifest.rules
           matching = policies.explain(key)
           winners  = policies.for(key)
 

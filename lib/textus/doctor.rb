@@ -20,7 +20,7 @@ module Textus
       Check::AuditLog,
       Check::UnownedSchemaFields,
       Check::SchemaViolations,
-      Check::PolicyAmbiguity,
+      Check::RuleAmbiguity,
       Check::HandlerAllowlist,
     ].freeze
 

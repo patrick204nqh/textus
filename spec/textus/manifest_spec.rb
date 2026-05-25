@@ -24,6 +24,37 @@ RSpec.describe Textus::Manifest do
     end
   end
 
+  describe "textus/3 rules" do
+    it "parses a top-level rules: array" do
+      yaml = <<~Y
+        version: textus/3
+        zones:
+          - { name: intake, write_policy: [runner], read_policy: [all] }
+        entries: []
+        rules:
+          - match: "intake.cal.*"
+            refresh: { ttl: 1h, on_stale: warn }
+      Y
+      mf = Textus::Manifest.parse(yaml)
+      expect(mf.rules.blocks.size).to eq(1)
+      expect(mf.rules.blocks.first.match).to eq("intake.cal.*")
+    end
+
+    it "rejects legacy policies: with migration hint" do
+      yaml = <<~Y
+        version: textus/3
+        zones:
+          - { name: intake, write_policy: [runner], read_policy: [all] }
+        entries: []
+        policies:
+          - match: "intake.cal.*"
+            refresh: { ttl: 1h }
+      Y
+      expect { Textus::Manifest.parse(yaml) }
+        .to raise_error(Textus::BadManifest, /policies:.*renamed to.*rules:/i)
+    end
+  end
+
   describe "textus/3 zone policy fields" do
     let(:base) { <<~Y }
       version: textus/3

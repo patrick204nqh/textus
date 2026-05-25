@@ -36,7 +36,7 @@ RSpec.describe "Manifest intake:" do
     expect(e.intake_config).to eq({ "url" => "https://example.com/feed" })
   end
 
-  it "exposes refresh policy via Manifest#policies_for(key)" do
+  it "exposes refresh rule via Manifest#rules_for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: working, write_policy: [runner] }]
@@ -46,28 +46,28 @@ RSpec.describe "Manifest intake:" do
           zone: working
           intake:
             handler: news_handler
-      policies:
+      rules:
         - match: working.news
           refresh:
             ttl: 10m
             on_stale: timed_sync
             sync_budget_ms: 800
     YAML
-    set = m.policies_for("working.news")
+    set = m.rules_for("working.news")
     expect(set.refresh).to be_a(Textus::Domain::Policy::Refresh)
     expect(set.refresh.ttl_seconds).to eq(600)
     expect(set.refresh.on_stale).to eq(:timed_sync)
     expect(set.refresh.sync_budget_ms).to eq(800)
   end
 
-  it "returns an empty PolicySet for keys with no matching refresh policy" do
+  it "returns an empty RuleSet for keys with no matching refresh rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working }
     YAML
-    expect(m.policies_for("working.x").refresh).to be_nil
+    expect(m.rules_for("working.x").refresh).to be_nil
   end
 
   it "defaults intake_config to {} when no intake block is present" do

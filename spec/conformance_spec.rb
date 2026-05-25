@@ -38,7 +38,7 @@ RSpec.describe "textus/3 conformance" do
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
-      policies:
+      rules:
         - match: intake.calendar.events
           refresh:
             ttl: 1s

@@ -19,7 +19,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
         - { key: working.doc,   path: working/doc.md,   zone: working }
         - { key: working.stale, path: working/stale.md, zone: working }
         - { key: identity.note,    path: identity/note.md,    zone: identity }
-      policies:
+      rules:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }
         - match: working.stale

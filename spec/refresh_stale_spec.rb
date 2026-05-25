@@ -25,7 +25,7 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
           zone: working
           intake:
             handler: counter
-      policies:
+      rules:
         - match: working.fresh
           refresh:
             ttl: 1h

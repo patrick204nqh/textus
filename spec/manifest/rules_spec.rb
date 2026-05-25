@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Manifest::Policies do
+RSpec.describe Textus::Manifest::Rules do
   let(:raw) do
     [
       { "match" => "intake.**",       "handler_allowlist" => ["http_get"] },
@@ -9,11 +9,11 @@ RSpec.describe Textus::Manifest::Policies do
     ]
   end
 
-  let(:policies) { described_class.parse(raw) }
+  let(:rules) { described_class.parse(raw) }
 
   describe "#for(key)" do
-    it "merges all matching rules into one PolicySet, most-specific per slot" do
-      set = policies.for("intake.news.hn")
+    it "merges all matching rules into one RuleSet, most-specific per slot" do
+      set = rules.for("intake.news.hn")
       expect(set.refresh).to be_a(Textus::Domain::Policy::Refresh)
       expect(set.refresh.ttl_seconds).to eq(6 * 3600)
       expect(set.handler_allowlist).to be_a(Textus::Domain::Policy::HandlerAllowlist)
@@ -22,7 +22,7 @@ RSpec.describe Textus::Manifest::Policies do
     end
 
     it "returns an empty set for keys not matched by any rule" do
-      set = policies.for("identity.something")
+      set = rules.for("identity.something")
       expect(set.refresh).to be_nil
       expect(set.handler_allowlist).to be_nil
       expect(set.promote).to be_nil

@@ -86,16 +86,23 @@ module Textus
         )
       end
 
+      if raw.key?("policies")
+        raise BadManifest.new(
+          "'policies:' was renamed to 'rules:' in textus/3. " \
+          "Replace policies: with rules: in your manifest.",
+        )
+      end
+
       @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
       validate_declared_keys!
     end
 
-    def policies
-      @policies ||= Textus::Manifest::Policies.parse(@raw["policies"] || [])
+    def rules
+      @rules ||= Textus::Manifest::Rules.parse(@raw["rules"] || [])
     end
 
-    def policies_for(key)
-      policies.for(key)
+    def rules_for(key)
+      rules.for(key)
     end
 
     # Returns [Manifest::Entry, resolved_path, remaining_segments]

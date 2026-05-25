@@ -43,8 +43,8 @@ module Textus
       ```
 
       The intake handler above is paired with a manifest entry plus a
-      top-level `policies:` block for freshness (ttl/on_stale live in
-      policies, not in the entry):
+      top-level `rules:` block for freshness (ttl/on_stale live in
+      rules, not in the entry):
 
       ```yaml
       entries:
@@ -54,7 +54,7 @@ module Textus
           intake:
             handler: my_source
 
-      policies:
+      rules:
         - match: intake.foo
           refresh:
             ttl: 10m

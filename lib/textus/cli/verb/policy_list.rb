@@ -3,7 +3,7 @@ module Textus
     class Verb
       class PolicyList < Verb
         def call(store)
-          policies = store.manifest.policies.blocks.map do |b|
+          policies = store.manifest.rules.blocks.map do |b|
             row = { "match" => b.match }
             if b.refresh
               row["refresh"] = {
