@@ -238,6 +238,44 @@ If `template` is given, it names a Mustache template under `.textus/templates/`.
 
 No partials. No lambdas. No HTML escaping (output is raw text, intended for Markdown). Template recursion depth is bounded at 8; exceeding the limit is an error.
 
+### 5.2.1 Externally-generated derived entries (`generator:`)
+
+A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `generator:` instead of `projection:`. textus does **not** execute the command (consistent with §2); the external runner is responsible for writing the file. textus records `sources:` so `textus freshness` can compare source mtimes against the derived file's `_meta.generated.at` and report staleness.
+
+```yaml
+- key: output.catalogs.skills
+  path: output/catalogs/skills.md
+  zone: output
+  owner: build:catalog-skills
+  generator:
+    command: "rake catalog:skills"   # informational; the runner invokes it
+    sources:                          # dotted keys OR repo-relative paths
+      - working.projects
+      - working.network
+```
+
+**`sources:`** is a list. Each element is either a dotted key prefix (matched against manifest entries) or a filesystem path (relative to the repo root, or absolute). For each key prefix, every matching entry's file mtime is checked. For each path, file or directory mtime is checked.
+
+**`command:`** is recorded in the staleness row's `generator` field but never executed. It exists so `textus freshness` output can carry a hint about how to refresh.
+
+**Freshness contract.** An entry with `generator:` is reported by `textus freshness` as `stale` when:
+- The derived file does not exist, OR
+- `_meta.generated.at` is missing or unparseable, OR
+- Any `sources:` element has been modified after `_meta.generated.at`.
+
+**Frontmatter contract.** The external runner is responsible for writing the `generated:` frontmatter block when it produces the file:
+
+```yaml
+generated:
+  by: "rake catalog:skills"
+  at: "2026-05-25T12:00:00Z"
+  from: [working.projects, working.network]
+```
+
+`generated.from` SHOULD match `generator.sources` — they're the same list, recorded twice so a diff proves what was actually consumed.
+
+`generator:` and `projection:` are alternatives — typically only one is set per entry. Templates are not required when `generator:` is declared: the runner produces the bytes directly.
+
 ### 5.3 Publish layer (`publish_to:`)
 
 A derived entry MAY declare `publish_to:` in its frontmatter, listing one or more destination paths relative to the project root:

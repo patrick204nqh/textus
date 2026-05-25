@@ -85,68 +85,14 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 Symlink-mode publish was removed; publish is `FileUtils.cp` + sentinel. Sentinels for published files live under `.textus/sentinels/<target_rel>.textus-managed.json` so consumer directories stay clean. Legacy sibling sentinels auto-migrate on next publish.
 
-## CLI verbs
+## CLI and zones
 
-All verbs accept `--format=json` and return the envelope defined in SPEC §8. Write verbs require `--as=<role>` (role resolution: `--as` → `TEXTUS_ROLE` env → `.textus/role` file → default `human`).
+All verbs accept `--format=json` and return the envelope defined in [SPEC §8](SPEC.md). Write verbs require `--as=<role>` (role resolution: `--as` → `TEXTUS_ROLE` env → `.textus/role` file → default `human`).
 
-**Read:**
+- Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
+- Zone semantics and the role/`writable_by` mapping live in [SPEC §5](SPEC.md), with a tutorial expansion in [`docs/zones.md`](docs/zones.md).
 
-| Verb | Purpose |
-|---|---|
-| `intro` | Store orientation: zones, entries, hooks, write flows, CLI map |
-| `list [--prefix=K] [--zone=Z]` | Enumerate keys |
-| `where K` | Resolve a key to its filesystem path |
-| `get K` | Full envelope (frontmatter, body, uid, etag, format) |
-| `schema show K` | Schema bound to an entry |
-| `freshness [--prefix=K] [--zone=Z]` | Per-entry status (fresh / stale / never_refreshed / no_policy) against `policies:` |
-| `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | Query `.textus/audit.log` |
-| `blame KEY` | Audit rows joined with git commit metadata |
-| `policy list` / `policy explain KEY` | Dump effective policies / per-slot winners for one key |
-| `deps K` / `rdeps K` | Forward / reverse projection dependencies |
-| `published` | List `publish_to:` targets and their backing keys |
-| `doctor --check=schema_violations` | Validate every entry against its schema |
-| `hook list [--event=E]` | Registered hooks grouped by event (intake, reduce, check, put, deleted, refreshed, built, accepted, published, mv, reject, loaded, refresh_began, refresh_failed, refresh_detached) |
-
-**Write:**
-
-| Verb | Role |
-|---|---|
-| `put K --stdin --as=R [--action=NAME]` | per zone |
-| `hook run NAME [--key=val] [--as=R]` | per zone written (invoke a registered intake hook) |
-| `delete K --if-etag=E --as=R` | per zone |
-| `refresh K --as=script` | per zone (typically `script`) |
-| `key mv old new --as=R [--dry-run]` | per zone (same-zone moves; uid preserved) |
-| `build [--prefix=K] [--dry-run]` | `build` |
-| `accept K --as=human` | `human` only |
-| `reject K --as=human` | `human` only (discards a pending proposal; fires `:reject`) |
-
-**Health & maintenance:**
-
-| Verb | Purpose |
-|---|---|
-| `doctor` | Health checks (manifest, schemas, templates, hooks, illegal keys, sentinels, audit log, policy ambiguity, handler allowlist, legacy intake fields); `ok: true` when clean |
-| `key migrate [--dry-run]` | Rename files whose basenames violate the strict key grammar |
-
-**Scaffolding (human-only):**
-
-| Verb | Purpose |
-|---|---|
-| `init` | Scaffold a fresh `.textus/` |
-| `schema init NAME` | Stub a schema |
-| `schema diff NAME` | Compare a schema against entries that claim it |
-| `schema migrate NAME [--rename=OLD:NEW]` | Rewrite frontmatter keys across affected entries |
-
-## Zones and roles
-
-| Zone | `writable_by` | Purpose |
-|---|---|---|
-| `identity` | `[human]` | Identity, voice, decisions — slow-changing |
-| `working` | `[human, ai, script]` | Active project state |
-| `inbox` | `[script]` | Declared external inputs (actions) |
-| `review` | `[ai, human]` | AI proposals; humans run `textus accept` to apply |
-| `output` | `[build]` | Computed outputs from `textus build` |
-
-Mismatches return `write_forbidden` with a hint naming the role that *would* be allowed. Every write records the resolved role in `.textus/audit.log`.
+`textus intro` prints the same information for the current store: zones, entry families with schemas, registered hooks, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 
 ## Compute and publish
 

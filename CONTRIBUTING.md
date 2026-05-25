@@ -46,6 +46,6 @@ Maintainers tag `vX.Y.Z` on `main`. The release workflow publishes to RubyGems a
 
 See [`SECURITY.md`](SECURITY.md).
 
-## Implementation plans
+## Sources of truth
 
-Per-release implementation plans live under [`docs/plans/`](docs/plans/) as design history — not as current documentation. They describe what was built and how; once a release ships, the prose may drift from the code. Treat the SPEC, ARCHITECTURE, and `docs/` as current; treat `docs/plans/` as a record of the path taken.
+Treat `SPEC.md`, `ARCHITECTURE.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version. Per-release implementation plans are kept locally by maintainers and are not part of the published tree.

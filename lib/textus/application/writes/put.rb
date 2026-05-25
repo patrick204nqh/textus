@@ -19,12 +19,9 @@ module Textus
           envelope = @ctx.store.writer.write_envelope_to_disk(
             key,
             mentry: mentry,
-            meta: meta,
-            body: body,
-            content: content,
+            payload: Textus::Store::Writer::Payload.new(meta: meta, body: body, content: content),
+            ctx: @ctx,
             if_etag: if_etag,
-            as: @ctx.role,
-            correlation_id: @ctx.correlation_id,
           )
 
           unless suppress_events
