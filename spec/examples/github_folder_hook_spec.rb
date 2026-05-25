@@ -3,7 +3,7 @@ require "json"
 
 require_relative "../../examples/claude-plugin/recipes/github_folder"
 
-RSpec.describe "github_folder intake hook", skip: "examples/ not yet migrated to textus/3 event names (Task 7.1)" do
+RSpec.describe "github_folder intake hook" do
   let(:fixtures_dir) { File.expand_path("fixtures", __dir__) }
   let(:registry) { Textus::Hooks::Registry.new }
   let(:prev_fetcher) { TextusRecipes::GithubFolder.fetcher }
@@ -29,7 +29,7 @@ RSpec.describe "github_folder intake hook", skip: "examples/ not yet migrated to
   after { TextusRecipes::GithubFolder.fetcher = prev_fetcher }
 
   it "returns a content envelope containing only the files under the configured path" do
-    callable = registry.rpc_callable(:intake, :github_folder)
+    callable = registry.rpc_callable(:resolve_intake, :github_folder)
     result = callable.call(
       store: nil,
       config: { "repo" => "example/repo", "ref" => "main", "path" => "skills/agent-eval" },
@@ -43,7 +43,7 @@ RSpec.describe "github_folder intake hook", skip: "examples/ not yet migrated to
   end
 
   it "stamps _meta with source repo, ref, path, and timestamp" do
-    callable = registry.rpc_callable(:intake, :github_folder)
+    callable = registry.rpc_callable(:resolve_intake, :github_folder)
     result = callable.call(
       store: nil,
       config: { "repo" => "example/repo", "ref" => "main", "path" => "skills/agent-eval" },
@@ -64,7 +64,7 @@ RSpec.describe "github_folder intake hook", skip: "examples/ not yet migrated to
     end
     bad_registry = Textus::Hooks::Registry.new
     Textus.with_registry(bad_registry) { TextusRecipes::GithubFolder.register }
-    callable = bad_registry.rpc_callable(:intake, :github_folder)
+    callable = bad_registry.rpc_callable(:resolve_intake, :github_folder)
 
     expect do
       callable.call(store: nil, config: { "repo" => "example/repo" }, args: {})

@@ -25,7 +25,7 @@ class FakeStore
   end
 end
 
-RSpec.describe "skill_fanout :entry_refreshed listener", skip: "examples/ not yet migrated to textus/3 event names (Task 7.1)" do
+RSpec.describe "skill_fanout :entry_refreshed listener" do
   let(:registry) { Textus::Hooks::Registry.new }
   let(:fake_store) { FakeStore.new }
 
@@ -34,7 +34,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener", skip: "examples/ not ye
   end
 
   def trigger(key:, files:, store: fake_store)
-    handler = registry.pubsub_handlers(:refreshed).find { |h| h[:name] == :skill_fanout }
+    handler = registry.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
     handler[:callable].call(store: store, key: key, envelope: envelope, change: :updated)
   end

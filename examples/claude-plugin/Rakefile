@@ -1,8 +1,8 @@
 require "json"
 require "open3"
 
-def stale_inbox_keys
-  fresh_json, = Open3.capture2("textus", "freshness", "--zone=inbox")
+def stale_intake_keys
+  fresh_json, = Open3.capture2("textus", "freshness", "--zone=intake")
   rows = JSON.parse(fresh_json)["rows"] || []
   rows
     .select { |r| %w[stale never_refreshed].include?(r["status"]) }
@@ -10,12 +10,12 @@ def stale_inbox_keys
 end
 
 def dispatch_build_hooks!
-  # Manifest-declared `events: { build: [{ exec: ... }] }` rows are
+  # Manifest-declared `events: { build_completed: [{ exec: ... }] }` rows are
   # advertised by textus but never invoked by it. An external runner
   # (this Rakefile, in this example) reads the listing and dispatches.
   hooks_json, = Open3.capture2("textus", "hook", "list")
   JSON.parse(hooks_json)["hooks"].each do |row|
-    next unless row["exec"] && row["event"] == "build"
+    next unless row["exec"] && row["event"] == "build_completed"
 
     puts "dispatching #{row["exec"]} for #{row["key"]} (as=#{row["as"]})"
     sh row["exec"], row["key"]
@@ -23,20 +23,20 @@ def dispatch_build_hooks!
 end
 
 namespace :textus do
-  desc "Refresh every stale inbox entry"
+  desc "Refresh every stale intake entry"
   task :refresh do
-    keys = stale_inbox_keys
+    keys = stale_intake_keys
     if keys.empty?
-      puts "no stale inbox entries"
+      puts "no stale intake entries"
       next
     end
     keys.each do |key|
       puts "refreshing #{key}"
-      sh "textus", "refresh", key, "--as=script"
+      sh "textus", "refresh", key, "--as=runner"
     end
   end
 
-  desc "Refresh inbox + rebuild output + dispatch external :build hooks"
+  desc "Refresh intake + rebuild output + dispatch external :build_completed hooks"
   task update: %i[refresh] do
     sh "textus build | jq -c '{built: (.built | length)}'"
     dispatch_build_hooks!

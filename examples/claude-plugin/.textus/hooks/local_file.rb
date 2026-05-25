@@ -1,4 +1,4 @@
-Textus.intake(:local_file) do |config:, **|
+Textus.on(:resolve_intake, :local_file) do |config:, **|
   path = config["path"] or raise "local_file intake requires intake.config.path"
   abs = File.absolute_path?(path) ? path : File.expand_path(path)
   raise "local_file: not found: #{abs}" unless File.exist?(abs)

@@ -13,7 +13,7 @@ module TextusRecipes
     DERIVED_PREFIX = "vendor.skills."
 
     def self.register
-      Textus.on(:refreshed, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |store:, key:, envelope:, **|
+      Textus.on(:entry_refreshed, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |store:, key:, envelope:, **|
         next unless key.start_with?(SOURCE_PREFIX)
 
         slug = key.delete_prefix(SOURCE_PREFIX)

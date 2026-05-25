@@ -49,7 +49,7 @@ module TextusRecipes
     end
 
     def self.register
-      Textus.on(:intake, :github_folder) do |config:, **|
+      Textus.on(:resolve_intake, :github_folder) do |config:, **|
         repo = config["repo"] or raise Textus::UsageError.new("github_folder requires config.repo (owner/repo)")
         ref  = config["ref"]  or raise Textus::UsageError.new("github_folder requires config.ref (branch or sha)")
         path = config["path"] or raise Textus::UsageError.new("github_folder requires config.path (folder prefix in repo)")
