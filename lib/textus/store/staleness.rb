@@ -8,11 +8,18 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil)
-        @manifest.entries.flat_map do |mentry|
-          next [] unless EntryFilter.match?(mentry, prefix: prefix, zone: zone)
+        @manifest.entries
+                 .select { |m| entry_matches?(m, prefix: prefix, zone: zone) }
+                 .flat_map { |m| @generator_check.rows_for(m) + @intake_check.rows_for(m) }
+      end
 
-          @generator_check.rows_for(mentry) + @intake_check.rows_for(mentry)
-        end
+      private
+
+      def entry_matches?(mentry, prefix:, zone:)
+        return false if zone && mentry.zone != zone
+        return false if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
+
+        true
       end
     end
   end
