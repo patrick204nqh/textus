@@ -252,7 +252,7 @@ RSpec.describe "Builder :file_published events" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Operations.for(store, role: "builder").writes.build.call
+      Textus::Operations.for(store, role: "builder").writes.publish.call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }
