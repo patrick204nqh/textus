@@ -59,4 +59,17 @@ RSpec.describe Textus::Application::Context do
       expect(first).to eq(second)
     end
   end
+
+  describe ".system" do
+    it "returns a human-role context bound to the store" do
+      Dir.mktmpdir do |root|
+        store = build_store(File.join(root, ".textus"))
+        ctx = described_class.system(store)
+        expect(ctx).to be_a(described_class)
+        expect(ctx.role).to eq("human")
+        expect(ctx.store).to equal(store)
+        expect(ctx.correlation_id).to be_a(String)
+      end
+    end
+  end
 end
