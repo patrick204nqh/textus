@@ -76,7 +76,7 @@ RSpec.describe "textus/3 conformance" do
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
-      env = store.get("working.network.org.jane")
+      env = store.reader.get("working.network.org.jane")
 
       expect(env["protocol"]).to eq("textus/3")
       expect(env["key"]).to eq("working.network.org.jane")
@@ -99,8 +99,8 @@ RSpec.describe "textus/3 conformance" do
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an agent tries to write identity" do
       expect do
-        store.put("identity.self",
-                  meta: { "name" => "self" }, body: "n/a", as: "agent")
+        Textus::Operations.for(store, role: "agent").writes.put.call("identity.self",
+                                                                     meta: { "name" => "self" }, body: "n/a")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
@@ -112,11 +112,10 @@ RSpec.describe "textus/3 conformance" do
   describe "Fixture C — schema validation" do
     it "raises SchemaViolation listing the missing required field" do
       expect do
-        store.put(
+        Textus::Operations.for(store, role: "human").writes.put.call(
           "working.network.org.bob",
           meta: { "name" => "bob", "org" => "acme" },
           body: "",
-          as: "human",
         )
       end.to raise_error(Textus::SchemaViolation) do |err|
         env = err.to_envelope

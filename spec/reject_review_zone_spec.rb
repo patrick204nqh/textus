@@ -23,14 +23,16 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     YAML
 
     store = Textus::Store.new(root)
-    store.put("review.draft",
-              meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "proposed body", as: "agent")
+    Textus::Operations.for(store, role: "agent").writes.put.call(
+      "review.draft",
+      meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
+      body: "proposed body",
+    )
 
-    result = store.reject("review.draft", as: "human")
+    result = store.writer.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect { store.get("review.draft") }.to raise_error(Textus::UnknownKey)
+    expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
   end
 
   it "negative-signal: a zone literally named 'pending' but without [ai] writers is NOT proposal-kind" do
@@ -49,10 +51,12 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     YAML
 
     store = Textus::Store.new(root)
-    store.put("pending.draft",
-              meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "x", as: "human")
-    expect { store.reject("pending.draft", as: "human") }
+    Textus::Operations.for(store, role: "human").writes.put.call(
+      "pending.draft",
+      meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
+      body: "x",
+    )
+    expect { store.writer.reject("pending.draft", as: "human") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 end

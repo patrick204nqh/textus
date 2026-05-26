@@ -50,8 +50,8 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ctx = Textus::Composition.context(store, role: "human")
-      result = Textus::Composition.blame(ctx).call(key: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      result = ops.reads.blame.call(key: "working.doc")
       expect(result.length).to eq(1)
       row = result.first
       expect(row["git"]).to be_a(Hash)
@@ -67,8 +67,8 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ctx = Textus::Composition.context(store, role: "human")
-      result = Textus::Composition.blame(ctx).call(key: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      result = ops.reads.blame.call(key: "working.doc")
       expect(result.length).to eq(1)
       expect(result.first["git"]).to be_nil
     end
@@ -82,8 +82,8 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ctx = Textus::Composition.context(store, role: "human")
-      result = Textus::Composition.blame(ctx).call(key: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      result = ops.reads.blame.call(key: "working.doc")
       expect(result.first["git"]).to be_nil
     end
   end

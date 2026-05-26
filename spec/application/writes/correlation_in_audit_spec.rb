@@ -19,11 +19,9 @@ RSpec.describe "correlation_id in audit rows" do
   it "put is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(
-        store: store, role: "human", correlation_id: "test-corr-put",
-      )
+      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-put")
 
-      Textus::Composition.writes_put(ctx).call(
+      ops.writes.put.call(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
@@ -39,16 +37,14 @@ RSpec.describe "correlation_id in audit rows" do
   it "delete is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(
-        store: store, role: "human", correlation_id: "test-corr-del",
-      )
+      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-del")
 
-      Textus::Composition.writes_put(ctx).call(
+      ops.writes.put.call(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
       )
-      Textus::Composition.writes_delete(ctx).call("working.foo")
+      ops.writes.delete.call("working.foo")
 
       row = File.readlines(File.join(root, ".textus/audit.log")).last
       parsed = JSON.parse(row)
@@ -69,10 +65,13 @@ RSpec.describe "correlation_id in audit rows" do
       YAML
       store = Textus::Store.new(File.join(root, ".textus"))
 
-      store.put("working.notes.alpha",
-                meta: { "name" => "alpha" }, body: "a", as: "human")
-      store.mv("working.notes.alpha", "working.notes.beta",
-               as: "human", correlation_id: "test-corr-mv")
+      Textus::Operations.for(store, role: "human").writes.put.call(
+        "working.notes.alpha",
+        meta: { "name" => "alpha" }, body: "a",
+      )
+      Textus::Operations.for(store, role: "human", correlation_id: "test-corr-mv").writes.mv.call(
+        "working.notes.alpha", "working.notes.beta"
+      )
 
       row = File.readlines(File.join(root, ".textus/audit.log")).last
       parsed = JSON.parse(row)

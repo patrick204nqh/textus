@@ -55,7 +55,7 @@ RSpec.describe "Hooks::Dispatcher external subscription" do
     store = Textus::Store.new(root)
     seen = []
     store.bus.subscribe(:entry_put, :external) { |key:, **| seen << key }
-    store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
+    Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
     expect(seen).to eq(["working.x"])
   end
 end

@@ -31,9 +31,11 @@ RSpec.describe "Role authority via schema.maintained_by" do
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   it "flags fields written by the wrong role" do
-    store.put("working.people.alice",
-              meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
-              body: "", as: "agent")
+    Textus::Operations.for(store, role: "agent").writes.put.call(
+      "working.people.alice",
+      meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
+      body: "",
+    )
     res = store.validate_all
     codes = res["violations"].map { |v| v["code"] }
     expect(codes).to include("role_authority")
@@ -44,9 +46,11 @@ RSpec.describe "Role authority via schema.maintained_by" do
   end
 
   it "allows human to override ai-owned fields" do
-    store.put("working.people.bob",
-              meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
-              body: "", as: "human")
+    Textus::Operations.for(store, role: "human").writes.put.call(
+      "working.people.bob",
+      meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
+      body: "",
+    )
     res = store.validate_all
     expect(res["violations"]).to be_empty
   end

@@ -48,8 +48,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
       write_envelope(root, "working/doc.md",   last_refreshed_at: Time.now.utc.iso8601)
       write_envelope(root, "working/stale.md", last_refreshed_at: (Time.now.utc - 3600).iso8601)
 
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.freshness.call
 
       keys = rows.map { |r| r[:key] }
       expect(keys).to contain_exactly("working.doc", "working.stale", "identity.note")
@@ -66,8 +66,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "filters by zone" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call(zone: "identity")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.freshness.call(zone: "identity")
 
       expect(rows.map { |r| r[:key] }).to eq(["identity.note"])
     end
@@ -76,8 +76,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "filters by prefix" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call(prefix: "working")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.freshness.call(prefix: "working")
 
       expect(rows.map { |r| r[:key] }).to contain_exactly("working.doc", "working.stale")
     end
@@ -86,8 +86,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "reports :never_refreshed when policy exists but envelope is absent" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call(prefix: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.freshness.call(prefix: "working.doc")
       expect(rows.first[:status]).to eq(:never_refreshed)
       expect(rows.first[:next_due_at]).to be_nil
     end
@@ -98,8 +98,8 @@ RSpec.describe Textus::Application::Reads::Freshness do
       store = build_store(root)
       t = Time.utc(2026, 1, 1, 12, 0, 0)
       write_envelope(root, "working/doc.md", last_refreshed_at: t.iso8601)
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.freshness(ctx).call(prefix: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.freshness.call(prefix: "working.doc")
       expect(Time.parse(rows.first[:next_due_at])).to eq(t + 3600)
     end
   end

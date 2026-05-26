@@ -26,9 +26,9 @@ RSpec.describe "textus action verb" do
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
         Textus.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
-          # `store:` is an Application::Context; .store is the underlying Store.
-          ctx = store
-          ctx.store.put("working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok", as: ctx.role)
+          Textus::Operations.for(store.store, role: store.role).writes.put.call(
+            "working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok",
+          )
         end
       RUBY
 
@@ -45,7 +45,7 @@ RSpec.describe "textus action verb" do
       expect(payload["ok"]).to be true
 
       store = Textus::Store.new(root)
-      env = store.get("working.demo")
+      env = store.reader.get("working.demo")
       expect(env["_meta"]["who"]).to eq("patrick")
     end
   end
