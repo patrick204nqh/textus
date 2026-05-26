@@ -6,6 +6,7 @@ module Textus
           Events,
           PublishEach,
           InjectIntro,
+          IndexFilename,
         ].freeze
 
         def self.run_all(entry)
