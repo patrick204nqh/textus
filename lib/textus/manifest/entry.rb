@@ -171,33 +171,11 @@ module Textus
         "markdown"
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def validate_format_matrix!
-        ext = File.extname(@path)
-
-        case @format
-        when "markdown"
-          # .md, or no extension (will be appended). Anything else is a mismatch caught above.
-          raise UsageError.new("entry '#{@key}': markdown format requires '.md' path (got #{ext.inspect})") if ext != "" && ext != ".md"
-        when "json"
-          if @nested
-            # nested json: path is a directory; ext must be empty.
-            raise UsageError.new("entry '#{@key}': nested json path must not have an extension") if ext != ""
-          elsif ext != ".json"
-            raise UsageError.new("entry '#{@key}': json format requires '.json' path (got #{ext.inspect})")
-          end
-        when "yaml"
-          if @nested
-            raise UsageError.new("entry '#{@key}': nested yaml path must not have an extension") if ext != ""
-          elsif ext != ".yaml" && ext != ".yml"
-            raise UsageError.new("entry '#{@key}': yaml format requires '.yaml' or '.yml' path (got #{ext.inspect})")
-          end
-        when "text"
-          if @nested
-            raise UsageError.new("entry '#{@key}': nested text path must not have an extension") if ext != ""
-          elsif ext != ".txt" && ext != ""
-            raise UsageError.new("entry '#{@key}': text format requires '.txt' or no extension (got #{ext.inspect})")
-          end
+        begin
+          Textus::Entry.for_format(@format).validate_path_extension(@path, @nested)
+        rescue UsageError => e
+          raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
         # Schema rules.
@@ -205,12 +183,11 @@ module Textus
 
         # Template-required-for-derived rules. Skipped for entries materialized by an
         # external generator: command (those produce the bytes themselves).
-        if in_generator_zone? && @template.nil? && @generator.nil? &&
-           (@format == "markdown" || @format == "text") && !@nested
-          raise UsageError.new("entry '#{@key}': derived #{@format} entries require a template")
-        end
+        return unless in_generator_zone? && @template.nil? && @generator.nil? &&
+                      %w[markdown text].include?(@format) && !@nested
+
+        raise UsageError.new("entry '#{@key}': derived #{@format} entries require a template")
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def parse_compute!(raw)
         src = raw["compute"]
