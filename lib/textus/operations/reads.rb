@@ -17,6 +17,9 @@ module Textus
       def where           = Application::Reads::Where.new(ctx: @ctx)
       def uid             = Application::Reads::Uid.new(ctx: @ctx)
       def schema_envelope = Application::Reads::SchemaEnvelope.new(ctx: @ctx)
+      def deps            = Application::Reads::Deps.new(ctx: @ctx)
+      def rdeps           = Application::Reads::Rdeps.new(ctx: @ctx)
+      def published       = Application::Reads::Published.new(ctx: @ctx)
 
       private
 
