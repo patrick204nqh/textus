@@ -9,6 +9,21 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.14.3 — 2026-05-26
+
+### Added
+
+- Top-level `flock(2)` mutex at `<root>/.build.lock` prevents concurrent
+  `textus build` invocations against the same store. A second build
+  while one is already running exits with code `75` (`EX_TEMPFAIL`) and
+  emits a `build_in_progress` error envelope, so wrappers like `rake
+  update` and CI can distinguish "another build is busy" from "this
+  build is broken". The lock is FD-bound and released by the kernel on
+  process death (including SIGKILL/OOM), so no stale-lock takeover
+  logic is needed. `close_on_exec` prevents the lock from leaking into
+  `bundle exec` and lefthook child processes. Per-key locks under
+  `.locks/` are unchanged. (#56)
+
 ## 0.14.2 — 2026-05-26
 
 ### Added
