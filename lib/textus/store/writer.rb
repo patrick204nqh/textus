@@ -70,14 +70,7 @@ module Textus
       end
 
       def enforce_name_match!(path, meta, format)
-        return unless %w[markdown json yaml].include?(format)
-        return unless meta.is_a?(Hash) && meta["name"]
-
-        ext = Entry.for_format(format).extensions.first
-        basename = File.basename(path, ext)
-        return if meta["name"] == basename
-
-        raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
+        Textus::Entry.for_format(format).enforce_name_match!(path, meta)
       end
 
       def serialize_for_put(mentry:, path:, strategy:, meta:, body:, content:)

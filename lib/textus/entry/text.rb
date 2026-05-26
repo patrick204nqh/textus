@@ -25,6 +25,10 @@ module Textus
         [meta, content]
       end
 
+      def self.enforce_name_match!(_path, _meta)
+        # text has no meta home; no-op
+      end
+
       def self.validate_path_extension(path, nested)
         ext = File.extname(path)
         if nested

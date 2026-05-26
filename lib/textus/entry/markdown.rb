@@ -37,6 +37,16 @@ module Textus
 
       def self.nested_glob = "**/*.md"
 
+      def self.enforce_name_match!(path, meta)
+        return unless meta.is_a?(Hash) && meta["name"]
+
+        ext = extensions.first
+        basename = File.basename(path, ext)
+        return if meta["name"] == basename
+
+        raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
+      end
+
       def self.inject_uid(meta, content, existing_uid)
         m = meta.is_a?(Hash) ? meta.dup : {}
         m["uid"] = existing_uid || Textus::Store.mint_uid unless m["uid"].is_a?(String) && !m["uid"].empty?
