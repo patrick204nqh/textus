@@ -69,6 +69,6 @@ RSpec.describe "Textus UID" do
 
   it "Store#uid returns the uid for a key" do
     env = Textus::Operations.for(store, role: "human").writes.put.call("working.md", meta: { "name" => "md" }, body: "hi")
-    expect(store.uid("working.md")).to eq(env["uid"])
+    expect(Textus::Operations.for(store).reads.uid.call("working.md")).to eq(env["uid"])
   end
 end

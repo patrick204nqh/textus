@@ -5,6 +5,10 @@ module Textus
     class Context
       attr_reader :store, :role, :correlation_id
 
+      def self.system(store)
+        new(store: store, role: "human")
+      end
+
       def initialize(store:, role:, correlation_id: nil, clock: Time, dry_run: false)
         @store          = store
         @role           = role.to_s

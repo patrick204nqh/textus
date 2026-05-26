@@ -9,6 +9,32 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## [0.12.4] — 2026-05-26
+
+### Breaking
+
+- Removed `Textus::Store#list`, `#where`, `#deps`, `#rdeps`, `#published`,
+  `#stale`, `#validate_all`, `#uid`, `#schema_envelope`, and `#fire_event`.
+  Use `Textus::Operations.for(store).reads.<name>.call(...)` instead.
+- Removed `Textus::Store::Writer#delete`, `#accept`, `#reject`. Use
+  `Textus::Operations.for(store, role:).writes.<verb>.call(...)`.
+- Removed `Textus::Store::Mover`. The mv use case lives entirely in
+  `Textus::Application::Writes::Mv` now.
+
+### Added
+
+- `Textus::Application::Reads::{List,Where,Uid,SchemaEnvelope,Deps,Rdeps,Published,Stale,ValidateAll}`.
+- `Textus::Application::Writes::Reject`.
+- `Textus::Application::Context.system(store)` for infrastructure-side
+  hook dispatch.
+
+### Internal
+
+- Internal call sites (`Projection`, `Schema::Tools`, `Application::Refresh::All`,
+  `Doctor::Check::SchemaViolations`) now route reads through `Operations`.
+
+See [ADR 0005](docs/architecture/decisions/0005-store-facade-final-removal.md).
+
 ## [0.12.3] — 2026-05-26
 
 ### Added

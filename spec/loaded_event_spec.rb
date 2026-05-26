@@ -18,7 +18,10 @@ RSpec.describe ":store_loaded event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:store_loaded, :log_loaded) { |store:| $textus_event_log << [:store_loaded, store.store.list.length] }
+      Textus.on(:store_loaded, :log_loaded) do |store:|
+        list = Textus::Application::Reads::List.new(ctx: store).call
+        $textus_event_log << [:store_loaded, list.length]
+      end
       Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
     RUBY
     $textus_event_log = []

@@ -4,7 +4,7 @@ module Textus
       class Deps < Verb
         def call(store)
           key = positional.shift or raise UsageError.new("deps requires a key")
-          emit({ "key" => key, "deps" => store.deps(key) })
+          emit({ "key" => key, "deps" => operations_for(store).reads.deps.call(key) })
         end
       end
     end

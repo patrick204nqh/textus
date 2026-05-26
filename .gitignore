@@ -10,3 +10,4 @@
 *.gem
 .ruby-lsp/
 docs/plans/
+.worktrees/

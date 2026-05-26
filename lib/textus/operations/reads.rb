@@ -13,6 +13,15 @@ module Textus
       def audit          = Application::Reads::Audit.new(ctx: @ctx)
       def blame          = Application::Reads::Blame.new(ctx: @ctx)
       def policy_explain = Application::Reads::PolicyExplain.new(ctx: @ctx)
+      def list           = Application::Reads::List.new(ctx: @ctx)
+      def where           = Application::Reads::Where.new(ctx: @ctx)
+      def uid             = Application::Reads::Uid.new(ctx: @ctx)
+      def schema_envelope = Application::Reads::SchemaEnvelope.new(ctx: @ctx)
+      def deps            = Application::Reads::Deps.new(ctx: @ctx)
+      def rdeps           = Application::Reads::Rdeps.new(ctx: @ctx)
+      def published       = Application::Reads::Published.new(ctx: @ctx)
+      def stale           = Application::Reads::Stale.new(ctx: @ctx)
+      def validate_all    = Application::Reads::ValidateAll.new(ctx: @ctx)
 
       private
 
