@@ -10,7 +10,7 @@ module Textus
         def call(pending_key)
           raise ProposalError.new("only human role can reject proposals; got '#{@ctx.role}'") unless @ctx.role == "human"
 
-          mentry, = @ctx.store.manifest.resolve(pending_key)
+          mentry = @ctx.store.manifest.resolve(pending_key).entry
           unless mentry.in_proposal_zone?
             raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
           end

@@ -9,7 +9,7 @@ module Textus
 
         def call(key, if_etag: nil, suppress_events: false)
           @ctx.store.manifest.validate_key!(key)
-          mentry, = @ctx.store.manifest.resolve(key)
+          mentry = @ctx.store.manifest.resolve(key).entry
 
           unless @ctx.can_write?(mentry.zone)
             raise WriteForbidden.new(key, mentry.zone,

@@ -14,7 +14,9 @@ module Textus
       # freshness annotation to avoid recursion. Used by Freshness.refresh_sync
       # after a sync refresh completes.
       def read_raw_envelope(key)
-        mentry, path, = @manifest.resolve(key)
+        res = @manifest.resolve(key)
+        mentry = res.entry
+        path = res.path
         return nil unless File.exist?(path)
 
         raw = File.binread(path)
@@ -33,12 +35,14 @@ module Textus
       end
 
       def where(key)
-        mentry, path, = @manifest.resolve(key)
+        res = @manifest.resolve(key)
+        mentry = res.entry
+        path = res.path
         { "protocol" => PROTOCOL, "key" => key, "zone" => mentry.zone, "owner" => mentry.owner, "path" => path }
       end
 
       def schema_envelope(key)
-        mentry, = @manifest.resolve(key)
+        mentry = @manifest.resolve(key).entry
         schema = @store.schema_for(mentry.schema)
         { "protocol" => PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
       end

@@ -34,10 +34,14 @@ module Textus
           manifest.validate_key!(new_key)
           raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-          old_mentry, old_path, = manifest.resolve(old_key)
+          old_res = manifest.resolve(old_key)
+          old_mentry = old_res.entry
+          old_path = old_res.path
           raise UnknownKey.new(old_key) unless File.exist?(old_path)
 
-          new_mentry, new_path, = manifest.resolve(new_key)
+          new_res = manifest.resolve(new_key)
+          new_mentry = new_res.entry
+          new_path = new_res.path
           validate_zone_and_format!(old_mentry, new_mentry)
           validate_writer!(old_mentry, old_key)
           raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)

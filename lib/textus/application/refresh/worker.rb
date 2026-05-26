@@ -12,7 +12,10 @@ module Textus
         end
 
         def run(key)
-          mentry, path, remaining = @ctx.store.manifest.resolve(key)
+          res = @ctx.store.manifest.resolve(key)
+          mentry = res.entry
+          path = res.path
+          remaining = res.remaining
           raise UsageError.new("no intake declared for '#{key}'") unless mentry.intake_handler
 
           before_etag = File.exist?(path) ? Etag.for_file(path) : nil
