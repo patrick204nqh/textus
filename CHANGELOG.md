@@ -9,6 +9,38 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.13.0 — 2026-05-26
+
+### Added
+
+- `Textus::Entry::Base` grows 7 abstract class methods that concrete
+  strategies must implement: `nested_glob`, `inject_uid`,
+  `enforce_name_match!`, `rewrite_name`, `serialize_for_put`,
+  `validate_path_extension`.
+- `Textus::Entry.infer_from_extension(ext)` — registry method
+  replacing the deleted `Manifest::EXT_TO_FORMAT` constant.
+
+### Changed
+
+- Format-specific branches in `Manifest#nested_glob`,
+  `Manifest::Entry#{validate_format_matrix!,resolve_format!,
+  validate_index_filename!}`, `Store::Writer#{ensure_uid,
+  enforce_name_match!,serialize_for_put}`, and
+  `Application::Writes::Mv#rewrite_name_for_mv!` all collapse to
+  single-line delegations to `Entry.for_format(fmt).<method>(...)`.
+- The 3 rubocop `Metrics/*` disable comments in
+  `Manifest::Entry#validate_format_matrix!` are removed; the method
+  is now 3 lines.
+
+### Removed
+
+- `Textus::Manifest::EXT_TO_FORMAT` constant. Use
+  `Textus::Entry.infer_from_extension(ext)` instead.
+
+### Reference
+
+- See [ADR 0006](docs/architecture/decisions/0006-format-strategy-extraction.md).
+
 ## 0.12.6 — 2026-05-26
 
 ### Examples

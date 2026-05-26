@@ -34,6 +34,52 @@ module Textus
       end
 
       def self.extensions = [".md"]
+
+      def self.nested_glob = "**/*.md"
+
+      def self.serialize_for_put(meta:, body:, content:, path:)
+        _ = path
+        _ = content
+        bytes = serialize(meta: meta || {}, body: body.to_s)
+        [bytes, meta, body.to_s, nil]
+      end
+
+      # Mutating filesystem op; returns true if a write happened (boolean is
+      # informational, not a predicate). Rubocop's predicate-name heuristic
+      # disabled here on purpose.
+      def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
+        raw = File.binread(path)
+        parsed = parse(raw, path: path)
+        meta = parsed["_meta"] || {}
+        return false unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
+
+        new_meta = meta.merge("name" => basename)
+        File.binwrite(path, serialize(meta: new_meta, body: parsed["body"]))
+        true
+      end
+
+      def self.enforce_name_match!(path, meta)
+        return unless meta.is_a?(Hash) && meta["name"]
+
+        ext = extensions.first
+        basename = File.basename(path, ext)
+        return if meta["name"] == basename
+
+        raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
+      end
+
+      def self.inject_uid(meta, content, existing_uid)
+        m = meta.is_a?(Hash) ? meta.dup : {}
+        m["uid"] = existing_uid || Textus::Store.mint_uid unless m["uid"].is_a?(String) && !m["uid"].empty?
+        [m, content]
+      end
+
+      def self.validate_path_extension(path, _nested)
+        ext = File.extname(path)
+        return if ["", ".md"].include?(ext)
+
+        raise UsageError.new("markdown format requires '.md' path (got #{ext.inspect})")
+      end
     end
   end
 end

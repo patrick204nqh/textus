@@ -86,7 +86,7 @@ module Textus
         end
 
         ext = File.extname(@index_filename)
-        inferred = Manifest::EXT_TO_FORMAT[ext]
+        inferred = Textus::Entry.infer_from_extension(ext)
         if inferred.nil?
           raise UsageError.new(
             "entry '#{@key}': index_filename #{@index_filename.inspect} has unknown extension #{ext.inspect}",
@@ -148,7 +148,7 @@ module Textus
 
       def resolve_format!(declared)
         ext = File.extname(@path)
-        inferred = Manifest::EXT_TO_FORMAT[ext]
+        inferred = Textus::Entry.infer_from_extension(ext)
 
         if declared.nil?
           return inferred if inferred
@@ -156,9 +156,7 @@ module Textus
           return "markdown" if ext == "" && @nested
           return "markdown" if ext == ""
         else
-          unless Manifest::EXT_TO_FORMAT.values.include?(declared)
-            raise UsageError.new("entry '#{@key}': unknown format #{declared.inspect}")
-          end
+          raise UsageError.new("entry '#{@key}': unknown format #{declared.inspect}") unless Textus::Entry.formats.include?(declared)
           # If the path has an extension, the declared format must match.
           if ext != "" && inferred && inferred != declared
             raise UsageError.new(
@@ -171,33 +169,11 @@ module Textus
         "markdown"
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def validate_format_matrix!
-        ext = File.extname(@path)
-
-        case @format
-        when "markdown"
-          # .md, or no extension (will be appended). Anything else is a mismatch caught above.
-          raise UsageError.new("entry '#{@key}': markdown format requires '.md' path (got #{ext.inspect})") if ext != "" && ext != ".md"
-        when "json"
-          if @nested
-            # nested json: path is a directory; ext must be empty.
-            raise UsageError.new("entry '#{@key}': nested json path must not have an extension") if ext != ""
-          elsif ext != ".json"
-            raise UsageError.new("entry '#{@key}': json format requires '.json' path (got #{ext.inspect})")
-          end
-        when "yaml"
-          if @nested
-            raise UsageError.new("entry '#{@key}': nested yaml path must not have an extension") if ext != ""
-          elsif ext != ".yaml" && ext != ".yml"
-            raise UsageError.new("entry '#{@key}': yaml format requires '.yaml' or '.yml' path (got #{ext.inspect})")
-          end
-        when "text"
-          if @nested
-            raise UsageError.new("entry '#{@key}': nested text path must not have an extension") if ext != ""
-          elsif ext != ".txt" && ext != ""
-            raise UsageError.new("entry '#{@key}': text format requires '.txt' or no extension (got #{ext.inspect})")
-          end
+        begin
+          Textus::Entry.for_format(@format).validate_path_extension(@path, @nested)
+        rescue UsageError => e
+          raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
         # Schema rules.
@@ -205,12 +181,11 @@ module Textus
 
         # Template-required-for-derived rules. Skipped for entries materialized by an
         # external generator: command (those produce the bytes themselves).
-        if in_generator_zone? && @template.nil? && @generator.nil? &&
-           (@format == "markdown" || @format == "text") && !@nested
-          raise UsageError.new("entry '#{@key}': derived #{@format} entries require a template")
-        end
+        return unless in_generator_zone? && @template.nil? && @generator.nil? &&
+                      %w[markdown text].include?(@format) && !@nested
+
+        raise UsageError.new("entry '#{@key}': derived #{@format} entries require a template")
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def parse_compute!(raw)
         src = raw["compute"]

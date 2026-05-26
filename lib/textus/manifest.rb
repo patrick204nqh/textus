@@ -3,14 +3,6 @@ require_relative "manifest/schema"
 
 module Textus
   class Manifest
-    EXT_TO_FORMAT = {
-      ".md" => "markdown",
-      ".json" => "json",
-      ".yaml" => "yaml",
-      ".yml" => "yaml",
-      ".txt" => "text",
-    }.freeze
-
     TEXTUS_2_HINT = "Install textus 0.11.x to run the migrator, then upgrade to this version. " \
                     "See https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md#0110".freeze
 
@@ -194,13 +186,7 @@ module Textus
     end
 
     def nested_glob(format)
-      case format
-      when "markdown" then "**/*.md"
-      when "json" then "**/*.json"
-      when "yaml" then "**/*.{yaml,yml}"
-      when "text" then "**/*.txt"
-      else raise UsageError.new("unknown format #{format.inspect} for nested glob")
-      end
+      Textus::Entry.for_format(format).nested_glob
     end
   end
 end
