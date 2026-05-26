@@ -93,12 +93,17 @@ RSpec.describe Textus::Envelope do
       expect(env.to_h_for_wire).not_to have_key("content")
     end
 
-    it "includes freshness when present" do
+    it "flattens freshness fields into top-level wire keys" do
       env = described_class.build(
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
-      ).with(freshness: { "state" => "stale" })
-      expect(env.to_h_for_wire["freshness"]).to eq({ "state" => "stale" })
+      ).with(freshness: { "stale" => true, "refreshing" => false })
+      h = env.to_h_for_wire
+      aggregate_failures do
+        expect(h["stale"]).to be true
+        expect(h["refreshing"]).to be false
+        expect(h).not_to have_key("freshness")
+      end
     end
   end
 
@@ -114,8 +119,8 @@ RSpec.describe Textus::Envelope do
       expect(base_env.stale?).to be false
     end
 
-    it "stale? returns true when freshness.state is 'stale'" do
-      env = base_env.with(freshness: { "state" => "stale" })
+    it "stale? returns true when freshness.stale is true" do
+      env = base_env.with(freshness: { "stale" => true })
       expect(env.stale?).to be true
     end
 
@@ -124,7 +129,7 @@ RSpec.describe Textus::Envelope do
     end
 
     it "refreshing? returns the boolean refreshing flag" do
-      env = base_env.with(freshness: { "state" => "stale", "refreshing" => true })
+      env = base_env.with(freshness: { "stale" => true, "refreshing" => true })
       expect(env.refreshing?).to be true
     end
   end

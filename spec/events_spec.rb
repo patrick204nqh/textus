@@ -46,7 +46,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       store = Textus::Store.new(root)
       env = Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
-      expect(env["body"]).to eq("hi") # write succeeded
+      expect(env.body).to eq("hi") # write succeeded
       last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
       expect(last["extras"]["event"]).to eq("entry_put")
       expect(last["extras"]["error"]).to match(/bang/)

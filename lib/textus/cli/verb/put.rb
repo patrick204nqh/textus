@@ -43,7 +43,8 @@ module Textus
           meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
-          emit(Textus::Operations.for(store, role: role).writes.put.call(key, meta: meta, body: body, if_etag: if_etag))
+          result = Textus::Operations.for(store, role: role).writes.put.call(key, meta: meta, body: body, if_etag: if_etag)
+          emit(result.to_h_for_wire)
         end
       end
     end

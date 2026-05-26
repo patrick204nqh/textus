@@ -29,13 +29,13 @@ RSpec.describe "textus mv" do
 
   it "moves an entry within the same zone, preserving uid" do
     env = put_md("working.notes.alpha")
-    uid = env["uid"]
+    uid = env.uid
     res = Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
     expect(res["ok"]).to be true
     expect(res["uid"]).to eq(uid)
     expect(File.exist?(File.join(root, "zones/working/notes/alpha.md"))).to be false
     expect(File.exist?(File.join(root, "zones/working/notes/beta.md"))).to be true
-    expect(store.reader.get("working.notes.beta")["uid"]).to eq(uid)
+    expect(store.reader.get("working.notes.beta").uid).to eq(uid)
   end
 
   it "writes an audit row with verb=mv and top-level structural fields" do
@@ -77,11 +77,11 @@ RSpec.describe "textus mv" do
   it "mints a uid if the source had none, so the audit row carries it" do
     src = File.join(root, "zones/working/notes/alpha.md")
     File.write(src, "---\nname: alpha\n---\nbody\n")
-    expect(store.reader.get("working.notes.alpha")["uid"]).to be_nil
+    expect(store.reader.get("working.notes.alpha").uid).to be_nil
 
     res = Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(store.reader.get("working.notes.beta")["uid"]).to eq(res["uid"])
+    expect(store.reader.get("working.notes.beta").uid).to eq(res["uid"])
 
     line = File.read(File.join(root, "audit.log")).lines.last
     parsed = JSON.parse(line.chomp)

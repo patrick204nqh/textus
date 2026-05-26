@@ -54,7 +54,7 @@ module Textus
         last_writer = @audit_log.last_writer_for(key)
         return if last_writer.nil?
 
-        env["_meta"].each_key do |field|
+        env.meta.each_key do |field|
           owner = schema.maintained_by(field)
           next if owner.nil? || last_writer == owner || last_writer == "human"
 
@@ -72,8 +72,8 @@ module Textus
 
       def validate_schema!(schema, envelope, format)
         payload = case format
-                  when "json", "yaml" then envelope["content"] || {}
-                  else envelope["_meta"] || {}
+                  when "json", "yaml" then envelope.content || {}
+                  else envelope.meta || {}
                   end
         schema.validate!(payload)
       end

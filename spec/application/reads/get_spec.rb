@@ -77,8 +77,8 @@ RSpec.describe Textus::Application::Reads::Get do
       envelope = use_case.call("working.doc")
 
       expect(envelope).not_to be_nil
-      expect(envelope["stale"]).to be(false)
-      expect(envelope["refreshing"]).to be(false)
+      expect(envelope.stale?).to be(false)
+      expect(envelope.refreshing?).to be(false)
     end
   end
 
@@ -104,8 +104,8 @@ RSpec.describe Textus::Application::Reads::Get do
       use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
       envelope = use_case.call("working.doc")
 
-      expect(envelope["stale"]).to be(true)
-      expect(envelope["refreshing"]).to be(false)
+      expect(envelope.stale?).to be(true)
+      expect(envelope.refreshing?).to be(false)
     end
   end
 end

@@ -46,7 +46,7 @@ module Textus
       # Returns the Textus UID for a key (or nil if the entry has none yet).
       # Raises UnknownKey if the key doesn't resolve to a real file.
       def uid(key)
-        get(key)["uid"]
+        get(key).uid
       end
 
       def deps(key)   = Dependencies.deps_of(@manifest, key)

@@ -70,8 +70,8 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     trigger(key: "intake.skills.agent-eval", files: { "scripts/run.rb" => "puts :ok" })
 
     envelope = derived_envelope("vendor.skills.agent-eval.scripts.run.rb")
-    expect(envelope["_meta"]["source_key"]).to eq("intake.skills.agent-eval")
-    expect(envelope["_meta"]["source_path"]).to eq("scripts/run.rb")
+    expect(envelope.meta["source_key"]).to eq("intake.skills.agent-eval")
+    expect(envelope.meta["source_path"]).to eq("scripts/run.rb")
   end
 
   it "deletes derived keys that no longer appear in the new file set" do

@@ -40,21 +40,18 @@ module Textus
         private
 
         def annotate(envelope, verdict, refreshing:, refresh_error: nil)
-          envelope = envelope.dup
-          envelope["stale"]         = verdict.stale?
-          envelope["stale_reason"]  = verdict.reason
-          envelope["refreshing"]    = refreshing
-          envelope["refresh_error"] = refresh_error if refresh_error
-          envelope
+          fresh = {
+            "stale" => verdict.stale?,
+            "stale_reason" => verdict.reason,
+            "refreshing" => refreshing,
+          }
+          fresh["refresh_error"] = refresh_error if refresh_error
+          envelope.with(freshness: fresh)
         end
 
         # No refresh policy applies to this key — treat as fresh, skip evaluation/orchestration.
         def annotate_fresh(envelope)
-          envelope = envelope.dup
-          envelope["stale"]        = false
-          envelope["stale_reason"] = nil
-          envelope["refreshing"]   = false
-          envelope
+          envelope.with(freshness: { "stale" => false, "stale_reason" => nil, "refreshing" => false })
         end
       end
     end

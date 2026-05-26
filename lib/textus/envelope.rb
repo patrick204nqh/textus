@@ -29,7 +29,6 @@ module Textus
       v = meta.is_a?(Hash) ? meta["uid"] : nil
       v.is_a?(String) ? v : nil
     end
-    private_class_method :extract_uid
 
     def to_h_for_wire
       h = {
@@ -46,16 +45,16 @@ module Textus
         "uid" => uid,
       }
       h["content"] = content unless content.nil?
-      h["freshness"] = freshness unless freshness.nil?
+      freshness.each { |k, v| h[k.to_s] = v } if freshness.is_a?(Hash)
       h
     end
 
     def stale?
-      freshness.is_a?(Hash) && ["stale", :stale].include?(freshness["state"])
+      freshness.is_a?(Hash) && (freshness["stale"] == true || freshness[:stale] == true)
     end
 
     def refreshing?
-      freshness.is_a?(Hash) && freshness["refreshing"] == true
+      freshness.is_a?(Hash) && (freshness["refreshing"] == true || freshness[:refreshing] == true)
     end
   end
 end

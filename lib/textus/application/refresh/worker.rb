@@ -69,7 +69,7 @@ module Textus
 
         def detect_change(before_etag, envelope)
           if before_etag.nil? then :created
-          elsif envelope["etag"] == before_etag then :unchanged
+          elsif envelope.etag == before_etag then :unchanged
           else :updated
           end
         end

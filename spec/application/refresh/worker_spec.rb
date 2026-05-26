@@ -53,7 +53,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       envelope = worker.run("intake.item")
 
       expect(envelope).not_to be_nil
-      expect(envelope["body"]).to eq("hello")
+      expect(envelope.body).to eq("hello")
 
       event_names = test_bus.events.map(&:first)
       expect(event_names).to include(:refresh_started)

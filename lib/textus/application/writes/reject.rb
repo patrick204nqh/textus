@@ -16,7 +16,7 @@ module Textus
           end
 
           env = @ctx.store.reader.get(pending_key)
-          proposal = env.dig("_meta", "proposal") or
+          proposal = env.meta&.dig("proposal") or
             raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target_key = proposal["target_key"] or
             raise ProposalError.new("proposal missing target_key")
