@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class RuleExplain < Verb
+        command_name "explain"
+        parent_group Group::Rule
+
         def call(store)
           key = positional.shift or raise UsageError.new("policy explain requires a KEY")
           result = operations_for(store).reads.policy_explain.call(key: key)

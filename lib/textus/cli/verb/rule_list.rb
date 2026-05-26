@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class RuleList < Verb
+        command_name "list"
+        parent_group Group::Rule
+
         def call(store)
           policies = store.manifest.rules.blocks.map do |b|
             row = { "match" => b.match }

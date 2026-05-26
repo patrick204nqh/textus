@@ -22,9 +22,39 @@ module Textus
           true
         end
 
+        # Declarative CLI name. Reader returns the registered name (or nil
+        # for verbs that aren't directly invokable, like the abstract
+        # Verb/Group base classes). Writer registers it.
+        def command_name(name = nil)
+          if name.nil?
+            @command_name
+          else
+            @command_name = name.to_s
+          end
+        end
+
+        # Declares that this verb is a subcommand of `group_klass`. When
+        # set, the verb is NOT a top-level CLI verb — it's listed under
+        # the group's subcommands instead.
+        def parent_group(group_klass = nil)
+          if group_klass.nil?
+            @parent_group
+          else
+            @parent_group = group_klass
+          end
+        end
+
         def inherited(subclass)
           super
           subclass.instance_variable_set(:@options, [])
+          subclass.instance_variable_set(:@command_name, nil)
+          subclass.instance_variable_set(:@parent_group, nil)
+        end
+
+        # Recursive subclass enumeration. Ruby 3.1 ships Class#subclasses
+        # but not Class#descendants, so we expand it ourselves.
+        def descendants
+          subclasses.flat_map { |k| [k] + k.descendants }
         end
       end
 

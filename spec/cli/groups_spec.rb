@@ -85,7 +85,7 @@ RSpec.describe "CLI subcommand groups" do
       run(["key"])
       err = JSON.parse(stdout.string)
       expect(err["code"]).to eq("usage")
-      expect(stderr.string).to match(/key requires a subcommand:.*mv.*uid.*normalize/i)
+      expect(stderr.string).to match(/key requires a subcommand:.*mv.*normalize.*uid/i)
     end
   end
 

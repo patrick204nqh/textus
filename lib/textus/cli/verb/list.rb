@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class List < Verb
+        command_name "list"
+
         option :prefix, "--prefix=KEY"
         option :zone, "--zone=Z"
 

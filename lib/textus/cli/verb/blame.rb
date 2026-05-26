@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Blame < Verb
+        command_name "blame"
+
         option :limit, "--limit=N"
 
         def call(store)

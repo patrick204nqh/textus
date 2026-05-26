@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Reject < Verb
+        command_name "reject"
+
         option :as_flag, "--as=ROLE"
 
         def call(store)

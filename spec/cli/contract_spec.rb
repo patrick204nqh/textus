@@ -35,11 +35,66 @@ RSpec.describe "Textus::CLI verb return-value contract" do
 
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
-      Textus::CLI::VERBS.each_key do |verb|
+      Textus::CLI.verbs.each_key do |verb|
         code, = run_cli([verb], cwd: root)
         expect(code).to be_an(Integer),
                         "verb `textus #{verb}` returned #{code.inspect} (expected Integer)"
       end
     end
+  end
+
+  it "the auto-derived verb table matches the prior surface exactly" do
+    expected = {
+      "accept" => Textus::CLI::Verb::Accept,
+      "audit" => Textus::CLI::Verb::Audit,
+      "blame" => Textus::CLI::Verb::Blame,
+      "build" => Textus::CLI::Verb::Build,
+      "delete" => Textus::CLI::Verb::Delete,
+      "deps" => Textus::CLI::Verb::Deps,
+      "doctor" => Textus::CLI::Verb::Doctor,
+      "freshness" => Textus::CLI::Verb::Freshness,
+      "get" => Textus::CLI::Verb::Get,
+      "hook" => Textus::CLI::Group::Hook,
+      "init" => Textus::CLI::Verb::Init,
+      "intro" => Textus::CLI::Verb::Intro,
+      "key" => Textus::CLI::Group::Key,
+      "list" => Textus::CLI::Verb::List,
+      "published" => Textus::CLI::Verb::Published,
+      "put" => Textus::CLI::Verb::Put,
+      "rdeps" => Textus::CLI::Verb::Rdeps,
+      "refresh" => Textus::CLI::Group::Refresh,
+      "reject" => Textus::CLI::Verb::Reject,
+      "rule" => Textus::CLI::Group::Rule,
+      "schema" => Textus::CLI::Group::Schema,
+      "where" => Textus::CLI::Verb::Where,
+    }
+    expect(Textus::CLI.verbs).to eq(expected)
+  end
+
+  it "verb ordering is stable (alphabetical by command_name)" do
+    keys = Textus::CLI.verbs.keys
+    expect(keys).to eq(keys.sort)
+  end
+
+  it "group subcommand tables are auto-derived from parent_group" do
+    expect(Textus::CLI::Group::Hook.subcommands).to eq(
+      "list" => Textus::CLI::Verb::Hooks,
+      "run" => Textus::CLI::Verb::HookRun,
+    )
+    expect(Textus::CLI::Group::Key.subcommands).to eq(
+      "mv" => Textus::CLI::Verb::Mv,
+      "normalize" => Textus::CLI::Verb::KeyNormalize,
+      "uid" => Textus::CLI::Verb::Uid,
+    )
+    expect(Textus::CLI::Group::Rule.subcommands).to eq(
+      "explain" => Textus::CLI::Verb::RuleExplain,
+      "list" => Textus::CLI::Verb::RuleList,
+    )
+    expect(Textus::CLI::Group::Schema.subcommands).to eq(
+      "diff" => Textus::CLI::Verb::SchemaDiff,
+      "init" => Textus::CLI::Verb::SchemaInit,
+      "migrate" => Textus::CLI::Verb::SchemaMigrate,
+      "show" => Textus::CLI::Verb::Schema,
+    )
   end
 end

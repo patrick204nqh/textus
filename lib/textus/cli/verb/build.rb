@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Build < Verb
+        command_name "build"
+
         option :prefix, "--prefix=K"
 
         def call(store)

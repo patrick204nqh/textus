@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class KeyNormalize < Verb
+        command_name "normalize"
+        parent_group Group::Key
+
         option :write, "--write"
         option :dry_run, "--dry-run"
 

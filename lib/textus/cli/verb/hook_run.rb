@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class HookRun < Verb
+        command_name "run"
+        parent_group Group::Hook
+
         def parse(argv)
           @raw_argv = argv
         end

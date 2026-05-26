@@ -3,32 +3,23 @@ require "optparse"
 
 module Textus
   class CLI
-    # verb name → Verb subclass. Adding a new verb is a one-line entry here
-    # plus a new file under lib/textus/cli/.
-    VERBS = {
-      "accept" => Verb::Accept,
-      "audit" => Verb::Audit,
-      "blame" => Verb::Blame,
-      "reject" => Verb::Reject,
-      "build" => Verb::Build,
-      "delete" => Verb::Delete,
-      "deps" => Verb::Deps,
-      "doctor" => Verb::Doctor,
-      "freshness" => Verb::Freshness,
-      "get" => Verb::Get,
-      "hook" => Group::Hook,
-      "init" => Verb::Init,
-      "intro" => Verb::Intro,
-      "key" => Group::Key,
-      "list" => Verb::List,
-      "published" => Verb::Published,
-      "put" => Verb::Put,
-      "rdeps" => Verb::Rdeps,
-      "refresh" => Group::Refresh,
-      "rule" => Group::Rule,
-      "schema" => Group::Schema,
-      "where" => Verb::Where,
-    }.freeze
+    # Auto-derived verb table. Every CLI::Verb (or Group) subclass that
+    # declares `command_name "X"` and has no `parent_group` is a top-level
+    # verb. Sorted alphabetically for stable help output. Adding a new
+    # verb requires only a new file declaring its `command_name`.
+    def self.verbs
+      Verb.descendants
+          .select { |k| k.command_name && k.parent_group.nil? }
+          .sort_by(&:command_name)
+          .to_h { |k| [k.command_name, k] }
+    end
+
+    # Backward-compat constant; callers should prefer `CLI.verbs`.
+    def self.const_missing(name)
+      return verbs.freeze if name == :VERBS
+
+      super
+    end
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
@@ -54,7 +45,7 @@ module Textus
         when "--help", "-h"    then print_help
                                     0
         else
-          klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
+          klass = self.class.verbs[verb] or raise UsageError.new("unknown verb: #{verb}")
           dispatch(klass, argv)
         end
 
