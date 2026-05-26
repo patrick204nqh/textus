@@ -7,7 +7,7 @@ module Textus
         def call(ctx, prefix: nil, zone: nil)
           worker = Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
 
-          stale_rows = ctx.store.stale(prefix: prefix, zone: zone)
+          stale_rows = Textus::Application::Reads::Stale.new(ctx: ctx).call(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

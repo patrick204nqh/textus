@@ -17,7 +17,7 @@ module Textus
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
       rows = keys.map do |key|
-        env = @store.reader.get(key)
+        env = Operations.for(@store).reads.get.call(key)
         row = pluck(env["_meta"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end
@@ -50,7 +50,8 @@ module Textus
 
     def collect_keys
       prefixes = Array(@spec["select"])
-      prefixes.flat_map { |p| @store.list(prefix: p).map { |row| row["key"] } }.uniq
+      ops = Operations.for(@store)
+      prefixes.flat_map { |p| ops.reads.list.call(prefix: p).map { |row| row["key"] } }.uniq
     end
 
     def pluck(frontmatter, _body)
