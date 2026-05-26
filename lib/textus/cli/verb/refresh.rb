@@ -6,8 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("refresh requires a key")
-          ctx = context_for(store)
-          emit(Textus::Composition.refresh_worker(ctx).run(key))
+          emit(operations_for(store).refresh.worker.run(key))
         end
       end
     end

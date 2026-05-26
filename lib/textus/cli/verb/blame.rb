@@ -6,8 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("blame requires a key")
-          ctx = context_for(store)
-          rows = Textus::Composition.blame(ctx).call(key: key, limit: limit&.to_i)
+          rows = operations_for(store).reads.blame.call(key: key, limit: limit&.to_i)
           emit({ "verb" => "blame", "key" => key, "rows" => rows })
         end
       end

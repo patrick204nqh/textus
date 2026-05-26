@@ -6,8 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("accept requires a key")
-          ctx = context_for(store)
-          emit(Textus::Composition.writes_accept(ctx).call(key))
+          emit(operations_for(store).writes.accept.call(key))
         end
       end
     end

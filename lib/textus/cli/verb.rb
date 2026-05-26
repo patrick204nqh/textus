@@ -72,6 +72,11 @@ module Textus
       def context_for(store)
         Textus::Composition.context(store, role: resolved_role(store))
       end
+
+      # Returns an Operations instance bound to the resolved role.
+      def operations_for(store)
+        Textus::Operations.for(store, role: resolved_role(store))
+      end
     end
   end
 end
