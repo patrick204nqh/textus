@@ -194,13 +194,7 @@ module Textus
     end
 
     def nested_glob(format)
-      case format
-      when "markdown" then "**/*.md"
-      when "json" then "**/*.json"
-      when "yaml" then "**/*.{yaml,yml}"
-      when "text" then "**/*.txt"
-      else raise UsageError.new("unknown format #{format.inspect} for nested glob")
-      end
+      Textus::Entry.for_format(format).nested_glob
     end
   end
 end
