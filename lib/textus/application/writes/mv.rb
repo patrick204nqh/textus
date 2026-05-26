@@ -9,9 +9,8 @@ module Textus
           :new_mentry, :uid, :etag_before
         )
 
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def call(old_key, new_key, dry_run: false)
@@ -43,7 +42,8 @@ module Textus
           new_mentry = new_res.entry
           new_path = new_res.path
           validate_zone_and_format!(old_mentry, new_mentry)
-          validate_writer!(old_mentry, old_key)
+          @ctx.authorize_write!(old_mentry)
+          @ctx.authorize_write!(new_mentry)
           raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if File.exist?(new_path)
 
           pre_env = reader.get(old_key)
@@ -68,17 +68,10 @@ module Textus
           raise UsageError.new("mv: format mismatch (#{old_mentry.format} → #{new_mentry.format}); refusing.")
         end
 
-        def validate_writer!(mentry, key)
-          writers = manifest.zone_writers(mentry.zone)
-          return if writers.include?(@ctx.role)
-
-          raise WriteForbidden.new(key, mentry.zone, writers: writers)
-        end
-
         def ensure_uid!(plan, pre_env:)
           return plan if plan.uid
 
-          env = Textus::Application::Writes::Put.new(ctx: @ctx, bus: @bus).call(
+          env = Textus::Application::Writes::Put.new(ctx: @ctx).call(
             plan.old_key,
             meta: pre_env.meta,
             body: pre_env.body,
@@ -109,13 +102,13 @@ module Textus
             extras: extras
           )
           new_envelope = reader.get(plan.new_key)
-          @bus.publish(:entry_renamed,
-                       store: @ctx.with_role(@ctx.role),
-                       key: plan.new_key,
-                       from_key: plan.old_key,
-                       to_key: plan.new_key,
-                       envelope: new_envelope,
-                       correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:entry_renamed,
+                           store: @ctx.with_role(@ctx.role),
+                           key: plan.new_key,
+                           from_key: plan.old_key,
+                           to_key: plan.new_key,
+                           envelope: new_envelope,
+                           correlation_id: @ctx.correlation_id)
           new_envelope
         end
 

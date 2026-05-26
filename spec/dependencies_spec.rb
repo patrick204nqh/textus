@@ -39,20 +39,20 @@ RSpec.describe Textus::Dependencies do
   end
 
   it "lists dependencies declared in projection.select" do
-    expect(ops.reads.deps.call("output.catalogs.people")).to eq(["working.people"])
+    expect(ops.deps("output.catalogs.people")).to eq(["working.people"])
   end
 
   it "lists reverse dependencies" do
-    expect(ops.reads.rdeps.call("working.people")).to eq(["output.catalogs.people"])
+    expect(ops.rdeps("working.people")).to eq(["output.catalogs.people"])
   end
 
   it "lists published entries with publish_to" do
-    expect(ops.reads.published.call.map { |r| r["key"] }).to include("output.catalogs.people")
-    rec = ops.reads.published.call.find { |r| r["key"] == "output.catalogs.people" }
+    expect(ops.published.map { |r| r["key"] }).to include("output.catalogs.people")
+    rec = ops.published.find { |r| r["key"] == "output.catalogs.people" }
     expect(rec["publish_to"]).to eq(["PEOPLE.md"])
   end
 
   it "returns empty deps for an unknown key" do
-    expect(ops.reads.deps.call("does.not.exist")).to eq([])
+    expect(ops.deps("does.not.exist")).to eq([])
   end
 end

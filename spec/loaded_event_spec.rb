@@ -18,11 +18,13 @@ RSpec.describe ":store_loaded event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:store_loaded, :log_loaded) do |store:|
-        list = Textus::Application::Reads::List.new(ctx: store).call
-        $textus_event_log << [:store_loaded, list.length]
+      Textus.hook do |reg|
+        reg.on(:store_loaded, :log_loaded) do |store:|
+          list = Textus::Application::Reads::List.new(ctx: store).call
+          $textus_event_log << [:store_loaded, list.length]
+        end
+        reg.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
       end
-      Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
     RUBY
     $textus_event_log = []
   end
@@ -46,7 +48,7 @@ RSpec.describe ":store_loaded event" do
 
   it "fires :store_loaded before any subsequent :entry_put" do
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
+    Textus::Operations.for(store, role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
     order = $textus_event_log.map(&:first)
     expect(order.index(:store_loaded)).to be < order.index(:entry_put)
   end

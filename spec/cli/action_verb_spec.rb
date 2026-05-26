@@ -19,16 +19,18 @@ RSpec.describe "textus action verb" do
     YAML
   end
 
-  it "invokes the named action with parsed args and lets it write via store.put" do
+  it "invokes the named action with parsed args and lets it write via store.put" do # rubocop:disable RSpec/ExampleLength
     Dir.mktmpdir do |dir|
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
-        Textus.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
-          Textus::Operations.for(store.store, role: store.role).writes.put.call(
-            "working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok",
-          )
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
+            Textus::Operations.for(store.store, role: store.role).put(
+              "working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok",
+            )
+          end
         end
       RUBY
 
@@ -69,7 +71,9 @@ RSpec.describe "textus action verb" do
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
-        Textus.on(:resolve_intake, :slow) { |store:, config:, args:| sleep 5 }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :slow) { |store:, config:, args:| sleep 5 }
+        end
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original
       allow(Timeout).to receive(:timeout)

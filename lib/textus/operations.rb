@@ -1,14 +1,13 @@
 module Textus
   # Single canonical entrypoint for invoking application use-cases against a
-  # store. Mirrors the directory structure under `lib/textus/application/`:
+  # store. Public surface is flat — one method per use case:
   #
   #   ops = Textus::Operations.for(store, role: "agent")
-  #   ops.writes.put.call(key, body: "...")
-  #   ops.reads.get.call(key)               # pure read
-  #   ops.reads.get_or_refresh.call(key)    # read + refresh-on-stale
-  #   ops.refresh.worker.call(key)
-  #
-  # Replaces the prior `Textus::Composition` module (deleted in v0.12.2).
+  #   ops.put(key, body: "...")
+  #   ops.get(key)               # pure read
+  #   ops.get_or_refresh(key)    # read + refresh-on-stale
+  #   ops.refresh(key)           # synchronous worker refresh
+  #   ops.refresh_all(prefix: ..., zone: ...)
   class Operations
     def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
       ctx = Application::Context.new(
@@ -26,20 +25,78 @@ module Textus
       @ctx = ctx
     end
 
-    def writes
-      @writes ||= Writes.new(@ctx)
+    def with_role(role) = self.class.new(@ctx.with_role(role))
+
+    # writes
+    def put(...)     = put_op.call(...)
+    def delete(...)  = delete_op.call(...)
+    def mv(...)      = mv_op.call(...)
+    def accept(...)  = accept_op.call(...)
+    def reject(...)  = reject_op.call(...)
+    def build(...)   = build_op.call(...)
+    def publish(...) = publish_op.call(...)
+
+    # reads
+    def get(...)             = get_op.call(...)
+    def get_or_refresh(...)  = get_or_refresh_op.call(...)
+    def list(...)            = list_op.call(...)
+    def where(...)           = where_op.call(...)
+    def uid(...)             = uid_op.call(...)
+    def schema_envelope(...) = schema_envelope_op.call(...)
+    def deps(...)            = deps_op.call(...)
+    def rdeps(...)           = rdeps_op.call(...)
+    def published(...)       = published_op.call(...)
+    def stale(...)           = stale_op.call(...)
+    def audit(...)           = audit_op.call(...)
+    def blame(...)           = blame_op.call(...)
+    def policy_explain(...)  = policy_explain_op.call(...)
+    def freshness(...)       = freshness_op.call(...)
+    def validate_all(...)    = validate_all_op.call(...)
+
+    # refresh
+    def refresh(key) = refresh_worker_op.run(key)
+    def refresh_all(**) = Application::Refresh::All.call(@ctx, **)
+
+    private
+
+    def put_op     = @put_op ||= Application::Writes::Put.new(ctx: @ctx)
+    def delete_op  = @delete_op ||= Application::Writes::Delete.new(ctx: @ctx)
+    def mv_op      = @mv_op ||= Application::Writes::Mv.new(ctx: @ctx)
+    def accept_op  = @accept_op ||= Application::Writes::Accept.new(ctx: @ctx)
+    def reject_op  = @reject_op ||= Application::Writes::Reject.new(ctx: @ctx)
+    def build_op   = @build_op ||= Application::Writes::Build.new(ctx: @ctx)
+    def publish_op = @publish_op ||= Application::Writes::Publish.new(ctx: @ctx)
+
+    def get_op = @get_op ||= Application::Reads::Get.new(ctx: @ctx) # rubocop:disable Naming/AccessorMethodName
+
+    def get_or_refresh_op # rubocop:disable Naming/AccessorMethodName
+      @get_or_refresh_op ||= Application::Reads::GetOrRefresh.new(ctx: @ctx, get: get_op,
+                                                                  orchestrator: orchestrator_op)
     end
 
-    def reads
-      @reads ||= Reads.new(@ctx)
-    end
+    def list_op            = @list_op ||= Application::Reads::List.new(ctx: @ctx)
+    def where_op           = @where_op ||= Application::Reads::Where.new(ctx: @ctx)
+    def uid_op             = @uid_op ||= Application::Reads::Uid.new(ctx: @ctx)
+    def schema_envelope_op = @schema_envelope_op ||= Application::Reads::SchemaEnvelope.new(ctx: @ctx)
+    def deps_op            = @deps_op ||= Application::Reads::Deps.new(ctx: @ctx)
+    def rdeps_op           = @rdeps_op ||= Application::Reads::Rdeps.new(ctx: @ctx)
+    def published_op       = @published_op ||= Application::Reads::Published.new(ctx: @ctx)
+    def stale_op           = @stale_op ||= Application::Reads::Stale.new(ctx: @ctx)
+    def audit_op           = @audit_op ||= Application::Reads::Audit.new(ctx: @ctx)
+    def blame_op           = @blame_op ||= Application::Reads::Blame.new(ctx: @ctx)
+    def policy_explain_op  = @policy_explain_op ||= Application::Reads::PolicyExplain.new(ctx: @ctx)
+    def freshness_op       = @freshness_op ||= Application::Reads::Freshness.new(ctx: @ctx)
+    def validate_all_op    = @validate_all_op ||= Application::Reads::ValidateAll.new(ctx: @ctx)
 
-    def refresh
-      @refresh ||= Refresh.new(@ctx)
-    end
+    def refresh_worker_op = @refresh_worker_op ||= Application::Refresh::Worker.new(ctx: @ctx)
 
-    def with_role(role)
-      self.class.new(@ctx.with_role(role))
+    def orchestrator_op
+      @orchestrator_op ||= Application::Refresh::Orchestrator.new(
+        worker: refresh_worker_op,
+        store_root: @ctx.store.root,
+        store: @ctx.store,
+        role: @ctx.role,
+      )
     end
   end
 end

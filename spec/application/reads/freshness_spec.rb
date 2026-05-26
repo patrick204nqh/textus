@@ -49,7 +49,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
       write_envelope(root, "working/stale.md", last_refreshed_at: (Time.now.utc - 3600).iso8601)
 
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.freshness.call
+      rows = ops.freshness
 
       keys = rows.map { |r| r[:key] }
       expect(keys).to contain_exactly("working.doc", "working.stale", "identity.note")
@@ -67,7 +67,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.freshness.call(zone: "identity")
+      rows = ops.freshness(zone: "identity")
 
       expect(rows.map { |r| r[:key] }).to eq(["identity.note"])
     end
@@ -77,7 +77,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.freshness.call(prefix: "working")
+      rows = ops.freshness(prefix: "working")
 
       expect(rows.map { |r| r[:key] }).to contain_exactly("working.doc", "working.stale")
     end
@@ -87,7 +87,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.freshness.call(prefix: "working.doc")
+      rows = ops.freshness(prefix: "working.doc")
       expect(rows.first[:status]).to eq(:never_refreshed)
       expect(rows.first[:next_due_at]).to be_nil
     end
@@ -99,7 +99,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
       t = Time.utc(2026, 1, 1, 12, 0, 0)
       write_envelope(root, "working/doc.md", last_refreshed_at: t.iso8601)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.freshness.call(prefix: "working.doc")
+      rows = ops.freshness(prefix: "working.doc")
       expect(Time.parse(rows.first[:next_due_at])).to eq(t + 3600)
     end
   end

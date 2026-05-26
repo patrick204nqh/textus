@@ -1,5 +1,7 @@
 # ADR 0004 — Operations rename + Store facade removal (v0.12.2)
 
+> **Note:** Superseded by [ADR 0010](0010-flat-operations-api.md) for the public Operations surface. The `Operations#reads` / `#writes` / `#refresh` accessors described below were removed in v0.17.0 in favour of one flat method per use case.
+
 **Status:** Proposed
 **Date:** 2026-05-26
 **Depends on:** [ADR 0002 — textus/3 vocabulary redesign](0002-textus-3-vocabulary-redesign.md), [ADR 0003 — Legacy Sweep](0003-legacy-sweep.md)

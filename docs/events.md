@@ -9,7 +9,7 @@ This is the hook-author's guide. For the normative event table see [`../SPEC.md`
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
 2. [The events in plain English](#2-the-events-in-plain-english)
 3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
-4. [The three definition surfaces](#4-the-three-definition-surfaces)
+4. [The definition surface](#4-the-definition-surface)
 5. [The `store:` proxy — what you can and can't do](#5-the-store-proxy)
 6. [Failure modes and timeouts](#6-failure-modes-and-timeouts)
 7. [Fan-out and `keys:` globs](#7-fan-out-and-keys-globs)
@@ -65,7 +65,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 | `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ store:, key:, target_key: }`. |
 | `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ store:, key:, envelope:, source:, target: }`. |
 | `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ store:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
-| `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `Operations.writes.reject.call(key)`). Counterpart to `:proposal_accepted`. Payload: `{ store:, key:, target_key: }`. |
+| `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ store:, key:, target_key: }`. |
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{ store: }`. |
 
 ### 2.1 Refresh lifecycle events
@@ -208,20 +208,23 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ---
 
-## 4. The two definition surfaces
+## 4. The definition surface
 
-Both register against the same registry. Pick whichever reads best.
+Hook files wrap a single `Textus.hook { |reg| ... }` block. The block receives the store's registry and registers handlers on it.
 
 ```ruby
-# 1. Primitive — the only registration form
-Textus.on(:resolve_intake, :local_file) do |store:, config:, args:|
-  { _meta: {}, body: File.read(config["path"]) }
-end
+# RPC and pub-sub register the same way — through reg.on.
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :local_file) do |store:, config:, args:|
+    { _meta: {}, body: File.read(config["path"]) }
+  end
 
-# 2. Same API for pub-sub events
-Textus.on(:entry_put, :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
-Textus.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, key:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:entry_put, :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
+  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, key:, target:, **| `git add #{target.shellescape}` }
+end
 ```
+
+Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them across blocks — the store-scoped loader drains every queued block and invokes each with its own registry. There is no thread-local and no global state.
 
 **Signature rule** — every hook accepts kwargs. Either list the ones you need explicitly, or accept `**` to absorb the rest. Missing a required kwarg with no `**` raises `UsageError` at registration time.
 
@@ -238,8 +241,10 @@ Why: hooks fire inside a verb's control flow. Letting hooks write would create r
 If you don't need `store:`, absorb it with `**`:
 
 ```ruby
-Textus.on(:transform_rows, :claude_root) do |rows:, **|   # store: absorbed by **
-  ...
+Textus.hook do |reg|
+  reg.on(:transform_rows, :claude_root) do |rows:, **|   # store: absorbed by **
+    ...
+  end
 end
 ```
 
@@ -276,10 +281,12 @@ The pub-sub guarantee — "your write will not fail because of a flaky listener"
 Pub-sub handlers can scope themselves with a `keys:` filter. Globs use `File.fnmatch?` with `FNM_PATHNAME`, meaning `*` does **not** cross `.` separators:
 
 ```ruby
-Textus.on(:entry_put, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
-Textus.on(:entry_put, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
-Textus.on(:entry_put, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
-Textus.on(:entry_put, :audit_all) { ... }                                # no filter → every key
+Textus.hook do |reg|
+  reg.on(:entry_put, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
+  reg.on(:entry_put, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
+  reg.on(:entry_put, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
+  reg.on(:entry_put, :audit_all) { ... }                                # no filter → every key
+end
 ```
 
 One `:entry_put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
@@ -316,9 +323,11 @@ Five `:resolve_intake` hooks ship pre-registered:
 Wrapping pattern:
 
 ```ruby
-Textus.on(:resolve_intake, :remote_rss) do |store:, config:, args:|
-  bytes = Net::HTTP.get(URI(config["url"]))
-  store.invoke_rpc(:resolve_intake, :rss, config: { "bytes" => bytes }, args: args)
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :remote_rss) do |store:, config:, args:|
+    bytes = Net::HTTP.get(URI(config["url"]))
+    store.invoke_rpc(:resolve_intake, :rss, config: { "bytes" => bytes }, args: args)
+  end
 end
 ```
 
@@ -326,20 +335,19 @@ end
 
 ## 9. Testing hooks
 
-Hooks register into the active registry. In tests, scope a registry per example with `Textus.with_registry`:
+Hooks register against a per-store `Hooks::Registry`. In tests, instantiate a registry and call `reg.on` directly — no thread-local, no global state:
 
 ```ruby
 RSpec.describe "my notion hook" do
   let(:reg) { Textus::Hooks::Registry.new }
-  around { |ex| Textus.with_registry(reg) { ex.run } }
 
   it "registers under :notion" do
-    Textus.on(:resolve_intake, :notion) { |store:, config:, args:| { _meta: {}, body: "stub" } }
+    reg.on(:resolve_intake, :notion) { |store:, config:, args:| { _meta: {}, body: "stub" } }
     expect(reg.rpc_names(:resolve_intake)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    Textus.on(:resolve_intake, :notion) do |store:, config:, args:|
+    reg.on(:resolve_intake, :notion) do |store:, config:, args:|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
     handler = reg.rpc_callable(:resolve_intake, :notion)
@@ -353,13 +361,15 @@ For pub-sub handlers, drive the dispatcher directly:
 
 ```ruby
 captured = []
-Textus.on(:entry_put, :listener, keys: ["working.*"]) { |store:, key:, envelope:, **| captured << key }
+reg.on(:entry_put, :listener, keys: ["working.*"]) { |store:, key:, envelope:, **| captured << key }
 
 reg.listeners(:entry_put, key: "working.x").first[:callable].call(
   store: nil, key: "working.x", envelope: {}
 )
 expect(captured).to eq(["working.x"])
 ```
+
+To exercise the loader end-to-end (drains `Textus.hook` blocks against your registry), point `Hooks::Loader.new(registry: reg).load_dir(path)` at a fixture directory whose files declare `Textus.hook { |reg| reg.on(...) { ... } }`.
 
 See `spec/hooks/registry_spec.rb` for the canonical patterns.
 
@@ -370,15 +380,17 @@ See `spec/hooks/registry_spec.rb` for the canonical patterns.
 ### Connector — paired `:resolve_intake` + `:transform_rows`
 
 ```ruby
-Textus.on(:resolve_intake, :linear) do |store:, config:, args:|
-  bytes = LinearClient.fetch(config["team_id"])
-  { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
-end
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :linear) do |store:, config:, args:|
+    bytes = LinearClient.fetch(config["team_id"])
+    { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
+  end
 
-Textus.on(:transform_rows, :linear) do |store:, rows:, **|
-  rows.map { |r| r.slice("id", "title", "state", "updated_at") }
-      .sort_by { |r| r["updated_at"] }
-      .reverse
+  reg.on(:transform_rows, :linear) do |store:, rows:, **|
+    rows.map { |r| r.slice("id", "title", "state", "updated_at") }
+        .sort_by { |r| r["updated_at"] }
+        .reverse
+  end
 end
 ```
 
@@ -401,26 +413,32 @@ rules:
 ### Audit listener — every write to a sensitive zone
 
 ```ruby
-Textus.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |store:, key:, envelope:, **|
-  Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']}")
+Textus.hook do |reg|
+  reg.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |store:, key:, envelope:, **|
+    Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']}")
+  end
 end
 ```
 
 ### Build notifier — desktop ping when derived files rebuild
 
 ```ruby
-Textus.on(:build_completed, :notify) do |store:, key:, sources:, **|
-  system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
+Textus.hook do |reg|
+  reg.on(:build_completed, :notify) do |store:, key:, sources:, **|
+    system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
+  end
 end
 ```
 
 ### Custom doctor check — enforce a project rule
 
 ```ruby
-Textus.on(:validate, :no_drafts_in_identity) do |store:|
-  Textus::Application::Reads::List.new(ctx: store).call(zone: "identity")
-    .select { |e| e["frontmatter"]["status"] == "draft" }
-    .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
+Textus.hook do |reg|
+  reg.on(:validate, :no_drafts_in_identity) do |store:|
+    Textus::Application::Reads::List.new(ctx: store).call(zone: "identity")
+      .select { |e| e["frontmatter"]["status"] == "draft" }
+      .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
+  end
 end
 ```
 

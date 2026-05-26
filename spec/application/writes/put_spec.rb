@@ -22,9 +22,9 @@ RSpec.describe Textus::Application::Writes::Put do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      Textus::Infra::EventBus.new(registry: store.registry)
 
-      envelope = described_class.new(ctx: ctx, bus: bus).call(
+      envelope = described_class.new(ctx: ctx).call(
         "working.foo",
         meta: { "key" => "working.foo" },
         body: "hello",
@@ -39,10 +39,10 @@ RSpec.describe Textus::Application::Writes::Put do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      Textus::Infra::EventBus.new(registry: store.registry)
 
       expect do
-        described_class.new(ctx: ctx, bus: bus).call("identity.bar", meta: {}, body: "x")
+        described_class.new(ctx: ctx).call("identity.bar", meta: {}, body: "x")
       end.to raise_error(Textus::WriteForbidden)
     end
   end
@@ -56,7 +56,7 @@ RSpec.describe Textus::Application::Writes::Put do
         events << [:entry_put, key, correlation_id]
       end
 
-      described_class.new(ctx: ctx, bus: store.bus).call("working.foo", meta: {}, body: "x")
+      described_class.new(ctx: ctx).call("working.foo", meta: {}, body: "x")
 
       expect(events).to include([:entry_put, "working.foo", "corr-1"])
     end

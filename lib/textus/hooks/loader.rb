@@ -1,25 +1,28 @@
 module Textus
   module Hooks
-    module Loader
-      THREAD_REGISTRY_KEY = :__textus_active_registry__
-      private_constant :THREAD_REGISTRY_KEY
-
-      def self.with_registry(registry)
-        prev = Thread.current[THREAD_REGISTRY_KEY]
-        Thread.current[THREAD_REGISTRY_KEY] = registry
-        yield
-      ensure
-        Thread.current[THREAD_REGISTRY_KEY] = prev
+    class Loader
+      def initialize(registry:)
+        @registry = registry
       end
 
-      def self.current_registry
-        Thread.current[THREAD_REGISTRY_KEY] or
-          raise UsageError.new("no active registry; hook code must be loaded by a Store")
+      def load_dir(dir)
+        return unless File.directory?(dir)
+
+        # Discard any leftover blocks from a prior partial load.
+        Textus.drain_hook_blocks
+
+        Dir.glob(File.join(dir, "**/*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
+          load(f)
+        rescue StandardError, ScriptError => e
+          raise UsageError.new("failed loading hook #{File.basename(f)}: #{e.class}: #{e.message}")
+        end
+
+        Textus.drain_hook_blocks.each do |blk|
+          blk.call(@registry)
+        rescue StandardError, ScriptError => e
+          raise UsageError.new("failed registering hook: #{e.class}: #{e.message}")
+        end
       end
     end
   end
-
-  # Public DSL
-  def self.with_registry(registry, &) = Hooks::Loader.with_registry(registry, &)
-  def self.current_registry           = Hooks::Loader.current_registry
 end

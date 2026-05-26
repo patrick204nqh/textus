@@ -18,8 +18,10 @@ RSpec.describe "Lifecycle events" do
       YAML
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $textus_event_log ||= []
-        Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
-        Textus.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
+        Textus.hook do |reg|
+          reg.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
+          reg.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
+        end
       RUBY
       $textus_event_log = []
     end
@@ -28,24 +30,26 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_put after a write" do
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
+      Textus::Operations.for(store, role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
       expect($textus_event_log).to include([:entry_put, "working.x"])
     end
 
     it "fires :entry_deleted after a delete" do
       store = Textus::Store.new(root)
       ops = Textus::Operations.for(store, role: "human")
-      ops.writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
-      ops.writes.delete.call("working.x")
+      ops.put("working.x", meta: { "name" => "x" }, body: "hi")
+      ops.delete("working.x")
       expect($textus_event_log).to include([:entry_deleted, "working.x"])
     end
 
     it "logs hook errors to audit log but does not abort the write" do
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
-        Textus.on(:entry_put, :boom) { |key:, envelope:, store:| raise "bang" }
+        Textus.hook do |reg|
+          reg.on(:entry_put, :boom) { |key:, envelope:, store:| raise "bang" }
+        end
       RUBY
       store = Textus::Store.new(root)
-      env = Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
+      env = Textus::Operations.for(store, role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
       expect(env.body).to eq("hi") # write succeeded
       last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
       expect(last["extras"]["event"]).to eq("entry_put")
@@ -68,8 +72,10 @@ RSpec.describe "Lifecycle events" do
       YAML
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
-        Textus.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-        Textus.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        end
       RUBY
       $log = []
     end
@@ -87,8 +93,10 @@ RSpec.describe "Lifecycle events" do
       Textus::Refresh.call(store, "intake.x", as: "runner")
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
-        Textus.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-        Textus.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
+          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        end
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
@@ -103,8 +111,10 @@ RSpec.describe "Lifecycle events" do
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
-        Textus.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-        Textus.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+        end
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
@@ -117,9 +127,11 @@ RSpec.describe "Lifecycle events" do
     it "does NOT double-fire :entry_put when refresh writes (suppress_events:)" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
-        Textus.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-        Textus.on(:entry_put, :p) { |key:, envelope:, store:| $log << [:entry_put, key] }
-        Textus.on(:entry_refreshed, :r) { |key:, envelope:, store:, change:| $log << [:entry_refreshed, key, change] }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
+          reg.on(:entry_put, :p) { |key:, envelope:, store:| $log << [:entry_put, key] }
+          reg.on(:entry_refreshed, :r) { |key:, envelope:, store:, change:| $log << [:entry_refreshed, key, change] }
+        end
       RUBY
       $log = []
       store = Textus::Store.new(root)
@@ -155,8 +167,10 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
-        Textus.on(:build_completed, :t) do |key:, envelope:, store:, sources:|
-          $log << [:build_completed, key, sources]
+        Textus.hook do |reg|
+          reg.on(:build_completed, :t) do |key:, envelope:, store:, sources:|
+            $log << [:build_completed, key, sources]
+          end
         end
       RUBY
       $log = []
@@ -166,7 +180,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "builder").writes.build.call
+      Textus::Operations.for(store, role: "builder").build
       expect($log).to include([:build_completed, "output.summary", ["working"]])
     end
   end
@@ -198,8 +212,10 @@ RSpec.describe "Lifecycle events" do
       MD
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
-        Textus.on(:proposal_accepted, :t) do |key:, target_key:, store:|
-          $log << [:proposal_accepted, key, target_key]
+        Textus.hook do |reg|
+          reg.on(:proposal_accepted, :t) do |key:, target_key:, store:|
+            $log << [:proposal_accepted, key, target_key]
+          end
         end
       RUBY
       $log = []
@@ -209,16 +225,18 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :proposal_accepted after Proposal.accept completes" do
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "human").writes.accept.call("review.bob")
+      Textus::Operations.for(store, role: "human").accept("review.bob")
       expect($log).to include([:proposal_accepted, "review.bob", "working.bob"])
     end
 
     it "records both target_key and key when a :proposal_accepted hook fails" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-        Textus.on(:proposal_accepted, :boom) { |key:, target_key:, store:| raise "bang" }
+        Textus.hook do |reg|
+          reg.on(:proposal_accepted, :boom) { |key:, target_key:, store:| raise "bang" }
+        end
       RUBY
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "human").writes.accept.call("review.bob")
+      Textus::Operations.for(store, role: "human").accept("review.bob")
       audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
       err = audit_lines.find { |h| h["verb"] == "event_error" }
       expect(err).not_to be_nil

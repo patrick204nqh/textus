@@ -51,7 +51,7 @@ RSpec.describe Textus::Application::Reads::Blame do
                            "verb" => "put", "key" => "working.doc" })
 
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.blame.call(key: "working.doc")
+      result = ops.blame(key: "working.doc")
       expect(result.length).to eq(1)
       row = result.first
       expect(row["git"]).to be_a(Hash)
@@ -68,7 +68,7 @@ RSpec.describe Textus::Application::Reads::Blame do
                            "verb" => "put", "key" => "working.doc" })
 
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.blame.call(key: "working.doc")
+      result = ops.blame(key: "working.doc")
       expect(result.length).to eq(1)
       expect(result.first["git"]).to be_nil
     end
@@ -83,7 +83,7 @@ RSpec.describe Textus::Application::Reads::Blame do
                            "verb" => "put", "key" => "working.doc" })
 
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.blame.call(key: "working.doc")
+      result = ops.blame(key: "working.doc")
       expect(result.first["git"]).to be_nil
     end
   end

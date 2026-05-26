@@ -10,9 +10,9 @@ RSpec.describe Textus::Projection do
   def build_projection(spec)
     ops = Textus::Operations.for(store)
     Textus::Projection.new(
-      reader: ops.reads.get.method(:call),
+      reader: ops.method(:get),
       spec: spec,
-      lister: ops.reads.list.method(:call),
+      lister: ops.method(:list),
       transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
       transform_context: Textus::Application::Context.system(store),
     )

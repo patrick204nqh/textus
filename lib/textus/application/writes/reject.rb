@@ -2,9 +2,8 @@ module Textus
   module Application
     module Writes
       class Reject
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def call(pending_key)
@@ -21,13 +20,13 @@ module Textus
           target_key = proposal["target_key"] or
             raise ProposalError.new("proposal missing target_key")
 
-          Textus::Application::Writes::Delete.new(ctx: @ctx, bus: @bus).call(pending_key, suppress_events: true)
+          Textus::Application::Writes::Delete.new(ctx: @ctx).call(pending_key, suppress_events: true)
 
-          @bus.publish(:proposal_rejected,
-                       store: @ctx.with_role(@ctx.role),
-                       key: pending_key,
-                       target_key: target_key,
-                       correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:proposal_rejected,
+                           store: @ctx.with_role(@ctx.role),
+                           key: pending_key,
+                           target_key: target_key,
+                           correlation_id: @ctx.correlation_id)
 
           { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
         end

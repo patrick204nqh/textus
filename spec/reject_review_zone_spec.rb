@@ -23,13 +23,13 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     YAML
 
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "agent").writes.put.call(
+    Textus::Operations.for(store, role: "agent").put(
       "review.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "proposed body",
     )
 
-    result = Textus::Operations.for(store, role: "human").writes.reject.call("review.draft")
+    result = Textus::Operations.for(store, role: "human").reject("review.draft")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
     expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
@@ -51,12 +51,12 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     YAML
 
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "human").writes.put.call(
+    Textus::Operations.for(store, role: "human").put(
       "pending.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "x",
     )
-    expect { Textus::Operations.for(store, role: "human").writes.reject.call("pending.draft") }
+    expect { Textus::Operations.for(store, role: "human").reject("pending.draft") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 end

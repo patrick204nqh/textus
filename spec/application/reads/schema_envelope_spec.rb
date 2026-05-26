@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Reads::SchemaEnvelope do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.schema_envelope.call("working.person")
+      result = ops.schema_envelope("working.person")
 
       expect(result).to include(
         "key" => "working.person",

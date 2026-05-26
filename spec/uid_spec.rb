@@ -22,15 +22,15 @@ RSpec.describe "Textus UID" do
   end
 
   it "auto-mints a uid on first put for markdown" do
-    env = Textus::Operations.for(store, role: "human").writes.put.call("working.md", meta: { "name" => "md" }, body: "hi")
+    env = Textus::Operations.for(store, role: "human").put("working.md", meta: { "name" => "md" }, body: "hi")
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
   end
 
   it "preserves the uid on subsequent puts" do
     ops = Textus::Operations.for(store, role: "human")
-    e1 = ops.writes.put.call("working.md", meta: { "name" => "md" }, body: "hi")
+    e1 = ops.put("working.md", meta: { "name" => "md" }, body: "hi")
     uid = e1.uid
-    e2 = ops.writes.put.call("working.md", meta: { "name" => "md" }, body: "again")
+    e2 = ops.put("working.md", meta: { "name" => "md" }, body: "again")
     expect(e2.uid).to eq(uid)
     e3 = store.reader.get("working.md")
     expect(e3.uid).to eq(uid)
@@ -42,7 +42,7 @@ RSpec.describe "Textus UID" do
     expect(store.reader.get("working.md").uid).to be_nil
 
     existing = store.reader.get("working.md")
-    env = Textus::Operations.for(store, role: "human").writes.put.call(
+    env = Textus::Operations.for(store, role: "human").put(
       "working.md",
       meta: existing.meta,
       body: existing.body,
@@ -51,24 +51,24 @@ RSpec.describe "Textus UID" do
   end
 
   it "stores uid in _meta.uid for json entries (accessible via env['_meta'])" do
-    env = Textus::Operations.for(store, role: "human").writes.put.call("working.j", content: { "name" => "j", "x" => 1 })
+    env = Textus::Operations.for(store, role: "human").put("working.j", content: { "name" => "j", "x" => 1 })
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
     expect(env.meta["uid"]).to eq(env.uid)
   end
 
   it "stores uid in _meta.uid for yaml entries (accessible via env['_meta'])" do
-    env = Textus::Operations.for(store, role: "human").writes.put.call("working.y", content: { "name" => "y", "x" => 1 })
+    env = Textus::Operations.for(store, role: "human").put("working.y", content: { "name" => "y", "x" => 1 })
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
     expect(env.meta["uid"]).to eq(env.uid)
   end
 
   it "yields nil uid for text entries even after put" do
-    env = Textus::Operations.for(store, role: "human").writes.put.call("working.t", body: "plain text")
+    env = Textus::Operations.for(store, role: "human").put("working.t", body: "plain text")
     expect(env.uid).to be_nil
   end
 
   it "Store#uid returns the uid for a key" do
-    env = Textus::Operations.for(store, role: "human").writes.put.call("working.md", meta: { "name" => "md" }, body: "hi")
-    expect(Textus::Operations.for(store).reads.uid.call("working.md")).to eq(env.uid)
+    env = Textus::Operations.for(store, role: "human").put("working.md", meta: { "name" => "md" }, body: "hi")
+    expect(Textus::Operations.for(store).uid("working.md")).to eq(env.uid)
   end
 end

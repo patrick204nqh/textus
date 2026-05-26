@@ -28,17 +28,19 @@ module Textus
       ## DSL
 
       ```ruby
-      Textus.on(:resolve_intake, :my_source) do |config:, args:, **|
-        { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
-      end
+      Textus.hook do |reg|
+        reg.on(:resolve_intake, :my_source) do |config:, args:, **|
+          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
+        end
 
-      Textus.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
-      Textus.on(:validate,       :my_check)  { |store:, **| [] }
-      Textus.on(:entry_put,      :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
+        reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
+        reg.on(:validate,       :my_check)  { |store:, **| [] }
+        reg.on(:entry_put,      :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
 
-      # Run a side-effect every time textus writes a file to your repo:
-      Textus.on(:file_published, :notify) do |key:, target:, **|
-        warn "wrote \#{target} (from \#{key})"
+        # Run a side-effect every time textus writes a file to your repo:
+        reg.on(:file_published, :notify) do |key:, target:, **|
+          warn "wrote \#{target} (from \#{key})"
+        end
       end
       ```
 

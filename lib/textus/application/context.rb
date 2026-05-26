@@ -34,6 +34,25 @@ module Textus
         store.manifest.permission_for(zone.to_s).allows_read?(role)
       end
 
+      def bus
+        @store.bus
+      end
+
+      def authorize_write!(mentry)
+        return if can_write?(mentry.zone)
+
+        writers = @store.manifest.zone_writers(mentry.zone)
+        raise WriteForbidden.new(mentry.key, mentry.zone, writers: writers)
+      end
+
+      def authorize_read!(mentry)
+        return if can_read?(mentry.zone)
+
+        readers = @store.manifest.zone_readers[mentry.zone]
+        readers = nil if readers == :all
+        raise ReadForbidden.new(mentry.key, mentry.zone, readers: readers)
+      end
+
       def with_role(new_role)
         self.class.new(
           store: @store,

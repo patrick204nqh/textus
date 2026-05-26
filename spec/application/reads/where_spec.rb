@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Reads::Where do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.where.call("working.doc")
+      result = ops.where("working.doc")
 
       expect(result).to include(
         "protocol" => be_a(String),

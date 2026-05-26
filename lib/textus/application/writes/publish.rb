@@ -5,9 +5,8 @@ module Textus
       # `:file_published` for each copy. Mirror of `Build` for the publish
       # half — split out from the old Build per ADR 0007.
       class Publish
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def call(prefix: nil)
@@ -42,13 +41,13 @@ module Textus
           end
 
           Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: store.root)
-          @bus.publish(:file_published,
-                       store: @ctx.with_role(@ctx.role),
-                       key: row[:key],
-                       envelope: store.reader.get(row[:key]),
-                       source: row[:path],
-                       target: target_abs,
-                       correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:file_published,
+                           store: @ctx.with_role(@ctx.role),
+                           key: row[:key],
+                           envelope: store.reader.get(row[:key]),
+                           source: row[:path],
+                           target: target_abs,
+                           correlation_id: @ctx.correlation_id)
           { "key" => row[:key], "source" => row[:path], "target" => target_abs }
         end
       end

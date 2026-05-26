@@ -243,10 +243,12 @@ Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 
 ```ruby
 # .textus/hooks/notion.rb
-Textus.on(:resolve_intake, :notion) do |store:, config:, args:|
-  page_id = config.fetch("page_id")
-  body = NotionClient.new.fetch_markdown(page_id)
-  { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :notion) do |store:, config:, args:|
+    page_id = config.fetch("page_id")
+    body = NotionClient.new.fetch_markdown(page_id)
+    { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }
+  end
 end
 ```
 
@@ -292,23 +294,27 @@ A derived entry says **"compute me from these sources, render me with this templ
 
 ### Registering hooks
 
-Every hook registers through the same primitive: `Textus.on(event, name, **opts, &blk)`. There is no separate sugar surface — the event name is always the first positional argument.
+Every hook file wraps a single `Textus.hook { |reg| ... }` block. Inside the block, `reg.on(event, name, **opts, &blk)` is the only registration primitive — the event name is always the first positional argument.
 
 ```ruby
-Textus.on(:resolve_intake, :local_file) do |store:, config:, args:|
-  { _meta: {}, body: File.read(config["path"]) }
-end
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :local_file) do |store:, config:, args:|
+    { _meta: {}, body: File.read(config["path"]) }
+  end
 
-Textus.on(:transform_rows, :rank_by_recency) { |store:, rows:, **|          ... }
-Textus.on(:entry_put,      :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
-Textus.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:transform_rows, :rank_by_recency) { |store:, rows:, **|          ... }
+  reg.on(:entry_put,      :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
+  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, target:, **| `git add #{target.shellescape}` }
+end
 ```
 
-To register multiple events under the same name (e.g. a `:resolve_intake` + `:transform_rows` connector), call `Textus.on` separately with the same name:
+To register multiple events under the same name (e.g. a `:resolve_intake` + `:transform_rows` connector), call `reg.on` separately within the same block:
 
 ```ruby
-Textus.on(:resolve_intake, :notion) { |store:, config:, args:| ... }
-Textus.on(:transform_rows, :notion) { |store:, rows:, **|       ... }
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :notion) { |store:, config:, args:| ... }
+  reg.on(:transform_rows, :notion) { |store:, rows:, **|       ... }
+end
 ```
 
 Both reference the same name from the manifest:

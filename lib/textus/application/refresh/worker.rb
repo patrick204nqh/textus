@@ -6,9 +6,8 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def run(key)
@@ -36,8 +35,8 @@ module Textus
 
         def fetch_with_bus(key, mentry, remaining)
           callable = @ctx.store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)
-          @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
-                                         correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
+                                             correlation_id: @ctx.correlation_id)
           call_intake(key, mentry, callable, remaining)
         end
 
@@ -51,31 +50,31 @@ module Textus
             )
           end
         rescue Timeout::Error
-          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",
-                                        error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
-                                        correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",
+                                            error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
+                                            correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
-          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
-                                        error_message: e.message, correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
+                                            error_message: e.message, correlation_id: @ctx.correlation_id)
           raise
         rescue StandardError => e
-          @bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
-                                        error_message: e.message, correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
+                                            error_message: e.message, correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
         end
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          envelope = Textus::Application::Writes::Put.new(ctx: @ctx, bus: @bus).call(
+          envelope = Textus::Application::Writes::Put.new(ctx: @ctx).call(
             key,
             meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             suppress_events: true
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged
-            @bus.publish(:entry_refreshed, store: read_view, key: key, envelope: envelope, change: change,
-                                           correlation_id: @ctx.correlation_id)
+            @ctx.bus.publish(:entry_refreshed, store: read_view, key: key, envelope: envelope, change: change,
+                                               correlation_id: @ctx.correlation_id)
           end
           envelope
         end

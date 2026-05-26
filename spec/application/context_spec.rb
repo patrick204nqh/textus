@@ -60,6 +60,51 @@ RSpec.describe Textus::Application::Context do
     end
   end
 
+  describe "#bus" do
+    it "returns the store's bus" do
+      Dir.mktmpdir do |root|
+        store = build_store(File.join(root, ".textus"))
+        ctx = described_class.new(store: store, role: "human")
+        expect(ctx.bus).to equal(store.bus)
+      end
+    end
+  end
+
+  describe "#authorize_write!" do
+    it "returns nil when the role can write to the mentry's zone" do
+      Dir.mktmpdir do |root|
+        store = build_store(File.join(root, ".textus"))
+        ctx = described_class.new(store: store, role: "runner")
+        mentry = Struct.new(:key, :zone).new("working.foo", "working")
+        expect(ctx.authorize_write!(mentry)).to be_nil
+      end
+    end
+
+    it "raises WriteForbidden with writers/zone/key details when the role lacks write" do
+      Dir.mktmpdir do |root|
+        store = build_store(File.join(root, ".textus"))
+        ctx = described_class.new(store: store, role: "runner")
+        mentry = Struct.new(:key, :zone).new("identity.self", "identity")
+        expect { ctx.authorize_write!(mentry) }.to raise_error(Textus::WriteForbidden) do |err|
+          expect(err.details["key"]).to eq("identity.self")
+          expect(err.details["zone"]).to eq("identity")
+          expect(err.details["writers"]).to eq(["human"])
+        end
+      end
+    end
+  end
+
+  describe "#authorize_read!" do
+    it "returns nil when the role can read the mentry's zone" do
+      Dir.mktmpdir do |root|
+        store = build_store(File.join(root, ".textus"))
+        ctx = described_class.new(store: store, role: "runner")
+        mentry = Struct.new(:key, :zone).new("working.foo", "working")
+        expect(ctx.authorize_read!(mentry)).to be_nil
+      end
+    end
+  end
+
   describe ".system" do
     it "returns a human-role context bound to the store" do
       Dir.mktmpdir do |root|

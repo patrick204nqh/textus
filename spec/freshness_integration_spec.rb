@@ -41,16 +41,18 @@ RSpec.describe "Reader honors on_stale policy" do
   it "warn: returns stale envelope with flag, does NOT refresh" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
-          Thread.current[:refresh_count] ||= 0
-          Thread.current[:refresh_count] += 1
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+            Thread.current[:refresh_count] ||= 0
+            Thread.current[:refresh_count] += 1
+            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+          end
         end
       RUBY
 
       Thread.current[:refresh_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.foo")
+      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -62,13 +64,15 @@ RSpec.describe "Reader honors on_stale policy" do
   it "sync: blocks for refresh, returns fresh envelope" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh body" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh body" }
+          end
         end
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.foo")
+      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
@@ -109,15 +113,17 @@ RSpec.describe "Reader honors on_stale policy" do
       MD
 
       File.write(File.join(textus, "hooks", "slow_intake.rb"), <<~RUBY)
-        Textus.on(:resolve_intake, :slow_intake) do |store:, config:, args:|
-          sleep 0.5
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :slow_intake) do |store:, config:, args:|
+            sleep 0.5
+            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
+          end
         end
       RUBY
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.slow")
+      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
@@ -175,8 +181,10 @@ RSpec.describe "Reader honors on_stale policy" do
       MD
 
       File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
-        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+          end
         end
       RUBY
 
@@ -188,9 +196,9 @@ RSpec.describe "Reader honors on_stale policy" do
       end
 
       store = Textus::Store.new(textus)
-      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      Textus::Infra::EventBus.new(registry: store.registry)
       ctx = Textus::Operations.for(store, role: "builder").ctx
-      Textus::Application::Writes::Build.new(ctx: ctx, bus: bus).call
+      Textus::Application::Writes::Build.new(ctx: ctx).call
 
       expect(orchestrator_calls).to be_empty
     end

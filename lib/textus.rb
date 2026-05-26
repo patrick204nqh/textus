@@ -14,5 +14,20 @@ loader.setup
 loader.eager_load
 
 module Textus
-  extend Hooks::Dsl
+  @hook_mutex  = Mutex.new
+  @hook_blocks = []
+
+  def self.hook(&blk)
+    raise UsageError.new("hook block required") unless blk
+
+    @hook_mutex.synchronize { @hook_blocks << blk }
+  end
+
+  def self.drain_hook_blocks
+    @hook_mutex.synchronize do
+      blocks = @hook_blocks
+      @hook_blocks = []
+      blocks
+    end
+  end
 end

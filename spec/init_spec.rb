@@ -29,7 +29,7 @@ RSpec.describe Textus::Init do
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
     expect(File.directory?(File.join(target, "hooks"))).to be true
-    expect(File.read(File.join(target, "hooks", "README.md"))).to include("Textus.on")
+    expect(File.read(File.join(target, "hooks", "README.md"))).to include("Textus.hook")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end

@@ -31,10 +31,11 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   let(:ops) { Textus::Operations.for(store, role: "runner") }
 
   before do
-    # The recipe registers into the active registry on require. When loaded
-    # outside a store boot, registration is deferred — invoke it explicitly
-    # against the per-store registry.
-    Textus.with_registry(store.registry) { TextusRecipes::SkillFanout.register }
+    # The recipe queues its registration via Textus.hook. Drain and apply
+    # against the per-store registry so the listener is wired up.
+    Textus.drain_hook_blocks # discard any stale leftover from prior load
+    TextusRecipes::SkillFanout.register
+    Textus.drain_hook_blocks.each { |b| b.call(store.registry) }
   end
 
   def trigger(key:, files:)
@@ -44,11 +45,11 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   end
 
   def derived_keys(slug)
-    ops.reads.list.call(prefix: "vendor.skills.#{slug}").map { |row| row["key"] }
+    ops.list(prefix: "vendor.skills.#{slug}").map { |row| row["key"] }
   end
 
   def derived_envelope(key)
-    ops.reads.get.call(key)
+    ops.get(key)
   end
 
   it "writes one derived entry per file under vendor.skills.<slug>" do
@@ -103,6 +104,6 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
 
   it "is a no-op for refreshed keys outside the intake.skills.* prefix" do
     trigger(key: "intake.feeds.news", files: { "a" => "b" })
-    expect(ops.reads.list.call(prefix: "vendor")).to be_empty
+    expect(ops.list(prefix: "vendor")).to be_empty
   end
 end

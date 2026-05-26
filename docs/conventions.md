@@ -111,8 +111,8 @@ There are two read operations, and the difference matters in custom code:
 
 | Operation | Triggers refresh? | Use for |
 |-----------|-------------------|---------|
-| `ops.reads.get` | No — pure read of on-disk envelope + freshness verdict | build / materialization paths, schema tooling, any context where a side-effecting read would surprise the caller |
-| `ops.reads.get_or_refresh` | Yes — composes `get` with the orchestrator per the rule's `on_stale` policy | interactive reads (`textus get`, dashboards) where the caller wants the freshest envelope obtainable |
+| `ops.get` | No — pure read of on-disk envelope + freshness verdict | build / materialization paths, schema tooling, any context where a side-effecting read would surprise the caller |
+| `ops.get_or_refresh` | Yes — composes `get` with the orchestrator per the rule's `on_stale` policy | interactive reads (`textus get`, dashboards) where the caller wants the freshest envelope obtainable |
 
 Build always uses the pure path; injecting refresh into materialization caused the cascading-staleness incident behind issue #59. Pick `get_or_refresh` only when you genuinely want side effects on read.
 

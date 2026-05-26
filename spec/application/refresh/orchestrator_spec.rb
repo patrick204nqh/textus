@@ -33,11 +33,18 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
     end
   end
 
+  let(:fake_store) do
+    bus = fake_bus
+    Class.new do
+      define_method(:bus) { bus }
+    end.new
+  end
+
   def make_orchestrator(worker, spawner: ->(**) {})
     described_class.new(
       worker: worker,
-      bus: fake_bus,
       store_root: "/tmp/fake",
+      store: fake_store,
       detached_spawner: spawner,
     )
   end
@@ -91,7 +98,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
       orch = described_class.new(
         worker: slow_worker,
-        bus: fake_bus,
+        store: fake_store,
         store_root: "/tmp/fake",
         detached_spawner: spawner,
       )
@@ -125,7 +132,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
         orch = described_class.new(
           worker: slow_worker,
-          bus: fake_bus,
+          store: fake_store,
           store_root: store_root,
           detached_spawner: spawner,
         )

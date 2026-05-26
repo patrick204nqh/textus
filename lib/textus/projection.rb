@@ -7,8 +7,8 @@ module Textus
     REDUCER_TIMEOUT_SECONDS = 2
 
     # `reader` — a callable `->(key) { envelope_or_nil }`. Caller picks
-    #   semantics: pure read (`ops.reads.get`) for materialization paths;
-    #   `ops.reads.get_or_refresh` if you want refresh-on-stale.
+    #   semantics: pure read (`ops.get`) for materialization paths;
+    #   `ops.get_or_refresh` if you want refresh-on-stale.
     # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
     # `transform_resolver` — a callable `->(name) { callable_or_raise }`.
     # `transform_context` — `Application::Context` handed to the transform reducer.

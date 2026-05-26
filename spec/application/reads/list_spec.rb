@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Reads::List do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.list.call
+      rows = ops.list
       expect(rows.map { |r| r["key"] }).to contain_exactly(
         "working.alpha", "working.beta", "notes.report"
       )
@@ -38,7 +38,7 @@ RSpec.describe Textus::Application::Reads::List do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.list.call(prefix: "working")
+      rows = ops.list(prefix: "working")
       expect(rows.map { |r| r["key"] }).to contain_exactly("working.alpha", "working.beta")
     end
   end
@@ -47,7 +47,7 @@ RSpec.describe Textus::Application::Reads::List do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.list.call(zone: "notes")
+      rows = ops.list(zone: "notes")
       expect(rows.map { |r| r["key"] }).to eq(["notes.report"])
     end
   end

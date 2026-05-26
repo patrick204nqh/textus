@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "applies the proposal target action and deletes the review entry" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").writes.put.call(
+      Textus::Operations.for(store, role: "agent").put(
         "review.2026-05-19-add-bob",
         meta: {
           "name" => "2026-05-19-add-bob",
@@ -32,7 +32,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       )
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      result = described_class.new(ctx: ctx, bus: store.bus).call("review.2026-05-19-add-bob")
+      result = described_class.new(ctx: ctx).call("review.2026-05-19-add-bob")
 
       expect(result["target_key"]).to eq("working.network.org.bob")
       expect(result["action"]).to eq("put")
@@ -45,7 +45,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "raises ProposalError when role is not human" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").writes.put.call(
+      Textus::Operations.for(store, role: "agent").put(
         "review.foo",
         meta: {
           "name" => "foo",
@@ -56,7 +56,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       )
 
       ctx = Textus::Application::Context.new(store: store, role: "agent")
-      expect { described_class.new(ctx: ctx, bus: store.bus).call("review.foo") }
+      expect { described_class.new(ctx: ctx).call("review.foo") }
         .to raise_error(Textus::ProposalError, /human/)
     end
   end
@@ -64,7 +64,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "fires :accepted event with correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").writes.put.call(
+      Textus::Operations.for(store, role: "agent").put(
         "review.p1",
         meta: {
           "name" => "p1",
@@ -80,7 +80,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         events << { key: key, target_key: target_key, correlation_id: correlation_id }
       end
 
-      described_class.new(ctx: ctx, bus: store.bus).call("review.p1")
+      described_class.new(ctx: ctx).call("review.p1")
 
       expect(events.length).to eq(1)
       expect(events.first[:key]).to eq("review.p1")
@@ -92,14 +92,14 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "raises ProposalError when entry has no proposal block" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").writes.put.call(
+      Textus::Operations.for(store, role: "agent").put(
         "review.noproposal",
         meta: { "name" => "noproposal" },
         body: "no proposal here",
       )
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      expect { described_class.new(ctx: ctx, bus: store.bus).call("review.noproposal") }
+      expect { described_class.new(ctx: ctx).call("review.noproposal") }
         .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
@@ -134,7 +134,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "passes the gate when schema_valid predicate succeeds (all required fields present)" do
       Dir.mktmpdir do |root|
         store = build_store_with_promotion(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").writes.put.call(
+        Textus::Operations.for(store, role: "agent").put(
           "review.valid-proposal",
           meta: {
             "name" => "valid-proposal",
@@ -145,7 +145,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         )
 
         ctx = Textus::Application::Context.new(store: store, role: "human")
-        result = described_class.new(ctx: ctx, bus: store.bus).call("review.valid-proposal")
+        result = described_class.new(ctx: ctx).call("review.valid-proposal")
         expect(result["accepted"]).to eq("review.valid-proposal")
       end
     end
@@ -153,7 +153,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "raises ProposalError when schema_valid predicate fails (missing required field)" do
       Dir.mktmpdir do |root|
         store = build_store_with_promotion(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").writes.put.call(
+        Textus::Operations.for(store, role: "agent").put(
           "review.bad-proposal",
           meta: {
             "name" => "bad-proposal",
@@ -164,7 +164,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         )
 
         ctx = Textus::Application::Context.new(store: store, role: "human")
-        expect { described_class.new(ctx: ctx, bus: store.bus).call("review.bad-proposal") }
+        expect { described_class.new(ctx: ctx).call("review.bad-proposal") }
           .to raise_error(Textus::ProposalError, /promotion gate failed/i)
       end
     end
@@ -191,7 +191,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "human_accept predicate passes when role is human" do
       Dir.mktmpdir do |root|
         store = build_human_accept_store(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").writes.put.call(
+        Textus::Operations.for(store, role: "agent").put(
           "review.ha-proposal",
           meta: {
             "name" => "ha-proposal",
@@ -201,7 +201,7 @@ RSpec.describe Textus::Application::Writes::Accept do
           body: "Proposed",
         )
         ctx = Textus::Application::Context.new(store: store, role: "human")
-        result = described_class.new(ctx: ctx, bus: store.bus).call("review.ha-proposal")
+        result = described_class.new(ctx: ctx).call("review.ha-proposal")
         expect(result["accepted"]).to eq("review.ha-proposal")
       end
     end

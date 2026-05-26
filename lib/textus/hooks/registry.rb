@@ -28,6 +28,10 @@ module Textus
         @dispatcher = dispatcher
       end
 
+      def on(event, name, keys: nil, &)
+        register(event, name, keys: keys, &)
+      end
+
       def register(event, name, keys: nil, &blk)
         event_sym = event.to_sym
         spec = EVENTS[event_sym] or raise UsageError.new("unknown event: #{event}")
