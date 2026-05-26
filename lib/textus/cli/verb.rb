@@ -70,7 +70,7 @@ module Textus
       # Convenience for verbs whose only pre-call boilerplate is
       # resolving the role and wrapping it in a context.
       def context_for(store)
-        Textus::Composition.context(store, role: resolved_role(store))
+        Textus::Operations.for(store, role: resolved_role(store)).ctx
       end
 
       # Returns an Operations instance bound to the resolved role.
