@@ -30,12 +30,12 @@ module Textus
           set = @ctx.store.manifest.rules_for(mentry.key)
           refresh = set.refresh
           envelope = safe_get(mentry.key)
-          last = envelope&.dig("_meta", "last_refreshed_at")
+          last = envelope&.meta&.dig("last_refreshed_at")
 
           return base_row(mentry, last).merge(status: :no_policy) if refresh.nil?
 
           fp = refresh.to_freshness_policy
-          verdict = @evaluator.call(fp, envelope || {}, now: @ctx.now)
+          verdict = @evaluator.call(fp, envelope, now: @ctx.now)
           status = if verdict.fresh? then :fresh
                    elsif last.nil?   then :never_refreshed
                    else                   :stale

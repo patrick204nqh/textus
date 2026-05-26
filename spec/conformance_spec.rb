@@ -78,21 +78,23 @@ RSpec.describe "textus/3 conformance" do
     it "returns the canonical envelope with a matching sha256 etag" do
       env = store.reader.get("working.network.org.jane")
 
-      expect(env["protocol"]).to eq("textus/3")
-      expect(env["key"]).to eq("working.network.org.jane")
-      expect(env["zone"]).to eq("working")
-      expect(env["owner"]).to eq("human:patrick")
-      expect(File.absolute_path?(env["path"])).to be true
-      expect(env["path"]).to end_with("working/network/org/jane.md")
+      aggregate_failures do
+        expect(env.protocol).to eq("textus/3")
+        expect(env.key).to eq("working.network.org.jane")
+        expect(env.zone).to eq("working")
+        expect(env.owner).to eq("human:patrick")
+        expect(File.absolute_path?(env.path)).to be true
+        expect(env.path).to end_with("working/network/org/jane.md")
 
-      expect(env["_meta"]).to eq(
-        "name" => "jane", "relationship" => "peer", "org" => "acme",
-      )
-      expect(env["body"]).to include("Short body in Markdown.")
+        expect(env.meta).to eq(
+          "name" => "jane", "relationship" => "peer", "org" => "acme",
+        )
+        expect(env.body).to include("Short body in Markdown.")
 
-      expected = "sha256:#{Digest::SHA256.hexdigest(File.binread(env["path"]))}"
-      expect(env["etag"]).to eq(expected)
-      expect(env["schema_ref"]).to eq("person")
+        expected = "sha256:#{Digest::SHA256.hexdigest(File.binread(env.path))}"
+        expect(env.etag).to eq(expected)
+        expect(env.schema_ref).to eq("person")
+      end
     end
   end
 

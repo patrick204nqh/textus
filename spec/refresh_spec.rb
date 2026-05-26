@@ -33,8 +33,8 @@ RSpec.describe Textus::Refresh do
   it "invokes the action, writes the entry under role=script, returns the envelope" do
     store = Textus::Store.new(root)
     env = described_class.call(store, "intake.repos", as: "runner")
-    expect(env["body"]).to eq("hello")
-    expect(env["zone"]).to eq("intake")
+    expect(env.body).to eq("hello")
+    expect(env.zone).to eq("intake")
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
   end
 
@@ -74,7 +74,7 @@ RSpec.describe Textus::Refresh do
       RUBY
       store = Textus::Store.new(root)
       env = described_class.call(store, "intake.repos", as: "runner")
-      expect(env["format"]).to eq("json")
+      expect(env.format).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
       parsed = JSON.parse(File.read(path))
       expect(parsed["items"]).to eq([{ "id" => 1 }, { "id" => 2 }])

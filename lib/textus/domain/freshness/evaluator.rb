@@ -9,7 +9,7 @@ module Textus
         def call(policy, envelope, now:)
           return Verdict.fresh if policy.ttl_seconds.nil?
 
-          last_str = envelope.dig("_meta", "last_refreshed_at")
+          last_str = envelope&.meta&.dig("last_refreshed_at")
           return Verdict.stale("never refreshed") if last_str.nil?
 
           last = begin

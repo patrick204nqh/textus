@@ -52,9 +52,9 @@ RSpec.describe "Reader honors on_stale policy" do
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
       envelope = Textus::Operations.for(store, role: "runner").reads.get.call("working.foo")
 
-      expect(envelope["stale"]).to be(true)
-      expect(envelope["stale_reason"]).to match(/ttl exceeded/)
-      expect(envelope["refreshing"]).to be(false)
+      expect(envelope.stale?).to be(true)
+      expect(envelope.freshness["stale_reason"]).to match(/ttl exceeded/)
+      expect(envelope.refreshing?).to be(false)
       expect(Thread.current[:refresh_count]).to eq(0)
     end
   end
@@ -70,8 +70,8 @@ RSpec.describe "Reader honors on_stale policy" do
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
       envelope = Textus::Operations.for(store, role: "runner").reads.get.call("working.foo")
 
-      expect(envelope["stale"]).to be(false)
-      expect(envelope["body"] || envelope["content"]).to include("fresh body")
+      expect(envelope.stale?).to be(false)
+      expect(envelope.body || envelope.content).to include("fresh body")
     end
   end
 
@@ -121,8 +121,8 @@ RSpec.describe "Reader honors on_stale policy" do
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
-      expect(envelope["stale"]).to be(true)
-      expect(envelope["refreshing"]).to be(true)
+      expect(envelope.stale?).to be(true)
+      expect(envelope.refreshing?).to be(true)
 
       sleep 1.5
       raw = File.read(File.join(textus, "zones", "working", "slow.md"))

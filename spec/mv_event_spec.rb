@@ -20,7 +20,7 @@ RSpec.describe ":entry_renamed event" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
       Textus.on(:entry_renamed, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
-        $textus_event_log << [:entry_renamed, from_key, to_key, envelope["uid"]]
+        $textus_event_log << [:entry_renamed, from_key, to_key, envelope.uid]
       end
       Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
       Textus.on(:entry_deleted, :log_delete) { |key:, store:|             $textus_event_log << [:entry_deleted, key] }

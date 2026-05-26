@@ -9,10 +9,10 @@ module Textus
             "schema_valid"
           end
 
-          def call(entry:, store:)
+          def call(entry:, store:) # rubocop:disable Metrics/PerceivedComplexity
             return true if entry.nil? || store.nil?
 
-            target_key = entry.dig("_meta", "proposal", "target_key")
+            target_key = entry.meta&.dig("proposal", "target_key")
             return true unless target_key
 
             mentry, = store.manifest.resolve(target_key)
@@ -22,7 +22,7 @@ module Textus
             schema = store.schema_for(schema_ref)
             return true unless schema
 
-            frontmatter = entry.dig("_meta", "frontmatter") || {}
+            frontmatter = entry.meta&.dig("frontmatter") || {}
             begin
               schema.validate!(frontmatter)
             rescue Textus::SchemaViolation => e

@@ -81,8 +81,8 @@ RSpec.describe Textus::Schema::Tools do
     res = Textus::Schema::Tools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
     env = store.reader.get(res["migrated"].first)
-    expect(env["_meta"]).to have_key("full_name")
-    expect(env["_meta"]).not_to have_key("name")
+    expect(env.meta).to have_key("full_name")
+    expect(env.meta).not_to have_key("name")
   end
 
   it "schema-migrate renames a frontmatter field across entries that have it" do
@@ -102,7 +102,7 @@ RSpec.describe Textus::Schema::Tools do
     expect(res["migrated"]).to eq(["working.people.alice"])
 
     env = store.reader.get("working.people.alice")
-    expect(env["_meta"]["organization"]).to eq("acme")
-    expect(env["_meta"]).not_to have_key("org")
+    expect(env.meta["organization"]).to eq("acme")
+    expect(env.meta).not_to have_key("org")
   end
 end

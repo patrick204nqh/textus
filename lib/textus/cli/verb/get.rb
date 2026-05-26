@@ -9,7 +9,7 @@ module Textus
           result = operations_for(store).reads.get.call(key)
           raise Textus::UnknownKey.new(key, suggestions: store.manifest.suggestions_for(key)) if result.nil?
 
-          emit(result)
+          emit(result.to_h_for_wire)
         end
       end
     end

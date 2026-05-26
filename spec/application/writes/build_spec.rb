@@ -43,13 +43,13 @@ RSpec.describe Textus::Application::Writes::Build do
                "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
 
-  it "returns a hash with protocol, built, and published_leaves keys" do
+  it "returns a hash with protocol and built keys" do
     result = use_case.call
 
     expect(result).to have_key("protocol")
     expect(result["protocol"]).to eq(Textus::PROTOCOL)
     expect(result).to have_key("built")
-    expect(result).to have_key("published_leaves")
+    expect(result).not_to have_key("published_leaves")
   end
 
   it "materializes output entries and returns their keys in built" do

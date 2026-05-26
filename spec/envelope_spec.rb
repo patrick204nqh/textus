@@ -1,51 +1,136 @@
-# frozen_string_literal: true
-
 require "spec_helper"
 
 RSpec.describe Textus::Envelope do
   let(:mentry) do
     instance_double(
       Textus::Manifest::Entry,
-      zone: "working", owner: "human", format: "markdown", schema: nil,
+      zone: "working", owner: "human:self", format: "markdown", schema: "note",
     )
   end
 
-  it "shapes a markdown envelope with uid pulled from meta" do
-    env = Textus::Envelope.build(
-      key: "working.x",
-      mentry: mentry,
-      path: "/tmp/x.md",
-      meta: { "name" => "x", "uid" => "0123456789abcdef" },
-      body: "hi\n",
-      etag: "deadbeef",
-    )
-    expect(env).to include(
-      "protocol" => Textus::PROTOCOL,
-      "key" => "working.x",
-      "zone" => "working",
-      "owner" => "human",
-      "format" => "markdown",
-      "etag" => "deadbeef",
-      "uid" => "0123456789abcdef",
-    )
-    expect(env["_meta"]).to eq("name" => "x", "uid" => "0123456789abcdef")
-    expect(env["body"]).to eq("hi\n")
-    expect(env).not_to have_key("content")
+  describe ".build" do
+    it "constructs an Envelope with all required fields" do
+      env = described_class.build(
+        key: "working.foo", mentry: mentry, path: "/x/foo.md",
+        meta: { "uid" => "abc123def4561234", "name" => "foo" },
+        body: "hello", etag: "deadbeef"
+      )
+
+      aggregate_failures do
+        expect(env).to be_a(Textus::Envelope)
+        expect(env.protocol).to eq(Textus::PROTOCOL)
+        expect(env.key).to eq("working.foo")
+        expect(env.zone).to eq("working")
+        expect(env.owner).to eq("human:self")
+        expect(env.path).to eq("/x/foo.md")
+        expect(env.format).to eq("markdown")
+        expect(env.schema_ref).to eq("note")
+        expect(env.uid).to eq("abc123def4561234")
+        expect(env.etag).to eq("deadbeef")
+        expect(env.meta).to eq({ "uid" => "abc123def4561234", "name" => "foo" })
+        expect(env.body).to eq("hello")
+        expect(env.content).to be_nil
+        expect(env.freshness).to be_nil
+      end
+    end
+
+    it "extracts content when given" do
+      env = described_class.build(
+        key: "working.j", mentry: mentry, path: "/x/foo.json",
+        meta: {}, body: "", etag: "x", content: { "a" => 1 }
+      )
+      expect(env.content).to eq({ "a" => 1 })
+    end
+
+    it "extracts uid from meta when meta has a uid" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: { "uid" => "abc" }, body: "", etag: "e"
+      )
+      expect(env.uid).to eq("abc")
+    end
+
+    it "uid is nil when meta has no uid string" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: { "uid" => 42 }, body: "", etag: "e"
+      )
+      expect(env.uid).to be_nil
+    end
   end
 
-  it "includes content only when provided" do
-    env = Textus::Envelope.build(
-      key: "k", mentry: mentry, path: "/p",
-      meta: {}, body: "", etag: "e", content: { "a" => 1 }
-    )
-    expect(env["content"]).to eq("a" => 1)
+  describe "#to_h_for_wire" do
+    it "returns a Hash with string keys in the legacy shape" do
+      env = described_class.build(
+        key: "working.foo", mentry: mentry, path: "/x/foo.md",
+        meta: { "uid" => "u1234567890123456", "name" => "foo" },
+        body: "hello", etag: "deadbeef"
+      )
+      h = env.to_h_for_wire
+
+      aggregate_failures do
+        expect(h).to be_a(Hash)
+        expect(h.keys).to all(be_a(String))
+        expect(h["protocol"]).to eq(Textus::PROTOCOL)
+        expect(h["key"]).to eq("working.foo")
+        expect(h["zone"]).to eq("working")
+        expect(h["owner"]).to eq("human:self")
+        expect(h["path"]).to eq("/x/foo.md")
+        expect(h["format"]).to eq("markdown")
+        expect(h["_meta"]).to eq({ "uid" => "u1234567890123456", "name" => "foo" })
+        expect(h["body"]).to eq("hello")
+        expect(h["etag"]).to eq("deadbeef")
+        expect(h["schema_ref"]).to eq("note")
+        expect(h["uid"]).to eq("u1234567890123456")
+      end
+    end
+
+    it "omits content key when content is nil" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: {}, body: "x", etag: "e"
+      )
+      expect(env.to_h_for_wire).not_to have_key("content")
+    end
+
+    it "flattens freshness fields into top-level wire keys" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: {}, body: "x", etag: "e"
+      ).with(freshness: { "stale" => true, "refreshing" => false })
+      h = env.to_h_for_wire
+      aggregate_failures do
+        expect(h["stale"]).to be true
+        expect(h["refreshing"]).to be false
+        expect(h).not_to have_key("freshness")
+      end
+    end
   end
 
-  it "returns nil uid when meta has none" do
-    env = Textus::Envelope.build(
-      key: "k", mentry: mentry, path: "/p",
-      meta: { "name" => "k" }, body: "", etag: "e"
-    )
-    expect(env["uid"]).to be_nil
+  describe "predicates" do
+    let(:base_env) do
+      described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: {}, body: "", etag: "e"
+      )
+    end
+
+    it "stale? returns false when freshness is nil" do
+      expect(base_env.stale?).to be false
+    end
+
+    it "stale? returns true when freshness.stale is true" do
+      env = base_env.with(freshness: { "stale" => true })
+      expect(env.stale?).to be true
+    end
+
+    it "refreshing? returns false when freshness is nil" do
+      expect(base_env.refreshing?).to be false
+    end
+
+    it "refreshing? returns the boolean refreshing flag" do
+      env = base_env.with(freshness: { "stale" => true, "refreshing" => true })
+      expect(env.refreshing?).to be true
+    end
   end
 end

@@ -47,7 +47,7 @@ module Textus
             old_key: old_key, new_key: new_key,
             old_path: old_path, new_path: new_path,
             new_mentry: new_mentry,
-            uid: pre_env["uid"], etag_before: pre_env["etag"]
+            uid: pre_env.uid, etag_before: pre_env.etag
           )
           [plan, pre_env]
         end
@@ -76,12 +76,12 @@ module Textus
 
           env = Textus::Application::Writes::Put.new(ctx: @ctx, bus: @bus).call(
             plan.old_key,
-            meta: pre_env["_meta"],
-            body: pre_env["body"],
-            content: pre_env["content"],
+            meta: pre_env.meta,
+            body: pre_env.body,
+            content: pre_env.content,
             suppress_events: true,
           )
-          plan.with(uid: env["uid"], etag_before: env["etag"])
+          plan.with(uid: env.uid, etag_before: env.etag)
         end
 
         def perform_move!(plan)
@@ -130,7 +130,7 @@ module Textus
             "from_key" => plan.old_key, "to_key" => plan.new_key,
             "from_path" => plan.old_path, "to_path" => plan.new_path,
             "uid" => plan.uid,
-            "envelope" => new_envelope
+            "envelope" => new_envelope.to_h_for_wire
           }
         end
 

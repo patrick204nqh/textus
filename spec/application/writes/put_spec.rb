@@ -30,7 +30,7 @@ RSpec.describe Textus::Application::Writes::Put do
         body: "hello",
       )
 
-      expect(envelope["body"] || envelope["content"]).to include("hello")
+      expect(envelope.body || envelope.content).to include("hello")
       expect(File.exist?(File.join(root, ".textus/zones/working/foo.md"))).to be(true)
     end
   end
