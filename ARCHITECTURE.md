@@ -2,73 +2,93 @@
 
 ```
 ┌─ Interface ────────────────────────────────────────────────┐
-│  CLI verbs:  ctx = Composition.context(store, role:)       │
-│              Composition.<use_case>(ctx).call(...)         │
+│  CLI verbs:  ops = Operations.for(store, role:)            │
+│              ops.reads.<name>.call(...)                    │
+│              ops.writes.<name>.call(...)                   │
+│              ops.refresh.<name>.call(...)                  │
 └──────────────────────┬─────────────────────────────────────┘
                        │
 ┌─ Application ────────▼─────────────────────────────────────┐
 │  Context          (per-request: store, role, correlation,  │
-│                    clock, dry_run; can_read?/can_write?)   │
-│  Composition      (factory module)                         │
+│                    clock, dry_run; can_read?/can_write?;   │
+│                    Context.system(store) for infra path)   │
+│  Operations       (facade with .reads/.writes/.refresh)    │
 │                                                            │
-│  reads/get.rb              writes/put.rb                   │
-│  refresh/worker.rb         writes/delete.rb                │
-│  refresh/orchestrator.rb   writes/build.rb                 │
-│  refresh/all.rb            writes/accept.rb                │
-│                            writes/publish.rb               │
+│  reads/{get,list,where,uid,schema_envelope,deps,rdeps,     │
+│         published,stale,validate_all,freshness,audit,      │
+│         blame,policy_explain}.rb                           │
+│  writes/{put,delete,mv,accept,reject,build,publish}.rb     │
+│  refresh/{worker,orchestrator,all}.rb                      │
 └──────────┬───────────────────────────────┬─────────────────┘
            │ uses domain                   │ uses ports
 ┌─ Domain ─▼─────────────────────────────────────────────────┐
-│  Permission             ← NEW: predicate, not Action       │
-│  Freshness::Policy      Freshness::Verdict                 │
-│  Freshness::Evaluator   Action  Outcome                    │
+│  Permission         (write/read predicate per zone)        │
+│  Freshness::{Policy,Verdict,Evaluator}                     │
+│  Action  Outcome                                           │
+│  Policy::Promotion (proposal accept gates)                 │
 └──────────────────────────────────────────┬─────────────────┘
                                            │ implements
 ┌─ Infrastructure ─────────────────────────▼─────────────────┐
-│  Store              (pure adapter — exposes ports only)    │
-│    Reader#read_envelope         Writer#write_envelope_…    │
-│    AuditLog, Staleness, Validator, Mover                   │
-│  Manifest           (incl. permission_for)                 │
-│  Hooks::Registry    EventBus     Clock                     │
-│  Refresh::Lock      Refresh::Detached                      │
-│  Infra::Publisher   (file copy + sentinel)                 │
+│  Store              (pure adapter — filesystem + hooks)    │
+│    Reader#{get,list,where,uid,deps,rdeps,published,        │
+│            stale,validate_all,read_raw_envelope,           │
+│            schema_envelope}                                │
+│    Writer#{write_envelope_to_disk,delete_envelope_from_    │
+│            disk,existing_uid_for,ensure_uid,               │
+│            enforce_name_match!,serialize_for_put}          │
+│    AuditLog, Staleness, Validator, Sentinel                │
+│  Manifest           (Entry, Rules, Schema, permission_for) │
+│  Hooks::{Registry,Dispatcher,Loader,Dsl,Builtin}           │
+│  Infra::{Publisher,EventBus,Clock,Refresh::Lock,           │
+│          Refresh::Detached}                                │
+│  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
 └────────────────────────────────────────────────────────────┘
 
    Dependency rule: arrows point DOWN. Domain has zero outbound
    imports. Application imports Domain + Infra (via ports).
 ```
 
-## Read path (`store.get`)
+## Read path (`ops.reads.get.call(key)`)
 
-1. CLI verb (or any caller) invokes `store.get(key, as:)`.
-2. `Store#get` constructs `Reads::Get(store, orchestrator)` and calls `.call(key, as:)`.
-3. `Reads::Get#call` reads the envelope from disk via `store.reader.read_raw_envelope(key)`.
-4. Resolves `Manifest::Entry#policy` — a `Domain::Freshness::Policy` value.
+1. CLI verb (or any external caller) builds `ops = Textus::Operations.for(store, role:)` then `ops.reads.get.call(key)`.
+2. `Operations::Reads#get` returns an `Application::Reads::Get.new(ctx:, orchestrator:)` instance bound to the request context.
+3. `Reads::Get#call(key)` reads the bare envelope from disk via `@ctx.store.reader.read_raw_envelope(key)`.
+4. Resolves the manifest rules for the key via `@ctx.store.manifest.rules_for(key)` and extracts the `refresh` policy.
 5. `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`.
 6. If fresh → annotate envelope (`stale: false`, `refreshing: false`) and return.
 7. Otherwise `policy.decide(verdict) → Action` (data, not behavior).
-8. `Orchestrator.execute(action, key, as)` interprets the Action:
+8. `Refresh::Orchestrator#execute(action, key:)` interprets the `Action`:
    - `Action::Return` → `Outcome::Skipped`
-   - `Action::RefreshSync` → run Worker inline → `Refreshed | Failed`
-   - `Action::RefreshTimed(budget_ms:)` → race Worker thread vs budget; on timeout, kill thread, fire `:refresh_detached`, fork+detach child, return `Outcome::Detached`
+   - `Action::RefreshSync` → run `Refresh::Worker` inline → `Refreshed | Failed`
+   - `Action::RefreshTimed(budget_ms:)` → race Worker thread vs budget; on timeout, kill thread, fire `:refresh_backgrounded`, fork+detach child, return `Outcome::Detached`
 9. Map outcome → envelope annotations (`stale`, `refreshing`, `refresh_error`) and return.
 
-## Write path (`store.put`)
+## Write path (`ops.writes.put.call(key, ...)`)
 
-1. CLI verb calls `ctx = Composition.context(store, role:)` then `Composition.writes_put(ctx).call(key, ...)`.
-2. `Writes::Put#call` checks `ctx.can_write?(zone)` — raises `write_forbidden` if denied.
-3. Delegates pure I/O to `Store::Writer#write_envelope_to_disk(key, ...)`.
-4. On success, fires `:put` event via the injected `Infra::EventBus`, including `correlation_id` from the Context.
+1. CLI verb calls `ops = Operations.for(store, role:)` then `ops.writes.put.call(key, meta:, body:, content:, if_etag:, suppress_events:)`.
+2. `Writes::Put#call` validates the key, resolves the manifest entry, and checks `@ctx.can_write?(mentry.zone)` — raises `WriteForbidden` if denied.
+3. Delegates raw I/O to `Store::Writer#write_envelope_to_disk(key, mentry:, payload:, ctx:, if_etag:)`, which:
+   - Resolves the path via `Manifest#resolve`
+   - Serializes via `Entry.for_format(...).serialize(...)`
+   - Validates against schema if declared
+   - Etag-checks if `if_etag:` provided (raises `EtagMismatch` on conflict)
+   - Writes to disk via `File.binwrite`
+   - Appends the audit row
+4. On success, publishes `:entry_put` via the bus, with `store: @ctx.with_role(@ctx.role)`, `key:`, `envelope:`, `correlation_id:`.
 
-The same pattern applies to `Writes::Delete`, `Writes::Build`, `Writes::Accept`, and `Writes::Publish`: each takes a `Context`, checks permissions at the use-case layer, then delegates raw I/O to the corresponding `Store::Writer` or `Infra::Publisher` primitive.
+The same pattern applies to `Writes::{Delete,Mv,Accept,Reject,Build,Publish}`: each takes a `Context`, checks permissions at the use-case layer, delegates raw I/O to `Store::Writer` or `Infra::Publisher`, and fires the matching event.
 
-## Refresh path (`textus refresh KEY`)
+## Refresh path (`ops.refresh.worker.run(key)`)
 
-1. CLI `Verb::Refresh` calls `Textus::Refresh.call(store, key, as:)`.
-2. That shim instantiates `Application::Refresh::Worker` and runs it.
-3. `Worker#run`:
-   - Resolves the manifest entry, looks up the `:intake` handler.
-   - Publishes `:refresh_began` via the injected `Infra::EventBus`.
+1. CLI `Verb::Refresh` builds `ops = Operations.for(store, role: "runner")` then calls `ops.refresh.worker.run(key)`.
+2. `Refresh::Worker#run(key)`:
+   - Resolves the manifest entry, looks up the intake handler via `store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)`.
+   - Publishes `:refresh_started` via the bus.
    - Invokes the handler under a 30s `Timeout.timeout` budget.
    - On any error: publishes `:refresh_failed`, then re-raises (or wraps in `UsageError`).
-   - On success: normalizes the return shape, persists via `store.put`, publishes `:refreshed` (unless the etag is unchanged).
+   - On success: normalizes the return shape, persists via `Application::Writes::Put` with `suppress_events: true`, publishes `:entry_refreshed` (unless the etag is unchanged).
+3. The batch entry point is `Application::Refresh::All.call(ctx, prefix:, zone:)` which lists stale entries via `Application::Reads::Stale`, then runs `Worker#run` per entry, returning a summary envelope `{ refreshed: [...], failed: [...], skipped: [...] }`.
+
+## Infrastructure-side hook dispatch
+
+The hook bus needs an `Application::Context` even when fired from inside `Store#initialize` or other infrastructure-side code paths. `Application::Context.system(store)` returns a Context with `role: "human"` and a fresh correlation_id, designed for exactly this case — see `lib/textus/store.rb` (the `:store_loaded` publish), `lib/textus/doctor.rb` (the doctor-check view), and `lib/textus/projection.rb` (the transform_rows view).
