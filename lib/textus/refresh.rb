@@ -1,13 +1,12 @@
 module Textus
   module Refresh
     def self.call(store, key, as:)
-      ctx = Textus::Composition.context(store, role: as)
-      Textus::Composition.refresh_worker(ctx).run(key)
+      Textus::Operations.for(store, role: as).refresh.worker.run(key)
     end
 
     def self.refresh_stale(store, prefix: nil, zone: nil, as: "runner")
-      ctx = Textus::Composition.context(store, role: as)
-      Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
+      ops = Textus::Operations.for(store, role: as)
+      Textus::Application::Refresh::All.call(ops.ctx, prefix: prefix, zone: zone)
     end
 
     # Normalize the three accepted intake return shapes into the store's

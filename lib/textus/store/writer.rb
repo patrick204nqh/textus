@@ -148,7 +148,8 @@ module Textus
       end
 
       def accept(key, as:)
-        Proposal.accept(@store, key, as: as)
+        ctx = Textus::Application::Context.new(store: @store, role: as)
+        Textus::Application::Writes::Accept.new(ctx: ctx, bus: @store.bus).call(key)
       end
 
       def reject(pending_key, as: Role::DEFAULT)
