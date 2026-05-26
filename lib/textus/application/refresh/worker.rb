@@ -26,6 +26,11 @@ module Textus
           Application::Context.new(store: @ctx.store, role: @ctx.role)
         end
 
+        def fetch_timeout_for(key)
+          rule = @ctx.store.manifest.rules_for(key)
+          rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
+        end
+
         def fetch_with_bus(key, mentry)
           callable = @ctx.store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)
           @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
@@ -34,14 +39,15 @@ module Textus
         end
 
         def call_intake(key, mentry, callable)
-          Timeout.timeout(FETCH_TIMEOUT_SECONDS) do
+          timeout = fetch_timeout_for(key)
+          Timeout.timeout(timeout) do
             callable.call(store: @ctx, config: mentry.intake_config, args: {})
           end
         rescue Timeout::Error
           @bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",
-                                        error_message: "intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s",
+                                        error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
                                         correlation_id: @ctx.correlation_id)
-          raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{FETCH_TIMEOUT_SECONDS}s timeout")
+          raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
           @bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
                                         error_message: e.message, correlation_id: @ctx.correlation_id)

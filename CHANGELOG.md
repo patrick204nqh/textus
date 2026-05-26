@@ -9,6 +9,31 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.14.2 — 2026-05-26
+
+### Added
+
+- Per-rule `fetch_timeout_seconds:` under `rules[].refresh` overrides the
+  hardcoded 30s worker timeout that applies to intake handlers invoked
+  via the refresh pipeline (`textus refresh <key>`, `textus refresh
+  stale`, and read-path `on_stale: sync` / `timed_sync`). Default stays
+  at 30s — opt-in only. Schema validates a positive integer ≤ 3600.
+  Mirrors `sync_budget_ms` plumbing: schema → rules → policy → worker
+  (#54).
+
+### Notes
+
+- `fetch_timeout_seconds` is the worker-side hard cap on the intake
+  call; `sync_budget_ms` is the caller-side wait budget for `timed_sync`
+  on the read path. Two separate concerns, two separate keys.
+- The CLI verbs `textus put --fetch` and `textus hook run` still use the
+  30s constant — only the refresh worker honors the per-rule override in
+  this release.
+- Long timeouts pair with `Timeout.timeout`, which raises in the Ruby
+  thread but does not kill spawned subprocesses. Intake handlers that
+  shell out (e.g. `git clone`) should write to a temp dir and atomically
+  rename so mid-flight aborts leave no observable partial state.
+
 ## 0.14.1 — 2026-05-26
 
 ### Changed

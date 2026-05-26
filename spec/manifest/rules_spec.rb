@@ -46,6 +46,20 @@ RSpec.describe Textus::Manifest::Rules do
       end
     end
 
+    describe "fetch_timeout_seconds" do
+      it "parses fetch_timeout_seconds: from a refresh block" do
+        raw = [{ "match" => "intake.slow.**", "refresh" => { "ttl" => "1h", "on_stale" => "sync", "fetch_timeout_seconds" => 600 } }]
+        set = described_class.parse(raw).for("intake.slow.thing")
+        expect(set.refresh.fetch_timeout_seconds).to eq(600)
+      end
+
+      it "defaults fetch_timeout_seconds to nil when omitted" do
+        raw = [{ "match" => "intake.x.*", "refresh" => { "ttl" => "1h", "on_stale" => "warn" } }]
+        set = described_class.parse(raw).for("intake.x.y")
+        expect(set.refresh.fetch_timeout_seconds).to be_nil
+      end
+    end
+
     describe "promotion" do
       it "parses promotion: { requires: [...] }" do
         raw = [{ "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } }]

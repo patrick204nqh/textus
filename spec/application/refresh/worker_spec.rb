@@ -85,6 +85,36 @@ RSpec.describe Textus::Application::Refresh::Worker do
     end
   end
 
+  def build_store_with_timeout(root, intake_body:, timeout:)
+    textus = File.join(root, ".textus")
+    FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
+    FileUtils.mkdir_p(File.join(textus, "hooks"))
+    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: intake, write_policy: [runner] }
+      entries:
+        - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake } }
+      rules:
+        - match: intake.slow
+          refresh: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
+    YAML
+    File.write(File.join(textus, "hooks", "slow_intake.rb"), intake_body)
+    Textus::Store.new(textus)
+  end
+
+  it "honors a per-rule fetch_timeout_seconds override in the timeout error message" do
+    Dir.mktmpdir do |root|
+      hook_body = "Textus.on(:resolve_intake, :slow_intake) { |store:, config:, args:| sleep 5 }"
+      store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      worker = described_class.new(ctx: ctx, bus: test_bus)
+
+      expect { worker.run("intake.slow") }
+        .to raise_error(Textus::UsageError, /exceeded 1s timeout/)
+    end
+  end
+
   it "raises UsageError immediately when the key has no intake handler" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")

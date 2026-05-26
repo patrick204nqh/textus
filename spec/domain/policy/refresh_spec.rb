@@ -20,6 +20,16 @@ RSpec.describe Textus::Domain::Policy::Refresh do
     end.to raise_error(Textus::UsageError, /on_stale.*one of/)
   end
 
+  it "exposes fetch_timeout_seconds (nil when omitted)" do
+    p = described_class.new(ttl: "1h", on_stale: :warn, sync_budget_ms: nil)
+    expect(p.fetch_timeout_seconds).to be_nil
+  end
+
+  it "passes through fetch_timeout_seconds when set" do
+    p = described_class.new(ttl: "1h", on_stale: :sync, sync_budget_ms: nil, fetch_timeout_seconds: 600)
+    expect(p.fetch_timeout_seconds).to eq(600)
+  end
+
   it "exports a Domain::Freshness::Policy view" do
     p = described_class.new(ttl: "1h", on_stale: :warn, sync_budget_ms: 500)
     fp = p.to_freshness_policy
