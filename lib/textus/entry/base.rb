@@ -25,6 +25,10 @@ module Textus
       def self.validate_against(schema, parsed)
         schema.validate!(parsed["_meta"] || {})
       end
+
+      def self.nested_glob
+        raise NotImplementedError.new("#{name}.nested_glob not implemented")
+      end
     end
   end
 end

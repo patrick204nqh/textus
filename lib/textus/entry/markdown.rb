@@ -34,6 +34,8 @@ module Textus
       end
 
       def self.extensions = [".md"]
+
+      def self.nested_glob = "**/*.md"
     end
   end
 end

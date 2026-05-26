@@ -42,6 +42,8 @@ module Textus
       end
 
       def self.extensions = [".json"]
+
+      def self.nested_glob = "**/*.json"
     end
   end
 end

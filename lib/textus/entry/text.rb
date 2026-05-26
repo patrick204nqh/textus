@@ -18,6 +18,8 @@ module Textus
       end
 
       def self.extensions = [".txt"]
+
+      def self.nested_glob = "**/*.txt"
     end
   end
 end

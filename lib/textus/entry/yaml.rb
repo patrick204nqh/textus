@@ -40,6 +40,8 @@ module Textus
       end
 
       def self.extensions = [".yaml", ".yml"]
+
+      def self.nested_glob = "**/*.{yaml,yml}"
     end
   end
 end
