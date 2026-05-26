@@ -264,4 +264,74 @@ RSpec.describe "Builder :file_published events" do
     end
   end
 end
+
+RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
+  include_context "textus_store_fixture"
+
+  let(:store) { Textus::Store.new(root) }
+  let(:build_use_case) { Textus::Operations.for(store, role: "builder").writes.build }
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "templates"))
+
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: working, write_policy: [human, agent, runner] }
+        - { name: output, write_policy: [builder] }
+      entries:
+        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+        - key: output.catalog-md
+          path: output/catalog.md
+          zone: output
+          schema: null
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name], sort_by: name }
+          template: people.mustache
+        - key: output.catalog-json
+          path: output/catalog.json
+          zone: output
+          format: json
+          schema: null
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name], sort_by: name }
+        - key: output.catalog-yaml
+          path: output/catalog.yaml
+          zone: output
+          format: yaml
+          schema: null
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name], sort_by: name, transform: envelope }
+        - key: output.catalog-txt
+          path: output/catalog.txt
+          zone: output
+          format: text
+          schema: null
+          owner: builder:auto
+          compute: { kind: projection, select: working.people, pluck: [name], sort_by: name }
+          template: people.mustache
+    YAML
+
+    File.write(File.join(root, "templates/people.mustache"), "{{#entries}}- {{name}}\n{{/entries}}")
+    File.write(
+      File.join(root, "zones/working/people/alice.md"),
+      "---\nuid: u-alice\nname: alice\n---\n",
+    )
+  end
+
+  it "markdown: skips write when only generated.at would differ" do
+    build_use_case.call(prefix: "output.catalog-md")
+    path = File.join(root, "zones/output/catalog.md")
+    mtime_before = File.mtime(path)
+    bytes_before = File.binread(path)
+
+    sleep 1.1 # ensure Time.now.iso8601 would round to a later second
+    build_use_case.call(prefix: "output.catalog-md")
+
+    expect(File.mtime(path)).to eq(mtime_before)
+    expect(File.binread(path)).to eq(bytes_before)
+  end
+end
 # rubocop:enable RSpec/MultipleDescribes
