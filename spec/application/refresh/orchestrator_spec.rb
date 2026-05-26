@@ -106,6 +106,41 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       expect(fake_bus.published.map(&:first)).to include(:refresh_backgrounded)
     end
 
+    it "returns Detached without forking when the per-leaf lock is already held (Bug 1)",
+       skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
+      Dir.mktmpdir do |store_root|
+        slow_worker = Class.new do
+          def run(_key)
+            sleep 5
+            {}
+          end
+        end.new
+
+        spawner_calls = []
+        spawner = ->(store_root:, key:) { spawner_calls << [store_root, key] }
+
+        # Force the single-flight probe to fail: stub Lock#try_acquire to return false.
+        allow_any_instance_of(Textus::Infra::Refresh::Lock) # rubocop:disable RSpec/AnyInstance
+          .to receive(:try_acquire).and_return(false)
+
+        orch = described_class.new(
+          worker: slow_worker,
+          bus: fake_bus,
+          store_root: store_root,
+          detached_spawner: spawner,
+        )
+
+        outcome = orch.execute(
+          Textus::Domain::Action::RefreshTimed.new(budget_ms: 50),
+          key: "slow.key",
+        )
+
+        expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
+        expect(spawner_calls).to be_empty
+        expect(fake_bus.published.map(&:first)).not_to include(:refresh_backgrounded)
+      end
+    end
+
     it "returns Outcome::Refreshed when worker finishes within budget" do
       envelope = { "key" => "fast.key" }
       worker = fake_worker.new(envelope)

@@ -60,32 +60,6 @@ RSpec.describe Textus::Application::Context do
     end
   end
 
-  describe "#bypass_freshness?" do
-    it "defaults to false" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "human")
-        expect(ctx.bypass_freshness?).to be(false)
-      end
-    end
-
-    it "is true when the flag is set" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "human", bypass_freshness: true)
-        expect(ctx.bypass_freshness?).to be(true)
-      end
-    end
-
-    it "propagates the flag across #with_role" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "human", bypass_freshness: true)
-        expect(ctx.with_role("builder").bypass_freshness?).to be(true)
-      end
-    end
-  end
-
   describe ".system" do
     it "returns a human-role context bound to the store" do
       Dir.mktmpdir do |root|

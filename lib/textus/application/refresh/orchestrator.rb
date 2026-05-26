@@ -47,6 +47,15 @@ module Textus
 
           if thread.alive?
             thread.kill
+
+            # Single-flight: if a sibling process / earlier fork holds the
+            # per-leaf lock, don't fork another worker — they're already
+            # doing this work.
+            probe = Textus::Infra::Refresh::Lock.new(root: @store_root, key: key)
+            return Textus::Domain::Outcome::Detached.new unless probe.try_acquire
+
+            probe.release
+
             store_view = @store ? Textus::Application::Context.new(store: @store, role: @role) : nil
             payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
             payload[:store] = store_view if store_view

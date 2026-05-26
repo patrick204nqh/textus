@@ -12,11 +12,11 @@ module Textus
         end
 
         def run(key)
-          mentry, path, = @ctx.store.manifest.resolve(key)
+          mentry, path, remaining = @ctx.store.manifest.resolve(key)
           raise UsageError.new("no intake declared for '#{key}'") unless mentry.intake_handler
 
           before_etag = File.exist?(path) ? Etag.for_file(path) : nil
-          result = fetch_with_bus(key, mentry)
+          result = fetch_with_bus(key, mentry, remaining)
           persist_and_notify(key, mentry, result, before_etag)
         end
 
@@ -31,17 +31,21 @@ module Textus
           rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
         end
 
-        def fetch_with_bus(key, mentry)
+        def fetch_with_bus(key, mentry, remaining)
           callable = @ctx.store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)
           @bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
                                          correlation_id: @ctx.correlation_id)
-          call_intake(key, mentry, callable)
+          call_intake(key, mentry, callable, remaining)
         end
 
-        def call_intake(key, mentry, callable)
+        def call_intake(key, mentry, callable, remaining)
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
-            callable.call(store: @ctx, config: mentry.intake_config, args: {})
+            callable.call(
+              store: @ctx,
+              config: mentry.intake_config,
+              args: { trigger_key: key, leaf_segments: remaining || [] },
+            )
           end
         rescue Timeout::Error
           @bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",

@@ -9,6 +9,71 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.15.0 — 2026-05-26
+
+### Breaking
+
+- `Application::Reads::Get#call` is now a **pure read**: it returns the
+  on-disk envelope annotated with a freshness verdict, and never
+  triggers refresh. `Reads::Get.new` no longer accepts `orchestrator:`.
+  Callers that relied on refresh-on-read should switch to
+  `Application::Reads::GetOrRefresh` (new), accessible via
+  `ops.reads.get_or_refresh`. The CLI verb `textus get` is migrated
+  internally; users of `textus get` see no behavior change.
+- `Application::Context#bypass_freshness?` and the `bypass_freshness:`
+  kwarg on `Context.new` / `Operations.for` are **removed**. They
+  shipped in 0.14.4 as a workaround; with `Reads::Get` now pure by
+  default, the flag is dead code. Callers passing `bypass_freshness:`
+  will see `ArgumentError`.
+- `Projection.new` signature is **breaking**: now
+  `Projection.new(reader:, spec:, lister:, transform_resolver:, transform_context:)`.
+  `Projection` no longer constructs its own `Operations` chain. Callers
+  inject collaborators. `Builder::Pipeline` is migrated internally.
+- Intake handlers now receive `args: { trigger_key:, leaf_segments: }`
+  instead of `args: {}`. Handlers that destructure `args` should
+  expect the new keys. Handlers that pass `args` through unchanged
+  are unaffected.
+
+### Fixed
+
+- **Bug 1 / single-flight.** `Refresh::Orchestrator#run_timed` now
+  probes the per-leaf lock before forking the detached refresh
+  worker. If the lock is held (by a sibling process or earlier fork),
+  the orchestrator returns `Outcome::Detached` without spawning a
+  redundant worker. Prevents wasted forks when the same key is read
+  concurrently across processes.
+- **Bug 2 / leaf-aware intake.** `Refresh::Worker` now keeps the
+  `remaining` segments from `Manifest#resolve(key)` and passes them
+  to the intake handler as `args: { trigger_key:, leaf_segments: }`.
+  Handlers can scope to one leaf instead of re-processing the full
+  parent `intake_config` for every leaf refresh.
+- **`textus refresh stale` now exits 0 on success.** Previously the
+  verb fell off the end returning `nil`, which propagated up through
+  `CLI.run` to `exe/textus:4`'s `exit nil` and raised `TypeError`,
+  exit-coding 1 on every successful refresh. Fixed by returning an
+  explicit Integer from the verb. The verb return-value contract is
+  now codified: every verb's `#call` returns Integer (or `nil` →
+  treated as 0); `CLI.run` coerces. (#61)
+
+### Added
+
+- `Application::Reads::GetOrRefresh` — explicit composition of pure
+  `Reads::Get` with the refresh orchestrator. Use for interactive
+  reads that want freshest-obtainable envelopes.
+- `ops.reads.get_or_refresh` accessor.
+
+### Migration
+
+If your code (or hook / handler / extension) called:
+
+| Old | New |
+|---|---|
+| `ops.reads.get.call(key)` to get the freshest envelope | `ops.reads.get_or_refresh.call(key)` |
+| `ops.reads.get.call(key)` for pure read | unchanged; now also pure semantics |
+| `Operations.for(store, bypass_freshness: true)` | `Operations.for(store)` |
+| `Projection.new(store, spec)` | `Projection.new(reader:, spec:, lister:, transform_resolver:, transform_context:)` — see `builder/pipeline.rb` for canonical wiring |
+| Handler signature `lambda { \|store:, config:, args:\| ... }` with `args == {}` | unchanged — `args` is now populated with `:trigger_key` and `:leaf_segments`; handlers that ignore them keep working |
+
 ## 0.14.4 — 2026-05-26
 
 ### Fixed

@@ -9,13 +9,12 @@ module Textus
         new(store: store, role: "human")
       end
 
-      def initialize(store:, role:, correlation_id: nil, clock: Time, dry_run: false, bypass_freshness: false)
+      def initialize(store:, role:, correlation_id: nil, clock: Time, dry_run: false)
         @store             = store
         @role              = role.to_s
         @correlation_id    = correlation_id || SecureRandom.uuid
         @clock             = clock
         @dry_run           = dry_run
-        @bypass_freshness  = bypass_freshness
         @now               = nil
       end
 
@@ -25,10 +24,6 @@ module Textus
 
       def dry_run?
         @dry_run
-      end
-
-      def bypass_freshness?
-        @bypass_freshness
       end
 
       def can_write?(zone)
@@ -46,7 +41,6 @@ module Textus
           correlation_id: @correlation_id,
           clock: @clock,
           dry_run: @dry_run,
-          bypass_freshness: @bypass_freshness,
         )
       end
     end

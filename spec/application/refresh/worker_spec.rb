@@ -137,4 +137,43 @@ RSpec.describe Textus::Application::Refresh::Worker do
         .to raise_error(Textus::UsageError, /no intake declared/)
     end
   end
+
+  it "passes trigger_key and leaf_segments in args (issue #59 follow-up: Bug 2)" do # rubocop:disable RSpec/ExampleLength
+    Dir.mktmpdir do |root|
+      textus = File.join(root, ".textus")
+      FileUtils.mkdir_p(File.join(textus, "zones", "intake", "vendor"))
+      FileUtils.mkdir_p(File.join(textus, "hooks"))
+
+      File.write(File.join(textus, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: intake, write_policy: [runner] }
+        entries:
+          - key: intake.vendor
+            path: intake/vendor
+            zone: intake
+            nested: true
+            intake: { handler: capturing_intake }
+      YAML
+
+      File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)
+        Textus.on(:resolve_intake, :capturing_intake) do |store:, config:, args:|
+          Thread.current[:captured_args] = args
+          { _meta: { "name" => "agent-eval" }, body: "x" }
+        end
+      RUBY
+
+      Thread.current[:captured_args] = nil
+      store = Textus::Store.new(textus)
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      worker = described_class.new(ctx: ctx, bus: test_bus)
+
+      worker.run("intake.vendor.affaan-m.agent-eval")
+
+      expect(Thread.current[:captured_args]).to include(
+        trigger_key: "intake.vendor.affaan-m.agent-eval",
+        leaf_segments: %w[affaan-m agent-eval],
+      )
+    end
+  end
 end
