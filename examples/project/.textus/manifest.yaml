@@ -32,10 +32,11 @@ entries:
     template: orientation.mustache
     inject_intro: true
     publish_to:
-      - "../CLAUDE.md"
-      - "../AGENTS.md"
+      - "CLAUDE.md"
+      - "AGENTS.md"
     compute:
       kind: projection
       select:
         - identity.project
         - working.runbooks
+      transform: orientation_reducer
