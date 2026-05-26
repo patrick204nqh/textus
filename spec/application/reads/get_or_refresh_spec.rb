@@ -65,7 +65,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
 
       env = use_case.call("working.doc")
       expect(env).not_to be_nil
-      expect(env.freshness["stale"]).to be(false)
+      expect(env.freshness.stale).to be(false)
     end
   end
 
@@ -79,8 +79,8 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)
 
       env = use_case.call("working.doc")
-      expect(env.freshness["stale"]).to be(true)
-      expect(env.freshness["refreshing"]).to be(false)
+      expect(env.freshness.stale).to be(true)
+      expect(env.freshness.refreshing).to be(false)
     end
   end
 
@@ -94,7 +94,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)
 
       env = use_case.call("working.doc")
-      expect(env.freshness["refreshing"]).to be(true)
+      expect(env.freshness.refreshing).to be(true)
     end
   end
 

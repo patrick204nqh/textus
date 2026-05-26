@@ -2,19 +2,14 @@ module Textus
   class CLI
     class Group < Verb
       class << self
+        # Subcommands are auto-derived: any Verb descendant whose
+        # `parent_group` is this group counts as a subcommand. Sorted
+        # alphabetically by command_name for stable help output.
         def subcommands
-          @subcommands ||= {}
-        end
-
-        def cli_name
-          @cli_name || raise("subclass must define cli_name")
-        end
-
-        attr_writer :cli_name
-
-        def inherited(subclass)
-          super
-          subclass.instance_variable_set(:@subcommands, {})
+          Verb.descendants
+              .select { |k| k.parent_group == self && k.command_name }
+              .sort_by(&:command_name)
+              .to_h { |k| [k.command_name, k] }
         end
 
         def needs_store?
@@ -24,18 +19,19 @@ module Textus
       end
 
       def parse(argv)
+        subs = self.class.subcommands
         subname = argv.shift
         if subname.nil?
           raise UsageError.new(
-            "#{self.class.cli_name} requires a subcommand: #{self.class.subcommands.keys.join(", ")}",
+            "#{self.class.command_name} requires a subcommand: #{subs.keys.join(", ")}",
           )
         end
 
-        @sub_klass = self.class.subcommands[subname]
+        @sub_klass = subs[subname]
         unless @sub_klass
           raise UsageError.new(
-            "unknown #{self.class.cli_name} subcommand '#{subname}'. " \
-            "Valid: #{self.class.subcommands.keys.join(", ")}",
+            "unknown #{self.class.command_name} subcommand '#{subname}'. " \
+            "Valid: #{subs.keys.join(", ")}",
           )
         end
 

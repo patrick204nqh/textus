@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Freshness < Verb
+        command_name "freshness"
+
         option :prefix, "--prefix=KEY"
         option :zone, "--zone=Z"
 

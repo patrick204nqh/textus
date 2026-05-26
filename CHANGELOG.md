@@ -9,6 +9,77 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.16.0 — 2026-05-26
+
+Type cleanup and infra glue. Wire format (`textus/3`) and CLI JSON output
+are byte-identical to 0.15.0. Every change is gem-side.
+
+### Breaking (Ruby API)
+
+- **`Envelope#freshness`** is now a `Textus::Domain::Freshness` value (a
+  `Data.define(:stale, :refreshing, :reason, :refresh_error, :checked_at,
+  :ttl_remaining_ms)`), not a `Hash`. Field access replaces string-key
+  lookup: `env.freshness.stale` (was `env.freshness["stale"]`). The
+  field formerly emitted as `"stale_reason"` on the wire is named
+  `:reason` on the value object; `Freshness#to_h_for_wire` still emits
+  `"stale_reason"`, so JSON output is unchanged. New fields
+  (`:checked_at`, `:ttl_remaining_ms`) are gem-side only and not on the
+  wire.
+- **`Manifest#resolve(key)`** now returns a `Textus::Manifest::Resolution`
+  value (`Data.define(:entry, :path, :remaining)`) instead of an
+  `[entry, path, remaining]` tuple. Callers that destructured the array
+  must switch to field access: `res = manifest.resolve(key); res.entry`.
+  Raises `UnknownKey` on miss (unchanged).
+- **`Textus::Store.mint_uid`** is removed. Use `Textus::Uid.mint`. A
+  companion `Textus::Uid.valid?(str)` predicate is added.
+- **`Hooks::Dispatcher.new(audit_log:)`** no longer accepts
+  `audit_log:`. The dispatcher is now a pure pub/sub. Hook-error audit
+  rows are written by `Textus::Infra::AuditSubscriber`, which `Store`
+  attaches at boot. The NDJSON audit line format is unchanged
+  byte-for-byte.
+
+### Added
+
+- `Textus::Domain::Freshness` — typed envelope-annotation value object.
+- `Textus::Manifest::Resolution` — typed key-resolution value object.
+- `Textus::Uid` — `.mint` / `.valid?` for the 16-hex UID format.
+- `Textus::Infra::AuditSubscriber` — attaches to the event bus and
+  writes the `verb: "event_error"` audit row when a user hook raises.
+- `CLI::Verb.command_name "X"` and `CLI::Verb.parent_group Group::Y`
+  DSL. Adding a new CLI verb is now a single declaration in the verb's
+  own file; the top-level `VERBS` table and group subcommand maps are
+  auto-derived from descendants. Help-output ordering is alphabetical
+  by command name.
+
+### Changed
+
+- `CLI::Group` no longer exposes the `cli_name` writer — use
+  `command_name` (the prior `cli_name` reader is removed).
+- `Application::Reads::Get` and `Reads::GetOrRefresh` construct
+  `Freshness` values directly; their public signatures are unchanged.
+
+### Deprecated
+
+- `Textus::CLI::VERBS` constant. Still resolves (via `const_missing` to
+  the auto-derived table) for backward compatibility; will be removed
+  in a future minor. Prefer `Textus::CLI.verbs`.
+
+### Notes for embedders
+
+- Group subcommand error messages now list subcommands alphabetically
+  (e.g., `key requires a subcommand: mv, normalize, uid` rather than
+  `mv, uid, normalize`).
+- Lifecycle audit appends for `verb: "put"` / `"delete"` / `"rename"`
+  still flow through `Store::Writer` and `Application::Writes::Mv`.
+  Centralizing those in a lifecycle subscriber is deferred to 0.18
+  port-extraction; it requires event payloads to carry
+  `etag_before`/`etag_after`, which they don't yet.
+
+### ADRs
+
+- [ADR 0008 — Freshness and Resolution value objects](docs/architecture/decisions/0008-freshness-and-resolution-types.md)
+- [ADR 0009 — AuditSubscriber split from Hooks::Dispatcher](docs/architecture/decisions/0009-audit-subscriber-split.md)
+
 ## 0.15.0 — 2026-05-26
 
 ### Breaking

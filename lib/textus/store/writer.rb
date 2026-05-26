@@ -15,7 +15,7 @@ module Textus
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Put).
       def write_envelope_to_disk(key, mentry:, payload:, ctx:, if_etag: nil)
-        _, path, = @manifest.resolve(key)
+        path = @manifest.resolve(key).path
 
         meta = payload.meta || {}
         strategy = Entry.for_format(mentry.format)
@@ -84,7 +84,7 @@ module Textus
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Delete).
       def delete_envelope_from_disk(key, ctx:, if_etag: nil)
-        _, path, = @manifest.resolve(key)
+        path = @manifest.resolve(key).path
         raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless File.exist?(path)
 
         etag_before = Etag.for_file(path)

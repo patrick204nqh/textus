@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class Hooks < Verb
+        command_name "list"
+        parent_group Group::Hook
+
         option :event_filter, "--event=E"
 
         def call(store) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity

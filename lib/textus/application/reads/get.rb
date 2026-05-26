@@ -23,17 +23,19 @@ module Textus
           policy = refresh_policy.to_freshness_policy
           verdict = @evaluator.call(policy, envelope, now: @ctx.now)
 
-          envelope.with(freshness: {
-                          "stale" => verdict.stale?,
-                          "stale_reason" => verdict.reason,
-                          "refreshing" => false,
-                        })
+          envelope.with(freshness: Textus::Domain::Freshness.build(
+            stale: verdict.stale?,
+            reason: verdict.reason,
+            refreshing: false,
+          ))
         end
 
         private
 
         def annotate_fresh(envelope)
-          envelope.with(freshness: { "stale" => false, "stale_reason" => nil, "refreshing" => false })
+          envelope.with(freshness: Textus::Domain::Freshness.build(
+            stale: false, reason: nil, refreshing: false,
+          ))
         end
       end
     end

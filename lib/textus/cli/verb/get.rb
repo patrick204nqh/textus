@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Get < Verb
+        command_name "get"
+
         option :as_flag, "--as=ROLE"
 
         def call(store)

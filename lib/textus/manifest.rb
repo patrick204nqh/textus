@@ -1,5 +1,6 @@
 require "yaml"
 require_relative "manifest/schema"
+require_relative "manifest/resolution"
 
 module Textus
   class Manifest
@@ -86,7 +87,7 @@ module Textus
       rules.for(key)
     end
 
-    # Returns [Manifest::Entry, resolved_path, remaining_segments]
+    # Returns a Resolution(entry:, path:, remaining:) value object.
     def resolve(key)
       validate_key!(key)
       segments = key.split(".")
@@ -101,7 +102,7 @@ module Textus
       remaining = segments[esegs.length..]
       if remaining.empty?
         path = resolve_leaf_path(entry)
-        [entry, path, []]
+        Resolution.new(entry: entry, path: path, remaining: [])
       else
         raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless entry.nested
 
@@ -111,7 +112,7 @@ module Textus
                  primary_ext = Textus::Entry.for_format(entry.format).extensions.first
                  File.join(@root, "zones", entry.path, *remaining) + primary_ext
                end
-        [entry, path, remaining]
+        Resolution.new(entry: entry, path: path, remaining: remaining)
       end
     end
 

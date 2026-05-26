@@ -74,8 +74,8 @@ RSpec.describe Textus::Application::Reads::Get do
       write_doc(root)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
       env = described_class.new(ctx: ctx).call("working.doc")
-      expect(env.freshness["stale"]).to be(false)
-      expect(env.freshness["refreshing"]).to be(false)
+      expect(env.freshness.stale).to be(false)
+      expect(env.freshness.refreshing).to be(false)
     end
   end
 
@@ -85,7 +85,7 @@ RSpec.describe Textus::Application::Reads::Get do
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
       env = described_class.new(ctx: ctx).call("working.doc")
-      expect(env.freshness["stale"]).to be(false)
+      expect(env.freshness.stale).to be(false)
     end
   end
 
@@ -95,8 +95,8 @@ RSpec.describe Textus::Application::Reads::Get do
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
       ctx = Textus::Application::Context.new(store: store, role: "runner")
       env = described_class.new(ctx: ctx).call("working.doc")
-      expect(env.freshness["stale"]).to be(true)
-      expect(env.freshness["refreshing"]).to be(false)
+      expect(env.freshness.stale).to be(true)
+      expect(env.freshness.refreshing).to be(false)
     end
   end
 

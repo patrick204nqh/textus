@@ -53,7 +53,7 @@ RSpec.describe "Reader honors on_stale policy" do
       envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.foo")
 
       expect(envelope.stale?).to be(true)
-      expect(envelope.freshness["stale_reason"]).to match(/ttl exceeded/)
+      expect(envelope.freshness.reason).to match(/ttl exceeded/)
       expect(envelope.refreshing?).to be(false)
       expect(Thread.current[:refresh_count]).to eq(0)
     end

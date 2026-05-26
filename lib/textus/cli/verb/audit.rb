@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Audit < Verb
+        command_name "audit"
+
         option :key_filter, "--key=KEY"
         option :zone, "--zone=Z"
         option :role_filter, "--role=ROLE"

@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class SchemaMigrate < Verb
+        command_name "migrate"
+        parent_group Group::Schema
+
         option :rename, "--rename=O:N"
 
         def call(store)

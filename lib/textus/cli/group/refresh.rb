@@ -2,8 +2,7 @@ module Textus
   class CLI
     class Group
       class Refresh < Group
-        self.cli_name = "refresh"
-        subcommands["stale"] = Verb::RefreshStale
+        command_name "refresh"
 
         def parse(argv)
           if argv.first == "stale"

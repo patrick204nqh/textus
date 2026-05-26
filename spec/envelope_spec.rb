@@ -97,13 +97,43 @@ RSpec.describe Textus::Envelope do
       env = described_class.build(
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
-      ).with(freshness: { "stale" => true, "refreshing" => false })
+      ).with(freshness: Textus::Domain::Freshness.build(
+        stale: true, refreshing: false, reason: "ttl exceeded",
+      ))
       h = env.to_h_for_wire
       aggregate_failures do
         expect(h["stale"]).to be true
         expect(h["refreshing"]).to be false
+        expect(h["stale_reason"]).to eq("ttl exceeded")
         expect(h).not_to have_key("freshness")
       end
+    end
+
+    it "does not emit gem-side-only freshness fields on the wire" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: {}, body: "x", etag: "e"
+      ).with(freshness: Textus::Domain::Freshness.build(
+        stale: false, refreshing: false,
+        checked_at: Time.utc(2026, 1, 1), ttl_remaining_ms: 1234
+      ))
+      h = env.to_h_for_wire
+      aggregate_failures do
+        expect(h).not_to have_key("checked_at")
+        expect(h).not_to have_key("ttl_remaining_ms")
+      end
+    end
+
+    it "asserts freshness is a Freshness or nil (not a Hash)" do
+      env = described_class.build(
+        key: "k", mentry: mentry, path: "/x/y",
+        meta: {}, body: "x", etag: "e"
+      )
+      expect(env.freshness).to be_nil
+
+      env2 = env.with(freshness: Textus::Domain::Freshness.build(stale: false))
+      expect(env2.freshness).to be_a(Textus::Domain::Freshness)
+      expect(env2.freshness).not_to be_a(Hash)
     end
   end
 
@@ -120,7 +150,7 @@ RSpec.describe Textus::Envelope do
     end
 
     it "stale? returns true when freshness.stale is true" do
-      env = base_env.with(freshness: { "stale" => true })
+      env = base_env.with(freshness: Textus::Domain::Freshness.build(stale: true))
       expect(env.stale?).to be true
     end
 
@@ -129,7 +159,7 @@ RSpec.describe Textus::Envelope do
     end
 
     it "refreshing? returns the boolean refreshing flag" do
-      env = base_env.with(freshness: { "stale" => true, "refreshing" => true })
+      env = base_env.with(freshness: Textus::Domain::Freshness.build(stale: true, refreshing: true))
       expect(env.refreshing?).to be true
     end
   end

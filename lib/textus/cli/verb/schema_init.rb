@@ -2,6 +2,9 @@ module Textus
   class CLI
     class Verb
       class SchemaInit < Verb
+        command_name "init"
+        parent_group Group::Schema
+
         option :from_key, "--from=KEY"
 
         def call(store)

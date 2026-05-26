@@ -69,7 +69,7 @@ RSpec.describe "textus rule group" do
       run(["rule"])
       err = JSON.parse(stdout.string)
       expect(err["code"]).to eq("usage")
-      expect(stderr.string).to match(/rule requires a subcommand:.*list.*explain/i)
+      expect(stderr.string).to match(/rule requires a subcommand:.*explain.*list/i)
     end
   end
 end

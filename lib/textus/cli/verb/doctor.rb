@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Doctor < Verb
+        command_name "doctor"
+
         option :checks, "--check=NAME"
 
         def call(store)

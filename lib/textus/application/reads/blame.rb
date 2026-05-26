@@ -23,7 +23,9 @@ module Textus
         private
 
         def resolve_path(key)
-          mentry, path, = @ctx.store.manifest.resolve(key)
+          res = @ctx.store.manifest.resolve(key)
+          mentry = res.entry
+          path = res.path
           # Nested entries resolve to a file under the entry path; leaf entries
           # already have a fully-resolved path. Either way `path` is what git
           # needs to know about.

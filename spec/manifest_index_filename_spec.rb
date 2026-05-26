@@ -46,7 +46,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   it "resolve(key) returns the SKILL.md path for a sub-directory" do
     write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
 
-    _entry, path, _remaining = Textus::Manifest.load(root).resolve("skills.ask")
+    path = Textus::Manifest.load(root).resolve("skills.ask").path
 
     expect(path).to eq(File.join(root, "zones/skills/ask/SKILL.md"))
   end

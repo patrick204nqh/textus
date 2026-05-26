@@ -7,8 +7,7 @@ require "fileutils"
 require "tmpdir"
 
 RSpec.describe Textus::Hooks::Dispatcher do
-  let(:audit) { instance_double(Textus::Store::AuditLog, append: nil) }
-  let(:bus)   { described_class.new(audit_log: audit) }
+  let(:bus) { described_class.new }
 
   it "calls every subscriber in registration order" do
     seen = []
@@ -18,15 +17,15 @@ RSpec.describe Textus::Hooks::Dispatcher do
     expect(seen).to eq([[:a, "k"], [:b, "k"]])
   end
 
-  it "audits and continues when a subscriber raises" do
+  it "invokes on_error callbacks and continues when a subscriber raises" do
+    errors = []
+    bus.on_error { |event:, hook:, key:, error:, **| errors << [event, hook, key, error.message] }
     ran = nil
     bus.subscribe(:entry_put, :boom) { |**| raise "bang" }
     bus.subscribe(:entry_put, :ok)   { |key:, **| ran = key }
     bus.publish(:entry_put, store: :view, key: "k", envelope: {})
     expect(ran).to eq("k")
-    expect(audit).to have_received(:append).with(
-      hash_including(verb: "event_error", key: "k"),
-    )
+    expect(errors).to eq([[:entry_put, :boom, "k", "bang"]])
   end
 
   it "filters by key glob when keys: is provided" do

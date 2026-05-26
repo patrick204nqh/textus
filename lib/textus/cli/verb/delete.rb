@@ -2,6 +2,8 @@ module Textus
   class CLI
     class Verb
       class Delete < Verb
+        command_name "delete"
+
         option :as_flag, "--as=ROLE"
         option :if_etag, "--if-etag=E"
 
