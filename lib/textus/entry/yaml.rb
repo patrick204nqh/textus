@@ -43,6 +43,22 @@ module Textus
 
       def self.nested_glob = "**/*.{yaml,yml}"
 
+      def self.serialize_for_put(meta:, body:, content:, path:)
+        raise UsageError.new("put for yaml requires content: or body:") if content.nil? && (body.nil? || body.to_s.empty?)
+
+        if content.nil?
+          begin
+            parsed = parse(body.to_s, path: path)
+          rescue BadFrontmatter => e
+            raise BadContent.new(path, "bad_content: #{e.message}")
+          end
+          [body.to_s, parsed["_meta"], body.to_s, parsed["content"]]
+        else
+          bytes = serialize(meta: meta, body: "", content: content)
+          [bytes, meta, bytes, content]
+        end
+      end
+
       def self.enforce_name_match!(path, meta)
         return unless meta.is_a?(Hash) && meta["name"]
 

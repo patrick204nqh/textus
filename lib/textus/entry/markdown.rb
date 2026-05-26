@@ -37,6 +37,13 @@ module Textus
 
       def self.nested_glob = "**/*.md"
 
+      def self.serialize_for_put(meta:, body:, content:, path:)
+        _ = path
+        _ = content
+        bytes = serialize(meta: meta || {}, body: body.to_s)
+        [bytes, meta, body.to_s, nil]
+      end
+
       def self.enforce_name_match!(path, meta)
         return unless meta.is_a?(Hash) && meta["name"]
 

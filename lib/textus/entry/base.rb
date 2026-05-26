@@ -41,6 +41,14 @@ module Textus
       def self.enforce_name_match!(_path, _meta)
         raise NotImplementedError.new("#{name}.enforce_name_match! not implemented")
       end
+
+      def self.serialize_for_put(meta:, body:, content:, path:)
+        _ = meta
+        _ = body
+        _ = content
+        _ = path
+        raise NotImplementedError.new("#{name}.serialize_for_put not implemented")
+      end
     end
   end
 end

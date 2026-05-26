@@ -74,27 +74,10 @@ module Textus
       end
 
       def serialize_for_put(mentry:, path:, strategy:, meta:, body:, content:)
-        case mentry.format
-        when "markdown", "text"
-          bytes = strategy.serialize(meta: meta, body: body.to_s)
-          [bytes, meta, body.to_s, nil]
-        when "json", "yaml"
-          raise UsageError.new("put for #{mentry.format} requires content: or body:") if content.nil? && (body.nil? || body.to_s.empty?)
-
-          if content.nil?
-            begin
-              parsed = strategy.parse(body.to_s, path: path)
-            rescue BadFrontmatter => e
-              raise BadContent.new(path, "bad_content: #{e.message}")
-            end
-            [body.to_s, parsed["_meta"], body.to_s, parsed["content"]]
-          else
-            bytes = strategy.serialize(meta: meta, body: "", content: content)
-            [bytes, meta, bytes, content]
-          end
-        else
-          raise UsageError.new("unknown format #{mentry.format.inspect}")
-        end
+        _ = strategy
+        Textus::Entry.for_format(mentry.format).serialize_for_put(
+          meta: meta, body: body, content: content, path: path,
+        )
       end
 
       # Pure I/O: resolve path, validate etag, delete from disk, audit. No
