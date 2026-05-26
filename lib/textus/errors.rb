@@ -122,6 +122,18 @@ module Textus
     def initialize(m) = super("io_error", m, exit_code: 64)
   end
 
+  class BuildInProgress < Error
+    def initialize(holder)
+      super(
+        "build_in_progress",
+        "textus build already running (#{holder})",
+        details: { "holder" => holder },
+        exit_code: 75,
+        hint: "wait for the running build to finish, or check for a recursive hook trigger"
+      )
+    end
+  end
+
   class UsageError < Error
     def initialize(m, hint: nil) = super("usage", m, exit_code: 2, hint: hint)
   end
