@@ -13,20 +13,12 @@ Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC
 
 Two versions, deliberately independent:
 
-- **Protocol wire string:** `textus/3`. Stable; breaking changes require `textus/4`.
-- **Gem version:** semver, currently `0.11.0`. The gem version is decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
+- **Gem version:** semver, currently `0.14.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
-### Upgrading from textus/2
-
-textus 0.12.0 does not include a built-in migrator. If you are upgrading from
-a textus/2 store (gem versions ≤ 0.10.x), first install textus 0.11.x and run:
-
-    textus migrate --to=textus/3
-
-Then upgrade to 0.12.0. Pre-0.11.0 audit-log rows with `role: ai|script|build`
-are tolerated verbatim by the reader — no rewrite step required.
+See [CHANGELOG.md](CHANGELOG.md) for per-release notes.
 
 ## Install
 
@@ -87,6 +79,8 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 - **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/output/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `transform`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
+- **Split build/publish (v0.14.0).** `Application::Writes::Build` materializes generator-zone entries; `Application::Writes::Publish` copies nested leaves to `publish_each` targets. The `textus build` CLI verb calls both and merges results, so wire output is unchanged.
+- **Typed envelopes (v0.14.0).** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key normalize --dry-run|--write` rewrites existing stores with illegal segments deterministically.
 - **`textus intro`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table. The boot signal for any agent — one tool call and it knows your store.
@@ -162,7 +156,7 @@ Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintai
 bundle exec rspec
 ```
 
-~490 examples; includes conformance fixtures A–I from SPEC §12.
+~637 examples; includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 
