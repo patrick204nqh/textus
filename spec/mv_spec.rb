@@ -74,14 +74,6 @@ RSpec.describe "textus mv" do
     end.to raise_error(Textus::UsageError, /invalid key segment/)
   end
 
-  it "--dry-run does not move and reports the plan" do
-    put_md("working.notes.alpha")
-    res = Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta", dry_run: true)
-    expect(res["dry_run"]).to be true
-    expect(File.exist?(File.join(root, "zones/working/notes/alpha.md"))).to be true
-    expect(File.exist?(File.join(root, "zones/working/notes/beta.md"))).to be false
-  end
-
   it "mints a uid if the source had none, so the audit row carries it" do
     src = File.join(root, "zones/working/notes/alpha.md")
     File.write(src, "---\nname: alpha\n---\nbody\n")

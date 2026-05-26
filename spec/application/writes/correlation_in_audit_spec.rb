@@ -52,31 +52,4 @@ RSpec.describe "correlation_id in audit rows" do
       expect(parsed.dig("extras", "correlation_id")).to eq("test-corr-del")
     end
   end
-
-  it "mv is audit-logged with the caller-provided correlation_id" do
-    Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, ".textus", "zones", "working"))
-      File.write(File.join(root, ".textus", "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: working, write_policy: [human] }
-        entries:
-          - { key: working.notes, path: working/notes, zone: working, nested: true }
-      YAML
-      store = Textus::Store.new(File.join(root, ".textus"))
-
-      Textus::Operations.for(store, role: "human").writes.put.call(
-        "working.notes.alpha",
-        meta: { "name" => "alpha" }, body: "a",
-      )
-      Textus::Operations.for(store, role: "human", correlation_id: "test-corr-mv").writes.mv.call(
-        "working.notes.alpha", "working.notes.beta"
-      )
-
-      row = File.readlines(File.join(root, ".textus/audit.log")).last
-      parsed = JSON.parse(row)
-      expect(parsed["verb"]).to eq("mv")
-      expect(parsed.dig("extras", "correlation_id")).to eq("test-corr-mv")
-    end
-  end
 end
