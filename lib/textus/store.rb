@@ -1,16 +1,8 @@
 require "fileutils"
-require "securerandom"
 
 module Textus
   class Store
     attr_reader :root, :manifest, :registry, :reader, :writer, :bus
-
-    # A Textus UID: 16 lowercase hex chars (SecureRandom.hex(8)). Not a UUID —
-    # short on purpose. Random enough for collision-never-in-practice within a
-    # single store.
-    def self.mint_uid
-      SecureRandom.hex(8)
-    end
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
