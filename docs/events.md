@@ -65,7 +65,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 | `:accepted` | pubsub | A pending proposal was promoted into its target zone. |
 | `:published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
 | `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:deleted` are suppressed — `:mv` is the sole signal. Payload: `{ key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
-| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `store.reject`). Counterpart to `:accepted`. Payload: `{ key:, target_key: }`. |
+| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `Operations.writes.reject`). Counterpart to `:accepted`. Payload: `{ key:, target_key: }`. |
 | `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
 
 ### 2.1 Refresh lifecycle events

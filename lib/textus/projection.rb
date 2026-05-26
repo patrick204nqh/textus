@@ -40,7 +40,7 @@ module Textus
     def apply_reducer(rows)
       name = @spec["transform"] or return rows
       callable = @store.registry.rpc_callable(:transform_rows, name)
-      view = Application::Context.new(store: @store, role: "human")
+      view = Application::Context.system(@store)
       Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
         callable.call(store: view, rows: rows, config: @spec["transform_config"] || {})
       end

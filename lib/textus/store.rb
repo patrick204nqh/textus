@@ -45,8 +45,7 @@ module Textus
       load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
-      view = Textus::Application::Context.new(store: self, role: "human")
-      @bus.publish(:store_loaded, store: view)
+      @bus.publish(:store_loaded, store: Textus::Application::Context.system(self))
     end
 
     def load_hooks
