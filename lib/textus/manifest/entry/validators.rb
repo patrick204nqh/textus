@@ -4,6 +4,7 @@ module Textus
       module Validators
         REGISTERED = [
           Events,
+          PublishEach,
         ].freeze
 
         def self.run_all(entry)
