@@ -9,6 +9,119 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.18.0 — 2026-05-27
+
+Port extraction finishes the hexagonal trajectory. `Store::Reader` and
+`Store::Writer` were disguised application code under an infra
+namespace; this release replaces them with a true I/O port
+(`Infra::Storage::FileStore`, bytes only) and lifts their orchestration
+into `Application::Writes::EnvelopeIO` and the existing
+`Application::Reads::*`. `Store` becomes a composition root: nothing
+else. Wire format (`textus/3`) and audit log NDJSON line format are
+byte-identical to 0.17.0 — every change is gem-side.
+
+### Breaking (Ruby API)
+
+- **`Store::Reader` and `Store::Writer` are deleted.** Both classes
+  were doing application work (serialize, UID inject, name-match,
+  schema validate, etag negotiate, audit append, event publish) under
+  an infra label. Their methods move to flat `Operations` calls:
+  ```
+  store.reader.get(key)                  →  Textus::Operations#get(key)
+  store.reader.read_raw_envelope(key)    →  Textus::Operations#get(key)
+  store.reader.list(prefix:, zone:)      →  Textus::Operations#list(prefix:, zone:)
+  store.reader.where(key)                →  Textus::Operations#where(key)
+  store.reader.uid(key)                  →  Textus::Operations#uid(key)
+  store.reader.schema_envelope(key)      →  Textus::Operations#schema_envelope(key)
+  store.reader.published                 →  Textus::Operations#published
+  store.reader.stale(...)                →  Textus::Operations#stale(...)
+  store.reader.deps(key)                 →  Textus::Operations#deps(key)
+  store.reader.rdeps(key)                →  Textus::Operations#rdeps(key)
+  store.reader.validate_all              →  Textus::Operations#validate_all
+
+  store.writer.write_envelope_to_disk    →  Textus::Operations#put(key, ...)
+  store.writer.delete_envelope_from_disk →  Textus::Operations#delete(key, ...)
+  ```
+- **`Store#schema_for(name)` is deleted.** Schemas live on a dedicated
+  cache:
+  ```
+  store.schema_for(name)                 →  store.schemas.fetch(name)
+  ```
+- **Infra/Domain relocations.** Files that were `Store::*` because the
+  namespace was a catch-all now live in the layer they belong to:
+  ```
+  Textus::Store::AuditLog                →  Textus::Infra::AuditLog
+  Textus::Store::Sentinel                →  Textus::Domain::Sentinel
+  Textus::Store::Staleness               →  Textus::Domain::Staleness
+  Textus::Store::Validator               →  Textus::Application::Reads::Validator
+  ```
+- **Write use-case constructors take `envelope_io:`.**
+  `Application::Writes::Put.new(ctx:, envelope_io:)` — same for
+  `Delete` and `Mv`. External code that constructed write use cases
+  directly adds the kwarg.
+- **Note.** Most embedders construct use cases via
+  `Textus::Operations.for(store)`. That constructor still works
+  without changes — `Operations#for` wires `envelope_io:` from the
+  store. Embedders on the recommended path see no breakage.
+
+### Added
+
+- **`Textus::Infra::Storage::FileStore`** — pure I/O port. `read`,
+  `write`, `delete`, `exists?`, `etag` — bytes in, bytes out. No
+  serialization, no schema, no manifest, no events. The seam that
+  makes non-file storage backends possible.
+- **`Textus::Schemas`** — eager-loading schema cache. Reads the
+  `_schemas/**` zone at boot, exposes `fetch(name)` and `each`.
+  Replaces the on-demand `Store#schema_for` lookup.
+- **`Textus::Application::Writes::EnvelopeIO`** — the write pipeline
+  collaborator. Serializes the envelope, validates against its
+  schema, negotiates etag, writes via `FileStore`, appends to audit,
+  publishes the event. The shared orchestration that `Put`,
+  `Delete`, and `Mv` previously duplicated through `Store::Writer`.
+
+### Internal
+
+- **`Store` is a composition root.** Its responsibilities are
+  construction and exposure: `manifest`, `schemas`, `file_store`,
+  `audit_log`, `bus`, `registry`, `root`. No `reader`, no `writer`,
+  no `schema_for`. Hook loading (`load_hooks`) and operations
+  exposure (`operations`) remain — both delegate to dedicated
+  collaborators.
+- **Read use cases read from `file_store`/`manifest`/`schemas`
+  directly.** `Reads::Get`, `Reads::List`, `Reads::Where`,
+  `Reads::Stale`, `Reads::Deps`, etc., no longer route through a
+  reader facade. The path is `Operations → use case → ports`.
+
+### Wire format / audit format
+
+Unchanged. `textus/3` envelopes written by 0.17.0 round-trip through
+0.18.0 byte-for-byte; audit log NDJSON lines are bidirectionally
+compatible.
+
+### Migrating from 0.17
+
+Mechanical for embedders; transparent for CLI users.
+
+```
+# Reads
+store.reader.get(key)        →  ops.get(key)
+store.reader.list(prefix: x) →  ops.list(prefix: x)
+store.reader.stale(...)      →  ops.stale(...)
+# (and the rest of the table above)
+
+# Writes — recommended path stays the same
+ops.put(key, body: x)        # unchanged
+
+# Schemas
+store.schema_for(name)       →  store.schemas.fetch(name)
+
+# Renames
+Textus::Store::AuditLog      →  Textus::Infra::AuditLog
+Textus::Store::Sentinel      →  Textus::Domain::Sentinel
+Textus::Store::Staleness     →  Textus::Domain::Staleness
+Textus::Store::Validator     →  Textus::Application::Reads::Validator
+```
+
 ## 0.17.0 — 2026-05-27
 
 API and policy reshape. The public Ruby surface flattens, authorization

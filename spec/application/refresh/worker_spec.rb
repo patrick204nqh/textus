@@ -51,7 +51,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       store = build_store(root, intake_body: hook_body)
       store.instance_variable_set(:@bus, test_bus)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      worker = described_class.new(ctx: ctx)
+      worker = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
 
       envelope = worker.run("intake.item")
 
@@ -79,7 +79,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       store = build_store(root, intake_body: hook_body)
       store.instance_variable_set(:@bus, test_bus)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      worker = described_class.new(ctx: ctx)
+      worker = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
 
       expect do
         worker.run("intake.item")
@@ -114,7 +114,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |store:, config:, args:| sleep 5 } }"
       store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      worker = described_class.new(ctx: ctx)
+      worker = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
 
       expect { worker.run("intake.slow") }
         .to raise_error(Textus::UsageError, /exceeded 1s timeout/)
@@ -137,7 +137,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
       store = Textus::Store.new(textus)
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      worker = described_class.new(ctx: ctx)
+      worker = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
 
       expect { worker.run("plain.doc") }
         .to raise_error(Textus::UsageError, /no intake declared/)
@@ -174,7 +174,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       Thread.current[:captured_args] = nil
       store = Textus::Store.new(textus)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      worker = described_class.new(ctx: ctx)
+      worker = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
 
       worker.run("intake.vendor.affaan-m.agent-eval")
 

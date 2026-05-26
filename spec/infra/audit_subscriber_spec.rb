@@ -6,7 +6,7 @@ require "tmpdir"
 
 RSpec.describe Textus::Infra::AuditSubscriber do
   let(:tmpdir)    { Dir.mktmpdir }
-  let(:audit_log) { Textus::Store::AuditLog.new(tmpdir) }
+  let(:audit_log) { Textus::Infra::AuditLog.new(tmpdir) }
   let(:bus)       { Textus::Hooks::Dispatcher.new }
 
   after { FileUtils.remove_entry(tmpdir) }

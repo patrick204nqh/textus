@@ -1,7 +1,7 @@
 require "time"
 
 module Textus
-  class Store
+  module Domain
     class Staleness
       # Reports staleness for generator-zone entries — derived files whose
       # generator's listed sources have been modified more recently than the

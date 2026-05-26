@@ -15,7 +15,7 @@ module Textus
 
         def call(prefix: nil, zone: nil)
           rows = []
-          @ctx.store.manifest.entries.each do |mentry|
+          @ctx.manifest.entries.each do |mentry|
             next if prefix && !mentry.key.start_with?(prefix)
             next if zone && mentry.zone != zone
 
@@ -27,7 +27,7 @@ module Textus
         private
 
         def row_for(mentry)
-          set = @ctx.store.manifest.rules_for(mentry.key)
+          set = @ctx.manifest.rules_for(mentry.key)
           refresh = set.refresh
           envelope = safe_get(mentry.key)
           last = envelope&.meta&.dig("last_refreshed_at")
@@ -61,7 +61,16 @@ module Textus
         # Returns the raw envelope or nil. Nested entries (mentry.key is a
         # prefix, not a leaf) and missing files both resolve to nil.
         def safe_get(key)
-          @ctx.store.reader.read_raw_envelope(key)
+          res = @ctx.manifest.resolve(key)
+          return nil unless @ctx.file_store.exists?(res.path)
+
+          raw = @ctx.file_store.read(res.path)
+          parsed = Entry.for_format(res.entry.format).parse(raw, path: res.path)
+          Envelope.build(
+            key: key, mentry: res.entry, path: res.path,
+            meta: parsed["_meta"], body: parsed["body"],
+            etag: Etag.for_bytes(raw), content: parsed["content"]
+          )
         rescue Textus::Error
           nil
         end

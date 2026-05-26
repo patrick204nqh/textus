@@ -38,6 +38,11 @@ module Textus
         @store.bus
       end
 
+      def manifest   = @store.manifest
+      def schemas    = @store.schemas
+      def file_store = @store.file_store
+      def audit_log  = @store.audit_log
+
       def authorize_write!(mentry)
         return if can_write?(mentry.zone)
 

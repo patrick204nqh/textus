@@ -19,7 +19,7 @@ module Textus
             schema_ref = mentry&.schema
             return true unless schema_ref
 
-            schema = store.schema_for(schema_ref)
+            schema = store.schemas.fetch_or_nil(schema_ref)
             return true unless schema
 
             frontmatter = entry.meta&.dig("frontmatter") || {}

@@ -81,7 +81,7 @@ module Textus
       end
 
       def self.load_schema(store, name)
-        store.schema_for(name)
+        store.schemas.fetch(name)
       rescue IoError
         raise UsageError.new("schema not found: #{name}")
       end

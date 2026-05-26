@@ -7,7 +7,7 @@ module Textus
         end
 
         def call(prefix: nil, zone: nil)
-          @ctx.store.reader.stale(prefix: prefix, zone: zone)
+          Textus::Domain::Staleness.new(manifest: @ctx.manifest).call(prefix: prefix, zone: zone)
         end
       end
     end

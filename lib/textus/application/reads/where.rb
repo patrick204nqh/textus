@@ -7,7 +7,10 @@ module Textus
         end
 
         def call(key)
-          @ctx.store.reader.where(key)
+          res = @ctx.manifest.resolve(key)
+          mentry = res.entry
+          path = res.path
+          { "protocol" => PROTOCOL, "key" => key, "zone" => mentry.zone, "owner" => mentry.owner, "path" => path }
         end
       end
     end

@@ -14,7 +14,8 @@ RSpec.describe Textus::Application::Writes::Mv do
       store.bus.subscribe(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      result = Textus::Application::Writes::Mv.new(ctx: ctx).call("working.notes.alpha", "working.notes.beta")
+      result = Textus::Application::Writes::Mv.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("working.notes.alpha",
+                                                                                                       "working.notes.beta")
 
       expect(result["ok"]).to be(true)
       expect(result["from_key"]).to eq("working.notes.alpha")
@@ -32,7 +33,7 @@ RSpec.describe Textus::Application::Writes::Mv do
       ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       ctx = Textus::Application::Context.new(store: store, role: "human")
-      result = Textus::Application::Writes::Mv.new(ctx: ctx)
+      result = Textus::Application::Writes::Mv.new(ctx: ctx, envelope_io: build_envelope_io(ctx))
                                               .call("working.notes.alpha", "working.notes.beta", dry_run: true)
 
       expect(result["dry_run"]).to be(true)
@@ -48,7 +49,7 @@ RSpec.describe Textus::Application::Writes::Mv do
       Textus::Operations.for(store, role: "human").put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
 
       ctx = Textus::Application::Context.new(store: store, role: "human", correlation_id: "cid-test")
-      Textus::Application::Writes::Mv.new(ctx: ctx).call("working.notes.alpha", "working.notes.beta")
+      Textus::Application::Writes::Mv.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("working.notes.alpha", "working.notes.beta")
 
       log_path = File.join(tmp, ".textus/audit.log")
       rows = File.readlines(log_path, chomp: true).map { |l| JSON.parse(l) }

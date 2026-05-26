@@ -83,10 +83,9 @@ The intake entry lands at `intake.skills.agent-eval`. The
 
 2. **No re-entry guard beyond `suppress_events: true`.** The listener
    uses the Operations facade for inner writes
-   (`Operations.writes.put.call(...)`, `Operations.writes.delete.call(...)`)
-   with `suppress_events: true` to prevent its own refresh from
-   triggering itself. If you fork the recipe and forget this, you get
-   an event loop.
+   (`ops.put(..., suppress_events: true)`, `ops.delete(..., suppress_events: true)`)
+   to prevent its own refresh from triggering itself. If you fork the
+   recipe and forget this, you get an event loop.
 
 3. **Reconciliation is per-source.** Only derived keys under
    `vendor.skills.<slug>.` for the refreshed source are reconciled.

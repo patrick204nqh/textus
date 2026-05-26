@@ -7,7 +7,7 @@ module Textus
         end
 
         def call
-          @ctx.store.reader.published
+          Dependencies.published_of(@ctx.manifest)
         end
       end
     end

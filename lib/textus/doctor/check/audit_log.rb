@@ -4,7 +4,7 @@ module Textus
       class AuditLog < Check
         def call
           path = File.join(store.root, "audit.log")
-          Textus::Store::AuditLog.new(store.root).verify_integrity.map do |v|
+          Textus::Infra::AuditLog.new(store.root).verify_integrity.map do |v|
             {
               "code" => "audit.parse_error",
               "level" => "warning",

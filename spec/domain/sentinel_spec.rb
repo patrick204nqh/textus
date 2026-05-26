@@ -4,7 +4,7 @@ require "tmpdir"
 require "json"
 require "digest"
 
-RSpec.describe Textus::Store::Sentinel do
+RSpec.describe Textus::Domain::Sentinel do
   let(:tmp)        { Dir.mktmpdir("textus-sentinel") }
   let(:repo_root)  { tmp }
   let(:store_root) { File.join(tmp, ".textus") }

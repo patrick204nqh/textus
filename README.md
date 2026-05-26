@@ -14,7 +14,7 @@ Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
-- **Gem version:** semver, currently `0.17.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, currently `0.18.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 

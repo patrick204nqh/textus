@@ -47,7 +47,7 @@ RSpec.describe "textus action verb" do
       expect(payload["ok"]).to be true
 
       store = Textus::Store.new(root)
-      env = store.reader.get("working.demo")
+      env = Textus::Operations.for(store).get("working.demo")
       expect(env.meta["who"]).to eq("patrick")
     end
   end
