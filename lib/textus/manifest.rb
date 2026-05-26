@@ -3,14 +3,6 @@ require_relative "manifest/schema"
 
 module Textus
   class Manifest
-    EXT_TO_FORMAT = {
-      ".md" => "markdown",
-      ".json" => "json",
-      ".yaml" => "yaml",
-      ".yml" => "yaml",
-      ".txt" => "text",
-    }.freeze
-
     TEXTUS_2_HINT = "Install textus 0.11.x to run the migrator, then upgrade to this version. " \
                     "See https://github.com/patrick204nqh/textus/blob/main/CHANGELOG.md#0110".freeze
 

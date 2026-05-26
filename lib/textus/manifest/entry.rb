@@ -86,7 +86,7 @@ module Textus
         end
 
         ext = File.extname(@index_filename)
-        inferred = Manifest::EXT_TO_FORMAT[ext]
+        inferred = Textus::Entry.infer_from_extension(ext)
         if inferred.nil?
           raise UsageError.new(
             "entry '#{@key}': index_filename #{@index_filename.inspect} has unknown extension #{ext.inspect}",
@@ -148,7 +148,7 @@ module Textus
 
       def resolve_format!(declared)
         ext = File.extname(@path)
-        inferred = Manifest::EXT_TO_FORMAT[ext]
+        inferred = Textus::Entry.infer_from_extension(ext)
 
         if declared.nil?
           return inferred if inferred
@@ -156,9 +156,7 @@ module Textus
           return "markdown" if ext == "" && @nested
           return "markdown" if ext == ""
         else
-          unless Manifest::EXT_TO_FORMAT.values.include?(declared)
-            raise UsageError.new("entry '#{@key}': unknown format #{declared.inspect}")
-          end
+          raise UsageError.new("entry '#{@key}': unknown format #{declared.inspect}") unless Textus::Entry.formats.include?(declared)
           # If the path has an extension, the declared format must match.
           if ext != "" && inferred && inferred != declared
             raise UsageError.new(
