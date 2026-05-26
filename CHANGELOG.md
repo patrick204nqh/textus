@@ -9,6 +9,43 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.14.0 — 2026-05-26
+
+### Breaking (Ruby API only — CLI JSON output unchanged)
+
+- `Operations.reads.get.call(...)` and every other use case that returned
+  an envelope Hash now returns `Textus::Envelope` (a `Data.define`
+  instance). Call `envelope.to_h_for_wire` to recover the previous Hash
+  shape for JSON serialization. The Hash shape itself is byte-identical.
+- `Operations.writes.build.call(...)` return shape no longer includes
+  `published_leaves`. Call `Operations.writes.publish.call(...)`
+  separately for that. The CLI verb `textus build` runs both
+  automatically, so CLI users see no change.
+
+### Added
+
+- `Textus::Application::Writes::Publish` — new use case that copies
+  nested-leaf files to their `publish_each` targets. Fires
+  `:file_published`.
+- `Operations.writes.publish` — factory exposing the new use case.
+- `Textus::Envelope` (now a class, was a module) — typed accessors for
+  `protocol`, `key`, `zone`, `owner`, `path`, `format`, `uid`, `etag`,
+  `schema_ref`, `meta`, `body`, `content`, `freshness`. Methods:
+  `to_h_for_wire`, `stale?`, `refreshing?`.
+
+### Internal
+
+- `Application::Writes::Build` trimmed from 116 LOC to ~50 LOC; now
+  only materializes generator-zone entries.
+- All ~17 internal `env["..."]` call sites migrated to typed access.
+- `Envelope.build` no longer carries `# rubocop:disable
+  Metrics/ParameterLists` (the `Data.define` member list serves the
+  same role more clearly).
+
+### Reference
+
+- See [ADR 0007](docs/architecture/decisions/0007-envelope-data-class.md).
+
 ## 0.13.1 — 2026-05-26
 
 ### Internal
