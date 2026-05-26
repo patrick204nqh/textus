@@ -14,7 +14,9 @@ module Textus
       def blame          = Application::Reads::Blame.new(ctx: @ctx)
       def policy_explain = Application::Reads::PolicyExplain.new(ctx: @ctx)
       def list           = Application::Reads::List.new(ctx: @ctx)
-      def where          = Application::Reads::Where.new(ctx: @ctx)
+      def where           = Application::Reads::Where.new(ctx: @ctx)
+      def uid             = Application::Reads::Uid.new(ctx: @ctx)
+      def schema_envelope = Application::Reads::SchemaEnvelope.new(ctx: @ctx)
 
       private
 
