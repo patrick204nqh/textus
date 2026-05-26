@@ -6,7 +6,7 @@ module Textus
     module Tools
       # textus schema init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
       def self.init(store, name:, from:)
-        env = store.get(from)
+        env = store.reader.get(from)
         meta = env["_meta"]
         schema = {
           "name" => name,
@@ -25,7 +25,7 @@ module Textus
         schema = load_schema(store, name)
         drift = []
         store.manifest.enumerate.each do |row|
-          env = store.get(row[:key])
+          env = store.reader.get(row[:key])
           begin
             schema.validate!(env["_meta"])
           rescue SchemaViolation => e
@@ -49,9 +49,10 @@ module Textus
           end
         raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
+        ops = Textus::Operations.for(store, role: "human")
         touched = []
         store.manifest.enumerate.each do |row|
-          env = store.get(row[:key])
+          env = ops.reads.get.call(row[:key])
           meta = env["_meta"]
           changed = false
           renames.each do |old, new|
@@ -62,7 +63,7 @@ module Textus
           end
           next unless changed
 
-          store.put(row[:key], meta: meta, body: env["body"], as: "human")
+          ops.writes.put.call(row[:key], meta: meta, body: env["body"])
           touched << row[:key]
         end
         { "protocol" => PROTOCOL, "migrated" => touched, "renames" => renames }
