@@ -3,7 +3,7 @@ module Textus
     class Verb
       class Published < Verb
         def call(store)
-          emit({ "published" => store.published })
+          emit({ "published" => operations_for(store).reads.published.call })
         end
       end
     end
