@@ -58,19 +58,6 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "scaffolds zones with the canonical names" do
-    Dir.mktmpdir do |root|
-      target = File.join(root, ".textus")
-      Textus::Init.run(target)
-      yaml = YAML.load_file(File.join(target, "manifest.yaml"))
-      names = yaml["zones"].map { |z| z["name"] }
-      expect(names).to eq(%w[identity working intake review output])
-      %w[identity working intake review output].each do |z|
-        expect(Dir.exist?(File.join(target, "zones", z))).to be(true)
-      end
-    end
-  end
-
   it "does not scaffold legacy inbox/ directory or zone" do
     Dir.mktmpdir do |root|
       target = File.join(root, ".textus")

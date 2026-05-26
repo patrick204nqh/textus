@@ -9,6 +9,45 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## [0.12.2] — 2026-05-26
+
+### Breaking changes
+
+- **Removed `Textus::Composition`.** All call sites now go through
+  `Textus::Operations.for(store, role:)`. The new facade groups use-cases
+  by kind: `ops.writes.put`, `ops.reads.get`, `ops.refresh.worker`, etc.
+  No alias, no deprecation warning — internal callers update on upgrade.
+- **Removed `Store#put / #get / #delete / #accept / #reject / #mv`.** These
+  were thin shims over `Composition`. Use `Operations` directly.
+- **Removed `Writer#put`** (the explicit "Backward-compat shim").
+
+### Internal
+
+- Added `Application::Writes::Mv` use-case wrapping `Store::Mover`.
+- Internal Application callers (Accept, Build, Refresh::Worker, Refresh::All,
+  Reads::Blame) no longer re-enter via the top-level facade.
+- Audited `spec/` and removed redundant examples (~-48 LOC; most redundancy
+  was already absorbed by call-site migration in earlier tasks).
+
+See [ADR 0004](docs/architecture/decisions/0004-operations-rename-and-store-facade-removal.md).
+
+### Migration
+
+There is no migration path for `Composition` and the Store facade methods —
+they were internal. External consumers (hooks, custom verbs, gem embedders)
+that referenced these symbols must update:
+
+```ruby
+# Before
+ctx = Textus::Composition.context(store, role: "agent")
+Textus::Composition.writes_put(ctx).call(key, body: "...")
+# or:
+store.put(key, body: "...", as: "agent")
+
+# After
+Textus::Operations.for(store, role: "agent").writes.put.call(key, body: "...")
+```
+
 ## 0.12.1 — textus/2 hint fix (2026-05-26)
 
 ### Fixed

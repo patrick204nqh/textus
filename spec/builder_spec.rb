@@ -10,8 +10,7 @@ RSpec.describe Textus::Application::Writes::Build do
 
   let(:store) { Textus::Store.new(root) }
   let(:build_use_case) do
-    ctx = Textus::Composition.context(store, role: "builder")
-    Textus::Composition.writes_build(ctx)
+    Textus::Operations.for(store, role: "builder").writes.build
   end
 
   before do
@@ -196,8 +195,8 @@ RSpec.describe "Builder :file_published events" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
-                         .call(prefix: "output.note")
+      Textus::Operations.for(store, role: "builder").writes.build
+                        .call(prefix: "output.note")
 
       expect(captured.size).to eq(2)
       expect(captured.map { _1[:key] }).to all(eq("output.note"))
@@ -217,8 +216,8 @@ RSpec.describe "Builder :file_published events" do
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder"))
-                         .call(prefix: "output.note")
+      Textus::Operations.for(store, role: "builder").writes.build
+                        .call(prefix: "output.note")
 
       expect(build_events.size).to eq(1)
       expect(build_events.first[:key]).to eq("output.note")
@@ -253,7 +252,7 @@ RSpec.describe "Builder :file_published events" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
+      Textus::Operations.for(store, role: "builder").writes.build.call
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }

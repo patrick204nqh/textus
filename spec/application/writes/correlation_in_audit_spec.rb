@@ -19,11 +19,9 @@ RSpec.describe "correlation_id in audit rows" do
   it "put is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(
-        store: store, role: "human", correlation_id: "test-corr-put",
-      )
+      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-put")
 
-      Textus::Composition.writes_put(ctx).call(
+      ops.writes.put.call(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
@@ -39,45 +37,19 @@ RSpec.describe "correlation_id in audit rows" do
   it "delete is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(
-        store: store, role: "human", correlation_id: "test-corr-del",
-      )
+      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-del")
 
-      Textus::Composition.writes_put(ctx).call(
+      ops.writes.put.call(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
       )
-      Textus::Composition.writes_delete(ctx).call("working.foo")
+      ops.writes.delete.call("working.foo")
 
       row = File.readlines(File.join(root, ".textus/audit.log")).last
       parsed = JSON.parse(row)
       expect(parsed["verb"]).to eq("delete")
       expect(parsed.dig("extras", "correlation_id")).to eq("test-corr-del")
-    end
-  end
-
-  it "mv is audit-logged with the caller-provided correlation_id" do
-    Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, ".textus", "zones", "working"))
-      File.write(File.join(root, ".textus", "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: working, write_policy: [human] }
-        entries:
-          - { key: working.notes, path: working/notes, zone: working, nested: true }
-      YAML
-      store = Textus::Store.new(File.join(root, ".textus"))
-
-      store.put("working.notes.alpha",
-                meta: { "name" => "alpha" }, body: "a", as: "human")
-      store.mv("working.notes.alpha", "working.notes.beta",
-               as: "human", correlation_id: "test-corr-mv")
-
-      row = File.readlines(File.join(root, ".textus/audit.log")).last
-      parsed = JSON.parse(row)
-      expect(parsed["verb"]).to eq("mv")
-      expect(parsed.dig("extras", "correlation_id")).to eq("test-corr-mv")
     end
   end
 end

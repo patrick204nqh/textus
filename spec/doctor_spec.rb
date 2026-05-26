@@ -231,9 +231,10 @@ RSpec.describe Textus::Doctor do
 
       ra_store = Textus::Store.new(ra_root)
       # Write full_name as ai — violates maintained_by: human
-      ra_store.put("working.people.alice",
-                   meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
-                   body: "", as: "agent")
+      Textus::Operations.for(ra_store, role: "agent").writes.put.call(
+        "working.people.alice",
+        meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "",
+      )
 
       res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])
       codes = res["issues"].map { |i| i["code"] }

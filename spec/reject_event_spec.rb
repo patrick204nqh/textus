@@ -39,31 +39,33 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
   it "fires :reject with review key and proposal target_key, then deletes the entry" do
     store = Textus::Store.new(root)
-    store.put("review.draft",
-              meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
-              body: "proposed body", as: "agent")
+    Textus::Operations.for(store, role: "agent").writes.put.call(
+      "review.draft",
+      meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
+      body: "proposed body",
+    )
     $textus_event_log.clear
-    result = store.reject("review.draft", as: "human")
+    result = store.writer.reject("review.draft", as: "human")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
     reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
     expect(reject_events.length).to eq(1)
     expect(reject_events.first[1]).to eq("review.draft")
     expect(reject_events.first[2]).to eq("identity.target")
-    expect { store.get("review.draft") }.to raise_error(Textus::UnknownKey)
+    expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
   end
 
   it "refuses to reject a non-review entry" do
     store = Textus::Store.new(root)
-    store.put("identity.target", meta: { "name" => "target" }, body: "x", as: "human")
-    expect { store.reject("identity.target", as: "human") }
+    Textus::Operations.for(store, role: "human").writes.put.call("identity.target", meta: { "name" => "target" }, body: "x")
+    expect { store.writer.reject("identity.target", as: "human") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.put("review.draft", meta: { "name" => "draft" }, body: "x", as: "agent")
-    expect { store.reject("review.draft", as: "human") }
+    Textus::Operations.for(store, role: "agent").writes.put.call("review.draft", meta: { "name" => "draft" }, body: "x")
+    expect { store.writer.reject("review.draft", as: "human") }
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
 
@@ -81,9 +83,11 @@ RSpec.describe ":proposal_rejected event and store.reject" do
           - { key: review.d,   path: review/d.md,   zone: review }
       YAML
       store = Textus::Store.new(root)
-      store.put("review.d",
-                meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
-                body: "x", as: "agent")
+      Textus::Operations.for(store, role: "agent").writes.put.call(
+        "review.d",
+        meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
+        body: "x",
+      )
     end
 
     it "rejects a review entry via CLI and emits JSON" do

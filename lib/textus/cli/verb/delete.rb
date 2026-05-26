@@ -7,8 +7,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("delete requires a key")
-          ctx = context_for(store)
-          emit(Textus::Composition.writes_delete(ctx).call(key, if_etag: if_etag))
+          emit(operations_for(store).writes.delete.call(key, if_etag: if_etag))
         end
       end
     end

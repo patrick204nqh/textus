@@ -54,10 +54,10 @@ module Textus
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          envelope = @ctx.store.put(
+          envelope = Textus::Application::Writes::Put.new(ctx: @ctx, bus: @bus).call(
             key,
             meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
-            as: @ctx.role, suppress_events: true
+            suppress_events: true
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged

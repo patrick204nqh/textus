@@ -61,7 +61,7 @@ module Textus
           Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: root)
           publish_event(:file_published,
                         key: row[:key],
-                        envelope: store.get(row[:key]),
+                        envelope: store.reader.get(row[:key]),
                         source: row[:path],
                         target: target_abs)
           { "key" => row[:key], "source" => row[:path], "target" => target_abs }
@@ -85,7 +85,7 @@ module Textus
         end
 
         def publish_and_fire(mentry, target_path)
-          envelope = store.get(mentry.key)
+          envelope = store.reader.get(mentry.key)
           repo_root = File.dirname(root)
 
           mentry.publish_to.each do |rel|

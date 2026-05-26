@@ -79,12 +79,12 @@ module Textus
       def ensure_uid!(plan, pre_env:)
         return plan if plan.uid
 
-        env = @writer.put(
+        ctx = Textus::Application::Context.new(store: @store, role: plan.as)
+        env = Textus::Application::Writes::Put.new(ctx: ctx, bus: @store.bus).call(
           plan.old_key,
           meta: pre_env["_meta"],
           body: pre_env["body"],
           content: pre_env["content"],
-          as: plan.as,
           suppress_events: true,
         )
         plan.with(uid: env["uid"], etag_before: env["etag"])

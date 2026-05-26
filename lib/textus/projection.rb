@@ -17,7 +17,7 @@ module Textus
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
       rows = keys.map do |key|
-        env = @store.get(key)
+        env = @store.reader.get(key)
         row = pluck(env["_meta"], env["body"])
         explicit_pluck ? row : row.merge("_key" => key)
       end

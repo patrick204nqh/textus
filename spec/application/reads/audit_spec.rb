@@ -46,8 +46,8 @@ RSpec.describe Textus::Application::Reads::Audit do
   it "returns [] when audit.log does not exist" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ctx = Textus::Composition.context(store, role: "human")
-      expect(Textus::Composition.audit(ctx).call).to eq([])
+      ops = Textus::Operations.for(store, role: "human")
+      expect(ops.reads.audit.call).to eq([])
     end
   end
 
@@ -59,8 +59,8 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
                 ])
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.audit(ctx).call(key: "working.doc")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.audit.call(key: "working.doc")
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
     end
@@ -78,8 +78,8 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
                     "extras" => { "correlation_id" => cid } },
                 ])
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.audit(ctx).call(correlation_id: cid)
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.audit.call(correlation_id: cid)
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
     end
@@ -92,8 +92,8 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                 ])
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.audit(ctx).call(zone: "identity")
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.audit.call(zone: "identity")
       expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
     end
   end
@@ -105,8 +105,8 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                 ])
-      ctx = Textus::Composition.context(store, role: "human")
-      rows = Textus::Composition.audit(ctx).call(since: Time.parse("2026-05-01T00:00:00Z"))
+      ops = Textus::Operations.for(store, role: "human")
+      rows = ops.reads.audit.call(since: Time.parse("2026-05-01T00:00:00Z"))
       expect(rows.map { |r| r["ts"] }).to eq(["2026-05-02T00:00:00Z"])
     end
   end
@@ -118,8 +118,8 @@ RSpec.describe Textus::Application::Reads::Audit do
         { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" }
       end
       write_log(root, rows)
-      ctx = Textus::Composition.context(store, role: "human")
-      out = Textus::Composition.audit(ctx).call(limit: 2)
+      ops = Textus::Operations.for(store, role: "human")
+      out = ops.reads.audit.call(limit: 2)
       expect(out.length).to eq(2)
     end
   end

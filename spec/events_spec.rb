@@ -28,14 +28,15 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_put after a write" do
       store = Textus::Store.new(root)
-      store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
+      Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
       expect($textus_event_log).to include([:entry_put, "working.x"])
     end
 
     it "fires :entry_deleted after a delete" do
       store = Textus::Store.new(root)
-      store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
-      store.delete("working.x", as: "human")
+      ops = Textus::Operations.for(store, role: "human")
+      ops.writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
+      ops.writes.delete.call("working.x")
       expect($textus_event_log).to include([:entry_deleted, "working.x"])
     end
 
@@ -44,7 +45,7 @@ RSpec.describe "Lifecycle events" do
         Textus.on(:entry_put, :boom) { |key:, envelope:, store:| raise "bang" }
       RUBY
       store = Textus::Store.new(root)
-      env = store.put("working.x", meta: { "name" => "x" }, body: "hi", as: "human")
+      env = Textus::Operations.for(store, role: "human").writes.put.call("working.x", meta: { "name" => "x" }, body: "hi")
       expect(env["body"]).to eq("hi") # write succeeded
       last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
       expect(last["extras"]["event"]).to eq("entry_put")
@@ -165,7 +166,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
-      Textus::Composition.writes_build(Textus::Composition.context(store, role: "builder")).call
+      Textus::Operations.for(store, role: "builder").writes.build.call
       expect($log).to include([:build_completed, "output.summary", ["working"]])
     end
   end
@@ -208,7 +209,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :proposal_accepted after Proposal.accept completes" do
       store = Textus::Store.new(root)
-      store.accept("review.bob", as: "human")
+      Textus::Operations.for(store, role: "human").writes.accept.call("review.bob")
       expect($log).to include([:proposal_accepted, "review.bob", "working.bob"])
     end
 
@@ -217,7 +218,7 @@ RSpec.describe "Lifecycle events" do
         Textus.on(:proposal_accepted, :boom) { |key:, target_key:, store:| raise "bang" }
       RUBY
       store = Textus::Store.new(root)
-      store.accept("review.bob", as: "human")
+      Textus::Operations.for(store, role: "human").writes.accept.call("review.bob")
       audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
       err = audit_lines.find { |h| h["verb"] == "event_error" }
       expect(err).not_to be_nil
