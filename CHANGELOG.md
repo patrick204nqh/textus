@@ -9,6 +9,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.14.1 — 2026-05-26
+
+### Changed
+
+- Build pipeline now skips rewriting a built artifact when the only
+  difference from the existing file on disk would be the freshly-stamped
+  `generated_at` (markdown: `generated.at`) timestamp. Stores under git
+  versioning no longer churn on every `textus build` (#52).
+- Strict policy: any other byte difference — changed `from`,
+  `template`, `reduce`, body content — still triggers a write. Text
+  format falls back to plain byte-equality (no timestamp to normalize).
+
+### Internal
+
+- Extracted `Manifest.check_version!` to dedupe the parse/load version
+  guard (#51).
+
 ## 0.14.0 — 2026-05-26
 
 ### Breaking (Ruby API only — CLI JSON output unchanged)
