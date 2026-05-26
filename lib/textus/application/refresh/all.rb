@@ -5,7 +5,7 @@ module Textus
         module_function
 
         def call(ctx, prefix: nil, zone: nil)
-          worker = Textus::Composition.refresh_worker(ctx)
+          worker = Textus::Application::Refresh::Worker.new(ctx: ctx, bus: ctx.store.bus)
 
           stale_rows = ctx.store.stale(prefix: prefix, zone: zone)
           refreshed = []
