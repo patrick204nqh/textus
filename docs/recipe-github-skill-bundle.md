@@ -45,7 +45,7 @@ The intake entry lands at `intake.skills.agent-eval`. The `:entry_refreshed` lis
 
   ```yaml
   zones:
-    - { name: vendor, writable_by: [script, system] }
+    - { name: vendor, write_policy: [runner, system] }
   ```
 
 - Derived keys are written without manifest entries. `textus doctor` will not complain about them today because doctor checks manifest references, not raw store entries. (When manifest-coverage-of-all-keys becomes a doctor check, this recipe will need to declare derived keys via a pattern entry — see the ADR.)

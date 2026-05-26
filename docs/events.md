@@ -370,16 +370,16 @@ end
 Manifest references the same name on both sides:
 
 ```yaml
-- key: inbox.linear.issues
-  zone: inbox
+- key: intake.linear.issues
+  zone: intake
   intake: { handler: linear, config: { team_id: "ENG" } }
 
 - key: output.linear.dashboard
   zone: output
-  projection: { select: [inbox.linear.issues], reduce: linear }
+  projection: { select: [intake.linear.issues], reduce: linear }
 
-policies:
-  - match: inbox.linear.**
+rules:
+  - match: intake.linear.**
     refresh: { ttl: 1h, on_stale: warn }
 ```
 
