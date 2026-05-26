@@ -9,6 +9,29 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.13.1 — 2026-05-26
+
+### Internal
+
+- `Manifest::Entry` (260 LOC, 11 responsibilities) decomposed into:
+  - `Manifest::Entry::Parser` — raw hash → Entry value object.
+  - `Manifest::Entry::Validators::*` — one file per validation rule
+    (events, publish_each, inject_intro, index_filename, format_matrix).
+  - `Manifest::Entry` (~50 LOC) — value object with attr readers,
+    zone-kind predicates, and `publish_target_for`.
+- Each validation rule is now independently testable. Adding a new
+  rule is one new file under `lib/textus/manifest/entry/validators/`
+  plus one line in `Validators::REGISTERED`.
+- Pattern matches the existing `doctor/check/*` (~15 files, same
+  shape).
+
+### Compatibility
+
+- `Manifest::Entry` keeps all public attribute readers, predicates,
+  and `publish_target_for`. External callers consuming `Entry`
+  instances see no change. Embedders who subclassed `Entry` may
+  need adjustment.
+
 ## 0.13.0 — 2026-05-26
 
 ### Added
