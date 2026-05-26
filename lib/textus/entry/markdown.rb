@@ -36,6 +36,13 @@ module Textus
       def self.extensions = [".md"]
 
       def self.nested_glob = "**/*.md"
+
+      def self.validate_path_extension(path, _nested)
+        ext = File.extname(path)
+        return if ["", ".md"].include?(ext)
+
+        raise UsageError.new("markdown format requires '.md' path (got #{ext.inspect})")
+      end
     end
   end
 end

@@ -44,6 +44,19 @@ module Textus
       def self.extensions = [".json"]
 
       def self.nested_glob = "**/*.json"
+
+      def self.validate_path_extension(path, nested)
+        ext = File.extname(path)
+        if nested
+          return if ext == ""
+
+          raise UsageError.new("nested json path must not have an extension")
+        end
+
+        return if ext == ".json"
+
+        raise UsageError.new("json format requires '.json' path (got #{ext.inspect})")
+      end
     end
   end
 end

@@ -42,6 +42,19 @@ module Textus
       def self.extensions = [".yaml", ".yml"]
 
       def self.nested_glob = "**/*.{yaml,yml}"
+
+      def self.validate_path_extension(path, nested)
+        ext = File.extname(path)
+        if nested
+          return if ext == ""
+
+          raise UsageError.new("nested yaml path must not have an extension")
+        end
+
+        return if [".yaml", ".yml"].include?(ext)
+
+        raise UsageError.new("yaml format requires '.yaml' or '.yml' path (got #{ext.inspect})")
+      end
     end
   end
 end

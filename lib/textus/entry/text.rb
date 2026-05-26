@@ -20,6 +20,19 @@ module Textus
       def self.extensions = [".txt"]
 
       def self.nested_glob = "**/*.txt"
+
+      def self.validate_path_extension(path, nested)
+        ext = File.extname(path)
+        if nested
+          return if ext == ""
+
+          raise UsageError.new("nested text path must not have an extension")
+        end
+
+        return if [".txt", ""].include?(ext)
+
+        raise UsageError.new("text format requires '.txt' or no extension (got #{ext.inspect})")
+      end
     end
   end
 end

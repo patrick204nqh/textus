@@ -29,6 +29,10 @@ module Textus
       def self.nested_glob
         raise NotImplementedError.new("#{name}.nested_glob not implemented")
       end
+
+      def self.validate_path_extension(_path, _nested)
+        raise NotImplementedError.new("#{name}.validate_path_extension not implemented")
+      end
     end
   end
 end
