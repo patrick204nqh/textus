@@ -40,6 +40,8 @@ module Textus
         when "json", "yaml"
           parsed = Entry.for_format(format).parse(bytes)
           parsed.dig("_meta", "generated_at")
+        else # rubocop:disable Style/EmptyElse
+          nil
         end
       rescue Textus::BadFrontmatter
         nil
