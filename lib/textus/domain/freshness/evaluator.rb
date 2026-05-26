@@ -2,7 +2,7 @@ require "time"
 
 module Textus
   module Domain
-    module Freshness
+    class Freshness
       module Evaluator
         module_function
 

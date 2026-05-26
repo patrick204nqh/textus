@@ -1,6 +1,6 @@
 module Textus
   module Domain
-    module Freshness
+    class Freshness
       Policy = Data.define(:ttl_seconds, :on_stale, :sync_budget_ms) do
         def decide(verdict)
           return Action::Return.new if verdict.fresh?

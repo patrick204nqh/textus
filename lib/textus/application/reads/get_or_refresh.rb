@@ -19,14 +19,14 @@ module Textus
         def call(key)
           envelope = @get.call(key)
           return nil if envelope.nil?
-          return envelope unless envelope.freshness["stale"]
+          return envelope unless envelope.freshness&.stale
 
           policy_set = @ctx.store.manifest.rules_for(key)
           refresh_policy = policy_set.refresh
           return envelope if refresh_policy.nil?
 
           policy = refresh_policy.to_freshness_policy
-          verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness["stale_reason"])
+          verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness.reason)
           action = policy.decide(verdict)
           outcome = @orchestrator.execute(action, key: key)
 
@@ -35,13 +35,13 @@ module Textus
             envelope
           when Textus::Domain::Outcome::Refreshed
             outcome.envelope.with(
-              freshness: { "stale" => false, "stale_reason" => nil, "refreshing" => false },
+              freshness: Textus::Domain::Freshness.build(stale: false, reason: nil, refreshing: false),
             )
           when Textus::Domain::Outcome::Detached
-            envelope.with(freshness: envelope.freshness.merge("refreshing" => true))
+            envelope.with(freshness: envelope.freshness.with(refreshing: true))
           when Textus::Domain::Outcome::Failed
             envelope.with(
-              freshness: envelope.freshness.merge("refresh_error" => outcome.error.message),
+              freshness: envelope.freshness.with(refresh_error: outcome.error.message),
             )
           end
         end
