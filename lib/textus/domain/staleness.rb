@@ -1,5 +1,5 @@
 module Textus
-  class Store
+  module Domain
     class Staleness
       def initialize(manifest:)
         @manifest = manifest

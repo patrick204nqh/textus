@@ -1,7 +1,7 @@
 require "time"
 
 module Textus
-  class Store
+  module Domain
     class Staleness
       # Reports TTL-exceeded staleness for intake-handler entries. Returns an
       # Array of row hashes (possibly empty) per entry.

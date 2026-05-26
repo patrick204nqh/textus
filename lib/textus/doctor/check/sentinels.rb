@@ -7,7 +7,7 @@ module Textus
           return [] unless File.directory?(dir)
 
           repo_root = File.dirname(store.root)
-          Dir.glob(File.join(dir, "**", "*#{Textus::Store::Sentinel::SUFFIX}")).flat_map do |sentinel_path|
+          Dir.glob(File.join(dir, "**", "*#{Textus::Domain::Sentinel::SUFFIX}")).flat_map do |sentinel_path|
             inspect_sentinel(sentinel_path, repo_root)
           end
         end
@@ -15,7 +15,7 @@ module Textus
         private
 
         def inspect_sentinel(sentinel_path, repo_root)
-          sentinel = Textus::Store::Sentinel.load(sentinel_path, repo_root)
+          sentinel = Textus::Domain::Sentinel.load(sentinel_path, repo_root)
           return [parse_error_issue(sentinel_path)] if sentinel.nil?
           return [orphan_issue(sentinel_path, sentinel)] if sentinel.orphan?
           return [drift_issue(sentinel)] if sentinel.drift?

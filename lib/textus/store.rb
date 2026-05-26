@@ -58,7 +58,7 @@ module Textus
     end
 
     def audit_log
-      @audit_log ||= Store::AuditLog.new(@root)
+      @audit_log ||= Textus::Infra::AuditLog.new(@root)
     end
   end
 end

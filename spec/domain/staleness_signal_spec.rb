@@ -6,7 +6,7 @@ require "tmpdir"
 # write_policy: [builder] signal, not via the literal zone name "derived". Prior
 # to signal-based detection, post-0.9.2 default `output` zones were skipped
 # entirely.
-RSpec.describe "Textus::Store::Staleness signal-based generator-zone detection" do
+RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection" do
   include_context "textus_store_fixture"
 
   def build_output_zone_fixture!

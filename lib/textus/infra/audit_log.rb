@@ -2,7 +2,7 @@ require "json"
 require "time"
 
 module Textus
-  class Store
+  module Infra
     class AuditLog
       def initialize(root)
         @path = File.join(root, "audit.log")

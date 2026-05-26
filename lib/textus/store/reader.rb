@@ -58,11 +58,11 @@ module Textus
       def published   = Dependencies.published_of(@manifest)
 
       def stale(prefix: nil, zone: nil)
-        Staleness.new(manifest: @manifest).call(prefix: prefix, zone: zone)
+        Textus::Domain::Staleness.new(manifest: @manifest).call(prefix: prefix, zone: zone)
       end
 
       def validate_all
-        Validator.new(
+        Textus::Application::Reads::Validator.new(
           reader: self, manifest: @manifest,
           audit_log: @store.audit_log,
           schema_for: ->(name) { @store.schema_for(name) }
