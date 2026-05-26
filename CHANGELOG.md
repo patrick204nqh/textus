@@ -9,6 +9,15 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## [0.12.3] — 2026-05-26
+
+### Added
+- `textus intro` output now includes an `agent_protocol` block: envelope shape, role-resolution rules, and four runnable recipes (`read`, `write`, `propose`, `refresh`). One `textus intro` call is sufficient orientation for a fresh AI agent to operate the store without consulting `SPEC.md`.
+- `textus intro --with-examples` inlines a real invocation and expected output snippet on each recipe. Default output stays lean for routine boot calls.
+
+### Compatibility
+- Fully additive. All pre-0.12.3 fields on `Textus::Intro.run` retain their existing keys, types, and shapes. The wire `"protocol"` field continues to hold the string `"textus/3"`.
+
 ## [0.12.2] — 2026-05-26
 
 ### Breaking changes
