@@ -9,6 +9,135 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.17.0 — 2026-05-27
+
+API and policy reshape. The public Ruby surface flattens, authorization
+moves from seven duplicated blocks into one helper on `Application::Context`,
+and the only thread-local in the library is gone. Wire format (`textus/3`)
+and CLI JSON output are byte-identical to 0.16.0. Every change is gem-side.
+
+### Breaking (Ruby API)
+
+- **`Operations` is flat.** The `Operations#reads`, `Operations#writes`,
+  and `Operations#refresh` namespace shells are removed; every use case
+  is now a directly-named method on `Operations` itself. Callers that
+  typed three levels of indirection plus `.call` switch to a single
+  method call:
+  ```ruby
+  ops.writes.put.call(key, body: x)   →   ops.put(key, body: x)
+  ops.reads.get.call(key)             →   ops.get(key)
+  ops.reads.get_or_refresh.call(key)  →   ops.get_or_refresh(key)
+  ops.refresh.worker.call(key)        →   ops.refresh(key)
+  ops.refresh.all.call(prefix:, …)    →   ops.refresh_all(prefix:, …)
+  ```
+  Internal use-case instances are memoized via `||=`. `Operations#with_role`
+  returns a fresh `Operations` with no shared memoization.
+- **`Operations::Reads`, `Operations::Writes`, `Operations::Refresh`** —
+  the shell classes — are deleted. External code that named them
+  directly (rare) must move to the flat methods on `Operations`.
+- **Top-level `Textus.on(event, name) { ... }` is removed.** Hook files
+  now wrap registration in a `Textus.hook` block that receives the
+  store's registry:
+  ```ruby
+  # before
+  Textus.on(:entry_put, "audit") { |store:, key:, **| ... }
+  # after
+  Textus.hook do |reg|
+    reg.on(:entry_put, "audit") { |store:, key:, **| ... }
+  end
+  ```
+  Multiple `reg.on` lines under one `Textus.hook` block is idiomatic.
+- **`Textus.with_registry` is removed.** Tests instantiate
+  `Textus::Hooks::Registry.new` and call `reg.on(...)` directly — no
+  `around` block, no thread-local cleanup.
+- **`Textus::Hooks::Loader.current_registry` is removed.** It was the
+  thread-local read accessor; nothing replaces it because no thread-
+  local remains.
+- **Write use-case constructors lose `bus:`.** `Application::Writes::*`
+  classes pull the bus from `@ctx.bus` instead of taking it as a kwarg.
+  External code that constructed `Writes::Put.new(ctx:, bus:)` directly
+  drops the `bus:` argument.
+
+### Added
+
+- **`Application::Context#authorize_write!(mentry)`** — raises
+  `WriteForbidden` (with the zone's writers list in `details`) when the
+  bound role lacks write permission. Returns `nil` on success. Replaces
+  the seven duplicated `unless can_write? ... raise WriteForbidden`
+  blocks across `Writes::{Put,Delete,Mv,Accept,Reject,Build,Publish}`.
+- **`Application::Context#authorize_read!(mentry)`** — mirror of
+  `authorize_write!`. Raises a new `ReadForbidden` (code `read_forbidden`,
+  exit 1, details: `key`, `zone`, `readers`).
+- **`Application::Context#bus`** — returns `store.bus`. Use cases publish
+  events through `@ctx.bus`; the prior `@ctx.store.bus` reach-through is
+  no longer used in-tree.
+- **`Textus::ReadForbidden`** error class. Symmetric with `WriteForbidden`.
+- **`Textus.hook(&blk)`** — appends the supplied block to a mutex-
+  guarded module-level queue. The store-scoped loader drains and invokes
+  each block with its registry.
+- **`Textus.drain_hook_blocks`** — public for tests; returns and clears
+  the queued blocks under the same mutex.
+- **`Textus::Hooks::Registry#on`** — already the canonical instance API
+  since 0.11; explicitly documented as the registration primitive now
+  that the top-level shim is gone.
+
+### Internal
+
+- **`Application::Writes::Mv`** now authorizes both source and
+  destination zones. The prior code authorized only the source; the
+  centralized `authorize_write!` made the second call a one-liner and
+  the gap obvious.
+- **`Hooks::Builtin.register_all`** takes a `registry:` argument and
+  calls `registry.on(...)` directly. No thread-local read.
+- **`Hooks::Loader`** is now a per-store class constructed with
+  `registry:`. `#load_dir(path)` walks the directory, `load`s each
+  `.rb`, then drains `Textus.drain_hook_blocks` and invokes each with
+  the registry. Two threads loading two stores concurrently are safe
+  because each `load_dir` drains around its own file walk under the
+  module-level mutex.
+- **`Doctor::Check::Hooks`** reads `store.registry` directly; no
+  thread-local indirection.
+- **`Store#load_hooks`** is a two-liner: construct a `Loader` with
+  `@registry`, call `load_dir` against `.textus/hooks/`.
+- **Reads/refresh paths** use `@ctx.bus` instead of `@ctx.store.bus`.
+  Same object; the indirection is gone.
+
+### Migrating from 0.16
+
+Mechanical, sed-friendly. The CLI shape is unchanged — only embedders
+and hook authors need to do anything.
+
+```
+# Operations: flat surface
+ops.writes.put.call(key, body: x)   →   ops.put(key, body: x)
+ops.reads.get.call(key)             →   ops.get(key)
+ops.reads.get_or_refresh.call(key)  →   ops.get_or_refresh(key)
+ops.refresh.worker.call(key)        →   ops.refresh(key)        # via Operations#refresh
+ops.refresh.all.call(...)           →   ops.refresh_all(...)
+
+# Hooks: explicit registration
+Textus.on(:entry_put, "x") { |e| ... }
+  →
+Textus.hook do |reg|
+  reg.on(:entry_put, "x") { |e| ... }
+end
+
+# Tests: no more thread-local scope
+around { |ex| Textus.with_registry(reg) { ex.run } }   # delete
+Textus.on(:resolve_intake, :x) { ... }                 # → reg.on(:resolve_intake, :x) { ... }
+```
+
+If you constructed `Writes::Put` (or any other write use case)
+directly, drop the `bus:` kwarg from the constructor call. If you
+constructed `Hooks::Loader` directly, the new signature is
+`Loader.new(registry:)` and the API is `loader.load_dir(path)`.
+
+### ADRs
+
+- [ADR 0010 — Flat Operations API](docs/architecture/decisions/0010-flat-operations-api.md)
+- [ADR 0011 — Authorize-bang in Context](docs/architecture/decisions/0011-authorize-bang-in-context.md)
+- [ADR 0012 — Explicit hook registration](docs/architecture/decisions/0012-explicit-hook-registration.md)
+
 ## 0.16.0 — 2026-05-26
 
 Type cleanup and infra glue. Wire format (`textus/3`) and CLI JSON output

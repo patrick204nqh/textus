@@ -14,7 +14,7 @@ Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
-- **Gem version:** semver, currently `0.14.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, currently `0.17.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -119,18 +119,22 @@ textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectorie
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
-Textus.on(:resolve_intake, :local_file) do |config:, args:, **|
-  path = config["path"] or raise "local-file requires intake.config.path"
-  {
-    _meta: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
-    body: File.read(File.expand_path(path)),
-  }
+Textus.hook do |reg|
+  reg.on(:resolve_intake, :local_file) do |config:, args:, **|
+    path = config["path"] or raise "local-file requires intake.config.path"
+    {
+      _meta: { "last_refreshed_at" => Time.now.utc.iso8601, "source_path" => path },
+      body: File.read(File.expand_path(path)),
+    }
+  end
 end
 ```
 
 ```ruby
-Textus.on(:transform_rows, :rank_by_recency) do |rows:, **|
-  rows.sort_by { |r| r["updated_at"].to_s }.reverse
+Textus.hook do |reg|
+  reg.on(:transform_rows, :rank_by_recency) do |rows:, **|
+    rows.sort_by { |r| r["updated_at"].to_s }.reverse
+  end
 end
 ```
 

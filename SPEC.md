@@ -450,7 +450,7 @@ Row transforms are RPC hooks on the `:transform_rows` event. See §5.10.
 
 ### 5.10 Hooks
 
-textus has a single hook registration verb: `Textus.on(event, name, **opts) { ... }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path.
+textus has a single hook registration verb: `Textus.hook { |reg| reg.on(event, name, **opts) { ... } }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path; the store-scoped loader drains the queued blocks and invokes each with its own registry.
 
 The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path.
 
@@ -458,14 +458,16 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 
 ```ruby
 # Canonical form — works for every event:
-Textus.on(:resolve_intake,  :my_source)              { |config:, args:, **|  … }
-Textus.on(:transform_rows,  :rank_by_recency)         { |rows:, **|            … }
-Textus.on(:validate,        :storage_writable)        { |store:|               … }
-Textus.on(:entry_put,       :audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-Textus.on(:file_published,  :git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+Textus.hook do |reg|
+  reg.on(:resolve_intake,  :my_source)              { |config:, args:, **|  … }
+  reg.on(:transform_rows,  :rank_by_recency)         { |rows:, **|            … }
+  reg.on(:validate,        :storage_writable)        { |store:|               … }
+  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |key:, envelope:, **| … }
+  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+end
 ```
 
-`Textus.on` is the sole entry point; there is no separate `Textus.hook` primitive.
+`Textus.hook` is the sole entry point. The block receives the store's `Hooks::Registry`; `reg.on` is the only registration primitive.
 
 #### Event table
 
@@ -821,7 +823,7 @@ Textus internals are organized into four layers. The dependency rule is one-way 
 
 The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
 
-Plugin authors interact only with the Hook DSL (`Textus.on(:resolve_intake, ...)`, `Textus.on(:entry_refreshed, ...)`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
+Plugin authors interact only with the Hook DSL (`Textus.hook { |reg| reg.on(:resolve_intake, ...) }`, `reg.on(:entry_refreshed, ...)`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
 
 Both read and write paths flow through the application layer:
 
@@ -830,8 +832,9 @@ Both read and write paths flow through the application layer:
 - `Application::Context` is the universal request object: it carries `store`, `role`, `correlation_id`, `clock`, and `dry_run`. Use cases never thread these as separate kwargs.
 - `Textus::Operations` is the factory CLI verbs (and future MCP server / HTTP shim)
   use to construct Contexts and use cases. `Operations.for(store, role:)` returns
-  a memoized facade with `.reads`, `.writes`, and `.refresh` namespaces mirroring the
-  files under `lib/textus/application/{reads,writes,refresh}/`.
+  a flat facade exposing one method per use case (`#put`, `#get`, `#refresh`, …);
+  internal use-case instances are memoized via `||=` and live under
+  `lib/textus/application/{reads,writes,refresh}/`.
 
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
