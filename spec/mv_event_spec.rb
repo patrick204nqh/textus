@@ -19,11 +19,13 @@ RSpec.describe ":entry_renamed event" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:entry_renamed, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
-        $textus_event_log << [:entry_renamed, from_key, to_key, envelope.uid]
+      Textus.hook do |reg|
+        reg.on(:entry_renamed, :log_mv) do |key:, from_key:, to_key:, envelope:, store:|
+          $textus_event_log << [:entry_renamed, from_key, to_key, envelope.uid]
+        end
+        reg.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
+        reg.on(:entry_deleted, :log_delete) { |key:, store:|             $textus_event_log << [:entry_deleted, key] }
       end
-      Textus.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
-      Textus.on(:entry_deleted, :log_delete) { |key:, store:|             $textus_event_log << [:entry_deleted, key] }
     RUBY
     $textus_event_log = []
   end
@@ -64,8 +66,10 @@ RSpec.describe ":entry_renamed event" do
   it "routes :entry_renamed hooks via keys: glob against the destination key" do
     File.write(File.join(root, "hooks/scoped.rb"), <<~RUBY)
       $textus_scoped_log ||= []
-      Textus.on(:entry_renamed, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
-      Textus.on(:entry_renamed, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
+      Textus.hook do |reg|
+        reg.on(:entry_renamed, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
+        reg.on(:entry_renamed, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
+      end
     RUBY
     $textus_scoped_log = []
     store = Textus::Store.new(root)

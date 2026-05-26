@@ -31,10 +31,11 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   let(:ops) { Textus::Operations.for(store, role: "runner") }
 
   before do
-    # The recipe registers into the active registry on require. When loaded
-    # outside a store boot, registration is deferred — invoke it explicitly
-    # against the per-store registry.
-    Textus.with_registry(store.registry) { TextusRecipes::SkillFanout.register }
+    # The recipe queues its registration via Textus.hook. Drain and apply
+    # against the per-store registry so the listener is wired up.
+    Textus.drain_hook_blocks # discard any stale leftover from prior load
+    TextusRecipes::SkillFanout.register
+    Textus.drain_hook_blocks.each { |b| b.call(store.registry) }
   end
 
   def trigger(key:, files:)

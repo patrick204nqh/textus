@@ -42,19 +42,8 @@ module Textus
     end
 
     def load_hooks
-      Textus.with_registry(@registry) do
-        Hooks::Builtin.register_all
-        dir = File.join(@root, "hooks")
-        return unless File.directory?(dir)
-
-        Dir.glob(File.join(dir, "**/*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-          begin
-            load(f)
-          rescue StandardError, ScriptError => e
-            raise UsageError.new("failed loading hook #{File.basename(f)}: #{e.class}: #{e.message}")
-          end
-        end
-      end
+      Hooks::Builtin.register_all(@registry)
+      Hooks::Loader.new(registry: @registry).load_dir(File.join(@root, "hooks"))
     end
 
     def schema_for(name)

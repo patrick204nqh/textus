@@ -193,7 +193,9 @@ RSpec.describe Textus::Doctor do
   it "reports hook.check_failed with a fix hint pointing to .textus/hooks/" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
-      Textus.on(:validate, :bad_check) { |store:| raise "boom in check" }
+      Textus.hook do |reg|
+        reg.on(:validate, :bad_check) { |store:| raise "boom in check" }
+      end
     RUBY
     store = Textus::Store.new(root)
     res = described_class.run(store)

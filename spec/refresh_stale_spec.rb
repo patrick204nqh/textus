@@ -53,8 +53,10 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
     MD
 
     File.write(File.join(textus, "hooks", "counter.rb"), <<~RUBY)
-      Textus.on(:resolve_intake, :counter) do |store:, config:, args:|
-        { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
+      Textus.hook do |reg|
+        reg.on(:resolve_intake, :counter) do |store:, config:, args:|
+          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
+        end
       end
     RUBY
   end

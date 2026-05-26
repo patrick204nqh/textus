@@ -24,10 +24,12 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.on(:proposal_rejected, :log_reject) do |key:, target_key:, store:|
-        $textus_event_log << [:proposal_rejected, key, target_key]
+      Textus.hook do |reg|
+        reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, store:|
+          $textus_event_log << [:proposal_rejected, key, target_key]
+        end
+        reg.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
       end
-      Textus.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
     RUBY
     $textus_event_log = []
   end

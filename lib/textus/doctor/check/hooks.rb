@@ -9,8 +9,10 @@ module Textus
 
           Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
             registry = Textus::Hooks::Registry.new
-            Textus.with_registry(registry) do
+            Textus.drain_hook_blocks
+            begin
               load(f)
+              Textus.drain_hook_blocks.each { |b| b.call(registry) }
             end
           rescue StandardError, ScriptError => e
             out << {

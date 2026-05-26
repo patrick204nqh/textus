@@ -43,7 +43,9 @@ RSpec.describe Textus::Application::Refresh::Worker do
   it "persists the envelope and fires :refresh_started and :entry_refreshed events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:resolve_intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+        end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
@@ -69,7 +71,9 @@ RSpec.describe Textus::Application::Refresh::Worker do
   it "fires :refresh_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.on(:resolve_intake, :test_intake) { |store:, config:, args:| raise "something went wrong" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :test_intake) { |store:, config:, args:| raise "something went wrong" }
+        end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
@@ -107,7 +111,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
   it "honors a per-rule fetch_timeout_seconds override in the timeout error message" do
     Dir.mktmpdir do |root|
-      hook_body = "Textus.on(:resolve_intake, :slow_intake) { |store:, config:, args:| sleep 5 }"
+      hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |store:, config:, args:| sleep 5 } }"
       store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
       worker = described_class.new(ctx: ctx)
@@ -159,9 +163,11 @@ RSpec.describe Textus::Application::Refresh::Worker do
       YAML
 
       File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)
-        Textus.on(:resolve_intake, :capturing_intake) do |store:, config:, args:|
-          Thread.current[:captured_args] = args
-          { _meta: { "name" => "agent-eval" }, body: "x" }
+        Textus.hook do |reg|
+          reg.on(:resolve_intake, :capturing_intake) do |store:, config:, args:|
+            Thread.current[:captured_args] = args
+            { _meta: { "name" => "agent-eval" }, body: "x" }
+          end
         end
       RUBY
 
