@@ -8,10 +8,10 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 
 1. [The mental model](#1-the-mental-model)
 2. [Roles — who is allowed to write](#2-roles--who-is-allowed-to-write)
-3. [The five default zones](#3-the-five-default-zones) — `identity`, `working`, `inbox`, `review`, `output`
+3. [The five default zones](#3-the-five-default-zones) — `identity`, `working`, `intake`, `review`, `output`
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
-6. [Wiring data in — intake and `:intake` hooks](#6-wiring-data-in--intake-and-intake-hooks)
+6. [Wiring data in — intake and `:resolve_intake` hooks](#6-wiring-data-in--intake-and-resolve_intake-hooks)
 7. [Wiring data out — derived entries and publishing](#7-wiring-data-out--derived-entries-and-publishing)
 8. [Worked example](#8-worked-example)
 9. [Enforcement — what `textus doctor` checks](#9-enforcement--what-textus-doctor-checks)
@@ -29,7 +29,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
                   │  :intake hook                         │  projection sources
                   ▼                                       ▼
             ┌──────────┐                            ┌──────────┐
-   script ─►│  inbox   │                    build ─►│  output  │─► publish
+   runner ─►│  intake  │                    build ─►│  output  │─► publish
             └──────────┘                            └──────────┘
             "pull bytes IN"                         "compute bytes OUT"
 
@@ -44,7 +44,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 Two ideas do all the work:
 
 - **A zone is a write-authority partition.** Each zone declares which roles may write to it. Directory names are convention; the manifest is the source of truth.
-- **A role is a write intent.** `human`, `ai`, `script`, `build` are the four conventional roles. Every `textus put` carries `--as=<role>`, and the writer is refused if that role isn't listed for the target zone.
+- **A role is a write intent.** `human`, `ai`, `runner`, `build` are the four conventional roles. Every `textus put` carries `--as=<role>`, and the writer is refused if that role isn't listed for the target zone.
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
 
@@ -58,12 +58,12 @@ Roles are just strings declared in the manifest. The four conventional ones:
 |------|--------------------|--------------|
 | `human` | A person editing files directly | `put`, `accept`, `mv` |
 | `ai` | An autonomous agent proposing changes | `put` (usually into `pending`) |
-| `script` | Automation pulling external data in | `refresh` |
+| `runner` | Automation pulling external data in | `refresh` |
 | `build` | The compiler that materializes derived entries | `build` |
 
 Two analogies that usually click:
 
-- **`script` is the grocery shopper** — goes outside, brings raw ingredients home.
+- **`runner` is the grocery shopper** — goes outside, brings raw ingredients home.
 - **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal.
 
 You can also invent your own roles (`reviewer`, `import-bot`, `scheduler`) — see [§4](#4-defining-your-own-zones). The `build` role has one piece of special meaning: any zone whose writers include `"build"` is treated as a derived zone by the build pipeline.
@@ -76,18 +76,18 @@ You can also invent your own roles (`reviewer`, `import-bot`, `scheduler`) — s
 
 ```yaml
 zones:
-  - { name: identity, writable_by: [human] }
-  - { name: working,  writable_by: [human, ai, script] }
-  - { name: inbox,    writable_by: [script] }
-  - { name: review,   writable_by: [ai, human] }
-  - { name: output,   writable_by: [build] }
+  - { name: identity, write_policy: [human] }
+  - { name: working,  write_policy: [human, ai, runner] }
+  - { name: intake,   write_policy: [runner] }
+  - { name: review,   write_policy: [ai, human] }
+  - { name: output,   write_policy: [build] }
 ```
 
 | Zone | Purpose | Lifetime | Writers |
 |------|---------|----------|---------|
 | `identity` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
-| `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `ai`, `script` |
-| `inbox` | Declared external inputs. Refreshed by `:intake` hooks, never edited by hand. | Refreshed on demand | `script` |
+| `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `ai`, `runner` |
+| `intake` | Declared external inputs. Refreshed via `Operations.refresh.worker.call(key)` (CLI: `textus refresh KEY --as=runner`), never edited by hand. Refreshed on demand. Default writer: `runner`. | Refreshed on demand | `runner` |
 | `review` | AI proposals awaiting human review. | Until `accept` or rejection | `ai`, `human` |
 | `output` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `build` |
 
@@ -101,7 +101,7 @@ Edit `.textus/manifest.yaml` and add entries under `zones:`. The schema is dead 
 
 ```yaml
 zones:
-  - { name: <zone-name>, writable_by: [<role>, <role>, ...] }
+  - { name: <zone-name>, write_policy: [<role>, <role>, ...] }
 ```
 
 ### Renaming defaults
@@ -110,10 +110,10 @@ zones:
 
 ```yaml
 zones:
-  - { name: self,      writable_by: [human] }       # was identity
-  - { name: notes,     writable_by: [human, ai] }   # was working
-  - { name: feeds,     writable_by: [importer] }    # was inbox (custom role too)
-  - { name: outputs,   writable_by: [build] }       # was output
+  - { name: self,      write_policy: [human] }       # was identity
+  - { name: notes,     write_policy: [human, ai] }   # was working
+  - { name: feeds,     write_policy: [importer], read_policy: [all] }  # custom role
+  - { name: outputs,   write_policy: [build] }       # was output
 ```
 
 ### Adding new zones
@@ -122,12 +122,12 @@ A consulting-engagement layout might want a sharper split than the defaults:
 
 ```yaml
 zones:
-  - { name: identity,    writable_by: [human] }
-  - { name: research,    writable_by: [human, ai] }     # AI-assisted research notes
-  - { name: deliverable, writable_by: [human] }         # human-only client-facing copy
-  - { name: archive,     writable_by: [human] }         # read-mostly historical record
-  - { name: feeds,       writable_by: [script] }        # external signals
-  - { name: built,       writable_by: [build] }         # rendered outputs
+  - { name: identity,    write_policy: [human] }
+  - { name: research,    write_policy: [human, ai] }     # AI-assisted research notes
+  - { name: deliverable, write_policy: [human] }         # human-only client-facing copy
+  - { name: archive,     write_policy: [human] }         # read-mostly historical record
+  - { name: feeds,       write_policy: [runner] }        # external signals
+  - { name: built,       write_policy: [build] }         # rendered outputs
 ```
 
 ### Custom roles
@@ -136,8 +136,8 @@ Roles are just strings — invent them as you need:
 
 ```yaml
 zones:
-  - { name: reviews, writable_by: [reviewer] }
-  - { name: imports, writable_by: [shopify-importer, stripe-importer] }
+  - { name: reviews, write_policy: [reviewer] }
+  - { name: imports, write_policy: [shopify-importer, stripe-importer] }
 ```
 
 Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, doctor checks). The only role with code-level meaning is `build`: it marks a zone as derived. Everything else is convention.
@@ -146,7 +146,7 @@ Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, d
 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
-- **An empty `writable_by:` list makes a zone read-only at runtime** — you can still publish into it via `build`, but `put --as=anything` will be refused.
+- **An empty `write_policy:` list makes a zone read-only at runtime** — you can still publish into it via `build`, but `put --as=anything` will be refused.
 - **There is no implicit role hierarchy.** `human` is not a superuser; if a zone's writers are `[ai]`, even a human running `put --as=human` is refused.
 
 ---
@@ -200,26 +200,23 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ---
 
-## 6. Wiring data in — intake and `:intake` hooks
+## 6. Wiring data in — intake and `:resolve_intake` hooks
 
-`inbox` zones are populated by `:intake` hooks. An inbox entry declares its handler; `textus refresh KEY --as=script` invokes the handler and writes the result. Freshness budgets live in a top-level `policies:` block, matched by glob.
+`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=runner` (or `Operations.refresh.worker.call(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
 
 ```yaml
 entries:
-  - key: inbox.upstream.notes
-    path: inbox/upstream/notes.md
-    zone: inbox
-    owner: script:local
+  - key: intake.upstream.notes
+    path: intake/upstream/notes.md
+    zone: intake
     intake:
-      handler: local-file                                # name of the :intake hook
-      config: { path: .textus/zones/identity/voice-tools.md }
+      handler: pull_notes
+      config: { url: "https://example.com/notes" }
 
-policies:
-  - match: inbox.upstream.**
+rules:
+  - match: intake.upstream.**
     refresh:
-      ttl: 12h
-      on_stale: warn       # warn | sync | timed_sync (default: warn)
-      sync_budget_ms: 500  # only used when on_stale: timed_sync (default: 500)
+      ttl: 1h
 ```
 
 #### `on_stale:` options
@@ -230,13 +227,13 @@ policies:
 | `sync` | Block the `get` call and refresh in-process before returning. |
 | `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
 
-### Built-in `:intake` handlers
+### Built-in `:resolve_intake` handlers
 
 Out of the box, textus ships **parsers** for common shapes — `json`, `csv`, `markdown-links`, `ical-events`, `rss`. These are not full fetchers: each expects raw bytes in `config["bytes"]` and produces structured `_meta`/body. The caller (typically an outer hook you write) is responsible for the actual I/O. This keeps textus itself free of implicit network calls (SPEC §5.4).
 
 If you want bytes to come from disk or a URL, you write the handler.
 
-### Custom `:intake` hooks
+### Custom `:resolve_intake` hooks
 
 Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 
@@ -245,16 +242,11 @@ Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 - `{ body: }` — raw bytes; the store re-parses per `format:`
 
 ```ruby
-# .textus/hooks/notion.rb — sugar form
-Textus.intake(:notion) do |config:, args:, **|
+# .textus/hooks/notion.rb
+Textus.on(:resolve_intake, :notion) do |store:, config:, args:|
   page_id = config.fetch("page_id")
   body = NotionClient.new.fetch_markdown(page_id)
   { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }
-end
-
-# Equivalent primitive form
-Textus.hook(:intake, :notion) do |store:, config:, args:|
-  ...
 end
 ```
 
@@ -262,19 +254,19 @@ Then point an entry at it:
 
 ```yaml
 entries:
-  - key: inbox.notion.roadmap
-    path: inbox/notion/roadmap.md
-    zone: inbox
+  - key: intake.notion.roadmap
+    path: intake/notion/roadmap.md
+    zone: intake
     intake:
       handler: notion            # matches the hook name
       config: { page_id: "abc123" }
 
-policies:
-  - match: inbox.notion.**
+rules:
+  - match: intake.notion.**
     refresh: { ttl: 6h, on_stale: warn }
 ```
 
-`textus refresh inbox.notion.roadmap --as=script` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
+`textus refresh intake.notion.roadmap --as=runner` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
 
 ---
 
@@ -296,28 +288,25 @@ A derived entry says **"compute me from these sources, render me with this templ
   publish_to: [CLAUDE.md]                      # external target(s)
 ```
 
-### Two ways to define a hook
+### Registering hooks
 
-Both surfaces are equivalent — they all register against the same registry. Pick whichever reads best.
+Every hook registers through the same primitive: `Textus.on(event, name, **opts, &blk)`. There is no separate sugar surface — the event name is always the first positional argument.
 
 ```ruby
-# 1. Primitive — the authoritative entry point
-Textus.hook(:intake, :local_file) do |store:, config:, args:|
+Textus.on(:resolve_intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
-# 2. Per-event sugar — one event, one callback
-Textus.intake(:local_file)      { |config:, args:, **| ... }
-Textus.reduce(:rank_by_recency) { |rows:, **|          ... }
-Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
-Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+Textus.on(:transform_rows, :rank_by_recency) { |store:, rows:, **|          ... }
+Textus.on(:entry_put,      :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
+Textus.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, target:, **| `git add #{target.shellescape}` }
 ```
 
-To register multiple events under the same name (e.g. an `:intake` + `:reduce` connector), simply call the sugar methods separately with the same name:
+To register multiple events under the same name (e.g. a `:resolve_intake` + `:transform_rows` connector), call `Textus.on` separately with the same name:
 
 ```ruby
-Textus.intake(:notion) { |config:, args:, **| ... }
-Textus.reduce(:notion) { |rows:, **| ... }
+Textus.on(:resolve_intake, :notion) { |store:, config:, args:| ... }
+Textus.on(:transform_rows, :notion) { |store:, rows:, **|       ... }
 ```
 
 Both reference the same name from the manifest:
@@ -350,12 +339,12 @@ A Claude plugin repo that publishes `CLAUDE.md` from a slow-changing identity fi
 `.textus/manifest.yaml`:
 
 ```yaml
-version: textus/2
+version: textus/3
 
 zones:
-  - { name: identity, writable_by: [human] }
-  - { name: working,  writable_by: [human, ai] }
-  - { name: output,   writable_by: [build] }
+  - { name: identity, write_policy: [human] }
+  - { name: working,  write_policy: [human, ai] }
+  - { name: output,   write_policy: [build] }
 
 entries:
   - key: identity.self
@@ -394,7 +383,7 @@ $ git diff CLAUDE.md                                         # review and commit
 
 To layer AI proposals in, add a `review` zone and let agents write `review.suggestion.*` with `--as=ai`, then `textus accept review.suggestion.<id> --as=human` promotes the proposal into `identity` or `working`.
 
-To layer external feeds in, add an `inbox` zone with `writable_by: [script]` and an entry whose `intake: handler:` points at an `:intake` hook, plus a `policies:` block matching the entry. `textus refresh` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add an `intake` zone with `write_policy: [runner]` and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus refresh KEY --as=runner` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
 
 ---
 
