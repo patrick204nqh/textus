@@ -1,0 +1,10 @@
+fields:
+  name:        { type: string, required: true }
+  status:      { type: string, required: true }   # proposed | accepted | rejected | superseded
+  date:        { type: string, required: true }
+  context:     { type: string }
+  proposal:
+    type: hash
+    fields:
+      target_key: { type: string, required: true }
+      action:     { type: string }

@@ -1,0 +1,41 @@
+version: textus/3
+zones:
+  - { name: identity, write_policy: [human],          read_policy: [all] }
+  - { name: working,  write_policy: [human, agent],   read_policy: [all] }
+  - { name: review,   write_policy: [agent, human],   read_policy: [all] }
+  - { name: output,   write_policy: [builder],        read_policy: [all] }
+
+entries:
+  - key: identity.project
+    path: identity/project.md
+    zone: identity
+    schema: project
+    owner: human:self
+
+  - key: working.runbooks
+    path: working/runbooks
+    zone: working
+    schema: runbook
+    owner: human:self
+    nested: true
+
+  - key: review.decisions
+    path: review/decisions
+    zone: review
+    schema: decision
+    owner: agent
+    nested: true
+
+  - key: output.orientation
+    path: output/orientation.md
+    zone: output
+    template: orientation.mustache
+    inject_intro: true
+    publish_to:
+      - "../CLAUDE.md"
+      - "../AGENTS.md"
+    compute:
+      kind: projection
+      select:
+        - identity.project
+        - working.runbooks
