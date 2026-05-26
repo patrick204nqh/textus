@@ -31,18 +31,18 @@ Every event is one of two kinds.
    • raised error ABORTS the verb   • raised error LOGGED, verb continues
    • named explicitly by manifest   • triggered by lifecycle, filtered by keys:
 
-   :intake → input to the store     :put              → after any write
-   :reduce → projection shaping     :deleted          → after delete
-   :check  → doctor checks          :refreshed        → after refresh
-                                    :built            → after derived materialization
-                                    :accepted         → after pending → target promotion
-                                    :published        → after each file written to a repo path
-                                    :mv               → after rename
-                                    :reject           → after proposal discard
-                                    :loaded           → once per Store.new
-                                    :refresh_began    → before intake handler runs
-                                    :refresh_failed   → intake handler raised
-                                    :refresh_detached → timed_sync budget exceeded
+   :resolve_intake → input to the store     :entry_put          → after any write
+   :transform_rows → projection shaping     :entry_deleted      → after delete
+   :validate       → doctor checks          :entry_refreshed    → after refresh
+                                            :build_completed    → after derived materialization
+                                            :proposal_accepted  → after pending → target promotion
+                                            :file_published     → after each file written to a repo path
+                                            :entry_renamed      → after rename
+                                            :proposal_rejected  → after proposal discard
+                                            :store_loaded       → once per Store.new
+                                            :refresh_started    → before intake handler runs
+                                            :refresh_failed     → intake handler raised
+                                            :refresh_backgrounded → timed_sync budget exceeded
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
@@ -55,18 +55,18 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh-stale`. |
-| `:reduce` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
-| `:check` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
-| `:put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). |
-| `:deleted` | pubsub | An entry was just unlinked. |
-| `:refreshed` | pubsub | Like `:put` but specific to refresh-driven writes. Both fire — `:put` first, then `:refreshed`. |
-| `:built` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. |
-| `:accepted` | pubsub | A pending proposal was promoted into its target zone. |
-| `:published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ key:, envelope:, source:, target: }`. |
-| `:mv`      | pubsub | A key was renamed in place. Both `:put` and `:deleted` are suppressed — `:mv` is the sole signal. Payload: `{ key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
-| `:reject`  | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `Operations.writes.reject`). Counterpart to `:accepted`. Payload: `{ key:, target_key: }`. |
-| `:loaded`  | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{}` (just `store:`). |
+| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh-stale`. |
+| `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
+| `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
+| `:entry_put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). Payload: `{ store:, key:, envelope: }`. |
+| `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ store:, key: }`. |
+| `:entry_refreshed` | pubsub | Like `:entry_put` but specific to refresh-driven writes. Both fire — `:entry_put` first, then `:entry_refreshed`. Payload: `{ store:, key:, envelope:, change: }`. |
+| `:build_completed` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. Payload: `{ store:, key:, envelope:, sources: }`. |
+| `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ store:, key:, target_key: }`. |
+| `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ store:, key:, envelope:, source:, target: }`. |
+| `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ store:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
+| `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `Operations.writes.reject.call(key)`). Counterpart to `:proposal_accepted`. Payload: `{ store:, key:, target_key: }`. |
+| `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{ store: }`. |
 
 ### 2.1 Refresh lifecycle events
 
@@ -74,9 +74,9 @@ Three additional pub-sub events observe the progress of in-process and backgroun
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:refresh_began` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
+| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
 | `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ store:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
-| `:refresh_detached` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ store:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
+| `:refresh_backgrounded` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ store:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -92,7 +92,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ etag check (--if-etag)                 ── ABORT if mismatch
   ┃ serialize, write file
   ┃ append audit row {verb:"put"}
-  ┃ ─────────────────────────────────────► :put  (pubsub)
+  ┃ ─────────────────────────────────────► :entry_put  (pubsub)
   ✔ emit envelope to stdout
 ```
 
@@ -102,7 +102,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ role gate                              ── ABORT if no
   ┃ unlink file
   ┃ append audit row {verb:"delete"}
-  ┃ ─────────────────────────────────────► :deleted  (pubsub)
+  ┃ ─────────────────────────────────────► :entry_deleted  (pubsub)
   ✔ done
 ```
 
@@ -110,18 +110,18 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ```
   ┃ require entry.intake.handler           ── ABORT if missing
-  ┃ ─────────────────────────────────────► :refresh_began  (pubsub, mode: "sync"|"timed_sync")
-  ┃ ─────────────────────────────────────► :intake  (RPC)
+  ┃ ─────────────────────────────────────► :refresh_started  (pubsub, mode: "sync"|"timed_sync")
+  ┃ ─────────────────────────────────────► :resolve_intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
   ┃   if handler raises:
   ┃ ─────────────────────────────────────► :refresh_failed  (pubsub)
   ┃   if timed_sync and budget exceeded:
-  ┃ ─────────────────────────────────────► :refresh_detached  (pubsub) — then continues in bg
+  ┃ ─────────────────────────────────────► :refresh_backgrounded  (pubsub) — then continues in bg
   ┃ normalize result by entry.format
   ┃ role gate, etag check, write           (same path as put)
   ┃ append audit row {verb:"refresh"}
-  ┃ ─────────────────────────────────────► :put       (pubsub) — every write fires :put
-  ┃ ─────────────────────────────────────► :refreshed (pubsub) — plus the refresh-specific event
+  ┃ ─────────────────────────────────────► :entry_put         (pubsub) — every write fires :entry_put
+  ┃ ─────────────────────────────────────► :entry_refreshed   (pubsub) — plus the refresh-specific event
   ✔ done
 ```
 
@@ -131,11 +131,11 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ resolve OLD_KEY → manifest entry
   ┃ role gate                              ── ABORT if no
   ┃ resolve NEW_KEY, refuse if exists      ── ABORT if collision
-  ┃ mint uid in place if absent (suppressed :put)
+  ┃ mint uid in place if absent (suppressed :entry_put)
   ┃ FileUtils.mv source → target
   ┃ rewrite name frontmatter
   ┃ append audit row {verb:"mv"}
-  ┃ ─────────────────────────────────────► :mv  (pubsub) — single signal; no :put/:delete
+  ┃ ─────────────────────────────────────► :entry_renamed  (pubsub) — single signal; no :entry_put/:entry_deleted
   ✔ done
 ```
 
@@ -146,8 +146,8 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ require _meta.proposal block           ── ABORT if no
   ┃ delete the pending file
   ┃ append audit row {verb:"delete"}
-  ┃ ─────────────────────────────────────► :deleted (pubsub) — generic delete observers still fire
-  ┃ ─────────────────────────────────────► :reject  (pubsub) — proposal-specific signal
+  ┃ ─────────────────────────────────────► :entry_deleted     (pubsub) — generic delete observers still fire
+  ┃ ─────────────────────────────────────► :proposal_rejected (pubsub) — proposal-specific signal
   ✔ done
 ```
 
@@ -158,7 +158,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ build dispatcher + registry
   ┃ load all hooks under .textus/hooks/**.rb
   ┃ build reader + writer
-  ┃ ─────────────────────────────────────► :loaded (pubsub) — fires exactly once per process per store
+  ┃ ─────────────────────────────────────► :store_loaded (pubsub) — fires exactly once per process per store
   ✔ store ready for use
 ```
 
@@ -167,7 +167,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ```
   ┃ for each entry in a build-writable zone:
   ┃   ┃ load source rows
-  ┃   ┃ if projection.reduce: ───────────► :reduce  (RPC)
+  ┃   ┃ if projection.reduce: ───────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
   ┃   ┃ sort/limit (skipped if reduce returned Hash)
   ┃   ┃ merge `intro` if inject_intro:
@@ -175,9 +175,9 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃   ┃ write derived path
   ┃   ┃ for each publish_to: / publish_each: target:
   ┃   ┃   byte-copy file to repo path
-  ┃   ┃   ─────────────────────────────► :published  (pubsub) — per file written
+  ┃   ┃   ─────────────────────────────► :file_published   (pubsub) — per file written
   ┃   ┃ append audit row {verb:"compute"}
-  ┃   ┃ ───────────────────────────────► :built  (pubsub) — per entry
+  ┃   ┃ ───────────────────────────────► :build_completed  (pubsub) — per entry
   ✔ done
 ```
 
@@ -187,11 +187,11 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃ role gate: must be "human"             ── ABORT if no
   ┃ read pending entry frontmatter
   ┃ apply proposal.action to proposal.target_key
-  ┃   └─► triggers :put or :deleted pubsub for the target
+  ┃   └─► triggers :entry_put or :entry_deleted pubsub for the target
   ┃ delete pending entry
-  ┃   └─► triggers :deleted pubsub for pending
+  ┃   └─► triggers :entry_deleted pubsub for pending
   ┃ append audit row {verb:"accept"}
-  ┃ ─────────────────────────────────────► :accepted  (pubsub)
+  ┃ ─────────────────────────────────────► :proposal_accepted  (pubsub)
   ✔ done
 ```
 
@@ -199,8 +199,8 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ```
   ┃ run 9 builtin Doctor::Check::* classes
-  ┃ for each registered :check hook:
-  ┃   ───────────────────────────────────► :check  (RPC per hook)
+  ┃ for each registered :validate hook:
+  ┃   ───────────────────────────────────► :validate  (RPC per hook)
   ┃                                          returns Array<issue>
   ┃ aggregate, emit report
   ✔ exit 0 / 1
@@ -213,21 +213,15 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 Both register against the same registry. Pick whichever reads best.
 
 ```ruby
-# 1. Primitive — authoritative entry point
-Textus.hook(:intake, :local_file) do |store:, config:, args:|
+# 1. Primitive — the only registration form
+Textus.on(:resolve_intake, :local_file) do |store:, config:, args:|
   { _meta: {}, body: File.read(config["path"]) }
 end
 
-# 2. Per-event sugar — one event, one callback
-Textus.intake(:local_file)       { |config:, args:, **| ... }
-Textus.reduce(:rank_by_recency)  { |rows:, **|          ... }
-Textus.put(:audit, keys: ["working.*"]) { |key:, envelope:, **| ... }
-Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+# 2. Same API for pub-sub events
+Textus.on(:entry_put, :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
+Textus.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, key:, target:, **| `git add #{target.shellescape}` }
 ```
-
-**When to use which:**
-- Per-event sugar (`Textus.intake`, `Textus.reduce`, …) — preferred for simple cases
-- `Textus.hook` — authoritative entry point; use when you want the most explicit form
 
 **Signature rule** — every hook accepts kwargs. Either list the ones you need explicitly, or accept `**` to absorb the rest. Missing a required kwarg with no `**` raises `UsageError` at registration time.
 
@@ -239,10 +233,10 @@ Every hook receives `store:` as its first kwarg. It's an `Application::Context` 
 
 Why: hooks fire inside a verb's control flow. Letting hooks write would create reentrancy, audit-log chaos, and surprise infinite loops. If you genuinely need to write from a hook, do it out of band — enqueue a job, write a sentinel file, or run a follow-up CLI command.
 
-For sugar forms that don't name `store:`, use `**` to discard it:
+If you don't need `store:`, absorb it with `**`:
 
 ```ruby
-Textus.reduce(:claude_root) do |rows:, **|   # store: absorbed by **
+Textus.on(:transform_rows, :claude_root) do |rows:, **|   # store: absorbed by **
   ...
 end
 ```
@@ -253,21 +247,21 @@ end
 
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
-| `:intake` raises | refresh aborts | nothing |
-| `:reduce` raises | build aborts (this entry only) | nothing |
-| `:check` raises | doctor aborts | nothing |
-| `:put` raises | verb still succeeds | `event_error` row in `audit.log` |
-| `:deleted` raises | verb still succeeds | `event_error` row |
-| `:refreshed` raises | verb still succeeds | `event_error` row |
-| `:built` raises | verb still succeeds | `event_error` row |
-| `:accepted` raises | verb still succeeds | `event_error` row |
-| `:published` raises | verb still succeeds | `event_error` row |
-| `:mv` raises | verb still succeeds | `event_error` row |
-| `:reject` raises | verb still succeeds | `event_error` row |
-| `:loaded` raises | store still ready | `event_error` row |
-| `:refresh_began` raises | verb still succeeds | `event_error` row |
+| `:resolve_intake` raises | refresh aborts | nothing |
+| `:transform_rows` raises | build aborts (this entry only) | nothing |
+| `:validate` raises | doctor aborts | nothing |
+| `:entry_put` raises | verb still succeeds | `event_error` row in `audit.log` |
+| `:entry_deleted` raises | verb still succeeds | `event_error` row |
+| `:entry_refreshed` raises | verb still succeeds | `event_error` row |
+| `:build_completed` raises | verb still succeeds | `event_error` row |
+| `:proposal_accepted` raises | verb still succeeds | `event_error` row |
+| `:file_published` raises | verb still succeeds | `event_error` row |
+| `:entry_renamed` raises | verb still succeeds | `event_error` row |
+| `:proposal_rejected` raises | verb still succeeds | `event_error` row |
+| `:store_loaded` raises | store still ready | `event_error` row |
+| `:refresh_started` raises | verb still succeeds | `event_error` row |
 | `:refresh_failed` raises | verb still succeeds | `event_error` row |
-| `:refresh_detached` raises | verb still succeeds | `event_error` row |
+| `:refresh_backgrounded` raises | verb still succeeds | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 
@@ -280,19 +274,19 @@ The pub-sub guarantee — "your write will not fail because of a flaky listener"
 Pub-sub handlers can scope themselves with a `keys:` filter. Globs use `File.fnmatch?` with `FNM_PATHNAME`, meaning `*` does **not** cross `.` separators:
 
 ```ruby
-Textus.put(:audit_working, keys: ["working.*"])    { ... }     # working.x ✓, working.y.z ✗
-Textus.put(:audit_working_deep, keys: ["working.**"]) { ... }  # any depth ✓
-Textus.put(:audit_identity,   keys: ["identity.*", "identity.**"]) { ... }
-Textus.put(:audit_all)                              { ... }     # no filter → every key
+Textus.on(:entry_put, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
+Textus.on(:entry_put, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
+Textus.on(:entry_put, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
+Textus.on(:entry_put, :audit_all) { ... }                                # no filter → every key
 ```
 
-One `put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
+One `:entry_put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
 
 ---
 
-## 8. Built-in intake parsers
+## 8. Built-in fetch parsers
 
-Five `:intake` hooks ship pre-registered:
+Five `:resolve_intake` hooks ship pre-registered:
 
 | Name | Expects in `config["bytes"]` | Returns |
 |------|------------------------------|---------|
@@ -307,9 +301,9 @@ Five `:intake` hooks ship pre-registered:
 Wrapping pattern:
 
 ```ruby
-Textus.intake(:remote_rss) do |store:, config:, args:|
+Textus.on(:resolve_intake, :remote_rss) do |store:, config:, args:|
   bytes = Net::HTTP.get(URI(config["url"]))
-  store.invoke_rpc(:intake, :rss, config: { "bytes" => bytes }, args: args)
+  store.invoke_rpc(:resolve_intake, :rss, config: { "bytes" => bytes }, args: args)
 end
 ```
 
@@ -325,15 +319,15 @@ RSpec.describe "my notion hook" do
   around { |ex| Textus.with_registry(reg) { ex.run } }
 
   it "registers under :notion" do
-    Textus.intake(:notion) { |config:, **| { _meta: {}, body: "stub" } }
-    expect(reg.rpc_names(:intake)).to include(:notion)
+    Textus.on(:resolve_intake, :notion) { |store:, config:, args:| { _meta: {}, body: "stub" } }
+    expect(reg.rpc_names(:resolve_intake)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    Textus.intake(:notion) do |config:, args:, **|
+    Textus.on(:resolve_intake, :notion) do |store:, config:, args:|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
-    handler = reg.rpc(:intake, :notion)
+    handler = reg.rpc_callable(:resolve_intake, :notion)
     result  = handler.call(store: nil, config: {}, args: {})
     expect(result[:body]).to eq("hello")
   end
@@ -344,29 +338,29 @@ For pub-sub handlers, drive the dispatcher directly:
 
 ```ruby
 captured = []
-Textus.put(:listener, keys: ["working.*"]) { |key:, **| captured << key }
+Textus.on(:entry_put, :listener, keys: ["working.*"]) { |store:, key:, envelope:, **| captured << key }
 
-reg.listeners(:put, key: "working.x").first[:callable].call(
+reg.listeners(:entry_put, key: "working.x").first[:callable].call(
   store: nil, key: "working.x", envelope: {}
 )
 expect(captured).to eq(["working.x"])
 ```
 
-See `spec/hooks/sugar_spec.rb` for the canonical patterns.
+See `spec/hooks/registry_spec.rb` for the canonical patterns.
 
 ---
 
 ## 10. Common patterns
 
-### Connector — paired `:intake` + `:reduce`
+### Connector — paired `:resolve_intake` + `:transform_rows`
 
 ```ruby
-Textus.intake(:linear) do |config:, args:, **|
+Textus.on(:resolve_intake, :linear) do |store:, config:, args:|
   bytes = LinearClient.fetch(config["team_id"])
   { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
 end
 
-Textus.reduce(:linear) do |rows:, **|
+Textus.on(:transform_rows, :linear) do |store:, rows:, **|
   rows.map { |r| r.slice("id", "title", "state", "updated_at") }
       .sort_by { |r| r["updated_at"] }
       .reverse
@@ -376,23 +370,23 @@ end
 Manifest references the same name on both sides:
 
 ```yaml
-- key: inbox.linear.issues
-  zone: inbox
+- key: intake.linear.issues
+  zone: intake
   intake: { handler: linear, config: { team_id: "ENG" } }
 
 - key: output.linear.dashboard
   zone: output
-  projection: { select: [inbox.linear.issues], reduce: linear }
+  projection: { select: [intake.linear.issues], reduce: linear }
 
-policies:
-  - match: inbox.linear.**
+rules:
+  - match: intake.linear.**
     refresh: { ttl: 1h, on_stale: warn }
 ```
 
 ### Audit listener — every write to a sensitive zone
 
 ```ruby
-Textus.put(:identity_audit, keys: ["identity.**"]) do |key:, envelope:, **|
+Textus.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |store:, key:, envelope:, **|
   Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']}")
 end
 ```
@@ -400,7 +394,7 @@ end
 ### Build notifier — desktop ping when derived files rebuild
 
 ```ruby
-Textus.built(:notify) do |key:, sources:, **|
+Textus.on(:build_completed, :notify) do |store:, key:, sources:, **|
   system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
 end
 ```
@@ -408,7 +402,7 @@ end
 ### Custom doctor check — enforce a project rule
 
 ```ruby
-Textus.check(:no_drafts_in_identity) do |store:|
+Textus.on(:validate, :no_drafts_in_identity) do |store:|
   Textus::Application::Reads::List.new(ctx: store).call(zone: "identity")
     .select { |e| e["frontmatter"]["status"] == "draft" }
     .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
@@ -422,6 +416,6 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 ## Where to go from here
 
 - [`./zones.md`](./zones.md) — the manifest side: declaring which entries trigger which hooks
-- [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:intake` and event contracts
+- [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:resolve_intake` and event contracts
 - [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
 - [`../examples/claude-plugin/.textus/hooks/`](../examples/claude-plugin/.textus/hooks/) — six worked hooks across four event types

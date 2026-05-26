@@ -37,7 +37,7 @@ Trigger the refresh:
 textus refresh intake.skills.agent-eval
 ```
 
-The intake entry lands at `intake.skills.agent-eval`. The `:refreshed` listener then writes `vendor.skills.agent-eval.SKILL.md`, `vendor.skills.agent-eval.scripts.run.rb`, etc.
+The intake entry lands at `intake.skills.agent-eval`. The `:entry_refreshed` listener then writes `vendor.skills.agent-eval.SKILL.md`, `vendor.skills.agent-eval.scripts.run.rb`, etc.
 
 ## Required manifest plumbing
 
@@ -45,7 +45,7 @@ The intake entry lands at `intake.skills.agent-eval`. The `:refreshed` listener 
 
   ```yaml
   zones:
-    - { name: vendor, writable_by: [script, system] }
+    - { name: vendor, write_policy: [runner, system] }
   ```
 
 - Derived keys are written without manifest entries. `textus doctor` will not complain about them today because doctor checks manifest references, not raw store entries. (When manifest-coverage-of-all-keys becomes a doctor check, this recipe will need to declare derived keys via a pattern entry — see the ADR.)
@@ -54,9 +54,9 @@ The intake entry lands at `intake.skills.agent-eval`. The `:refreshed` listener 
 
 1. **30-second fetch timeout.** `lib/textus/application/refresh/worker.rb:7` caps intake at 30s. Large folders with many files may exceed this. Workarounds: narrow the `path` config, or fetch via a CDN-backed mirror.
 
-2. **No re-entry guard.** The listener calls `store.put`/`store.delete` with `suppress_events: true` to prevent its own refresh from triggering itself. If you fork the recipe and forget this, you get an event loop.
+2. **No re-entry guard.** The listener uses the Operations facade for inner writes (`Operations.writes.put.call(...)`, `Operations.writes.delete.call(...)`) with `suppress_events: true` to prevent its own refresh from triggering itself. If you fork the recipe and forget this, you get an event loop.
 
-3. **Reconciliation is per-source.** Only derived keys under `vendor.skills.<slug>.` for the refreshed source are reconciled. Deleting the intake source entry does **not** garbage-collect its children — you would need a separate `:deleted` listener for that.
+3. **Reconciliation is per-source.** Only derived keys under `vendor.skills.<slug>.` for the refreshed source are reconciled. Deleting the intake source entry does **not** garbage-collect its children — you would need a separate `:entry_deleted` listener for that.
 
 4. **Public repos only as written.** The hook does not send an `Authorization` header. For private repos or to dodge unauthenticated rate limits, extend `TextusRecipes::GithubFolder::DEFAULT_FETCHER` to inject a `Bearer` token from `ENV`.
 

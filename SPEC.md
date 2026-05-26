@@ -828,7 +828,10 @@ Both read and write paths flow through the application layer:
 - **Reads** flow through `Application::Reads::Get`, which takes a `Context` and dispatches refresh via `Application::Refresh::Orchestrator`.
 - **Writes** flow through `Application::Writes::{Put,Delete,Build,Accept,Publish}`, each taking a `Context`. Permission checks happen at the use-case layer (via `Context#can_write?`); I/O happens at `Store::Writer#write_envelope_to_disk` (pure).
 - `Application::Context` is the universal request object: it carries `store`, `role`, `correlation_id`, `clock`, and `dry_run`. Use cases never thread these as separate kwargs.
-- `Textus::Composition` is the factory module CLI verbs (and future MCP server / HTTP shim) use to construct Contexts and use cases.
+- `Textus::Operations` is the factory CLI verbs (and future MCP server / HTTP shim)
+  use to construct Contexts and use cases. `Operations.for(store, role:)` returns
+  a memoized facade with `.reads`, `.writes`, and `.refresh` namespaces mirroring the
+  files under `lib/textus/application/{reads,writes,refresh}/`.
 
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
