@@ -45,7 +45,8 @@ module Textus
       load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
-      fire_event(:store_loaded)
+      view = Textus::Application::Context.new(store: self, role: "human")
+      @bus.publish(:store_loaded, store: view)
     end
 
     def load_hooks
@@ -74,23 +75,6 @@ module Textus
         Schema.load(sp)
       end
     end
-
-    def where(key) = @reader.where(key)
-    def list(**) = @reader.list(**)
-    def schema_envelope(key) = @reader.schema_envelope(key)
-
-    def fire_event(event, **)
-      view = Textus::Application::Context.new(store: self, role: "human")
-      @bus.publish(event, store: view, **)
-    end
-
-    def deps(key)    = @reader.deps(key)
-    def rdeps(key)   = @reader.rdeps(key)
-    def published    = @reader.published
-    def stale(**)    = @reader.stale(**)
-    def validate_all = @reader.validate_all
-
-    def uid(key) = @reader.uid(key)
 
     def audit_log
       @audit_log ||= Store::AuditLog.new(@root)
