@@ -19,6 +19,35 @@ module Textus
       end
     end
 
+    # Replaces the freshly-stamped timestamp inside `new_bytes` with the
+    # timestamp pulled from `old_bytes` (same format). Returns the rewritten
+    # bytes, or nil if either side lacks a parseable timestamp.
+    module IdempotentWrite
+      def self.rewrite_with_prior_timestamp(new_bytes:, old_bytes:, format:)
+        prior = extract_timestamp(old_bytes, format)
+        fresh = extract_timestamp(new_bytes, format)
+        return nil unless prior && fresh
+        return new_bytes if prior == fresh
+
+        new_bytes.sub(fresh, prior)
+      end
+
+      def self.extract_timestamp(bytes, format)
+        case format
+        when "markdown"
+          parsed = Entry.for_format("markdown").parse(bytes)
+          parsed.dig("_meta", "generated", "at")
+        when "json", "yaml"
+          parsed = Entry.for_format(format).parse(bytes)
+          parsed.dig("_meta", "generated_at")
+        else # rubocop:disable Style/EmptyElse
+          nil
+        end
+      rescue Textus::BadFrontmatter
+        nil
+      end
+    end
+
     module Pipeline
       def self.renderers
         @renderers ||= {
@@ -44,12 +73,27 @@ module Textus
           raise UsageError.new("builder: unsupported format #{mentry.format.inspect} for '#{mentry.key}'")
         bytes = klass.new(template_loader: template_loader).call(mentry: mentry, data: data)
 
-        # 3. Write
+        # 3. Write (idempotent: skip if only generated_at would differ)
         target_path = Key::Path.resolve(store.manifest, mentry)
         FileUtils.mkdir_p(File.dirname(target_path))
-        File.binwrite(target_path, bytes)
+        write_if_changed(target_path, bytes, mentry.format)
 
         target_path
+      end
+
+      def self.write_if_changed(target_path, bytes, format)
+        if File.exist?(target_path)
+          old_bytes = File.binread(target_path)
+          if format == "text"
+            return if old_bytes == bytes
+          else
+            rewritten = IdempotentWrite.rewrite_with_prior_timestamp(
+              new_bytes: bytes, old_bytes: old_bytes, format: format,
+            )
+            return if rewritten && rewritten == old_bytes
+          end
+        end
+        File.binwrite(target_path, bytes)
       end
     end
   end
