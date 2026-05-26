@@ -32,16 +32,16 @@ RSpec.describe "Textus UID" do
     uid = e1.uid
     e2 = ops.put("working.md", meta: { "name" => "md" }, body: "again")
     expect(e2.uid).to eq(uid)
-    e3 = store.reader.get("working.md")
+    e3 = Textus::Operations.for(store).get("working.md")
     expect(e3.uid).to eq(uid)
   end
 
   it "shows nil uid for existing files that have none, then mints on put" do
     path = File.join(root, "zones/working/md.md")
     File.write(path, "---\nname: md\n---\nhand-rolled\n")
-    expect(store.reader.get("working.md").uid).to be_nil
+    expect(Textus::Operations.for(store).get("working.md").uid).to be_nil
 
-    existing = store.reader.get("working.md")
+    existing = Textus::Operations.for(store).get("working.md")
     env = Textus::Operations.for(store, role: "human").put(
       "working.md",
       meta: existing.meta,

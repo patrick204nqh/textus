@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   class Store
-    attr_reader :root, :manifest, :registry, :reader, :writer, :bus, :schemas, :file_store
+    attr_reader :root, :manifest, :schemas, :file_store, :audit_log, :bus, :registry
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
@@ -29,38 +29,17 @@ module Textus
     end
 
     def initialize(root)
-      @root = File.expand_path(root)
-      @manifest = Manifest.load(@root)
-      @bus = Hooks::Dispatcher.new
-      Textus::Infra::AuditSubscriber.new(audit_log).attach(@bus)
-      @registry = Hooks::Registry.new(dispatcher: @bus)
-      @schema_cache = {}
-      @file_store = Infra::Storage::FileStore.new
+      @root       = File.expand_path(root)
+      @manifest   = Manifest.load(@root)
       @schemas    = Schemas.new(File.join(@root, "schemas"))
-      load_hooks
-      @reader = Reader.new(self)
-      @writer = Writer.new(self)
-      @bus.publish(:store_loaded, store: Textus::Application::Context.system(self))
-    end
-
-    def load_hooks
+      @file_store = Infra::Storage::FileStore.new
+      @audit_log  = Infra::AuditLog.new(@root)
+      @bus        = Hooks::Dispatcher.new
+      @registry   = Hooks::Registry.new(dispatcher: @bus)
+      Infra::AuditSubscriber.new(@audit_log).attach(@bus)
       Hooks::Builtin.register_all(@registry)
       Hooks::Loader.new(registry: @registry).load_dir(File.join(@root, "hooks"))
-    end
-
-    def schema_for(name)
-      return nil if name.nil?
-
-      @schema_cache[name] ||= begin
-        sp = File.join(@root, "schemas", "#{name}.yaml")
-        raise IoError.new("schema not found: #{sp}") unless File.exist?(sp)
-
-        Schema.load(sp)
-      end
-    end
-
-    def audit_log
-      @audit_log ||= Textus::Infra::AuditLog.new(@root)
+      @bus.publish(:store_loaded, store: Application::Context.system(self))
     end
   end
 end

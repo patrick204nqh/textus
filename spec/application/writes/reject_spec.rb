@@ -34,7 +34,7 @@ RSpec.describe Textus::Application::Writes::Reject do
 
       expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "review.draft", "target_key" => "identity.target")
       expect(events).to eq([["review.draft", "identity.target"]])
-      expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
+      expect(Textus::Operations.for(store).get("review.draft")).to be_nil
     end
   end
 

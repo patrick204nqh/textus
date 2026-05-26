@@ -54,7 +54,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     expect(reject_events.length).to eq(1)
     expect(reject_events.first[1]).to eq("review.draft")
     expect(reject_events.first[2]).to eq("identity.target")
-    expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
+    expect(Textus::Operations.for(store).get("review.draft")).to be_nil
   end
 
   it "refuses to reject a non-review entry" do

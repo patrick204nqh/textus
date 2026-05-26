@@ -32,7 +32,7 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     result = Textus::Operations.for(store, role: "human").reject("review.draft")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
+    expect(Textus::Operations.for(store).get("review.draft")).to be_nil
   end
 
   it "negative-signal: a zone literally named 'pending' but without [ai] writers is NOT proposal-kind" do
