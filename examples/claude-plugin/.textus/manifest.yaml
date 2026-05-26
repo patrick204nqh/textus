@@ -13,11 +13,6 @@ zones:
   - runner
   read_policy:
   - all
-- name: intake
-  write_policy:
-  - runner
-  read_policy:
-  - all
 - name: review
   write_policy:
   - agent
@@ -34,11 +29,6 @@ entries:
   path: identity/voice-tools.md
   zone: identity
   schema: plugin
-  owner: human:self
-- key: identity.marketplace
-  path: identity/example-marketplace.md
-  zone: identity
-  schema:
   owner: human:self
 - key: working.agents
   path: working/agents
@@ -67,14 +57,6 @@ entries:
   schema:
   owner: agent:catalog
   nested: true
-- key: intake.upstream.notes
-  path: intake/upstream/notes.md
-  zone: intake
-  owner: runner:local
-  intake:
-    handler: local_file
-    config:
-      path: ".textus/zones/identity/voice-tools.md"
 - key: output.plugin
   path: output/plugin.json
   zone: output
@@ -88,21 +70,6 @@ entries:
     pluck: "*"
     kind: projection
     transform: plugin_envelope
-- key: output.marketplace
-  path: output/marketplace.json
-  zone: output
-  format: json
-  owner: builder:auto
-  publish_to:
-  - ".claude-plugin/marketplace.json"
-  compute:
-    select:
-    - identity.marketplace
-    - identity.plugin
-    - working.skills
-    pluck: "*"
-    kind: projection
-    transform: marketplace_envelope
 - key: output.claude-root
   path: output/claude-root.md
   zone: output
@@ -125,16 +92,6 @@ entries:
     kind: projection
     transform: claude_root
 rules:
-- match: intake.**
-  refresh:
-    ttl: 24h
-    on_stale: warn
-- match: intake.upstream.notes
-  refresh:
-    ttl: 12h
-- match: intake.**
-  intake_handler_allowlist:
-  - local_file
 - match: review.**
   promotion:
     requires:

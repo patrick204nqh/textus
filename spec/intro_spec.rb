@@ -139,6 +139,43 @@ RSpec.describe Textus::Intro do
     expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "hook")
   end
 
+  describe "agent_protocol block" do
+    it "includes envelope_shape, role_resolution, and recipes" do
+      result = Textus::Intro.run(store)
+      expect(result).to have_key("agent_protocol")
+      block = result["agent_protocol"]
+      expect(block).to have_key("envelope_shape")
+      expect(block).to have_key("role_resolution")
+      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "refresh")
+    end
+
+    it "does not change the wire protocol field" do
+      result = Textus::Intro.run(store)
+      expect(result["protocol"]).to eq("textus/3")
+    end
+
+    it "is omitted from per-recipe output by default (no example field)" do
+      result = Textus::Intro.run(store)
+      result["agent_protocol"]["recipes"].each_value do |r|
+        expect(r).not_to have_key("example")
+      end
+    end
+  end
+
+  describe "backward compatibility" do
+    it "keeps every pre-0.12.3 top-level key with its original shape" do
+      result = Textus::Intro.run(store)
+      expect(result["protocol"]).to be_a(String).and eq("textus/3")
+      expect(result["store_root"]).to be_a(String)
+      expect(result["zones"]).to be_a(Array)
+      expect(result["entries"]).to be_a(Array)
+      expect(result["hooks"]).to be_a(Hash)
+      expect(result["write_flows"]).to be_a(Hash)
+      expect(result["cli_verbs"]).to be_a(Array)
+      expect(result["docs"]).to be_a(Hash)
+    end
+  end
+
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new

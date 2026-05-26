@@ -26,6 +26,61 @@ module Textus
       "builder" => "'textus build' computes output entries from projections; output files are never hand-edited",
     }.freeze
 
+    # Static, store-independent guide to the agent-facing protocol. Surfaced
+    # under the new top-level `agent_protocol` key in Intro.run. Recipes
+    # describe CLI verbs (not Ruby Operations) because the audience is an
+    # agent driving textus from the command line.
+    AGENT_PROTOCOL = {
+      "envelope_shape" => {
+        "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
+        "fields" => {
+          "_meta" => "hash of structured frontmatter; schema-validated per entry family",
+          "body" => "string payload (markdown/text) or nil for json/yaml formats where body lives in _meta",
+          "uid" => "stable 16-char hex identifier; preserved across writes and key renames",
+          "etag" => "content hash; pass back on writes to detect concurrent edits",
+        },
+        "ref" => "SPEC.md §8",
+      },
+      "role_resolution" => {
+        "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, default human",
+        "roles" => %w[human agent runner builder],
+        "ref" => "SPEC.md §5",
+      },
+      "recipes" => {
+        "read" => {
+          "purpose" => "find and read an entry",
+          "steps" => [
+            "textus list --zone=ZONE --prefix=PREFIX  # discover keys",
+            "textus get KEY                            # returns envelope JSON",
+          ],
+        },
+        "write" => {
+          "purpose" => "create or update an entry",
+          "steps" => [
+            "textus schema get FAMILY                  # learn the _meta field shape",
+            "build an envelope JSON: {_meta: {...}, body: \"...\"}",
+            "echo ENVELOPE | textus put KEY --as=ROLE --stdin",
+          ],
+        },
+        "propose" => {
+          "purpose" => "agent suggests a change for human review",
+          "agent_steps" => [
+            "echo ENVELOPE | textus put review.KEY --as=agent --stdin",
+          ],
+          "human_steps" => [
+            "textus accept review.KEY --as=human       # promotes the proposal to its target zone",
+          ],
+        },
+        "refresh" => {
+          "purpose" => "rebuild stale intake-zone caches from their declared actions",
+          "steps" => [
+            "textus freshness --zone=intake            # report fresh/stale per entry",
+            "textus refresh stale --zone=intake --as=runner",
+          ],
+        },
+      },
+    }.freeze
+
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
     # Agents that read intro should see a stable shape regardless of how
     # verb implementations evolve.
@@ -59,6 +114,7 @@ module Textus
         "hooks" => hooks_for(store),
         "write_flows" => WRITE_FLOWS.dup,
         "cli_verbs" => CLI_VERBS.map(&:dup),
+        "agent_protocol" => AGENT_PROTOCOL,
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end

@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-25T11:44:44Z'
+  at: '2026-05-26T04:27:41Z'
   from:
   - identity.plugin
   - working.agents
@@ -18,13 +18,25 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 → Write authority by zone:
     - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human agent runner ) — active project state; humans, AI, and scripts share this surface
-    - **intake** (runner ) — declared external inputs; script-refreshed via actions
     - **review** (agent human ) — AI proposals awaiting human accept
     - **output** (builder ) — build-computed outputs; never hand-edited
 
-→ AI proposals go to `review.*` with `--as=agent` carrying a `proposal:` block;
-   a human runs `textus accept <key>` to apply.
+→ Agent protocol (from `textus intro`):
+   • **read** — find and read an entry
+     `textus list --zone=ZONE --prefix=PREFIX  # discover keys`
+     `textus get KEY                            # returns envelope JSON`
+   • **write** — create or update an entry
+     `textus schema get FAMILY                  # learn the _meta field shape`
+     `build an envelope JSON: {_meta: {...}, body: "..."}`
+     `echo ENVELOPE | textus put KEY --as=ROLE --stdin`
+   • **propose** — agent suggests a change for human review
+     agent: `echo ENVELOPE | textus put review.KEY --as=agent --stdin`
+     human: `textus accept review.KEY --as=human       # promotes the proposal to its target zone`
+   • **refresh** — rebuild stale intake-zone caches from their declared actions
+     `textus freshness --zone=intake            # report fresh/stale per entry`
+     `textus refresh stale --zone=intake --as=runner`
 -->
+
 
 # voice-tools
 
@@ -34,14 +46,10 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 ## Agents
 
-- **fact-checker** — Cross-references claims in prose against cited sources.
-
 - **voice-writer** — Rewrites prose in the author's canonical voice.
 
 
 ## Skills
-
-- **fact-checker** — Source-verification skill for editorial workflows.
 
 - **voice-writer** — Voice-preserving rewrite skill bundled with voice-tools.
 
@@ -52,4 +60,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-25T11:44:44Z._
+_Built at 2026-05-26T04:27:41Z._

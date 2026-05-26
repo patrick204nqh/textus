@@ -9,6 +9,18 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## [0.12.3] — 2026-05-26
+
+### Added
+- `textus intro` output now includes an `agent_protocol` block: envelope shape, role-resolution rules, and four canonical recipes (`read`, `write`, `propose`, `refresh`). One `textus intro` call is sufficient orientation for a fresh AI agent to operate the store without consulting `SPEC.md`.
+
+### Compatibility
+- Fully additive. All pre-0.12.3 fields on `Textus::Intro.run` retain their existing keys, types, and shapes. The wire `"protocol"` field continues to hold the string `"textus/3"`.
+
+### Examples
+- `examples/claude-plugin/.textus/templates/claude-root.mustache` now projects the new `agent_protocol` recipes into the rendered `CLAUDE.md` via the existing `inject_intro:` mechanism. A plugin's CLAUDE.md auto-projects the four recipes alongside zone authority — agents reading CLAUDE.md get full orientation without a separate `textus intro` call. This is the canonical pattern for plugin authors who want recipes inline.
+- `examples/claude-plugin/` trimmed to one of each surface (one agent, one skill, one command, one identity entry, one JSON output). Removed: the duplicate `fact-checker` variants, the `marketplace.json` projection (the JSON-output lesson is already shown by `plugin.json`), the degenerate `local_file` intake demo (pulled a file from the same store), and unused demo hooks (`rank_by_recency`, `build-stamp`). File count drops from 51 to 33; manifest from 142 to 99 lines.
+
 ## [0.12.2] — 2026-05-26
 
 ### Breaking changes

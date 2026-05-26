@@ -1,20 +1,22 @@
 # voice-tools — a Claude Code plugin managed by textus
 
-This example shows a real-shape Claude Code plugin (`voice-tools`) whose
+This example shows a minimal Claude Code plugin (`voice-tools`) whose
 authoring surface lives entirely under `.textus/`. The plugin ships:
 
-- 2 agents (`voice-writer`, `fact-checker`)
-- 2 skills (`voice-writer`, `fact-checker`)
+- 1 agent (`voice-writer`)
+- 1 skill (`voice-writer`)
 - 1 command (`/rewrite`)
 - a plugin manifest at `.claude-plugin/plugin.json`
-- a marketplace listing at `.claude-plugin/marketplace.json`
 - a `CLAUDE.md` loaded on session start
 
-Every consumer-facing file in this plugin — the three output envelopes
-*and* every agent/skill/command leaf under `agents/`, `skills/`, `commands/`
-— is byte-copied from `.textus/zones/...` by `textus build`. The entire
-plugin layout is end-to-end textus-managed; no file under `agents/`,
-`skills/`, or `commands/` is hand-mirrored.
+Every consumer-facing file — the two output envelopes *and* every
+agent/skill/command leaf under `agents/`, `skills/`, `commands/` — is
+byte-copied from `.textus/zones/...` by `textus build`. No file under
+`agents/`, `skills/`, or `commands/` is hand-mirrored.
+
+The example is deliberately small. It demonstrates three load-bearing
+patterns once each: zone separation by role, `publish_each` byte-copy,
+and `inject_intro` orientation projection.
 
 ## Layout
 
@@ -22,15 +24,12 @@ plugin layout is end-to-end textus-managed; no file under `agents/`,
 voice-tools/
   .claude-plugin/
     plugin.json              # ← published from .textus/zones/output/plugin.json
-    marketplace.json         # ← published from .textus/zones/output/marketplace.json
   CLAUDE.md                  # ← published from .textus/zones/output/claude-root.md
 
   agents/
     voice-writer.md          # ← publish_each from working.agents.voice-writer
-    fact-checker.md          # ← publish_each from working.agents.fact-checker
   skills/
     voice-writer/SKILL.md    # ← publish_each from working.skills.writing.voice-writer
-    fact-checker/SKILL.md    # ← publish_each from working.skills.research.fact-checker
   commands/
     rewrite.md               # ← publish_each from working.commands.rewrite
 
@@ -43,57 +42,53 @@ voice-tools/
       command.yaml           # name, description
     hooks/
       plugin_envelope.rb     # transform → plugin.json shape
-      marketplace_envelope.rb# transform → marketplace.json shape
       claude_root.rb         # transform → CLAUDE.md template payload
-      rank_by_recency.rb     # demo transform (kept for reference)
-      local_file.rb          # demo intake handler
-      build-stamp.rb         # demo :built hook (in-process)
     templates/
       claude-root.mustache   # renders CLAUDE.md from the compute payload
     zones/
       identity/
-        voice-tools.md         # plugin identity (name, version, description, author, repository)
-        example-marketplace.md # marketplace identity (name, owner)
+        voice-tools.md         # plugin identity
       working/
-        agents/<name>.md       # one file per agent
-        skills/<topic>/<name>.md  # nested ≥4 segments (e.g. working.skills.writing.voice-writer)
+        agents/<name>.md
+        skills/<topic>/<name>.md  # nested ≥4 segments
         commands/<name>.md
-      intake/
-        upstream/notes.md      # action demo (local_file)
+      review/
+        suggestion/<name>.md   # AI proposals awaiting human accept
       output/
         plugin.json            # → publish_to .claude-plugin/plugin.json
-        marketplace.json       # → publish_to .claude-plugin/marketplace.json
         claude-root.md         # → publish_to CLAUDE.md
   bin/notify-build             # external-runner stub for the :build event
   lefthook.yml                 # git hooks (unrelated to textus :build hook)
-  Rakefile                     # rake textus:refresh / textus:update
+  Rakefile                     # rake textus:update
+  recipes/                     # optional advanced patterns; see recipes/README.md
 ```
 
 ## How textus manages the catalog
 
-- **Identity** holds the slow-changing identity blocks (`identity.plugin`
-  and `identity.marketplace`). The `identity` zone is `write_policy: [human]`
-  — agents and runners cannot touch it.
+- **Identity** holds the slow-changing plugin identity (`identity.plugin`).
+  The `identity` zone is `write_policy: [human]` — agents and runners
+  cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
-- **Intake** is action-fed (runner-only). The `intake.upstream.notes` entry
-  uses the project-local `local_file` action as a small demo. Its freshness
-  rule and a per-zone handler allowlist both live in the manifest's top-level
-  `rules:` block — see "Policies" below.
 - **Review** is the AI proposal surface. The manifest's `review.**` rule
   declares `promotion: { requires: [schema_valid, human_accept] }` — the
   contract a proposal must satisfy before it can be accepted.
-- **Output** is owned by `builder:auto`. Three output entries assemble the
+- **Output** is owned by `builder:auto`. Two output entries assemble the
   shipped surface:
   - `output.plugin` → `plugin_envelope` transform → `.claude-plugin/plugin.json`
-  - `output.marketplace` → `marketplace_envelope` transform →
-    `.claude-plugin/marketplace.json`
   - `output.claude-root` → `claude_root` transform + `claude-root.mustache`
-    template → `CLAUDE.md`
+    template (with `inject_intro: true`) → `CLAUDE.md`
 
-The deep-nested skill paths (`working.skills.writing.voice-writer` —
-four key segments below `working`) exercise textus's nested-tree resolver.
+The `inject_intro: true` flag on `output.claude-root` makes `Intro.run(store)`
+available inside the template as `{{intro.*}}` — the rendered `CLAUDE.md`
+auto-projects zone authority *and* the four protocol recipes
+(read/write/propose/refresh) straight from textus's own intro envelope.
+Agents reading `CLAUDE.md` get full orientation without a separate
+`textus intro` call.
+
+The deep-nested skill path (`working.skills.writing.voice-writer` —
+four key segments below `working`) exercises textus's nested-tree resolver.
 
 ## Build
 
@@ -149,33 +144,18 @@ editing any working-zone file and the consumer mirrors update automatically.
 
 The manifest's top-level `rules:` block declares rules that apply across
 multiple entries, matched by glob and resolved most-specific-wins per slot.
-This example ships four blocks:
+This example ships one block:
 
 ```yaml
 rules:
-  # Baseline: refresh every intake.* once a day, warn on stale.
-  - match: intake.**
-    refresh: { ttl: 24h, on_stale: warn }
-
-  # More-specific override for one entry — 12h instead of 24h.
-  - match: intake.upstream.notes
-    refresh: { ttl: 12h }
-
-  # Guard-rail: every intake.* must use a handler from this list.
-  - match: intake.**
-    intake_handler_allowlist: [local_file]
-
   # Contract for AI proposals.
   - match: review.**
     promotion: { requires: [schema_valid, human_accept] }
 ```
 
-`textus rule explain intake.upstream.notes` walks the resolution: two blocks
-contribute a `refresh` rule, the literal-match one wins; one contributes an
-`intake_handler_allowlist`. `textus doctor` runs the `rule_ambiguity` check
-(no two blocks of equal specificity may fill the same slot) and the
-`intake_handler_allowlist` check (every intake handler must be in its rule's
-allowlist).
+`textus rule list` dumps every parsed block; `textus rule explain KEY` walks
+the resolution for a single key. `textus doctor` runs the `rule_ambiguity`
+check (no two blocks of equal specificity may fill the same slot).
 
 ## Visibility verbs
 
@@ -320,16 +300,6 @@ top suggestions via the `did you mean:` hint, ranked by shared prefix and
 Levenshtein distance against the actual key set. Same applies to `where`,
 `put`, `delete`, and `key mv`.
 
-## Intake refresh
-
-`intake.upstream.notes` reads `.textus/zones/identity/voice-tools.md` through
-the in-process `local_file` action. Walk it with:
-
-```bash
-rake textus:refresh    # refresh every stale intake entry
-rake textus:update     # refresh + build + dispatch external :build hooks
-```
-
 ## Project-local hooks
 
 Every `.rb` file in `.textus/hooks/` is auto-loaded on store boot and
@@ -337,12 +307,9 @@ registers into an isolated per-store registry. This example wires up:
 
 - `plugin_envelope` — turns the `identity.plugin` row into a Claude
   `plugin.json` envelope.
-- `marketplace_envelope` — assembles `identity.marketplace` + `identity.plugin` +
-  the `working.skills.*` rows into a Claude `marketplace.json` envelope.
 - `claude_root` — groups compute rows by source prefix for the CLAUDE.md
   template payload.
-- `rank_by_recency`, `local_file`, `build-stamp` — kept as demos of the
-  `:transform_rows` / `:resolve_intake` / `:built` / `:validate` event
-  surfaces (all expressed through the unified `Textus.on(event, name)` DSL).
 
-Inspect everything currently loaded with `textus hook list`.
+Inspect everything currently loaded with `textus hook list`. For richer
+patterns (external intake handlers, fan-out from one intake to many derived
+entries), see the optional copy-paste recipes in `recipes/`.
