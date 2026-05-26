@@ -37,6 +37,12 @@ module Textus
 
       def self.nested_glob = "**/*.md"
 
+      def self.inject_uid(meta, content, existing_uid)
+        m = meta.is_a?(Hash) ? meta.dup : {}
+        m["uid"] = existing_uid || Textus::Store.mint_uid unless m["uid"].is_a?(String) && !m["uid"].empty?
+        [m, content]
+      end
+
       def self.validate_path_extension(path, _nested)
         ext = File.extname(path)
         return if ["", ".md"].include?(ext)

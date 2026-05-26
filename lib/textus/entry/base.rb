@@ -33,6 +33,10 @@ module Textus
       def self.validate_path_extension(_path, _nested)
         raise NotImplementedError.new("#{name}.validate_path_extension not implemented")
       end
+
+      def self.inject_uid(_meta, _content, _existing_uid)
+        raise NotImplementedError.new("#{name}.inject_uid not implemented")
+      end
     end
   end
 end

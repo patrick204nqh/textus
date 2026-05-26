@@ -66,14 +66,7 @@ module Textus
       end
 
       def ensure_uid(format, meta, content, existing_uid)
-        case format
-        when "markdown", "json", "yaml"
-          m = meta.is_a?(Hash) ? meta.dup : {}
-          m["uid"] = existing_uid || Store.mint_uid unless m["uid"].is_a?(String) && !m["uid"].empty?
-          [m, content]
-        else
-          [meta, content]
-        end
+        Textus::Entry.for_format(format).inject_uid(meta, content, existing_uid)
       end
 
       def enforce_name_match!(path, meta, format)

@@ -21,6 +21,10 @@ module Textus
 
       def self.nested_glob = "**/*.txt"
 
+      def self.inject_uid(meta, content, _existing_uid)
+        [meta, content]
+      end
+
       def self.validate_path_extension(path, nested)
         ext = File.extname(path)
         if nested
