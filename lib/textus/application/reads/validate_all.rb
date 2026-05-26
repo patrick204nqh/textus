@@ -7,7 +7,12 @@ module Textus
         end
 
         def call
-          @ctx.store.reader.validate_all
+          Validator.new(
+            reader: Get.new(ctx: @ctx),
+            manifest: @ctx.manifest,
+            audit_log: @ctx.audit_log,
+            schema_for: ->(name) { @ctx.schemas.fetch_or_nil(name) },
+          ).call
         end
       end
     end

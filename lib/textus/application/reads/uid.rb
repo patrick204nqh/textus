@@ -7,7 +7,7 @@ module Textus
         end
 
         def call(key)
-          @ctx.store.reader.uid(key)
+          Get.new(ctx: @ctx).get(key).uid
         end
       end
     end

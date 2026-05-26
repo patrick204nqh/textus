@@ -7,7 +7,9 @@ module Textus
         end
 
         def call(prefix: nil, zone: nil)
-          @ctx.store.reader.list(prefix: prefix, zone: zone)
+          rows = @ctx.manifest.enumerate(prefix: prefix)
+          rows = rows.select { |r| r[:manifest_entry].zone == zone } if zone
+          rows.map { |row| { "key" => row[:key], "zone" => row[:manifest_entry].zone, "path" => row[:path] } }
         end
       end
     end

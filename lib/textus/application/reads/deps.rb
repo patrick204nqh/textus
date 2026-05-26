@@ -7,7 +7,7 @@ module Textus
         end
 
         def call(key)
-          @ctx.store.reader.deps(key)
+          Dependencies.deps_of(@ctx.manifest, key)
         end
       end
     end
