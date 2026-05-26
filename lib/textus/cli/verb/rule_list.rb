@@ -10,6 +10,7 @@ module Textus
                 "ttl_seconds" => b.refresh.ttl_seconds,
                 "on_stale" => b.refresh.on_stale,
                 "sync_budget_ms" => b.refresh.sync_budget_ms,
+                "fetch_timeout_seconds" => b.refresh.fetch_timeout_seconds,
               }
             end
             row["handler_allowlist"] = b.handler_allowlist.handlers if b.handler_allowlist

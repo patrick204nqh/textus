@@ -11,7 +11,8 @@ module Textus
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
       RULE_KEYS    = %w[match refresh intake_handler_allowlist promotion retention].freeze
-      REFRESH_KEYS = %w[ttl on_stale sync_budget_ms].freeze
+      REFRESH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
+      FETCH_TIMEOUT_SECONDS_CEILING = 3600
       PROMOTION_KEYS = %w[requires].freeze
 
       def self.validate!(raw)
@@ -30,9 +31,21 @@ module Textus
         Array(raw["rules"]).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
-          walk(r["refresh"], REFRESH_KEYS, "#{path}.refresh") if r["refresh"].is_a?(Hash)
+          if r["refresh"].is_a?(Hash)
+            walk(r["refresh"], REFRESH_KEYS, "#{path}.refresh")
+            validate_fetch_timeout!(r["refresh"]["fetch_timeout_seconds"], "#{path}.refresh.fetch_timeout_seconds")
+          end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
         end
+      end
+
+      def self.validate_fetch_timeout!(value, path)
+        return if value.nil?
+        return if value.is_a?(Integer) && value.positive? && value <= FETCH_TIMEOUT_SECONDS_CEILING
+
+        raise BadManifest.new(
+          "fetch_timeout_seconds at '#{path}' must be a positive integer ≤ #{FETCH_TIMEOUT_SECONDS_CEILING} (got #{value.inspect})",
+        )
       end
 
       def self.walk(hash, allowed, path)

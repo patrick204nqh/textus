@@ -63,6 +63,7 @@ module Textus
             ttl: h["ttl"],
             on_stale: h["on_stale"] || "warn",
             sync_budget_ms: h["sync_budget_ms"],
+            fetch_timeout_seconds: h["fetch_timeout_seconds"],
           )
         end
 
