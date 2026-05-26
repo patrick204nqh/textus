@@ -229,7 +229,9 @@ Textus.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, key:, targe
 
 ## 5. The `store:` proxy
 
-Every hook receives `store:` as its first kwarg. It's an `Application::Context` bound to the active role — use it to drive read use cases (`Textus::Application::Reads::Get.new(ctx: store).call(key)`, `Textus::Application::Reads::List.new(ctx: store).call(...)`, etc.). Writes from inside a hook are unsupported and will raise.
+Every hook receives `store:` as its first kwarg. It's an `Application::Context` bound to the active role — use it to drive read use cases (`Textus::Application::Reads::Get.new(ctx: store).call(key)` for a pure read, `Textus::Application::Reads::GetOrRefresh` if you want refresh-on-stale, `Textus::Application::Reads::List.new(ctx: store).call(...)`, etc.). Writes from inside a hook are unsupported and will raise.
+
+Pick `Reads::Get` for materialization or read-only inspection; pick `Reads::GetOrRefresh` (composes `Get` with the refresh orchestrator) when the hook needs the freshest envelope obtainable. See [conventions](conventions.md) for the read-vs-refresh split.
 
 Why: hooks fire inside a verb's control flow. Letting hooks write would create reentrancy, audit-log chaos, and surprise infinite loops. If you genuinely need to write from a hook, do it out of band — enqueue a job, write a sentinel file, or run a follow-up CLI command.
 
@@ -281,6 +283,19 @@ Textus.on(:entry_put, :audit_all) { ... }                                # no fi
 ```
 
 One `:entry_put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
+
+---
+
+## 7a. `:resolve_intake` args
+
+The third kwarg `args:` carries leaf-key context populated by `Refresh::Worker`:
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `trigger_key` | String | The full key being refreshed (e.g. `"intake.vendor.affaan-m.agent-eval"`). |
+| `leaf_segments` | Array&lt;String&gt; | The segments **past** the parent `intake` entry (`["affaan-m", "agent-eval"]` in the example above). Empty array when the key matches the entry exactly. |
+
+Handlers that ignore `args:` keep working unchanged. Handlers over a `nested: true` intake should scope to the requested leaf using `args[:leaf_segments]` — re-processing the full parent `intake_config` for every leaf refresh is the path of pain (and the reason Bug 2 existed pre-0.15.0).
 
 ---
 

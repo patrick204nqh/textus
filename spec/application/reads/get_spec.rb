@@ -59,74 +59,54 @@ RSpec.describe Textus::Application::Reads::Get do
     MD
   end
 
-  let(:fake_orchestrator) do
-    Class.new do
-      def execute(_action, key: nil, as: nil) # rubocop:disable Lint/UnusedMethodArgument
-        Textus::Domain::Outcome::Skipped.new
-      end
-    end.new
-  end
-
-  it "returns annotated envelope with stale=false and refreshing=false when entry is fresh" do
-    Dir.mktmpdir do |root|
-      store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
-      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
-      envelope = use_case.call("working.doc")
-
-      expect(envelope).not_to be_nil
-      expect(envelope.stale?).to be(false)
-      expect(envelope.refreshing?).to be(false)
-    end
-  end
-
   it "returns nil when the file does not exist on disk" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
-      # Do NOT write the file — leave the zone dir empty.
-
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
-      result = use_case.call("working.doc")
-
-      expect(result).to be_nil
+      use_case = described_class.new(ctx: ctx)
+      expect(use_case.call("working.doc")).to be_nil
     end
   end
 
-  it "annotates as stale when verdict is stale and orchestrator returns Skipped" do
+  it "annotates as fresh when no refresh policy applies" do
     Dir.mktmpdir do |root|
-      store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
-      write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-
+      store = build_store_no_intake(root)
+      write_doc(root)
       ctx = Textus::Application::Context.new(store: store, role: "runner")
-      use_case = described_class.new(ctx: ctx, orchestrator: fake_orchestrator)
-      envelope = use_case.call("working.doc")
-
-      expect(envelope.stale?).to be(true)
-      expect(envelope.refreshing?).to be(false)
+      env = described_class.new(ctx: ctx).call("working.doc")
+      expect(env.freshness["stale"]).to be(false)
+      expect(env.freshness["refreshing"]).to be(false)
     end
   end
 
-  it "skips the orchestrator and annotates as fresh when ctx.bypass_freshness? is true" do
+  it "annotates as fresh when the envelope is within TTL" do
+    Dir.mktmpdir do |root|
+      store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
+      write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      env = described_class.new(ctx: ctx).call("working.doc")
+      expect(env.freshness["stale"]).to be(false)
+    end
+  end
+
+  it "annotates as stale when the envelope is past TTL — but does NOT refresh" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      env = described_class.new(ctx: ctx).call("working.doc")
+      expect(env.freshness["stale"]).to be(true)
+      expect(env.freshness["refreshing"]).to be(false)
+    end
+  end
 
-      ctx = Textus::Application::Context.new(store: store, role: "builder", bypass_freshness: true)
-      failing_orchestrator = Class.new do
-        def execute(*)
-          raise "orchestrator must not be called when bypass_freshness is set"
-        end
-      end.new
-
-      use_case = described_class.new(ctx: ctx, orchestrator: failing_orchestrator)
-      envelope = use_case.call("working.doc")
-
-      expect(envelope).not_to be_nil
-      expect(envelope.freshness["stale"]).to be(false)
-      expect(envelope.freshness["refreshing"]).to be(false)
+  it "does not accept an orchestrator: kwarg (signal of the contract)" do
+    Dir.mktmpdir do |root|
+      store = build_store_no_intake(root)
+      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      expect do
+        described_class.new(ctx: ctx, orchestrator: Object.new)
+      end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
     end
   end
 end

@@ -4,18 +4,18 @@ module Textus
   #
   #   ops = Textus::Operations.for(store, role: "agent")
   #   ops.writes.put.call(key, body: "...")
-  #   ops.reads.get.call(key)
+  #   ops.reads.get.call(key)               # pure read
+  #   ops.reads.get_or_refresh.call(key)    # read + refresh-on-stale
   #   ops.refresh.worker.call(key)
   #
   # Replaces the prior `Textus::Composition` module (deleted in v0.12.2).
   class Operations
-    def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false, bypass_freshness: false)
+    def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
       ctx = Application::Context.new(
         store: store,
         role: role,
         correlation_id: correlation_id,
         dry_run: dry_run,
-        bypass_freshness: bypass_freshness,
       )
       new(ctx)
     end

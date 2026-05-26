@@ -6,10 +6,18 @@ module Textus
     MAX_LIMIT = 1000
     REDUCER_TIMEOUT_SECONDS = 2
 
-    def initialize(store, spec, bypass_freshness: false)
-      @store = store
-      @spec = spec || {}
-      @bypass_freshness = bypass_freshness
+    # `reader` — a callable `->(key) { envelope_or_nil }`. Caller picks
+    #   semantics: pure read (`ops.reads.get`) for materialization paths;
+    #   `ops.reads.get_or_refresh` if you want refresh-on-stale.
+    # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
+    # `transform_resolver` — a callable `->(name) { callable_or_raise }`.
+    # `transform_context` — `Application::Context` handed to the transform reducer.
+    def initialize(reader:, spec:, lister:, transform_resolver:, transform_context:)
+      @reader             = reader
+      @spec               = spec || {}
+      @lister             = lister
+      @transform_resolver = transform_resolver
+      @transform_context  = transform_context
       @limit = (@spec["limit"] || MAX_LIMIT).to_i
       raise InvalidProjection.new("limit #{@limit} exceeds max #{MAX_LIMIT}") if @limit > MAX_LIMIT
     end
@@ -17,9 +25,8 @@ module Textus
     def run
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
-      ops = Operations.for(@store, bypass_freshness: @bypass_freshness)
       rows = keys.map do |key|
-        env = ops.reads.get.call(key)
+        env = @reader.call(key)
         row = pluck(env.meta, env.body)
         explicit_pluck ? row : row.merge("_key" => key)
       end
@@ -41,10 +48,9 @@ module Textus
 
     def apply_reducer(rows)
       name = @spec["transform"] or return rows
-      callable = @store.registry.rpc_callable(:transform_rows, name)
-      view = Application::Context.system(@store)
+      callable = @transform_resolver.call(name)
       Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
-        callable.call(store: view, rows: rows, config: @spec["transform_config"] || {})
+        callable.call(store: @transform_context, rows: rows, config: @spec["transform_config"] || {})
       end
     rescue Timeout::Error
       raise UsageError.new("transform_rows '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
@@ -52,8 +58,7 @@ module Textus
 
     def collect_keys
       prefixes = Array(@spec["select"])
-      ops = Operations.for(@store, bypass_freshness: @bypass_freshness)
-      prefixes.flat_map { |p| ops.reads.list.call(prefix: p).map { |row| row["key"] } }.uniq
+      prefixes.flat_map { |p| @lister.call(prefix: p).map { |row| row["key"] } }.uniq
     end
 
     def pluck(frontmatter, _body)

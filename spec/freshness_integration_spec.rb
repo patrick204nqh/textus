@@ -50,7 +50,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       Thread.current[:refresh_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").reads.get.call("working.foo")
+      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness["stale_reason"]).to match(/ttl exceeded/)
@@ -68,7 +68,7 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").reads.get.call("working.foo")
+      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
@@ -117,7 +117,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = Textus::Operations.for(store, role: "runner").reads.get.call("working.slow")
+      envelope = Textus::Operations.for(store, role: "runner").reads.get_or_refresh.call("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
@@ -130,7 +130,7 @@ RSpec.describe "Reader honors on_stale policy" do
     end
   end
 
-  it "textus build does not trigger refresh on stale entries (issue #59)" do # rubocop:disable RSpec/ExampleLength
+  it "build materializes using the pure read path (issue #59)" do # rubocop:disable RSpec/ExampleLength
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "zones", "working"))

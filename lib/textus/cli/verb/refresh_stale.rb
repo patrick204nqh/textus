@@ -10,7 +10,7 @@ module Textus
           ctx = context_for(store)
           result = Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
           emit(result)
-          exit(1) unless result["ok"]
+          result["ok"] ? 0 : 1
         end
       end
     end

@@ -6,7 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("get requires a key")
-          result = operations_for(store).reads.get.call(key)
+          result = operations_for(store).reads.get_or_refresh.call(key)
           raise Textus::UnknownKey.new(key, suggestions: store.manifest.suggestions_for(key)) if result.nil?
 
           emit(result.to_h_for_wire)

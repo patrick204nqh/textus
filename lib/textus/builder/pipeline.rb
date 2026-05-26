@@ -62,7 +62,14 @@ module Textus
         # 1. Load sources + project + reduce
         data =
           if mentry.projection
-            Projection.new(store, mentry.projection, bypass_freshness: true).run
+            ops = Operations.for(store)
+            Projection.new(
+              reader: ops.reads.get.method(:call),
+              spec: mentry.projection,
+              lister: ops.reads.list.method(:call),
+              transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
+              transform_context: Application::Context.system(store),
+            ).run
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
           end

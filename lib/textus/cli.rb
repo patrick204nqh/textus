@@ -47,20 +47,34 @@ module Textus
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
-      case verb
-      when "--version", "-v" then @stdout.puts(VERSION)
-                                  0
-      when "--help", "-h"    then print_help
-                                  0
-      else
-        klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
-        dispatch(klass, argv)
-      end
+      result =
+        case verb
+        when "--version", "-v" then @stdout.puts(VERSION)
+                                    0
+        when "--help", "-h"    then print_help
+                                    0
+        else
+          klass = VERBS[verb] or raise UsageError.new("unknown verb: #{verb}")
+          dispatch(klass, argv)
+        end
+
+      coerce_exit_code(result)
     rescue Textus::Error => e
       emit_error(e)
     end
 
     private
+
+    def coerce_exit_code(value)
+      case value
+      when Integer then value
+      when true, nil then 0
+      when false then 1
+      else
+        @stderr.puts("warning: verb returned non-Integer #{value.class}; treating as 0")
+        0
+      end
+    end
 
     def store
       @store ||= Store.discover(@cwd, root: @root_arg)

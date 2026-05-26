@@ -7,6 +7,17 @@ RSpec.describe Textus::Projection do
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
 
+  def build_projection(spec)
+    ops = Textus::Operations.for(store)
+    Textus::Projection.new(
+      reader: ops.reads.get.method(:call),
+      spec: spec,
+      lister: ops.reads.list.method(:call),
+      transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
+      transform_context: Textus::Application::Context.system(store),
+    )
+  end
+
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -25,11 +36,11 @@ RSpec.describe Textus::Projection do
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   it "selects + plucks + sorts" do
-    proj = Textus::Projection.new(store, {
-                                    "select" => "working.people",
-                                    "pluck" => %w[name org],
-                                    "sort_by" => "name",
-                                  })
+    proj = build_projection(
+      "select" => "working.people",
+      "pluck" => %w[name org],
+      "sort_by" => "name",
+    )
     result = proj.run
     expect(result["entries"].length).to eq(2)
     expect(result["entries"].first).to include("name" => "alice", "org" => "x")
@@ -38,13 +49,13 @@ RSpec.describe Textus::Projection do
   end
 
   it "caps at limit=1000 by default" do
-    proj = Textus::Projection.new(store, { "select" => "working.people" })
+    proj = build_projection("select" => "working.people")
     expect(proj.run["entries"].length).to be <= 1000
   end
 
   it "raises if limit > 1000" do
     expect do
-      Textus::Projection.new(store, { "select" => "working.people", "limit" => 5000 })
+      build_projection("select" => "working.people", "limit" => 5000)
     end.to raise_error(Textus::InvalidProjection)
   end
 
@@ -54,12 +65,12 @@ RSpec.describe Textus::Projection do
       _ = store
       rows.map { |r| r.merge("score" => r["name"].length) }
     end
-    proj = Textus::Projection.new(store, {
-                                    "select" => "working.people",
-                                    "pluck" => ["name"],
-                                    "transform" => "score",
-                                    "sort_by" => "score",
-                                  })
+    proj = build_projection(
+      "select" => "working.people",
+      "pluck" => ["name"],
+      "transform" => "score",
+      "sort_by" => "score",
+    )
     out = proj.run
     expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
   end
@@ -71,10 +82,10 @@ RSpec.describe Textus::Projection do
       _ = store
       sleep 5
     end
-    proj = Textus::Projection.new(store, {
-                                    "select" => "working.people",
-                                    "transform" => "slow",
-                                  })
+    proj = build_projection(
+      "select" => "working.people",
+      "transform" => "slow",
+    )
     expect { proj.run }.to raise_error(Textus::UsageError, /transform_rows 'slow' exceeded 2s timeout/)
   end
 end
