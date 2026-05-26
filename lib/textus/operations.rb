@@ -59,15 +59,13 @@ module Textus
 
     private
 
-    def bus = @ctx.store.bus
-
-    def put_op     = @put_op ||= Application::Writes::Put.new(ctx: @ctx, bus: bus)
-    def delete_op  = @delete_op ||= Application::Writes::Delete.new(ctx: @ctx, bus: bus)
-    def mv_op      = @mv_op ||= Application::Writes::Mv.new(ctx: @ctx, bus: bus)
-    def accept_op  = @accept_op ||= Application::Writes::Accept.new(ctx: @ctx, bus: bus)
-    def reject_op  = @reject_op ||= Application::Writes::Reject.new(ctx: @ctx, bus: bus)
-    def build_op   = @build_op ||= Application::Writes::Build.new(ctx: @ctx, bus: bus)
-    def publish_op = @publish_op ||= Application::Writes::Publish.new(ctx: @ctx, bus: bus)
+    def put_op     = @put_op ||= Application::Writes::Put.new(ctx: @ctx)
+    def delete_op  = @delete_op ||= Application::Writes::Delete.new(ctx: @ctx)
+    def mv_op      = @mv_op ||= Application::Writes::Mv.new(ctx: @ctx)
+    def accept_op  = @accept_op ||= Application::Writes::Accept.new(ctx: @ctx)
+    def reject_op  = @reject_op ||= Application::Writes::Reject.new(ctx: @ctx)
+    def build_op   = @build_op ||= Application::Writes::Build.new(ctx: @ctx)
+    def publish_op = @publish_op ||= Application::Writes::Publish.new(ctx: @ctx)
 
     def get_op = @get_op ||= Application::Reads::Get.new(ctx: @ctx) # rubocop:disable Naming/AccessorMethodName
 
@@ -90,12 +88,11 @@ module Textus
     def freshness_op       = @freshness_op ||= Application::Reads::Freshness.new(ctx: @ctx)
     def validate_all_op    = @validate_all_op ||= Application::Reads::ValidateAll.new(ctx: @ctx)
 
-    def refresh_worker_op = @refresh_worker_op ||= Application::Refresh::Worker.new(ctx: @ctx, bus: bus)
+    def refresh_worker_op = @refresh_worker_op ||= Application::Refresh::Worker.new(ctx: @ctx)
 
     def orchestrator_op
       @orchestrator_op ||= Application::Refresh::Orchestrator.new(
         worker: refresh_worker_op,
-        bus: bus,
         store_root: @ctx.store.root,
         store: @ctx.store,
         role: @ctx.role,

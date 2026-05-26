@@ -108,6 +108,25 @@ module Textus
     end
   end
 
+  class ReadForbidden < Error
+    def initialize(k, z, readers: nil)
+      readers_str =
+        if readers && !readers.empty?
+          readers.join(", ")
+        else
+          "the role(s) listed in the manifest 'read_policy:'"
+        end
+      details = { "key" => k, "zone" => z }
+      details["readers"] = readers if readers
+      super(
+        "read_forbidden",
+        "zone '#{z}' is not readable by role for key '#{k}'",
+        details: details,
+        hint: "this zone is readable by #{readers_str}; pass --as=<role>",
+      )
+    end
+  end
+
   class EtagMismatch < Error
     def initialize(k, w, g)
       super(

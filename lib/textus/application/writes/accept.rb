@@ -2,9 +2,8 @@ module Textus
   module Application
     module Writes
       class Accept
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def call(pending_key)
@@ -23,20 +22,20 @@ module Textus
             # target. Not related to the removed intake-handler legacy bridge.
             target_meta = env.meta["frontmatter"] || {}
             target_body = env.body
-            Textus::Application::Writes::Put.new(ctx: @ctx, bus: @bus).call(target, meta: target_meta, body: target_body)
+            Textus::Application::Writes::Put.new(ctx: @ctx).call(target, meta: target_meta, body: target_body)
           when "delete"
-            Textus::Application::Writes::Delete.new(ctx: @ctx, bus: @bus).call(target)
+            Textus::Application::Writes::Delete.new(ctx: @ctx).call(target)
           else
             raise ProposalError.new("unknown action: #{action}")
           end
 
-          Textus::Application::Writes::Delete.new(ctx: @ctx, bus: @bus).call(pending_key)
+          Textus::Application::Writes::Delete.new(ctx: @ctx).call(pending_key)
 
-          @bus.publish(:proposal_accepted,
-                       store: @ctx.with_role(@ctx.role),
-                       key: pending_key,
-                       target_key: target,
-                       correlation_id: @ctx.correlation_id)
+          @ctx.bus.publish(:proposal_accepted,
+                           store: @ctx.with_role(@ctx.role),
+                           key: pending_key,
+                           target_key: target,
+                           correlation_id: @ctx.correlation_id)
 
           { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
         end

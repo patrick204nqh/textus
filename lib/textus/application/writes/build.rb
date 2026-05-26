@@ -11,9 +11,8 @@ module Textus
       # `Application::Writes::Publish`. The CLI verb `textus build` calls
       # both classes and merges the results.
       class Build
-        def initialize(ctx:, bus:)
+        def initialize(ctx:)
           @ctx = ctx
-          @bus = bus
         end
 
         def call(prefix: nil)
@@ -71,7 +70,7 @@ module Textus
         end
 
         def publish_event(event, **payload)
-          @bus.publish(event, store: @ctx.with_role(@ctx.role), correlation_id: @ctx.correlation_id, **payload)
+          @ctx.bus.publish(event, store: @ctx.with_role(@ctx.role), correlation_id: @ctx.correlation_id, **payload)
         end
       end
     end

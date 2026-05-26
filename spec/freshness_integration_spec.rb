@@ -188,9 +188,9 @@ RSpec.describe "Reader honors on_stale policy" do
       end
 
       store = Textus::Store.new(textus)
-      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      Textus::Infra::EventBus.new(registry: store.registry)
       ctx = Textus::Operations.for(store, role: "builder").ctx
-      Textus::Application::Writes::Build.new(ctx: ctx, bus: bus).call
+      Textus::Application::Writes::Build.new(ctx: ctx).call
 
       expect(orchestrator_calls).to be_empty
     end
