@@ -44,11 +44,11 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   end
 
   def derived_keys(slug)
-    ops.reads.list.call(prefix: "vendor.skills.#{slug}").map { |row| row["key"] }
+    ops.list(prefix: "vendor.skills.#{slug}").map { |row| row["key"] }
   end
 
   def derived_envelope(key)
-    ops.reads.get.call(key)
+    ops.get(key)
   end
 
   it "writes one derived entry per file under vendor.skills.<slug>" do
@@ -103,6 +103,6 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
 
   it "is a no-op for refreshed keys outside the intake.skills.* prefix" do
     trigger(key: "intake.feeds.news", files: { "a" => "b" })
-    expect(ops.reads.list.call(prefix: "vendor")).to be_empty
+    expect(ops.list(prefix: "vendor")).to be_empty
   end
 end

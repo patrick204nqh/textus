@@ -22,7 +22,7 @@ RSpec.describe Textus::Schema::Tools do
 
   it "schema-init infers a schema from an entry's frontmatter" do
     s = store
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.alice",
       meta: { "name" => "alice", "org" => "acme", "age" => 30 },
       body: "",
@@ -38,12 +38,12 @@ RSpec.describe Textus::Schema::Tools do
 
   it "schema-diff reports entries that violate the schema" do
     s = store
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.alice",
       meta: { "name" => "alice", "org" => "acme" },
       body: "",
     )
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.bob",
       meta: { "name" => "bob" },
       body: "",
@@ -65,7 +65,7 @@ RSpec.describe Textus::Schema::Tools do
 
   it "auto-applies migrate_from on schema-migrate without --rename" do
     s = store
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.alice",
       meta: { "name" => "alice" },
       body: "hello",
@@ -87,12 +87,12 @@ RSpec.describe Textus::Schema::Tools do
 
   it "schema-migrate renames a frontmatter field across entries that have it" do
     s = store
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.alice",
       meta: { "name" => "alice", "org" => "acme" },
       body: "hello",
     )
-    Textus::Operations.for(s, role: "human").writes.put.call(
+    Textus::Operations.for(s, role: "human").put(
       "working.people.bob",
       meta: { "name" => "bob", "company" => "other" },
       body: "world",

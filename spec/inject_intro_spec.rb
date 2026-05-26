@@ -33,7 +33,7 @@ RSpec.describe "inject_intro:" do
 
   it "injects intro: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "builder").writes.build.call
+    Textus::Operations.for(store, role: "builder").build
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
@@ -91,7 +91,7 @@ RSpec.describe "inject_intro:" do
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "builder").writes.build.call
+    Textus::Operations.for(store, role: "builder").build
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).not_to include("protocol=textus/3")
   end

@@ -32,7 +32,7 @@ RSpec.describe Textus::Application::Reads::Deps do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.deps.call("output.catalogs.people")
+      result = ops.deps("output.catalogs.people")
       expect(result).to include("working.people")
     end
   end

@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.policy_explain.call(key: "working.doc")
+      result = ops.policy_explain(key: "working.doc")
 
       expect(result[:key]).to eq("working.doc")
       expect(result[:matched_blocks].length).to eq(3)
@@ -42,7 +42,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.policy_explain.call(key: "working.doc")
+      result = ops.policy_explain(key: "working.doc")
 
       expect(result[:effective][:refresh][:ttl_seconds]).to eq(300)
       expect(result[:effective][:refresh][:on_stale]).to eq(:sync)
@@ -64,7 +64,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
       YAML
       store = Textus::Store.new(textus)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.policy_explain.call(key: "working.doc")
+      result = ops.policy_explain(key: "working.doc")
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:refresh]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil

@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Reads::ValidateAll do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.validate_all.call
+      result = ops.validate_all
       expect(result).to be_a(Hash)
       expect(result).to have_key("ok")
     end

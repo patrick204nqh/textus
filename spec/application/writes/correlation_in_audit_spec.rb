@@ -21,7 +21,7 @@ RSpec.describe "correlation_id in audit rows" do
       store = build_store(File.join(root, ".textus"))
       ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-put")
 
-      ops.writes.put.call(
+      ops.put(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
@@ -39,12 +39,12 @@ RSpec.describe "correlation_id in audit rows" do
       store = build_store(File.join(root, ".textus"))
       ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-del")
 
-      ops.writes.put.call(
+      ops.put(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hello",
       )
-      ops.writes.delete.call("working.foo")
+      ops.delete("working.foo")
 
       row = File.readlines(File.join(root, ".textus/audit.log")).last
       parsed = JSON.parse(row)

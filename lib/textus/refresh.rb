@@ -1,7 +1,7 @@
 module Textus
   module Refresh
     def self.call(store, key, as:)
-      Textus::Operations.for(store, role: as).refresh.worker.run(key)
+      Textus::Operations.for(store, role: as).refresh(key)
     end
 
     def self.refresh_stale(store, prefix: nil, zone: nil, as: "runner")

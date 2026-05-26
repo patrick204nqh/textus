@@ -8,7 +8,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("reject requires a key")
-          emit(operations_for(store).writes.reject.call(key))
+          emit(operations_for(store).reject(key))
         end
       end
     end

@@ -28,15 +28,15 @@ module TextusRecipes
         # prevent the derived puts from re-triggering this listener.
         ops = Textus::Operations.for(store.store, role: store.role)
 
-        existing_rows = ops.reads.list.call(prefix: "#{DERIVED_PREFIX}#{slug}")
+        existing_rows = ops.list(prefix: "#{DERIVED_PREFIX}#{slug}")
         existing_keys = existing_rows.map { |row| row["key"] }
 
         (existing_keys - desired_keys).each do |orphan|
-          ops.writes.delete.call(orphan, suppress_events: true)
+          ops.delete(orphan, suppress_events: true)
         end
 
         files.each do |rel, bytes|
-          ops.writes.put.call(
+          ops.put(
             TextusRecipes::SkillFanout.derived_key(slug, rel),
             meta: { "source_key" => key, "source_path" => rel },
             body: bytes,

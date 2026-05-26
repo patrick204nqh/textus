@@ -5,7 +5,7 @@ module Textus
         command_name "published"
 
         def call(store)
-          emit({ "published" => operations_for(store).reads.published.call })
+          emit({ "published" => operations_for(store).published })
         end
       end
     end

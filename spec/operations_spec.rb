@@ -2,42 +2,91 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Textus::Operations do
-  it "constructs from a store and exposes writes/reads/refresh namespaces" do
+  def init_ops(tmp, role: "human")
+    Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
+    store = Textus::Store.new(File.join(tmp, ".textus"))
+    Textus::Operations.for(store, role: role)
+  end
+
+  it "responds to the entire flat surface" do
+    surface_methods = %i[
+      put delete mv accept reject build publish
+      get get_or_refresh list where uid schema_envelope
+      deps rdeps published stale audit blame policy_explain
+      freshness validate_all
+      refresh refresh_all
+    ]
     Dir.mktmpdir do |tmp|
-      Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
-      store = Textus::Store.new(File.join(tmp, ".textus"))
-      ops = Textus::Operations.for(store, role: "human")
-
-      expect(ops.writes).to be_a(Textus::Operations::Writes)
-      expect(ops.reads).to be_a(Textus::Operations::Reads)
-      expect(ops.refresh).to be_a(Textus::Operations::Refresh)
-
-      expect(ops.writes.put).to be_a(Textus::Application::Writes::Put)
-      expect(ops.reads.get).to be_a(Textus::Application::Reads::Get)
-      expect(ops.refresh.worker).to be_a(Textus::Application::Refresh::Worker)
+      ops = init_ops(tmp)
+      surface_methods.each do |m|
+        expect(ops).to respond_to(m), "expected Operations#{m} to exist"
+      end
     end
   end
 
-  it "memoizes the writes/reads/refresh namespace objects" do
+  it "put returns an Envelope" do
     Dir.mktmpdir do |tmp|
-      Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
-      store = Textus::Store.new(File.join(tmp, ".textus"))
-      ops = Textus::Operations.for(store, role: "human")
-
-      expect(ops.writes).to equal(ops.writes)
-      expect(ops.reads).to equal(ops.reads)
+      ops = init_ops(tmp)
+      env = ops.put("working.notes.alpha", body: "hello")
+      expect(env).to be_a(Textus::Envelope)
     end
   end
 
-  it "with_role returns a new Operations with a different role" do
+  it "get returns an Envelope" do
     Dir.mktmpdir do |tmp|
-      Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
-      store = Textus::Store.new(File.join(tmp, ".textus"))
-      ops = Textus::Operations.for(store, role: "human")
+      ops = init_ops(tmp)
+      ops.put("working.notes.alpha", body: "hello")
+      env = ops.get("working.notes.alpha")
+      expect(env).to be_a(Textus::Envelope)
+    end
+  end
+
+  it "get and get_or_refresh use distinct internal use-case objects" do
+    Dir.mktmpdir do |tmp|
+      ops = init_ops(tmp)
+      begin
+        ops.get("working.notes.alpha")
+      rescue StandardError
+        nil
+      end
+      begin
+        ops.get_or_refresh("working.notes.alpha")
+      rescue StandardError
+        nil
+      end
+      get_op = ops.instance_variable_get(:@get_op)
+      gor_op = ops.instance_variable_get(:@get_or_refresh_op)
+      expect(get_op).to be_a(Textus::Application::Reads::Get)
+      expect(gor_op).to be_a(Textus::Application::Reads::GetOrRefresh)
+      expect(get_op).not_to equal(gor_op)
+    end
+  end
+
+  it "memoizes internal use-case objects across calls" do
+    Dir.mktmpdir do |tmp|
+      ops = init_ops(tmp)
+      ops.put("working.notes.alpha", body: "one")
+      first = ops.instance_variable_get(:@put_op)
+      ops.put("working.notes.alpha", body: "two")
+      second = ops.instance_variable_get(:@put_op)
+      expect(first).to be_a(Textus::Application::Writes::Put)
+      expect(first).to equal(second)
+    end
+  end
+
+  it "with_role returns a new Operations with fresh memoization" do
+    Dir.mktmpdir do |tmp|
+      ops = init_ops(tmp)
+      ops.put("working.notes.alpha", body: "x")
+      original_put_op = ops.instance_variable_get(:@put_op)
+
       other = ops.with_role("agent")
-
+      expect(other).to be_a(Textus::Operations)
       expect(other.ctx.role).to eq("agent")
       expect(ops.ctx.role).to eq("human")
+      expect(other.instance_variable_get(:@put_op)).to be_nil
+      expect(other).not_to equal(ops)
+      expect(original_put_op).to equal(ops.instance_variable_get(:@put_op))
     end
   end
 end

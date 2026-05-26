@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Reads::Uid do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      result = ops.reads.uid.call("working.doc")
+      result = ops.uid("working.doc")
       expect(result).to eq("abc123def456")
     end
   end

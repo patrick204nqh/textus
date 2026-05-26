@@ -24,13 +24,13 @@ RSpec.describe "textus mv" do
 
   def put_md(key, body: "hi")
     basename = key.split(".").last
-    Textus::Operations.for(store, role: "human").writes.put.call(key, meta: { "name" => basename }, body: body)
+    Textus::Operations.for(store, role: "human").put(key, meta: { "name" => basename }, body: body)
   end
 
   it "moves an entry within the same zone, preserving uid" do
     env = put_md("working.notes.alpha")
     uid = env.uid
-    res = Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
+    res = Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "working.notes.beta")
     expect(res["ok"]).to be true
     expect(res["uid"]).to eq(uid)
     expect(File.exist?(File.join(root, "zones/working/notes/alpha.md"))).to be false
@@ -40,7 +40,7 @@ RSpec.describe "textus mv" do
 
   it "writes an audit row with verb=mv and top-level structural fields" do
     put_md("working.notes.alpha")
-    Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
+    Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "working.notes.beta")
     line = File.read(File.join(root, "audit.log")).lines.last.chomp
     parsed = JSON.parse(line)
     expect(parsed["verb"]).to eq("mv")
@@ -55,7 +55,7 @@ RSpec.describe "textus mv" do
   it "refuses cross-zone moves" do
     put_md("working.notes.alpha")
     expect do
-      Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "identity.notes.alpha")
+      Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "identity.notes.alpha")
     end.to raise_error(Textus::UsageError, /cross-zone/)
   end
 
@@ -63,14 +63,14 @@ RSpec.describe "textus mv" do
     put_md("working.notes.alpha")
     put_md("working.notes.beta")
     expect do
-      Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
+      Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "working.notes.beta")
     end.to raise_error(Textus::UsageError, /already exists/)
   end
 
   it "refuses when the new key fails grammar" do
     put_md("working.notes.alpha")
     expect do
-      Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.Bad_Name")
+      Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "working.notes.Bad_Name")
     end.to raise_error(Textus::UsageError, /invalid key segment/)
   end
 
@@ -79,7 +79,7 @@ RSpec.describe "textus mv" do
     File.write(src, "---\nname: alpha\n---\nbody\n")
     expect(store.reader.get("working.notes.alpha").uid).to be_nil
 
-    res = Textus::Operations.for(store, role: "human").writes.mv.call("working.notes.alpha", "working.notes.beta")
+    res = Textus::Operations.for(store, role: "human").mv("working.notes.alpha", "working.notes.beta")
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
     expect(store.reader.get("working.notes.beta").uid).to eq(res["uid"])
 

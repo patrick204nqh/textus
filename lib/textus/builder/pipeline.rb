@@ -64,9 +64,9 @@ module Textus
           if mentry.projection
             ops = Operations.for(store)
             Projection.new(
-              reader: ops.reads.get.method(:call),
+              reader: ops.method(:get),
               spec: mentry.projection,
-              lister: ops.reads.list.method(:call),
+              lister: ops.method(:list),
               transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
               transform_context: Application::Context.system(store),
             ).run

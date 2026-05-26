@@ -8,7 +8,7 @@ module Textus
         option :zone, "--zone=Z"
 
         def call(store)
-          emit({ "entries" => operations_for(store).reads.list.call(prefix: prefix, zone: zone) })
+          emit({ "entries" => operations_for(store).list(prefix: prefix, zone: zone) })
         end
       end
     end

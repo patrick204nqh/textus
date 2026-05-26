@@ -10,7 +10,7 @@ RSpec.describe Textus::Application::Writes::Build do
 
   let(:store) { Textus::Store.new(root) }
   let(:build_use_case) do
-    Textus::Operations.for(store, role: "builder").writes.build
+    Textus::Operations.for(store, role: "builder").method(:build)
   end
 
   before do
@@ -195,7 +195,7 @@ RSpec.describe "Builder :file_published events" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Operations.for(store, role: "builder").writes.build
+      Textus::Operations.for(store, role: "builder").method(:build)
                         .call(prefix: "output.note")
 
       expect(captured.size).to eq(2)
@@ -216,7 +216,7 @@ RSpec.describe "Builder :file_published events" do
         build_events << { key: key, sources: sources }
       end
 
-      Textus::Operations.for(store, role: "builder").writes.build
+      Textus::Operations.for(store, role: "builder").method(:build)
                         .call(prefix: "output.note")
 
       expect(build_events.size).to eq(1)
@@ -252,7 +252,7 @@ RSpec.describe "Builder :file_published events" do
         captured << { key: key, source: source, target: target }
       end
 
-      Textus::Operations.for(store, role: "builder").writes.publish.call
+      Textus::Operations.for(store, role: "builder").publish
 
       expect(captured.size).to eq(2)
       keys = captured.map { _1[:key] }
@@ -269,7 +269,7 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
-  let(:build_use_case) { Textus::Operations.for(store, role: "builder").writes.build }
+  let(:build_use_case) { Textus::Operations.for(store, role: "builder").method(:build) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))

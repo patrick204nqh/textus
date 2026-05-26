@@ -47,7 +47,7 @@ RSpec.describe Textus::Application::Reads::Audit do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = Textus::Operations.for(store, role: "human")
-      expect(ops.reads.audit.call).to eq([])
+      expect(ops.audit).to eq([])
     end
   end
 
@@ -60,7 +60,7 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
                 ])
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.audit.call(key: "working.doc")
+      rows = ops.audit(key: "working.doc")
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
     end
@@ -79,7 +79,7 @@ RSpec.describe Textus::Application::Reads::Audit do
                     "extras" => { "correlation_id" => cid } },
                 ])
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.audit.call(correlation_id: cid)
+      rows = ops.audit(correlation_id: cid)
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
     end
@@ -93,7 +93,7 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                 ])
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.audit.call(zone: "identity")
+      rows = ops.audit(zone: "identity")
       expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
     end
   end
@@ -106,7 +106,7 @@ RSpec.describe Textus::Application::Reads::Audit do
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                 ])
       ops = Textus::Operations.for(store, role: "human")
-      rows = ops.reads.audit.call(since: Time.parse("2026-05-01T00:00:00Z"))
+      rows = ops.audit(since: Time.parse("2026-05-01T00:00:00Z"))
       expect(rows.map { |r| r["ts"] }).to eq(["2026-05-02T00:00:00Z"])
     end
   end
@@ -119,7 +119,7 @@ RSpec.describe Textus::Application::Reads::Audit do
       end
       write_log(root, rows)
       ops = Textus::Operations.for(store, role: "human")
-      out = ops.reads.audit.call(limit: 2)
+      out = ops.audit(limit: 2)
       expect(out.length).to eq(2)
     end
   end
