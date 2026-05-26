@@ -235,7 +235,7 @@ Textus.published(:git_add, keys: ["derived.*"]) { |target:, **| `git add #{targe
 
 ## 5. The `store:` proxy
 
-Every hook receives `store:` as its first kwarg. It's a **read-only proxy** — calling `store.get(key)`, `store.list(...)`, `store.where(key)` works; calling `store.put(...)` raises `UsageError`.
+Every hook receives `store:` as its first kwarg. It's an `Application::Context` bound to the active role — use it to drive read use cases (`Textus::Application::Reads::Get.new(ctx: store).call(key)`, `Textus::Application::Reads::List.new(ctx: store).call(...)`, etc.). Writes from inside a hook are unsupported and will raise.
 
 Why: hooks fire inside a verb's control flow. Letting hooks write would create reentrancy, audit-log chaos, and surprise infinite loops. If you genuinely need to write from a hook, do it out of band — enqueue a job, write a sentinel file, or run a follow-up CLI command.
 
@@ -409,9 +409,9 @@ end
 
 ```ruby
 Textus.check(:no_drafts_in_identity) do |store:|
-  store.list(zone: "identity")
-       .select { |e| e["frontmatter"]["status"] == "draft" }
-       .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
+  Textus::Application::Reads::List.new(ctx: store).call(zone: "identity")
+    .select { |e| e["frontmatter"]["status"] == "draft" }
+    .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
 end
 ```
 
