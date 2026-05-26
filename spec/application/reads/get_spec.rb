@@ -108,4 +108,25 @@ RSpec.describe Textus::Application::Reads::Get do
       expect(envelope.refreshing?).to be(false)
     end
   end
+
+  it "skips the orchestrator and annotates as fresh when ctx.bypass_freshness? is true" do
+    Dir.mktmpdir do |root|
+      store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
+      write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
+
+      ctx = Textus::Application::Context.new(store: store, role: "builder", bypass_freshness: true)
+      failing_orchestrator = Class.new do
+        def execute(*)
+          raise "orchestrator must not be called when bypass_freshness is set"
+        end
+      end.new
+
+      use_case = described_class.new(ctx: ctx, orchestrator: failing_orchestrator)
+      envelope = use_case.call("working.doc")
+
+      expect(envelope).not_to be_nil
+      expect(envelope.freshness["stale"]).to be(false)
+      expect(envelope.freshness["refreshing"]).to be(false)
+    end
+  end
 end

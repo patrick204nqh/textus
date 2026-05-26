@@ -129,4 +129,70 @@ RSpec.describe "Reader honors on_stale policy" do
       expect(raw).to include("fresh-from-child")
     end
   end
+
+  it "textus build does not trigger refresh on stale entries (issue #59)" do # rubocop:disable RSpec/ExampleLength
+    Dir.mktmpdir do |root|
+      textus = File.join(root, ".textus")
+      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "output"))
+      FileUtils.mkdir_p(File.join(textus, "templates"))
+      FileUtils.mkdir_p(File.join(textus, "hooks"))
+
+      File.write(File.join(textus, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, write_policy: [human, runner] }
+          - { name: output, write_policy: [builder] }
+        entries:
+          - key: working.foo
+            path: working/foo.md
+            zone: working
+            intake:
+              handler: test_intake
+          - key: output.summary
+            path: output/summary.md
+            zone: output
+            schema: null
+            owner: builder:auto
+            compute: { kind: projection, select: working.foo }
+            template: echo.mustache
+        rules:
+          - match: working.foo
+            refresh:
+              ttl: 1s
+              on_stale: timed_sync
+              sync_budget_ms: 1
+      YAML
+
+      File.write(File.join(textus, "templates", "echo.mustache"), "built {{count}}\n")
+
+      File.write(File.join(textus, "zones", "working", "foo.md"), <<~MD)
+        ---
+        key: working.foo
+        last_refreshed_at: "2020-01-01T00:00:00Z"
+        ---
+        old body
+      MD
+
+      File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
+        Textus.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+        end
+      RUBY
+
+      orchestrator_calls = []
+      allow_any_instance_of(Textus::Application::Refresh::Orchestrator) # rubocop:disable RSpec/AnyInstance
+        .to receive(:execute) do |_, *args, **kwargs|
+        orchestrator_calls << [args, kwargs]
+        raise "orchestrator must not be called during build (issue #59)"
+      end
+
+      store = Textus::Store.new(textus)
+      bus = Textus::Infra::EventBus.new(registry: store.registry)
+      ctx = Textus::Operations.for(store, role: "builder").ctx
+      Textus::Application::Writes::Build.new(ctx: ctx, bus: bus).call
+
+      expect(orchestrator_calls).to be_empty
+    end
+  end
 end

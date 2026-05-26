@@ -6,9 +6,10 @@ module Textus
     MAX_LIMIT = 1000
     REDUCER_TIMEOUT_SECONDS = 2
 
-    def initialize(store, spec)
+    def initialize(store, spec, bypass_freshness: false)
       @store = store
       @spec = spec || {}
+      @bypass_freshness = bypass_freshness
       @limit = (@spec["limit"] || MAX_LIMIT).to_i
       raise InvalidProjection.new("limit #{@limit} exceeds max #{MAX_LIMIT}") if @limit > MAX_LIMIT
     end
@@ -16,8 +17,9 @@ module Textus
     def run
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
+      ops = Operations.for(@store, bypass_freshness: @bypass_freshness)
       rows = keys.map do |key|
-        env = Operations.for(@store).reads.get.call(key)
+        env = ops.reads.get.call(key)
         row = pluck(env.meta, env.body)
         explicit_pluck ? row : row.merge("_key" => key)
       end
@@ -50,7 +52,7 @@ module Textus
 
     def collect_keys
       prefixes = Array(@spec["select"])
-      ops = Operations.for(@store)
+      ops = Operations.for(@store, bypass_freshness: @bypass_freshness)
       prefixes.flat_map { |p| ops.reads.list.call(prefix: p).map { |row| row["key"] } }.uniq
     end
 

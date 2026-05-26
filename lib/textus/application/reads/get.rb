@@ -11,6 +11,7 @@ module Textus
         def call(key)
           envelope = @ctx.store.reader.read_raw_envelope(key)
           return nil if envelope.nil?
+          return annotate_fresh(envelope) if @ctx.bypass_freshness?
 
           policy_set = @ctx.store.manifest.rules_for(key)
           refresh_policy = policy_set.refresh
