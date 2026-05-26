@@ -66,7 +66,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 | `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ store:, key:, envelope:, source:, target: }`. |
 | `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ store:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
 | `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ store:, key:, target_key: }`. |
-| `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, reader/writer are ready. Use for cache warmups or external watcher registration. Payload: `{ store: }`. |
+| `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ store: }`. |
 
 ### 2.1 Refresh lifecycle events
 
@@ -155,9 +155,9 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ```
   ┃ load manifest
+  ┃ build schemas, file_store, audit_log
   ┃ build dispatcher + registry
   ┃ load all hooks under .textus/hooks/**.rb
-  ┃ build reader + writer
   ┃ ─────────────────────────────────────► :store_loaded (pubsub) — fires exactly once per process per store
   ✔ store ready for use
 ```

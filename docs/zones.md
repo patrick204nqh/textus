@@ -87,7 +87,7 @@ zones:
 |------|---------|----------|---------|
 | `identity` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
 | `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `ai`, `runner` |
-| `intake` | Declared external inputs. Refreshed via `Operations.refresh.worker.call(key)` (CLI: `textus refresh KEY --as=runner`), never edited by hand. Refreshed on demand. Default writer: `runner`. | Refreshed on demand | `runner` |
+| `intake` | Declared external inputs. Refreshed via `ops.refresh(key)` (CLI: `textus refresh KEY --as=runner`), never edited by hand. Refreshed on demand. Default writer: `runner`. | Refreshed on demand | `runner` |
 | `review` | AI proposals awaiting human review. | Until `accept` or rejection | `ai`, `human` |
 | `output` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `build` |
 
@@ -202,7 +202,7 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ## 6. Wiring data in — intake and `:resolve_intake` hooks
 
-`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=runner` (or `Operations.refresh.worker.call(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
+`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=runner` (or `ops.refresh(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
 
 ```yaml
 entries:
