@@ -73,7 +73,11 @@ module Textus
 
       Schema.validate!(raw)
 
-      @entries = Array(raw["entries"]).map { |e| Manifest::Entry.new(self, e) }
+      @entries = Array(raw["entries"]).map do |e|
+        entry = Manifest::Entry::Parser.call(self, e)
+        Manifest::Entry::Validators.run_all(entry)
+        entry
+      end
       validate_declared_keys!
     end
 
