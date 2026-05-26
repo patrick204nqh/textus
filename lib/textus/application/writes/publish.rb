@@ -44,7 +44,7 @@ module Textus
           @ctx.bus.publish(:file_published,
                            store: @ctx.with_role(@ctx.role),
                            key: row[:key],
-                           envelope: store.reader.get(row[:key]),
+                           envelope: Textus::Application::Reads::Get.new(ctx: @ctx).call(row[:key]),
                            source: row[:path],
                            target: target_abs,
                            correlation_id: @ctx.correlation_id)

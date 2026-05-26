@@ -50,7 +50,7 @@ module Textus
         end
 
         def publish_and_fire(mentry, target_path)
-          envelope = store.reader.get(mentry.key)
+          envelope = Textus::Application::Reads::Get.new(ctx: @ctx).call(mentry.key)
           repo_root = File.dirname(root)
 
           mentry.publish_to.each do |rel|

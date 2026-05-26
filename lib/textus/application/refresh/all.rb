@@ -5,7 +5,14 @@ module Textus
         module_function
 
         def call(ctx, prefix: nil, zone: nil)
-          worker = Textus::Application::Refresh::Worker.new(ctx: ctx)
+          envelope_io = Textus::Application::Writes::EnvelopeIO.new(
+            file_store: ctx.file_store,
+            manifest: ctx.manifest,
+            schemas: ctx.schemas,
+            audit_log: ctx.audit_log,
+            ctx: ctx,
+          )
+          worker = Textus::Application::Refresh::Worker.new(ctx: ctx, envelope_io: envelope_io)
 
           stale_rows = Textus::Application::Reads::Stale.new(ctx: ctx).call(prefix: prefix, zone: zone)
           refreshed = []

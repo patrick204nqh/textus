@@ -30,7 +30,7 @@ RSpec.describe Textus::Application::Writes::Delete do
         events << [:entry_deleted, key, correlation_id]
       end
 
-      described_class.new(ctx: ctx).call("working.foo")
+      described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("working.foo")
 
       expect(File.exist?(File.join(textus, "zones", "working", "foo.md"))).to be(false)
       expect(events).to include([:entry_deleted, "working.foo", "del-1"])
@@ -46,7 +46,7 @@ RSpec.describe Textus::Application::Writes::Delete do
       ctx = Textus::Application::Context.new(store: store, role: "runner")
 
       expect do
-        described_class.new(ctx: ctx).call("identity.bar")
+        described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("identity.bar")
       end.to raise_error(Textus::WriteForbidden)
     end
   end

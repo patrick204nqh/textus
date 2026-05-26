@@ -31,7 +31,15 @@ module Textus
 
       Dir.glob(File.join(@dir, "*.yaml")).each do |path|
         name = File.basename(path, ".yaml")
-        @schemas[name] = Schema.load(path)
+        begin
+          @schemas[name] = Schema.load(path)
+        rescue StandardError
+          # Tolerate broken schema files at construction time so the rest of
+          # the store remains loadable. Surfacing the failure is the job of
+          # Doctor::Check::SchemaParseError. Lookups via #fetch still raise
+          # IoError for the missing-but-named schema.
+          next
+        end
       end
     end
   end

@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   class Store
-    attr_reader :root, :manifest, :registry, :reader, :writer, :bus
+    attr_reader :root, :manifest, :registry, :reader, :writer, :bus, :schemas, :file_store
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
@@ -34,7 +34,9 @@ module Textus
       @bus = Hooks::Dispatcher.new
       Textus::Infra::AuditSubscriber.new(audit_log).attach(@bus)
       @registry = Hooks::Registry.new(dispatcher: @bus)
-      @schemas = {}
+      @schema_cache = {}
+      @file_store = Infra::Storage::FileStore.new
+      @schemas    = Schemas.new(File.join(@root, "schemas"))
       load_hooks
       @reader = Reader.new(self)
       @writer = Writer.new(self)
@@ -49,7 +51,7 @@ module Textus
     def schema_for(name)
       return nil if name.nil?
 
-      @schemas[name] ||= begin
+      @schema_cache[name] ||= begin
         sp = File.join(@root, "schemas", "#{name}.yaml")
         raise IoError.new("schema not found: #{sp}") unless File.exist?(sp)
 

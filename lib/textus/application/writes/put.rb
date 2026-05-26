@@ -2,21 +2,21 @@ module Textus
   module Application
     module Writes
       class Put
-        def initialize(ctx:)
+        def initialize(ctx:, envelope_io:)
           @ctx = ctx
+          @envelope_io = envelope_io
         end
 
         def call(key, meta: nil, body: nil, content: nil, if_etag: nil, suppress_events: false)
-          @ctx.store.manifest.validate_key!(key)
-          mentry = @ctx.store.manifest.resolve(key).entry
+          @ctx.manifest.validate_key!(key)
+          mentry = @ctx.manifest.resolve(key).entry
 
           @ctx.authorize_write!(mentry)
 
-          envelope = @ctx.store.writer.write_envelope_to_disk(
+          envelope = @envelope_io.write(
             key,
             mentry: mentry,
-            payload: Textus::Store::Writer::Payload.new(meta: meta, body: body, content: content),
-            ctx: @ctx,
+            payload: Textus::Application::Writes::EnvelopeIO::Payload.new(meta: meta, body: body, content: content),
             if_etag: if_etag,
           )
 

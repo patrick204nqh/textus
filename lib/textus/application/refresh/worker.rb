@@ -6,8 +6,9 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:)
+        def initialize(ctx:, envelope_io:)
           @ctx = ctx
+          @envelope_io = envelope_io
         end
 
         def run(key)
@@ -66,7 +67,7 @@ module Textus
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          envelope = Textus::Application::Writes::Put.new(ctx: @ctx).call(
+          envelope = Textus::Application::Writes::Put.new(ctx: @ctx, envelope_io: @envelope_io).call(
             key,
             meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             suppress_events: true
