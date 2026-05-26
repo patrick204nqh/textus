@@ -20,6 +20,8 @@ module Textus
       def deps            = Application::Reads::Deps.new(ctx: @ctx)
       def rdeps           = Application::Reads::Rdeps.new(ctx: @ctx)
       def published       = Application::Reads::Published.new(ctx: @ctx)
+      def stale           = Application::Reads::Stale.new(ctx: @ctx)
+      def validate_all    = Application::Reads::ValidateAll.new(ctx: @ctx)
 
       private
 
