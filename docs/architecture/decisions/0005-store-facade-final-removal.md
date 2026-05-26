@@ -40,3 +40,15 @@ choose differently from file to file.
 - Phases 2–4 (format-strategy extraction, `Manifest::Entry` split,
   `Build`/`Publish` separation, envelope `Data.define`) remain for later
   versions. This ADR closes Phase 1 only.
+
+## Update (2026-05-26, v0.14.0)
+
+Phases 2, 3, 4 from this ADR's "Out of scope" section are now complete:
+
+- **Phase 2** (format-strategy extraction) — shipped in v0.13.0, ADR 0006.
+- **Phase 3** (`Manifest::Entry` split) — shipped in v0.13.1.
+- **Phase 4** (Build/Publish split + Envelope `Data.define`) — shipped in
+  v0.14.0, ADR 0007.
+
+The four-phase cleanup arc from the original v0.12.4 tech-debt review is
+closed.
