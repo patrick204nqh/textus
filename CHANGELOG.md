@@ -11,8 +11,28 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## 0.14.4 — 2026-05-26
 
+### Fixed
+
+- `textus build` no longer triggers per-leaf refresh fan-out when
+  projection reads encounter stale entries under `on_stale: timed_sync`
+  / `on_stale: sync`. Build is a downstream materialization step over
+  current store state; freshness is an inflow concern, and they
+  shouldn't compose. Previously, building a marketplace-style output
+  whose projection selected `intake.vendor.**` against ~400 stale
+  leaves spawned ~400 concurrent detached refresh workers, each
+  re-running the full intake handler, exhausting the system. The
+  build pipeline now reads through an `Application::Context` with
+  `bypass_freshness: true`, so `Application::Reads::Get` returns the
+  on-disk envelope annotated as fresh without consulting the
+  orchestrator. Explicit freshness before build still works via
+  `textus refresh stale`. (#59)
+
 ### Added
 
+- `Application::Context#bypass_freshness?` — new flag for read paths
+  that must not initiate refresh. Threaded through `Operations.for`
+  and propagated across `Context#with_role`. Used by `Builder::Pipeline`
+  via a `bypass_freshness:` constructor kwarg on `Projection`.
 - `textus doctor` now reports stale per-key refresh lock files under
   `<root>/.locks/` whose recorded PID is no longer running, as an
   `info`-level `refresh_lock.stale` issue. The check is purely

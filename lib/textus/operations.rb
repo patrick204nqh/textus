@@ -9,12 +9,13 @@ module Textus
   #
   # Replaces the prior `Textus::Composition` module (deleted in v0.12.2).
   class Operations
-    def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
+    def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false, bypass_freshness: false)
       ctx = Application::Context.new(
         store: store,
         role: role,
         correlation_id: correlation_id,
         dry_run: dry_run,
+        bypass_freshness: bypass_freshness,
       )
       new(ctx)
     end

@@ -62,7 +62,7 @@ module Textus
         # 1. Load sources + project + reduce
         data =
           if mentry.projection
-            Projection.new(store, mentry.projection).run
+            Projection.new(store, mentry.projection, bypass_freshness: true).run
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
           end
