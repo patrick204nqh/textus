@@ -319,6 +319,12 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
       File.join(root, "zones/working/people/alice.md"),
       "---\nuid: u-alice\nname: alice\n---\n",
     )
+
+    store.registry.register(:transform_rows, :envelope) do |store:, rows:, config:|
+      _ = config
+      _ = store
+      { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }
+    end
   end
 
   it "markdown: skips write when only generated.at would differ" do
@@ -332,6 +338,61 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
 
     expect(File.mtime(path)).to eq(mtime_before)
     expect(File.binread(path)).to eq(bytes_before)
+  end
+
+  it "json: skips write when only _meta.generated_at would differ" do
+    build_use_case.call(prefix: "output.catalog-json")
+    path = File.join(root, "zones/output/catalog.json")
+    mtime_before = File.mtime(path)
+    bytes_before = File.binread(path)
+
+    sleep 1.1
+    build_use_case.call(prefix: "output.catalog-json")
+
+    expect(File.mtime(path)).to eq(mtime_before)
+    expect(File.binread(path)).to eq(bytes_before)
+  end
+
+  it "yaml: skips write when only _meta.generated_at would differ" do
+    build_use_case.call(prefix: "output.catalog-yaml")
+    path = File.join(root, "zones/output/catalog.yaml")
+    mtime_before = File.mtime(path)
+    bytes_before = File.binread(path)
+
+    sleep 1.1
+    build_use_case.call(prefix: "output.catalog-yaml")
+
+    expect(File.mtime(path)).to eq(mtime_before)
+    expect(File.binread(path)).to eq(bytes_before)
+  end
+
+  it "text: skips write when bytes are identical" do
+    build_use_case.call(prefix: "output.catalog-txt")
+    path = File.join(root, "zones/output/catalog.txt")
+    mtime_before = File.mtime(path)
+    bytes_before = File.binread(path)
+
+    sleep 1.1
+    build_use_case.call(prefix: "output.catalog-txt")
+
+    expect(File.mtime(path)).to eq(mtime_before)
+    expect(File.binread(path)).to eq(bytes_before)
+  end
+
+  it "markdown: writes when source data actually changed" do
+    build_use_case.call(prefix: "output.catalog-md")
+    path = File.join(root, "zones/output/catalog.md")
+    bytes_before = File.binread(path)
+
+    File.write(
+      File.join(root, "zones/working/people/bob.md"),
+      "---\nuid: u-bob\nname: bob\n---\n",
+    )
+    sleep 1.1
+    build_use_case.call(prefix: "output.catalog-md")
+
+    expect(File.binread(path)).not_to eq(bytes_before)
+    expect(File.binread(path)).to include("- bob")
   end
 end
 # rubocop:enable RSpec/MultipleDescribes
