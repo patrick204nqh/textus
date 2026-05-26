@@ -5,6 +5,7 @@ module Textus
         REGISTERED = [
           Events,
           PublishEach,
+          InjectIntro,
         ].freeze
 
         def self.run_all(entry)
