@@ -30,4 +30,12 @@ RSpec.describe Textus::Hooks::FireReport do
     r = described_class.new(fired: [], errored: [], timed_out: [])
     expect(r).to be_frozen
   end
+
+  it "is isolated from caller mutation of input arrays" do
+    fired = [:a]
+    r = described_class.new(fired: fired, errored: [], timed_out: [])
+    fired << :b
+    expect(r.fired).to eq([:a])
+    expect(r.fired).to be_frozen
+  end
 end

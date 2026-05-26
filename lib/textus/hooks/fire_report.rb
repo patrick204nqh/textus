@@ -11,23 +11,13 @@ module Textus
     # Callers that care about hook health (tests, strict embedders) can
     # check #ok? or inspect #failures. The dispatcher itself never raises
     # on a hook failure unless strict: true was passed to #publish.
-    class FireReport
-      attr_reader :fired, :errored, :timed_out
-
+    FireReport = Data.define(:fired, :errored, :timed_out) do
       def initialize(fired:, errored:, timed_out:)
-        @fired = fired.freeze
-        @errored = errored.freeze
-        @timed_out = timed_out.freeze
-        freeze
+        super(fired: fired.dup.freeze, errored: errored.dup.freeze, timed_out: timed_out.dup.freeze)
       end
 
-      def ok?
-        @errored.empty? && @timed_out.empty?
-      end
-
-      def failures
-        @errored + @timed_out
-      end
+      def ok? = errored.empty? && timed_out.empty?
+      def failures = errored + timed_out
     end
   end
 end
