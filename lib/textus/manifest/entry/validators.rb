@@ -7,6 +7,7 @@ module Textus
           PublishEach,
           InjectIntro,
           IndexFilename,
+          FormatMatrix,
         ].freeze
 
         def self.run_all(entry)
