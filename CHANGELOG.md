@@ -15,7 +15,10 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 - New `examples/project/` — demonstrates textus as the context store
   for your own project (identity + runbooks + ADR proposal flow,
-  projecting `CLAUDE.md` and `AGENTS.md` at the repo root).
+  projecting `CLAUDE.md` and `AGENTS.md` at the repo root). Staged as
+  a fictional Rails service (`ledger`) so the entries read like a real
+  codebase, and the pre-staged ADR proposal is `accept`-runnable
+  end-to-end (carries a valid `frontmatter:` payload for its target).
 - Refined `examples/claude-plugin/` — reduced to one entry of each kind
   (one agent, one skill, one command, one identity entry, one output,
   one intake recipe). Removed `bin/`, `Rakefile`, `lefthook.yml`, the
