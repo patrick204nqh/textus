@@ -13,6 +13,7 @@ module Textus
       def audit          = Application::Reads::Audit.new(ctx: @ctx)
       def blame          = Application::Reads::Blame.new(ctx: @ctx)
       def policy_explain = Application::Reads::PolicyExplain.new(ctx: @ctx)
+      def list           = Application::Reads::List.new(ctx: @ctx)
 
       private
 
