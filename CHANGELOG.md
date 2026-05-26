@@ -9,6 +9,30 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.12.5 — 2026-05-26
+
+### Documentation
+
+- Rewrote `docs/events.md` to use the textus/3 event names from
+  `Hooks::Registry::EVENTS` (`:entry_put`, `:entry_deleted`,
+  `:build_completed`, `:entry_renamed`, `:proposal_accepted`,
+  `:proposal_rejected`, `:file_published`, `:store_loaded`,
+  `:entry_refreshed`, `:refresh_started`, `:refresh_failed`,
+  `:refresh_backgrounded`). All hook examples now register against
+  events that actually exist.
+- Rewrote `docs/zones.md` to use textus/3 vocabulary (`intake` not
+  `inbox`, `write_policy:` not `writable_by:`, `rules:` not
+  `policies:`, `runner` role not `script`). Manifest fixtures bump
+  to `version: textus/3`.
+- Rewrote `ARCHITECTURE.md` to match the v0.12.4 layering:
+  `Operations` facade replaces `Composition`, `Application::Reads/Writes`
+  use cases replace direct `Store#get/#put` calls, `Store` is pure
+  infrastructure.
+- `SPEC.md` Composition → Operations sweep; removed references to
+  deleted Store delegators.
+- `docs/recipe-github-skill-bundle.md` updated to use the
+  `Operations.writes.{put,delete}` inner-write surface.
+
 ## [0.12.4] — 2026-05-26
 
 ### Breaking
