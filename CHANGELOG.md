@@ -9,6 +9,28 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.14.4 — 2026-05-26
+
+### Added
+
+- `textus doctor` now reports stale per-key refresh lock files under
+  `<root>/.locks/` whose recorded PID is no longer running, as an
+  `info`-level `refresh_lock.stale` issue. The check is purely
+  informational: `Refresh::Lock` uses `flock(2)`, which the kernel
+  releases on process death, so stale `.lock` files on disk do not
+  block subsequent refresh acquires. The check exists so users can
+  clean up forensic clutter and notice unexpected accumulation. No
+  read-path changes — adding a PID probe + unlink there would
+  reintroduce the TOCTOU and PID-reuse hazards explicitly rejected
+  in 0.14.3 / PR #57. (#58)
+
+### Tested
+
+- Added a regression spec that forks a child, takes a per-key
+  `Refresh::Lock`, SIGKILLs the child, and asserts a fresh acquire
+  on the same key succeeds without manual cleanup. Pins the
+  flock-survives-SIGKILL contract.
+
 ## 0.14.3 — 2026-05-26
 
 ### Added
