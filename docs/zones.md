@@ -268,6 +268,8 @@ rules:
 
 `textus refresh intake.notion.roadmap --as=runner` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
 
+The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being refreshed and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](events.md#7a-resolve_intake-args).
+
 ---
 
 ## 7. Wiring data out — derived entries and publishing
