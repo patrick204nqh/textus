@@ -31,7 +31,8 @@ module Textus
     def initialize(root)
       @root = File.expand_path(root)
       @manifest = Manifest.load(@root)
-      @bus = Hooks::Dispatcher.new(audit_log: audit_log)
+      @bus = Hooks::Dispatcher.new
+      Textus::Infra::AuditSubscriber.new(audit_log).attach(@bus)
       @registry = Hooks::Registry.new(dispatcher: @bus)
       @schemas = {}
       load_hooks

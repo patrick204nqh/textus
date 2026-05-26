@@ -7,9 +7,15 @@ module Textus
     class Dispatcher
       HOOK_TIMEOUT_SECONDS = 2
 
-      def initialize(audit_log:)
-        @audit_log = audit_log
+      def initialize
         @subscribers = Hash.new { |h, k| h[k] = [] }
+        @error_handlers = []
+      end
+
+      # Register an error callback invoked when a user hook raises.
+      # Used by Infra::AuditSubscriber to record an "event_error" audit row.
+      def on_error(&block)
+        @error_handlers << block
       end
 
       def subscribe(event, name, keys: nil, &block)
@@ -31,13 +37,15 @@ module Textus
         accepted = filter_kwargs(sub[:callable], kwargs)
         Timeout.timeout(HOOK_TIMEOUT_SECONDS) { sub[:callable].call(**accepted) }
       rescue StandardError => e
-        extras = { "event" => event.to_s, "hook" => sub[:name].to_s, "error" => "#{e.class}: #{e.message}" }
-        extras["target_key"]  = kwargs[:target_key]  if kwargs.key?(:target_key)
-        extras["pending_key"] = kwargs[:pending_key] if kwargs.key?(:pending_key)
-        @audit_log.append(
-          role: "runner", verb: "event_error", key: key,
-          etag_before: nil, etag_after: nil, extras: extras
-        )
+        notify_error(event, sub, key, kwargs, e)
+      end
+
+      def notify_error(event, sub, key, kwargs, error)
+        @error_handlers.each do |handler|
+          handler.call(event: event, hook: sub[:name], key: key, kwargs: kwargs, error: error)
+        rescue StandardError => e
+          warn "[textus] error handler failed: #{e.class}: #{e.message}"
+        end
       end
 
       # Passes only the kwargs a hook block declares. Lets us extend event
