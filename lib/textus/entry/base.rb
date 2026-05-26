@@ -49,6 +49,10 @@ module Textus
         _ = path
         raise NotImplementedError.new("#{name}.serialize_for_put not implemented")
       end
+
+      def self.rewrite_name(_path, _basename)
+        raise NotImplementedError.new("#{name}.rewrite_name not implemented")
+      end
     end
   end
 end

@@ -44,6 +44,20 @@ module Textus
         [bytes, meta, body.to_s, nil]
       end
 
+      # Mutating filesystem op; returns true if a write happened (boolean is
+      # informational, not a predicate). Rubocop's predicate-name heuristic
+      # disabled here on purpose.
+      def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
+        raw = File.binread(path)
+        parsed = parse(raw, path: path)
+        meta = parsed["_meta"] || {}
+        return false unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
+
+        new_meta = meta.merge("name" => basename)
+        File.binwrite(path, serialize(meta: new_meta, body: parsed["body"]))
+        true
+      end
+
       def self.enforce_name_match!(path, meta)
         return unless meta.is_a?(Hash) && meta["name"]
 

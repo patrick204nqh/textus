@@ -36,6 +36,11 @@ module Textus
         [bytes, meta, body.to_s, nil]
       end
 
+      # No-op; text has no meta. Returns false (never writes).
+      def self.rewrite_name(_path, _basename) # rubocop:disable Naming/PredicateMethod
+        false
+      end
+
       def self.validate_path_extension(path, nested)
         ext = File.extname(path)
         if nested

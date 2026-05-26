@@ -135,25 +135,8 @@ module Textus
         end
 
         def rewrite_name_for_mv!(mentry, new_path, new_key)
-          strategy = Entry.for_format(mentry.format)
-          raw = File.binread(new_path)
-          parsed = strategy.parse(raw, path: new_path)
           basename = new_key.split(".").last
-
-          case mentry.format
-          when "markdown"
-            meta = parsed["_meta"] || {}
-            return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
-
-            meta = meta.merge("name" => basename)
-            File.binwrite(new_path, strategy.serialize(meta: meta, body: parsed["body"]))
-          when "json", "yaml"
-            meta = parsed["_meta"]
-            return unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
-
-            new_meta = meta.merge("name" => basename)
-            File.binwrite(new_path, strategy.serialize(meta: new_meta, body: "", content: parsed["content"]))
-          end
+          Entry.for_format(mentry.format).rewrite_name(new_path, basename)
         end
       end
     end
