@@ -39,14 +39,7 @@ module Textus
 
     def self.parse(yaml_text, root: ".")
       raw = YAML.safe_load(yaml_text, aliases: false)
-      unless raw["version"] == PROTOCOL
-        raise BadFrontmatter.new(
-          "<string>",
-          "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}",
-          hint: version_hint_for(raw["version"]),
-        )
-      end
-
+      check_version!(raw, "<string>")
       new(root, raw)
     end
 
@@ -55,16 +48,20 @@ module Textus
       raise IoError.new("manifest not found: #{manifest_path}") unless File.exist?(manifest_path)
 
       raw = YAML.safe_load_file(manifest_path, aliases: false)
-      unless raw["version"] == PROTOCOL
-        raise BadFrontmatter.new(
-          manifest_path,
-          "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}",
-          hint: version_hint_for(raw["version"]),
-        )
-      end
-
+      check_version!(raw, manifest_path)
       new(root, raw)
     end
+
+    def self.check_version!(raw, source)
+      return if raw["version"] == PROTOCOL
+
+      raise BadFrontmatter.new(
+        source,
+        "unsupported manifest version #{raw["version"].inspect}; expected #{PROTOCOL.inspect}",
+        hint: version_hint_for(raw["version"]),
+      )
+    end
+    private_class_method :check_version!
 
     def initialize(root, raw)
       @root = root
