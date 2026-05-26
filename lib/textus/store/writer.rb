@@ -11,16 +11,6 @@ module Textus
         @reader = store.reader
       end
 
-      # Backward-compat shim — orchestration now lives in Application::Writes::Put.
-      # rubocop:disable Metrics/ParameterLists
-      def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-        ctx = Textus::Application::Context.new(store: @store, role: as)
-        Textus::Application::Writes::Put.new(ctx: ctx, bus: @store.bus).call(
-          key, meta: meta, body: body, content: content, if_etag: if_etag, suppress_events: suppress_events
-        )
-      end
-      # rubocop:enable Metrics/ParameterLists
-
       # Pure I/O: validate, serialize, etag-check, write to disk, audit. No
       # permission check and no event firing — those are handled by the caller
       # (Application::Writes::Put).
@@ -158,7 +148,7 @@ module Textus
         mentry, = @store.manifest.resolve(pending_key)
         raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})") unless mentry.in_proposal_zone?
 
-        env = @store.get(pending_key)
+        env = @reader.get(pending_key)
         proposal = env.dig("_meta", "proposal") or
           raise ProposalError.new("entry has no proposal block: #{pending_key}")
         target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")

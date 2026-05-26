@@ -75,43 +75,14 @@ module Textus
       end
     end
 
-    def get(key, as: Textus::Role::DEFAULT)
-      ctx = Textus::Composition.context(self, role: as)
-      result = Textus::Composition.reads_get(ctx).call(key)
-      raise UnknownKey.new(key, suggestions: manifest.suggestions_for(key)) if result.nil?
-
-      result
-    end
-
     def where(key) = @reader.where(key)
     def list(**) = @reader.list(**)
     def schema_envelope(key) = @reader.schema_envelope(key)
-
-    # rubocop:disable Metrics/ParameterLists
-    def put(key, meta: nil, body: nil, content: nil, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-      ctx = Textus::Composition.context(self, role: as)
-      Textus::Composition.writes_put(ctx).call(
-        key, meta: meta, body: body, content: content, if_etag: if_etag, suppress_events: suppress_events
-      )
-    end
-    # rubocop:enable Metrics/ParameterLists
-
-    def delete(key, if_etag: nil, as: Role::DEFAULT, suppress_events: false)
-      ctx = Textus::Composition.context(self, role: as)
-      Textus::Composition.writes_delete(ctx).call(key, if_etag: if_etag, suppress_events: suppress_events)
-    end
 
     def fire_event(event, **)
       view = Textus::Application::Context.new(store: self, role: "human")
       @bus.publish(event, store: view, **)
     end
-
-    def accept(key, as: Role::DEFAULT)
-      ctx = Textus::Composition.context(self, role: as)
-      Textus::Composition.writes_accept(ctx).call(key)
-    end
-
-    def reject(...) = @writer.reject(...)
 
     def deps(key)    = @reader.deps(key)
     def rdeps(key)   = @reader.rdeps(key)
@@ -120,14 +91,6 @@ module Textus
     def validate_all = @reader.validate_all
 
     def uid(key) = @reader.uid(key)
-
-    # Move an entry from old_key to new_key within the same zone. Preserves
-    # uid (minting one first if absent), validates both keys against the
-    # manifest, refuses to clobber, and writes one mv audit row.
-    def mv(old_key, new_key, as: Role::DEFAULT, dry_run: false, correlation_id: nil)
-      Mover.new(store: self, reader: @reader, writer: @writer, manifest: @manifest, audit_log: audit_log)
-           .call(old_key, new_key, as: as, dry_run: dry_run, correlation_id: correlation_id)
-    end
 
     def audit_log
       @audit_log ||= Store::AuditLog.new(@root)
