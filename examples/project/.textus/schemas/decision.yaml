@@ -1,0 +1,14 @@
+fields:
+  name:        { type: string, required: true }
+  status:
+    type: enum
+    values: [proposed, accepted, rejected, superseded]
+    required: true
+  date:        { type: string, required: true }
+  context:     { type: string }
+  proposal:
+    type: hash
+    fields:
+      target_key:  { type: string, required: true }
+      action:      { type: enum, values: [put, delete] }
+      frontmatter: { type: hash }

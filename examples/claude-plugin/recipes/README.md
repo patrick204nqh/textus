@@ -1,12 +1,16 @@
 # Recipes
 
-Optional hook files demonstrating patterns built on textus primitives. **These files do not auto-load** — they live outside `.textus/hooks/` on purpose, so the example plugin's `textus doctor` stays clean.
+Opt-in hook patterns that you copy into your store's `.textus/hooks/`
+directory to enable. They live under `recipes/` rather than `.textus/hooks/`
+in this example so they don't auto-load — pick the ones you want and
+copy them in.
 
-To use a recipe, copy the file into your own `.textus/hooks/` and add the corresponding manifest entries documented in `docs/recipe-*.md`.
+## `skill_fanout.rb`
 
-## Available recipes
+Listens for `:entry_refreshed` events on `intake.skills.*` and fans the
+bundle out into per-file `vendor.skills.<slug>.<rel>` derived entries.
+Reconciles: orphaned children whose source path disappeared upstream are
+deleted. Inner writes use `suppress_events: true` to prevent recursion.
 
-| File | Pattern | Docs |
-|------|---------|------|
-| `github_folder.rb` | Fetch a folder from a public GitHub repo as a single intake entry | `docs/recipe-github-skill-bundle.md` |
-| `skill_fanout.rb`  | Fan out one intake entry into N derived entries, with reconciliation | `docs/recipe-github-skill-bundle.md` |
+See [docs/recipe-github-skill-bundle.md](../../../docs/recipe-github-skill-bundle.md)
+for the end-to-end recipe (manifest snippet, copy command, caveats).

@@ -9,6 +9,27 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.12.6 — 2026-05-26
+
+### Examples
+
+- New `examples/project/` — demonstrates textus as the context store
+  for your own project (identity + runbooks + ADR proposal flow,
+  projecting `CLAUDE.md` and `AGENTS.md` at the repo root). Staged as
+  a fictional Rails service (`ledger`) so the entries read like a real
+  codebase, and the pre-staged ADR proposal is `accept`-runnable
+  end-to-end (carries a valid `frontmatter:` payload for its target).
+- Refined `examples/claude-plugin/` — reduced to one entry of each kind
+  (one agent, one skill, one command, one identity entry, one output,
+  one intake recipe). Removed `bin/`, `Rakefile`, `lefthook.yml`, the
+  duplicate `github_folder.rb` recipe, and the per-recipe README.
+- Fixed `examples/claude-plugin/recipes/skill_fanout.rb` — the recipe
+  routed inner writes through `store.list/put/delete`, which were
+  removed in v0.12.2. Now uses `Operations.writes.{put,delete}` against
+  the `Application::Context` that hooks actually receive.
+- Updated `spec/examples/skill_fanout_hook_spec.rb` to test the recipe
+  against a Context-like duck type, matching the runtime contract.
+
 ## 0.12.5 — 2026-05-26
 
 ### Documentation

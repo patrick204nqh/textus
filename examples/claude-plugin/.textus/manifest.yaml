@@ -78,10 +78,6 @@ entries:
   inject_intro: true
   publish_to:
   - CLAUDE.md
-  events:
-    build_completed:
-    - exec: bin/notify-build
-      as: runner
   compute:
     select:
     - identity.plugin

@@ -1,5 +1,12 @@
 # voice-tools — a Claude Code plugin managed by textus
 
+> This example demonstrates the **distribution** use case: textus is the
+> authoring source-of-truth for a Claude plugin that ships to end users.
+> Identity → working/{agents,skills,commands} → published artifacts at
+> `agents/*.md`, `skills/*.md`, etc. For the **internal project context**
+> use case (textus inside your own project, not shipping anything), see
+> `examples/project/`.
+
 This example shows a minimal Claude Code plugin (`voice-tools`) whose
 authoring surface lives entirely under `.textus/`. The plugin ships:
 
@@ -57,9 +64,6 @@ voice-tools/
       output/
         plugin.json            # → publish_to .claude-plugin/plugin.json
         claude-root.md         # → publish_to CLAUDE.md
-  bin/notify-build             # external-runner stub for the :build event
-  lefthook.yml                 # git hooks (unrelated to textus :build hook)
-  Rakefile                     # rake textus:update
   recipes/                     # optional advanced patterns; see recipes/README.md
 ```
 
@@ -225,9 +229,9 @@ textus hook list
 ```
 
 Useful when wiring up an external runner that needs to discover declared
-`events: { build: [{ exec: ..., as: runner }] }` hooks (this example's
-`output.claude-root` declares one — see `Rakefile`'s `textus:update` task
-for a working dispatcher).
+`events: { build: [{ exec: ..., as: runner }] }` hooks — textus advertises
+them via `hook list` but never invokes them; an external dispatcher
+(cron, lefthook, CI, a rake task) reads the listing and execs.
 
 ## AI proposals (`review` zone)
 
