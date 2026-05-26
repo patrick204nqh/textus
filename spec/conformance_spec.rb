@@ -144,7 +144,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = store.stale(zone: "output")
+      rows = Textus::Operations.for(store).reads.stale.call(zone: "output")
       expect(rows.length).to eq(1)
       row = rows.first
       expect(row["key"]).to eq("output.catalogs.skills")
@@ -172,7 +172,7 @@ RSpec.describe "textus/3 conformance" do
 
   describe "intake staleness via TTL" do
     it "flags intake entries that were never refreshed" do
-      rows = store.stale(zone: "intake")
+      rows = Textus::Operations.for(store).reads.stale.call(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["key"]).to eq("intake.calendar.events")
       expect(rows.first["reason"]).to match(/never refreshed/)
@@ -188,7 +188,7 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = store.stale(zone: "intake")
+      rows = Textus::Operations.for(store).reads.stale.call(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
@@ -203,7 +203,7 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = store.stale(zone: "intake")
+      rows = Textus::Operations.for(store).reads.stale.call(zone: "intake")
       expect(rows).to be_empty
     end
   end
@@ -289,13 +289,13 @@ RSpec.describe "textus/3 conformance" do
 
   describe "--zone filter on list" do
     it "returns only entries in the named zone" do
-      expect(store.list(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
+      expect(Textus::Operations.for(store).reads.list.call(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
     end
   end
 
   describe "store#validate_all" do
     it "returns ok when every entry conforms" do
-      res = store.validate_all
+      res = Textus::Operations.for(store).reads.validate_all.call
       expect(res["ok"]).to be true
       expect(res["violations"]).to be_empty
     end
@@ -303,7 +303,7 @@ RSpec.describe "textus/3 conformance" do
     it "reports schema violations and bad frontmatter" do
       File.write(File.join(root, "zones/working/network/org/broken.md"),
                  "---\nname: broken\n---\n")
-      res = store.validate_all
+      res = Textus::Operations.for(store).reads.validate_all.call
       expect(res["ok"]).to be false
       keys = res["violations"].map { |v| v["key"] }
       expect(keys).to include("working.network.org.broken")

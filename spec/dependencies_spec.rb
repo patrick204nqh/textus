@@ -6,6 +6,7 @@ RSpec.describe Textus::Dependencies do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
+  let(:ops)   { Textus::Operations.for(store) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/people"))
@@ -38,20 +39,20 @@ RSpec.describe Textus::Dependencies do
   end
 
   it "lists dependencies declared in projection.select" do
-    expect(store.deps("output.catalogs.people")).to eq(["working.people"])
+    expect(ops.reads.deps.call("output.catalogs.people")).to eq(["working.people"])
   end
 
   it "lists reverse dependencies" do
-    expect(store.rdeps("working.people")).to eq(["output.catalogs.people"])
+    expect(ops.reads.rdeps.call("working.people")).to eq(["output.catalogs.people"])
   end
 
   it "lists published entries with publish_to" do
-    expect(store.published.map { |r| r["key"] }).to include("output.catalogs.people")
-    rec = store.published.find { |r| r["key"] == "output.catalogs.people" }
+    expect(ops.reads.published.call.map { |r| r["key"] }).to include("output.catalogs.people")
+    rec = ops.reads.published.call.find { |r| r["key"] == "output.catalogs.people" }
     expect(rec["publish_to"]).to eq(["PEOPLE.md"])
   end
 
   it "returns empty deps for an unknown key" do
-    expect(store.deps("does.not.exist")).to eq([])
+    expect(ops.reads.deps.call("does.not.exist")).to eq([])
   end
 end

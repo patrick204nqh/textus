@@ -29,7 +29,7 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
       body: "proposed body",
     )
 
-    result = store.writer.reject("review.draft", as: "human")
+    result = Textus::Operations.for(store, role: "human").writes.reject.call("review.draft")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
     expect { store.reader.get("review.draft") }.to raise_error(Textus::UnknownKey)
@@ -56,7 +56,7 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "x",
     )
-    expect { store.writer.reject("pending.draft", as: "human") }
+    expect { Textus::Operations.for(store, role: "human").writes.reject.call("pending.draft") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 end

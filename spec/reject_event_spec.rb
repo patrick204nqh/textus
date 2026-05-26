@@ -45,7 +45,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       body: "proposed body",
     )
     $textus_event_log.clear
-    result = store.writer.reject("review.draft", as: "human")
+    result = Textus::Operations.for(store, role: "human").writes.reject.call("review.draft")
     expect(result["rejected"]).to eq("review.draft")
     expect(result["target_key"]).to eq("identity.target")
     reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
@@ -58,14 +58,14 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   it "refuses to reject a non-review entry" do
     store = Textus::Store.new(root)
     Textus::Operations.for(store, role: "human").writes.put.call("identity.target", meta: { "name" => "target" }, body: "x")
-    expect { store.writer.reject("identity.target", as: "human") }
+    expect { Textus::Operations.for(store, role: "human").writes.reject.call("identity.target") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
     Textus::Operations.for(store, role: "agent").writes.put.call("review.draft", meta: { "name" => "draft" }, body: "x")
-    expect { store.writer.reject("review.draft", as: "human") }
+    expect { Textus::Operations.for(store, role: "human").writes.reject.call("review.draft") }
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
 

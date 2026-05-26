@@ -36,7 +36,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
       body: "",
     )
-    res = store.validate_all
+    res = Textus::Operations.for(store).reads.validate_all.call
     codes = res["violations"].map { |v| v["code"] }
     expect(codes).to include("role_authority")
     bad = res["violations"].find { |v| v["code"] == "role_authority" }
@@ -51,7 +51,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
       body: "",
     )
-    res = store.validate_all
+    res = Textus::Operations.for(store).reads.validate_all.call
     expect(res["violations"]).to be_empty
   end
 end
