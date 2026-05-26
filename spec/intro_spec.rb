@@ -162,25 +162,6 @@ RSpec.describe Textus::Intro do
     end
   end
 
-  describe "agent_protocol with examples" do
-    it "includes an example field on every recipe when with_examples: true" do
-      result = Textus::Intro.run(store, with_examples: true)
-      recipes = result["agent_protocol"]["recipes"]
-      %w[read write propose refresh].each do |name|
-        expect(recipes[name]).to have_key("example"), "missing example for #{name}"
-      end
-    end
-
-    it "examples are runnable strings, not nil or empty" do
-      result = Textus::Intro.run(store, with_examples: true)
-      result["agent_protocol"]["recipes"].each do |name, r|
-        ex = r["example"]
-        expect(ex).to be_a(Hash), "example for #{name} must be a hash"
-        expect(ex["command"]).to match(/\Atextus /), "example.command for #{name} must start with 'textus '"
-      end
-    end
-  end
-
   describe "backward compatibility" do
     it "keeps every pre-0.12.3 top-level key with its original shape" do
       result = Textus::Intro.run(store)
@@ -192,23 +173,6 @@ RSpec.describe Textus::Intro do
       expect(result["write_flows"]).to be_a(Hash)
       expect(result["cli_verbs"]).to be_a(Array)
       expect(result["docs"]).to be_a(Hash)
-    end
-  end
-
-  describe "examples are grounded in examples/claude-plugin" do
-    it "every example command references a key that exists in the example store" do
-      manifest_path = File.expand_path("../examples/claude-plugin/.textus/manifest.yaml", __dir__)
-      skip "example store not present" unless File.exist?(manifest_path)
-      manifest = YAML.safe_load_file(manifest_path)
-      example_keys = manifest["entries"].map { |e| e["key"] }
-      Textus::Intro::EXAMPLES.each do |name, ex|
-        cmd = ex["command"]
-        key = cmd[/textus \w+ ([a-z0-9.-]+)/, 1]
-        next unless key
-
-        match = example_keys.any? { |k| key == k || key.start_with?("#{k}.") }
-        expect(match).to be(true), "example '#{name}' references #{key.inspect}, not in #{manifest_path}"
-      end
     end
   end
 

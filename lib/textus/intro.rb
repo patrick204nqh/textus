@@ -81,31 +81,6 @@ module Textus
       },
     }.freeze
 
-    # Concrete example invocations against examples/claude-plugin. Inlined
-    # under each recipe only when callers pass `with_examples: true`. Keys
-    # here must exist in examples/claude-plugin/.textus/manifest.yaml; a CI
-    # guard in spec/intro_spec.rb enforces this.
-    EXAMPLES = {
-      "read" => {
-        "command" => "textus get identity.plugin",
-        "output_snippet" => '{"envelope":{"_meta":{...},"body":"...","uid":"a3f...","etag":"sha256:..."}}',
-      },
-      "write" => {
-        "command" => "textus put working.skills.example --as=human --stdin",
-        "stdin" => '{"_meta":{"name":"example"},"body":"notes\n"}',
-        "output_snippet" => '{"ok":true,"key":"working.skills.example","uid":"...","wrote":true}',
-      },
-      "propose" => {
-        "command" => "textus put review.suggestion.example --as=agent --stdin",
-        "stdin" => '{"_meta":{"proposal":{"target":"working.skills.example"}},"body":"prefer em-dashes\n"}',
-        "output_snippet" => '{"ok":true,"key":"review.suggestion.example","awaiting":"human"}',
-      },
-      "refresh" => {
-        "command" => "textus refresh intake.upstream.notes --as=runner",
-        "output_snippet" => '{"ok":true,"refreshed":["intake.upstream.notes"],"skipped":[]}',
-      },
-    }.freeze
-
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
     # Agents that read intro should see a stable shape regardless of how
     # verb implementations evolve.
@@ -130,7 +105,7 @@ module Textus
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
     ].freeze
 
-    def self.run(store, with_examples: false)
+    def self.run(store)
       {
         "protocol" => PROTOCOL_ID,
         "store_root" => store.root,
@@ -139,27 +114,9 @@ module Textus
         "hooks" => hooks_for(store),
         "write_flows" => WRITE_FLOWS.dup,
         "cli_verbs" => CLI_VERBS.map(&:dup),
-        "agent_protocol" => agent_protocol(with_examples: with_examples),
+        "agent_protocol" => AGENT_PROTOCOL,
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
-    end
-
-    def self.agent_protocol(with_examples:)
-      base = deep_dup(AGENT_PROTOCOL)
-      return base unless with_examples
-
-      EXAMPLES.each do |recipe_name, example|
-        base["recipes"][recipe_name]["example"] = deep_dup(example)
-      end
-      base
-    end
-
-    def self.deep_dup(obj)
-      case obj
-      when Hash then obj.transform_values { |v| deep_dup(v) }
-      when Array then obj.map { |v| deep_dup(v) }
-      else obj
-      end
     end
 
     def self.zones_for(store)
