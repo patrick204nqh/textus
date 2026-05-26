@@ -11,6 +11,7 @@ module Textus
       def accept  = Application::Writes::Accept.new(ctx: @ctx, bus: bus)
       def build   = Application::Writes::Build.new(ctx: @ctx, bus: bus)
       def publish = Application::Writes::Publish.new(ctx: @ctx, bus: bus)
+      def reject  = Application::Writes::Reject.new(ctx: @ctx, bus: bus)
 
       private
 
