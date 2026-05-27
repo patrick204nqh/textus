@@ -60,6 +60,18 @@ module Textus
 
           { kind: :leaves, value: leaves }
         end
+
+        KIND = :nested
+
+        def self.from_raw(common, raw)
+          new(
+            index_filename: raw["index_filename"],
+            publish_each: raw["publish_each"],
+            **common,
+          )
+        end
+
+        Entry::REGISTRY[KIND] = self
       end
     end
   end

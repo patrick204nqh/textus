@@ -40,6 +40,21 @@ module Textus
 
           { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
         end
+
+        KIND = :derived
+
+        def self.from_raw(common, raw)
+          source = Parser.parse_source(raw, common[:key])
+          new(
+            source: source,
+            template: raw["template"],
+            inject_boot: raw["inject_boot"] == true,
+            events: raw["events"] || {},
+            **common,
+          )
+        end
+
+        Entry::REGISTRY[KIND] = self
       end
     end
   end

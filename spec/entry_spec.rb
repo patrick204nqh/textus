@@ -41,4 +41,17 @@ RSpec.describe Textus::Entry do
       expect(leaf.index_filename).to be_nil
     end
   end
+
+  describe "Manifest::Entry::REGISTRY" do
+    it "registers all four kinds at load" do
+      expect(Textus::Manifest::Entry::REGISTRY.keys).to contain_exactly(:leaf, :nested, :derived, :intake)
+    end
+
+    it "maps each kind to its class" do
+      expect(Textus::Manifest::Entry::REGISTRY[:leaf]).to eq(Textus::Manifest::Entry::Leaf)
+      expect(Textus::Manifest::Entry::REGISTRY[:nested]).to eq(Textus::Manifest::Entry::Nested)
+      expect(Textus::Manifest::Entry::REGISTRY[:derived]).to eq(Textus::Manifest::Entry::Derived)
+      expect(Textus::Manifest::Entry::REGISTRY[:intake]).to eq(Textus::Manifest::Entry::Intake)
+    end
+  end
 end
