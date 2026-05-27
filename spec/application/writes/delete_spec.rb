@@ -24,13 +24,13 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "working", "foo.md"), "---\nkey: working.foo\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "del-1")
+      ctx = test_ctx(role: "runner", correlation_id: "del-1")
       events = []
       store.bus.subscribe(:entry_deleted, :capture) do |key:, correlation_id:, **|
         events << [:entry_deleted, key, correlation_id]
       end
 
-      described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("working.foo")
+      build_delete(store, ctx).call("working.foo")
 
       expect(File.exist?(File.join(textus, "zones", "working", "foo.md"))).to be(false)
       expect(events).to include([:entry_deleted, "working.foo", "del-1"])
@@ -43,10 +43,10 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = test_ctx(role: "runner")
 
       expect do
-        described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("identity.bar")
+        build_delete(store, ctx).call("identity.bar")
       end.to raise_error(Textus::WriteForbidden)
     end
   end

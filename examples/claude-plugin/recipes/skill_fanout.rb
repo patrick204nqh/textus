@@ -23,11 +23,12 @@ module TextusRecipes
 
           desired_keys = files.keys.map { |rel| TextusRecipes::SkillFanout.derived_key(slug, rel) }
 
-          # `store:` in a hook is an Application::Context. Route inner writes
-          # through Operations so the standard write pipeline (audit, schema
-          # validation, events) applies — using `suppress_events: true` to
-          # prevent the derived puts from re-triggering this listener.
-          ops = Textus::Operations.for(store.store, role: store.role)
+          # `store:` in a hook is the actual Textus::Store. Route inner
+          # writes through Operations so the standard write pipeline (audit,
+          # schema validation, events) applies. This listener is on
+          # :entry_refreshed; inner ops.put fires :entry_put (a different
+          # event), so no recursion guard is needed.
+          ops = Textus::Operations.for(store, role: "runner")
 
           existing_rows = ops.list(prefix: "#{DERIVED_PREFIX}#{slug}")
           existing_keys = existing_rows.map { |row| row["key"] }
@@ -41,7 +42,6 @@ module TextusRecipes
               TextusRecipes::SkillFanout.derived_key(slug, rel),
               meta: { "source_key" => key, "source_path" => rel },
               body: bytes,
-              suppress_events: true,
             )
           end
         end

@@ -24,6 +24,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         - { name: identity, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working }
+        - { key: working.bar, path: working/bar.md, zone: working }
         - { key: working.note, path: working/note.md, zone: working, schema: note }
     YAML
     textus_dir
@@ -221,6 +222,82 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         expect do
           io.delete("working.foo", mentry: mentry, if_etag: "wrong")
         end.to raise_error(Textus::EtagMismatch)
+      end
+    end
+  end
+
+  describe "#move" do
+    it "moves the file to the new path, deletes the old, returns the new envelope, audits with verb=mv" do
+      Dir.mktmpdir do |root|
+        textus_dir = build_textus(root)
+        ctx = ctx_double(role: :runner, correlation_id: "corr-mv")
+        io = build_io(textus_dir, ctx: ctx)
+        manifest = Textus::Manifest.load(textus_dir)
+        old_mentry = manifest.resolve("working.foo").entry
+        new_mentry = manifest.resolve("working.bar").entry
+
+        io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hello"))
+        envelope = io.move(from_key: "working.foo", to_key: "working.bar",
+                           new_mentry: new_mentry)
+
+        old_path = File.join(textus_dir, "zones", "working", "foo.md")
+        new_path = File.join(textus_dir, "zones", "working", "bar.md")
+        expect(File.exist?(old_path)).to be(false)
+        expect(File.exist?(new_path)).to be(true)
+        expect(envelope.key).to eq("working.bar")
+        expect(envelope.uid).to be_a(String)
+
+        rows = File.read(File.join(textus_dir, "audit.log")).lines
+        mv_row = rows.find { |l| l.include?("\"verb\":\"mv\"") }
+        expect(mv_row).to include("\"from_key\":\"working.foo\"")
+        expect(mv_row).to include("\"to_key\":\"working.bar\"")
+        expect(mv_row).to include("\"correlation_id\":\"corr-mv\"")
+      end
+    end
+
+    it "raises EtagMismatch when if_etag does not match the source" do
+      Dir.mktmpdir do |root|
+        textus_dir = build_textus(root)
+        io = build_io(textus_dir, ctx: ctx_double)
+        manifest = Textus::Manifest.load(textus_dir)
+        old_mentry = manifest.resolve("working.foo").entry
+        new_mentry = manifest.resolve("working.bar").entry
+
+        io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hi"))
+        expect do
+          io.move(from_key: "working.foo", to_key: "working.bar",
+                  new_mentry: new_mentry, if_etag: "nope")
+        end.to raise_error(Textus::EtagMismatch)
+      end
+    end
+
+    it "preserves the UID across the move" do
+      Dir.mktmpdir do |root|
+        textus_dir = build_textus(root)
+        io = build_io(textus_dir, ctx: ctx_double)
+        manifest = Textus::Manifest.load(textus_dir)
+        old_mentry = manifest.resolve("working.foo").entry
+        new_mentry = manifest.resolve("working.bar").entry
+
+        before = io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "x"))
+        after = io.move(from_key: "working.foo", to_key: "working.bar",
+                        new_mentry: new_mentry)
+
+        expect(after.uid).to eq(before.uid)
+      end
+    end
+
+    it "raises UnknownKey when the source file does not exist" do
+      Dir.mktmpdir do |root|
+        textus_dir = build_textus(root)
+        io = build_io(textus_dir, ctx: ctx_double)
+        manifest = Textus::Manifest.load(textus_dir)
+        new_mentry = manifest.resolve("working.bar").entry
+
+        expect do
+          io.move(from_key: "working.foo", to_key: "working.bar",
+                  new_mentry: new_mentry)
+        end.to raise_error(Textus::UnknownKey)
       end
     end
   end

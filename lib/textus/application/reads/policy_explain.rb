@@ -4,12 +4,12 @@ module Textus
       # For one key, surface every matching policy block along with the
       # per-slot effective value (which loses ties win-by-specificity).
       class PolicyExplain
-        def initialize(ctx:)
-          @ctx = ctx
+        def initialize(manifest:)
+          @manifest = manifest
         end
 
         def call(key:)
-          policies = @ctx.store.manifest.rules
+          policies = @manifest.rules
           matching = policies.explain(key)
           winners  = policies.for(key)
 

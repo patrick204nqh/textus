@@ -1,5 +1,5 @@
 module Textus
-  module Domain
+  module Application
     module Policy
       module Predicates
         class SchemaValid
@@ -9,17 +9,17 @@ module Textus
             "schema_valid"
           end
 
-          def call(entry:, store:) # rubocop:disable Metrics/PerceivedComplexity
-            return true if entry.nil? || store.nil?
+          def call(entry:, schemas:, manifest:) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
+            return true if entry.nil? || manifest.nil? || schemas.nil?
 
             target_key = entry.meta&.dig("proposal", "target_key")
             return true unless target_key
 
-            mentry = store.manifest.resolve(target_key).entry
+            mentry = manifest.resolve(target_key).entry
             schema_ref = mentry&.schema
             return true unless schema_ref
 
-            schema = store.schemas.fetch_or_nil(schema_ref)
+            schema = schemas.fetch_or_nil(schema_ref)
             return true unless schema
 
             frontmatter = entry.meta&.dig("frontmatter") || {}

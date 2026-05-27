@@ -58,22 +58,23 @@ module Textus
         }
       end
 
-      def self.run(store:, mentry:, template_loader:)
+      # rubocop:disable Metrics/ParameterLists
+      def self.run(mentry:, manifest:, reader:, lister:, transform_resolver:, template_loader:,
+                   transform_context: nil, inject_intro: nil)
         # 1. Load sources + project + reduce
         data =
           if mentry.projection
-            ops = Operations.for(store)
             Projection.new(
-              reader: ops.method(:get),
+              reader: reader,
               spec: mentry.projection,
-              lister: ops.method(:list),
-              transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
-              transform_context: Application::Context.system(store),
+              lister: lister,
+              transform_resolver: transform_resolver,
+              transform_context: transform_context,
             ).run
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
           end
-        data = data.merge("intro" => Intro.run(store)) if mentry.inject_intro
+        data = data.merge("intro" => inject_intro.call) if mentry.inject_intro && inject_intro
 
         # 2. Render
         klass = renderers[mentry.format] or
@@ -81,12 +82,13 @@ module Textus
         bytes = klass.new(template_loader: template_loader).call(mentry: mentry, data: data)
 
         # 3. Write (idempotent: skip if only generated_at would differ)
-        target_path = Key::Path.resolve(store.manifest, mentry)
+        target_path = Key::Path.resolve(manifest, mentry)
         FileUtils.mkdir_p(File.dirname(target_path))
         write_if_changed(target_path, bytes, mentry.format)
 
         target_path
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def self.write_if_changed(target_path, bytes, format)
         if File.exist?(target_path)

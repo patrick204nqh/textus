@@ -39,7 +39,7 @@ module Textus
       Infra::AuditSubscriber.new(@audit_log).attach(@bus)
       Hooks::Builtin.register_all(@registry)
       Hooks::Loader.new(registry: @registry).load_dir(File.join(@root, "hooks"))
-      @bus.publish(:store_loaded, store: Application::Context.system(self))
+      @bus.publish(:store_loaded, store: self)
     end
   end
 end

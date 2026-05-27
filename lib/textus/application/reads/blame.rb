@@ -8,12 +8,13 @@ module Textus
       # row. Falls back to `git => nil` when not in a git repo or when the
       # file is untracked.
       class Blame
-        def initialize(ctx:)
-          @ctx = ctx
+        def initialize(manifest:, root:)
+          @manifest = manifest
+          @root = root
         end
 
         def call(key:, limit: nil)
-          audit_rows = Textus::Application::Reads::Audit.new(ctx: @ctx).call(key: key, limit: limit)
+          audit_rows = Textus::Application::Reads::Audit.new(manifest: @manifest, root: @root).call(key: key, limit: limit)
           path = resolve_path(key)
           return audit_rows.map { |r| r.merge("git" => nil) } unless git_tracked?(path)
 
@@ -23,13 +24,13 @@ module Textus
         private
 
         def resolve_path(key)
-          res = @ctx.store.manifest.resolve(key)
+          res = @manifest.resolve(key)
           mentry = res.entry
           path = res.path
           # Nested entries resolve to a file under the entry path; leaf entries
           # already have a fully-resolved path. Either way `path` is what git
           # needs to know about.
-          path || Textus::Key::Path.resolve(@ctx.store.manifest, mentry)
+          path || Textus::Key::Path.resolve(@manifest, mentry)
         rescue Textus::Error
           nil
         end
@@ -41,7 +42,7 @@ module Textus
 
           _out, _err, status = Open3.capture3(
             "git", "ls-files", "--error-unmatch", path,
-            chdir: @ctx.store.root
+            chdir: @root
           )
           status.success?
         rescue Errno::ENOENT
@@ -50,7 +51,7 @@ module Textus
 
         def git_repo?
           # Walk up from store root to find a .git directory.
-          dir = @ctx.store.root
+          dir = @root
           loop do
             return true if File.directory?(File.join(dir, ".git"))
 
@@ -65,7 +66,7 @@ module Textus
           args = ["git", "log", "-1"]
           args << "--before=#{timestamp}" if timestamp
           args += ["--format=%H%x09%an%x09%aI%x09%s", "--", path]
-          out, _err, status = Open3.capture3(*args, chdir: @ctx.store.root)
+          out, _err, status = Open3.capture3(*args, chdir: @root)
           return nil unless status.success?
 
           sha, author, date, subject = out.strip.split("\t", 4)

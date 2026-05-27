@@ -1,120 +1,44 @@
+# frozen_string_literal: true
+
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Application::Context do
-  def build_store(textus_dir)
-    FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
-    File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, write_policy: [human, runner] }
-        - { name: identity,   write_policy: [human] }
-    YAML
-    Textus::Store.new(textus_dir)
+  it "carries role, correlation_id, now, and dry_run" do
+    t = Time.utc(2026, 1, 1)
+    ctx = described_class.build(role: "agent", correlation_id: "c-1", now: t, dry_run: true)
+    expect(ctx.role).to eq("agent")
+    expect(ctx.correlation_id).to eq("c-1")
+    expect(ctx.now).to eq(t)
+    expect(ctx.dry_run?).to be(true)
   end
 
-  it "carries store, role, correlation_id, and clock" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      ctx = described_class.new(store: store, role: "runner", correlation_id: "abc-123")
-      expect(ctx.store).to equal(store)
-      expect(ctx.role).to eq("runner")
-      expect(ctx.correlation_id).to eq("abc-123")
-    end
+  it "defaults correlation_id, now, dry_run via .build" do
+    ctx = described_class.build(role: "human")
+    expect(ctx.correlation_id).to be_a(String)
+    expect(ctx.now).to be_a(Time)
+    expect(ctx.dry_run?).to be(false)
   end
 
-  it "generates a correlation_id if omitted" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      ctx = described_class.new(store: store, role: "human")
-      expect(ctx.correlation_id).to match(/\A[0-9a-f-]{36}\z/)
-    end
+  it "is frozen" do
+    expect(described_class.build(role: "human")).to be_frozen
   end
 
-  it "answers can_write?(zone) by consulting Domain::Permission" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      ctx_human  = described_class.new(store: store, role: "human")
-      ctx_script = described_class.new(store: store, role: "runner")
-      expect(ctx_human.can_write?("working")).to be(true)
-      expect(ctx_script.can_write?("working")).to be(true)
-      expect(ctx_human.can_write?("identity")).to be(true)
-      expect(ctx_script.can_write?("identity")).to be(false)
+  it "produces a new instance via with_role" do
+    ctx = described_class.build(role: "agent", correlation_id: "c-1")
+    elev = ctx.with_role("human")
+    expect(elev.role).to eq("human")
+    expect(elev.correlation_id).to eq("c-1")
+    expect(elev).not_to eq(ctx)
+  end
+
+  it "does not expose service-locator methods" do
+    ctx = described_class.build(role: "human")
+    %i[manifest schemas file_store audit_log bus authorize_write! authorize_read! can_write? can_read?].each do |m|
+      expect(ctx).not_to respond_to(m), "expected slim Context not to respond to ##{m}"
     end
   end
 
-  it "returns frozen ctx.now within a single request lifetime" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      fake_clock = Class.new do
-        def self.now
-          Time.utc(2026, 5, 22, 12, 0, 0)
-        end
-      end
-      ctx = described_class.new(store: store, role: "human", clock: fake_clock)
-      first = ctx.now
-      sleep 0.01
-      second = ctx.now
-      expect(first).to eq(second)
-    end
-  end
-
-  describe "#bus" do
-    it "returns the store's bus" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "human")
-        expect(ctx.bus).to equal(store.bus)
-      end
-    end
-  end
-
-  describe "#authorize_write!" do
-    it "returns nil when the role can write to the mentry's zone" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "runner")
-        mentry = Struct.new(:key, :zone).new("working.foo", "working")
-        expect(ctx.authorize_write!(mentry)).to be_nil
-      end
-    end
-
-    it "raises WriteForbidden with writers/zone/key details when the role lacks write" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "runner")
-        mentry = Struct.new(:key, :zone).new("identity.self", "identity")
-        expect { ctx.authorize_write!(mentry) }.to raise_error(Textus::WriteForbidden) do |err|
-          expect(err.details["key"]).to eq("identity.self")
-          expect(err.details["zone"]).to eq("identity")
-          expect(err.details["writers"]).to eq(["human"])
-        end
-      end
-    end
-  end
-
-  describe "#authorize_read!" do
-    it "returns nil when the role can read the mentry's zone" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.new(store: store, role: "runner")
-        mentry = Struct.new(:key, :zone).new("working.foo", "working")
-        expect(ctx.authorize_read!(mentry)).to be_nil
-      end
-    end
-  end
-
-  describe ".system" do
-    it "returns a human-role context bound to the store" do
-      Dir.mktmpdir do |root|
-        store = build_store(File.join(root, ".textus"))
-        ctx = described_class.system(store)
-        expect(ctx).to be_a(described_class)
-        expect(ctx.role).to eq("human")
-        expect(ctx.store).to equal(store)
-        expect(ctx.correlation_id).to be_a(String)
-      end
-    end
+  it "does not define a .legacy factory" do
+    expect(described_class).not_to respond_to(:legacy)
   end
 end

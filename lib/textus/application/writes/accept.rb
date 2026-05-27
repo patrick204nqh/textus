@@ -2,15 +2,23 @@ module Textus
   module Application
     module Writes
       class Accept
-        def initialize(ctx:, envelope_io:)
-          @ctx = ctx
+        def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
+          @ctx         = ctx
+          @manifest    = manifest
+          @file_store  = file_store
+          @schemas     = schemas
           @envelope_io = envelope_io
+          @bus         = bus
+          @authorizer  = authorizer
+          @store       = store
         end
 
         def call(pending_key)
           raise ProposalError.new("only human role can accept proposals; got '#{@ctx.role}'") unless @ctx.role == "human"
 
-          env = Textus::Application::Reads::Get.new(ctx: @ctx).call(pending_key)
+          env = Textus::Application::Reads::Get.new(
+            ctx: @ctx, manifest: @manifest, file_store: @file_store,
+          ).call(pending_key)
           proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
           action = proposal["action"] || "put"
@@ -23,33 +31,50 @@ module Textus
             # target. Not related to the removed intake-handler legacy bridge.
             target_meta = env.meta["frontmatter"] || {}
             target_body = env.body
-            Textus::Application::Writes::Put.new(ctx: @ctx, envelope_io: @envelope_io).call(target, meta: target_meta, body: target_body)
+            put_op.call(target, meta: target_meta, body: target_body)
           when "delete"
-            Textus::Application::Writes::Delete.new(ctx: @ctx, envelope_io: @envelope_io).call(target)
+            delete_op.call(target)
           else
             raise ProposalError.new("unknown action: #{action}")
           end
 
-          Textus::Application::Writes::Delete.new(ctx: @ctx, envelope_io: @envelope_io).call(pending_key)
+          delete_op.call(pending_key)
 
-          @ctx.bus.publish(:proposal_accepted,
-                           store: @ctx.with_role(@ctx.role),
-                           key: pending_key,
-                           target_key: target,
-                           correlation_id: @ctx.correlation_id)
+          @bus.publish(:proposal_accepted,
+                       store: @store,
+                       role: @ctx.role,
+                       key: pending_key,
+                       target_key: target,
+                       correlation_id: @ctx.correlation_id)
 
           { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
         end
 
         private
 
+        def put_op
+          @put_op ||= Textus::Application::Writes::Put.new(
+            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
+            bus: @bus, authorizer: @authorizer, store: @store
+          )
+        end
+
+        def delete_op
+          @delete_op ||= Textus::Application::Writes::Delete.new(
+            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
+            bus: @bus, authorizer: @authorizer, store: @store
+          )
+        end
+
         def evaluate_promotion!(env, target_key)
-          rules = @ctx.manifest.rules_for(target_key)
+          rules = @manifest.rules_for(target_key)
           promote = rules.promote
           return if promote.nil? || promote.requires.empty?
 
-          policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
-          result = policy.evaluate(entry: env, store: @ctx.store)
+          policy = Textus::Application::Policy::Promotion.from_names(promote.requires)
+          result = policy.evaluate(
+            entry: env, schemas: @schemas, manifest: @manifest, role: @ctx.role,
+          )
           return if result.ok?
 
           raise ProposalError.new(

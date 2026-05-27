@@ -54,11 +54,10 @@ module Textus
 
     def run_registered_checks(store)
       out = []
-      view = Application::Context.system(store)
       store.registry.rpc_names(:validate).each do |name|
         callable = store.registry.rpc_callable(:validate, name)
         begin
-          result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: view) }
+          result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: store) }
           if result.is_a?(Array)
             out.concat(result.map { |h| h.transform_keys(&:to_s) })
           else

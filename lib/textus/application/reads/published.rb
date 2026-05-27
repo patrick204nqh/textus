@@ -2,12 +2,12 @@ module Textus
   module Application
     module Reads
       class Published
-        def initialize(ctx:)
-          @ctx = ctx
+        def initialize(manifest:)
+          @manifest = manifest
         end
 
         def call
-          Dependencies.published_of(@ctx.manifest)
+          Dependencies.published_of(@manifest)
         end
       end
     end

@@ -10,8 +10,7 @@ module Textus
         option :as_flag, "--as=ROLE"
 
         def call(store)
-          ctx = context_for(store)
-          result = Textus::Application::Refresh::All.call(ctx, prefix: prefix, zone: zone)
+          result = operations_for(store).refresh_all(prefix: prefix, zone: zone)
           emit(result)
           result["ok"] ? 0 : 1
         end

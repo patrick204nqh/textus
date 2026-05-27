@@ -1,20 +1,26 @@
 module Textus
   module Application
     module Refresh
-      module All
-        module_function
+      class All
+        # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, manifest:, envelope_io:, bus:, registry:, store:, authorizer:)
+          @ctx = ctx
+          @manifest = manifest
+          @envelope_io = envelope_io
+          @bus = bus
+          @registry = registry
+          @store = store
+          @authorizer = authorizer
+        end
+        # rubocop:enable Metrics/ParameterLists
 
-        def call(ctx, prefix: nil, zone: nil)
-          envelope_io = Textus::Application::Writes::EnvelopeIO.new(
-            file_store: ctx.file_store,
-            manifest: ctx.manifest,
-            schemas: ctx.schemas,
-            audit_log: ctx.audit_log,
-            ctx: ctx,
+        def call(prefix: nil, zone: nil)
+          worker = Textus::Application::Refresh::Worker.new(
+            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io, bus: @bus,
+            registry: @registry, store: @store, authorizer: @authorizer
           )
-          worker = Textus::Application::Refresh::Worker.new(ctx: ctx, envelope_io: envelope_io)
 
-          stale_rows = Textus::Application::Reads::Stale.new(ctx: ctx).call(prefix: prefix, zone: zone)
+          stale_rows = Textus::Application::Reads::Stale.new(manifest: @manifest).call(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

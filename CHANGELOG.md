@@ -9,6 +9,76 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.19.0 — 2026-05-27
+
+### Breaking
+
+- `Application::Context` is now a slim value object (`role`,
+  `correlation_id`, `now`, `dry_run`). Migration table:
+
+  | Was | Now |
+  |-----|-----|
+  | `Application::Context.new(store:, role:)` | `Operations.for(store, role:)` (common case) or `Application::Context.build(role:)` (pure call state) |
+  | `Application::Context.system(store)` | Pass `store` directly to hooks |
+  | `ctx.store` / `ctx.manifest` / `ctx.file_store` etc. | Construct use cases with the explicit port kwargs |
+  | `ctx.authorize_write!(mentry)` | `Domain::Authorizer.new(manifest:).authorize_write!(mentry, role:)` |
+  | `Put.new(ctx:).call(..., suppress_events: true)` | Use `EnvelopeIO#write` directly |
+  | `store.role` inside a hook | Read `role:` from the event payload |
+
+- `Operations.new(ctx:, manifest:, file_store:, schemas:, audit_log:, bus:, registry:, root:, store:)`
+  is the primary constructor. `Operations.for(store, role:)` remains
+  a convenience.
+
+- `Application::Writes::Put#call` no longer accepts `suppress_events:`.
+
+- `Domain::Policy::Predicates::*` moved to `Application::Policy::Predicates::*`.
+  `Domain::Policy::Promotion` moved to `Application::Policy::Promotion`.
+  `Promotion#evaluate` now takes `entry:, schemas:, manifest:, role:`
+  instead of `store:`.
+
+- Hooks/intakes/transforms receive the actual `Store` as `store:`
+  (previously a Context impersonating one). Event payloads
+  (`:entry_put`, `:entry_deleted`, `:entry_renamed`, `:proposal_accepted`,
+  `:proposal_rejected`, `:entry_refreshed`, `:refresh_started`,
+  `:refresh_failed`, `:refresh_backgrounded`, `:file_published`,
+  `:build_completed`) now carry `role:` directly so hooks can observe
+  the actor without reaching through the `store:` handle.
+
+- `Application::Refresh::All` is a class, not a module function. Callers
+  go through `Operations#refresh_all`.
+
+### Added
+
+- `Domain::Authorizer` — single source of truth for permission checks.
+- `Application::Policy::Promotion` and `Application::Policy::Predicates::*` —
+  the policy evaluator and predicates now live with the Application code
+  that loads envelope bytes off disk to evaluate them.
+- `Application::Writes::EnvelopeIO#move` — full move pipeline (replaces
+  the in-`Mv` file move + audit).
+- `Application::Writes::EnvelopeIO#read_envelope(key)` — internal
+  convenience for callers that need to inspect a pre-move envelope.
+
+### Internal
+
+- `Builder::Pipeline` no longer re-enters `Operations.for(store)`; it
+  takes reader/lister callables from the caller.
+- CLI verbs construct `Operations`, never `Context` directly.
+- `Operations` no longer memoizes per-use-case factories; only
+  `envelope_io`, `refresh_worker`, and `orchestrator` are shared.
+- Wire format `textus/3` unchanged. Audit-log NDJSON unchanged.
+
+### Known follow-ups
+
+- CLI verbs `hook run`, `put --fetch`, `hooks list`, and `rule list`
+  still reach into `store.manifest` / `store.registry` directly. A
+  future release adds `Operations` projections (e.g. `manifest_view`,
+  `hooks_view`, `run_intake`) so these verbs route through the
+  Operations boundary.
+- `Application::Writes::Delete#call` retains a `suppress_events:` kwarg
+  (used internally by `Reject`). A future release either lifts the
+  suppression into `EnvelopeIO`-direct usage (matching the `Mv` path)
+  or formalizes per-event suppression as part of the public hook API.
+
 ## 0.18.1 — 2026-05-27
 
 ### Fixed

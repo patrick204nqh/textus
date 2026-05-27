@@ -27,7 +27,7 @@ RSpec.describe "textus action verb" do
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
         Textus.hook do |reg|
           reg.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
-            Textus::Operations.for(store.store, role: store.role).put(
+            Textus::Operations.for(store, role: "human").put(
               "working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok",
             )
           end

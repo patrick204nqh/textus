@@ -2,16 +2,20 @@ module Textus
   module Application
     module Writes
       class Put
-        def initialize(ctx:, envelope_io:)
-          @ctx = ctx
+        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, store:)
+          @ctx         = ctx
+          @manifest    = manifest
           @envelope_io = envelope_io
+          @bus         = bus
+          @authorizer  = authorizer
+          @store       = store
         end
 
-        def call(key, meta: nil, body: nil, content: nil, if_etag: nil, suppress_events: false)
-          @ctx.manifest.validate_key!(key)
-          mentry = @ctx.manifest.resolve(key).entry
+        def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
+          @manifest.validate_key!(key)
+          mentry = @manifest.resolve(key).entry
 
-          @ctx.authorize_write!(mentry)
+          @authorizer.authorize_write!(mentry, role: @ctx.role)
 
           envelope = @envelope_io.write(
             key,
@@ -20,13 +24,12 @@ module Textus
             if_etag: if_etag,
           )
 
-          unless suppress_events
-            @ctx.bus.publish(:entry_put,
-                             store: @ctx.with_role(@ctx.role),
-                             key: key,
-                             envelope: envelope,
-                             correlation_id: @ctx.correlation_id)
-          end
+          @bus.publish(:entry_put,
+                       store: @store,
+                       role: @ctx.role,
+                       key: key,
+                       envelope: envelope,
+                       correlation_id: @ctx.correlation_id)
 
           envelope
         end

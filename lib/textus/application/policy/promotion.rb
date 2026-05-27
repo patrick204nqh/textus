@@ -1,8 +1,13 @@
 module Textus
-  module Domain
+  module Application
     module Policy
       # Promotion evaluates a list of named predicates against a pending-proposal
       # entry and returns a Result indicating whether all requirements are met.
+      #
+      # Lives in Application because the predicates it wires up read live state
+      # from explicit ports (schemas, manifest, role). The Domain-side rule
+      # statement ("this policy requires predicates X and Y") is captured by
+      # Textus::Domain::Policy::Promote.
       class Promotion
         Result = Struct.new(:ok?, :reasons, keyword_init: true)
 
@@ -31,13 +36,25 @@ module Textus
           @predicates.map(&:name)
         end
 
-        def evaluate(entry:, store:)
+        def evaluate(entry:, schemas:, manifest:, role:)
           reasons = []
           @predicates.each do |pred|
-            ok = pred.call(entry: entry, store: store)
+            ok = invoke(pred, entry: entry, schemas: schemas, manifest: manifest, role: role)
             reasons << "#{pred.name}: #{pred.reason || "predicate failed"}" unless ok
           end
           Result.new(ok?: reasons.empty?, reasons: reasons)
+        end
+
+        private
+
+        def invoke(pred, entry:, schemas:, manifest:, role:)
+          case pred.name
+          when "human_accept"
+            pred.call(role: role, entry: entry)
+          else
+            # Default shape: schema-style predicates that need entry + schemas + manifest.
+            pred.call(entry: entry, schemas: schemas, manifest: manifest)
+          end
         end
       end
     end

@@ -1,60 +1,46 @@
-require "fileutils"
-
 module Textus
   module Application
     module Writes
       class Mv
-        MovePlan = Data.define(
-          :old_key, :new_key, :old_path, :new_path,
-          :new_mentry, :uid, :etag_before
-        )
-
-        def initialize(ctx:, envelope_io:)
-          @ctx = ctx
+        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, store:)
+          @ctx         = ctx
+          @manifest    = manifest
           @envelope_io = envelope_io
+          @bus         = bus
+          @authorizer  = authorizer
+          @store       = store
         end
 
         def call(old_key, new_key, dry_run: false)
-          plan, pre_env = prepare_plan(old_key, new_key)
-          return dry_run_result(plan) if dry_run
+          old_res, new_res = prepare(old_key, new_key)
+          return dry_run_result(old_key, new_key, old_res, new_res) if dry_run
 
-          plan = ensure_uid!(plan, pre_env: pre_env)
-          etag_after = perform_move!(plan)
-          new_envelope = record_move(plan, etag_after: etag_after)
-          success_result(plan, new_envelope: new_envelope)
+          ensure_uid!(old_key, old_res.entry)
+          envelope = @envelope_io.move(
+            from_key: old_key, to_key: new_key,
+            new_mentry: new_res.entry
+          )
+          publish_renamed(old_key, new_key, envelope)
+          success_result(old_key, new_key, old_res, new_res, envelope)
         end
 
         private
 
-        def manifest = @ctx.manifest
-        def reader_get(key) = (@reader_get ||= Textus::Application::Reads::Get.new(ctx: @ctx)).call(key)
-
-        def prepare_plan(old_key, new_key)
-          manifest.validate_key!(old_key)
-          manifest.validate_key!(new_key)
+        def prepare(old_key, new_key)
+          @manifest.validate_key!(old_key)
+          @manifest.validate_key!(new_key)
           raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-          old_res = manifest.resolve(old_key)
-          old_mentry = old_res.entry
-          old_path = old_res.path
-          raise UnknownKey.new(old_key) unless @ctx.file_store.exists?(old_path)
+          old_res = @manifest.resolve(old_key)
+          new_res = @manifest.resolve(new_key)
+          raise UnknownKey.new(old_key) unless @envelope_io.exists?(old_res.path)
 
-          new_res = manifest.resolve(new_key)
-          new_mentry = new_res.entry
-          new_path = new_res.path
-          validate_zone_and_format!(old_mentry, new_mentry)
-          @ctx.authorize_write!(old_mentry)
-          @ctx.authorize_write!(new_mentry)
-          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if @ctx.file_store.exists?(new_path)
+          validate_zone_and_format!(old_res.entry, new_res.entry)
+          @authorizer.authorize_write!(old_res.entry, role: @ctx.role)
+          @authorizer.authorize_write!(new_res.entry, role: @ctx.role)
+          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if @envelope_io.exists?(new_res.path)
 
-          pre_env = reader_get(old_key)
-          plan = MovePlan.new(
-            old_key: old_key, new_key: new_key,
-            old_path: old_path, new_path: new_path,
-            new_mentry: new_mentry,
-            uid: pre_env.uid, etag_before: pre_env.etag
-          )
-          [plan, pre_env]
+          [old_res, new_res]
         end
 
         def validate_zone_and_format!(old_mentry, new_mentry)
@@ -69,72 +55,51 @@ module Textus
           raise UsageError.new("mv: format mismatch (#{old_mentry.format} → #{new_mentry.format}); refusing.")
         end
 
-        def ensure_uid!(plan, pre_env:)
-          return plan if plan.uid
+        # If the source file lacks a UID, rewrite it in-place via EnvelopeIO#write
+        # so a UID gets injected before the move. This replaces the previous
+        # Put(suppress_events: true) bypass with a direct EnvelopeIO call —
+        # producing one "put" audit row, then the "mv" row from EnvelopeIO#move.
+        def ensure_uid!(old_key, old_mentry)
+          pre_env = @envelope_io.read_envelope(old_key)
+          return if pre_env.uid
 
-          env = Textus::Application::Writes::Put.new(ctx: @ctx, envelope_io: @envelope_io).call(
-            plan.old_key,
-            meta: pre_env.meta,
-            body: pre_env.body,
-            content: pre_env.content,
-            suppress_events: true,
+          @envelope_io.write(
+            old_key, mentry: old_mentry,
+                     payload: EnvelopeIO::Payload.new(
+                       meta: pre_env.meta, body: pre_env.body, content: pre_env.content,
+                     )
           )
-          plan.with(uid: env.uid, etag_before: env.etag)
         end
 
-        def perform_move!(plan)
-          FileUtils.mkdir_p(File.dirname(plan.new_path))
-          FileUtils.mv(plan.old_path, plan.new_path)
-          rewrite_name_for_mv!(plan.new_mentry, plan.new_path, plan.new_key)
-          Etag.for_file(plan.new_path)
+        def publish_renamed(old_key, new_key, envelope)
+          @bus.publish(:entry_renamed,
+                       store: @store,
+                       role: @ctx.role,
+                       key: new_key,
+                       from_key: old_key,
+                       to_key: new_key,
+                       envelope: envelope,
+                       correlation_id: @ctx.correlation_id)
         end
 
-        def record_move(plan, etag_after:)
-          extras = {
-            "from_key" => plan.old_key, "to_key" => plan.new_key,
-            "from_path" => plan.old_path, "to_path" => plan.new_path,
-            "uid" => plan.uid
-          }
-          extras["correlation_id"] = @ctx.correlation_id if @ctx.correlation_id
-
-          @ctx.audit_log.append(
-            role: @ctx.role, verb: "mv", key: plan.new_key,
-            etag_before: plan.etag_before, etag_after: etag_after,
-            extras: extras
-          )
-          new_envelope = reader_get(plan.new_key)
-          @ctx.bus.publish(:entry_renamed,
-                           store: @ctx.with_role(@ctx.role),
-                           key: plan.new_key,
-                           from_key: plan.old_key,
-                           to_key: plan.new_key,
-                           envelope: new_envelope,
-                           correlation_id: @ctx.correlation_id)
-          new_envelope
-        end
-
-        def dry_run_result(plan)
+        def dry_run_result(old_key, new_key, old_res, new_res)
+          pre_env = @envelope_io.read_envelope(old_key)
           {
             "protocol" => PROTOCOL, "ok" => true, "dry_run" => true,
-            "from_key" => plan.old_key, "to_key" => plan.new_key,
-            "from_path" => plan.old_path, "to_path" => plan.new_path,
-            "uid" => plan.uid
+            "from_key" => old_key, "to_key" => new_key,
+            "from_path" => old_res.path, "to_path" => new_res.path,
+            "uid" => pre_env.uid
           }
         end
 
-        def success_result(plan, new_envelope:)
+        def success_result(old_key, new_key, old_res, new_res, envelope)
           {
             "protocol" => PROTOCOL, "ok" => true,
-            "from_key" => plan.old_key, "to_key" => plan.new_key,
-            "from_path" => plan.old_path, "to_path" => plan.new_path,
-            "uid" => plan.uid,
-            "envelope" => new_envelope.to_h_for_wire
+            "from_key" => old_key, "to_key" => new_key,
+            "from_path" => old_res.path, "to_path" => new_res.path,
+            "uid" => envelope.uid,
+            "envelope" => envelope.to_h_for_wire
           }
-        end
-
-        def rewrite_name_for_mv!(mentry, new_path, new_key)
-          basename = new_key.split(".").last
-          Entry.for_format(mentry.format).rewrite_name(new_path, basename)
         end
       end
     end
