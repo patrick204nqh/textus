@@ -42,7 +42,7 @@ module Textus
       # entry with nested: true in the raw YAML — e.g. Intake entries covering
       # a directory of leaf files).
       def nested_entry?(entry)
-        entry.is_a?(Textus::Manifest::Entry::Nested) || entry.raw["nested"] == true
+        entry.nested?
       end
 
       def build_resolution(entry, remaining, key)
@@ -51,7 +51,7 @@ module Textus
         else
           raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
-          index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+          index_fn = entry.index_filename
           path = if index_fn
                    File.join(@manifest.root, "zones", entry.path, *remaining, index_fn)
                  else
@@ -71,14 +71,14 @@ module Textus
         base = File.join(@manifest.root, "zones", entry.path)
         return [] unless File.directory?(base)
 
-        entry_index_filename = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        entry_index_filename = entry.index_filename
         glob_pattern = entry_index_filename ? "**/#{entry_index_filename}" : nested_glob(entry.format)
         Dir.glob(File.join(base, glob_pattern)).filter_map { |path| nested_row_for(entry, base, path) }
       end
 
       def nested_row_for(entry, base, path)
         rel = path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        entry_if = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        entry_if = entry.index_filename
         stripped = entry_if ? File.dirname(rel) : rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
         segs = stripped.split("/").reject { |s| s.empty? || s == "." }
         return nil if segs.empty?

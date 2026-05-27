@@ -14,7 +14,7 @@ module Textus
               raise UsageError.new("entry '#{entry.key}': text format must not declare a schema")
             end
 
-            has_template = entry.respond_to?(:template) && !entry.template.nil?
+            has_template = !entry.template.nil?
             is_external  = entry.derived? && entry.external?
             is_intake    = entry.intake?
             return unless entry.in_generator_zone? && !has_template && !is_external && !is_intake &&

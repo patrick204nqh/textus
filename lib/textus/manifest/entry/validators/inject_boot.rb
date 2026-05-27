@@ -4,13 +4,11 @@ module Textus
       module Validators
         module InjectBoot
           def self.call(entry)
-            inject_boot = entry.respond_to?(:inject_boot) ? entry.inject_boot : false
-            return unless inject_boot
+            return unless entry.inject_boot
 
             raise UsageError.new("entry '#{entry.key}': inject_boot: is only valid on derived entries") unless entry.in_generator_zone?
 
-            has_template = entry.respond_to?(:template) && !entry.template.nil?
-            return if has_template
+            return unless entry.template.nil?
 
             raise UsageError.new("entry '#{entry.key}': inject_boot: requires a template:")
           end

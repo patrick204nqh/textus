@@ -11,7 +11,8 @@ module Textus
           @events = events || {}
         end
 
-        def intake? = true
+        def intake?  = true
+        def nested?  = !!@raw["nested"]
       end
     end
   end
