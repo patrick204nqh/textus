@@ -13,6 +13,10 @@ module Textus
 
         REGISTRY = {
           "schema_valid" => -> { Predicates::SchemaValid.new },
+          "accept_authority_signed" => -> { Predicates::HumanAccept.new },
+          # Legacy alias — kept so manifests written against the pre-0.20.1
+          # vocabulary keep resolving. The Domain Promote DSL normalizes the
+          # symbol; this entry covers callers that pass the raw string.
           "human_accept" => -> { Predicates::HumanAccept.new },
         }.freeze
 
