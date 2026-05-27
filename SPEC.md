@@ -430,8 +430,10 @@ Every successful write appends one compact JSON object (NDJSON) to `.textus/audi
 Schema (one JSON object per line, no interior whitespace):
 
 ```json
-{"ts":"<iso8601-utc>","role":"<role>","verb":"<verb>","key":"<key>","etag_before":<etag-or-null>,"etag_after":<etag-or-null>}
+{"seq":<integer>,"ts":"<iso8601-utc>","role":"<role>","verb":"<verb>","key":"<key>","etag_before":<etag-or-null>,"etag_after":<etag-or-null>}
 ```
+
+`seq` is a monotonic integer counter, auto-incremented on each append. It is the foundation for cursor-based queries: `textus audit --seq-since=N` returns only rows with `seq > N`, and `textus pulse --since=N` builds its `changed` array from the same cursor. When an agent's cursor falls below the oldest available seq (due to log rotation), the operation raises `CursorExpired`.
 
 `ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag).
 
@@ -730,6 +732,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `hook run NAME` | write | any |
 | `doctor [--check=NAME[,NAME]] [--output=json]` | read | any |
 | `boot [--output=json]` | read | any |
+| `pulse [--since=N]` | read | any |
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh KEY --as=runner` | write | per zone (typically `runner`) |
@@ -740,6 +743,36 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `schema {show,init,diff,migrate}` | read/write | `human` for writes |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `key uid K` | read | any |
+
+**`textus boot` envelope extras.** In addition to zones, entries, hooks, write flows, and the `cli_verbs` catalog, the boot envelope includes an `agent_quickstart` block synthesized from the manifest's role-kind declarations:
+
+```json
+{
+  "agent_quickstart": {
+    "read_verbs":     ["boot", "get", "list", "audit", "pulse", "freshness", "doctor"],
+    "write_verbs":    ["put KEY --as=<proposer-role> --stdin"],
+    "writable_zones": ["review"],
+    "propose_zone":   "review",
+    "latest_seq":     1842
+  }
+}
+```
+
+`latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
+
+**`textus pulse` output shape:**
+
+```json
+{
+  "cursor":         1845,
+  "changed":        [ { "seq": 1843, "key": "working.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
+  "stale":          [ "output.marketplace" ],
+  "pending_review": [ "review.proposal.123" ],
+  "doctor":         { "ok": true, "warn": 0, "fail": 0 }
+}
+```
+
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the review zone. `doctor` is an `{ok, warn, fail}` count summary. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -797,6 +830,12 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
 The reference Ruby gem follows semver independently and speaks `textus/3`.
+
+## 11.1 Agent integration
+
+Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable zones, and its propose zone. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
+
+For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/agent-integration.md`](docs/agent-integration.md).
 
 ## 12. Conformance fixtures
 
