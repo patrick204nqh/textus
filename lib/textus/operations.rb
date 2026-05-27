@@ -88,7 +88,7 @@ module Textus
     def build(...)
       Application::Writes::Build.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, store: @store
+        bus: @bus, root: @root, registry: @registry, store: @store
       ).call(...)
     end
 

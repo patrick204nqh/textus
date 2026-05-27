@@ -89,7 +89,7 @@ module TextusSpecHelpers
     p = writes_ports(store, ctx)
     Textus::Application::Writes::Build.new(
       ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      bus: p[:bus], root: p[:root], store: p[:store]
+      bus: p[:bus], root: p[:root], registry: store.registry, store: p[:store]
     )
   end
 

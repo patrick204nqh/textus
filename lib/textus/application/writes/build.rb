@@ -11,16 +11,17 @@ module Textus
       # `Application::Writes::Publish`. The CLI verb `textus build` calls
       # both classes and merges the results.
       class Build
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
+        # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, manifest:, file_store:, bus:, root:, registry:, store:)
           @ctx        = ctx
           @manifest   = manifest
           @file_store = file_store
           @bus        = bus
           @root       = root
-          # T11 will replace `store:` here when Builder::Pipeline takes
-          # reader/lister callables instead of a store handle.
+          @registry   = registry
           @store      = store
         end
+        # rubocop:enable Metrics/ParameterLists
 
         def call(prefix: nil)
           built = @manifest.entries.filter_map do |mentry|
@@ -36,10 +37,19 @@ module Textus
         private
 
         def materialize(mentry)
+          reader = Textus::Application::Reads::Get.new(
+            ctx: @ctx, manifest: @manifest, file_store: @file_store,
+          )
+          lister = Textus::Application::Reads::List.new(manifest: @manifest)
           target_path = Builder::Pipeline.run(
-            store: @store,
             mentry: mentry,
+            manifest: @manifest,
+            reader: reader.method(:call),
+            lister: lister.method(:call),
+            transform_resolver: ->(name) { @registry.rpc_callable(:transform_rows, name) },
             template_loader: ->(name) { read_template(name) },
+            transform_context: @store,
+            inject_intro: -> { Textus::Intro.run(@store) },
           )
           publish_and_fire(mentry, target_path)
           { "key" => mentry.key, "path" => target_path, "published_to" => mentry.publish_to }
