@@ -8,6 +8,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       path: opts.fetch(:path, "foo.md"),
       nested?: false,
       derived?: false,
+      intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
       in_generator_zone?: opts.fetch(:in_generator_zone, false),
@@ -21,12 +22,39 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       path: opts.fetch(:path, "foo.md"),
       nested?: false,
       derived?: true,
+      intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
       template: opts[:template],
       external?: opts.fetch(:external, false),
       in_generator_zone?: opts.fetch(:in_generator_zone, false),
     )
+  end
+
+  def intake_entry(opts = {})
+    instance_double(
+      Textus::Manifest::Entry::Intake,
+      key: "output.catalog",
+      path: opts.fetch(:path, "catalog.txt"),
+      nested?: false,
+      derived?: false,
+      intake?: true,
+      format: opts.fetch(:format, "text"),
+      schema: opts[:schema],
+      in_generator_zone?: opts.fetch(:in_generator_zone, true),
+    )
+  end
+
+  it "accepts intake text in a generator zone with no template" do
+    expect do
+      described_class.call(intake_entry(format: "text", path: "catalog.txt"))
+    end.not_to raise_error
+  end
+
+  it "accepts intake markdown in a generator zone with no template" do
+    expect do
+      described_class.call(intake_entry(format: "markdown", path: "catalog.md"))
+    end.not_to raise_error
   end
 
   it "delegates path-extension validation to the format strategy" do
@@ -47,7 +75,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
                              format: "markdown", in_generator_zone: true,
                              template: nil, external: false
                            ))
-    end.to raise_error(Textus::UsageError, /derived markdown entries require a template/)
+    end.to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
   end
 
   it "accepts derived text with template" do
