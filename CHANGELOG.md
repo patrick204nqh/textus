@@ -9,6 +9,26 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.21.1 — 2026-05-27
+
+### Fixed
+- **Intake entries can now act as builder outputs.** Two related gaps closed:
+  - `FormatMatrix` validator no longer rejects `kind: intake` entries in
+    generator zones for missing a template. Intake bodies come from a
+    `:resolve_intake` handler, so the "derived format requires template"
+    rule never applied. (Error message widened from "derived #{format}"
+    to "#{format} entries in a generator zone require a template".)
+  - `Manifest::Entry::Intake` now parses `publish_to:` from YAML (was
+    hardcoded to `[]`).
+  - `textus publish` / `textus build` now fan out intake bodies to each
+    `publish_to` target, mirroring the Leaf fan-out path. Refresh-time
+    fan-out is unchanged — bodies still publish on the next publish/build
+    run.
+
+  Closes #80. Lets consumers replace `kind: derived, compute: { kind:
+  external }` runner glue with `kind: intake` + `Textus.on(:resolve_intake)`
+  hooks for builder-produced outputs.
+
 ## 0.21.0 — 2026-05-27
 
 ### BREAKING
