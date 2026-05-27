@@ -25,6 +25,11 @@ tracks both additive improvements and breaking protocol bumps independently.
   accept" when the manifest declares zero `accept_authority` roles — the
   error now says "no role with accept_authority kind is declared in this
   manifest; accept/reject is disabled".
+- `textus build` now resolves the build role from the manifest's declared
+  `generator` kind instead of hardcoding `"builder"`, so renamed generator
+  roles work correctly.
+- Manifest validator's "exactly one accept_authority" error message now
+  matches what the schema actually enforces.
 
 ### Internal
 - Final cleanup of role-name leaks identified by the 0.20.2 architecture
