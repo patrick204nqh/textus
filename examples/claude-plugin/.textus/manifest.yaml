@@ -30,6 +30,7 @@ entries:
   zone: identity
   schema: plugin
   owner: human:self
+  kind: leaf
 - key: working.agents
   path: working/agents
   zone: working
@@ -37,6 +38,7 @@ entries:
   owner: human:self
   nested: true
   publish_each: agents/{basename}.md
+  kind: nested
 - key: working.skills
   path: working/skills
   zone: working
@@ -44,6 +46,7 @@ entries:
   owner: human:self
   nested: true
   publish_each: skills/{basename}/SKILL.md
+  kind: nested
 - key: working.commands
   path: working/commands
   zone: working
@@ -51,12 +54,14 @@ entries:
   owner: human:self
   nested: true
   publish_each: commands/{basename}.md
+  kind: nested
 - key: review.suggestion
   path: review/suggestion
   zone: review
   schema:
   owner: agent:catalog
   nested: true
+  kind: nested
 - key: output.plugin
   path: output/plugin.json
   zone: output
@@ -70,6 +75,7 @@ entries:
     pluck: "*"
     kind: projection
     transform: plugin_envelope
+  kind: derived
 - key: output.claude-root
   path: output/claude-root.md
   zone: output
@@ -87,6 +93,7 @@ entries:
     pluck: "*"
     kind: projection
     transform: claude_root
+  kind: derived
 rules:
 - match: review.**
   promotion:
