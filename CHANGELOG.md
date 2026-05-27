@@ -9,6 +9,39 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.22.0 — 2026-05-28
+
+### Changed (internal — no manifest-schema impact)
+- **Entry polymorphism pass.** Behavior-preserving refactor that
+  consolidates cross-cutting fields on `Manifest::Entry::Base` and
+  replaces case-statement dispatch with polymorphic methods. Adding
+  a new entry kind now costs ~1 file edit instead of ~5–10.
+  - `publish_to` is now owned by `Base` (was declared four separate
+    times across Leaf/Derived/Nested/Intake).
+  - `Base` exposes nil-returning stubs for `template`, `inject_boot`,
+    `events`, `publish_each`, `index_filename` — validators and
+    serializers no longer need `respond_to?` guards.
+  - `Publish#call` dispatches via `entry.publish_via(context)` instead
+    of a 4-branch case-statement. The byte-identical
+    `publish_leaf_entry` / `publish_intake_entry` helpers are gone.
+  - Each `Entry` subclass declares a `KIND` constant and a
+    `self.from_raw(common, raw)` factory; `Parser` dispatches via
+    `Entry::REGISTRY` instead of a closed `case kind`.
+  - Dead `Base#kind` method removed.
+
+No public API or manifest YAML changes. All existing manifests load
+identically.
+
+Remaining `is_a?(Entry::Derived)` callsites in `builder/`, `renderer/`,
+`application/reads/`, and `domain/staleness/` are out of scope for this
+pass — they touch a different polymorphism axis (what data the entry
+contributes to a build) and will be addressed in a follow-up.
+
+Known follow-up: `Intake#nested?` still reads `@raw["nested"]` to
+preserve the `kind: intake, nested: true` YAML overlay used by nested
+intake handlers. This dual discriminator (`kind:` + `nested:`) is a
+design tension worth revisiting alongside the broader is_a? cleanup.
+
 ## 0.21.1 — 2026-05-27
 
 ### Fixed
