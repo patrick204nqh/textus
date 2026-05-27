@@ -3,7 +3,7 @@ require "tmpdir"
 require "fileutils"
 require "json"
 
-RSpec.describe Textus::MigrateKeys do
+RSpec.describe Textus::Application::Tools::MigrateKeys do
   include_context "textus_store_fixture"
 
   before do

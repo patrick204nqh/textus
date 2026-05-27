@@ -10,7 +10,7 @@ module Textus
 
         def call(store)
           effective_write = write && !dry_run
-          res = Textus::MigrateKeys.run(store, write: effective_write || false)
+          res = Textus::Application::Tools::MigrateKeys.run(store, write: effective_write || false)
           emit(res, exit_code: res["ok"] ? 0 : 1)
         end
       end
