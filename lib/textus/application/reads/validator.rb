@@ -19,7 +19,7 @@ module Textus
         private
 
         def check_content_violations(violations)
-          @manifest.enumerate.each do |row|
+          @manifest.resolver.enumerate.each do |row|
             key = row[:key]
             mentry = row[:manifest_entry]
             env = fetch_envelope(key, violations) or next
@@ -35,7 +35,7 @@ module Textus
         end
 
         def check_role_authority_violations(violations)
-          @manifest.enumerate.each do |row|
+          @manifest.resolver.enumerate.each do |row|
             mentry = row[:manifest_entry]
             next unless mentry.schema
 

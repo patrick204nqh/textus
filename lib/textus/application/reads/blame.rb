@@ -24,7 +24,7 @@ module Textus
         private
 
         def resolve_path(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           mentry = res.entry
           path = res.path
           # Nested entries resolve to a file under the entry path; leaf entries

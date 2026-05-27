@@ -19,7 +19,7 @@ module Textus
         # rubocop:enable Metrics/ParameterLists
 
         def run(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           mentry = res.entry
           path = res.path
           remaining = res.remaining

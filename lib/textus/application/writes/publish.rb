@@ -23,7 +23,7 @@ module Textus
             next unless mentry.nested && mentry.publish_each
             next if prefix && !mentry.key.start_with?(prefix) && !prefix.start_with?("#{mentry.key}.")
 
-            @manifest.enumerate(prefix: mentry.key).each do |row|
+            @manifest.resolver.enumerate(prefix: mentry.key).each do |row|
               next unless row[:manifest_entry].equal?(mentry)
               next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
 

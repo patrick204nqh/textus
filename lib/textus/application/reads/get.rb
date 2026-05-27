@@ -36,13 +36,13 @@ module Textus
         # Used by consumers (e.g. Validator) that need to distinguish absence
         # from emptiness.
         def get(key)
-          call(key) || raise(UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)))
+          call(key) || raise(UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)))
         end
 
         private
 
         def read_raw_envelope(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           mentry = res.entry
           path = res.path
           return nil unless @file_store.exists?(path)

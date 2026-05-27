@@ -15,7 +15,7 @@ module Textus
             target_key = entry.meta&.dig("proposal", "target_key")
             return true unless target_key
 
-            mentry = manifest.resolve(target_key).entry
+            mentry = manifest.resolver.resolve(target_key).entry
             schema_ref = mentry&.schema
             return true unless schema_ref
 

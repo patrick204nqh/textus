@@ -24,7 +24,7 @@ module Textus
       def self.diff(store, name:)
         schema = load_schema(store, name)
         drift = []
-        store.manifest.enumerate.each do |row|
+        store.manifest.resolver.enumerate.each do |row|
           env = Textus::Operations.for(store).get(row[:key])
           begin
             schema.validate!(env.meta)
@@ -51,7 +51,7 @@ module Textus
 
         ops = Textus::Operations.for(store, role: "human")
         touched = []
-        store.manifest.enumerate.each do |row|
+        store.manifest.resolver.enumerate.each do |row|
           env = ops.get(row[:key])
           meta = env.meta.dup
           changed = false
