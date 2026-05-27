@@ -70,7 +70,7 @@ module Textus
         end
 
         def persist_and_notify(key, mentry, result, before_etag)
-          normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
+          normalized = self.class.send(:normalize_action_result, result, format: mentry.format)
           @authorizer.authorize_write!(mentry, role: @ctx.role)
           envelope = @envelope_io.write(
             key,
@@ -93,6 +93,30 @@ module Textus
           else :updated
           end
         end
+
+        def self.normalize_action_result(res, format:)
+          res = res.transform_keys(&:to_s) if res.is_a?(Hash)
+          res ||= {}
+          meta_val = res["_meta"]
+          body     = res["body"]
+          content  = res["content"]
+
+          case format
+          when "markdown" then { meta: meta_val || {}, body: body.to_s, content: nil }
+          when "text"     then { meta: {}, body: body.to_s, content: nil }
+          when "json", "yaml"
+            if !content.nil?
+              { meta: meta_val || {}, body: nil, content: content }
+            elsif !body.nil?
+              { meta: {}, body: body.to_s, content: nil }
+            else
+              raise Textus::UsageError.new("intake for #{format} returned neither content nor body")
+            end
+          else
+            raise Textus::UsageError.new("unknown format #{format.inspect}")
+          end
+        end
+        private_class_method :normalize_action_result
       end
     end
   end

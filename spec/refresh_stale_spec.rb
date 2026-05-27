@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::Refresh.refresh_stale" do
+RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
   let(:tmp) { Dir.mktmpdir }
   let(:textus) { File.join(tmp, ".textus") }
 
@@ -65,7 +65,7 @@ RSpec.describe "Textus::Refresh.refresh_stale" do
 
   it "refreshes every entry whose ttl has expired" do
     store = Textus::Store.new(textus)
-    result = Textus::Refresh.refresh_stale(store)
+    result = Textus::Operations.for(store, role: "runner").refresh_all
 
     expect(result["ok"]).to be(true)
     expect(result["refreshed"]).to eq(["working.stale"])

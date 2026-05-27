@@ -84,13 +84,13 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_refreshed with change=:created on first refresh" do
       store = Textus::Store.new(root)
-      Textus::Refresh.call(store, "intake.x", as: "runner")
+      Textus::Operations.for(store, role: "runner").refresh("intake.x")
       expect($log).to eq([["intake.x", :created]])
     end
 
     it "fires :entry_refreshed with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
-      Textus::Refresh.call(store, "intake.x", as: "runner")
+      Textus::Operations.for(store, role: "runner").refresh("intake.x")
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
@@ -100,13 +100,13 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      Textus::Refresh.call(store2, "intake.x", as: "runner")
+      Textus::Operations.for(store2, role: "runner").refresh("intake.x")
       expect($log.last).to eq(["intake.x", :updated])
     end
 
     it "does NOT fire :entry_refreshed when the intake bytes are identical to the previous bytes" do
       store = Textus::Store.new(root)
-      Textus::Refresh.call(store, "intake.x", as: "runner")
+      Textus::Operations.for(store, role: "runner").refresh("intake.x")
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -118,7 +118,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      Textus::Refresh.call(store2, "intake.x", as: "runner")
+      Textus::Operations.for(store2, role: "runner").refresh("intake.x")
       # Two refreshes with identical action body (both "v1") — only the first
       # should fire :entry_refreshed (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])
@@ -135,7 +135,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       $log = []
       store = Textus::Store.new(root)
-      Textus::Refresh.call(store, "intake.x", as: "runner")
+      Textus::Operations.for(store, role: "runner").refresh("intake.x")
       expect($log.count { |e| e[0] == :entry_put }).to eq(0)
       expect($log.count { |e| e[0] == :entry_refreshed }).to eq(1)
     end

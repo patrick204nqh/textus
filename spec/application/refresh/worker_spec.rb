@@ -144,6 +144,19 @@ RSpec.describe Textus::Application::Refresh::Worker do
     end
   end
 
+  describe "#normalize_action_result" do
+    it "wraps body strings for markdown" do
+      out = described_class.send(:normalize_action_result, { "body" => "hi" }, format: "markdown")
+      expect(out).to eq(meta: {}, body: "hi", content: nil)
+    end
+
+    it "raises for json with neither body nor content" do
+      expect do
+        described_class.send(:normalize_action_result, {}, format: "json")
+      end.to raise_error(Textus::UsageError, /neither content nor body/)
+    end
+  end
+
   it "passes trigger_key and leaf_segments in args (issue #59 follow-up: Bug 2)" do # rubocop:disable RSpec/ExampleLength
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
