@@ -9,6 +9,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.20.0 — architecture redesign (unreleased)
+
+**BREAKING (pre-1.0):** Public top-level utility modules removed.
+Callers must use the `Operations` facade or the new internal namespaces.
+
+### Removed
+- `Textus::Dependencies` — use `Operations#deps`, `#rdeps`, `#published`.
+- `Textus::Refresh` — use `Operations#refresh`. The `normalize_action_result`
+  helper is now a private class method on `Application::Refresh::Worker`.
+
+### Changed
+- `Textus::Projection` moved to `Textus::Application::Projection`.
+- `Textus::MigrateKeys` moved to `Textus::Application::Tools::MigrateKeys`.
+
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 
 **BREAKING (pre-1.0):** Users on gem ≤0.10 (manifest protocol `textus/2`)

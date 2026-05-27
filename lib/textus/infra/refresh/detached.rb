@@ -21,7 +21,7 @@ module Textus
 
             begin
               store = Textus::Store.new(store_root)
-              Textus::Refresh.call(store, key, as: "runner")
+              Textus::Operations.for(store, role: "runner").refresh(key)
             rescue StandardError
               # Already logged via :refresh_failed; exit cleanly.
             ensure

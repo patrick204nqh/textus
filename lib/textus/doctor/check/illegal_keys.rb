@@ -43,7 +43,7 @@ module Textus
         end
 
         def issue(abs_path, stem)
-          proposed = Textus::MigrateKeys.normalize(stem)
+          proposed = Textus::Application::Tools::MigrateKeys.normalize(stem)
           {
             "code" => "key.illegal",
             "level" => "error",
