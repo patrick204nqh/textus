@@ -138,6 +138,69 @@ RSpec.describe Textus::Application::Writes::Publish do
     end
   end
 
+  context "with an Intake entry that has publish_to" do
+    before do
+      FileUtils.mkdir_p(File.join(root, "zones/output"))
+      write_manifest(<<~YAML)
+        version: textus/3
+        zones:
+          - { name: output, write_policy: [runner, builder] }
+        entries:
+          - key: output.catalog
+            kind: intake
+            path: output/catalog.txt
+            zone: output
+            format: text
+            owner: builder:auto
+            publish_to: [CATALOG.txt, docs/catalog.txt]
+            intake:
+              handler: catalog_handler
+      YAML
+      # Seed a refreshed body directly — Publish reads it, doesn't generate it.
+      File.write(File.join(root, "zones/output/catalog.txt"), "one\ntwo\nthree\n")
+    end
+
+    it "fans out the intake body to each publish_to target" do
+      events = []
+      store.bus.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+
+      ctx = test_ctx(role: "builder")
+      res = build_publish(store, ctx).call
+
+      built = res["built"]
+      catalog = built.find { |r| r["key"] == "output.catalog" }
+      expect(catalog).not_to be_nil
+      expect(catalog["published_to"]).to eq(["CATALOG.txt", "docs/catalog.txt"])
+
+      repo_root = File.dirname(root)
+      expect(File.read(File.join(repo_root, "CATALOG.txt"))).to eq("one\ntwo\nthree\n")
+      expect(File.read(File.join(repo_root, "docs/catalog.txt"))).to eq("one\ntwo\nthree\n")
+      expect(events.map(&:first)).to contain_exactly("output.catalog", "output.catalog")
+    end
+
+    it "skips intake entries with no publish_to" do
+      # Overwrite the manifest without publish_to; same body file.
+      write_manifest(<<~YAML)
+        version: textus/3
+        zones:
+          - { name: output, write_policy: [runner, builder] }
+        entries:
+          - key: output.catalog
+            kind: intake
+            path: output/catalog.txt
+            zone: output
+            format: text
+            owner: builder:auto
+            intake:
+              handler: catalog_handler
+      YAML
+      store_no_publish = Textus::Store.new(root)
+      ctx = test_ctx(role: "builder")
+      res = build_publish(store_no_publish, ctx).call
+      expect(res["built"]).to be_empty
+    end
+  end
+
   context "with a publish_each target that escapes the repo root" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/working/bad"))
