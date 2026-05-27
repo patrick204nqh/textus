@@ -82,10 +82,6 @@ module Textus
       @resolver ||= Resolver.new(self)
     end
 
-    def resolve(key)        = resolver.resolve(key)
-    def enumerate(**)       = resolver.enumerate(**)
-    def suggestions_for(k)  = resolver.suggestions_for(k)
-
     def validate_key!(key)
       raise UsageError.new("empty key") if key.nil? || key.empty?
 

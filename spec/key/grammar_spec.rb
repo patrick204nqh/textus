@@ -100,7 +100,7 @@ RSpec.describe "Key grammar enforcement" do
 
       manifest = Textus::Manifest.load(root)
       rows = nil
-      expect { rows = manifest.enumerate }.to output(/illegal key segment 'Bad_Name'/).to_stderr
+      expect { rows = manifest.resolver.enumerate }.to output(/illegal key segment 'Bad_Name'/).to_stderr
       keys = rows.map { |r| r[:key] }
       expect(keys).to include("working.notes.good-name")
       expect(keys).not_to include("working.notes.Bad_Name")

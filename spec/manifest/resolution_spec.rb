@@ -18,7 +18,7 @@ RSpec.describe Textus::Manifest::Resolution do
   let(:manifest) { Textus::Manifest.load(root) }
 
   it "returns a Resolution for a leaf key with empty remaining" do
-    res = manifest.resolve("working.x")
+    res = manifest.resolver.resolve("working.x")
 
     expect(res).to be_a(described_class)
     expect(res.entry).to be_a(Textus::Manifest::Entry)
@@ -28,7 +28,7 @@ RSpec.describe Textus::Manifest::Resolution do
   end
 
   it "returns a Resolution for a nested key with remaining segments" do
-    res = manifest.resolve("working.dir.alpha.beta")
+    res = manifest.resolver.resolve("working.dir.alpha.beta")
 
     expect(res).to be_a(described_class)
     expect(res.entry.key).to eq("working.dir")
@@ -37,14 +37,14 @@ RSpec.describe Textus::Manifest::Resolution do
   end
 
   it "supports Data value equality" do
-    a = manifest.resolve("working.x")
-    b = manifest.resolve("working.x")
+    a = manifest.resolver.resolve("working.x")
+    b = manifest.resolver.resolve("working.x")
 
     expect(a).to eq(b)
     expect(a.hash).to eq(b.hash)
   end
 
   it "raises UnknownKey for keys outside the manifest" do
-    expect { manifest.resolve("nope.nada") }.to raise_error(Textus::UnknownKey)
+    expect { manifest.resolver.resolve("nope.nada") }.to raise_error(Textus::UnknownKey)
   end
 end
