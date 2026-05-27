@@ -41,36 +41,22 @@ RSpec.describe Textus::Operations do
     end
   end
 
-  it "get and get_or_refresh use distinct internal use-case objects" do
-    Dir.mktmpdir do |tmp|
-      ops = init_ops(tmp)
-      begin
-        ops.get("working.notes.alpha")
-      rescue StandardError
-        nil
-      end
-      begin
-        ops.get_or_refresh("working.notes.alpha")
-      rescue StandardError
-        nil
-      end
-      get_op = ops.instance_variable_get(:@get_op)
-      gor_op = ops.instance_variable_get(:@get_or_refresh_op)
-      expect(get_op).to be_a(Textus::Application::Reads::Get)
-      expect(gor_op).to be_a(Textus::Application::Reads::GetOrRefresh)
-      expect(get_op).not_to equal(gor_op)
-    end
-  end
-
-  it "memoizes internal use-case objects across calls" do
+  it "memoizes shared collaborators (envelope_io, orchestrator) across calls" do
     Dir.mktmpdir do |tmp|
       ops = init_ops(tmp)
       ops.put("working.notes.alpha", body: "one")
-      first = ops.instance_variable_get(:@put_op)
       ops.put("working.notes.alpha", body: "two")
-      second = ops.instance_variable_get(:@put_op)
-      expect(first).to be_a(Textus::Application::Writes::Put)
-      expect(first).to equal(second)
+      envelope_io = ops.instance_variable_get(:@envelope_io)
+      expect(envelope_io).to be_a(Textus::Application::Writes::EnvelopeIO)
+    end
+  end
+
+  it "does not memoize per-op use cases (constructs fresh on each call)" do
+    Dir.mktmpdir do |tmp|
+      ops = init_ops(tmp)
+      ops.put("working.notes.alpha", body: "hello")
+      expect(ops.instance_variable_get(:@put_op)).to be_nil
+      expect(ops.instance_variable_get(:@get_op)).to be_nil
     end
   end
 
