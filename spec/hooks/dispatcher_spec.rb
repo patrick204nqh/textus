@@ -55,6 +55,36 @@ RSpec.describe Textus::Hooks::Dispatcher do
     expect(seen_errors.map(&:first)).to eq([:slow])
     expect(seen_errors.first.last.name).to eq("Textus::Hooks::Dispatcher::HookTimeout")
   end
+
+  it "returns a FireReport listing every subscriber that fired" do
+    bus.subscribe(:entry_put, :a) { |**| nil }
+    bus.subscribe(:entry_put, :b) { |**| nil }
+    report = bus.publish(:entry_put, store: :view, key: "k", envelope: {})
+    expect(report).to be_a(Textus::Hooks::FireReport)
+    expect(report.fired).to eq(%i[a b])
+    expect(report).to be_ok
+  end
+
+  it "returns a non-ok FireReport when a hook errors but does not raise" do
+    bus.on_error { |**| nil }
+    bus.subscribe(:entry_put, :boom) { |**| raise "bang" }
+    bus.subscribe(:entry_put, :ok)   { |**| nil }
+    report = bus.publish(:entry_put, store: :view, key: "k", envelope: {})
+    expect(report.errored).to eq([:boom])
+    expect(report.fired).to eq([:ok])
+    expect(report).not_to be_ok
+  end
+
+  it "raises the first failure when strict: true after every hook is attempted" do
+    audit = []
+    bus.on_error { |hook:, **| audit << hook }
+    bus.subscribe(:entry_put, :boom1) { |**| raise "first" }
+    bus.subscribe(:entry_put, :boom2) { |**| raise "second" }
+    expect do
+      bus.publish(:entry_put, strict: true, store: :view, key: "k", envelope: {})
+    end.to raise_error(RuntimeError, "first")
+    expect(audit).to eq(%i[boom1 boom2])
+  end
 end
 
 RSpec.describe "Hooks::Dispatcher external subscription" do
