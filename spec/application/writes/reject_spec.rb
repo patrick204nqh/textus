@@ -11,8 +11,10 @@ RSpec.describe Textus::Application::Writes::Reject do
         - { name: identity, write_policy: [human] }
         - { name: review, write_policy: [agent, human] }
       entries:
-        - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o }
-        - { key: review.draft, path: draft.md, zone: review, schema: null, owner: o }
+        - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o, kind: leaf}
+
+        - { key: review.draft, path: draft.md, zone: review, schema: null, owner: o, kind: leaf}
+
     YAML
     File.write(File.join(textus_dir, "zones/target.md"), "---\nname: target\n---\nbody\n")
     File.write(

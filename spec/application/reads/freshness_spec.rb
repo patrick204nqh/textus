@@ -16,9 +16,12 @@ RSpec.describe Textus::Application::Reads::Freshness do
         - { name: working, write_policy: [human, runner] }
         - { name: identity,   write_policy: [human] }
       entries:
-        - { key: working.doc,   path: working/doc.md,   zone: working }
-        - { key: working.stale, path: working/stale.md, zone: working }
-        - { key: identity.note,    path: identity/note.md,    zone: identity }
+        - { key: working.doc,   path: working/doc.md,   zone: working, kind: leaf}
+
+        - { key: working.stale, path: working/stale.md, zone: working, kind: leaf}
+
+        - { key: identity.note,    path: identity/note.md,    zone: identity, kind: leaf}
+
       rules:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }

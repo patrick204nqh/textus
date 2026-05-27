@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe Textus::Manifest::Entry::Validators::Events do
-  let(:entry) { instance_double(Textus::Manifest::Entry::Base, key: "working.foo", events: events) }
+  let(:entry) { instance_double(Textus::Manifest::Entry::Derived, key: "working.foo", events: events) }
 
   context "with no events declared" do
     let(:events) { {} }

@@ -13,7 +13,8 @@ RSpec.describe Textus::Doctor::Check::Schemas do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: note }
+        - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf}
+
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
       name: note

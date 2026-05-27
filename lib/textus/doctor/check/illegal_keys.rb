@@ -5,12 +5,13 @@ module Textus
         def call
           out = []
           store.manifest.entries.each do |entry|
-            next unless entry.nested
+            next unless entry.nested?
 
             base = File.join(store.root, "zones", entry.path)
             next unless File.directory?(base)
 
-            entry.index_filename ? check_index_paths(entry, base, out) : check_all_paths(base, out)
+            index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+            index_fn ? check_index_paths(entry, index_fn, base, out) : check_all_paths(base, out)
           end
           out
         end
@@ -31,8 +32,8 @@ module Textus
         # segments leading to each index file participate in keys. Sibling
         # files and unrelated subtrees are not enumerated and must not be
         # flagged. Each illegal segment is reported once per path.
-        def check_index_paths(entry, base, out)
-          Dir.glob(File.join(base, "**", entry.index_filename)).each do |fp|
+        def check_index_paths(_entry, index_fn, base, out)
+          Dir.glob(File.join(base, "**", index_fn)).each do |fp|
             rel = fp.sub(%r{\A#{Regexp.escape(base)}/?}, "")
             File.dirname(rel).split("/").reject { |s| s.empty? || s == "." }.each do |seg|
               next if seg.match?(Key::Grammar::SEGMENT)

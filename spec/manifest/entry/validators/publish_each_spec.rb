@@ -3,10 +3,10 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
   def entry_with(opts)
     instance_double(
-      Textus::Manifest::Entry::Base,
+      Textus::Manifest::Entry::Nested,
       key: "working.foo",
       publish_each: opts[:publish_each],
-      nested: opts.fetch(:nested, true),
+      nested?: opts.fetch(:nested, true),
       publish_to: opts.fetch(:publish_to, []),
     )
   end

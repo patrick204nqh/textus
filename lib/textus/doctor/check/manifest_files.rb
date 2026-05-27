@@ -4,7 +4,7 @@ module Textus
       class ManifestFiles < Check
         def call
           store.manifest.entries.each_with_object([]) do |entry, out|
-            next if entry.nested
+            next if entry.nested?
 
             path = Textus::Key::Path.resolve(store.manifest, entry)
             next if File.exist?(path)

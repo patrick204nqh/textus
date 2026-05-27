@@ -23,7 +23,8 @@ RSpec.describe Textus::CLI::Verb::Freshness do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
       rules:
         - match: working.doc
           refresh: { ttl: 1h, on_stale: warn }

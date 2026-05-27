@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Tools::MigrateKeys do
 
   describe "dry-run plan" do
     before do
-      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true }")
+      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }")
       write_md("Some_File.md")
       write_md("BadName.md")
       write_md("legal-name.md")
@@ -57,7 +57,7 @@ RSpec.describe Textus::Application::Tools::MigrateKeys do
 
   describe "collision detection" do
     before do
-      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true }")
+      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }")
       write_md("Some_File.md")
       write_md("some.file.md")
     end
@@ -88,7 +88,7 @@ RSpec.describe Textus::Application::Tools::MigrateKeys do
 
   describe "write mode" do
     before do
-      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true }")
+      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }")
       write_md("Some_File.md", body: "---\n---\nA")
       write_md("legal-name.md", body: "---\n---\nB")
     end
@@ -118,7 +118,7 @@ RSpec.describe Textus::Application::Tools::MigrateKeys do
 
   describe "directory rename" do
     before do
-      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true }")
+      write_manifest("  - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }")
       # Org/CMC.Global/charter.md — illegal segments at both directory levels;
       # leaf file is legal but lives under illegal parents.
       write_md("Org", "CMC.Global", "charter.md", body: "---\n---\nC")

@@ -26,14 +26,16 @@ RSpec.describe "Manifest intake:" do
       zones: [{ name: working, write_policy: [runner] }]
       entries:
         - key: working.news
+          kind: intake
           path: working/news.md
           zone: working
           intake:
             handler: news_handler
             config: { url: https://example.com/feed }
     YAML
-    expect(e.intake_handler).to eq("news_handler")
-    expect(e.intake_config).to eq({ "url" => "https://example.com/feed" })
+    expect(e).to be_a(Textus::Manifest::Entry::Intake)
+    expect(e.handler).to eq("news_handler")
+    expect(e.config).to eq({ "url" => "https://example.com/feed" })
   end
 
   it "exposes refresh rule via Manifest#rules_for(key)" do
@@ -42,6 +44,7 @@ RSpec.describe "Manifest intake:" do
       zones: [{ name: working, write_policy: [runner] }]
       entries:
         - key: working.news
+          kind: intake
           path: working/news.md
           zone: working
           intake:
@@ -65,19 +68,21 @@ RSpec.describe "Manifest intake:" do
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working }
+        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+
     YAML
     expect(m.rules_for("working.x").refresh).to be_nil
   end
 
-  it "defaults intake_config to {} when no intake block is present" do
+  it "defaults to a Leaf entry when no intake block is present" do
     e = load_entry(<<~YAML)
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working }
+        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+
     YAML
-    expect(e.intake_handler).to be_nil
-    expect(e.intake_config).to eq({})
+    expect(e).to be_a(Textus::Manifest::Entry::Leaf)
+    expect(e).not_to be_intake
   end
 end

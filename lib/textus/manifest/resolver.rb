@@ -49,8 +49,9 @@ module Textus
         else
           raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
-          path = if entry.index_filename
-                   File.join(@manifest.root, "zones", entry.path, *remaining, entry.index_filename)
+          index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+          path = if index_fn
+                   File.join(@manifest.root, "zones", entry.path, *remaining, index_fn)
                  else
                    primary_ext = Textus::Entry.for_format(entry.format).extensions.first
                    File.join(@manifest.root, "zones", entry.path, *remaining) + primary_ext
@@ -68,13 +69,15 @@ module Textus
         base = File.join(@manifest.root, "zones", entry.path)
         return [] unless File.directory?(base)
 
-        glob_pattern = entry.index_filename ? "**/#{entry.index_filename}" : nested_glob(entry.format)
+        entry_index_filename = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        glob_pattern = entry_index_filename ? "**/#{entry_index_filename}" : nested_glob(entry.format)
         Dir.glob(File.join(base, glob_pattern)).filter_map { |path| nested_row_for(entry, base, path) }
       end
 
       def nested_row_for(entry, base, path)
         rel = path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        stripped = entry.index_filename ? File.dirname(rel) : rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
+        entry_if = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        stripped = entry_if ? File.dirname(rel) : rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
         segs = stripped.split("/").reject { |s| s.empty? || s == "." }
         return nil if segs.empty?
 

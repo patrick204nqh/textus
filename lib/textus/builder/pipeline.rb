@@ -67,10 +67,10 @@ module Textus
                    transform_context: nil, inject_intro: nil)
         # 1. Load sources + project + reduce
         data =
-          if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.source
+          if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
             Application::Projection.new(
               reader: reader,
-              spec: mentry.projection,
+              spec: mentry.source.to_h.transform_keys(&:to_s),
               lister: lister,
               transform_resolver: transform_resolver,
               transform_context: transform_context,

@@ -16,7 +16,8 @@ RSpec.describe Textus::Hooks::Context do
       zones:
         - { name: working, write_policy: [human, agent] }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: agent }
+        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: agent, kind: leaf}
+
     YAML
   end
 

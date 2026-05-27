@@ -79,7 +79,7 @@ module Textus
           {
             "key" => mentry.key,
             "path" => path,
-            "generator" => mentry.compute,
+            "generator" => mentry.raw["compute"],
             "reason" => reason,
           }
         end

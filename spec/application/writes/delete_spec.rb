@@ -12,8 +12,10 @@ RSpec.describe Textus::Application::Writes::Delete do
         - { name: working, write_policy: [human, runner] }
         - { name: identity,   write_policy: [human] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
-        - { key: identity.bar,   path: identity/bar.md,   zone: identity }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
+        - { key: identity.bar,   path: identity/bar.md,   zone: identity, kind: leaf}
+
     YAML
     Textus::Store.new(textus_dir)
   end

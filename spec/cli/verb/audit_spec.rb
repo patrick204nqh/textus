@@ -22,7 +22,8 @@ RSpec.describe Textus::CLI::Verb::Audit do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
     YAML
     File.open(File.join(root, "audit.log"), "w") do |f|
       f.puts JSON.generate({ "ts" => "2026-05-01T00:00:00Z", "role" => "human",

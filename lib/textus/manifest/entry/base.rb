@@ -32,62 +32,6 @@ module Textus
         def derived? = false
         def intake?  = false
         def leaf?    = false
-
-        # Legacy field shims — return nil/default so use-cases that probe these attrs keep
-        # working until they are migrated to type dispatch (Plan 05 Task 6).
-        # rubocop:disable Naming/PredicateMethod
-        def publish_target_for(_full_key)
-          nil
-        end
-
-        def projection
-          nil
-        end
-
-        def generator
-          nil
-        end
-
-        def compute
-          nil
-        end
-
-        def intake_handler
-          nil
-        end
-
-        def intake_config
-          {}
-        end
-
-        def template
-          nil
-        end
-
-        def publish_to
-          []
-        end
-
-        def publish_each
-          @raw["publish_each"]
-        end
-
-        def nested
-          @raw["nested"] == true
-        end
-
-        def index_filename
-          @raw["index_filename"]
-        end
-
-        def inject_intro
-          false
-        end
-
-        def events
-          {}
-        end
-        # rubocop:enable Naming/PredicateMethod
       end
     end
   end

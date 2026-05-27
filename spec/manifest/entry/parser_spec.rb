@@ -16,16 +16,12 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     it "extracts the required fields" do
       entry = described_class.call(
         manifest,
-        { "key" => "working.foo", "path" => "foo.md", "zone" => "working" },
+        { "key" => "working.foo", "path" => "foo.md", "zone" => "working", "kind" => "leaf" },
       )
       expect(entry.key).to eq("working.foo")
       expect(entry.path).to eq("foo.md")
       expect(entry.zone).to eq("working")
-      expect(entry.nested).to be false
-      expect(entry.events).to eq({})
-      expect(entry.publish_to).to eq([])
-      expect(entry.publish_each).to be_nil
-      expect(entry.inject_intro).to be false
+      expect(entry).to be_a(Textus::Manifest::Entry::Leaf)
       expect(entry.format).to eq("markdown")
     end
 
@@ -44,17 +40,25 @@ RSpec.describe Textus::Manifest::Entry::Parser do
         .to raise_error(Textus::UsageError, /missing zone/)
     end
 
+    it "raises when kind is missing" do
+      expect do
+        described_class.call(manifest, { "key" => "working.foo", "path" => "foo.md", "zone" => "working" })
+      end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
+    end
+
     it "extracts compute: projection" do
       entry = described_class.call(
         manifest,
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+          "kind" => "derived",
           "compute" => { "kind" => "projection", "select" => ["working.bar"] },
           "template" => "x.mustache"
         },
       )
-      expect(entry.projection).to eq({ "kind" => "projection", "select" => ["working.bar"] })
-      expect(entry.generator).to be_nil
+      expect(entry).to be_a(Textus::Manifest::Entry::Derived)
+      expect(entry).to be_projection
+      expect(entry.source.select).to eq(["working.bar"])
     end
 
     it "extracts compute: external" do
@@ -62,11 +66,12 @@ RSpec.describe Textus::Manifest::Entry::Parser do
         manifest,
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+          "kind" => "derived",
           "compute" => { "kind" => "external", "command" => "echo hi" }
         },
       )
-      expect(entry.generator).to eq({ "kind" => "external", "command" => "echo hi" })
-      expect(entry.projection).to be_nil
+      expect(entry).to be_a(Textus::Manifest::Entry::Derived)
+      expect(entry).to be_external
     end
 
     it "rejects unknown compute.kind" do
@@ -75,6 +80,7 @@ RSpec.describe Textus::Manifest::Entry::Parser do
           manifest,
           {
             "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+            "kind" => "derived",
             "compute" => { "kind" => "weird" }
           },
         )
@@ -86,12 +92,13 @@ RSpec.describe Textus::Manifest::Entry::Parser do
         manifest,
         {
           "key" => "intake.foo", "path" => "foo.md", "zone" => "intake",
-          "intake" => { "handler" => "pull_foo", "config" => { "url" => "x" } },
-          "template" => "x.mustache"
+          "kind" => "intake",
+          "intake" => { "handler" => "pull_foo", "config" => { "url" => "x" } }
         },
       )
-      expect(entry.intake_handler).to eq("pull_foo")
-      expect(entry.intake_config).to eq({ "url" => "x" })
+      expect(entry).to be_a(Textus::Manifest::Entry::Intake)
+      expect(entry.handler).to eq("pull_foo")
+      expect(entry.config).to eq({ "url" => "x" })
     end
 
     it "parses an explicit leaf row" do
@@ -125,26 +132,19 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     end
   end
 
-  describe "kind inference (backward compat)" do
-    it "infers nested from nested: true" do
-      e = described_class.call(manifest, { "key" => "z.n", "path" => "z/n", "zone" => "z", "nested" => true })
-      expect(e).to be_a(Textus::Manifest::Entry::Nested)
-    end
+  describe "kind: is now required (no inference fallback)" do
+    it "raises BadManifest when kind: is absent, regardless of other fields" do
+      expect do
+        described_class.call(manifest, { "key" => "z.n", "path" => "z/n", "zone" => "z", "nested" => true })
+      end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
 
-    it "infers derived from template:" do
-      e = described_class.call(manifest, { "key" => "o.x", "path" => "o/x.md", "zone" => "o", "template" => "t.mustache" })
-      expect(e).to be_a(Textus::Manifest::Entry::Derived)
-    end
+      expect do
+        described_class.call(manifest, { "key" => "o.x", "path" => "o/x.md", "zone" => "o", "template" => "t.mustache" })
+      end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
 
-    it "infers intake from intake:" do
-      e = described_class.call(manifest, { "key" => "i.x", "path" => "i/x.md", "zone" => "i",
-                                           "intake" => { "handler" => "h" } })
-      expect(e).to be_a(Textus::Manifest::Entry::Intake)
-    end
-
-    it "defaults to leaf" do
-      e = described_class.call(manifest, { "key" => "z.a", "path" => "z/a.md", "zone" => "z" })
-      expect(e).to be_a(Textus::Manifest::Entry::Leaf)
+      expect do
+        described_class.call(manifest, { "key" => "z.a", "path" => "z/a.md", "zone" => "z" })
+      end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
   end
 end

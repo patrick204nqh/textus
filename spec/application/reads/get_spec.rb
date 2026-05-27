@@ -13,7 +13,8 @@ RSpec.describe Textus::Application::Reads::Get do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
     YAML
 
     Textus::Store.new(textus)
@@ -30,6 +31,7 @@ RSpec.describe Textus::Application::Reads::Get do
         - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.doc
+          kind: intake
           path: working/doc.md
           zone: working
           intake:

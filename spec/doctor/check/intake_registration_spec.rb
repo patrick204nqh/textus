@@ -13,6 +13,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
           - { name: working, write_policy: [human, runner] }
         entries:
           - key: working.foo
+            kind: intake
             path: working/foo.md
             zone: working
             intake:

@@ -11,7 +11,8 @@ RSpec.describe "correlation_id in audit rows" do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
     YAML
     Textus::Store.new(textus_dir)
   end

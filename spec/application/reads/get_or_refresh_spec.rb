@@ -14,6 +14,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
         - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.doc
+          kind: intake
           path: working/doc.md
           zone: working
           intake:

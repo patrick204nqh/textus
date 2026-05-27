@@ -16,7 +16,8 @@ RSpec.describe "Role authority via schema.maintained_by" do
       zones:
         - { name: working, write_policy: [human, agent, runner] }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
+        - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)

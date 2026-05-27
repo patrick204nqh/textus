@@ -4,9 +4,12 @@ require "tempfile"
 RSpec.describe Textus::Builder::Renderer::Markdown do
   let(:mentry) do
     instance_double(
-      Textus::Manifest::Entry::Base,
+      Textus::Manifest::Entry::Derived,
       format: "markdown", template: "tpl.md.mustache",
-      projection: { "kind" => "projection", "select" => ["working.*"] }, inject_intro: false
+      source: Textus::Manifest::Entry::Derived::Projection.new(
+        select: ["working.*"], pluck: nil, sort_by: nil, transform: nil,
+      ),
+      inject_intro: false
     )
   end
 

@@ -9,7 +9,8 @@ module Textus
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
           zone = raw["zone"] or raise UsageError.new("manifest entry '#{key}' missing zone")
 
-          kind = (raw["kind"] || infer_kind(raw)).to_sym
+          raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (leaf|nested|derived|intake)")
+          kind = raw_kind.to_sym
           format = resolve_format(raw, path)
 
           common = {
@@ -26,15 +27,6 @@ module Textus
           when :intake  then build_intake(common, raw, key)
           else raise BadManifest.new("entry '#{key}': unknown kind: #{kind.inspect}")
           end
-        end
-
-        def self.infer_kind(raw)
-          return "intake"  if raw["intake"].is_a?(Hash) || raw["intake_handler"]
-          return "derived" if raw["template"] || raw["compute"] || raw["generator"] || raw["projection"]
-
-          return "nested" if raw["nested"] == true
-
-          "leaf"
         end
 
         def self.build_leaf(common, raw)
@@ -58,7 +50,6 @@ module Textus
             inject_intro: raw["inject_intro"] == true,
             publish_to: raw["publish_to"],
             events: raw["events"] || {},
-            raw_compute: raw["compute"],
             **common,
           )
         end

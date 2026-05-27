@@ -18,8 +18,10 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
         - { name: identity, write_policy: [human] }
         - { name: review,   write_policy: [agent, human] }
       entries:
-        - { key: identity.target, path: identity/target.md, zone: identity }
-        - { key: review.draft,    path: review/draft.md,    zone: review }
+        - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+
+        - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
+
     YAML
 
     store = Textus::Store.new(root)
@@ -46,8 +48,10 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
         - { name: identity, write_policy: [human] }
         - { name: pending,  write_policy: [human] }
       entries:
-        - { key: identity.target, path: identity/target.md, zone: identity }
-        - { key: pending.draft,   path: pending/draft.md,   zone: pending }
+        - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+
+        - { key: pending.draft,   path: pending/draft.md,   zone: pending, kind: leaf}
+
     YAML
 
     store = Textus::Store.new(root)

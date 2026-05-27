@@ -20,6 +20,7 @@ RSpec.describe Textus::Application::Writes::Publish do
           - { name: working, write_policy: [human, agent, runner, builder] }
         entries:
           - key: working.agents
+            kind: nested
             path: working/agents
             zone: working
             schema: null
@@ -63,6 +64,7 @@ RSpec.describe Textus::Application::Writes::Publish do
           - { name: working, write_policy: [human, agent, runner, builder] }
         entries:
           - key: working.bad
+            kind: nested
             path: working/bad
             zone: working
             schema: null

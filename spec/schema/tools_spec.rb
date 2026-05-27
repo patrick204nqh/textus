@@ -14,7 +14,8 @@ RSpec.describe Textus::Schema::Tools do
       zones:
         - { name: working, write_policy: [human, agent, runner] }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
     YAML
   end
 

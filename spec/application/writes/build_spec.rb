@@ -24,8 +24,10 @@ RSpec.describe Textus::Application::Writes::Build do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: output, write_policy: [builder] }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
         - key: output.catalogs.people
+          kind: derived
           path: output/catalogs/people.md
           zone: output
           schema: null

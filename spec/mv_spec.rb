@@ -17,8 +17,10 @@ RSpec.describe "textus mv" do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: identity,   write_policy: [human] }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, nested: true }
-        - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true }
+        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
+
+        - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true, kind: nested}
+
     YAML
   end
 

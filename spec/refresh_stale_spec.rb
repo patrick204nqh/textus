@@ -16,11 +16,13 @@ RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
         - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.fresh
+          kind: intake
           path: working/fresh.md
           zone: working
           intake:
             handler: counter
         - key: working.stale
+          kind: intake
           path: working/stale.md
           zone: working
           intake:

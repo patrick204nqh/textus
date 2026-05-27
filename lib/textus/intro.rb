@@ -141,7 +141,7 @@ module Textus
           "derived" => derived,
           "intake" => e.is_a?(Textus::Manifest::Entry::Intake),
           "publish_to" => Array(e.publish_to),
-          "publish_each" => e.publish_each,
+          "publish_each" => e.respond_to?(:publish_each) ? e.publish_each : nil,
         }
       end
     end

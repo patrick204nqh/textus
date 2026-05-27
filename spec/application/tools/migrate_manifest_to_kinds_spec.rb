@@ -6,8 +6,10 @@ RSpec.describe Textus::Application::Tools::MigrateManifestToKinds do
       version: textus/3
       zones: [{ name: z, write_policy: [human] }]
       entries:
-        - { key: z.notes, path: z/notes.md, owner: h }
-        - { key: z.people, path: z/people, owner: h, nested: true }
+        - { key: z.notes, path: z/notes.md, owner: h, kind: leaf}
+
+        - { key: z.people, path: z/people, owner: h, nested: true, kind: nested}
+
         - { key: z.x, path: z/x.md, owner: builder:auto, template: x.mustache,
             compute: { kind: projection, select: z.people } }
         - { key: z.feed, path: z/feed.json, owner: runner,

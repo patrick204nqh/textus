@@ -22,7 +22,8 @@ RSpec.describe "CLI subcommand groups" do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: archive, write_policy: [human] }
       entries:
-        - { key: working.note, path: working/note.md, zone: working }
+        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+
     YAML
     File.write(File.join(root, "zones/working/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
@@ -45,8 +46,10 @@ RSpec.describe "CLI subcommand groups" do
         zones:
           - { name: working, write_policy: [human, agent, runner] }
         entries:
-          - { key: working.note, path: working/note.md, zone: working }
-          - { key: working.memo, path: working/memo.md, zone: working }
+          - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+
+          - { key: working.memo, path: working/memo.md, zone: working, kind: leaf}
+
       YAML
       rc = run(["key", "mv", "working.note", "working.memo", "--as=human"])
       expect(rc).to eq(0)

@@ -14,6 +14,7 @@ RSpec.describe Textus::Manifest::Entry do
   it "parses compute.kind=projection with transform" do
     mf = parse_manifest(<<~YAML)
       - key: output.x
+        kind: derived
         zone: output
         path: x.json
         format: json
@@ -24,15 +25,16 @@ RSpec.describe Textus::Manifest::Entry do
           transform: marketplace_indexer
     YAML
     e = mf.entries.first
-    expect(e.compute).to include("kind" => "projection", "transform" => "marketplace_indexer")
-    expect(e.projection).to include("transform" => "marketplace_indexer")
-    expect(e.projection).not_to have_key("reduce")
-    expect(e.generator).to be_nil
+    expect(e).to be_a(Textus::Manifest::Entry::Derived)
+    expect(e).to be_projection
+    expect(e.source.transform).to eq("marketplace_indexer")
+    expect(e.source.select).to eq(["working.skills"])
   end
 
   it "parses compute.kind=external" do
     mf = parse_manifest(<<~YAML)
       - key: output.big
+        kind: derived
         zone: output
         path: big.json
         format: json
@@ -42,15 +44,16 @@ RSpec.describe Textus::Manifest::Entry do
           sources: [working.docs]
     YAML
     e = mf.entries.first
-    expect(e.compute["kind"]).to eq("external")
-    expect(e.generator).to include("command" => "rake build:big-index")
-    expect(e.projection).to be_nil
+    expect(e).to be_a(Textus::Manifest::Entry::Derived)
+    expect(e).to be_external
+    expect(e.source.runner).to be_nil
   end
 
   it "rejects unknown compute.kind" do
     expect do
       parse_manifest(<<~YAML)
         - key: output.x
+          kind: derived
           zone: output
           path: x.json
           format: json

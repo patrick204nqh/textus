@@ -7,7 +7,7 @@ module Textus
 
         option :event_filter, "--event=E"
 
-        def call(store) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
+        def call(store) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
           subcommand = positional.first
           if subcommand
             raise UsageError.new("hook requires 'list'") unless subcommand == "list"
@@ -32,7 +32,7 @@ module Textus
             end
           end
           store.manifest.entries.each do |e|
-            e.events.each do |evt, defs|
+            (e.respond_to?(:events) ? e.events : {}).each do |evt, defs|
               Array(defs).each do |defn|
                 next unless defn["exec"]
 

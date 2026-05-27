@@ -14,10 +14,14 @@ RSpec.describe "Textus UID" do
       zones:
         - { name: working, write_policy: [human, agent, runner] }
       entries:
-        - { key: working.md,   path: working/md.md,   zone: working }
-        - { key: working.j,    path: working/j.json,  zone: working }
-        - { key: working.y,    path: working/y.yaml,  zone: working }
-        - { key: working.t,    path: working/t.txt,   zone: working }
+        - { key: working.md,   path: working/md.md,   zone: working, kind: leaf}
+
+        - { key: working.j,    path: working/j.json,  zone: working, kind: leaf}
+
+        - { key: working.y,    path: working/y.yaml,  zone: working, kind: leaf}
+
+        - { key: working.t,    path: working/t.txt,   zone: working, kind: leaf}
+
     YAML
   end
 

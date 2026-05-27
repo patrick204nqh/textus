@@ -20,8 +20,10 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
         - { name: intake, write_policy: [human, runner, agent] }
         - { name: vendor, write_policy: [human, runner, agent] }
       entries:
-        - { key: intake.skills, path: intake/skills, zone: intake, schema: null, owner: o, nested: true }
-        - { key: vendor.skills, path: vendor/skills, zone: vendor, schema: null, owner: o, nested: true }
+        - { key: intake.skills, path: intake/skills, zone: intake, schema: null, owner: o, nested: true, kind: nested}
+
+        - { key: vendor.skills, path: vendor/skills, zone: vendor, schema: null, owner: o, nested: true, kind: nested}
+
     YAML
 
     Textus::Store.new(root)

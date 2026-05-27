@@ -40,7 +40,7 @@ module Textus
           target_buckets = Hash.new { |h, k| h[k] = [] } # target_path => [source_path, ...]
 
           store.manifest.entries.each do |entry|
-            next unless entry.nested
+            next unless entry.nested?
 
             base = File.join(store.root, "zones", entry.path)
             next unless File.directory?(base)

@@ -27,7 +27,10 @@ RSpec.describe "publish_each:" do
 
   describe "manifest validation" do
     it "raises if publish_each is set without nested: true" do
-      write_manifest("  - { key: working.flat, path: working/flat.md, zone: working, schema: null, publish_each: \"out/{basename}.md\" }")
+      write_manifest(
+        "  - { key: working.flat, path: working/flat.md, zone: working, schema: null, kind: leaf, " \
+        "publish_each: \"out/{basename}.md\" }",
+      )
       expect { Textus::Manifest.load(root) }
         .to raise_error(Textus::UsageError, /publish_each requires nested: true/)
     end
@@ -35,6 +38,7 @@ RSpec.describe "publish_each:" do
     it "raises if both publish_to and publish_each are set" do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
@@ -49,6 +53,7 @@ RSpec.describe "publish_each:" do
     it "raises if the template references no leaf-derived variable" do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
@@ -62,6 +67,7 @@ RSpec.describe "publish_each:" do
     it "raises if the template uses an unknown variable" do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
@@ -75,6 +81,7 @@ RSpec.describe "publish_each:" do
     it "accepts {leaf}, {basename}, {key}, {ext}" do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
@@ -89,6 +96,7 @@ RSpec.describe "publish_each:" do
     it "substitutes {leaf}, {basename}, {key}, {ext} correctly for a deep tree" do
       write_manifest(<<~Y)
         - key: working.skills
+          kind: nested
           path: working/skills
           zone: working
           schema: null
@@ -115,6 +123,7 @@ RSpec.describe "publish_each:" do
     before do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
@@ -122,6 +131,7 @@ RSpec.describe "publish_each:" do
           publish_each: "agents/{basename}.md"
 
         - key: working.skills
+          kind: nested
           path: working/skills
           zone: working
           schema: null
@@ -129,6 +139,7 @@ RSpec.describe "publish_each:" do
           publish_each: "skills/{basename}/SKILL.md"
 
         - key: working.commands
+          kind: nested
           path: working/commands
           zone: working
           schema: null
@@ -179,6 +190,7 @@ RSpec.describe "publish_each:" do
     it "refuses to publish to a target outside the repo root" do
       write_manifest(<<~Y)
         - key: working.agents
+          kind: nested
           path: working/agents
           zone: working
           schema: null
