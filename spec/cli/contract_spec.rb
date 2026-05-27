@@ -43,7 +43,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     end
   end
 
-  it "the auto-derived verb table matches the prior surface exactly" do
+  it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
     expected = {
       "accept" => Textus::CLI::Verb::Accept,
       "audit" => Textus::CLI::Verb::Audit,
@@ -60,6 +60,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "key" => Textus::CLI::Group::Key,
       "list" => Textus::CLI::Verb::List,
       "published" => Textus::CLI::Verb::Published,
+      "pulse" => Textus::CLI::Verb::Pulse,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::Rdeps,
       "refresh" => Textus::CLI::Group::Refresh,
