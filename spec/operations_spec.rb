@@ -96,4 +96,65 @@ RSpec.describe Textus::Operations do
       expect(original_put_op).to equal(ops.instance_variable_get(:@put_op))
     end
   end
+
+  # Regression: deps / rdeps / published delegate correctly through Operations
+  context "dependency graph methods" do
+    def projection_ops(tmp)
+      root = File.join(tmp, ".textus")
+      FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/output"))
+      FileUtils.mkdir_p(File.join(root, "templates"))
+
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: output, write_policy: [builder] }
+        entries:
+          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+          - key: output.catalogs.people
+            path: output/catalogs/people.md
+            zone: output
+            schema: null
+            owner: builder:auto
+            compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
+            template: people.mustache
+            publish_to: [PEOPLE.md]
+      YAML
+
+      store = Textus::Store.new(root)
+      Textus::Operations.for(store)
+    end
+
+    it "returns deps declared in projection.select" do
+      Dir.mktmpdir do |tmp|
+        ops = projection_ops(tmp)
+        expect(ops.deps("output.catalogs.people")).to eq(["working.people"])
+      end
+    end
+
+    it "returns reverse dependencies" do
+      Dir.mktmpdir do |tmp|
+        ops = projection_ops(tmp)
+        expect(ops.rdeps("working.people")).to eq(["output.catalogs.people"])
+      end
+    end
+
+    it "returns published entries with publish_to" do
+      Dir.mktmpdir do |tmp|
+        ops = projection_ops(tmp)
+        result = ops.published
+        expect(result.map { |r| r["key"] }).to include("output.catalogs.people")
+        rec = result.find { |r| r["key"] == "output.catalogs.people" }
+        expect(rec["publish_to"]).to eq(["PEOPLE.md"])
+      end
+    end
+
+    it "returns empty deps for an unknown key" do
+      Dir.mktmpdir do |tmp|
+        ops = projection_ops(tmp)
+        expect(ops.deps("does.not.exist")).to eq([])
+      end
+    end
+  end
 end
