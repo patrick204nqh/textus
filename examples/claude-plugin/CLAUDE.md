@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-26T04:27:41Z'
+  at: '2026-05-27T15:44:54Z'
   from:
   - identity.plugin
   - working.agents
@@ -15,6 +15,10 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 → Context store: `.textus/` (textus, protocol textus/3).
 → Run `textus boot` for the full catalog shape and write flows.
+→ Per-turn heartbeat: `textus pulse --since=<cursor>`.
+  - Initial `cursor` comes from `boot.agent_quickstart.latest_seq`.
+  - Response advances `cursor` on every call. Re-run `boot` if you get `CursorExpired`.
+  - Use `changed[]` to refresh your view; `pending_review[]` shows proposals awaiting human accept; `stale[]` flags entries past their refresh policy.
 → Write authority by zone:
     - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human agent runner ) — active project state; humans, AI, and scripts share this surface
@@ -60,4 +64,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-26T04:27:41Z._
+_Built at 2026-05-27T15:44:54Z._

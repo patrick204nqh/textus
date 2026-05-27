@@ -99,4 +99,4 @@ rules:
   promotion:
     requires:
     - schema_valid
-    - human_accept
+    - accept_authority_signed

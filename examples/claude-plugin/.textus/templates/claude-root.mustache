@@ -6,6 +6,10 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 → Context store: `.textus/` (textus, protocol {{boot.protocol}}).
 → Run `textus boot` for the full catalog shape and write flows.
+→ Per-turn heartbeat: `textus pulse --since=<cursor>`.
+  - Initial `cursor` comes from `boot.agent_quickstart.latest_seq`.
+  - Response advances `cursor` on every call. Re-run `boot` if you get `CursorExpired`.
+  - Use `changed[]` to refresh your view; `pending_review[]` shows proposals awaiting human accept; `stale[]` flags entries past their refresh policy.
 → Write authority by zone:
 {{#boot.zones}}    - **{{name}}** ({{#writers}}{{.}} {{/writers}}){{#purpose}} — {{purpose}}{{/purpose}}
 {{/boot.zones}}

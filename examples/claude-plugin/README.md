@@ -88,6 +88,9 @@ The `inject_boot: true` flag on `output.claude-root` makes `Boot.run(store)`
 available inside the template as `{{boot.*}}` — the rendered `CLAUDE.md`
 auto-projects zone authority *and* the four protocol recipes
 (read/write/propose/refresh) straight from textus's own boot envelope.
+The template also instructs agents to start the per-turn `pulse` heartbeat
+loop from `boot.agent_quickstart.latest_seq`, teaching the boot+pulse pattern
+for keeping context fresh in long-running interactions.
 Agents reading `CLAUDE.md` get full orientation without a separate
 `textus boot` call.
 
