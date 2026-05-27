@@ -55,6 +55,89 @@ RSpec.describe Textus::Application::Writes::Publish do
     end
   end
 
+  context "with a Derived entry with publish_to and a Nested entry with publish_each" do
+    before do
+      FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/output"))
+      FileUtils.mkdir_p(File.join(root, "templates"))
+
+      write_manifest(<<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, write_policy: [human, agent, runner] }
+          - { name: output, write_policy: [builder] }
+        entries:
+          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested }
+
+          - key: output.catalogs.people
+            kind: derived
+            path: output/catalogs/people.md
+            zone: output
+            schema: null
+            owner: builder:auto
+            compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
+            template: people.mustache
+            publish_to: [PEOPLE.md]
+
+          - key: working.agents
+            kind: nested
+            path: working/agents
+            zone: working
+            schema: null
+            owner: human:self
+            nested: true
+            publish_each: "agents/{basename}.md"
+      YAML
+
+      File.write(File.join(root, "zones/working/people/alice.md"), "---\nname: alice\norg: x\n---\n")
+      File.write(File.join(root, "zones/working/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
+      File.write(File.join(root, "templates/people.mustache"),
+                 "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
+      FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
+      File.write(File.join(root, "zones/working/agents/claude.md"), "---\nname: claude\n---\nbody\n")
+    end
+
+    it "returns the combined {protocol, built, published_leaves} shape" do
+      ctx = test_ctx(role: "builder")
+      res = build_publish(store, ctx).call
+
+      expect(res["protocol"]).to eq(Textus::PROTOCOL)
+      expect(res).to have_key("built")
+      expect(res).to have_key("published_leaves")
+
+      built_keys = res["built"].map { |b| b["key"] }
+      expect(built_keys).to include("output.catalogs.people")
+
+      leaf_keys = res["published_leaves"].map { |r| r["key"] }
+      expect(leaf_keys).to include("working.agents.claude")
+    end
+
+    it "materializes the Derived entry and writes it to the publish_to target" do
+      ctx = test_ctx(role: "builder")
+      build_publish(store, ctx).call
+
+      repo_root = File.dirname(root)
+      published_path = File.join(repo_root, "PEOPLE.md")
+      expect(File.exist?(published_path)).to be true
+      content = File.read(published_path)
+      expect(content).to include("alice")
+    end
+
+    it "fires :build_completed for derived entries and :file_published for all copies" do
+      build_completed = []
+      file_published  = []
+      store.bus.register(:build_completed, :cap1) { |key:, **| build_completed << key }
+      store.bus.register(:file_published,  :cap2) { |key:, **| file_published  << key }
+
+      ctx = test_ctx(role: "builder")
+      build_publish(store, ctx).call
+
+      expect(build_completed).to include("output.catalogs.people")
+      expect(file_published).to include("output.catalogs.people")
+      expect(file_published).to include("working.agents.claude")
+    end
+  end
+
   context "with a publish_each target that escapes the repo root" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/working/bad"))

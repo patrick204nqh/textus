@@ -127,7 +127,7 @@ module TextusSpecHelpers
     p = writes_ports(store, ctx)
     Textus::Application::Writes::Publish.new(
       ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      bus: p[:bus], root: p[:root], hook_context: p[:hook_context]
+      bus: p[:bus], root: p[:root], store: p[:store], hook_context: p[:hook_context]
     )
   end
 end

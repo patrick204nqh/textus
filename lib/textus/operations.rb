@@ -97,7 +97,7 @@ module Textus
     def publish(...)
       Application::Writes::Publish.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, hook_context: hook_context
+        bus: @bus, root: @root, store: @store, hook_context: hook_context
       ).call(...)
     end
 
