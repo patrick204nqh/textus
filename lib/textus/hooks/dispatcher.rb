@@ -27,8 +27,8 @@ module Textus
       end
 
       # Fires every subscriber whose key-glob matches and returns a FireReport.
-      # When strict: true, raises the first failure (errored before timed_out)
-      # after every hook has been attempted.
+      # When strict: true, raises the first failure encountered (in subscriber
+      # iteration order) after every hook has been attempted.
       def publish(event, strict: false, **kwargs)
         key = kwargs[:key] || "-"
         fired = []
@@ -57,8 +57,7 @@ module Textus
 
       def invoke(event, sub, key, kwargs)
         accepted = filter_kwargs(sub[:callable], kwargs)
-        result = nil
-        error  = nil
+        error = nil
 
         thread = Thread.new do
           sub[:callable].call(**accepted)
@@ -80,7 +79,6 @@ module Textus
           return [:errored, error]
         end
 
-        _ = result
         [:ok, nil]
       end
 
