@@ -26,13 +26,10 @@ module Textus
         @dry_run
       end
 
-      def can_write?(zone)
-        store.manifest.permission_for(zone.to_s).allows_write?(role)
-      end
-
-      def can_read?(zone)
-        store.manifest.permission_for(zone.to_s).allows_read?(role)
-      end
+      def can_write?(zone) = authorizer.can_write?(zone, role: @role)
+      def can_read?(zone)  = authorizer.can_read?(zone, role: @role)
+      def authorize_write!(mentry) = authorizer.authorize_write!(mentry, role: @role)
+      def authorize_read!(mentry)  = authorizer.authorize_read!(mentry, role: @role)
 
       def bus
         @store.bus
@@ -43,21 +40,6 @@ module Textus
       def file_store = @store.file_store
       def audit_log  = @store.audit_log
 
-      def authorize_write!(mentry)
-        return if can_write?(mentry.zone)
-
-        writers = @store.manifest.zone_writers(mentry.zone)
-        raise WriteForbidden.new(mentry.key, mentry.zone, writers: writers)
-      end
-
-      def authorize_read!(mentry)
-        return if can_read?(mentry.zone)
-
-        readers = @store.manifest.zone_readers[mentry.zone]
-        readers = nil if readers == :all
-        raise ReadForbidden.new(mentry.key, mentry.zone, readers: readers)
-      end
-
       def with_role(new_role)
         self.class.new(
           store: @store,
@@ -66,6 +48,12 @@ module Textus
           clock: @clock,
           dry_run: @dry_run,
         )
+      end
+
+      private
+
+      def authorizer
+        @authorizer ||= Textus::Domain::Authorizer.new(manifest: store.manifest)
       end
     end
   end
