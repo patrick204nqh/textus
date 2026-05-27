@@ -35,29 +35,12 @@ module Textus
         private
 
         def materialize(mentry)
-          reader = Textus::Application::Reads::Get.new(
+          target_path = Materializer.new(
             ctx: @ctx, manifest: @manifest, file_store: @file_store,
-          )
-          lister = Textus::Application::Reads::List.new(manifest: @manifest)
-          target_path = Builder::Pipeline.run(
-            mentry: mentry,
-            manifest: @manifest,
-            reader: reader.method(:call),
-            lister: lister.method(:call),
-            transform_resolver: ->(name) { @bus.rpc_callable(:transform_rows, name) },
-            template_loader: ->(name) { read_template(name) },
-            transform_context: @store,
-            inject_intro: -> { Textus::Intro.run(@store) },
-          )
+            bus: @bus, root: @root, store: @store
+          ).run(mentry)
           publish_and_fire(mentry, target_path)
           { "key" => mentry.key, "path" => target_path, "published_to" => mentry.publish_to }
-        end
-
-        def read_template(name)
-          tpl_path = File.join(@root, "templates", name)
-          raise TemplateError.new("template not found: #{tpl_path}", template_name: name) unless File.exist?(tpl_path)
-
-          File.read(tpl_path)
         end
 
         def publish_and_fire(mentry, target_path)
