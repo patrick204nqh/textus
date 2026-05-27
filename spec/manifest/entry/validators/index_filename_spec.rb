@@ -2,9 +2,11 @@ require "spec_helper"
 
 RSpec.describe Textus::Manifest::Entry::Validators::IndexFilename do
   def entry_with(opts)
+    raw = { "index_filename" => opts[:index_filename] }.compact
     instance_double(
       Textus::Manifest::Entry::Nested,
       key: "working.foo",
+      raw: raw,
       index_filename: opts[:index_filename],
       nested?: opts.fetch(:nested, true),
       format: opts.fetch(:format, "markdown"),

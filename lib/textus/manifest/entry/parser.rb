@@ -17,7 +17,8 @@ module Textus
             manifest: manifest, raw: raw,
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
-            format: format
+            format: format,
+            publish_to: raw["publish_to"]
           }
 
           case kind
@@ -29,15 +30,14 @@ module Textus
           end
         end
 
-        def self.build_leaf(common, raw)
-          Leaf.new(publish_to: raw["publish_to"], **common)
+        def self.build_leaf(common, _raw)
+          Leaf.new(**common)
         end
 
         def self.build_nested(common, raw)
           Nested.new(
             index_filename: raw["index_filename"],
             publish_each: raw["publish_each"],
-            publish_to: raw["publish_to"],
             **common,
           )
         end
@@ -48,7 +48,6 @@ module Textus
             source: source,
             template: raw["template"],
             inject_boot: raw["inject_boot"] == true,
-            publish_to: raw["publish_to"],
             events: raw["events"] || {},
             **common,
           )
@@ -59,7 +58,7 @@ module Textus
           handler = intake["handler"] || raw["intake_handler"] or
             raise UsageError.new("intake entry '#{key}' missing handler")
           config = intake["config"] || raw["intake_config"] || {}
-          Intake.new(handler: handler, config: config, events: raw["events"] || {}, publish_to: raw["publish_to"], **common)
+          Intake.new(handler: handler, config: config, events: raw["events"] || {}, **common)
         end
 
         def self.parse_source(raw, key)

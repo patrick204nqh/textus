@@ -7,13 +7,14 @@ module Textus
           VAR_RE = /\{([a-z]+)\}/
           REQUIRED_DISCRIMINATOR_VARS = %w[leaf basename key].freeze
 
-          def self.call(entry) # rubocop:disable Metrics/AbcSize
-            publish_each = entry.respond_to?(:publish_each) ? entry.publish_each : entry.raw["publish_each"]
+          def self.call(entry)
+            # Use raw to detect misuse on non-nested entries (typed attr stubs nil on Base).
+            publish_each = entry.nested? ? entry.publish_each : entry.raw["publish_each"]
             return if publish_each.nil?
 
             raise UsageError.new("entry '#{entry.key}': publish_each requires nested: true") unless entry.nested?
 
-            publish_to = entry.respond_to?(:publish_to) ? entry.publish_to : Array(entry.raw["publish_to"])
+            publish_to = entry.publish_to
             raise UsageError.new("entry '#{entry.key}': publish_to and publish_each are mutually exclusive") unless publish_to.empty?
             raise UsageError.new("entry '#{entry.key}': publish_each must be a string") unless publish_each.is_a?(String)
 

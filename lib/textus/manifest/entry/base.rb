@@ -2,10 +2,10 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :manifest
+        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :manifest, :publish_to
 
         # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
-        def initialize(manifest:, raw:, key:, path:, zone:, schema:, owner:, format:)
+        def initialize(manifest:, raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
           @manifest = manifest
           @raw = raw
           @key = key
@@ -14,6 +14,7 @@ module Textus
           @schema = schema
           @owner = owner
           @format = format
+          @publish_to = Array(publish_to)
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
@@ -32,6 +33,15 @@ module Textus
         def derived? = false
         def intake?  = false
         def leaf?    = false
+
+        # Nil stubs for cross-cutting optional attrs. Subclasses override the
+        # ones they own. Validators and serializers can call these directly
+        # without `respond_to?` guards.
+        def template       = nil
+        def inject_boot    = false # rubocop:disable Naming/PredicateMethod
+        def events         = {}
+        def publish_each   = nil
+        def index_filename = nil
       end
     end
   end

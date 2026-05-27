@@ -7,13 +7,12 @@ module Textus
         PUBLISH_EACH_VARS   = Validators::PublishEach::KNOWN_VARS
         PUBLISH_EACH_VAR_RE = Validators::PublishEach::VAR_RE
 
-        attr_reader :index_filename, :publish_each, :publish_to
+        attr_reader :index_filename, :publish_each
 
-        def initialize(index_filename: nil, publish_each: nil, publish_to: [], **rest)
+        def initialize(index_filename: nil, publish_each: nil, **rest)
           super(**rest)
           @index_filename = index_filename
           @publish_each = publish_each
-          @publish_to = Array(publish_to)
         end
 
         def nested? = true
