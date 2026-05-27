@@ -1,6 +1,7 @@
 require "yaml"
 require_relative "manifest/schema"
 require_relative "manifest/resolver"
+require_relative "manifest/role_kinds"
 
 module Textus
   class Manifest
@@ -27,6 +28,26 @@ module Textus
         write_policy: zone_writers(zone_name),
         read_policy: zone_readers[zone_name] || :all,
       )
+    end
+
+    def role_mapping
+      @role_mapping ||= RoleKinds.resolve(@raw["roles"])
+    end
+
+    def role_kind(name)
+      role_mapping[name]
+    end
+
+    def roles_with_kind(kind)
+      role_mapping.each_with_object([]) { |(name, k), acc| acc << name if k == kind }
+    end
+
+    def zone_kinds(zone_name)
+      writers = zone_writers(zone_name)
+      writers.each_with_object(Set.new) do |w, acc|
+        k = role_kind(w)
+        acc << k if k
+      end
     end
 
     def self.parse(yaml_text, root: ".")
