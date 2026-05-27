@@ -86,4 +86,19 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
       expect(m.zone_kinds("memory")).to eq(Set[:proposer, :accept_authority])
     end
   end
+
+  describe "empty roles: []" do
+    it "treats every role as undeclared" do
+      # An empty roles: block + no writers means schema is valid but the mapping is empty.
+      m = parse(<<~YAML)
+        version: textus/3
+        roles: []
+        zones:
+          - { name: identity, write_policy: [] }
+        entries: []
+      YAML
+      expect(m.role_kind("anyone")).to be_nil
+      expect(m.roles_with_kind(:accept_authority)).to eq([])
+    end
+  end
 end

@@ -66,4 +66,26 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
     YAML
     expect { parse(yaml) }.not_to raise_error
   end
+
+  it "rejects a zone writer that is not a declared role (when roles: is declared)" do
+    yaml = <<~YAML
+      version: textus/3
+      roles:
+        - { name: owner, kind: accept_authority }
+      zones:
+        - { name: identity, write_policy: [owner, ghost] }
+      entries: []
+    YAML
+    expect { parse(yaml) }.to raise_error(Textus::BadManifest, /undeclared role 'ghost'/)
+  end
+
+  it "permits unknown writers when roles: is omitted (default mapping is permissive)" do
+    yaml = <<~YAML
+      version: textus/3
+      zones:
+        - { name: identity, write_policy: [human, mystery] }
+      entries: []
+    YAML
+    expect { parse(yaml) }.not_to raise_error
+  end
 end

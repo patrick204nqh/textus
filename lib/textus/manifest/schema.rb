@@ -40,6 +40,23 @@ module Textus
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
         end
+        validate_zone_writers_declared!(raw)
+      end
+
+      def self.validate_zone_writers_declared!(raw)
+        return if raw["roles"].nil? # default mapping is permissive
+
+        declared = Array(raw["roles"]).map { |r| r["name"] }.compact.to_set
+        Array(raw["zones"]).each do |z|
+          Array(z["write_policy"]).each_with_index do |w, j|
+            next if declared.include?(w)
+
+            raise BadManifest.new(
+              "zone '#{z["name"]}' write_policy[#{j}] references undeclared role '#{w}' " \
+              "(declared roles: #{declared.to_a.join(", ")})",
+            )
+          end
+        end
       end
 
       def self.validate_roles!(roles)
