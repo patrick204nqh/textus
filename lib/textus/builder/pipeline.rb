@@ -68,7 +68,7 @@ module Textus
               spec: mentry.projection,
               lister: ops.method(:list),
               transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
-              transform_context: Application::Context.legacy(store: store),
+              transform_context: store,
             ).run
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }

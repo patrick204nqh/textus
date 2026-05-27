@@ -27,7 +27,6 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ctx) { Textus::Application::Context.legacy(store: store, role: "runner") }
   let(:ops) { Textus::Operations.for(store, role: "runner") }
 
   before do
@@ -41,7 +40,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   def trigger(key:, files:)
     handler = store.registry.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
-    handler[:callable].call(store: ctx, key: key, envelope: envelope, change: :updated)
+    handler[:callable].call(store: store, key: key, envelope: envelope, change: :updated)
   end
 
   def derived_keys(slug)

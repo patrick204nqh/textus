@@ -6,13 +6,21 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:, envelope_io:)
+        # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, manifest:, envelope_io:, bus:, file_store:, registry:, store:, authorizer:)
           @ctx = ctx
+          @manifest = manifest
           @envelope_io = envelope_io
+          @bus = bus
+          @file_store = file_store
+          @registry = registry
+          @store = store
+          @authorizer = authorizer
         end
+        # rubocop:enable Metrics/ParameterLists
 
         def run(key)
-          res = @ctx.store.manifest.resolve(key)
+          res = @manifest.resolve(key)
           mentry = res.entry
           path = res.path
           remaining = res.remaining
@@ -25,19 +33,15 @@ module Textus
 
         private
 
-        def read_view
-          Application::Context.legacy(store: @ctx.store, role: @ctx.role)
-        end
-
         def fetch_timeout_for(key)
-          rule = @ctx.store.manifest.rules_for(key)
+          rule = @manifest.rules_for(key)
           rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
         end
 
         def fetch_with_bus(key, mentry, remaining)
-          callable = @ctx.store.registry.rpc_callable(:resolve_intake, mentry.intake_handler)
-          @ctx.bus.publish(:refresh_started, store: read_view, key: key, mode: :sync,
-                                             correlation_id: @ctx.correlation_id)
+          callable = @registry.rpc_callable(:resolve_intake, mentry.intake_handler)
+          @bus.publish(:refresh_started, store: @store, key: key, mode: :sync,
+                                         correlation_id: @ctx.correlation_id)
           call_intake(key, mentry, callable, remaining)
         end
 
@@ -45,36 +49,35 @@ module Textus
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
             callable.call(
-              store: @ctx,
+              store: @store,
               config: mentry.intake_config,
               args: { trigger_key: key, leaf_segments: remaining || [] },
             )
           end
         rescue Timeout::Error
-          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: "Timeout::Error",
-                                            error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
-                                            correlation_id: @ctx.correlation_id)
+          @bus.publish(:refresh_failed, store: @store, key: key, error_class: "Timeout::Error",
+                                        error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
+                                        correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
-          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
-                                            error_message: e.message, correlation_id: @ctx.correlation_id)
+          @bus.publish(:refresh_failed, store: @store, key: key, error_class: e.class.name,
+                                        error_message: e.message, correlation_id: @ctx.correlation_id)
           raise
         rescue StandardError => e
-          @ctx.bus.publish(:refresh_failed, store: read_view, key: key, error_class: e.class.name,
-                                            error_message: e.message, correlation_id: @ctx.correlation_id)
+          @bus.publish(:refresh_failed, store: @store, key: key, error_class: e.class.name,
+                                        error_message: e.message, correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
         end
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          # T5 will replace this direct ctor with explicit ports on Worker itself.
           envelope = Textus::Application::Writes::Put.new(
             ctx: @ctx,
-            manifest: @ctx.manifest,
+            manifest: @manifest,
             envelope_io: @envelope_io,
-            bus: @ctx.bus,
-            authorizer: Textus::Domain::Authorizer.new(manifest: @ctx.manifest),
-            store: @ctx.store,
+            bus: @bus,
+            authorizer: @authorizer,
+            store: @store,
           ).call(
             key,
             meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
@@ -82,8 +85,8 @@ module Textus
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged
-            @ctx.bus.publish(:entry_refreshed, store: read_view, key: key, envelope: envelope, change: change,
-                                               correlation_id: @ctx.correlation_id)
+            @bus.publish(:entry_refreshed, store: @store, key: key, envelope: envelope, change: change,
+                                           correlation_id: @ctx.correlation_id)
           end
           envelope
         end

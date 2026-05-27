@@ -4,9 +4,9 @@ require "fileutils"
 
 RSpec.describe Textus::Application::Writes::Build do
   subject(:use_case) do
-    ctx = Textus::Application::Context.legacy(store: store, role: "human")
+    ctx = test_ctx(role: "human")
     store.bus
-    build_build(ctx)
+    build_build(store, ctx)
   end
 
   include_context "textus_store_fixture"
@@ -67,8 +67,8 @@ RSpec.describe Textus::Application::Writes::Build do
       captured << { key: key, correlation_id: correlation_id }
     end
 
-    ctx = Textus::Application::Context.legacy(store: store, role: "builder", correlation_id: "cid-test-123")
-    build_build(ctx).call
+    ctx = test_ctx(role: "builder", correlation_id: "cid-test-123")
+    build_build(store, ctx).call
 
     expect(captured.size).to eq(1)
     expect(captured.first[:key]).to eq("output.catalogs.people")
@@ -81,8 +81,8 @@ RSpec.describe Textus::Application::Writes::Build do
       captured << { key: key, correlation_id: correlation_id, target: target }
     end
 
-    ctx = Textus::Application::Context.legacy(store: store, role: "builder", correlation_id: "cid-pub-456")
-    build_build(ctx).call
+    ctx = test_ctx(role: "builder", correlation_id: "cid-pub-456")
+    build_build(store, ctx).call
 
     expect(captured).not_to be_empty
     expect(captured.map { _1[:correlation_id] }).to all(eq("cid-pub-456"))

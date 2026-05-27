@@ -23,11 +23,11 @@ module TextusRecipes
 
           desired_keys = files.keys.map { |rel| TextusRecipes::SkillFanout.derived_key(slug, rel) }
 
-          # `store:` in a hook is an Application::Context. Route inner writes
-          # through Operations so the standard write pipeline (audit, schema
-          # validation, events) applies — using `suppress_events: true` to
-          # prevent the derived puts from re-triggering this listener.
-          ops = Textus::Operations.for(store.store, role: store.role)
+          # `store:` in a hook is the actual Textus::Store. Route inner
+          # writes through Operations so the standard write pipeline (audit,
+          # schema validation, events) applies — using `suppress_events: true`
+          # to prevent the derived puts from re-triggering this listener.
+          ops = Textus::Operations.for(store, role: "runner")
 
           existing_rows = ops.list(prefix: "#{DERIVED_PREFIX}#{slug}")
           existing_keys = existing_rows.map { |row| row["key"] }

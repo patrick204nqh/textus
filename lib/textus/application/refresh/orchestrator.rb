@@ -2,11 +2,11 @@ module Textus
   module Application
     module Refresh
       class Orchestrator
-        def initialize(worker:, store_root:, store: nil, role: "human", detached_spawner: nil)
+        def initialize(worker:, store_root:, bus: nil, store: nil, detached_spawner: nil)
           @worker = worker
           @store_root = store_root
+          @bus = bus
           @store = store
-          @role = role
           @detached_spawner = detached_spawner || default_spawner
         end
 
@@ -55,10 +55,9 @@ module Textus
 
             probe.release
 
-            store_view = @store ? Textus::Application::Context.legacy(store: @store, role: @role) : nil
             payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
-            payload[:store] = store_view if store_view
-            @store&.bus&.publish(:refresh_backgrounded, **payload)
+            payload[:store] = @store if @store
+            @bus&.publish(:refresh_backgrounded, **payload)
             @detached_spawner.call(store_root: @store_root, key: key)
             Textus::Domain::Outcome::Detached.new
           elsif result.is_a?(Textus::Error)
