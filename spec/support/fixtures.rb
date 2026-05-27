@@ -89,14 +89,14 @@ module TextusSpecHelpers
     p = writes_ports(store, ctx)
     Textus::Application::Writes::Build.new(
       ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      bus: p[:bus], root: p[:root], registry: store.registry, store: p[:store]
+      bus: p[:bus], root: p[:root], store: p[:store]
     )
   end
 
   def build_worker(store, ctx)
     Textus::Application::Refresh::Worker.new(
       ctx: ctx, manifest: store.manifest, envelope_io: build_envelope_io(store, ctx),
-      bus: store.bus, registry: store.registry,
+      bus: store.bus,
       store: store, authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest)
     )
   end

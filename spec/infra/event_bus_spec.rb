@@ -1,12 +1,12 @@
 require "spec_helper"
 
 RSpec.describe Textus::Infra::EventBus do
-  let(:registry) { Textus::Hooks::Registry.new }
-  let(:bus)      { described_class.new(registry: registry) }
+  let(:hook_bus) { Textus::Hooks::Bus.new }
+  let(:bus)      { described_class.new(bus: hook_bus) }
 
   it "routes published events to registered pubsub handlers" do
     received = []
-    registry.register(:entry_put, :test_handler) { |key:, **_| received << { key: key } }
+    hook_bus.register(:entry_put, :test_handler) { |key:, **| received << { key: key } }
 
     bus.publish(:entry_put, key: "some.key", envelope: {}, store: nil)
 
@@ -15,8 +15,8 @@ RSpec.describe Textus::Infra::EventBus do
 
   it "calls all registered handlers for the event" do
     calls = []
-    registry.register(:entry_put, :handler_a) { |**_| calls << :a }
-    registry.register(:entry_put, :handler_b) { |**_| calls << :b }
+    hook_bus.register(:entry_put, :handler_a) { |**| calls << :a }
+    hook_bus.register(:entry_put, :handler_b) { |**| calls << :b }
 
     bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
 
@@ -24,7 +24,7 @@ RSpec.describe Textus::Infra::EventBus do
   end
 
   it "does not raise when a handler errors; warns instead" do
-    registry.register(:entry_put, :boom) { |**_| raise "bang" }
+    hook_bus.register(:entry_put, :boom) { |**| raise "bang" }
 
     expect do
       bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
@@ -33,7 +33,7 @@ RSpec.describe Textus::Infra::EventBus do
 
   it "calls no handlers when no handlers are registered for that event" do
     calls = []
-    registry.register(:entry_put, :handler) { |**_| calls << :entry_put }
+    hook_bus.register(:entry_put, :handler) { |**| calls << :entry_put }
 
     bus.publish(:entry_deleted, key: "k", store: nil)
 

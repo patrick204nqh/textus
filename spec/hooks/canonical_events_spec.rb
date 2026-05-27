@@ -2,7 +2,7 @@
 require "spec_helper"
 
 RSpec.describe "textus/3 canonical hook events" do
-  let(:registry) { Textus::Hooks::Registry.new }
+  let(:registry) { Textus::Hooks::Bus.new }
 
   it "accepts canonical textus/3 event names" do
     registry.on(:resolve_intake,    :handler_a)         { |**| { _meta: {}, body: "x" } }

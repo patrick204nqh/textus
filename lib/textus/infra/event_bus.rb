@@ -1,12 +1,12 @@
 module Textus
   module Infra
     class EventBus
-      def initialize(registry:)
-        @registry = registry
+      def initialize(bus:)
+        @bus = bus
       end
 
       def publish(event, **payload)
-        @registry.pubsub_handlers(event).each do |entry|
+        @bus.pubsub_handlers(event).each do |entry|
           next unless entry[:keys].nil? || matches?(entry[:keys], payload[:key])
 
           entry[:callable].call(**payload)

@@ -34,11 +34,11 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     # against the per-store registry so the listener is wired up.
     Textus.drain_hook_blocks # discard any stale leftover from prior load
     TextusRecipes::SkillFanout.register
-    Textus.drain_hook_blocks.each { |b| b.call(store.registry) }
+    Textus.drain_hook_blocks.each { |b| b.call(store.bus) }
   end
 
   def trigger(key:, files:)
-    handler = store.registry.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
+    handler = store.bus.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
     handler[:callable].call(store: store, key: key, envelope: envelope, change: :updated)
   end

@@ -11,17 +11,14 @@ module Textus
       # `Application::Writes::Publish`. The CLI verb `textus build` calls
       # both classes and merges the results.
       class Build
-        # rubocop:disable Metrics/ParameterLists
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, registry:, store:)
+        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
           @ctx        = ctx
           @manifest   = manifest
           @file_store = file_store
           @bus        = bus
           @root       = root
-          @registry   = registry
           @store      = store
         end
-        # rubocop:enable Metrics/ParameterLists
 
         def call(prefix: nil)
           built = @manifest.entries.filter_map do |mentry|
@@ -46,7 +43,7 @@ module Textus
             manifest: @manifest,
             reader: reader.method(:call),
             lister: lister.method(:call),
-            transform_resolver: ->(name) { @registry.rpc_callable(:transform_rows, name) },
+            transform_resolver: ->(name) { @bus.rpc_callable(:transform_rows, name) },
             template_loader: ->(name) { read_template(name) },
             transform_context: @store,
             inject_intro: -> { Textus::Intro.run(@store) },

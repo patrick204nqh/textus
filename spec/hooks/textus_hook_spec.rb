@@ -27,8 +27,8 @@ RSpec.describe "Textus.hook collector" do
     expect(Textus).not_to respond_to(:current_registry)
   end
 
-  describe "Registry#on alias" do
-    let(:reg) { Textus::Hooks::Registry.new }
+  describe "Bus#on alias" do
+    let(:reg) { Textus::Hooks::Bus.new }
 
     it "registers an RPC handler" do
       reg.on(:resolve_intake, :gh) do |config:, args:, **|

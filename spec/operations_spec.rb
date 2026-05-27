@@ -71,7 +71,6 @@ RSpec.describe Textus::Operations do
         schemas: store.schemas,
         audit_log: store.audit_log,
         bus: store.bus,
-        registry: store.registry,
         root: store.root,
         store: store,
       )

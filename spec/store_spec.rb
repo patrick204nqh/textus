@@ -30,8 +30,7 @@ RSpec.describe Textus::Store do
       expect(store.schemas).to be_a(Textus::Schemas)
       expect(store.file_store).to be_a(Textus::Infra::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Infra::AuditLog)
-      expect(store.bus).to be_a(Textus::Hooks::Dispatcher)
-      expect(store.registry).to be_a(Textus::Hooks::Registry)
+      expect(store.bus).to be_a(Textus::Hooks::Bus)
     end
 
     it "no longer responds to reader/writer/schema_for" do

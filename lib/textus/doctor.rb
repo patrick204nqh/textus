@@ -54,8 +54,8 @@ module Textus
 
     def run_registered_checks(store)
       out = []
-      store.registry.rpc_names(:validate).each do |name|
-        callable = store.registry.rpc_callable(:validate, name)
+      store.bus.rpc_names(:validate).each do |name|
+        callable = store.bus.rpc_callable(:validate, name)
         begin
           result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: store) }
           if result.is_a?(Array)

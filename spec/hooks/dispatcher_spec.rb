@@ -103,7 +103,7 @@ RSpec.describe "Hooks::Dispatcher external subscription" do
   it "lets external code subscribe to :put without a hooks/ file" do
     store = Textus::Store.new(root)
     seen = []
-    store.bus.subscribe(:entry_put, :external) { |key:, **| seen << key }
+    store.bus.register(:entry_put, :external) { |key:, **| seen << key }
     Textus::Operations.for(store, role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
     expect(seen).to eq(["working.x"])
   end

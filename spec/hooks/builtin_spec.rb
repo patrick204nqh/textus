@@ -2,7 +2,7 @@ require "spec_helper"
 require "yaml"
 
 RSpec.describe "Built-in hooks" do
-  let(:reg) { Textus::Hooks::Registry.new }
+  let(:reg) { Textus::Hooks::Bus.new }
 
   before { Textus::Hooks::Builtin.register_all(reg) }
 
