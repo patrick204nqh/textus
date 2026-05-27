@@ -2,6 +2,8 @@ module Textus
   module Domain
     module Policy
       class Refresh
+        ALLOWED_ON_STALE = %i[warn sync timed_sync].freeze
+
         attr_reader :ttl, :on_stale, :sync_budget_ms, :fetch_timeout_seconds
 
         def initialize(ttl:, on_stale:, sync_budget_ms:, fetch_timeout_seconds: nil)

@@ -54,6 +54,7 @@ RSpec.describe "inject_intro:" do
           zone: identity
           schema: null
           template: root.mustache
+          compute: { kind: projection }
           inject_intro: true
     YAML
     expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*derived/)

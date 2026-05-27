@@ -58,7 +58,7 @@ module Textus
           ).run(mentry)
 
           publish_derived_copies(mentry, target_path, repo_root)
-          fire_build_completed(mentry, target_path)
+          fire_build_completed(mentry)
 
           { "key" => mentry.key, "path" => target_path, "published_to" => mentry.publish_to }
         end
@@ -76,7 +76,7 @@ module Textus
           end
         end
 
-        def fire_build_completed(mentry, target_path) # rubocop:disable Lint/UnusedMethodArgument
+        def fire_build_completed(mentry)
           envelope = reader.call(mentry.key)
           src = mentry.source
           selects = src.is_a?(Textus::Manifest::Entry::Derived::Projection) ? Array(src.select).compact : []

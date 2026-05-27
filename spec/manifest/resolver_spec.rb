@@ -22,7 +22,7 @@ RSpec.describe Textus::Manifest::Resolver do
 
   it "resolves a leaf key to a Resolution" do
     res = resolver.resolve("working.notes")
-    expect(res).to be_a(Textus::Manifest::Resolution)
+    expect(res).to be_a(Textus::Manifest::Resolver::Resolution)
     expect(res.path).to end_with("/zones/working/notes.md")
   end
 
