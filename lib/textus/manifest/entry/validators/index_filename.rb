@@ -4,7 +4,8 @@ module Textus
       module Validators
         module IndexFilename
           def self.call(entry)
-            index_filename = entry.respond_to?(:index_filename) ? entry.index_filename : entry.raw["index_filename"]
+            # Use raw to detect misuse on non-nested entries (typed attr stubs nil on Base).
+            index_filename = entry.nested? ? entry.index_filename : entry.raw["index_filename"]
             return if index_filename.nil?
 
             check_shape!(entry, index_filename)

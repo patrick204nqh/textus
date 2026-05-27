@@ -2,9 +2,11 @@ require "spec_helper"
 
 RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
   def entry_with(opts)
+    raw = { "publish_each" => opts[:publish_each] }.compact
     instance_double(
       Textus::Manifest::Entry::Nested,
       key: "working.foo",
+      raw: raw,
       publish_each: opts[:publish_each],
       nested?: opts.fetch(:nested, true),
       publish_to: opts.fetch(:publish_to, []),

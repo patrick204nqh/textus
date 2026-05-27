@@ -2,14 +2,15 @@ module Textus
   class Manifest
     class Entry
       class Leaf < Base
-        attr_reader :publish_to
-
-        def initialize(publish_to: [], **rest)
-          super(**rest)
-          @publish_to = Array(publish_to)
-        end
+        KIND = :leaf
 
         def leaf? = true
+
+        def self.from_raw(common, _raw)
+          new(**common)
+        end
+
+        Entry::REGISTRY[KIND] = self
       end
     end
   end

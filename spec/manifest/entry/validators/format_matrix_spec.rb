@@ -11,6 +11,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
+      template: opts[:template],
       in_generator_zone?: opts.fetch(:in_generator_zone, false),
     )
   end
@@ -41,6 +42,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: true,
       format: opts.fetch(:format, "text"),
       schema: opts[:schema],
+      template: opts[:template],
       in_generator_zone?: opts.fetch(:in_generator_zone, true),
     )
   end

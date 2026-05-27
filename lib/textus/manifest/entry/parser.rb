@@ -9,7 +9,7 @@ module Textus
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
           zone = raw["zone"] or raise UsageError.new("manifest entry '#{key}' missing zone")
 
-          raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (leaf|nested|derived|intake)")
+          raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (#{Entry::REGISTRY.keys.join("|")})")
           kind = raw_kind.to_sym
           format = resolve_format(raw, path)
 
@@ -17,49 +17,13 @@ module Textus
             manifest: manifest, raw: raw,
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
-            format: format
+            format: format,
+            publish_to: raw["publish_to"]
           }
 
-          case kind
-          when :leaf    then build_leaf(common, raw)
-          when :nested  then build_nested(common, raw)
-          when :derived then build_derived(common, raw, key)
-          when :intake  then build_intake(common, raw, key)
-          else raise BadManifest.new("entry '#{key}': unknown kind: #{kind.inspect}")
-          end
-        end
-
-        def self.build_leaf(common, raw)
-          Leaf.new(publish_to: raw["publish_to"], **common)
-        end
-
-        def self.build_nested(common, raw)
-          Nested.new(
-            index_filename: raw["index_filename"],
-            publish_each: raw["publish_each"],
-            publish_to: raw["publish_to"],
-            **common,
-          )
-        end
-
-        def self.build_derived(common, raw, key)
-          source = parse_source(raw, key)
-          Derived.new(
-            source: source,
-            template: raw["template"],
-            inject_boot: raw["inject_boot"] == true,
-            publish_to: raw["publish_to"],
-            events: raw["events"] || {},
-            **common,
-          )
-        end
-
-        def self.build_intake(common, raw, key)
-          intake = raw["intake"] || {}
-          handler = intake["handler"] || raw["intake_handler"] or
-            raise UsageError.new("intake entry '#{key}' missing handler")
-          config = intake["config"] || raw["intake_config"] || {}
-          Intake.new(handler: handler, config: config, events: raw["events"] || {}, publish_to: raw["publish_to"], **common)
+          klass = Entry::REGISTRY[kind] or
+            raise BadManifest.new("entry '#{key}': unknown kind: #{kind.inspect} (known: #{Entry::REGISTRY.keys.join(", ")})")
+          klass.from_raw(common, raw)
         end
 
         def self.parse_source(raw, key)
@@ -73,14 +37,14 @@ module Textus
           end
 
           if compute["kind"] == "projection"
-            Derived::Projection.new(
+            Entry::Derived::Projection.new(
               select: compute["select"],
               pluck: compute["pluck"],
               sort_by: compute["sort_by"],
               transform: compute["transform"],
             )
           else
-            Derived::External.new(sources: compute["sources"], runner: compute["runner"])
+            Entry::Derived::External.new(sources: compute["sources"], runner: compute["runner"])
           end
         end
 
