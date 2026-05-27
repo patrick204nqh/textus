@@ -19,9 +19,11 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
         - { name: output,  write_policy: [builder] }
       entries:
         - key: working.src
+          kind: leaf
           path: working/src.md
           zone: working
         - key: output.catalog
+          kind: derived
           path: output/catalog.md
           zone: output
           compute:
@@ -62,9 +64,11 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
         - { name: derived, write_policy: [human] }
       entries:
         - key: working.src
+          kind: leaf
           path: working/src.md
           zone: working
         - key: derived.note
+          kind: derived
           path: derived/note.md
           zone: derived
           compute:

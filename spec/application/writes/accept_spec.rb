@@ -12,8 +12,10 @@ RSpec.describe Textus::Application::Writes::Accept do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: review, write_policy: [agent, human] }
       entries:
-        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true }
-        - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
+        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
+        - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
+
     YAML
     Textus::Store.new(textus_dir)
   end
@@ -121,8 +123,10 @@ RSpec.describe Textus::Application::Writes::Accept do
           - { name: working, write_policy: [human, agent, runner] }
           - { name: review, write_policy: [agent, human] }
         entries:
-          - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true }
-          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
+          - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested}
+
+          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
+
         rules:
           - match: "working.network.org.**"
             promotion:
@@ -178,8 +182,10 @@ RSpec.describe Textus::Application::Writes::Accept do
           - { name: working, write_policy: [human, agent, runner] }
           - { name: review, write_policy: [agent, human] }
         entries:
-          - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true }
-          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true }
+          - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
+          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
+
         rules:
           - match: "working.network.org.**"
             promotion:

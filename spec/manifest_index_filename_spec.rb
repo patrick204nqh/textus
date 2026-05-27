@@ -26,7 +26,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   end
 
   it "enumerates SKILL.md files keyed by parent directory" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
+    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, index_filename: SKILL.md }")
 
     rows = Textus::Manifest.load(root).resolver.enumerate
     keys = rows.map { |r| r[:key] }
@@ -35,7 +35,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   end
 
   it "ignores sibling files (references/*) under index_filename mode" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
+    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, index_filename: SKILL.md }")
 
     rows = Textus::Manifest.load(root).resolver.enumerate
     paths = rows.map { |r| File.basename(r[:path]) }
@@ -44,7 +44,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   end
 
   it "resolve(key) returns the SKILL.md path for a sub-directory" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
+    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, index_filename: SKILL.md }")
 
     path = Textus::Manifest.load(root).resolver.resolve("skills.ask").path
 
@@ -52,28 +52,30 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   end
 
   it "rejects index_filename without nested: true" do
-    write_manifest("  - { key: skills, path: skills/ask/SKILL.md, zone: skills, index_filename: SKILL.md }")
+    write_manifest("  - { key: skills, path: skills/ask/SKILL.md, zone: skills, kind: leaf, index_filename: SKILL.md }")
 
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /requires nested: true/)
   end
 
   it "rejects index_filename with a slash" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: refs/SKILL.md }")
+    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, index_filename: refs/SKILL.md }")
 
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /must be a bare basename/)
   end
 
   it "rejects index_filename whose extension does not match the format" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, format: markdown, index_filename: SKILL.json }")
+    write_manifest(
+      "  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, format: markdown, index_filename: SKILL.json }",
+    )
 
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /implies format "json"/)
   end
 
   it "rejects index_filename with an unknown extension" do
-    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.weird }")
+    write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, kind: nested, index_filename: SKILL.weird }")
 
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /unknown extension/)

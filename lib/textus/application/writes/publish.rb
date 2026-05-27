@@ -18,7 +18,8 @@ module Textus
           repo_root = File.dirname(@root)
           out = []
           @manifest.entries.each do |mentry|
-            next unless mentry.nested && mentry.publish_each
+            next unless mentry.is_a?(Textus::Manifest::Entry::Nested)
+            next unless mentry.publish_each
             next if prefix && !mentry.key.start_with?(prefix) && !prefix.start_with?("#{mentry.key}.")
 
             @manifest.resolver.enumerate(prefix: mentry.key).each do |row|

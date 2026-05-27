@@ -11,7 +11,8 @@ RSpec.describe Textus::Application::Reads::Where do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working, owner: alice }
+        - { key: working.doc, path: working/doc.md, zone: working, owner: alice, kind: leaf}
+
     YAML
     File.write(File.join(textus, "zones", "working", "doc.md"), "---\nname: doc\n---\nbody\n")
     Textus::Store.new(textus)

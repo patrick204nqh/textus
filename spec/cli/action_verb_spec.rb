@@ -15,7 +15,8 @@ RSpec.describe "textus action verb" do
         - { name: review,   write_policy: [agent, human] }
         - { name: output,   write_policy: [builder] }
       entries:
-        - { key: working.demo, path: working/demo.md, zone: working }
+        - { key: working.demo, path: working/demo.md, zone: working, kind: leaf}
+
     YAML
   end
 

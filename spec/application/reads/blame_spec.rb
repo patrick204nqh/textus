@@ -13,7 +13,8 @@ RSpec.describe Textus::Application::Reads::Blame do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
     YAML
     Textus::Store.new(textus)
   end

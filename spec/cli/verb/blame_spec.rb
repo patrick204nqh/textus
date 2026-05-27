@@ -22,7 +22,8 @@ RSpec.describe Textus::CLI::Verb::Blame do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
     YAML
     File.write(File.join(root, "zones/working/doc.md"), "---\nname: doc\n---\nbody\n")
     File.open(File.join(root, "audit.log"), "w") do |f|

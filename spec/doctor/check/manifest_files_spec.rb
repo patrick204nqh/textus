@@ -12,7 +12,8 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.note, path: working/note.md, zone: working }
+        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+
     YAML
   end
 
@@ -38,7 +39,8 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, nested: true }
+        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
+
     YAML
     store = Textus::Store.new(root)
     expect(described_class.new(store).call).to eq([])

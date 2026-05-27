@@ -11,8 +11,10 @@ RSpec.describe Textus::Key::Path do
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
-        - { key: working.x,   path: working/x.md,   zone: working }
-        - { key: working.dir, path: working/dir,    zone: working, nested: true }
+        - { key: working.x,   path: working/x.md,   zone: working, kind: leaf}
+
+        - { key: working.dir, path: working/dir,    zone: working, nested: true, kind: nested}
+
     YAML
   end
 

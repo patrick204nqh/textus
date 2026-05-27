@@ -4,7 +4,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
   let(:now) { Time.parse("2026-05-22T12:00:00Z") }
   let(:mentry) do
     instance_double(
-      Textus::Manifest::Entry,
+      Textus::Manifest::Entry::Base,
       zone: "working", owner: "human", format: "markdown", schema: nil,
     )
   end

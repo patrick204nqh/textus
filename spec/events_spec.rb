@@ -14,7 +14,8 @@ RSpec.describe "Lifecycle events" do
         version: textus/3
         zones: [{ name: working, write_policy: [human] }]
         entries:
-          - { key: working.x, path: working/x.md, zone: working }
+          - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+
       YAML
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $textus_event_log ||= []
@@ -66,6 +67,7 @@ RSpec.describe "Lifecycle events" do
         zones: [{ name: intake, write_policy: [runner] }]
         entries:
           - key: intake.x
+            kind: intake
             path: intake/x.md
             zone: intake
             intake: { handler: f }
@@ -152,8 +154,10 @@ RSpec.describe "Lifecycle events" do
           - { name: working, write_policy: [human] }
           - { name: output,  write_policy: [builder] }
         entries:
-          - { key: working.x, path: working/x.md, zone: working }
+          - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+
           - key: output.summary
+            kind: derived
             path: output/summary.md
             zone: output
             template: summary.mustache
@@ -196,8 +200,10 @@ RSpec.describe "Lifecycle events" do
           - { name: working, write_policy: [human] }
           - { name: review,  write_policy: [agent, human] }
         entries:
-          - { key: working.bob, path: working/bob.md, zone: working }
-          - { key: review.bob,  path: review/bob.md,  zone: review }
+          - { key: working.bob, path: working/bob.md, zone: working, kind: leaf}
+
+          - { key: review.bob,  path: review/bob.md,  zone: review, kind: leaf}
+
       YAML
       File.write(File.join(root, "zones/review/bob.md"), <<~MD)
         ---

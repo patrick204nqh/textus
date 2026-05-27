@@ -18,8 +18,10 @@ RSpec.describe "textus build concurrency" do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: output, write_policy: [builder] }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null }
+        - { key: working.note, path: working/note.md, zone: working, schema: null, kind: leaf}
+
         - key: output.note
+          kind: derived
           path: output/note.md
           zone: output
           schema: null

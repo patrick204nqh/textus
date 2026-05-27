@@ -15,8 +15,10 @@ RSpec.describe "inject_intro:" do
         - { name: identity, write_policy: [human] }
         - { name: output,   write_policy: [builder] }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+
         - key: output.root
+          kind: derived
           path: output/root.md
           zone: output
           compute: { kind: projection, select: [identity.id], pluck: "*" }
@@ -47,6 +49,7 @@ RSpec.describe "inject_intro:" do
         - { name: identity, write_policy: [human] }
       entries:
         - key: identity.bad
+          kind: derived
           path: identity/bad.md
           zone: identity
           schema: null
@@ -65,8 +68,10 @@ RSpec.describe "inject_intro:" do
         - { name: identity, write_policy: [human] }
         - { name: output,   write_policy: [builder] }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+
         - key: output.root
+          kind: derived
           path: output/root.json
           zone: output
           format: json
@@ -83,8 +88,10 @@ RSpec.describe "inject_intro:" do
         - { name: identity, write_policy: [human] }
         - { name: output,   write_policy: [builder] }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null }
+        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+
         - key: output.root
+          kind: derived
           path: output/root.md
           zone: output
           compute: { kind: projection, select: [identity.id], pluck: "*" }

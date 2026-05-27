@@ -14,7 +14,8 @@ RSpec.describe ":store_loaded event" do
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working }
+        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []

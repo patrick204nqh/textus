@@ -15,7 +15,8 @@ RSpec.describe Textus::Manifest::Resolver do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self }
+        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf}
+
     YAML
   end
 

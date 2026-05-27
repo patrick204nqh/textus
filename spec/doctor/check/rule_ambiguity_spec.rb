@@ -18,7 +18,8 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
       rules:
         - match: working.foo
           refresh: { ttl: 10m }
@@ -36,7 +37,8 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
       rules:
         - match: working.*
           refresh: { ttl: 10m }
@@ -60,7 +62,8 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       zones:
         - { name: working, write_policy: [human] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
       rules:
         - match: working.*
           refresh: { ttl: 10m }

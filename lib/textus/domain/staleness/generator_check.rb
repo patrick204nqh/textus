@@ -14,9 +14,10 @@ module Textus
 
         def rows_for(mentry)
           return [] unless mentry.in_generator_zone?
+          return [] unless mentry.is_a?(Textus::Manifest::Entry::Derived)
 
-          gen = mentry.generator
-          return [] unless gen
+          src = mentry.source
+          return [] unless src.is_a?(Textus::Manifest::Entry::Derived::External)
 
           path = Textus::Key::Path.resolve(@manifest, mentry)
           return [stale_row(mentry, path, "derived entry has never been generated")] unless File.exist?(path)
@@ -28,7 +29,7 @@ module Textus
           gen_time = parse_time(generated_at)
           return [stale_row(mentry, path, "unparseable generated.at: #{generated_at.inspect}")] unless gen_time
 
-          offender = newest_source_after(gen, gen_time)
+          offender = newest_source_after(src, gen_time)
           return [stale_row(mentry, path, "source '#{offender}' modified after generated.at")] if offender
 
           []
@@ -42,8 +43,8 @@ module Textus
           nil
         end
 
-        def newest_source_after(gen, gen_time)
-          Array(gen["sources"]).each do |src|
+        def newest_source_after(external_src, gen_time)
+          Array(external_src.sources).each do |src|
             offender = check_source(src, gen_time)
             return offender if offender
           end
@@ -78,7 +79,7 @@ module Textus
           {
             "key" => mentry.key,
             "path" => path,
-            "generator" => mentry.generator,
+            "generator" => mentry.raw["compute"],
             "reason" => reason,
           }
         end

@@ -22,7 +22,8 @@ RSpec.describe "textus rule group" do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
       rules:
         - match: "working.*"
           refresh: { ttl: 1h, on_stale: warn }

@@ -13,10 +13,12 @@ RSpec.describe "Textus::Operations#refresh" do
       zones: [{ name: intake, write_policy: [runner] }]
       entries:
         - key: intake.repos
+          kind: intake
           path: intake/repos.md
           zone: intake
           intake: { handler: stub_fetch, config: { word: hello } }
         - key: intake.manual
+          kind: leaf
           path: intake/manual.md
           zone: intake
     YAML
@@ -66,6 +68,7 @@ RSpec.describe "Textus::Operations#refresh" do
         zones: [{ name: intake, write_policy: [runner] }]
         entries:
           - key: intake.repos
+            kind: intake
             path: intake/repos.json
             zone: intake
             format: json
@@ -93,6 +96,7 @@ RSpec.describe "Textus::Operations#refresh" do
         zones: [{ name: intake, write_policy: [runner] }]
         entries:
           - key: intake.notes
+            kind: intake
             path: intake/notes.txt
             zone: intake
             format: text

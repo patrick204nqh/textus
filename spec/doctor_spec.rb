@@ -17,8 +17,10 @@ RSpec.describe Textus::Doctor do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: output, write_policy: [builder] }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
-        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
+        - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
+
+        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived}
+
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
       name: note
@@ -101,9 +103,12 @@ RSpec.describe Textus::Doctor do
           - { name: skills, write_policy: [human] }
           - { name: output, write_policy: [builder] }
         entries:
-          - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true }
-          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache }
-          - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }
+          - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
+
+          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived}
+
+          - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md, kind: nested}
+
       YAML
     end
 
@@ -220,7 +225,8 @@ RSpec.describe Textus::Doctor do
         zones:
           - { name: working, write_policy: [human, agent, runner] }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true }
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+
       YAML
 
       File.write(File.join(ra_root, "schemas/person.yaml"), <<~YAML)

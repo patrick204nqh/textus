@@ -9,61 +9,94 @@ module Textus
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
           zone = raw["zone"] or raise UsageError.new("manifest entry '#{key}' missing zone")
 
-          nested = raw["nested"] == true
-          compute, projection, generator = parse_compute(raw, key)
-          intake_handler, intake_config = parse_intake(raw["intake"])
-          format = resolve_format(raw, path, nested)
+          raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (leaf|nested|derived|intake)")
+          kind = raw_kind.to_sym
+          format = resolve_format(raw, path)
 
-          Textus::Manifest::Entry.new(
+          common = {
             manifest: manifest, raw: raw,
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
-            nested: nested,
-            template: raw["template"],
-            publish_to: Array(raw["publish_to"]),
-            publish_each: raw["publish_each"],
-            events: raw["events"] || {},
-            inject_intro: raw["inject_intro"] == true,
+            format: format
+          }
+
+          case kind
+          when :leaf    then build_leaf(common, raw)
+          when :nested  then build_nested(common, raw)
+          when :derived then build_derived(common, raw, key)
+          when :intake  then build_intake(common, raw, key)
+          else raise BadManifest.new("entry '#{key}': unknown kind: #{kind.inspect}")
+          end
+        end
+
+        def self.build_leaf(common, raw)
+          Leaf.new(publish_to: raw["publish_to"], **common)
+        end
+
+        def self.build_nested(common, raw)
+          Nested.new(
             index_filename: raw["index_filename"],
-            format: format,
-            compute: compute, projection: projection, generator: generator,
-            intake_handler: intake_handler, intake_config: intake_config
+            publish_each: raw["publish_each"],
+            publish_to: raw["publish_to"],
+            **common,
           )
         end
 
-        def self.parse_compute(raw, key)
-          src = raw["compute"]
-          return [nil, nil, nil] if src.nil?
+        def self.build_derived(common, raw, key)
+          source = parse_source(raw, key)
+          Derived.new(
+            source: source,
+            template: raw["template"],
+            inject_intro: raw["inject_intro"] == true,
+            publish_to: raw["publish_to"],
+            events: raw["events"] || {},
+            **common,
+          )
+        end
 
-          kind = src["kind"]
-          unless COMPUTE_KINDS.include?(kind)
+        def self.build_intake(common, raw, key)
+          intake = raw["intake"] || {}
+          handler = intake["handler"] || raw["intake_handler"] or
+            raise UsageError.new("intake entry '#{key}' missing handler")
+          config = intake["config"] || raw["intake_config"] || {}
+          Intake.new(handler: handler, config: config, events: raw["events"] || {}, **common)
+        end
+
+        def self.parse_source(raw, key)
+          compute = raw["compute"]
+          if compute.nil?
+            # Tolerate legacy derived entries with bare template (no compute block):
+            # treat as projection with no select.
+            return Derived::Projection.new(select: nil, pluck: nil, sort_by: nil, transform: nil) if raw["template"]
+
+            raise BadManifest.new("derived entry '#{key}' requires compute: { kind: projection|external } or template:")
+          end
+
+          unless COMPUTE_KINDS.include?(compute["kind"])
             raise BadManifest.new(
-              "entry '#{key}': compute.kind must be one of #{COMPUTE_KINDS.join(", ")} (got #{kind.inspect})",
+              "entry '#{key}': compute.kind must be one of #{COMPUTE_KINDS.join(", ")} (got #{compute["kind"].inspect})",
             )
           end
 
-          frozen = src.freeze
-          if kind == "projection"
-            [frozen, frozen, nil]
+          if compute["kind"] == "projection"
+            Derived::Projection.new(
+              select: compute["select"],
+              pluck: compute["pluck"],
+              sort_by: compute["sort_by"],
+              transform: compute["transform"],
+            )
           else
-            [frozen, nil, frozen]
+            Derived::External.new(sources: compute["sources"], runner: compute["runner"])
           end
         end
 
-        def self.parse_intake(src)
-          src ||= {}
-          [src["handler"], src["config"] || {}]
-        end
-
-        def self.resolve_format(raw, path, nested)
+        def self.resolve_format(raw, path)
           declared = raw["format"]
           ext = File.extname(path)
           inferred = Textus::Entry.infer_from_extension(ext)
 
           if declared.nil?
             return inferred if inferred
-            return "markdown" if ext == "" && nested
-            return "markdown" if ext == ""
 
             return "markdown"
           end

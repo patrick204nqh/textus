@@ -8,8 +8,16 @@ module Textus
 
         def call(key)
           entry = @manifest.entries.find { |e| e.key == key } or return []
-          result = Array(entry.projection&.fetch("select", nil)).dup
-          Array(entry.generator&.fetch("sources", nil)).each { |s| result << s }
+          return [] unless entry.is_a?(Textus::Manifest::Entry::Derived)
+
+          src = entry.source
+          result = if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
+                     Array(src.select).compact
+                   elsif src.is_a?(Textus::Manifest::Entry::Derived::External)
+                     Array(src.sources).compact
+                   else
+                     []
+                   end
           result.uniq
         end
       end

@@ -35,6 +35,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
         - { name: intake, write_policy: [runner] }
       entries:
         - key: intake.item
+          kind: intake
           path: intake/item.md
           zone: intake
           intake: { handler: test_intake }
@@ -107,7 +108,8 @@ RSpec.describe Textus::Application::Refresh::Worker do
       zones:
         - { name: intake, write_policy: [runner] }
       entries:
-        - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake } }
+        - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake }, kind: intake}
+
       rules:
         - match: intake.slow
           refresh: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
@@ -139,7 +141,8 @@ RSpec.describe Textus::Application::Refresh::Worker do
         zones:
           - { name: plain, write_policy: [human] }
         entries:
-          - { key: plain.doc, path: plain/doc.md, zone: plain }
+          - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
+
       YAML
 
       store = Textus::Store.new(textus)
@@ -176,6 +179,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
           - { name: intake, write_policy: [runner] }
         entries:
           - key: intake.vendor
+            kind: intake
             path: intake/vendor
             zone: intake
             nested: true

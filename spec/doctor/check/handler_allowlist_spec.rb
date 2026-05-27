@@ -19,6 +19,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, write_policy: [runner] }
       entries:
         - key: intake.notes
+          kind: intake
           path: intake/notes.md
           zone: intake
           intake:
@@ -41,6 +42,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, write_policy: [runner] }
       entries:
         - key: intake.notes
+          kind: intake
           path: intake/notes.md
           zone: intake
           intake:
@@ -68,6 +70,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, write_policy: [runner] }
       entries:
         - key: intake.notes
+          kind: intake
           path: intake/notes.md
           zone: intake
           intake:

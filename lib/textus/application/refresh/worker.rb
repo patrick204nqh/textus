@@ -21,7 +21,7 @@ module Textus
           mentry = res.entry
           path = res.path
           remaining = res.remaining
-          raise UsageError.new("no intake declared for '#{key}'") unless mentry.intake_handler
+          raise UsageError.new("no intake declared for '#{key}'") unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
           before_etag = File.exist?(path) ? Etag.for_file(path) : nil
           result = fetch_with_bus(key, mentry, remaining)
@@ -36,7 +36,7 @@ module Textus
         end
 
         def fetch_with_bus(key, mentry, remaining)
-          callable = @bus.rpc_callable(:resolve_intake, mentry.intake_handler)
+          callable = @bus.rpc_callable(:resolve_intake, mentry.handler)
           @bus.publish(:refresh_started, ctx: @hook_context, key: key, mode: :sync)
           call_intake(key, mentry, callable, remaining)
         end
@@ -46,15 +46,15 @@ module Textus
           Timeout.timeout(timeout) do
             callable.call(
               store: @store,
-              config: mentry.intake_config,
+              config: mentry.config,
               args: { trigger_key: key, leaf_segments: remaining || [] },
             )
           end
         rescue Timeout::Error
           @bus.publish(:refresh_failed, ctx: @hook_context, key: key,
                                         error_class: "Timeout::Error",
-                                        error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s")
-          raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{timeout}s timeout")
+                                        error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
+          raise UsageError.new("intake '#{mentry.handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
           @bus.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
                                         error_message: e.message)
@@ -62,7 +62,7 @@ module Textus
         rescue StandardError => e
           @bus.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
                                         error_message: e.message)
-          raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
+          raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
         end
 
         def persist_and_notify(key, mentry, result, before_etag)

@@ -13,8 +13,8 @@ module Textus
         - { name: review,   write_policy: [agent, human],        read_policy: [all] }
         - { name: output,   write_policy: [builder],             read_policy: [all] }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
-        - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
+        - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true, kind: nested }
     YAML
 
     HOOKS_README = <<~MD
@@ -51,6 +51,7 @@ module Textus
       ```yaml
       entries:
         - key: intake.foo
+          kind: intake
           path: intake/foo.md
           zone: intake
           intake:

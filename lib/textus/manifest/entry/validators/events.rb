@@ -5,7 +5,8 @@ module Textus
         module Events
           def self.call(entry)
             pubsub_events = Textus::Hooks::Bus::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
-            entry.events.each_key do |evt|
+            events = entry.respond_to?(:events) ? entry.events : {}
+            events.each_key do |evt|
               next if pubsub_events.include?(evt.to_sym)
 
               raise UsageError.new(

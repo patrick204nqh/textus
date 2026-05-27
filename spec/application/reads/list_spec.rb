@@ -13,9 +13,12 @@ RSpec.describe Textus::Application::Reads::List do
         - { name: working, write_policy: [human, runner] }
         - { name: notes,   write_policy: [human] }
       entries:
-        - { key: working.alpha, path: working/alpha.md, zone: working }
-        - { key: working.beta,  path: working/beta.md,  zone: working }
-        - { key: notes.report,  path: notes/report.md,  zone: notes }
+        - { key: working.alpha, path: working/alpha.md, zone: working, kind: leaf}
+
+        - { key: working.beta,  path: working/beta.md,  zone: working, kind: leaf}
+
+        - { key: notes.report,  path: notes/report.md,  zone: notes, kind: leaf}
+
     YAML
     File.write(File.join(textus, "zones", "working", "alpha.md"), "---\nname: alpha\n---\nbody\n")
     File.write(File.join(textus, "zones", "working", "beta.md"),  "---\nname: beta\n---\nbody\n")

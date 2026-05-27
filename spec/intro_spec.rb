@@ -26,13 +26,16 @@ RSpec.describe Textus::Intro do
         - { name: review,   write_policy: [agent] }
         - { name: output,   write_policy: [builder] }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf}
+
         - key: working.notes
+          kind: nested
           path: working/notes
           zone: working
           schema: null
           nested: true
         - key: intake.feed
+          kind: intake
           path: intake/feed.md
           zone: intake
           owner: runner:local
@@ -40,6 +43,7 @@ RSpec.describe Textus::Intro do
             handler: demo-action
             config: { foo: 1 }
         - key: output.report
+          kind: derived
           path: output/report.md
           zone: output
           owner: builder:auto
@@ -96,7 +100,8 @@ RSpec.describe Textus::Intro do
         - { name: identity, write_policy: [human] }
         - { name: weird,    write_policy: [human] }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null }
+        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
+
     YAML
     s = Textus::Store.new(root)
     env = described_class.run(s)

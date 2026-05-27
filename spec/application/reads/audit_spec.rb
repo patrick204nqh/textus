@@ -15,8 +15,10 @@ RSpec.describe Textus::Application::Reads::Audit do
         - { name: working, write_policy: [human, runner] }
         - { name: identity,   write_policy: [human] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
-        - { key: identity.note,  path: identity/note.md,  zone: identity }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
+        - { key: identity.note,  path: identity/note.md,  zone: identity, kind: leaf}
+
     YAML
     Textus::Store.new(textus)
   end

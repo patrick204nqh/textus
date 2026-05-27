@@ -19,8 +19,10 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         - { name: identity, write_policy: [human] }
         - { name: review,   write_policy: [agent, human] }
       entries:
-        - { key: identity.target, path: identity/target.md, zone: identity }
-        - { key: review.draft,    path: review/draft.md,    zone: review }
+        - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+
+        - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
+
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
@@ -81,8 +83,10 @@ RSpec.describe ":proposal_rejected event and store.reject" do
           - { name: identity, write_policy: [human] }
           - { name: review,   write_policy: [agent, human] }
         entries:
-          - { key: identity.t, path: identity/t.md, zone: identity }
-          - { key: review.d,   path: review/d.md,   zone: review }
+          - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
+
+          - { key: review.d,   path: review/d.md,   zone: review, kind: leaf}
+
       YAML
       store = Textus::Store.new(root)
       Textus::Operations.for(store, role: "agent").put(

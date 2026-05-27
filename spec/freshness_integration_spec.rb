@@ -14,6 +14,7 @@ RSpec.describe "Reader honors on_stale policy" do
         - { name: working, write_policy: [human, runner] }
       entries:
         - key: working.foo
+          kind: intake
           path: working/foo.md
           zone: working
           intake:
@@ -92,6 +93,7 @@ RSpec.describe "Reader honors on_stale policy" do
           - { name: working, write_policy: [human, runner] }
         entries:
           - key: working.slow
+            kind: intake
             path: working/slow.md
             zone: working
             intake:
@@ -151,11 +153,13 @@ RSpec.describe "Reader honors on_stale policy" do
           - { name: output, write_policy: [builder] }
         entries:
           - key: working.foo
+            kind: intake
             path: working/foo.md
             zone: working
             intake:
               handler: test_intake
           - key: output.summary
+            kind: derived
             path: output/summary.md
             zone: output
             schema: null

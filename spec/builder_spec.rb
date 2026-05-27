@@ -24,8 +24,10 @@ RSpec.describe Textus::Application::Writes::Build do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: output, write_policy: [builder] }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
         - key: output.catalogs.people
+          kind: derived
           path: output/catalogs/people.md
           zone: output
           schema: null
@@ -34,6 +36,7 @@ RSpec.describe Textus::Application::Writes::Build do
           template: people.mustache
           publish_to: [PEOPLE.md]
         - key: output.people-json
+          kind: derived
           path: output/people.json
           zone: output
           format: json
@@ -41,6 +44,7 @@ RSpec.describe Textus::Application::Writes::Build do
           owner: builder:auto
           compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
         - key: output.people-yaml
+          kind: derived
           path: output/people.yaml
           zone: output
           format: yaml
@@ -48,6 +52,7 @@ RSpec.describe Textus::Application::Writes::Build do
           owner: builder:auto
           compute: { kind: projection, select: working.people, pluck: [name, org], transform: envelope }
         - key: output.people-json-tpl
+          kind: derived
           path: output/people-tpl.json
           zone: output
           format: json
@@ -56,6 +61,7 @@ RSpec.describe Textus::Application::Writes::Build do
           compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
           template: people.json.mustache
         - key: output.people-bad-tpl
+          kind: derived
           path: output/people-bad.json
           zone: output
           format: json
@@ -170,8 +176,10 @@ RSpec.describe "Builder :file_published events" do
           - { name: working, write_policy: [human, agent, runner] }
           - { name: output, write_policy: [builder] }
         entries:
-          - { key: working.note, path: working/note.md, zone: working, schema: null }
+          - { key: working.note, path: working/note.md, zone: working, schema: null, kind: leaf}
+
           - key: output.note
+            kind: derived
             path: output/note.md
             zone: output
             schema: null
@@ -232,6 +240,7 @@ RSpec.describe "Builder :file_published events" do
           - { name: working, write_policy: [human, agent, runner] }
         entries:
           - key: working.agents
+            kind: nested
             path: working/agents
             zone: working
             schema: null
@@ -282,8 +291,10 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
         - { name: working, write_policy: [human, agent, runner] }
         - { name: output, write_policy: [builder] }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true }
+        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
         - key: output.catalog-md
+          kind: derived
           path: output/catalog.md
           zone: output
           schema: null
@@ -291,6 +302,7 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
           compute: { kind: projection, select: working.people, pluck: [name], sort_by: name }
           template: people.mustache
         - key: output.catalog-json
+          kind: derived
           path: output/catalog.json
           zone: output
           format: json
@@ -298,6 +310,7 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
           owner: builder:auto
           compute: { kind: projection, select: working.people, pluck: [name], sort_by: name }
         - key: output.catalog-yaml
+          kind: derived
           path: output/catalog.yaml
           zone: output
           format: yaml
@@ -305,6 +318,7 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
           owner: builder:auto
           compute: { kind: projection, select: working.people, pluck: [name], sort_by: name, transform: envelope }
         - key: output.catalog-txt
+          kind: derived
           path: output/catalog.txt
           zone: output
           format: text

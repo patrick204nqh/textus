@@ -23,9 +23,12 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         - { name: working,  write_policy: [human, runner] }
         - { name: identity, write_policy: [human] }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working }
-        - { key: working.bar, path: working/bar.md, zone: working }
-        - { key: working.note, path: working/note.md, zone: working, schema: note }
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+
+        - { key: working.bar, path: working/bar.md, zone: working, kind: leaf}
+
+        - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf}
+
     YAML
     textus_dir
   end

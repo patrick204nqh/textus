@@ -49,6 +49,18 @@ of direct `store.*` access. RPC events (`transform_rows`, `resolve_intake`,
 - All pubsub events declare `ctx:` instead of `store:` in their kwargs
   schema. Every `bus.publish` call site passes `ctx: hook_context`.
   `Operations#hook_context` builds the per-`Operations` `Hooks::Context`.
+- Manifest entries gain a required `kind:` field
+  (`leaf | nested | derived | intake`). Run
+  `textus key normalize --upgrade-manifest` to add it to existing
+  manifests — the inference is deterministic and lossless.
+- Internal: `Manifest::Entry` is now an abstract namespace; concrete
+  classes are `Entry::Leaf`, `Entry::Nested`, `Entry::Derived`,
+  `Entry::Intake`. The fields `projection`, `generator`, `compute`,
+  `intake_handler`, `intake_config` are removed from the entry
+  interface; `Entry::Derived` carries a typed `source`
+  (`Projection` or `External`) and `Entry::Intake` carries `handler`
+  / `config`. Use-case code dispatches on entry type rather than
+  probing optional fields.
 
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 

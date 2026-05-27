@@ -14,8 +14,10 @@ RSpec.describe ":entry_renamed event" do
       version: textus/3
       zones: [{ name: working, write_policy: [human] }]
       entries:
-        - { key: working.a, path: working/a.md, zone: working }
-        - { key: working.b, path: working/b.md, zone: working }
+        - { key: working.a, path: working/a.md, zone: working, kind: leaf}
+
+        - { key: working.b, path: working/b.md, zone: working, kind: leaf}
+
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []

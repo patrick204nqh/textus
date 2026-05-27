@@ -4,7 +4,7 @@ module Textus
       ROOT_KEYS    = %w[version zones entries rules].freeze
       ZONE_KEYS    = %w[name write_policy read_policy].freeze
       ENTRY_KEYS   = %w[
-        key path zone schema owner nested format
+        key path zone kind schema owner nested format
         compute template publish_to publish_each
         intake events inject_intro index_filename
       ].freeze

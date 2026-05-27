@@ -17,7 +17,8 @@ RSpec.describe Textus::Application::Reads::SchemaEnvelope do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.person, path: working/person.md, zone: working, schema: person }
+        - { key: working.person, path: working/person.md, zone: working, schema: person, kind: leaf}
+
     YAML
     File.write(File.join(textus, "zones", "working", "person.md"), "---\nfull_name: Alice\n---\nbody\n")
     Textus::Store.new(textus)

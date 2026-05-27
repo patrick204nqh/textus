@@ -135,13 +135,13 @@ module Textus
           "key" => e.key,
           "zone" => e.zone,
           "schema" => e.schema,
-          "nested" => e.nested ? true : false,
+          "nested" => e.is_a?(Textus::Manifest::Entry::Nested),
           "owner" => e.owner,
           "format" => e.format,
           "derived" => derived,
-          "intake" => !e.intake_handler.nil?,
+          "intake" => e.is_a?(Textus::Manifest::Entry::Intake),
           "publish_to" => Array(e.publish_to),
-          "publish_each" => e.publish_each,
+          "publish_each" => e.respond_to?(:publish_each) ? e.publish_each : nil,
         }
       end
     end

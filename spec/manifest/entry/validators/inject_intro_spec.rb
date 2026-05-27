@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Validators::InjectIntro do
   def entry_with(opts)
     instance_double(
-      Textus::Manifest::Entry,
+      Textus::Manifest::Entry::Derived,
       key: "working.foo",
       inject_intro: opts.fetch(:inject_intro, false),
       template: opts[:template],

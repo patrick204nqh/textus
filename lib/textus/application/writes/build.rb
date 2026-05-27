@@ -23,8 +23,8 @@ module Textus
 
         def call(prefix: nil)
           built = @manifest.entries.filter_map do |mentry|
+            next unless mentry.is_a?(Textus::Manifest::Entry::Derived)
             next unless mentry.in_generator_zone?
-            next unless mentry.projection || mentry.template
             next if prefix && !mentry.key.start_with?(prefix)
 
             materialize(mentry)
@@ -76,10 +76,12 @@ module Textus
                           target: target_abs)
           end
 
+          src = mentry.source
+          selects = src.is_a?(Textus::Manifest::Entry::Derived::Projection) ? Array(src.select).compact : []
           publish_event(:build_completed,
                         key: mentry.key,
                         envelope: envelope,
-                        sources: Array(mentry.projection&.fetch("select", nil)).compact)
+                        sources: selects)
         end
 
         def publish_event(event, **payload)

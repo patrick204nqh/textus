@@ -21,7 +21,7 @@ module Textus
 
       def suggestions_for(key)
         candidates = enumerate.map { |r| r[:key] }
-        candidates.concat(@manifest.entries.reject(&:nested).map(&:key))
+        candidates.concat(@manifest.entries.reject { |e| nested_entry?(e) }.map(&:key))
         candidates.uniq!
         Key::Distance.suggest(key, candidates, limit: 5)
       rescue StandardError
@@ -29,21 +29,29 @@ module Textus
       end
 
       def enumerate(prefix: nil)
-        out = @manifest.entries.flat_map { |entry| entry.nested ? enumerate_nested(entry) : enumerate_leaf(entry) }
+        out = @manifest.entries.flat_map { |entry| nested_entry?(entry) ? enumerate_nested(entry) : enumerate_leaf(entry) }
         out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
         out.sort_by { |row| row[:key] }
       end
 
       private
 
+      # Returns true for entries that behave as nested (Nested subclass, or any
+      # entry with nested: true in the raw YAML — e.g. Intake entries covering
+      # a directory of leaf files).
+      def nested_entry?(entry)
+        entry.is_a?(Textus::Manifest::Entry::Nested) || entry.raw["nested"] == true
+      end
+
       def build_resolution(entry, remaining, key)
         if remaining.empty?
           Resolution.new(entry: entry, path: resolve_leaf_path(entry), remaining: [])
         else
-          raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless entry.nested
+          raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
-          path = if entry.index_filename
-                   File.join(@manifest.root, "zones", entry.path, *remaining, entry.index_filename)
+          index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+          path = if index_fn
+                   File.join(@manifest.root, "zones", entry.path, *remaining, index_fn)
                  else
                    primary_ext = Textus::Entry.for_format(entry.format).extensions.first
                    File.join(@manifest.root, "zones", entry.path, *remaining) + primary_ext
@@ -61,13 +69,15 @@ module Textus
         base = File.join(@manifest.root, "zones", entry.path)
         return [] unless File.directory?(base)
 
-        glob_pattern = entry.index_filename ? "**/#{entry.index_filename}" : nested_glob(entry.format)
+        entry_index_filename = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        glob_pattern = entry_index_filename ? "**/#{entry_index_filename}" : nested_glob(entry.format)
         Dir.glob(File.join(base, glob_pattern)).filter_map { |path| nested_row_for(entry, base, path) }
       end
 
       def nested_row_for(entry, base, path)
         rel = path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-        stripped = entry.index_filename ? File.dirname(rel) : rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
+        entry_if = entry.respond_to?(:index_filename) ? entry.index_filename : nil
+        stripped = entry_if ? File.dirname(rel) : rel.sub(/#{Regexp.escape(File.extname(rel))}\z/, "")
         segs = stripped.split("/").reject { |s| s.empty? || s == "." }
         return nil if segs.empty?
 

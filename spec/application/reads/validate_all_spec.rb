@@ -11,7 +11,8 @@ RSpec.describe Textus::Application::Reads::ValidateAll do
       zones:
         - { name: working, write_policy: [human, runner] }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working }
+        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
     YAML
     File.write(File.join(textus, "zones", "working", "doc.md"), "---\nname: doc\n---\nbody\n")
     Textus::Store.new(textus)
