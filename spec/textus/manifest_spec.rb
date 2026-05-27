@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "Textus::Manifest version mismatch hints" do
   it "raises BadFrontmatter with the generic hint for any unsupported version" do
