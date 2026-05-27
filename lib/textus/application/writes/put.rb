@@ -11,7 +11,7 @@ module Textus
           @store       = store
         end
 
-        def call(key, meta: nil, body: nil, content: nil, if_etag: nil, suppress_events: false)
+        def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
           @manifest.validate_key!(key)
           mentry = @manifest.resolve(key).entry
 
@@ -24,14 +24,12 @@ module Textus
             if_etag: if_etag,
           )
 
-          unless suppress_events
-            @bus.publish(:entry_put,
-                         store: @store,
-                         role: @ctx.role,
-                         key: key,
-                         envelope: envelope,
-                         correlation_id: @ctx.correlation_id)
-          end
+          @bus.publish(:entry_put,
+                       store: @store,
+                       role: @ctx.role,
+                       key: key,
+                       envelope: envelope,
+                       correlation_id: @ctx.correlation_id)
 
           envelope
         end

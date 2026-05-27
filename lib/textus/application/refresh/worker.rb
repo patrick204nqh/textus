@@ -71,17 +71,13 @@ module Textus
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          envelope = Textus::Application::Writes::Put.new(
-            ctx: @ctx,
-            manifest: @manifest,
-            envelope_io: @envelope_io,
-            bus: @bus,
-            authorizer: @authorizer,
-            store: @store,
-          ).call(
+          @authorizer.authorize_write!(mentry, role: @ctx.role)
+          envelope = @envelope_io.write(
             key,
-            meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
-            suppress_events: true
+            mentry: mentry,
+            payload: Textus::Application::Writes::EnvelopeIO::Payload.new(
+              meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
+            ),
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged
