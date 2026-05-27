@@ -2,15 +2,15 @@ module Textus
   module Application
     module Writes
       class Accept
-        def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
-          @ctx         = ctx
-          @manifest    = manifest
-          @file_store  = file_store
-          @schemas     = schemas
-          @envelope_io = envelope_io
-          @bus         = bus
-          @authorizer  = authorizer
-          @store       = store
+        def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+          @ctx          = ctx
+          @manifest     = manifest
+          @file_store   = file_store
+          @schemas      = schemas
+          @envelope_io  = envelope_io
+          @bus          = bus
+          @authorizer   = authorizer
+          @hook_context = hook_context
         end
 
         def call(pending_key)
@@ -41,11 +41,9 @@ module Textus
           delete_op.call(pending_key)
 
           @bus.publish(:proposal_accepted,
-                       store: @store,
-                       role: @ctx.role,
+                       ctx: @hook_context,
                        key: pending_key,
-                       target_key: target,
-                       correlation_id: @ctx.correlation_id)
+                       target_key: target)
 
           { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
         end
@@ -55,14 +53,14 @@ module Textus
         def put_op
           @put_op ||= Textus::Application::Writes::Put.new(
             ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, store: @store
+            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
           )
         end
 
         def delete_op
           @delete_op ||= Textus::Application::Writes::Delete.new(
             ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, store: @store
+            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
           )
         end
 

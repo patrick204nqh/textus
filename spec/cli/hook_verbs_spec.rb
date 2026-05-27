@@ -23,7 +23,7 @@ RSpec.describe "CLI hook verbs" do
       Textus.hook do |reg|
         reg.on(:resolve_intake, :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
         reg.on(:transform_rows, :r)    { |store:, rows:, config:| rows }
-        reg.on(:entry_put, :h)         { |store:, key:, envelope:| }
+        reg.on(:entry_put, :h)         { |**| }
         reg.on(:validate, :dc)         { |store:| [] }
       end
     RUBY

@@ -47,13 +47,13 @@ RSpec.describe Textus::Application::Writes::Put do
     end
   end
 
-  it "fires :entry_put event with key, envelope, and correlation_id" do
+  it "fires :entry_put event with key, envelope, and correlation_id (via ctx)" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = test_ctx(role: "runner", correlation_id: "corr-1")
       events = []
-      store.bus.register(:entry_put, :capture) do |key:, correlation_id:, **|
-        events << [:entry_put, key, correlation_id]
+      store.bus.register(:entry_put, :capture) do |ctx:, key:, **|
+        events << [:entry_put, key, ctx.correlation_id]
       end
 
       build_put(store, ctx).call("working.foo", meta: {}, body: "x")

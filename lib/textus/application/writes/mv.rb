@@ -2,13 +2,13 @@ module Textus
   module Application
     module Writes
       class Mv
-        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, store:)
-          @ctx         = ctx
-          @manifest    = manifest
-          @envelope_io = envelope_io
-          @bus         = bus
-          @authorizer  = authorizer
-          @store       = store
+        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, hook_context:)
+          @ctx          = ctx
+          @manifest     = manifest
+          @envelope_io  = envelope_io
+          @bus          = bus
+          @authorizer   = authorizer
+          @hook_context = hook_context
         end
 
         def call(old_key, new_key, dry_run: false)
@@ -73,13 +73,11 @@ module Textus
 
         def publish_renamed(old_key, new_key, envelope)
           @bus.publish(:entry_renamed,
-                       store: @store,
-                       role: @ctx.role,
+                       ctx: @hook_context,
                        key: new_key,
                        from_key: old_key,
                        to_key: new_key,
-                       envelope: envelope,
-                       correlation_id: @ctx.correlation_id)
+                       envelope: envelope)
         end
 
         def dry_run_result(old_key, new_key, old_res, new_res)

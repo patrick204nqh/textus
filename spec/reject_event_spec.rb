@@ -25,10 +25,10 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
       Textus.hook do |reg|
-        reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, store:|
+        reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, **|
           $textus_event_log << [:proposal_rejected, key, target_key]
         end
-        reg.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
+        reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
       end
     RUBY
     $textus_event_log = []

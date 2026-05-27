@@ -38,7 +38,8 @@ module Textus
       Infra::AuditSubscriber.new(@audit_log).attach(@bus)
       Hooks::Builtin.register_all(@bus)
       Hooks::Loader.new(bus: @bus).load_dir(File.join(@root, "hooks"))
-      @bus.publish(:store_loaded, store: self)
+      ops = Operations.for(self, role: Role::DEFAULT)
+      @bus.publish(:store_loaded, ctx: ops.hook_context)
     end
   end
 end

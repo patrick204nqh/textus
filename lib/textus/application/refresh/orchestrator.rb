@@ -2,12 +2,13 @@ module Textus
   module Application
     module Refresh
       class Orchestrator
-        def initialize(worker:, store_root:, bus: nil, store: nil, ctx: nil, detached_spawner: nil)
-          @worker = worker
-          @store_root = store_root
-          @bus = bus
-          @store = store
-          @ctx = ctx
+        def initialize(worker:, store_root:, bus: nil, store: nil, ctx: nil, hook_context: nil, detached_spawner: nil) # rubocop:disable Metrics/ParameterLists
+          @worker       = worker
+          @store_root   = store_root
+          @bus          = bus
+          @store        = store
+          @ctx          = ctx
+          @hook_context = hook_context
           @detached_spawner = detached_spawner || default_spawner
         end
 
@@ -57,8 +58,7 @@ module Textus
             probe.release
 
             payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
-            payload[:store] = @store if @store
-            payload[:role] = @ctx.role if @ctx
+            payload[:ctx] = @hook_context if @hook_context
             @bus&.publish(:refresh_backgrounded, **payload)
             @detached_spawner.call(store_root: @store_root, key: key)
             Textus::Domain::Outcome::Detached.new
