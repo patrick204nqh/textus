@@ -9,7 +9,7 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## 0.20.0 — architecture redesign (unreleased)
+## 0.20.0 — architecture redesign (2026-05-27)
 
 **BREAKING (pre-1.0):** Public top-level utility modules removed,
 `Manifest` routing methods extracted into a dedicated resolver,
