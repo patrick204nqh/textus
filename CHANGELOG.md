@@ -45,7 +45,7 @@ of direct `store.*` access. RPC events (`transform_rows`, `resolve_intake`,
   `Store#bus`). `Hooks::Builtin.register_all(bus)` and
   `Hooks::Loader.new(bus:)` now take a Bus instead of a Registry.
   `Operations.for` no longer accepts `registry:`. Use cases
-  (`Writes::Build`, `Refresh::Worker`, `Refresh::All`) take `bus:`.
+  (`Refresh::Worker`, `Refresh::All`) take `bus:`.
 - All pubsub events declare `ctx:` instead of `store:` in their kwargs
   schema. Every `bus.publish` call site passes `ctx: hook_context`.
   `Operations#hook_context` builds the per-`Operations` `Hooks::Context`.
@@ -61,6 +61,12 @@ of direct `store.*` access. RPC events (`transform_rows`, `resolve_intake`,
   (`Projection` or `External`) and `Entry::Intake` carries `handler`
   / `config`. Use-case code dispatches on entry type rather than
   probing optional fields.
+- `Application::Writes::Build` removed. `Application::Writes::Publish` now
+  materializes derived entries (template + projection + external runner)
+  AND copies leaf/nested entries to their publish targets in a single pass.
+  `Operations#build` is gone; use `Operations#publish` — the `textus build`
+  CLI verb is unchanged and produces the same
+  `{protocol, built, published_leaves}` JSON shape.
 
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 
