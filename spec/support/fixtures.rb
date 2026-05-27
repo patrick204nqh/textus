@@ -94,7 +94,7 @@ module TextusSpecHelpers
   def build_worker(store, ctx)
     Textus::Application::Refresh::Worker.new(
       ctx: ctx, manifest: store.manifest, envelope_io: build_envelope_io(store, ctx),
-      bus: store.bus, file_store: store.file_store, registry: store.registry,
+      bus: store.bus, registry: store.registry,
       store: store, authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest)
     )
   end

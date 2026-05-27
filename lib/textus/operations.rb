@@ -156,14 +156,13 @@ module Textus
     def refresh_worker_op
       @refresh_worker_op ||= Application::Refresh::Worker.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        file_store: @file_store, registry: @registry, store: @store, authorizer: @authorizer
+        registry: @registry, store: @store, authorizer: @authorizer
       )
     end
 
     def refresh_all_op
       @refresh_all_op ||= Application::Refresh::All.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        file_store: @file_store, schemas: @schemas, audit_log: @audit_log,
         registry: @registry, store: @store, authorizer: @authorizer
       )
     end
@@ -174,6 +173,7 @@ module Textus
         store_root: @root,
         bus: @bus,
         store: @store,
+        ctx: @ctx,
       )
     end
   end

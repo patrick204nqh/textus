@@ -119,6 +119,7 @@ module Textus
           new_envelope = reader_get(plan.new_key)
           @bus.publish(:entry_renamed,
                        store: @store,
+                       role: @ctx.role,
                        key: plan.new_key,
                        from_key: plan.old_key,
                        to_key: plan.new_key,

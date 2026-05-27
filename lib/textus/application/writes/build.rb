@@ -75,7 +75,7 @@ module Textus
         end
 
         def publish_event(event, **payload)
-          @bus.publish(event, store: @store, correlation_id: @ctx.correlation_id, **payload)
+          @bus.publish(event, store: @store, role: @ctx.role, correlation_id: @ctx.correlation_id, **payload)
         end
       end
     end

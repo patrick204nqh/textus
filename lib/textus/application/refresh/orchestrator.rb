@@ -2,11 +2,12 @@ module Textus
   module Application
     module Refresh
       class Orchestrator
-        def initialize(worker:, store_root:, bus: nil, store: nil, detached_spawner: nil)
+        def initialize(worker:, store_root:, bus: nil, store: nil, ctx: nil, detached_spawner: nil)
           @worker = worker
           @store_root = store_root
           @bus = bus
           @store = store
+          @ctx = ctx
           @detached_spawner = detached_spawner || default_spawner
         end
 
@@ -57,6 +58,7 @@ module Textus
 
             payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
             payload[:store] = @store if @store
+            payload[:role] = @ctx.role if @ctx
             @bus&.publish(:refresh_backgrounded, **payload)
             @detached_spawner.call(store_root: @store_root, key: key)
             Textus::Domain::Outcome::Detached.new

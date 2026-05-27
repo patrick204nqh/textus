@@ -41,6 +41,7 @@ module Textus
 
           @bus.publish(:proposal_accepted,
                        store: @store,
+                       role: @ctx.role,
                        key: pending_key,
                        target_key: target,
                        correlation_id: @ctx.correlation_id)

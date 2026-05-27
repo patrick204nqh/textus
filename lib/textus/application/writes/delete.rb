@@ -22,6 +22,7 @@ module Textus
           unless suppress_events
             @bus.publish(:entry_deleted,
                          store: @store,
+                         role: @ctx.role,
                          key: key,
                          correlation_id: @ctx.correlation_id)
           end

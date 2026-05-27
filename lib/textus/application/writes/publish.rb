@@ -50,6 +50,7 @@ module Textus
           )
           @bus.publish(:file_published,
                        store: @store,
+                       role: @ctx.role,
                        key: row[:key],
                        envelope: reader.call(row[:key]),
                        source: row[:path],

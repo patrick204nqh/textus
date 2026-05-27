@@ -27,6 +27,7 @@ module Textus
           unless suppress_events
             @bus.publish(:entry_put,
                          store: @store,
+                         role: @ctx.role,
                          key: key,
                          envelope: envelope,
                          correlation_id: @ctx.correlation_id)

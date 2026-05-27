@@ -7,12 +7,11 @@ module Textus
         FETCH_TIMEOUT_SECONDS = 30
 
         # rubocop:disable Metrics/ParameterLists
-        def initialize(ctx:, manifest:, envelope_io:, bus:, file_store:, registry:, store:, authorizer:)
+        def initialize(ctx:, manifest:, envelope_io:, bus:, registry:, store:, authorizer:)
           @ctx = ctx
           @manifest = manifest
           @envelope_io = envelope_io
           @bus = bus
-          @file_store = file_store
           @registry = registry
           @store = store
           @authorizer = authorizer
@@ -40,7 +39,7 @@ module Textus
 
         def fetch_with_bus(key, mentry, remaining)
           callable = @registry.rpc_callable(:resolve_intake, mentry.intake_handler)
-          @bus.publish(:refresh_started, store: @store, key: key, mode: :sync,
+          @bus.publish(:refresh_started, store: @store, role: @ctx.role, key: key, mode: :sync,
                                          correlation_id: @ctx.correlation_id)
           call_intake(key, mentry, callable, remaining)
         end
@@ -55,16 +54,17 @@ module Textus
             )
           end
         rescue Timeout::Error
-          @bus.publish(:refresh_failed, store: @store, key: key, error_class: "Timeout::Error",
+          @bus.publish(:refresh_failed, store: @store, role: @ctx.role, key: key,
+                                        error_class: "Timeout::Error",
                                         error_message: "intake '#{mentry.intake_handler}' exceeded #{timeout}s",
                                         correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
-          @bus.publish(:refresh_failed, store: @store, key: key, error_class: e.class.name,
+          @bus.publish(:refresh_failed, store: @store, role: @ctx.role, key: key, error_class: e.class.name,
                                         error_message: e.message, correlation_id: @ctx.correlation_id)
           raise
         rescue StandardError => e
-          @bus.publish(:refresh_failed, store: @store, key: key, error_class: e.class.name,
+          @bus.publish(:refresh_failed, store: @store, role: @ctx.role, key: key, error_class: e.class.name,
                                         error_message: e.message, correlation_id: @ctx.correlation_id)
           raise UsageError.new("intake '#{mentry.intake_handler}' raised: #{e.class}: #{e.message}")
         end
@@ -85,8 +85,8 @@ module Textus
           )
           change = detect_change(before_etag, envelope)
           unless change == :unchanged
-            @bus.publish(:entry_refreshed, store: @store, key: key, envelope: envelope, change: change,
-                                           correlation_id: @ctx.correlation_id)
+            @bus.publish(:entry_refreshed, store: @store, role: @ctx.role, key: key, envelope: envelope,
+                                           change: change, correlation_id: @ctx.correlation_id)
           end
           envelope
         end
