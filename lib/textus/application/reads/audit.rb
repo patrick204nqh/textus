@@ -8,27 +8,36 @@ module Textus
       # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
       # rows produce nil and are skipped).
       class Audit
-        def initialize(manifest:, root:)
-          @manifest = manifest
-          @log_path = File.join(root, "audit.log")
+        def initialize(manifest:, root:, audit_log: nil)
+          @manifest  = manifest
+          @root      = root
+          @log_path  = File.join(root, "audit.log")
+          @audit_log = audit_log
         end
 
         # rubocop:disable Metrics/ParameterLists, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-        def call(key: nil, zone: nil, role: nil, verb: nil, since: nil, correlation_id: nil, limit: nil)
-          return [] unless File.exist?(@log_path)
+        def call(key: nil, zone: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
+          check_cursor_expiry!(seq_since)
+
+          files = all_log_files
+          return [] if files.empty?
 
           rows = []
-          File.foreach(@log_path) do |line|
-            parsed = parse_row(line.chomp)
-            next unless parsed
-            next if key   && parsed["key"]  != key
-            next if role  && parsed["role"] != role
-            next if verb  && parsed["verb"] != verb
-            next if zone  && !key_in_zone?(parsed["key"], zone)
-            next if since && (parsed["ts"].nil? || Time.parse(parsed["ts"]) < since)
-            next if correlation_id && parsed.dig("extras", "correlation_id") != correlation_id
+          files.each do |file|
+            File.foreach(file) do |line|
+              parsed = parse_row(line.chomp)
+              next unless parsed
+              next if key && parsed["key"] != key
+              next if role && parsed["role"] != role
+              next if verb && parsed["verb"] != verb
+              next if zone && !key_in_zone?(parsed["key"], zone)
+              next if since && (parsed["ts"].nil? || Time.parse(parsed["ts"]) < since)
+              next if seq_since && (parsed["seq"].nil? || parsed["seq"] <= seq_since)
+              next if correlation_id && parsed.dig("extras", "correlation_id") != correlation_id
 
-            rows << parsed
+              rows << parsed
+              break if limit && rows.length >= limit
+            end
             break if limit && rows.length >= limit
           end
           rows
@@ -47,6 +56,22 @@ module Textus
         end
 
         private
+
+        def check_cursor_expiry!(seq_since)
+          return unless seq_since
+
+          log = @audit_log || Textus::Infra::AuditLog.new(@root)
+          min = log.min_available_seq
+          raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
+        end
+
+        def all_log_files
+          rotated = Dir.glob(File.join(@root, "audit.log.*"))
+                       .reject { |p| p.end_with?(".meta.json") }
+                       .sort_by { |p| -p.scan(/\d+$/).first.to_i } # .5 .4 .3 .2 .1 → oldest first
+          active = File.exist?(@log_path) ? [@log_path] : []
+          rotated + active
+        end
 
         def parse_row(line)
           return nil if line.empty?
