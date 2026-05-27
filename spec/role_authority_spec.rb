@@ -55,4 +55,46 @@ RSpec.describe "Role authority via schema.maintained_by" do
     res = Textus::Operations.for(store).validate_all
     expect(res["violations"]).to be_empty
   end
+
+  context "with a renamed accept_authority role" do
+    let(:tmp)   { Dir.mktmpdir("textus-role-authority-renamed") }
+    let(:root)  { File.join(tmp, ".textus") }
+    let(:store) { Textus::Store.new(root) }
+
+    before do
+      FileUtils.mkdir_p(File.join(root, "schemas"))
+      FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        roles:
+          - { name: owner,    kind: accept_authority }
+          - { name: proposer, kind: proposer }
+        zones:
+          - { name: working, write_policy: [owner, proposer] }
+        entries:
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: owner:patrick, nested: true, kind: nested}
+
+      YAML
+
+      File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
+        name: person
+        required: [full_name]
+        fields:
+          full_name:  { type: string, maintained_by: proposer }
+          embedding:  { type: array,  maintained_by: proposer }
+      YAML
+    end
+
+    it "allows the renamed accept_authority role to override proposer-owned fields" do
+      Textus::Operations.for(store, role: "owner").put(
+        "working.people.carol",
+        meta: { "name" => "carol", "full_name" => "Carol Override", "embedding" => [0.5] },
+        body: "",
+      )
+      res = Textus::Operations.for(store).validate_all
+      authority = res["violations"].select { |v| v["code"] == "role_authority" }
+      expect(authority).to be_empty
+    end
+  end
 end

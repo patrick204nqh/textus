@@ -55,9 +55,11 @@ module Textus
           last_writer = @audit_log.last_writer_for(key)
           return if last_writer.nil?
 
+          last_writer_is_authority = @manifest.role_kind(last_writer) == :accept_authority
+
           env.meta.each_key do |field|
             owner = schema.maintained_by(field)
-            next if owner.nil? || last_writer == owner || last_writer == "human"
+            next if owner.nil? || last_writer == owner || last_writer_is_authority
 
             violations << { "key" => key, "code" => "role_authority",
                             "field" => field, "expected" => owner, "last_writer" => last_writer }
