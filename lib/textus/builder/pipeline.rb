@@ -64,7 +64,7 @@ module Textus
         # 1. Load sources + project + reduce
         data =
           if mentry.projection
-            Projection.new(
+            Application::Projection.new(
               reader: reader,
               spec: mentry.projection,
               lister: lister,
