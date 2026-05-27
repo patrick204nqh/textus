@@ -3,6 +3,7 @@
 # rubocop:disable RSpec/MultipleDescribes
 
 require "spec_helper"
+require "benchmark"
 require "fileutils"
 require "tmpdir"
 
@@ -34,6 +35,25 @@ RSpec.describe Textus::Hooks::Dispatcher do
     bus.publish(:entry_put, store: :v, key: "working.x", envelope: {})
     bus.publish(:entry_put, store: :v, key: "identity.y", envelope: {})
     expect(seen).to eq(["working.x"])
+  end
+
+  it "treats a slow hook as timed_out, not errored" do
+    seen_errors = []
+    bus.on_error { |hook:, error:, **| seen_errors << [hook, error.class] }
+    bus.subscribe(:entry_put, :slow) { |**| sleep 5 }
+    bus.subscribe(:entry_put, :ok)   { |**| nil }
+
+    report = nil
+    elapsed = Benchmark.realtime do
+      report = bus.publish(:entry_put, store: :view, key: "k", envelope: {})
+    end
+
+    expect(elapsed).to be < 3.0
+    expect(report.timed_out).to eq([:slow])
+    expect(report.errored).to eq([])
+    expect(report.fired).to eq([:ok])
+    expect(seen_errors.map(&:first)).to eq([:slow])
+    expect(seen_errors.first.last.name).to eq("Textus::Hooks::Dispatcher::HookTimeout")
   end
 end
 
