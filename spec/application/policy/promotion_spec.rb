@@ -25,13 +25,18 @@ RSpec.describe Textus::Application::Policy::Promotion do
   end
 
   it "resolves predicate names from a registry" do
-    policy = described_class.from_names(%w[schema_valid human_accept])
+    policy = described_class.from_names(%w[schema_valid accept_authority_signed])
     expect(policy.predicate_names).to contain_exactly("schema_valid", "accept_authority_signed")
   end
 
   it "rejects unknown predicate names" do
     expect { described_class.from_names(["mystery"]) }
       .to raise_error(Textus::UsageError, /unknown.*mystery/i)
+  end
+
+  it "rejects the dropped 'human_accept' legacy registry key" do
+    expect { described_class.from_names(%w[human_accept]) }
+      .to raise_error(Textus::UsageError, /unknown.*human_accept/i)
   end
 
   describe "always_false double call with named args" do
@@ -48,7 +53,7 @@ RSpec.describe Textus::Application::Policy::Promotion do
     it "evaluate(role:) fails for non-authority role and reports the kind seen" do
       manifest = instance_double(Textus::Manifest)
       allow(manifest).to receive(:role_kind).with("agent").and_return(:proposer)
-      policy = described_class.from_names(%w[human_accept])
+      policy = described_class.from_names(%w[accept_authority_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "agent")
       expect(result.ok?).to be false
       expect(result.reasons.first).to match(/accept_authority_signed.*role 'agent' has kind ':proposer'/)
@@ -59,14 +64,6 @@ RSpec.describe Textus::Application::Policy::Promotion do
       allow(manifest).to receive(:role_kind).with("owner").and_return(:accept_authority)
       policy = described_class.from_names(%w[accept_authority_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "owner")
-      expect(result.ok?).to be true
-    end
-
-    it "evaluate(role:) passes through the legacy 'human_accept' registry key" do
-      manifest = instance_double(Textus::Manifest)
-      allow(manifest).to receive(:role_kind).with("human").and_return(:accept_authority)
-      policy = described_class.from_names(%w[human_accept])
-      result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "human")
       expect(result.ok?).to be true
     end
   end

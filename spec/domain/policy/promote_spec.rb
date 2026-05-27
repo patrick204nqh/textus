@@ -18,19 +18,14 @@ RSpec.describe Textus::Domain::Policy::Promote do
     expect(p.demands?(:accept_authority_signed)).to be(false)
   end
 
-  it "accepts the new :accept_authority_signed predicate" do
+  it "accepts the :accept_authority_signed predicate" do
     p = described_class.new(requires: [:accept_authority_signed])
     expect(p.demands?(:accept_authority_signed)).to be true
   end
 
-  it "accepts the legacy :human_accept predicate as an alias" do
-    p = described_class.new(requires: [:human_accept])
-    expect(p.demands?(:accept_authority_signed)).to be true
-  end
-
-  it "normalizes the legacy alias internally" do
-    p = described_class.new(requires: [:human_accept])
-    expect(p.requires).to include(:accept_authority_signed)
+  it "rejects the dropped :human_accept legacy alias" do
+    expect { described_class.new(requires: [:human_accept]) }
+      .to raise_error(Textus::UsageError, /unknown promote requirement.*human_accept/)
   end
 
   it "still rejects unknown predicates" do

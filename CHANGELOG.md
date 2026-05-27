@@ -15,8 +15,7 @@ tracks both additive improvements and breaking protocol bumps independently.
 - Promotion predicate `accept_authority_signed` now checks the role's *kind*
   via `manifest.role_kind`, so manifests with a renamed authority role (e.g.
   `owner` instead of `human`) pass the promotion gate. The internal class
-  `Predicates::HumanAccept` was renamed to `Predicates::AcceptAuthoritySigned`;
-  the `human_accept` string/symbol aliases are preserved for back-compat.
+  `Predicates::HumanAccept` was renamed to `Predicates::AcceptAuthoritySigned`.
 - `textus schema migrate` now writes as the manifest's declared
   `accept_authority` role instead of the literal `"human"`, and raises a
   clear `UsageError` (with a YAML hint) when no `accept_authority` role is
@@ -32,6 +31,11 @@ tracks both additive improvements and breaking protocol bumps independently.
   matches what the schema actually enforces.
 
 ### Removed
+- Legacy `human_accept` promotion-predicate alias (string and symbol forms).
+  Manifests using `rules[].promotion.requires: [human_accept]` must change
+  to `[accept_authority_signed]`. The error on the old form is actionable:
+  `unknown promotion predicate: 'human_accept' (known: schema_valid,
+  accept_authority_signed)`.
 - `textus key normalize` verb and the underlying
   `Textus::Application::Tools::MigrateKeys` module. Files dropped into nested
   zones with illegal basenames are still reported by `textus doctor` with a

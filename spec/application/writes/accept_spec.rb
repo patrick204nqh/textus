@@ -222,7 +222,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       end
     end
 
-    def build_human_accept_store(textus_dir)
+    def build_promotion_gate_store(textus_dir)
       FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
       FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
@@ -238,14 +238,14 @@ RSpec.describe Textus::Application::Writes::Accept do
         rules:
           - match: "working.network.org.**"
             promotion:
-              requires: [human_accept]
+              requires: [accept_authority_signed]
       YAML
       Textus::Store.new(textus_dir)
     end
 
-    it "human_accept predicate passes when role is human" do
+    it "accept_authority_signed predicate passes when role has accept_authority kind" do
       Dir.mktmpdir do |root|
-        store = build_human_accept_store(File.join(root, ".textus"))
+        store = build_promotion_gate_store(File.join(root, ".textus"))
         Textus::Operations.for(store, role: "agent").put(
           "review.ha-proposal",
           meta: {

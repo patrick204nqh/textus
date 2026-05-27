@@ -10,9 +10,6 @@ module Textus
         REGISTRY = {
           "schema_valid" => -> { Predicates::SchemaValid.new },
           "accept_authority_signed" => -> { Predicates::AcceptAuthoritySigned.new },
-          # Legacy alias — pre-0.20.1 manifests / callers passing the raw string.
-          # Domain::Policy::Promote already normalizes the symbol form.
-          "human_accept" => -> { Predicates::AcceptAuthoritySigned.new },
         }.freeze
 
         def self.from_names(names)
