@@ -67,7 +67,15 @@ module Textus
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = Textus::Refresh.normalize_action_result(result, format: mentry.format)
-          envelope = Textus::Application::Writes::Put.new(ctx: @ctx, envelope_io: @envelope_io).call(
+          # T5 will replace this direct ctor with explicit ports on Worker itself.
+          envelope = Textus::Application::Writes::Put.new(
+            ctx: @ctx,
+            manifest: @ctx.manifest,
+            envelope_io: @envelope_io,
+            bus: @ctx.bus,
+            authorizer: Textus::Domain::Authorizer.new(manifest: @ctx.manifest),
+            store: @ctx.store,
+          ).call(
             key,
             meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             suppress_events: true

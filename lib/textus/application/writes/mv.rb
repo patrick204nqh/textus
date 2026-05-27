@@ -9,9 +9,15 @@ module Textus
           :new_mentry, :uid, :etag_before
         )
 
-        def initialize(ctx:, envelope_io:)
-          @ctx = ctx
+        def initialize(ctx:, manifest:, file_store:, audit_log:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
+          @ctx         = ctx
+          @manifest    = manifest
+          @file_store  = file_store
+          @audit_log   = audit_log
           @envelope_io = envelope_io
+          @bus         = bus
+          @authorizer  = authorizer
+          @store       = store
         end
 
         def call(old_key, new_key, dry_run: false)
@@ -26,33 +32,31 @@ module Textus
 
         private
 
-        def manifest = @ctx.manifest
-
         def reader
           @reader ||= Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @ctx.manifest, file_store: @ctx.file_store,
+            ctx: @ctx, manifest: @manifest, file_store: @file_store,
           )
         end
 
         def reader_get(key) = reader.call(key)
 
         def prepare_plan(old_key, new_key)
-          manifest.validate_key!(old_key)
-          manifest.validate_key!(new_key)
+          @manifest.validate_key!(old_key)
+          @manifest.validate_key!(new_key)
           raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-          old_res = manifest.resolve(old_key)
+          old_res = @manifest.resolve(old_key)
           old_mentry = old_res.entry
           old_path = old_res.path
-          raise UnknownKey.new(old_key) unless @ctx.file_store.exists?(old_path)
+          raise UnknownKey.new(old_key) unless @file_store.exists?(old_path)
 
-          new_res = manifest.resolve(new_key)
+          new_res = @manifest.resolve(new_key)
           new_mentry = new_res.entry
           new_path = new_res.path
           validate_zone_and_format!(old_mentry, new_mentry)
-          @ctx.authorize_write!(old_mentry)
-          @ctx.authorize_write!(new_mentry)
-          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if @ctx.file_store.exists?(new_path)
+          @authorizer.authorize_write!(old_mentry, role: @ctx.role)
+          @authorizer.authorize_write!(new_mentry, role: @ctx.role)
+          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_path}") if @file_store.exists?(new_path)
 
           pre_env = reader_get(old_key)
           plan = MovePlan.new(
@@ -79,7 +83,10 @@ module Textus
         def ensure_uid!(plan, pre_env:)
           return plan if plan.uid
 
-          env = Textus::Application::Writes::Put.new(ctx: @ctx, envelope_io: @envelope_io).call(
+          env = Textus::Application::Writes::Put.new(
+            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
+            bus: @bus, authorizer: @authorizer, store: @store
+          ).call(
             plan.old_key,
             meta: pre_env.meta,
             body: pre_env.body,
@@ -104,19 +111,19 @@ module Textus
           }
           extras["correlation_id"] = @ctx.correlation_id if @ctx.correlation_id
 
-          @ctx.audit_log.append(
+          @audit_log.append(
             role: @ctx.role, verb: "mv", key: plan.new_key,
             etag_before: plan.etag_before, etag_after: etag_after,
             extras: extras
           )
           new_envelope = reader_get(plan.new_key)
-          @ctx.bus.publish(:entry_renamed,
-                           store: @ctx.with_role(@ctx.role),
-                           key: plan.new_key,
-                           from_key: plan.old_key,
-                           to_key: plan.new_key,
-                           envelope: new_envelope,
-                           correlation_id: @ctx.correlation_id)
+          @bus.publish(:entry_renamed,
+                       store: @store,
+                       key: plan.new_key,
+                       from_key: plan.old_key,
+                       to_key: plan.new_key,
+                       envelope: new_envelope,
+                       correlation_id: @ctx.correlation_id)
           new_envelope
         end
 

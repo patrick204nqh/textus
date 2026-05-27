@@ -32,7 +32,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       )
 
       ctx = Textus::Application::Context.legacy(store: store, role: "human")
-      result = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.2026-05-19-add-bob")
+      result = build_accept(ctx).call("review.2026-05-19-add-bob")
 
       expect(result["target_key"]).to eq("working.network.org.bob")
       expect(result["action"]).to eq("put")
@@ -56,7 +56,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       )
 
       ctx = Textus::Application::Context.legacy(store: store, role: "agent")
-      expect { described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.foo") }
+      expect { build_accept(ctx).call("review.foo") }
         .to raise_error(Textus::ProposalError, /human/)
     end
   end
@@ -80,7 +80,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         events << { key: key, target_key: target_key, correlation_id: correlation_id }
       end
 
-      described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.p1")
+      build_accept(ctx).call("review.p1")
 
       expect(events.length).to eq(1)
       expect(events.first[:key]).to eq("review.p1")
@@ -99,7 +99,7 @@ RSpec.describe Textus::Application::Writes::Accept do
       )
 
       ctx = Textus::Application::Context.legacy(store: store, role: "human")
-      expect { described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.noproposal") }
+      expect { build_accept(ctx).call("review.noproposal") }
         .to raise_error(Textus::ProposalError, /no proposal block/)
     end
   end
@@ -145,7 +145,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         )
 
         ctx = Textus::Application::Context.legacy(store: store, role: "human")
-        result = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.valid-proposal")
+        result = build_accept(ctx).call("review.valid-proposal")
         expect(result["accepted"]).to eq("review.valid-proposal")
       end
     end
@@ -164,7 +164,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         )
 
         ctx = Textus::Application::Context.legacy(store: store, role: "human")
-        expect { described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.bad-proposal") }
+        expect { build_accept(ctx).call("review.bad-proposal") }
           .to raise_error(Textus::ProposalError, /promotion gate failed/i)
       end
     end
@@ -201,7 +201,7 @@ RSpec.describe Textus::Application::Writes::Accept do
           body: "Proposed",
         )
         ctx = Textus::Application::Context.legacy(store: store, role: "human")
-        result = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.ha-proposal")
+        result = build_accept(ctx).call("review.ha-proposal")
         expect(result["accepted"]).to eq("review.ha-proposal")
       end
     end

@@ -65,7 +65,10 @@ module Textus
     def schemas     = @ctx.schemas
     def file_store  = @ctx.file_store
     def audit_log   = @ctx.audit_log
+    def bus         = @ctx.bus
+    def store       = @ctx.store
     def root        = @ctx.store.root
+    def authorizer  = @authorizer ||= Textus::Domain::Authorizer.new(manifest: manifest)
 
     def envelope_io
       @envelope_io ||= Application::Writes::EnvelopeIO.new(
@@ -77,13 +80,54 @@ module Textus
       )
     end
 
-    def put_op     = @put_op ||= Application::Writes::Put.new(ctx: @ctx, envelope_io: envelope_io)
-    def delete_op  = @delete_op ||= Application::Writes::Delete.new(ctx: @ctx, envelope_io: envelope_io)
-    def mv_op      = @mv_op ||= Application::Writes::Mv.new(ctx: @ctx, envelope_io: envelope_io)
-    def accept_op  = @accept_op ||= Application::Writes::Accept.new(ctx: @ctx, envelope_io: envelope_io)
-    def reject_op  = @reject_op ||= Application::Writes::Reject.new(ctx: @ctx, envelope_io: envelope_io)
-    def build_op   = @build_op ||= Application::Writes::Build.new(ctx: @ctx)
-    def publish_op = @publish_op ||= Application::Writes::Publish.new(ctx: @ctx)
+    def put_op
+      @put_op ||= Application::Writes::Put.new(
+        ctx: @ctx, manifest: manifest, envelope_io: envelope_io,
+        bus: bus, authorizer: authorizer, store: store
+      )
+    end
+
+    def delete_op
+      @delete_op ||= Application::Writes::Delete.new(
+        ctx: @ctx, manifest: manifest, envelope_io: envelope_io,
+        bus: bus, authorizer: authorizer, store: store
+      )
+    end
+
+    def mv_op
+      @mv_op ||= Application::Writes::Mv.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store, audit_log: audit_log,
+        envelope_io: envelope_io, bus: bus, authorizer: authorizer, store: store
+      )
+    end
+
+    def accept_op
+      @accept_op ||= Application::Writes::Accept.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store,
+        envelope_io: envelope_io, bus: bus, authorizer: authorizer, store: store
+      )
+    end
+
+    def reject_op
+      @reject_op ||= Application::Writes::Reject.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store,
+        envelope_io: envelope_io, bus: bus, authorizer: authorizer, store: store
+      )
+    end
+
+    def build_op
+      @build_op ||= Application::Writes::Build.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store,
+        bus: bus, root: root, store: store
+      )
+    end
+
+    def publish_op
+      @publish_op ||= Application::Writes::Publish.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store,
+        bus: bus, root: root, store: store
+      )
+    end
 
     def get_op # rubocop:disable Naming/AccessorMethodName
       @get_op ||= Application::Reads::Get.new(ctx: @ctx, manifest: manifest, file_store: file_store)

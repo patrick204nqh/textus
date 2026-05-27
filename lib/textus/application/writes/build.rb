@@ -11,12 +11,19 @@ module Textus
       # `Application::Writes::Publish`. The CLI verb `textus build` calls
       # both classes and merges the results.
       class Build
-        def initialize(ctx:)
-          @ctx = ctx
+        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
+          @ctx        = ctx
+          @manifest   = manifest
+          @file_store = file_store
+          @bus        = bus
+          @root       = root
+          # T11 will replace `store:` here when Builder::Pipeline takes
+          # reader/lister callables instead of a store handle.
+          @store      = store
         end
 
         def call(prefix: nil)
-          built = manifest.entries.filter_map do |mentry|
+          built = @manifest.entries.filter_map do |mentry|
             next unless mentry.in_generator_zone?
             next unless mentry.projection || mentry.template
             next if prefix && !mentry.key.start_with?(prefix)
@@ -28,13 +35,9 @@ module Textus
 
         private
 
-        def store = @ctx.store
-        def manifest = store.manifest
-        def root = store.root
-
         def materialize(mentry)
           target_path = Builder::Pipeline.run(
-            store: store,
+            store: @store,
             mentry: mentry,
             template_loader: ->(name) { read_template(name) },
           )
@@ -43,19 +46,21 @@ module Textus
         end
 
         def read_template(name)
-          tpl_path = File.join(root, "templates", name)
+          tpl_path = File.join(@root, "templates", name)
           raise TemplateError.new("template not found: #{tpl_path}", template_name: name) unless File.exist?(tpl_path)
 
           File.read(tpl_path)
         end
 
         def publish_and_fire(mentry, target_path)
-          envelope = Textus::Application::Reads::Get.new(ctx: @ctx, manifest: @ctx.manifest, file_store: @ctx.file_store).call(mentry.key)
-          repo_root = File.dirname(root)
+          envelope = Textus::Application::Reads::Get.new(
+            ctx: @ctx, manifest: @manifest, file_store: @file_store,
+          ).call(mentry.key)
+          repo_root = File.dirname(@root)
 
           mentry.publish_to.each do |rel|
             target_abs = File.join(repo_root, rel)
-            Textus::Infra::Publisher.publish(source: target_path, target: target_abs, store_root: root)
+            Textus::Infra::Publisher.publish(source: target_path, target: target_abs, store_root: @root)
             publish_event(:file_published,
                           key: mentry.key,
                           envelope: envelope,
@@ -70,7 +75,7 @@ module Textus
         end
 
         def publish_event(event, **payload)
-          @ctx.bus.publish(event, store: @ctx.with_role(@ctx.role), correlation_id: @ctx.correlation_id, **payload)
+          @bus.publish(event, store: @store, correlation_id: @ctx.correlation_id, **payload)
         end
       end
     end
