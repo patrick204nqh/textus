@@ -22,17 +22,18 @@ module Textus
     # name and returns a guidance string for that role. Roles whose kind has
     # no template (e.g. unknown future kinds) are omitted from write_flows.
     WRITE_FLOW_TEMPLATES = {
-      accept_authority: lambda do |name|
+      accept_authority: lambda do |name, _manifest|
         "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
       end,
-      proposer: lambda do |name|
+      proposer: lambda do |name, manifest|
+        authority = manifest.roles_with_kind(:accept_authority).first || "accept_authority"
         "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
-          "the accept_authority role runs 'textus accept' to apply"
+          "the #{authority} role runs 'textus accept' to apply"
       end,
-      runner: lambda do |name|
+      runner: lambda do |name, _manifest|
         "refresh intake entries with 'textus refresh KEY --as=#{name}' (uses the entry's declared action)"
       end,
-      generator: lambda do |_name|
+      generator: lambda do |_name, _manifest|
         "'textus build' computes output entries from projections; output files are never hand-edited"
       end,
     }.freeze
@@ -40,7 +41,7 @@ module Textus
     def self.write_flows_for(manifest)
       manifest.role_mapping.each_with_object({}) do |(name, kind), acc|
         tmpl = WRITE_FLOW_TEMPLATES[kind]
-        acc[name] = tmpl.call(name) if tmpl
+        acc[name] = tmpl.call(name, manifest) if tmpl
       end
     end
 
@@ -121,7 +122,7 @@ module Textus
       AGENT_PROTOCOL_TEMPLATE.merge(
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
-                       "default role from the manifest's first declared role with `accept_authority` kind",
+                       "default 'human'",
           "roles" => manifest.role_mapping.keys,
           "ref" => "SPEC.md §5",
         },

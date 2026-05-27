@@ -212,7 +212,8 @@ RSpec.describe Textus::Intro do
       flows = env["write_flows"]
       expect(flows.keys).to contain_exactly("owner", "proposer", "fetcher", "compiler")
       expect(flows["owner"]).to include("owner")
-      expect(flows["proposer"]).to include("proposer")
+      expect(flows["proposer"]).to include("proposer", "owner")
+      expect(flows["proposer"]).not_to include("accept_authority")
       expect(flows["fetcher"]).to include("fetcher")
 
       roles = env["agent_protocol"]["role_resolution"]["roles"]
