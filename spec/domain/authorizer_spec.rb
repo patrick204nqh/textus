@@ -31,6 +31,18 @@ RSpec.describe Textus::Domain::Authorizer do
     expect { auth.authorize_write!(mentry, role: "agent") }.to raise_error(Textus::WriteForbidden)
   end
 
+  it "allows a read when role is in zone readers" do
+    auth = described_class.new(manifest: manifest)
+    identity_entry = instance_double(Textus::Manifest::Entry, zone: "identity", key: "identity.x")
+    expect { auth.authorize_read!(identity_entry, role: "human") }.not_to raise_error
+  end
+
+  it "raises ReadForbidden when role is not in zone readers" do
+    auth = described_class.new(manifest: manifest)
+    identity_entry = instance_double(Textus::Manifest::Entry, zone: "identity", key: "identity.x")
+    expect { auth.authorize_read!(identity_entry, role: "agent") }.to raise_error(Textus::ReadForbidden)
+  end
+
   it "answers can_write? and can_read? without raising" do
     auth = described_class.new(manifest: manifest)
     expect(auth.can_write?("working", role: "human")).to be(true)

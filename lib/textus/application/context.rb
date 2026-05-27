@@ -53,7 +53,7 @@ module Textus
       private
 
       def authorizer
-        @authorizer ||= Textus::Domain::Authorizer.new(manifest: store.manifest)
+        Textus::Domain::Authorizer.new(manifest: store.manifest)
       end
     end
   end
