@@ -13,7 +13,10 @@ module Textus
         end
 
         def call(pending_key)
-          raise ProposalError.new("only human role can reject proposals; got '#{@ctx.role}'") unless @ctx.role == "human"
+          unless @manifest.role_kind(@ctx.role) == :accept_authority
+            authority = @manifest.roles_with_kind(:accept_authority).first || "human"
+            raise ProposalError.new("only #{authority} role can reject proposals; got '#{@ctx.role}'")
+          end
 
           mentry = @manifest.resolver.resolve(pending_key).entry
           unless mentry.in_proposal_zone?
