@@ -2,17 +2,14 @@ module Textus
   module Application
     module Writes
       class Mv
-        # rubocop:disable Metrics/ParameterLists
-        def initialize(ctx:, manifest:, file_store:, envelope_io:, bus:, authorizer:, store:)
+        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, store:)
           @ctx         = ctx
           @manifest    = manifest
-          @file_store  = file_store
           @envelope_io = envelope_io
           @bus         = bus
           @authorizer  = authorizer
           @store       = store
         end
-        # rubocop:enable Metrics/ParameterLists
 
         def call(old_key, new_key, dry_run: false)
           old_res, new_res = prepare(old_key, new_key)
@@ -21,19 +18,13 @@ module Textus
           ensure_uid!(old_key, old_res.entry)
           envelope = @envelope_io.move(
             from_key: old_key, to_key: new_key,
-            old_mentry: old_res.entry, new_mentry: new_res.entry
+            new_mentry: new_res.entry
           )
           publish_renamed(old_key, new_key, envelope)
           success_result(old_key, new_key, old_res, new_res, envelope)
         end
 
         private
-
-        def reader
-          @reader ||= Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @manifest, file_store: @file_store,
-          )
-        end
 
         def prepare(old_key, new_key)
           @manifest.validate_key!(old_key)
@@ -69,7 +60,7 @@ module Textus
         # Put(suppress_events: true) bypass with a direct EnvelopeIO call —
         # producing one "put" audit row, then the "mv" row from EnvelopeIO#move.
         def ensure_uid!(old_key, old_mentry)
-          pre_env = reader.call(old_key)
+          pre_env = @envelope_io.read_envelope(old_key)
           return if pre_env.uid
 
           @envelope_io.write(
@@ -92,7 +83,7 @@ module Textus
         end
 
         def dry_run_result(old_key, new_key, old_res, new_res)
-          pre_env = reader.call(old_key)
+          pre_env = @envelope_io.read_envelope(old_key)
           {
             "protocol" => PROTOCOL, "ok" => true, "dry_run" => true,
             "from_key" => old_key, "to_key" => new_key,

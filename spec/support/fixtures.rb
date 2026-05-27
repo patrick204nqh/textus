@@ -59,7 +59,7 @@ module TextusSpecHelpers
   def build_mv(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Mv.new(
-      ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
+      ctx: p[:ctx], manifest: p[:manifest],
       envelope_io: p[:envelope_io],
       bus: p[:bus], authorizer: p[:authorizer], store: p[:store]
     )

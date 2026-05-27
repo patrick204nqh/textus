@@ -238,7 +238,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
 
         io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hello"))
         envelope = io.move(from_key: "working.foo", to_key: "working.bar",
-                           old_mentry: old_mentry, new_mentry: new_mentry)
+                           new_mentry: new_mentry)
 
         old_path = File.join(textus_dir, "zones", "working", "foo.md")
         new_path = File.join(textus_dir, "zones", "working", "bar.md")
@@ -266,7 +266,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hi"))
         expect do
           io.move(from_key: "working.foo", to_key: "working.bar",
-                  old_mentry: old_mentry, new_mentry: new_mentry, if_etag: "nope")
+                  new_mentry: new_mentry, if_etag: "nope")
         end.to raise_error(Textus::EtagMismatch)
       end
     end
@@ -281,7 +281,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
 
         before = io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "x"))
         after = io.move(from_key: "working.foo", to_key: "working.bar",
-                        old_mentry: old_mentry, new_mentry: new_mentry)
+                        new_mentry: new_mentry)
 
         expect(after.uid).to eq(before.uid)
       end
@@ -292,12 +292,11 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
         manifest = Textus::Manifest.load(textus_dir)
-        old_mentry = manifest.resolve("working.foo").entry
         new_mentry = manifest.resolve("working.bar").entry
 
         expect do
           io.move(from_key: "working.foo", to_key: "working.bar",
-                  old_mentry: old_mentry, new_mentry: new_mentry)
+                  new_mentry: new_mentry)
         end.to raise_error(Textus::UnknownKey)
       end
     end

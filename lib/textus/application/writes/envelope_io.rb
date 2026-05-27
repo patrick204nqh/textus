@@ -22,6 +22,24 @@ module Textus
 
         def exists?(path) = @file_store.exists?(path)
 
+        # Reads an envelope by key, returning nil when absent. Used by Mv
+        # to inspect pre-move state (UID presence, content surfacing) so
+        # the move pipeline can consolidate I/O in one place.
+        def read_envelope(key)
+          res = @manifest.resolve(key)
+          path = res.path
+          return nil unless @file_store.exists?(path)
+
+          mentry = res.entry
+          raw = @file_store.read(path)
+          parsed = Entry.for_format(mentry.format).parse(raw, path: path)
+          Envelope.build(
+            key: key, mentry: mentry, path: path,
+            meta: parsed["_meta"], body: parsed["body"],
+            etag: Etag.for_bytes(raw), content: parsed["content"]
+          )
+        end
+
         def write(key, mentry:, payload:, if_etag: nil)
           path = @manifest.resolve(key).path
 
@@ -78,8 +96,7 @@ module Textus
           )
         end
 
-        def move(from_key:, to_key:, old_mentry:, new_mentry:, if_etag: nil)
-          _ = old_mentry
+        def move(from_key:, to_key:, new_mentry:, if_etag: nil)
           from_path = @manifest.resolve(from_key).path
           to_path   = @manifest.resolve(to_key).path
           raise UnknownKey.new(from_key, suggestions: @manifest.suggestions_for(from_key)) unless @file_store.exists?(from_path)

@@ -91,7 +91,7 @@ module Textus
 
     def mv_op
       @mv_op ||= Application::Writes::Mv.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store,
+        ctx: @ctx, manifest: @manifest,
         envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, store: @store
       )
     end
