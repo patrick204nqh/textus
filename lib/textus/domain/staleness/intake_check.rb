@@ -11,7 +11,7 @@ module Textus
         end
 
         def rows_for(mentry)
-          return [] unless mentry.intake_handler
+          return [] unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
           ttl = @manifest.rules_for(mentry.key).refresh&.ttl_seconds
           return [] unless ttl
@@ -38,7 +38,7 @@ module Textus
         end
 
         def row(mentry, path, reason)
-          { "key" => mentry.key, "path" => path, "handler" => mentry.intake_handler, "reason" => reason }
+          { "key" => mentry.key, "path" => path, "handler" => mentry.handler, "reason" => reason }
         end
       end
     end

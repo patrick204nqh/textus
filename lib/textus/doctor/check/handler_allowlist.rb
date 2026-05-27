@@ -8,8 +8,9 @@ module Textus
         def call
           out = []
           store.manifest.entries.each do |mentry|
-            handler = mentry.intake_handler
-            next if handler.nil?
+            next unless mentry.is_a?(Textus::Manifest::Entry::Intake)
+
+            handler = mentry.handler
 
             allow = store.manifest.rules_for(mentry.key).handler_allowlist
             next if allow.nil?

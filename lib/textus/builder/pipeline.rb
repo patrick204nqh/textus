@@ -7,11 +7,15 @@ module Textus
       # Returns a new hash with _meta as the first key, per SPEC §6 ordering.
       def self.call(content_hash, mentry)
         meta = { "generated_at" => Time.now.utc.iso8601 }
-        from = Array(mentry.projection&.fetch("select", nil)).compact
-        meta["from"] = from unless from.empty?
+        if mentry.is_a?(Textus::Manifest::Entry::Derived)
+          src = mentry.source
+          if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
+            from = Array(src.select).compact
+            meta["from"] = from unless from.empty?
+            meta["reduce"] = src.transform if src.transform
+          end
+        end
         meta["template"] = mentry.template if mentry.template
-        reduce = mentry.projection&.dig("transform")
-        meta["reduce"] = reduce if reduce
 
         out = { "_meta" => meta }
         content_hash.each { |k, v| out[k] = v unless k == "_meta" }
@@ -63,7 +67,7 @@ module Textus
                    transform_context: nil, inject_intro: nil)
         # 1. Load sources + project + reduce
         data =
-          if mentry.projection
+          if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.source
             Application::Projection.new(
               reader: reader,
               spec: mentry.projection,

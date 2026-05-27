@@ -21,7 +21,7 @@ module Textus
 
       def suggestions_for(key)
         candidates = enumerate.map { |r| r[:key] }
-        candidates.concat(@manifest.entries.reject(&:nested).map(&:key))
+        candidates.concat(@manifest.entries.reject { |e| nested_entry?(e) }.map(&:key))
         candidates.uniq!
         Key::Distance.suggest(key, candidates, limit: 5)
       rescue StandardError
@@ -29,18 +29,25 @@ module Textus
       end
 
       def enumerate(prefix: nil)
-        out = @manifest.entries.flat_map { |entry| entry.nested ? enumerate_nested(entry) : enumerate_leaf(entry) }
+        out = @manifest.entries.flat_map { |entry| nested_entry?(entry) ? enumerate_nested(entry) : enumerate_leaf(entry) }
         out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
         out.sort_by { |row| row[:key] }
       end
 
       private
 
+      # Returns true for entries that behave as nested (Nested subclass, or any
+      # entry with nested: true in the raw YAML — e.g. Intake entries covering
+      # a directory of leaf files).
+      def nested_entry?(entry)
+        entry.is_a?(Textus::Manifest::Entry::Nested) || entry.raw["nested"] == true
+      end
+
       def build_resolution(entry, remaining, key)
         if remaining.empty?
           Resolution.new(entry: entry, path: resolve_leaf_path(entry), remaining: [])
         else
-          raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless entry.nested
+          raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
           path = if entry.index_filename
                    File.join(@manifest.root, "zones", entry.path, *remaining, entry.index_filename)
