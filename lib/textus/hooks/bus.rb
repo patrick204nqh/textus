@@ -8,22 +8,24 @@ module Textus
       class HookTimeout < StandardError; end
 
       EVENTS = {
+        # RPC events — gem-internal, keep :store
         resolve_intake: { mode: :rpc, args: %i[store config args] },
         transform_rows: { mode: :rpc, args: %i[store rows config] },
         validate: { mode: :rpc, args: %i[store] },
 
-        entry_put: { mode: :pubsub, args: %i[store key envelope] },
-        entry_deleted: { mode: :pubsub, args: %i[store key] },
-        entry_refreshed: { mode: :pubsub, args: %i[store key envelope change] },
-        entry_renamed: { mode: :pubsub, args: %i[store key from_key to_key envelope] },
-        build_completed: { mode: :pubsub, args: %i[store key envelope sources] },
-        proposal_accepted: { mode: :pubsub, args: %i[store key target_key] },
-        proposal_rejected: { mode: :pubsub, args: %i[store key target_key] },
-        file_published: { mode: :pubsub, args: %i[store key envelope source target] },
-        store_loaded: { mode: :pubsub, args: %i[store] },
-        refresh_started: { mode: :pubsub, args: %i[store key mode] },
-        refresh_failed: { mode: :pubsub, args: %i[store key error_class error_message] },
-        refresh_backgrounded: { mode: :pubsub, args: %i[store key started_at budget_ms] },
+        # Pubsub events — ship :ctx (Hooks::Context) instead of raw store
+        entry_put: { mode: :pubsub, args: %i[ctx key envelope] },
+        entry_deleted: { mode: :pubsub, args: %i[ctx key] },
+        entry_refreshed: { mode: :pubsub, args: %i[ctx key envelope change] },
+        entry_renamed: { mode: :pubsub, args: %i[ctx key from_key to_key envelope] },
+        build_completed: { mode: :pubsub, args: %i[ctx key envelope sources] },
+        proposal_accepted: { mode: :pubsub, args: %i[ctx key target_key] },
+        proposal_rejected: { mode: :pubsub, args: %i[ctx key target_key] },
+        file_published: { mode: :pubsub, args: %i[ctx key envelope source target] },
+        store_loaded: { mode: :pubsub, args: %i[ctx] },
+        refresh_started: { mode: :pubsub, args: %i[ctx key mode] },
+        refresh_failed: { mode: :pubsub, args: %i[ctx key error_class error_message] },
+        refresh_backgrounded: { mode: :pubsub, args: %i[ctx key started_at budget_ms] },
       }.freeze
 
       def initialize
