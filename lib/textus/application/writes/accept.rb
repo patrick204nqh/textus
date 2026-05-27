@@ -10,7 +10,7 @@ module Textus
         def call(pending_key)
           raise ProposalError.new("only human role can accept proposals; got '#{@ctx.role}'") unless @ctx.role == "human"
 
-          env = Textus::Application::Reads::Get.new(ctx: @ctx).call(pending_key)
+          env = Textus::Application::Reads::Get.new(ctx: @ctx, manifest: @ctx.manifest, file_store: @ctx.file_store).call(pending_key)
           proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
           action = proposal["action"] || "put"

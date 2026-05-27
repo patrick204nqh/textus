@@ -10,8 +10,8 @@ module Textus
       # Pure reads (build, projection, schema tooling) should use
       # `Reads::Get` directly; it has no orchestrator dependency.
       class GetOrRefresh
-        def initialize(ctx:, get:, orchestrator:)
-          @ctx          = ctx
+        def initialize(manifest:, get:, orchestrator:)
+          @manifest     = manifest
           @get          = get
           @orchestrator = orchestrator
         end
@@ -21,7 +21,7 @@ module Textus
           return nil if envelope.nil?
           return envelope unless envelope.freshness&.stale
 
-          policy_set = @ctx.store.manifest.rules_for(key)
+          policy_set = @manifest.rules_for(key)
           refresh_policy = policy_set.refresh
           return envelope if refresh_policy.nil?
 

@@ -27,7 +27,14 @@ module Textus
         private
 
         def manifest = @ctx.manifest
-        def reader_get(key) = (@reader_get ||= Textus::Application::Reads::Get.new(ctx: @ctx)).call(key)
+
+        def reader
+          @reader ||= Textus::Application::Reads::Get.new(
+            ctx: @ctx, manifest: @ctx.manifest, file_store: @ctx.file_store,
+          )
+        end
+
+        def reader_get(key) = reader.call(key)
 
         def prepare_plan(old_key, new_key)
           manifest.validate_key!(old_key)

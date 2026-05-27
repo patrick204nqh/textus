@@ -41,10 +41,13 @@ module Textus
           end
 
           Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: store.root)
+          reader = Textus::Application::Reads::Get.new(
+            ctx: @ctx, manifest: @ctx.manifest, file_store: @ctx.file_store,
+          )
           @ctx.bus.publish(:file_published,
                            store: @ctx.with_role(@ctx.role),
                            key: row[:key],
-                           envelope: Textus::Application::Reads::Get.new(ctx: @ctx).call(row[:key]),
+                           envelope: reader.call(row[:key]),
                            source: row[:path],
                            target: target_abs,
                            correlation_id: @ctx.correlation_id)

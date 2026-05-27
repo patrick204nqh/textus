@@ -64,8 +64,8 @@ RSpec.describe Textus::Application::Reads::Get do
   it "returns nil when the file does not exist on disk" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
-      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
-      use_case = described_class.new(ctx: ctx)
+      ctx = Textus::Application::Context.build(role: "runner")
+      use_case = described_class.new(ctx: ctx, manifest: store.manifest, file_store: store.file_store)
       expect(use_case.call("working.doc")).to be_nil
     end
   end
@@ -74,8 +74,8 @@ RSpec.describe Textus::Application::Reads::Get do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
       write_doc(root)
-      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
-      env = described_class.new(ctx: ctx).call("working.doc")
+      ctx = Textus::Application::Context.build(role: "runner")
+      env = described_class.new(ctx: ctx, manifest: store.manifest, file_store: store.file_store).call("working.doc")
       expect(env.freshness.stale).to be(false)
       expect(env.freshness.refreshing).to be(false)
     end
@@ -85,8 +85,8 @@ RSpec.describe Textus::Application::Reads::Get do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
-      env = described_class.new(ctx: ctx).call("working.doc")
+      ctx = Textus::Application::Context.build(role: "runner")
+      env = described_class.new(ctx: ctx, manifest: store.manifest, file_store: store.file_store).call("working.doc")
       expect(env.freshness.stale).to be(false)
     end
   end
@@ -95,8 +95,8 @@ RSpec.describe Textus::Application::Reads::Get do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
-      env = described_class.new(ctx: ctx).call("working.doc")
+      ctx = Textus::Application::Context.build(role: "runner")
+      env = described_class.new(ctx: ctx, manifest: store.manifest, file_store: store.file_store).call("working.doc")
       expect(env.freshness.stale).to be(true)
       expect(env.freshness.refreshing).to be(false)
     end
@@ -105,9 +105,9 @@ RSpec.describe Textus::Application::Reads::Get do
   it "does not accept an orchestrator: kwarg (signal of the contract)" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
-      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
+      ctx = Textus::Application::Context.build(role: "runner")
       expect do
-        described_class.new(ctx: ctx, orchestrator: Object.new)
+        described_class.new(ctx: ctx, manifest: store.manifest, file_store: store.file_store, orchestrator: Object.new)
       end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
     end
   end

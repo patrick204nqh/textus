@@ -14,7 +14,7 @@ module Textus
           )
           worker = Textus::Application::Refresh::Worker.new(ctx: ctx, envelope_io: envelope_io)
 
-          stale_rows = Textus::Application::Reads::Stale.new(ctx: ctx).call(prefix: prefix, zone: zone)
+          stale_rows = Textus::Application::Reads::Stale.new(manifest: ctx.manifest).call(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

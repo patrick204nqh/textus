@@ -59,12 +59,18 @@ module Textus
 
     private
 
+    def manifest    = @ctx.manifest
+    def schemas     = @ctx.schemas
+    def file_store  = @ctx.file_store
+    def audit_log   = @ctx.audit_log
+    def root        = @ctx.store.root
+
     def envelope_io
       @envelope_io ||= Application::Writes::EnvelopeIO.new(
-        file_store: @ctx.file_store,
-        manifest: @ctx.manifest,
-        schemas: @ctx.schemas,
-        audit_log: @ctx.audit_log,
+        file_store: file_store,
+        manifest: manifest,
+        schemas: schemas,
+        audit_log: audit_log,
         ctx: @ctx,
       )
     end
@@ -77,26 +83,34 @@ module Textus
     def build_op   = @build_op ||= Application::Writes::Build.new(ctx: @ctx)
     def publish_op = @publish_op ||= Application::Writes::Publish.new(ctx: @ctx)
 
-    def get_op = @get_op ||= Application::Reads::Get.new(ctx: @ctx) # rubocop:disable Naming/AccessorMethodName
-
-    def get_or_refresh_op # rubocop:disable Naming/AccessorMethodName
-      @get_or_refresh_op ||= Application::Reads::GetOrRefresh.new(ctx: @ctx, get: get_op,
-                                                                  orchestrator: orchestrator_op)
+    def get_op # rubocop:disable Naming/AccessorMethodName
+      @get_op ||= Application::Reads::Get.new(ctx: @ctx, manifest: manifest, file_store: file_store)
     end
 
-    def list_op            = @list_op ||= Application::Reads::List.new(ctx: @ctx)
-    def where_op           = @where_op ||= Application::Reads::Where.new(ctx: @ctx)
-    def uid_op             = @uid_op ||= Application::Reads::Uid.new(ctx: @ctx)
-    def schema_envelope_op = @schema_envelope_op ||= Application::Reads::SchemaEnvelope.new(ctx: @ctx)
-    def deps_op            = @deps_op ||= Application::Reads::Deps.new(ctx: @ctx)
-    def rdeps_op           = @rdeps_op ||= Application::Reads::Rdeps.new(ctx: @ctx)
-    def published_op       = @published_op ||= Application::Reads::Published.new(ctx: @ctx)
-    def stale_op           = @stale_op ||= Application::Reads::Stale.new(ctx: @ctx)
-    def audit_op           = @audit_op ||= Application::Reads::Audit.new(ctx: @ctx)
-    def blame_op           = @blame_op ||= Application::Reads::Blame.new(ctx: @ctx)
-    def policy_explain_op  = @policy_explain_op ||= Application::Reads::PolicyExplain.new(ctx: @ctx)
-    def freshness_op       = @freshness_op ||= Application::Reads::Freshness.new(ctx: @ctx)
-    def validate_all_op    = @validate_all_op ||= Application::Reads::ValidateAll.new(ctx: @ctx)
+    def get_or_refresh_op # rubocop:disable Naming/AccessorMethodName
+      @get_or_refresh_op ||= Application::Reads::GetOrRefresh.new(
+        manifest: manifest, get: get_op, orchestrator: orchestrator_op,
+      )
+    end
+
+    def list_op            = @list_op ||= Application::Reads::List.new(manifest: manifest)
+    def where_op           = @where_op ||= Application::Reads::Where.new(manifest: manifest)
+    def uid_op             = @uid_op ||= Application::Reads::Uid.new(ctx: @ctx, manifest: manifest, file_store: file_store)
+    def schema_envelope_op = @schema_envelope_op ||= Application::Reads::SchemaEnvelope.new(manifest: manifest, schemas: schemas)
+    def deps_op            = @deps_op ||= Application::Reads::Deps.new(manifest: manifest)
+    def rdeps_op           = @rdeps_op ||= Application::Reads::Rdeps.new(manifest: manifest)
+    def published_op       = @published_op ||= Application::Reads::Published.new(manifest: manifest)
+    def stale_op           = @stale_op ||= Application::Reads::Stale.new(manifest: manifest)
+    def audit_op           = @audit_op ||= Application::Reads::Audit.new(manifest: manifest, root: root)
+    def blame_op           = @blame_op ||= Application::Reads::Blame.new(manifest: manifest, root: root)
+    def policy_explain_op  = @policy_explain_op ||= Application::Reads::PolicyExplain.new(manifest: manifest)
+    def freshness_op       = @freshness_op ||= Application::Reads::Freshness.new(ctx: @ctx, manifest: manifest, file_store: file_store)
+
+    def validate_all_op
+      @validate_all_op ||= Application::Reads::ValidateAll.new(
+        ctx: @ctx, manifest: manifest, file_store: file_store, schemas: schemas, audit_log: audit_log,
+      )
+    end
 
     def refresh_worker_op = @refresh_worker_op ||= Application::Refresh::Worker.new(ctx: @ctx, envelope_io: envelope_io)
 

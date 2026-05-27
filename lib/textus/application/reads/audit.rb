@@ -8,9 +8,9 @@ module Textus
       # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
       # rows produce nil and are skipped).
       class Audit
-        def initialize(ctx:)
-          @ctx = ctx
-          @log_path = File.join(@ctx.store.root, "audit.log")
+        def initialize(manifest:, root:)
+          @manifest = manifest
+          @log_path = File.join(root, "audit.log")
         end
 
         # rubocop:disable Metrics/ParameterLists, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -58,7 +58,7 @@ module Textus
         end
 
         def key_in_zone?(key, zone)
-          mentry = @ctx.store.manifest.resolve(key).entry
+          mentry = @manifest.resolve(key).entry
           mentry && mentry.zone == zone
         rescue Textus::Error
           false
