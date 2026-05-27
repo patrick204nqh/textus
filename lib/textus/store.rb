@@ -33,7 +33,11 @@ module Textus
       @manifest   = Manifest.load(@root)
       @schemas    = Schemas.new(File.join(@root, "schemas"))
       @file_store = Infra::Storage::FileStore.new
-      @audit_log  = Infra::AuditLog.new(@root)
+      @audit_log  = Infra::AuditLog.new(
+        @root,
+        max_size: @manifest.audit_config[:max_size],
+        keep: @manifest.audit_config[:keep],
+      )
       @bus = Hooks::Bus.new
       Infra::AuditSubscriber.new(@audit_log).attach(@bus)
       Hooks::Builtin.register_all(@bus)
