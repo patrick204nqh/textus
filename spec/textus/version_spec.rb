@@ -1,8 +1,8 @@
 require "spec_helper"
 
 RSpec.describe Textus do
-  it "is at gem version 0.19.0" do
-    expect(Textus::VERSION).to eq("0.19.0")
+  it "is at gem version 0.19.1" do
+    expect(Textus::VERSION).to eq("0.19.1")
   end
 
   it "still speaks protocol textus/3 (unchanged in this release)" do

@@ -9,6 +9,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.19.1 — drop textus/2 migration hint (2026-05-27)
+
+**BREAKING (pre-1.0):** Users on gem ≤0.10 (manifest protocol `textus/2`)
+no longer receive a stepping-stone hint pointing at 0.11.x. The manifest
+parser and `textus doctor` now emit the generic "unsupported version"
+error. Users on ≤0.10 should install 0.11.x first (still on RubyGems)
+to run the migrator, then upgrade to 0.19.1+.
+
+### Changed
+- `Textus::Manifest` no longer special-cases `textus/2`; `TEXTUS_2_HINT`
+  and `version_hint_for` removed.
+- `Doctor::Check::ProtocolVersion` hint/fix text simplified; no longer
+  links to the 0.11.x CHANGELOG anchor.
+
+### Removed
+- Two redundant manifest specs (the `Manifest.load` duplicate and the
+  `textus/2`-specific hint assertion) collapsed into one generic case.
+
 ## 0.19.0 — 2026-05-27
 
 ### Breaking
