@@ -184,7 +184,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "builder").build
+      Textus::Operations.for(store, role: "builder").publish
       expect($log).to include([:build_completed, "output.summary", ["working"]])
     end
   end

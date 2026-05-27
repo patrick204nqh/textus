@@ -10,7 +10,7 @@ RSpec.describe Textus::Operations do
 
   it "responds to the entire flat surface" do
     surface_methods = %i[
-      put delete mv accept reject build publish
+      put delete mv accept reject publish
       get get_or_refresh list where uid schema_envelope
       deps rdeps published stale audit blame policy_explain
       freshness validate_all
