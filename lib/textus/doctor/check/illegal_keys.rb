@@ -44,15 +44,14 @@ module Textus
         end
 
         def issue(abs_path, stem)
-          proposed = Textus::Application::Tools::MigrateKeys.normalize(stem)
           {
             "code" => "key.illegal",
             "level" => "error",
             "subject" => abs_path,
             "path" => abs_path,
-            "proposed_key" => proposed,
             "message" => "illegal key segment '#{stem}' at #{abs_path}",
-            "fix" => "run 'textus key normalize --dry-run' then '--write' to rename to '#{proposed}'",
+            "fix" => "rename the file/directory so each segment matches [a-z0-9][a-z0-9-]* " \
+                     "(lowercase, digits, hyphens)",
           }
         end
 

@@ -32,10 +32,14 @@ tracks both additive improvements and breaking protocol bumps independently.
   matches what the schema actually enforces.
 
 ### Removed
-- `textus key normalize --upgrade-manifest` and the underlying
-  `Textus::Application::Tools::MigrateManifestToKinds` module. This was the
-  one-shot 0.19→0.20 manifest upgrader; nothing in 0.20.x can produce a
-  pre-kind manifest, so the migrator is dead weight.
+- `textus key normalize` verb and the underlying
+  `Textus::Application::Tools::MigrateKeys` module. Files dropped into nested
+  zones with illegal basenames are still reported by `textus doctor` with a
+  `key.illegal` finding; fix them by hand. The `--upgrade-manifest` flag and
+  its `Textus::Application::Tools::MigrateManifestToKinds` module (one-shot
+  0.19→0.20 manifest upgrader) are removed for the same reason — dead weight.
+- The `migrate-keys` audit-log payload string is no longer emitted (no writer
+  produces it).
 
 ### Internal
 - Final cleanup of role-name leaks identified by the 0.20.2 architecture

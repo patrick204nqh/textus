@@ -105,7 +105,7 @@ module Textus
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
       { "name" => "accept",   "summary" => "apply a review.* proposal; --as=human only" },
-      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid', 'key normalize'" },
+      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
       { "name" => "refresh",  "summary" => "run an action for an intake entry" },

@@ -433,7 +433,7 @@ Schema (one JSON object per line, no interior whitespace):
 {"ts":"<iso8601-utc>","role":"<role>","verb":"<verb>","key":"<key>","etag_before":<etag-or-null>,"etag_after":<etag-or-null>}
 ```
 
-`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `migrate-keys`, `mv`, ...). Note that `migrate-keys` here is the on-disk payload key — the CLI surface is `textus key migrate`; the payload string is retained for log stability. `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag). `key migrate --write` emits one line per renamed file (with payload `verb: "migrate-keys"`) using the new key as `key` and the file's pre- and post-rename etags.
+`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag).
 
 For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
 
@@ -739,7 +739,6 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `init` | write | `human` |
 | `schema {show,init,diff,migrate}` | read/write | `human` for writes |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
-| `key normalize [--dry-run\|--write]` | write (with `--write`) | `human` |
 | `key uid K` | read | any |
 
 **`put` input** (read from stdin when `--stdin` is given):
