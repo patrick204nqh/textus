@@ -765,7 +765,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 ```json
 {
   "cursor":         1845,
-  "changed":        [ { "seq": 1843, "key": "working.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
+  "changed":        [ { "seq": 1843, "key": "working.x", "verb": "put", "role": "human", "ts": "..." } ],
   "stale":          [ "output.marketplace" ],
   "pending_review": [ "review.proposal.123" ],
   "doctor":         { "ok": true, "warn": 0, "fail": 0 }

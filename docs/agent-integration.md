@@ -85,7 +85,7 @@ contract = boot  # cache the orientation for the session
 
 while session_active:
     pulse = run(f"textus pulse --since={cursor}")
-    if pulse.get("error") == "CursorExpired":
+    if pulse.get("code") == "cursor_expired":
         boot = run("textus boot --output=json")
         cursor = boot["agent_quickstart"]["latest_seq"]
         continue
