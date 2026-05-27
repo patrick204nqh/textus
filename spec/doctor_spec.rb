@@ -19,7 +19,7 @@ RSpec.describe Textus::Doctor do
       entries:
         - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
 
-        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived}
+        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
@@ -105,7 +105,7 @@ RSpec.describe Textus::Doctor do
         entries:
           - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
 
-          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived}
+          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
           - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md, kind: nested}
 

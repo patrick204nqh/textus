@@ -1,6 +1,5 @@
 require "yaml"
 require_relative "manifest/schema"
-require_relative "manifest/resolution"
 require_relative "manifest/resolver"
 
 module Textus

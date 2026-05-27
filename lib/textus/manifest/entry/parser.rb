@@ -64,13 +64,7 @@ module Textus
 
         def self.parse_source(raw, key)
           compute = raw["compute"]
-          if compute.nil?
-            # Tolerate legacy derived entries with bare template (no compute block):
-            # treat as projection with no select.
-            return Derived::Projection.new(select: nil, pluck: nil, sort_by: nil, transform: nil) if raw["template"]
-
-            raise BadManifest.new("derived entry '#{key}' requires compute: { kind: projection|external } or template:")
-          end
+          raise BadManifest.new("derived entry '#{key}' requires compute: { kind: projection|external } or template:") if compute.nil?
 
           unless COMPUTE_KINDS.include?(compute["kind"])
             raise BadManifest.new(

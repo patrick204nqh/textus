@@ -1,6 +1,8 @@
 module Textus
   class Manifest
     class Resolver
+      Resolution = Data.define(:entry, :path, :remaining)
+
       def initialize(manifest)
         @manifest = manifest
       end
