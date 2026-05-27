@@ -57,6 +57,8 @@ module Textus
     def refresh(key) = refresh_worker_op.run(key)
     def refresh_all(**) = Application::Refresh::All.call(@ctx, **)
 
+    # Temporary T3→T7 port accessors. Delegate to @ctx (a LegacyContext)
+    # until Task 7 makes Operations#initialize take ports directly.
     private
 
     def manifest    = @ctx.manifest

@@ -9,7 +9,13 @@ module Textus
         end
 
         def call(key)
-          Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).get(key).uid
+          get.get(key).uid
+        end
+
+        private
+
+        def get
+          @get ||= Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store)
         end
       end
     end
