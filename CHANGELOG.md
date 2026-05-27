@@ -9,6 +9,32 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.18.1 — 2026-05-27
+
+### Fixed
+
+- `Hooks::Dispatcher` no longer uses `Timeout.timeout`, which can interrupt a
+  hook mid-syscall or mid-`ensure` and leave Ruby state corrupted. Each
+  subscriber now runs in a worker thread joined with a deadline; on overrun
+  the thread is killed and the hook is recorded as `timed_out` (distinct
+  from `errored`).
+
+### Added
+
+- `Hooks::FireReport` — value object returned from `bus.publish`. Lists
+  `fired`, `errored`, and `timed_out` subscriber names; exposes `#ok?` and
+  `#failures`. Backwards-compatible: callers that ignore the return value
+  (the entire current codebase) keep working.
+- `Hooks::Dispatcher#publish` accepts `strict: true`, which re-raises the
+  first failure after every subscriber has been attempted. Intended for
+  test setups that want loud hooks; default remains `false`.
+
+### Internal
+
+- No public API surface changes. CLI behavior, `Operations` methods, wire
+  format `textus/3`, and the audit-log NDJSON shape are unchanged. Stores
+  written by 0.18.0 round-trip through 0.18.1 byte-for-byte.
+
 ## 0.18.0 — 2026-05-27
 
 Port extraction finishes the hexagonal trajectory. `Store::Reader` and
