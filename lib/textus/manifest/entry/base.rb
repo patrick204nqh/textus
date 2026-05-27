@@ -18,8 +18,6 @@ module Textus
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
-        def kind = self.class.name.split("::").last.downcase.to_sym
-
         def zone_writers
           @manifest.zone_writers(@zone)
         rescue UsageError => e
