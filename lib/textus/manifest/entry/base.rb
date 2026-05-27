@@ -42,6 +42,35 @@ module Textus
         def events         = {}
         def publish_each   = nil
         def index_filename = nil
+
+        PublishContext = Struct.new(
+          :repo_root, :manifest, :file_store, :root, :store, :ctx, :bus, :hook_context,
+          :reader, :emit, # callables: reader.call(key) → envelope; emit.call(event, **payload)
+          keyword_init: true
+        )
+
+        # Subclasses override to customize publish behavior.
+        # Default: copy the stored file to each publish_to target.
+        # Returns: { kind: :built|:leaves, value: ... } to be accumulated by
+        # Publish#call, or nil to skip.
+        def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
+          return nil if Array(publish_to).empty?
+
+          source_path = pctx.manifest.resolver.resolve(@key).path
+          envelope = pctx.reader.call(@key)
+
+          publish_to.each do |rel|
+            target_abs = File.join(pctx.repo_root, rel)
+            Textus::Infra::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
+            pctx.emit.call(:file_published,
+                           key: @key,
+                           envelope: envelope,
+                           source: source_path,
+                           target: target_abs)
+          end
+
+          { kind: :built, value: { "key" => @key, "path" => source_path, "published_to" => publish_to } }
+        end
       end
     end
   end
