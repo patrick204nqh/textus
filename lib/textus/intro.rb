@@ -147,14 +147,14 @@ module Textus
     end
 
     def self.hooks_for(store)
-      reg = store.registry
+      bus = store.bus
       sections = {}
-      Hooks::Registry::EVENTS.each do |event, spec|
+      Hooks::Bus::EVENTS.each do |event, spec|
         case spec[:mode]
         when :rpc
-          sections[event.to_s] = reg.rpc_names(event).map(&:to_s).sort
+          sections[event.to_s] = bus.rpc_names(event).map(&:to_s).sort
         when :pubsub
-          sections[event.to_s] = reg.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
+          sections[event.to_s] = bus.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
         end
       end
       sections

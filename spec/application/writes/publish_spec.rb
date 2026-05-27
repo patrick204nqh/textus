@@ -35,7 +35,7 @@ RSpec.describe Textus::Application::Writes::Publish do
 
     it "publishes each nested leaf to its publish_each target" do
       events = []
-      store.registry.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+      store.bus.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
       ctx = test_ctx(role: "builder")
       res = build_publish(store, ctx).call

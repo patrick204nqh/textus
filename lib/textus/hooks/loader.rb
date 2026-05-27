@@ -1,8 +1,8 @@
 module Textus
   module Hooks
     class Loader
-      def initialize(registry:)
-        @registry = registry
+      def initialize(bus:)
+        @bus = bus
       end
 
       def load_dir(dir)
@@ -18,7 +18,7 @@ module Textus
         end
 
         Textus.drain_hook_blocks.each do |blk|
-          blk.call(@registry)
+          blk.call(@bus)
         rescue StandardError, ScriptError => e
           raise UsageError.new("failed registering hook: #{e.class}: #{e.message}")
         end

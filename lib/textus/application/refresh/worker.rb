@@ -6,17 +6,14 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        # rubocop:disable Metrics/ParameterLists
-        def initialize(ctx:, manifest:, envelope_io:, bus:, registry:, store:, authorizer:)
+        def initialize(ctx:, manifest:, envelope_io:, bus:, store:, authorizer:)
           @ctx = ctx
           @manifest = manifest
           @envelope_io = envelope_io
           @bus = bus
-          @registry = registry
           @store = store
           @authorizer = authorizer
         end
-        # rubocop:enable Metrics/ParameterLists
 
         def run(key)
           res = @manifest.resolver.resolve(key)
@@ -38,7 +35,7 @@ module Textus
         end
 
         def fetch_with_bus(key, mentry, remaining)
-          callable = @registry.rpc_callable(:resolve_intake, mentry.intake_handler)
+          callable = @bus.rpc_callable(:resolve_intake, mentry.intake_handler)
           @bus.publish(:refresh_started, store: @store, role: @ctx.role, key: key, mode: :sync,
                                          correlation_id: @ctx.correlation_id)
           call_intake(key, mentry, callable, remaining)

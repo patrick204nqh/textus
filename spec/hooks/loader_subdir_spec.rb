@@ -28,7 +28,7 @@ RSpec.describe "Hook loader subdirectory support" do
       )
 
       store = Textus::Store.new(textus)
-      registry = store.instance_variable_get(:@registry)
+      registry = store.bus
 
       expect(registry.rpc_names(:resolve_intake)).to include(:nested_intake)
       expect(registry.rpc_names(:transform_rows)).to include(:nested_reduce)
@@ -47,7 +47,7 @@ RSpec.describe "Hook loader subdirectory support" do
       )
 
       store = Textus::Store.new(textus)
-      registry = store.instance_variable_get(:@registry)
+      registry = store.bus
       expect(registry.rpc_names(:resolve_intake)).to include(:flat)
     end
   end

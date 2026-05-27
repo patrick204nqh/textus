@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Writes::Reject do
       store = build_store(File.join(root, ".textus"))
 
       events = []
-      store.bus.subscribe(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
+      store.bus.register(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
 
       ctx = test_ctx(role: "human")
       res = build_reject(store, ctx).call("review.draft")

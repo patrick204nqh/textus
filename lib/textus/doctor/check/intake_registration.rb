@@ -6,7 +6,7 @@ module Textus
 
         def call
           declared = collect_declared_handlers
-          registered = store.registry.rpc_names(:resolve_intake).to_set
+          registered = store.bus.rpc_names(:resolve_intake).to_set
 
           out = (declared - registered).map do |name|
             {

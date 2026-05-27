@@ -16,15 +16,15 @@ module Textus
           end
 
           rows = []
-          Textus::Hooks::Registry::EVENTS.each do |event, spec|
+          Textus::Hooks::Bus::EVENTS.each do |event, spec|
             mode = spec[:mode].to_s
             case spec[:mode]
             when :rpc
-              store.registry.rpc_names(event).each do |name|
+              store.bus.rpc_names(event).each do |name|
                 rows << { "event" => event.to_s, "mode" => mode, "name" => name.to_s }
               end
             when :pubsub
-              store.registry.pubsub_handlers(event).each do |h|
+              store.bus.pubsub_handlers(event).each do |h|
                 row = { "event" => event.to_s, "mode" => mode, "name" => h[:name].to_s }
                 row["keys"] = Array(h[:keys]) if h[:keys]
                 rows << row

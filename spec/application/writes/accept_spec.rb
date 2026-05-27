@@ -76,7 +76,7 @@ RSpec.describe Textus::Application::Writes::Accept do
 
       ctx = test_ctx(role: "human", correlation_id: "corr-accept-1")
       events = []
-      store.bus.subscribe(:proposal_accepted, :capture_accept) do |key:, target_key:, correlation_id:, **|
+      store.bus.register(:proposal_accepted, :capture_accept) do |key:, target_key:, correlation_id:, **|
         events << { key: key, target_key: target_key, correlation_id: correlation_id }
       end
 

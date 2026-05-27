@@ -11,13 +11,17 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## 0.20.0 — architecture redesign (unreleased)
 
-**BREAKING (pre-1.0):** Public top-level utility modules removed, and
-`Manifest` routing methods extracted into a dedicated resolver.
+**BREAKING (pre-1.0):** Public top-level utility modules removed,
+`Manifest` routing methods extracted into a dedicated resolver, and
+`Hooks::Dispatcher`/`Hooks::Registry` collapsed into a single bus.
+External hook files written against the 0.19 `register(event, name, ...)`
+API continue to work unchanged.
 
 ### Removed
 - `Textus::Dependencies` — use `Operations#deps`, `#rdeps`, `#published`.
 - `Textus::Refresh` — use `Operations#refresh`. The `normalize_action_result`
   helper is now a private class method on `Application::Refresh::Worker`.
+- `Textus::Hooks::Dispatcher` and `Textus::Hooks::Registry` classes.
 
 ### Changed
 - `Textus::Projection` moved to `Textus::Application::Projection`.
@@ -26,6 +30,11 @@ tracks both additive improvements and breaking protocol bumps independently.
   the public `Manifest` API. Use `manifest.resolver.resolve(key)` etc.
   via the new `Manifest::Resolver`. `Manifest` retains the data accessors
   (`entries`, `zones`, `rules`, `permissions`, `validate_key!`).
+- `Store` constructs one `Hooks::Bus`; `Store#registry` removed (use
+  `Store#bus`). `Hooks::Builtin.register_all(bus)` and
+  `Hooks::Loader.new(bus:)` now take a Bus instead of a Registry.
+  `Operations.for` no longer accepts `registry:`. Use cases
+  (`Writes::Build`, `Refresh::Worker`, `Refresh::All`) take `bus:`.
 
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 

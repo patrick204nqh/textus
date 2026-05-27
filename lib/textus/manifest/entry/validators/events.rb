@@ -4,7 +4,7 @@ module Textus
       module Validators
         module Events
           def self.call(entry)
-            pubsub_events = Textus::Hooks::Registry::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
+            pubsub_events = Textus::Hooks::Bus::EVENTS.select { |_, s| s[:mode] == :pubsub }.keys
             entry.events.each_key do |evt|
               next if pubsub_events.include?(evt.to_sym)
 

@@ -84,7 +84,7 @@ RSpec.describe Textus::Application::Writes::Build do
 
     # Reducer used by the YAML pipeline — returns a Hash so the structured-format
     # path uses it as the payload base.
-    store.registry.register(:transform_rows, :envelope) do |store:, rows:, config:|
+    store.bus.register(:transform_rows, :envelope) do |store:, rows:, config:|
       _ = config
       _ = store
       { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }
@@ -190,7 +190,7 @@ RSpec.describe "Builder :file_published events" do
 
     it "fires :file_published once per publish_to target with correct key/source/target" do
       captured = []
-      store.registry.register(:file_published, :capture) do |key:, envelope:, source:, target:, **|
+      store.bus.register(:file_published, :capture) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
@@ -211,7 +211,7 @@ RSpec.describe "Builder :file_published events" do
 
     it "fires :build_completed exactly once per output entry regardless of publish_to count" do
       build_events = []
-      store.registry.register(:build_completed, :capture_build) do |key:, envelope:, sources:, **|
+      store.bus.register(:build_completed, :capture_build) do |key:, envelope:, sources:, **|
         _ = envelope
         build_events << { key: key, sources: sources }
       end
@@ -247,7 +247,7 @@ RSpec.describe "Builder :file_published events" do
 
     it "fires :file_published once per leaf with the correct leaf key and target" do
       captured = []
-      store.registry.register(:file_published, :capture_leaf) do |key:, envelope:, source:, target:, **|
+      store.bus.register(:file_published, :capture_leaf) do |key:, envelope:, source:, target:, **|
         _ = envelope
         captured << { key: key, source: source, target: target }
       end
@@ -320,7 +320,7 @@ RSpec.describe "Textus::Builder::Pipeline idempotent writes" do
       "---\nuid: u-alice\nname: alice\n---\n",
     )
 
-    store.registry.register(:transform_rows, :envelope) do |store:, rows:, config:|
+    store.bus.register(:transform_rows, :envelope) do |store:, rows:, config:|
       _ = config
       _ = store
       { "protocol" => "textus/3", "people" => rows.sort_by { |r| r["name"].to_s } }

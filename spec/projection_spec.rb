@@ -13,7 +13,7 @@ RSpec.describe Textus::Application::Projection do
       reader: ops.method(:get),
       spec: spec,
       lister: ops.method(:list),
-      transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
+      transform_resolver: ->(name) { store.bus.rpc_callable(:transform_rows, name) },
       transform_context: store,
     )
   end
@@ -60,7 +60,7 @@ RSpec.describe Textus::Application::Projection do
   end
 
   it "applies a reducer before sort/limit" do
-    store.registry.register(:transform_rows, :score) do |store:, rows:, config:|
+    store.bus.register(:transform_rows, :score) do |store:, rows:, config:|
       _ = config
       _ = store
       rows.map { |r| r.merge("score" => r["name"].length) }
@@ -76,7 +76,7 @@ RSpec.describe Textus::Application::Projection do
   end
 
   it "raises UsageError when a reducer exceeds 2s timeout" do
-    store.registry.register(:transform_rows, :slow) do |store:, rows:, config:|
+    store.bus.register(:transform_rows, :slow) do |store:, rows:, config:|
       _ = rows
       _ = config
       _ = store

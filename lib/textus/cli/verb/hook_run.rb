@@ -27,7 +27,7 @@ module Textus
           end
 
           Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          callable = store.registry.rpc_callable(:resolve_intake, name)
+          callable = store.bus.rpc_callable(:resolve_intake, name)
 
           begin
             Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do

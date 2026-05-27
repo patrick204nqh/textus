@@ -3,20 +3,25 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe Textus::Application::Refresh::Worker do
-  # A simple test bus that records published events without going through
-  # the hooks registry (avoiding the store: kwarg shape-check).
-  let(:test_bus) do
+  # A simple test bus that records published events. Delegates rpc_callable
+  # to the real bus so intake handlers registered at store boot are accessible.
+  def make_test_bus(real_bus)
     Class.new do
       attr_reader :events
 
-      def initialize
+      def initialize(delegate)
         @events = []
+        @delegate = delegate
       end
 
       def publish(event, **payload)
         @events << [event, payload]
       end
-    end.new
+
+      def rpc_callable(event, name)
+        @delegate.rpc_callable(event, name)
+      end
+    end.new(real_bus)
   end
 
   def build_store(root, intake_body:)
@@ -49,6 +54,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
+      test_bus = make_test_bus(store.bus)
       store.instance_variable_set(:@bus, test_bus)
       ctx = test_ctx(role: "runner")
       worker = build_worker(store, ctx)
@@ -77,6 +83,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
       RUBY
 
       store = build_store(root, intake_body: hook_body)
+      test_bus = make_test_bus(store.bus)
       store.instance_variable_set(:@bus, test_bus)
       ctx = test_ctx(role: "runner")
       worker = build_worker(store, ctx)

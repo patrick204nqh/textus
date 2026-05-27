@@ -17,7 +17,6 @@ module Textus
         schemas: store.schemas,
         audit_log: store.audit_log,
         bus: store.bus,
-        registry: store.registry,
         root: store.root,
         store: store,
       )
@@ -26,14 +25,13 @@ module Textus
     attr_reader :ctx, :store
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(ctx:, manifest:, file_store:, schemas:, audit_log:, bus:, registry:, root:, store:)
+    def initialize(ctx:, manifest:, file_store:, schemas:, audit_log:, bus:, root:, store:)
       @ctx        = ctx
       @manifest   = manifest
       @file_store = file_store
       @schemas    = schemas
       @audit_log  = audit_log
       @bus        = bus
-      @registry   = registry
       @root       = root
       @store      = store
       @authorizer = Textus::Domain::Authorizer.new(manifest: @manifest)
@@ -44,7 +42,7 @@ module Textus
       self.class.new(
         ctx: @ctx.with_role(role),
         manifest: @manifest, file_store: @file_store, schemas: @schemas,
-        audit_log: @audit_log, bus: @bus, registry: @registry,
+        audit_log: @audit_log, bus: @bus,
         root: @root, store: @store
       )
     end
@@ -88,7 +86,7 @@ module Textus
     def build(...)
       Application::Writes::Build.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, registry: @registry, store: @store
+        bus: @bus, root: @root, store: @store
       ).call(...)
     end
 
@@ -137,7 +135,7 @@ module Textus
     def refresh_all(**)
       Application::Refresh::All.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        registry: @registry, store: @store, authorizer: @authorizer
+        store: @store, authorizer: @authorizer
       ).call(**)
     end
 
@@ -156,7 +154,7 @@ module Textus
     def refresh_worker
       @refresh_worker ||= Application::Refresh::Worker.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        registry: @registry, store: @store, authorizer: @authorizer
+        store: @store, authorizer: @authorizer
       )
     end
 

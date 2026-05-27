@@ -3,7 +3,7 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe Textus::Hooks::Loader do
-  let(:registry) { Textus::Hooks::Registry.new }
+  let(:registry) { Textus::Hooks::Bus.new }
   let(:thread_registry_key_legacy) { :__textus_active_registry__ }
 
   after { Textus.drain_hook_blocks }
@@ -21,7 +21,7 @@ RSpec.describe Textus::Hooks::Loader do
         end
       RUBY
 
-      described_class.new(registry: registry).load_dir(dir)
+      described_class.new(bus: registry).load_dir(dir)
 
       expect(registry.rpc_names(:resolve_intake)).to include(:a)
       expect(registry.rpc_names(:transform_rows)).to include(:b)
@@ -36,7 +36,7 @@ RSpec.describe Textus::Hooks::Loader do
         end
       RUBY
 
-      described_class.new(registry: registry).load_dir(dir)
+      described_class.new(bus: registry).load_dir(dir)
       expect(Thread.current.keys).not_to include(thread_registry_key_legacy)
     end
   end
@@ -49,12 +49,12 @@ RSpec.describe Textus::Hooks::Loader do
         end
       RUBY
 
-      reg_a = Textus::Hooks::Registry.new
-      reg_b = Textus::Hooks::Registry.new
+      reg_a = Textus::Hooks::Bus.new
+      reg_b = Textus::Hooks::Bus.new
 
-      t1 = Thread.new { described_class.new(registry: reg_a).load_dir(dir) }
+      t1 = Thread.new { described_class.new(bus: reg_a).load_dir(dir) }
       t1.join
-      t2 = Thread.new { described_class.new(registry: reg_b).load_dir(dir) }
+      t2 = Thread.new { described_class.new(bus: reg_b).load_dir(dir) }
       t2.join
 
       expect(reg_a.rpc_names(:resolve_intake)).to include(:iso)
@@ -65,14 +65,14 @@ RSpec.describe Textus::Hooks::Loader do
   it "loads cleanly when a hook file does not call Textus.hook" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "noop.rb"), "# nothing to register here\n")
-      expect { described_class.new(registry: registry).load_dir(dir) }.not_to raise_error
+      expect { described_class.new(bus: registry).load_dir(dir) }.not_to raise_error
     end
   end
 
   it "raises UsageError when a hook file fails to load" do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "boom.rb"), "raise 'kaboom'\n")
-      expect { described_class.new(registry: registry).load_dir(dir) }
+      expect { described_class.new(bus: registry).load_dir(dir) }
         .to raise_error(Textus::UsageError, /failed loading hook boom\.rb/)
     end
   end
@@ -82,7 +82,7 @@ RSpec.describe Textus::Hooks::Loader do
       File.write(File.join(dir, "bad.rb"), <<~RUBY)
         Textus.hook { |_reg| raise "explode-in-block" }
       RUBY
-      expect { described_class.new(registry: registry).load_dir(dir) }
+      expect { described_class.new(bus: registry).load_dir(dir) }
         .to raise_error(Textus::UsageError, /failed registering hook/)
     end
   end
@@ -96,12 +96,12 @@ RSpec.describe Textus::Hooks::Loader do
         end
       RUBY
 
-      expect { described_class.new(registry: registry).load_dir(dir) }.not_to raise_error
+      expect { described_class.new(bus: registry).load_dir(dir) }.not_to raise_error
       expect(registry.rpc_names(:resolve_intake)).to include(:ok)
     end
   end
 
   it "is a no-op when the directory does not exist" do
-    expect { described_class.new(registry: registry).load_dir("/nonexistent/path") }.not_to raise_error
+    expect { described_class.new(bus: registry).load_dir("/nonexistent/path") }.not_to raise_error
   end
 end

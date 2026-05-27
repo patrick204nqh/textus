@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   class Store
-    attr_reader :root, :manifest, :schemas, :file_store, :audit_log, :bus, :registry
+    attr_reader :root, :manifest, :schemas, :file_store, :audit_log, :bus
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
@@ -34,11 +34,10 @@ module Textus
       @schemas    = Schemas.new(File.join(@root, "schemas"))
       @file_store = Infra::Storage::FileStore.new
       @audit_log  = Infra::AuditLog.new(@root)
-      @bus        = Hooks::Dispatcher.new
-      @registry   = Hooks::Registry.new(dispatcher: @bus)
+      @bus = Hooks::Bus.new
       Infra::AuditSubscriber.new(@audit_log).attach(@bus)
-      Hooks::Builtin.register_all(@registry)
-      Hooks::Loader.new(registry: @registry).load_dir(File.join(@root, "hooks"))
+      Hooks::Builtin.register_all(@bus)
+      Hooks::Loader.new(bus: @bus).load_dir(File.join(@root, "hooks"))
       @bus.publish(:store_loaded, store: self)
     end
   end
