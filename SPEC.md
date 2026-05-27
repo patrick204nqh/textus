@@ -229,6 +229,40 @@ Unknown role values are rejected with `invalid_role`.
 
 Every successful write records the resolved role and a wall-clock timestamp in `.textus/audit.log`, so reviewers can later distinguish a human edit from an agent edit even though both live in the same file.
 
+#### 5.1.1 Role kinds (engine semantics)
+
+Internally the engine recognizes four **role kinds** — abstract capability
+markers — rather than the four default role names. A manifest may declare a
+`roles:` block to map any role name to a kind:
+
+```yaml
+roles:
+  - { name: owner,    kind: accept_authority }
+  - { name: compiler, kind: generator }
+  - { name: proposer, kind: proposer }
+  - { name: fetcher,  kind: runner }
+```
+
+Kind allow-list: `accept_authority`, `generator`, `proposer`, `runner`.
+At most one role may have `accept_authority`. When `roles:` is declared,
+every entry in `zones[*].write_policy` must be a declared role name.
+
+When the `roles:` block is omitted, the default mapping applies:
+
+| Default name | Kind |
+|---|---|
+| `human`   | `accept_authority` |
+| `agent`   | `proposer` |
+| `builder` | `generator` |
+| `runner`  | `runner` |
+
+This means existing manifests continue to work byte-for-byte. Wire protocol
+`textus/3` is unchanged — kinds are an internal-semantics concept and never
+appear on the wire.
+
+The promotion DSL predicate `:human_accept` is now `:accept_authority_signed`;
+the old symbol works as an alias for backwards compatibility.
+
 ### 5.2 Compute layer (derived entries)
 
 Derived entries live in a zone whose `write_policy:` list includes `builder` — `output` in the default scaffold. They are not authored by hand; their body is produced by projecting over other entries. A derived entry declares a `compute:` block with a `kind:` discriminator.
