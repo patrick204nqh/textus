@@ -120,6 +120,13 @@ module Textus
     def policy_explain(...)  = Application::Reads::PolicyExplain.new(manifest: @manifest).call(...)
     def freshness(...)       = Application::Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call(...)
 
+    def pulse(...)
+      Application::Reads::Pulse.new(
+        ctx: @ctx, manifest: @manifest, file_store: @file_store,
+        audit_log: @audit_log, root: @root, store: @store
+      ).call(...)
+    end
+
     def validate_all(...)
       Application::Reads::ValidateAll.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store, schemas: @schemas, audit_log: @audit_log,
