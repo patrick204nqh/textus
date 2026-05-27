@@ -17,12 +17,11 @@ RSpec.describe Textus::Doctor::Check::ProtocolVersion do
     expect(described_class.run(root: tmp)).to be_empty
   end
 
-  it "returns a protocol_mismatch issue when version is textus/2" do
+  it "returns a protocol_mismatch issue when version is not textus/3" do
     FileUtils.mkdir_p(File.join(tmp, ".textus"))
-    File.write(File.join(tmp, ".textus/manifest.yaml"), "version: textus/2\nzones: []\nentries: []\n")
+    File.write(File.join(tmp, ".textus/manifest.yaml"), "version: textus/4\nzones: []\nentries: []\n")
     issues = described_class.run(root: tmp)
     expect(issues.first["code"]).to eq("protocol_mismatch")
-    expect(issues.first["hint"]).to match(/0\.11\.x/)
-    expect(issues.first["hint"]).not_to match(/textus migrate/)
+    expect(issues.first["severity"]).to eq("error")
   end
 end
