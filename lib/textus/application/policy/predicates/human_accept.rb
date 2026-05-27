@@ -6,13 +6,14 @@ module Textus
           attr_reader :reason
 
           def name
-            "human_accept"
+            "accept_authority_signed"
           end
 
-          # The role is passed explicitly. In practice, Accept already enforces
-          # role == "human" before reaching the promotion gate, so this predicate
-          # trivially passes. It documents intent and future-proofs multi-actor
-          # accept flows.
+          # Checks that an accept-authority role signed the promotion. The role
+          # is passed explicitly. In practice, Accept already enforces that an
+          # accept-authority (currently "human") has acted before reaching the
+          # promotion gate, so this predicate trivially passes. It documents
+          # intent and future-proofs multi-actor accept flows.
           def call(role:, entry: nil) # rubocop:disable Lint/UnusedMethodArgument
             role_str = role&.to_s
             # If we cannot determine the role, trust that Accept has already

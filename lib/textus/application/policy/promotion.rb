@@ -53,7 +53,7 @@ module Textus
 
         def invoke(pred, entry:, schemas:, manifest:, role:)
           case pred.name
-          when "human_accept"
+          when "accept_authority_signed"
             pred.call(role: role, entry: entry)
           else
             # Default shape: schema-style predicates that need entry + schemas + manifest.
