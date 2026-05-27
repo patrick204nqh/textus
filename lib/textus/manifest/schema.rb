@@ -1,7 +1,9 @@
 module Textus
   class Manifest
     module Schema
-      ROOT_KEYS    = %w[version zones entries rules].freeze
+      ROOT_KEYS    = %w[version roles zones entries rules].freeze
+      ROLE_KEYS    = %w[name kind].freeze
+      ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
       ZONE_KEYS    = %w[name write_policy read_policy].freeze
       ENTRY_KEYS   = %w[
         key path zone kind schema owner nested format
@@ -19,6 +21,7 @@ module Textus
         raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
         walk(raw, ROOT_KEYS, "$")
+        validate_roles!(raw["roles"])
         Array(raw["zones"]).each_with_index do |z, i|
           walk(z, ZONE_KEYS, "$.zones[#{i}]")
         end
@@ -37,6 +40,30 @@ module Textus
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
         end
+      end
+
+      def self.validate_roles!(roles)
+        return if roles.nil?
+        raise BadManifest.new("roles: must be a list") unless roles.is_a?(Array)
+
+        accept_authority_count = 0
+        roles.each_with_index do |r, i|
+          path = "$.roles[#{i}]"
+          walk(r, ROLE_KEYS, path)
+          name = r["name"] or raise BadManifest.new("role at '#{path}' missing name")
+          kind = r["kind"] or raise BadManifest.new("role '#{name}' at '#{path}' missing kind")
+          unless ROLE_KINDS.include?(kind)
+            raise BadManifest.new("unknown role kind '#{kind}' at '#{path}' (known: #{ROLE_KINDS.join(", ")})")
+          end
+
+          accept_authority_count += 1 if kind == "accept_authority"
+        end
+        return unless accept_authority_count > 1
+
+        raise BadManifest.new(
+          "manifest declares #{accept_authority_count} accept_authority roles; " \
+          "exactly one accept_authority role is required",
+        )
       end
 
       def self.validate_fetch_timeout!(value, path)
