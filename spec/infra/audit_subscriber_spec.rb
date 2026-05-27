@@ -43,6 +43,26 @@ RSpec.describe Textus::Infra::AuditSubscriber do
     )
   end
 
+  it "appends an event_error row when a hook times out" do
+    described_class.new(audit_log).attach(bus)
+    # Override the deadline so the test runs fast.
+    stub_const("Textus::Hooks::Dispatcher::HOOK_TIMEOUT_SECONDS", 0.05)
+    bus.subscribe(:entry_put, :slow) { |**| sleep 1 }
+    bus.publish(:entry_put, key: "k", envelope: {})
+
+    row = read_rows.first
+    expect(row).to include(
+      "role" => "runner",
+      "verb" => "event_error",
+      "key" => "k",
+    )
+    expect(row["extras"]).to include(
+      "event" => "entry_put",
+      "hook" => "slow",
+    )
+    expect(row.dig("extras", "error")).to start_with("Textus::Hooks::Dispatcher::HookTimeout:")
+  end
+
   it "matches the canonical row format (key ordering and field set)" do
     described_class.new(audit_log).attach(bus)
     bus.subscribe(:entry_put, :boom) { |**| raise "bang" }
