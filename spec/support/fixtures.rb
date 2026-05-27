@@ -96,14 +96,6 @@ module TextusSpecHelpers
     )
   end
 
-  def build_build(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Build.new(
-      ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      bus: p[:bus], root: p[:root], store: p[:store], hook_context: p[:hook_context]
-    )
-  end
-
   def build_worker(store, ctx)
     ops = Textus::Operations.new(
       ctx: ctx,
