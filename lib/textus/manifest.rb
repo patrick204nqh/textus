@@ -43,11 +43,11 @@ module Textus
     end
 
     def zone_kinds(zone_name)
-      writers = zone_writers(zone_name)
-      writers.each_with_object(Set.new) do |w, acc|
+      @zone_kinds_cache ||= {}
+      @zone_kinds_cache[zone_name] ||= zone_writers(zone_name).each_with_object(Set.new) do |w, acc|
         k = role_kind(w)
         acc << k if k
-      end
+      end.freeze
     end
 
     def self.parse(yaml_text, root: ".")
