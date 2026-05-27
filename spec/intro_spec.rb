@@ -183,6 +183,63 @@ RSpec.describe Textus::Intro do
     end
   end
 
+  describe "with user-renamed roles" do
+    def build_store(yaml)
+      dir = Dir.mktmpdir("textus-intro-renamed-")
+      FileUtils.mkdir_p(File.join(dir, "schemas"))
+      File.write(File.join(dir, "manifest.yaml"), yaml)
+      Textus::Store.new(dir)
+    end
+
+    it "renders write_flows keyed by the configured role names" do
+      yaml = <<~YAML
+        version: textus/3
+        roles:
+          - { name: owner,    kind: accept_authority }
+          - { name: proposer, kind: proposer }
+          - { name: fetcher,  kind: runner }
+          - { name: compiler, kind: generator }
+        zones:
+          - { name: self,    write_policy: [owner] }
+          - { name: working, write_policy: [owner, proposer, fetcher] }
+          - { name: review,  write_policy: [proposer, owner] }
+          - { name: world,   write_policy: [fetcher] }
+          - { name: build,   write_policy: [compiler] }
+        entries: []
+      YAML
+      s = build_store(yaml)
+      env = described_class.run(s)
+      flows = env["write_flows"]
+      expect(flows.keys).to contain_exactly("owner", "proposer", "fetcher", "compiler")
+      expect(flows["owner"]).to include("owner")
+      expect(flows["proposer"]).to include("proposer", "owner")
+      expect(flows["proposer"]).not_to include("accept_authority")
+      expect(flows["fetcher"]).to include("fetcher")
+
+      roles = env["agent_protocol"]["role_resolution"]["roles"]
+      expect(roles).to eq(%w[owner proposer fetcher compiler])
+    end
+
+    it "falls back to default role names when roles: block is omitted" do
+      yaml = <<~YAML
+        version: textus/3
+        zones:
+          - { name: identity, write_policy: [human] }
+          - { name: working,  write_policy: [human, agent, runner] }
+          - { name: review,   write_policy: [agent] }
+          - { name: output,   write_policy: [builder] }
+        entries: []
+      YAML
+      s = build_store(yaml)
+      env = described_class.run(s)
+      flows = env["write_flows"]
+      expect(flows.keys).to contain_exactly("human", "agent", "runner", "builder")
+
+      roles = env["agent_protocol"]["role_resolution"]["roles"]
+      expect(roles).to contain_exactly("human", "agent", "runner", "builder")
+    end
+  end
+
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new

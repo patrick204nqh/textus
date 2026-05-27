@@ -13,6 +13,10 @@ module Textus
 
         REGISTRY = {
           "schema_valid" => -> { Predicates::SchemaValid.new },
+          "accept_authority_signed" => -> { Predicates::HumanAccept.new },
+          # Legacy alias — kept so manifests written against the pre-0.20.1
+          # vocabulary keep resolving. The Domain Promote DSL normalizes the
+          # symbol; this entry covers callers that pass the raw string.
           "human_accept" => -> { Predicates::HumanAccept.new },
         }.freeze
 
@@ -49,8 +53,8 @@ module Textus
 
         def invoke(pred, entry:, schemas:, manifest:, role:)
           case pred.name
-          when "human_accept"
-            pred.call(role: role, entry: entry)
+          when "accept_authority_signed"
+            pred.call(role: role, manifest: manifest, entry: entry)
           else
             # Default shape: schema-style predicates that need entry + schemas + manifest.
             pred.call(entry: entry, schemas: schemas, manifest: manifest)

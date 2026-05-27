@@ -18,19 +18,37 @@ module Textus
       "output" => "build-computed outputs; never hand-edited",
     }.freeze
 
-    WRITE_FLOWS = {
-      "human" => "edit files in identity/working zones, then 'textus put KEY --as=human'",
-      "agent" => "propose changes by writing 'review.*' entries with --as=agent and a 'proposal:' frontmatter block; " \
-                 "a human runs 'textus accept' to apply",
-      "runner" => "refresh intake entries with 'textus refresh KEY --as=runner' (uses the entry's declared action)",
-      "builder" => "'textus build' computes output entries from projections; output files are never hand-edited",
+    # Per-kind write-flow templates. Each lambda receives the user-facing role
+    # name and returns a guidance string for that role. Roles whose kind has
+    # no template (e.g. unknown future kinds) are omitted from write_flows.
+    WRITE_FLOW_TEMPLATES = {
+      accept_authority: lambda do |name, _manifest|
+        "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
+      end,
+      proposer: lambda do |name, manifest|
+        authority = manifest.roles_with_kind(:accept_authority).first || "accept_authority"
+        "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
+          "the #{authority} role runs 'textus accept' to apply"
+      end,
+      runner: lambda do |name, _manifest|
+        "refresh intake entries with 'textus refresh KEY --as=#{name}' (uses the entry's declared action)"
+      end,
+      generator: lambda do |_name, _manifest|
+        "'textus build' computes output entries from projections; output files are never hand-edited"
+      end,
     }.freeze
 
-    # Static, store-independent guide to the agent-facing protocol. Surfaced
-    # under the new top-level `agent_protocol` key in Intro.run. Recipes
-    # describe CLI verbs (not Ruby Operations) because the audience is an
-    # agent driving textus from the command line.
-    AGENT_PROTOCOL = {
+    def self.write_flows_for(manifest)
+      manifest.role_mapping.each_with_object({}) do |(name, kind), acc|
+        tmpl = WRITE_FLOW_TEMPLATES[kind]
+        acc[name] = tmpl.call(name, manifest) if tmpl
+      end
+    end
+
+    # Static, store-independent parts of the agent-facing protocol. The
+    # `role_resolution` block is derived per-manifest in agent_protocol(...)
+    # because role names are user-configurable.
+    AGENT_PROTOCOL_TEMPLATE = {
       "envelope_shape" => {
         "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
         "fields" => {
@@ -40,11 +58,6 @@ module Textus
           "etag" => "content hash; pass back on writes to detect concurrent edits",
         },
         "ref" => "SPEC.md §8",
-      },
-      "role_resolution" => {
-        "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, default human",
-        "roles" => %w[human agent runner builder],
-        "ref" => "SPEC.md §5",
       },
       "recipes" => {
         "read" => {
@@ -105,6 +118,17 @@ module Textus
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
     ].freeze
 
+    def self.agent_protocol(manifest)
+      AGENT_PROTOCOL_TEMPLATE.merge(
+        "role_resolution" => {
+          "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
+                       "default 'human'",
+          "roles" => manifest.role_mapping.keys,
+          "ref" => "SPEC.md §5",
+        },
+      )
+    end
+
     def self.run(store)
       {
         "protocol" => PROTOCOL_ID,
@@ -112,9 +136,9 @@ module Textus
         "zones" => zones_for(store),
         "entries" => entries_for(store),
         "hooks" => hooks_for(store),
-        "write_flows" => WRITE_FLOWS.dup,
+        "write_flows" => write_flows_for(store.manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
-        "agent_protocol" => AGENT_PROTOCOL,
+        "agent_protocol" => agent_protocol(store.manifest),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end
@@ -130,7 +154,7 @@ module Textus
 
     def self.entries_for(store)
       store.manifest.entries.map do |e|
-        derived = store.manifest.zone_writers(e.zone).include?("builder")
+        derived = store.manifest.zone_kinds(e.zone).include?(:generator)
         {
           "key" => e.key,
           "zone" => e.zone,

@@ -2,14 +2,17 @@ module Textus
   module Domain
     module Policy
       class Promote
-        KNOWN = %i[schema_valid human_accept].freeze
+        KNOWN   = %i[schema_valid accept_authority_signed].freeze
+        ALIASES = { human_accept: :accept_authority_signed }.freeze
         attr_reader :requires
 
         def initialize(requires:)
-          syms = Array(requires).map { |r| r.to_s.to_sym }
+          syms = Array(requires).map { |r| r.to_s.to_sym }.map { |s| ALIASES.fetch(s, s) }
           unknown = syms - KNOWN
           unless unknown.empty?
-            raise Textus::UsageError.new("unknown promote requirement: #{unknown.first.inspect} (known: #{KNOWN.join(", ")})")
+            raise Textus::UsageError.new(
+              "unknown promote requirement: #{unknown.first.inspect} (known: #{KNOWN.join(", ")})",
+            )
           end
 
           @requires = syms

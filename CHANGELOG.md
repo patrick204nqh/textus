@@ -9,6 +9,31 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.20.1 — 2026-05-27
+
+### Added
+- Optional `roles:` block in `manifest.yaml` lets users rename roles without
+  breaking engine semantics. Each declared role maps to one of four engine
+  kinds: `accept_authority`, `generator`, `proposer`, `runner`. (#72)
+- `Manifest#role_kind`, `Manifest#roles_with_kind`, `Manifest#zone_kinds`
+  accessors for engine integrations.
+
+### Changed
+- `accept` / `reject` now gate on `accept_authority` kind, not the literal
+  `"human"` role. Error messages cite the configured role name.
+- `validator` last-writer trust check uses `accept_authority` kind.
+- Entry `in_generator_zone?` / `in_proposal_zone?` query `zone_kinds`.
+- `Intro` derives `write_flows` and `agent_protocol.role_resolution.roles`
+  from the manifest's role mapping.
+- Promote DSL predicate `:human_accept` renamed to `:accept_authority_signed`;
+  the old symbol still works as an alias.
+- Schema rejects zone writers that reference an undeclared role when `roles:`
+  is declared.
+
+### Compatibility
+- No wire protocol change (`textus/3`).
+- Existing manifests without a `roles:` block behave identically to 0.20.0.
+
 ## 0.20.0 — architecture redesign (2026-05-27)
 
 **BREAKING (pre-1.0):** Public top-level utility modules removed,

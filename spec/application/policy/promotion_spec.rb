@@ -26,7 +26,7 @@ RSpec.describe Textus::Application::Policy::Promotion do
 
   it "resolves predicate names from a registry" do
     policy = described_class.from_names(%w[schema_valid human_accept])
-    expect(policy.predicate_names).to contain_exactly("schema_valid", "human_accept")
+    expect(policy.predicate_names).to contain_exactly("schema_valid", "accept_authority_signed")
   end
 
   it "rejects unknown predicate names" do
@@ -49,7 +49,7 @@ RSpec.describe Textus::Application::Policy::Promotion do
       policy = described_class.from_names(%w[human_accept])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: nil, role: "agent")
       expect(result.ok?).to be false
-      expect(result.reasons.first).to match(/human_accept.*expected 'human'/)
+      expect(result.reasons.first).to match(/accept_authority_signed.*expected 'human'/)
     end
 
     it "passes when role is human" do

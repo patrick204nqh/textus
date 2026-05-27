@@ -49,7 +49,8 @@ module Textus
           end
         raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
-        ops = Textus::Operations.for(store, role: "human")
+        role = store.manifest.roles_with_kind(:accept_authority).first || "human"
+        ops = Textus::Operations.for(store, role: role)
         touched = []
         store.manifest.resolver.enumerate.each do |row|
           env = ops.get(row[:key])

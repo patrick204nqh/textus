@@ -8,7 +8,8 @@ module Textus
 
         def call(store)
           Textus::Infra::BuildLock.with(root: store.root) do
-            ops = Textus::Operations.for(store, role: "builder")
+            role = store.manifest.roles_with_kind(:generator).first || "builder"
+            ops = Textus::Operations.for(store, role: role)
             result = ops.publish(prefix: prefix)
             emit(result)
           end
