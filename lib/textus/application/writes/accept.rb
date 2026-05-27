@@ -15,8 +15,13 @@ module Textus
 
         def call(pending_key)
           unless @manifest.role_kind(@ctx.role) == :accept_authority
-            authority = @manifest.roles_with_kind(:accept_authority).first || "human"
-            raise ProposalError.new("only #{authority} role can accept proposals; got '#{@ctx.role}'")
+            authority = @manifest.roles_with_kind(:accept_authority).first
+            msg = if authority.nil?
+                    "no role with accept_authority kind is declared in this manifest; accept is disabled"
+                  else
+                    "only #{authority} role can accept proposals; got '#{@ctx.role}'"
+                  end
+            raise ProposalError.new(msg)
           end
 
           env = Textus::Application::Reads::Get.new(

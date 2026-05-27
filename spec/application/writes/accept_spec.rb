@@ -106,6 +106,55 @@ RSpec.describe Textus::Application::Writes::Accept do
     end
   end
 
+  describe "manifest with zero accept_authority roles" do
+    def build_zero_authority_store(textus_dir)
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/working"))
+      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
+      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        roles:
+          - { name: agent, kind: proposer }
+          - { name: runner, kind: runner }
+        zones:
+          - { name: working, write_policy: [agent, runner] }
+          - { name: review, write_policy: [agent] }
+        entries:
+          - { key: working.n, path: working/n.md, zone: working, schema: null, owner: o, kind: leaf }
+          - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+        rules: []
+      YAML
+      store = Textus::Store.new(textus_dir)
+      Textus::Operations.for(store, role: "agent").put(
+        "review.p",
+        meta: { "name" => "p", "proposal" => { "target_key" => "working.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
+        body: "b",
+      )
+      store
+    end
+
+    it "accept raises an honest error naming no fallback role" do
+      Dir.mktmpdir do |root|
+        store = build_zero_authority_store(File.join(root, ".textus"))
+        ctx = test_ctx(role: "agent")
+        expect { build_accept(store, ctx).call("review.p") }.to raise_error(
+          Textus::ProposalError,
+          /no role with accept_authority kind is declared/i,
+        )
+      end
+    end
+
+    it "reject raises an honest error naming no fallback role" do
+      Dir.mktmpdir do |root|
+        store = build_zero_authority_store(File.join(root, ".textus"))
+        ctx = test_ctx(role: "agent")
+        expect { build_reject(store, ctx).call("review.p") }.to raise_error(
+          Textus::ProposalError,
+          /no role with accept_authority kind is declared/i,
+        )
+      end
+    end
+  end
+
   describe "promotion gate" do
     def build_store_with_promotion(textus_dir)
       FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
