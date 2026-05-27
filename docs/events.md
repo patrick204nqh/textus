@@ -10,7 +10,7 @@ This is the hook-author's guide. For the normative event table see [`../SPEC.md`
 2. [The events in plain English](#2-the-events-in-plain-english)
 3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
 4. [The definition surface](#4-the-definition-surface)
-5. [The `store:` proxy — what you can and can't do](#5-the-store-proxy)
+5. [The `ctx:` handle — what you can and can't do](#5-the-ctx-handle)
 6. [Failure modes and timeouts](#6-failure-modes-and-timeouts)
 7. [Fan-out and `keys:` globs](#7-fan-out-and-keys-globs)
 8. [Built-in fetch parsers](#8-built-in-fetch-parsers)
@@ -58,15 +58,15 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 | `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh-stale`. |
 | `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
-| `:entry_put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). Payload: `{ store:, key:, envelope: }`. |
-| `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ store:, key: }`. |
-| `:entry_refreshed` | pubsub | Like `:entry_put` but specific to refresh-driven writes. Both fire — `:entry_put` first, then `:entry_refreshed`. Payload: `{ store:, key:, envelope:, change: }`. |
-| `:build_completed` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. Payload: `{ store:, key:, envelope:, sources: }`. |
-| `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ store:, key:, target_key: }`. |
-| `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ store:, key:, envelope:, source:, target: }`. |
-| `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ store:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
-| `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ store:, key:, target_key: }`. |
-| `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ store: }`. |
+| `:entry_put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). Payload: `{ ctx:, key:, envelope: }`. |
+| `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ ctx:, key: }`. |
+| `:entry_refreshed` | pubsub | Like `:entry_put` but specific to refresh-driven writes. Both fire — `:entry_put` first, then `:entry_refreshed`. Payload: `{ ctx:, key:, envelope:, change: }`. |
+| `:build_completed` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. Payload: `{ ctx:, key:, envelope:, sources: }`. |
+| `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ ctx:, key:, target_key: }`. |
+| `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ ctx:, key:, envelope:, source:, target: }`. |
+| `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ ctx:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
+| `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ ctx:, key:, target_key: }`. |
+| `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
 
 ### 2.1 Refresh lifecycle events
 
@@ -74,9 +74,9 @@ Three additional pub-sub events observe the progress of in-process and backgroun
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ store:, key:, mode: }`. |
-| `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ store:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
-| `:refresh_backgrounded` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ store:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
+| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
+| `:refresh_backgrounded` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -219,8 +219,8 @@ Textus.hook do |reg|
     { _meta: {}, body: File.read(config["path"]) }
   end
 
-  reg.on(:entry_put, :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
-  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, key:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:entry_put, :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| ... }
+  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |ctx:, key:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -230,19 +230,19 @@ Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them
 
 ---
 
-## 5. The `store:` proxy
+## 5. The `ctx:` handle
 
-Every hook receives `store:` as its first kwarg. It's an `Application::Context` bound to the active role — use it to drive read use cases (`Textus::Application::Reads::Get.new(ctx: store).call(key)` for a pure read, `Textus::Application::Reads::GetOrRefresh` if you want refresh-on-stale, `Textus::Application::Reads::List.new(ctx: store).call(...)`, etc.). Writes from inside a hook are unsupported and will raise.
+Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_put, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
 
-Pick `Reads::Get` for materialization or read-only inspection; pick `Reads::GetOrRefresh` (composes `Get` with the refresh orchestrator) when the hook needs the freshest envelope obtainable. See [conventions](conventions.md) for the read-vs-refresh split.
+All writes via `ctx` route through `Operations` so authorization, schema validation, and audit logging always fire — there are no bypass paths.
 
-Why: hooks fire inside a verb's control flow. Letting hooks write would create reentrancy, audit-log chaos, and surprise infinite loops. If you genuinely need to write from a hook, do it out of band — enqueue a job, write a sentinel file, or run a follow-up CLI command.
+RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and still receive `store:`.
 
-If you don't need `store:`, absorb it with `**`:
+If you don't need `ctx:`, absorb it with `**`:
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:transform_rows, :claude_root) do |rows:, **|   # store: absorbed by **
+  reg.on(:transform_rows, :claude_root) do |rows:, **|   # ctx: absorbed by **
     ...
   end
 end
@@ -326,7 +326,9 @@ Wrapping pattern:
 Textus.hook do |reg|
   reg.on(:resolve_intake, :remote_rss) do |store:, config:, args:|
     bytes = Net::HTTP.get(URI(config["url"]))
-    store.invoke_rpc(:resolve_intake, :rss, config: { "bytes" => bytes }, args: args)
+    # :resolve_intake is RPC — store: is available for RPC event handlers
+    callable = store.bus.rpc_callable(:resolve_intake, :rss)
+    callable.call(store: store, config: { "bytes" => bytes }, args: args)
   end
 end
 ```
@@ -361,10 +363,10 @@ For pub-sub handlers, drive the dispatcher directly:
 
 ```ruby
 captured = []
-reg.on(:entry_put, :listener, keys: ["working.*"]) { |store:, key:, envelope:, **| captured << key }
+reg.on(:entry_put, :listener, keys: ["working.*"]) { |ctx:, key:, envelope:, **| captured << key }
 
 reg.listeners(:entry_put, key: "working.x").first[:callable].call(
-  store: nil, key: "working.x", envelope: {}
+  ctx: nil, key: "working.x", envelope: {}
 )
 expect(captured).to eq(["working.x"])
 ```
@@ -386,7 +388,7 @@ Textus.hook do |reg|
     { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
   end
 
-  reg.on(:transform_rows, :linear) do |store:, rows:, **|
+  reg.on(:transform_rows, :linear) do |rows:, **|
     rows.map { |r| r.slice("id", "title", "state", "updated_at") }
         .sort_by { |r| r["updated_at"] }
         .reverse
@@ -414,8 +416,8 @@ rules:
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |store:, key:, envelope:, **|
-    Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']}")
+  reg.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |ctx:, key:, envelope:, **|
+    Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']} role=#{ctx.role}")
   end
 end
 ```
@@ -424,7 +426,7 @@ end
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:build_completed, :notify) do |store:, key:, sources:, **|
+  reg.on(:build_completed, :notify) do |ctx:, key:, sources:, **|
     system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
   end
 end
@@ -435,7 +437,7 @@ end
 ```ruby
 Textus.hook do |reg|
   reg.on(:validate, :no_drafts_in_identity) do |store:|
-    Textus::Application::Reads::List.new(ctx: store).call(zone: "identity")
+    Textus::Application::Reads::List.new(manifest: store.manifest).call(zone: "identity")
       .select { |e| e["frontmatter"]["status"] == "draft" }
       .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
   end

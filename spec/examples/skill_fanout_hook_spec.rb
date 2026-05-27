@@ -40,7 +40,8 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   def trigger(key:, files:)
     handler = store.bus.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
-    handler[:callable].call(store: store, key: key, envelope: envelope, change: :updated)
+    ctx = Textus::Hooks::Context.new(ops: ops)
+    handler[:callable].call(ctx: ctx, key: key, envelope: envelope, change: :updated)
   end
 
   def derived_keys(slug)
