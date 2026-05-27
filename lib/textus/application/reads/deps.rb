@@ -8,7 +8,7 @@ module Textus
 
         def call(key)
           entry = @manifest.entries.find { |e| e.key == key } or return []
-          result = Array(entry.projection&.fetch("select", nil)).map { |s| s }
+          result = Array(entry.projection&.fetch("select", nil)).dup
           Array(entry.generator&.fetch("sources", nil)).each { |s| result << s }
           result.uniq
         end
