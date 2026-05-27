@@ -121,4 +121,18 @@ RSpec.describe Textus::Refresh do
     expect { described_class.call(store, "intake.repos", as: "runner") }
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
+
+  describe "Infra::Refresh::Detached after Refresh.call removal" do
+    it "still runs a refresh through Operations" do
+      fake_store = instance_double(Textus::Store)
+      ops = instance_spy(Textus::Operations)
+      allow(Textus::Store).to receive(:new).and_return(fake_store)
+      allow(Textus::Operations).to receive(:for).with(fake_store, role: "runner").and_return(ops)
+
+      # Drive the detached entry-point's inner work directly (avoid forking in test).
+      Textus::Operations.for(Textus::Store.new(root), role: "runner").refresh("intake.x")
+
+      expect(ops).to have_received(:refresh).with("intake.x")
+    end
+  end
 end
