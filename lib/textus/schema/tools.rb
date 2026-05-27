@@ -52,7 +52,8 @@ module Textus
         authority = store.manifest.roles_with_kind(:accept_authority).first
         if authority.nil?
           raise UsageError.new(
-            "schema migrate requires a role with kind :accept_authority in the manifest; none declared",
+            "schema migrate requires a role with kind :accept_authority in the manifest; " \
+            "none declared (add e.g. `- { name: owner, kind: accept_authority }` to roles:)",
           )
         end
         ops = Textus::Operations.for(store, role: authority)

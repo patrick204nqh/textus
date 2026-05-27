@@ -84,10 +84,8 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     expect(env.meta).to have_key("title")
     expect(env.meta).not_to have_key("headline")
 
-    # Verify the migrate write was recorded with role "owner" in the audit log
-    parsed_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
-    migrate_write = parsed_lines.select { |h| h["verb"] == "put" && h["key"] == "working.note" }.last
-    expect(migrate_write["role"]).to eq("owner")
+    audit = Textus::Infra::AuditLog.new(root)
+    expect(audit.last_writer_for("working.note")).to eq("owner")
   end
 
   it "migrate raises UsageError when roles: is declared but no accept_authority kind exists" do
