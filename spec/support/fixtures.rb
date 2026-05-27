@@ -31,6 +31,7 @@ module TextusSpecHelpers
       ctx: ctx,
       manifest: store.manifest,
       file_store: store.file_store,
+      schemas: store.schemas,
       audit_log: store.audit_log,
       envelope_io: envelope_io || build_envelope_io(store, ctx),
       bus: store.bus,
@@ -69,6 +70,7 @@ module TextusSpecHelpers
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Accept.new(
       ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
+      schemas: p[:schemas],
       envelope_io: p[:envelope_io], bus: p[:bus],
       authorizer: p[:authorizer], store: p[:store]
     )

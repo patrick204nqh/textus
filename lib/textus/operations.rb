@@ -73,7 +73,7 @@ module Textus
 
     def accept(...)
       Application::Writes::Accept.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store,
+        ctx: @ctx, manifest: @manifest, file_store: @file_store, schemas: @schemas,
         envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, store: @store
       ).call(...)
     end

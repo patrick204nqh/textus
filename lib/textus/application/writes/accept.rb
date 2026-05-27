@@ -2,10 +2,11 @@ module Textus
   module Application
     module Writes
       class Accept
-        def initialize(ctx:, manifest:, file_store:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
           @ctx         = ctx
           @manifest    = manifest
           @file_store  = file_store
+          @schemas     = schemas
           @envelope_io = envelope_io
           @bus         = bus
           @authorizer  = authorizer
@@ -70,10 +71,10 @@ module Textus
           promote = rules.promote
           return if promote.nil? || promote.requires.empty?
 
-          policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
-          # T9 will replace `store:` here when Policy::Promotion takes
-          # reader/lister callables instead of a store handle.
-          result = policy.evaluate(entry: env, store: @store)
+          policy = Textus::Application::Policy::Promotion.from_names(promote.requires)
+          result = policy.evaluate(
+            entry: env, schemas: @schemas, manifest: @manifest, role: @ctx.role,
+          )
           return if result.ok?
 
           raise ProposalError.new(
