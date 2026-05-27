@@ -4,8 +4,8 @@ module Textus
   # project: zones and their write authority, entries and their flags,
   # registered hooks, write flows, and the CLI verb catalog.
   #
-  # Intro is side-effect-free.
-  module Intro
+  # Boot is side-effect-free.
+  module Boot
     PROTOCOL_ID = PROTOCOL
 
     # Conventional zone purposes. Unknown zones (declared in the manifest
@@ -95,10 +95,10 @@ module Textus
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
-    # Agents that read intro should see a stable shape regardless of how
+    # Agents that read boot should see a stable shape regardless of how
     # verb implementations evolve.
     CLI_VERBS = [
-      { "name" => "intro",    "summary" => "this output — orientation for agents and tools" },
+      { "name" => "boot",     "summary" => "this output — orientation for agents and tools" },
       { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
       { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },

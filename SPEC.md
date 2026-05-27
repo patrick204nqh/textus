@@ -189,7 +189,7 @@ Validation at manifest load: any unknown variable raises `UsageError`; the templ
 
 A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/working/skills/writing/voice-writer.md`) publishes to `skills/voice-writer/SKILL.md`.
 
-**`inject_intro:`.** A derived entry with a `template:` MAY declare `inject_intro: true`. When the builder materializes the entry, it merges the `textus intro` envelope (§9) into the projection data under the key `intro`, so the template can render orientation content (zones, write flows, CLI catalog) alongside its projected rows. The flag is rejected at manifest load on (a) non-derived entries or (b) derived entries without a `template:` — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus intro` exposes.
+**`inject_boot:`.** A derived entry with a `template:` MAY declare `inject_boot: true`. When the builder materializes the entry, it merges the `textus boot` envelope (§9) into the projection data under the key `boot`, so the template can render orientation content (zones, write flows, CLI catalog) alongside its projected rows. The flag is rejected at manifest load on (a) non-derived entries or (b) derived entries without a `template:` — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus boot` exposes.
 
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
@@ -729,7 +729,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `hook list` | read | any |
 | `hook run NAME` | write | any |
 | `doctor [--check=NAME[,NAME]] [--output=json]` | read | any |
-| `intro [--output=json]` | read | any |
+| `boot [--output=json]` | read | any |
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `refresh KEY --as=runner` | write | per zone (typically `runner`) |

@@ -1,11 +1,11 @@
 module Textus
   class CLI
     class Verb
-      class Intro < Verb
-        command_name "intro"
+      class Boot < Verb
+        command_name "boot"
 
         def call(store)
-          emit(Textus::Intro.run(store))
+          emit(Textus::Boot.run(store))
         end
       end
     end

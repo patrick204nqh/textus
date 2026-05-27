@@ -32,7 +32,7 @@ module Textus
             transform_resolver: ->(name) { @bus.rpc_callable(:transform_rows, name) },
             template_loader: ->(name) { read_template(name) },
             transform_context: @store,
-            inject_intro: -> { Textus::Intro.run(@store) },
+            inject_boot: -> { Textus::Boot.run(@store) },
           )
         end
 

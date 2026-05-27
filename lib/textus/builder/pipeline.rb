@@ -64,7 +64,7 @@ module Textus
 
       # rubocop:disable Metrics/ParameterLists
       def self.run(mentry:, manifest:, reader:, lister:, transform_resolver:, template_loader:,
-                   transform_context: nil, inject_intro: nil)
+                   transform_context: nil, inject_boot: nil)
         # 1. Load sources + project + reduce
         data =
           if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
@@ -78,7 +78,7 @@ module Textus
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
           end
-        data = data.merge("intro" => inject_intro.call) if mentry.inject_intro && inject_intro
+        data = data.merge("boot" => inject_boot.call) if mentry.inject_boot && inject_boot
 
         # 2. Render
         klass = renderers[mentry.format] or

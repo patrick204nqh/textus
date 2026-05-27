@@ -4,22 +4,22 @@ start. It is the projection of textus over `.textus/zones/...`. Do not
 edit by hand — edit the source under `.textus/zones/working/...` and run
 `textus build`.
 
-→ Context store: `.textus/` (textus, protocol {{intro.protocol}}).
-→ Run `textus intro` for the full catalog shape and write flows.
+→ Context store: `.textus/` (textus, protocol {{boot.protocol}}).
+→ Run `textus boot` for the full catalog shape and write flows.
 → Write authority by zone:
-{{#intro.zones}}    - **{{name}}** ({{#writers}}{{.}} {{/writers}}){{#purpose}} — {{purpose}}{{/purpose}}
-{{/intro.zones}}
-→ Agent protocol (from `textus intro`):
-{{#intro.agent_protocol.recipes.read}}   • **read** — {{purpose}}
+{{#boot.zones}}    - **{{name}}** ({{#writers}}{{.}} {{/writers}}){{#purpose}} — {{purpose}}{{/purpose}}
+{{/boot.zones}}
+→ Agent protocol (from `textus boot`):
+{{#boot.agent_protocol.recipes.read}}   • **read** — {{purpose}}
 {{#steps}}     `{{.}}`
-{{/steps}}{{/intro.agent_protocol.recipes.read}}{{#intro.agent_protocol.recipes.write}}   • **write** — {{purpose}}
+{{/steps}}{{/boot.agent_protocol.recipes.read}}{{#boot.agent_protocol.recipes.write}}   • **write** — {{purpose}}
 {{#steps}}     `{{.}}`
-{{/steps}}{{/intro.agent_protocol.recipes.write}}{{#intro.agent_protocol.recipes.propose}}   • **propose** — {{purpose}}
+{{/steps}}{{/boot.agent_protocol.recipes.write}}{{#boot.agent_protocol.recipes.propose}}   • **propose** — {{purpose}}
 {{#agent_steps}}     agent: `{{.}}`
 {{/agent_steps}}{{#human_steps}}     human: `{{.}}`
-{{/human_steps}}{{/intro.agent_protocol.recipes.propose}}{{#intro.agent_protocol.recipes.refresh}}   • **refresh** — {{purpose}}
+{{/human_steps}}{{/boot.agent_protocol.recipes.propose}}{{#boot.agent_protocol.recipes.refresh}}   • **refresh** — {{purpose}}
 {{#steps}}     `{{.}}`
-{{/steps}}{{/intro.agent_protocol.recipes.refresh}}-->
+{{/steps}}{{/boot.agent_protocol.recipes.refresh}}-->
 
 
 # {{plugin.name}}

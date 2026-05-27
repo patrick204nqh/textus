@@ -23,7 +23,7 @@ byte-copied from `.textus/zones/...` by `textus build`. No file under
 
 The example is deliberately small. It demonstrates three load-bearing
 patterns once each: zone separation by role, `publish_each` byte-copy,
-and `inject_intro` orientation projection.
+and `inject_boot` orientation projection.
 
 ## Layout
 
@@ -82,14 +82,14 @@ voice-tools/
   shipped surface:
   - `output.plugin` → `plugin_envelope` transform → `.claude-plugin/plugin.json`
   - `output.claude-root` → `claude_root` transform + `claude-root.mustache`
-    template (with `inject_intro: true`) → `CLAUDE.md`
+    template (with `inject_boot: true`) → `CLAUDE.md`
 
-The `inject_intro: true` flag on `output.claude-root` makes `Intro.run(store)`
-available inside the template as `{{intro.*}}` — the rendered `CLAUDE.md`
+The `inject_boot: true` flag on `output.claude-root` makes `Boot.run(store)`
+available inside the template as `{{boot.*}}` — the rendered `CLAUDE.md`
 auto-projects zone authority *and* the four protocol recipes
-(read/write/propose/refresh) straight from textus's own intro envelope.
+(read/write/propose/refresh) straight from textus's own boot envelope.
 Agents reading `CLAUDE.md` get full orientation without a separate
-`textus intro` call.
+`textus boot` call.
 
 The deep-nested skill path (`working.skills.writing.voice-writer` —
 four key segments below `working`) exercises textus's nested-tree resolver.

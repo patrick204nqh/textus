@@ -178,7 +178,7 @@ entries:
 | `intake:` | no | Declares this is an intake entry. See [§6](#6-wiring-data-in--intake-and-intake-hooks). |
 | `projection:` | no | Declares this is a derived entry. See [§7](#7-wiring-data-out--derived-entries-and-publishing). |
 | `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
-| `inject_intro:` | no | When `true` on a derived entry, the `textus intro` payload is merged into the projection data so templates can reference it. |
+| `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
 | `publish_to:` | no | List of external paths to byte-copy the built file to. |
 | `publish_each:` | no | For `nested:` entries — pattern like `"skills/{basename}/SKILL.md"` that publishes each child file to its own external path. |
 | `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build` event). |
@@ -376,7 +376,7 @@ entries:
       pluck: "*"
       reduce: claude_root            # name of a :reduce hook in .textus/hooks/
     template: claude-root.mustache   # under .textus/templates/
-    inject_intro: true               # merge `textus intro` payload into template data
+    inject_boot: true                 # merge `textus boot` payload into template data
     publish_to: [CLAUDE.md]
 ```
 

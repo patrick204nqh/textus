@@ -56,7 +56,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "get" => Textus::CLI::Verb::Get,
       "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,
-      "intro" => Textus::CLI::Verb::Intro,
+      "boot" => Textus::CLI::Verb::Boot,
       "key" => Textus::CLI::Group::Key,
       "list" => Textus::CLI::Verb::List,
       "published" => Textus::CLI::Verb::Published,

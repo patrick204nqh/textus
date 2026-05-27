@@ -170,7 +170,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃   ┃ if projection.reduce: ───────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
   ┃   ┃ sort/limit (skipped if reduce returned Hash)
-  ┃   ┃ merge `intro` if inject_intro:
+  ┃   ┃ merge `boot` if inject_boot:
   ┃   ┃ render via format + template
   ┃   ┃ write derived path
   ┃   ┃ for each publish_to: / publish_each: target:

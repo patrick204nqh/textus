@@ -47,7 +47,7 @@ module Textus
           Derived.new(
             source: source,
             template: raw["template"],
-            inject_intro: raw["inject_intro"] == true,
+            inject_boot: raw["inject_boot"] == true,
             publish_to: raw["publish_to"],
             events: raw["events"] || {},
             **common,
