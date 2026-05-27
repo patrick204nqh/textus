@@ -19,8 +19,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $textus_event_log ||= []
         Textus.hook do |reg|
-          reg.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
-          reg.on(:entry_deleted, :log_delete) { |key:, store:| $textus_event_log << [:entry_deleted, key] }
+          reg.on(:entry_put, :log_put)    { |key:, **| $textus_event_log << [:entry_put, key] }
+          reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
         end
       RUBY
       $textus_event_log = []
@@ -45,7 +45,7 @@ RSpec.describe "Lifecycle events" do
     it "logs hook errors to audit log but does not abort the write" do
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:entry_put, :boom) { |key:, envelope:, store:| raise "bang" }
+          reg.on(:entry_put, :boom) { |key:, **| raise "bang" }
         end
       RUBY
       store = Textus::Store.new(root)
@@ -74,7 +74,7 @@ RSpec.describe "Lifecycle events" do
         $log = []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       $log = []
@@ -95,7 +95,7 @@ RSpec.describe "Lifecycle events" do
         $log ||= []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
@@ -113,7 +113,7 @@ RSpec.describe "Lifecycle events" do
         $log ||= []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_refreshed, :tap) { |key:, envelope:, store:, change:| $log << [key, change] }
+          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       # Re-instantiate to reload hook file from disk
@@ -129,8 +129,8 @@ RSpec.describe "Lifecycle events" do
         $log = []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-          reg.on(:entry_put, :p) { |key:, envelope:, store:| $log << [:entry_put, key] }
-          reg.on(:entry_refreshed, :r) { |key:, envelope:, store:, change:| $log << [:entry_refreshed, key, change] }
+          reg.on(:entry_put, :p) { |key:, **| $log << [:entry_put, key] }
+          reg.on(:entry_refreshed, :r) { |key:, change:, **| $log << [:entry_refreshed, key, change] }
         end
       RUBY
       $log = []
@@ -168,7 +168,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:build_completed, :t) do |key:, envelope:, store:, sources:|
+          reg.on(:build_completed, :t) do |key:, sources:, **|
             $log << [:build_completed, key, sources]
           end
         end
@@ -213,7 +213,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:proposal_accepted, :t) do |key:, target_key:, store:|
+          reg.on(:proposal_accepted, :t) do |key:, target_key:, **|
             $log << [:proposal_accepted, key, target_key]
           end
         end
@@ -232,7 +232,7 @@ RSpec.describe "Lifecycle events" do
     it "records both target_key and key when a :proposal_accepted hook fails" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:proposal_accepted, :boom) { |key:, target_key:, store:| raise "bang" }
+          reg.on(:proposal_accepted, :boom) { |key:, target_key:, **| raise "bang" }
         end
       RUBY
       store = Textus::Store.new(root)

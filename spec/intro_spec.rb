@@ -60,7 +60,7 @@ RSpec.describe Textus::Intro do
         reg.on(:resolve_intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
         reg.on(:transform_rows, :rank_by_recency) { |store:, rows:, config:| rows }
         reg.on(:transform_rows, :alpha)           { |store:, rows:, config:| rows }
-        reg.on(:build_completed, :stamp_log)        { |store:, key:, envelope:, sources:| }
+        reg.on(:build_completed, :stamp_log)        { |**| }
         reg.on(:validate, :smoke)            { |store:| [] }
       end
     RUBY

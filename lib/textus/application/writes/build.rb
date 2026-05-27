@@ -11,13 +11,14 @@ module Textus
       # `Application::Writes::Publish`. The CLI verb `textus build` calls
       # both classes and merges the results.
       class Build
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
-          @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
-          @bus        = bus
-          @root       = root
-          @store      = store
+        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:, hook_context:) # rubocop:disable Metrics/ParameterLists
+          @ctx          = ctx
+          @manifest     = manifest
+          @file_store   = file_store
+          @bus          = bus
+          @root         = root
+          @store        = store
+          @hook_context = hook_context
         end
 
         def call(prefix: nil)
@@ -82,7 +83,7 @@ module Textus
         end
 
         def publish_event(event, **payload)
-          @bus.publish(event, store: @store, role: @ctx.role, correlation_id: @ctx.correlation_id, **payload)
+          @bus.publish(event, ctx: @hook_context, **payload)
         end
       end
     end

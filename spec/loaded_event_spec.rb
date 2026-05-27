@@ -19,11 +19,11 @@ RSpec.describe ":store_loaded event" do
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
       $textus_event_log ||= []
       Textus.hook do |reg|
-        reg.on(:store_loaded, :log_loaded) do |store:|
-          list = Textus::Application::Reads::List.new(manifest: store.manifest).call
+        reg.on(:store_loaded, :log_loaded) do |ctx:|
+          list = ctx.list
           $textus_event_log << [:store_loaded, list.length]
         end
-        reg.on(:entry_put, :log_put)    { |key:, envelope:, store:| $textus_event_log << [:entry_put, key] }
+        reg.on(:entry_put, :log_put) { |key:, **| $textus_event_log << [:entry_put, key] }
       end
     RUBY
     $textus_event_log = []

@@ -47,53 +47,57 @@ module Textus
       )
     end
 
+    def hook_context
+      @hook_context ||= Textus::Hooks::Context.new(ops: self)
+    end
+
     # writes
     def put(...)
       Application::Writes::Put.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, store: @store
+        bus: @bus, authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def delete(...)
       Application::Writes::Delete.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, store: @store
+        bus: @bus, authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def mv(...)
       Application::Writes::Mv.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, store: @store
+        bus: @bus, authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def accept(...)
       Application::Writes::Accept.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store, schemas: @schemas,
-        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, store: @store
+        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def reject(...)
       Application::Writes::Reject.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, store: @store
+        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def build(...)
       Application::Writes::Build.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, store: @store
+        bus: @bus, root: @root, store: @store, hook_context: hook_context
       ).call(...)
     end
 
     def publish(...)
       Application::Writes::Publish.new(
         ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, store: @store
+        bus: @bus, root: @root, hook_context: hook_context
       ).call(...)
     end
 
@@ -135,7 +139,7 @@ module Textus
     def refresh_all(**)
       Application::Refresh::All.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        store: @store, authorizer: @authorizer
+        store: @store, authorizer: @authorizer, hook_context: hook_context
       ).call(**)
     end
 
@@ -154,7 +158,7 @@ module Textus
     def refresh_worker
       @refresh_worker ||= Application::Refresh::Worker.new(
         ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        store: @store, authorizer: @authorizer
+        store: @store, authorizer: @authorizer, hook_context: hook_context
       )
     end
 
@@ -165,6 +169,7 @@ module Textus
         bus: @bus,
         store: @store,
         ctx: @ctx,
+        hook_context: hook_context,
       )
     end
   end

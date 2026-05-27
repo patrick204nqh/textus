@@ -63,8 +63,8 @@ RSpec.describe Textus::Application::Writes::Build do
 
   it "fires :build_completed exactly once per output entry with correlation_id" do
     captured = []
-    store.bus.register(:build_completed, :capture) do |key:, correlation_id:, **|
-      captured << { key: key, correlation_id: correlation_id }
+    store.bus.register(:build_completed, :capture) do |ctx:, key:, **|
+      captured << { key: key, correlation_id: ctx.correlation_id }
     end
 
     ctx = test_ctx(role: "builder", correlation_id: "cid-test-123")
@@ -77,8 +77,8 @@ RSpec.describe Textus::Application::Writes::Build do
 
   it "fires :file_published with correlation_id for each publish_to target" do
     captured = []
-    store.bus.register(:file_published, :capture) do |key:, correlation_id:, target:, **|
-      captured << { key: key, correlation_id: correlation_id, target: target }
+    store.bus.register(:file_published, :capture) do |ctx:, key:, target:, **|
+      captured << { key: key, correlation_id: ctx.correlation_id, target: target }
     end
 
     ctx = test_ctx(role: "builder", correlation_id: "cid-pub-456")

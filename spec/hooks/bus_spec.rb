@@ -35,26 +35,26 @@ RSpec.describe Textus::Hooks::Bus do
   describe "pubsub mode" do
     it "delivers events to multiple handlers" do
       seen = []
-      bus.register(:entry_put, :a) do |store:, key:, envelope:|
-        [store, envelope]
+      bus.register(:entry_put, :a) do |ctx:, key:, envelope:|
+        [ctx, envelope]
         seen << [:a, key]
       end
-      bus.register(:entry_put, :b) do |store:, key:, envelope:|
-        [store, envelope]
+      bus.register(:entry_put, :b) do |ctx:, key:, envelope:|
+        [ctx, envelope]
         seen << [:b, key]
       end
-      bus.publish(:entry_put, store: :s, key: "x", envelope: nil)
+      bus.publish(:entry_put, ctx: :c, key: "x", envelope: nil)
       expect(seen).to contain_exactly([:a, "x"], [:b, "x"])
     end
 
     it "filters by key glob" do
       seen = []
-      bus.register(:entry_put, :g, keys: "working.*") do |store:, key:, envelope:|
-        [store, envelope]
+      bus.register(:entry_put, :g, keys: "working.*") do |ctx:, key:, envelope:|
+        [ctx, envelope]
         seen << key
       end
-      bus.publish(:entry_put, store: :s, key: "working.notes", envelope: nil)
-      bus.publish(:entry_put, store: :s, key: "output.x", envelope: nil)
+      bus.publish(:entry_put, ctx: :c, key: "working.notes", envelope: nil)
+      bus.publish(:entry_put, ctx: :c, key: "output.x", envelope: nil)
       expect(seen).to eq(["working.notes"])
     end
 
@@ -65,7 +65,7 @@ RSpec.describe Textus::Hooks::Bus do
         err = error
       end
       bus.register(:entry_put, :slow) { |**| sleep 5 }
-      report = bus.publish(:entry_put, store: :s, key: "x", envelope: nil)
+      report = bus.publish(:entry_put, ctx: :c, key: "x", envelope: nil)
       expect(report.timed_out).to eq([:slow])
       expect(err).to be_a(Textus::Hooks::Bus::HookTimeout)
     end
@@ -73,7 +73,7 @@ RSpec.describe Textus::Hooks::Bus do
     it "in strict mode re-raises the first hook error" do
       bus.register(:entry_put, :boom) { |**| raise "nope" }
       expect do
-        bus.publish(:entry_put, strict: true, store: :s, key: "x", envelope: nil)
+        bus.publish(:entry_put, strict: true, ctx: :c, key: "x", envelope: nil)
       end.to raise_error("nope")
     end
   end
@@ -86,7 +86,7 @@ RSpec.describe Textus::Hooks::Bus do
 
     it "rejects handlers missing required kwargs" do
       expect do
-        bus.register(:entry_put, :bad) { |key:| key } # missing :store, :envelope
+        bus.register(:entry_put, :bad) { |key:| key } # missing :ctx, :envelope
       end.to raise_error(Textus::UsageError, /must accept kwargs/)
     end
   end

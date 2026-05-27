@@ -2,14 +2,14 @@ module Textus
   module Application
     module Writes
       class Reject
-        def initialize(ctx:, manifest:, file_store:, envelope_io:, bus:, authorizer:, store:) # rubocop:disable Metrics/ParameterLists
-          @ctx         = ctx
-          @manifest    = manifest
-          @file_store  = file_store
-          @envelope_io = envelope_io
-          @bus         = bus
-          @authorizer  = authorizer
-          @store       = store
+        def initialize(ctx:, manifest:, file_store:, envelope_io:, bus:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+          @ctx          = ctx
+          @manifest     = manifest
+          @file_store   = file_store
+          @envelope_io  = envelope_io
+          @bus          = bus
+          @authorizer   = authorizer
+          @hook_context = hook_context
         end
 
         def call(pending_key)
@@ -30,15 +30,13 @@ module Textus
 
           Textus::Application::Writes::Delete.new(
             ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, store: @store
+            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
           ).call(pending_key, suppress_events: true)
 
           @bus.publish(:proposal_rejected,
-                       store: @store,
-                       role: @ctx.role,
+                       ctx: @hook_context,
                        key: pending_key,
-                       target_key: target_key,
-                       correlation_id: @ctx.correlation_id)
+                       target_key: target_key)
 
           { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
         end

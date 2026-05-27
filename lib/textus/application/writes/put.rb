@@ -2,13 +2,13 @@ module Textus
   module Application
     module Writes
       class Put
-        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, store:)
-          @ctx         = ctx
-          @manifest    = manifest
-          @envelope_io = envelope_io
-          @bus         = bus
-          @authorizer  = authorizer
-          @store       = store
+        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, hook_context:)
+          @ctx          = ctx
+          @manifest     = manifest
+          @envelope_io  = envelope_io
+          @bus          = bus
+          @authorizer   = authorizer
+          @hook_context = hook_context
         end
 
         def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
@@ -25,11 +25,9 @@ module Textus
           )
 
           @bus.publish(:entry_put,
-                       store: @store,
-                       role: @ctx.role,
+                       ctx: @hook_context,
                        key: key,
-                       envelope: envelope,
-                       correlation_id: @ctx.correlation_id)
+                       envelope: envelope)
 
           envelope
         end

@@ -73,7 +73,7 @@ RSpec.describe Textus::Store do
       File.write(File.join(root, "hooks/marker.rb"), <<~RUBY)
         $textus_store_spec_seen = []
         Textus.hook do |reg|
-          reg.on(:store_loaded, :marker) { |store:| $textus_store_spec_seen << :loaded }
+          reg.on(:store_loaded, :marker) { |**| $textus_store_spec_seen << :loaded }
         end
       RUBY
       $textus_store_spec_seen = nil

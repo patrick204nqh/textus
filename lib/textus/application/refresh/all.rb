@@ -2,19 +2,20 @@ module Textus
   module Application
     module Refresh
       class All
-        def initialize(ctx:, manifest:, envelope_io:, bus:, store:, authorizer:)
-          @ctx = ctx
-          @manifest = manifest
-          @envelope_io = envelope_io
-          @bus = bus
-          @store = store
-          @authorizer = authorizer
+        def initialize(ctx:, manifest:, envelope_io:, bus:, store:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+          @ctx          = ctx
+          @manifest     = manifest
+          @envelope_io  = envelope_io
+          @bus          = bus
+          @store        = store
+          @authorizer   = authorizer
+          @hook_context = hook_context
         end
 
         def call(prefix: nil, zone: nil)
           worker = Textus::Application::Refresh::Worker.new(
             ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io, bus: @bus,
-            store: @store, authorizer: @authorizer
+            store: @store, authorizer: @authorizer, hook_context: @hook_context
           )
 
           stale_rows = Textus::Application::Reads::Stale.new(manifest: @manifest).call(prefix: prefix, zone: zone)

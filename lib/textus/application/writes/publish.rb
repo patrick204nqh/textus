@@ -5,15 +5,13 @@ module Textus
       # `:file_published` for each copy. Mirror of `Build` for the publish
       # half — split out from the old Build per ADR 0007.
       class Publish
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
-          @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
-          @bus        = bus
-          @root       = root
-          # T11 will revisit `store:` here when downstream collaborators take
-          # reader/lister callables instead of a store handle.
-          @store      = store
+        def initialize(ctx:, manifest:, file_store:, bus:, root:, hook_context:)
+          @ctx          = ctx
+          @manifest     = manifest
+          @file_store   = file_store
+          @bus          = bus
+          @root         = root
+          @hook_context = hook_context
         end
 
         def call(prefix: nil)
@@ -49,13 +47,11 @@ module Textus
             ctx: @ctx, manifest: @manifest, file_store: @file_store,
           )
           @bus.publish(:file_published,
-                       store: @store,
-                       role: @ctx.role,
+                       ctx: @hook_context,
                        key: row[:key],
                        envelope: reader.call(row[:key]),
                        source: row[:path],
-                       target: target_abs,
-                       correlation_id: @ctx.correlation_id)
+                       target: target_abs)
           { "key" => row[:key], "source" => row[:path], "target" => target_abs }
         end
       end

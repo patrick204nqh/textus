@@ -15,7 +15,7 @@ module TextusRecipes
 
     def self.register
       Textus.hook do |reg|
-        reg.on(:entry_refreshed, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |store:, key:, envelope:, **|
+        reg.on(:entry_refreshed, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |ctx:, key:, envelope:, **|
           next unless key.start_with?(SOURCE_PREFIX)
 
           slug = key.delete_prefix(SOURCE_PREFIX)
@@ -23,22 +23,19 @@ module TextusRecipes
 
           desired_keys = files.keys.map { |rel| TextusRecipes::SkillFanout.derived_key(slug, rel) }
 
-          # `store:` in a hook is the actual Textus::Store. Route inner
-          # writes through Operations so the standard write pipeline (audit,
-          # schema validation, events) applies. This listener is on
-          # :entry_refreshed; inner ops.put fires :entry_put (a different
-          # event), so no recursion guard is needed.
-          ops = Textus::Operations.for(store, role: "runner")
-
-          existing_rows = ops.list(prefix: "#{DERIVED_PREFIX}#{slug}")
+          # `ctx:` routes all reads and writes through Operations so the
+          # standard pipeline (authz, audit, schema validation, events) applies.
+          # This listener is on :entry_refreshed; inner ctx.put fires :entry_put
+          # (a different event), so no recursion guard is needed.
+          existing_rows = ctx.list(prefix: "#{DERIVED_PREFIX}#{slug}")
           existing_keys = existing_rows.map { |row| row["key"] }
 
           (existing_keys - desired_keys).each do |orphan|
-            ops.delete(orphan, suppress_events: true)
+            ctx.delete(orphan, suppress_events: true)
           end
 
           files.each do |rel, bytes|
-            ops.put(
+            ctx.put(
               TextusRecipes::SkillFanout.derived_key(slug, rel),
               meta: { "source_key" => key, "source_path" => rel },
               body: bytes,

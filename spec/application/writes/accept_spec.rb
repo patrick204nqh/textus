@@ -76,8 +76,8 @@ RSpec.describe Textus::Application::Writes::Accept do
 
       ctx = test_ctx(role: "human", correlation_id: "corr-accept-1")
       events = []
-      store.bus.register(:proposal_accepted, :capture_accept) do |key:, target_key:, correlation_id:, **|
-        events << { key: key, target_key: target_key, correlation_id: correlation_id }
+      store.bus.register(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
+        events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
       end
 
       build_accept(store, ctx).call("review.p1")
