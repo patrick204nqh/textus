@@ -31,6 +31,12 @@ tracks both additive improvements and breaking protocol bumps independently.
 - Manifest validator's "exactly one accept_authority" error message now
   matches what the schema actually enforces.
 
+### Removed
+- `textus key normalize --upgrade-manifest` and the underlying
+  `Textus::Application::Tools::MigrateManifestToKinds` module. This was the
+  one-shot 0.19→0.20 manifest upgrader; nothing in 0.20.x can produce a
+  pre-kind manifest, so the migrator is dead weight.
+
 ### Internal
 - Final cleanup of role-name leaks identified by the 0.20.2 architecture
   audit (follow-on to 0.20.1 role-kinds refactor).
