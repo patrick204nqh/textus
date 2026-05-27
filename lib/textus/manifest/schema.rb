@@ -1,14 +1,14 @@
 module Textus
   class Manifest
     module Schema
-      ROOT_KEYS    = %w[version roles zones entries rules].freeze
+      ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name kind].freeze
       ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
       ZONE_KEYS    = %w[name write_policy read_policy].freeze
       ENTRY_KEYS   = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each
-        intake events inject_intro index_filename
+        intake events inject_boot index_filename
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
@@ -16,22 +16,37 @@ module Textus
       REFRESH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
       FETCH_TIMEOUT_SECONDS_CEILING = 3600
       PROMOTION_KEYS = %w[requires].freeze
+      AUDIT_KEYS     = %w[max_size keep].freeze
 
       def self.validate!(raw)
         raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
         walk(raw, ROOT_KEYS, "$")
         validate_roles!(raw["roles"])
-        Array(raw["zones"]).each_with_index do |z, i|
+        validate_zones!(raw["zones"])
+        validate_entries!(raw["entries"])
+        validate_rules!(raw["rules"])
+        walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
+        validate_zone_writers_declared!(raw)
+      end
+
+      def self.validate_zones!(zones)
+        Array(zones).each_with_index do |z, i|
           walk(z, ZONE_KEYS, "$.zones[#{i}]")
         end
-        Array(raw["entries"]).each_with_index do |e, i|
+      end
+
+      def self.validate_entries!(entries)
+        Array(entries).each_with_index do |e, i|
           path = "$.entries[#{i}]"
           walk(e, ENTRY_KEYS, path)
           walk(e["compute"], COMPUTE_KEYS, "#{path}.compute") if e["compute"].is_a?(Hash)
           walk(e["intake"], INTAKE_KEYS, "#{path}.intake") if e["intake"].is_a?(Hash)
         end
-        Array(raw["rules"]).each_with_index do |r, i|
+      end
+
+      def self.validate_rules!(rules)
+        Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
           if r["refresh"].is_a?(Hash)
@@ -40,7 +55,6 @@ module Textus
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
         end
-        validate_zone_writers_declared!(raw)
       end
 
       def self.validate_zone_writers_declared!(raw)

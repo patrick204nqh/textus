@@ -12,14 +12,14 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 `textus build`.
 
 → Context store: `.textus/` (textus, protocol textus/3).
-→ Run `textus intro` for the full catalog shape and write flows.
+→ Run `textus boot` for the full catalog shape and write flows.
 → Write authority by zone:
     - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human agent ) — active project state; humans, AI, and scripts share this surface
     - **review** (agent human ) — AI proposals awaiting human accept
     - **output** (builder ) — build-computed outputs; never hand-edited
 
-→ Agent protocol (from `textus intro`):
+→ Agent protocol (from `textus boot`):
    • **read** — find and read an entry
      `textus list --zone=ZONE --prefix=PREFIX  # discover keys`
      `textus get KEY                            # returns envelope JSON`

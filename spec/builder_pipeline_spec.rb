@@ -9,7 +9,7 @@ RSpec.describe Textus::Builder::Renderer::Markdown do
       source: Textus::Manifest::Entry::Derived::Projection.new(
         select: ["working.*"], pluck: nil, sort_by: nil, transform: nil,
       ),
-      inject_intro: false
+      inject_boot: false
     )
   end
 

@@ -5,13 +5,13 @@ module Textus
         Projection = Data.define(:select, :pluck, :sort_by, :transform)
         External   = Data.define(:sources, :runner)
 
-        attr_reader :source, :template, :inject_intro, :publish_to, :events
+        attr_reader :source, :template, :inject_boot, :publish_to, :events
 
-        def initialize(source:, template: nil, inject_intro: false, publish_to: [], events: {}, **rest)
+        def initialize(source:, template: nil, inject_boot: false, publish_to: [], events: {}, **rest)
           super(**rest)
           @source = source
           @template = template
-          @inject_intro = inject_intro
+          @inject_boot = inject_boot
           @publish_to = Array(publish_to)
           @events = events || {}
         end

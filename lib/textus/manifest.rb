@@ -30,6 +30,16 @@ module Textus
       )
     end
 
+    AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
+
+    def audit_config
+      raw = @raw["audit"] || {}
+      {
+        max_size: raw["max_size"] || AUDIT_DEFAULTS[:max_size],
+        keep: raw["keep"] || AUDIT_DEFAULTS[:keep],
+      }
+    end
+
     def role_mapping
       @role_mapping ||= RoleKinds.resolve(@raw["roles"])
     end

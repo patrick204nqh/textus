@@ -48,7 +48,7 @@ entries:
   path: output/orientation.md
   zone: output
   template: orientation.mustache
-  inject_intro: true
+  inject_boot: true
   publish_to:
   - CLAUDE.md
   - AGENTS.md

@@ -70,7 +70,7 @@ RSpec.describe Textus::Infra::AuditSubscriber do
 
     line = File.read(audit_path).lines.first.chomp
     parsed = JSON.parse(line)
-    expect(parsed.keys).to eq(%w[ts role verb key etag_before etag_after extras])
+    expect(parsed.keys).to eq(%w[seq ts role verb key etag_before etag_after extras])
   end
 
   it "writes nothing when a hook succeeds" do

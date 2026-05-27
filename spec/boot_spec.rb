@@ -4,7 +4,7 @@ require "fileutils"
 require "json"
 require "stringio"
 
-RSpec.describe Textus::Intro do
+RSpec.describe Textus::Boot do
   include_context "textus_store_fixture"
 
   before do
@@ -143,12 +143,12 @@ RSpec.describe Textus::Intro do
     expect(env["write_flows"]["agent"]).to include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("intro", "list", "get", "put", "accept", "build", "doctor", "hook")
+    expect(names).to include("boot", "list", "get", "put", "accept", "build", "doctor", "hook")
   end
 
   describe "agent_protocol block" do
     it "includes envelope_shape, role_resolution, and recipes" do
-      result = Textus::Intro.run(store)
+      result = Textus::Boot.run(store)
       expect(result).to have_key("agent_protocol")
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
@@ -157,12 +157,12 @@ RSpec.describe Textus::Intro do
     end
 
     it "does not change the wire protocol field" do
-      result = Textus::Intro.run(store)
+      result = Textus::Boot.run(store)
       expect(result["protocol"]).to eq("textus/3")
     end
 
     it "is omitted from per-recipe output by default (no example field)" do
-      result = Textus::Intro.run(store)
+      result = Textus::Boot.run(store)
       result["agent_protocol"]["recipes"].each_value do |r|
         expect(r).not_to have_key("example")
       end
@@ -171,7 +171,7 @@ RSpec.describe Textus::Intro do
 
   describe "backward compatibility" do
     it "keeps every pre-0.12.3 top-level key with its original shape" do
-      result = Textus::Intro.run(store)
+      result = Textus::Boot.run(store)
       expect(result["protocol"]).to be_a(String).and eq("textus/3")
       expect(result["store_root"]).to be_a(String)
       expect(result["zones"]).to be_a(Array)
@@ -185,7 +185,7 @@ RSpec.describe Textus::Intro do
 
   describe "with user-renamed roles" do
     def build_store(yaml)
-      dir = Dir.mktmpdir("textus-intro-renamed-")
+      dir = Dir.mktmpdir("textus-boot-renamed-")
       FileUtils.mkdir_p(File.join(dir, "schemas"))
       File.write(File.join(dir, "manifest.yaml"), yaml)
       Textus::Store.new(dir)
@@ -243,7 +243,7 @@ RSpec.describe Textus::Intro do
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(["intro", "--output=json"],
+    code = Textus::CLI.run(["boot", "--output=json"],
                            stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)

@@ -115,10 +115,17 @@ module Textus
     def rdeps(...)           = Application::Reads::Rdeps.new(manifest: @manifest).call(...)
     def published(...)       = Application::Reads::Published.new(manifest: @manifest).call(...)
     def stale(...)           = Application::Reads::Stale.new(manifest: @manifest).call(...)
-    def audit(...)           = Application::Reads::Audit.new(manifest: @manifest, root: @root).call(...)
+    def audit(...)           = Application::Reads::Audit.new(manifest: @manifest, root: @root, audit_log: @audit_log).call(...)
     def blame(...)           = Application::Reads::Blame.new(manifest: @manifest, root: @root).call(...)
     def policy_explain(...)  = Application::Reads::PolicyExplain.new(manifest: @manifest).call(...)
     def freshness(...)       = Application::Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call(...)
+
+    def pulse(...)
+      Application::Reads::Pulse.new(
+        ctx: @ctx, manifest: @manifest, file_store: @file_store,
+        audit_log: @audit_log, root: @root, store: @store
+      ).call(...)
+    end
 
     def validate_all(...)
       Application::Reads::ValidateAll.new(

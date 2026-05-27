@@ -1,6 +1,6 @@
 ---
 generated:
-  at: '2026-05-26T04:27:41Z'
+  at: '2026-05-27T15:44:54Z'
   from:
   - identity.plugin
   - working.agents
@@ -14,14 +14,18 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 `textus build`.
 
 → Context store: `.textus/` (textus, protocol textus/3).
-→ Run `textus intro` for the full catalog shape and write flows.
+→ Run `textus boot` for the full catalog shape and write flows.
+→ Per-turn heartbeat: `textus pulse --since=<cursor>`.
+  - Initial `cursor` comes from `boot.agent_quickstart.latest_seq`.
+  - Response advances `cursor` on every call. Re-run `boot` if you get `CursorExpired`.
+  - Use `changed[]` to refresh your view; `pending_review[]` shows proposals awaiting human accept; `stale[]` flags entries past their refresh policy.
 → Write authority by zone:
     - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human agent runner ) — active project state; humans, AI, and scripts share this surface
     - **review** (agent human ) — AI proposals awaiting human accept
     - **output** (builder ) — build-computed outputs; never hand-edited
 
-→ Agent protocol (from `textus intro`):
+→ Agent protocol (from `textus boot`):
    • **read** — find and read an entry
      `textus list --zone=ZONE --prefix=PREFIX  # discover keys`
      `textus get KEY                            # returns envelope JSON`
@@ -60,4 +64,4 @@ edit by hand — edit the source under `.textus/zones/working/...` and run
 
 
 ---
-_Built at 2026-05-26T04:27:41Z._
+_Built at 2026-05-27T15:44:54Z._

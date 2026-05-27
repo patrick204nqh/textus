@@ -81,7 +81,7 @@ entries:
   zone: output
   owner: builder:auto
   template: claude-root.mustache
-  inject_intro: true
+  inject_boot: true
   publish_to:
   - CLAUDE.md
   compute:
@@ -99,4 +99,4 @@ rules:
   promotion:
     requires:
     - schema_valid
-    - human_accept
+    - accept_authority_signed

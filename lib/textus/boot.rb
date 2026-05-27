@@ -4,8 +4,8 @@ module Textus
   # project: zones and their write authority, entries and their flags,
   # registered hooks, write flows, and the CLI verb catalog.
   #
-  # Intro is side-effect-free.
-  module Intro
+  # Boot is side-effect-free.
+  module Boot
     PROTOCOL_ID = PROTOCOL
 
     # Conventional zone purposes. Unknown zones (declared in the manifest
@@ -95,10 +95,10 @@ module Textus
     }.freeze
 
     # The CLI verb catalog. Truth lives here; do not derive dynamically.
-    # Agents that read intro should see a stable shape regardless of how
+    # Agents that read boot should see a stable shape regardless of how
     # verb implementations evolve.
     CLI_VERBS = [
-      { "name" => "intro",    "summary" => "this output — orientation for agents and tools" },
+      { "name" => "boot",     "summary" => "this output — orientation for agents and tools" },
       { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
       { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
@@ -116,7 +116,28 @@ module Textus
       { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "pulse",
+        "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
     ].freeze
+
+    def self.agent_quickstart(manifest, store)
+      proposer_roles = manifest.roles_with_kind(:proposer)
+      agent_role = proposer_roles.first
+
+      writable_zones = manifest.zones.each_with_object([]) do |(zname, writers), acc|
+        acc << zname if agent_role && writers.include?(agent_role)
+      end
+
+      propose_zone = writable_zones.find { |z| z.include?("review") } || writable_zones.first
+
+      {
+        "read_verbs" => %w[boot get list audit pulse freshness doctor],
+        "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
+        "writable_zones" => writable_zones,
+        "propose_zone" => propose_zone,
+        "latest_seq" => store.audit_log.latest_seq,
+      }
+    end
 
     def self.agent_protocol(manifest)
       AGENT_PROTOCOL_TEMPLATE.merge(
@@ -139,6 +160,7 @@ module Textus
         "write_flows" => write_flows_for(store.manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(store.manifest),
+        "agent_quickstart" => agent_quickstart(store.manifest, store),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end

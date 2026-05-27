@@ -9,6 +9,45 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.21.0 — 2026-05-27
+
+### BREAKING
+- `textus intro` is removed. Use `textus boot` instead — same envelope, same
+  use case, better name (pairs with the new `pulse` verb to form the agent
+  lifecycle: `boot` for static contract, `pulse` for dynamic state).
+- The `Textus::Intro` module is now `Textus::Boot`. The manifest entry field
+  `inject_intro:` is now `inject_boot:`. Builder template variable
+  `{{intro.*}}` is now `{{boot.*}}`. Pre-1.0; no compatibility alias.
+
+### Added
+- **`textus pulse [--since=N]`** — agent heartbeat verb. Returns an envelope
+  with `cursor` (current `latest_seq`), `changed` (audit rows since N),
+  `stale` (entries past refresh policy), `pending_review` (keys in review
+  zone), and `doctor` (ok/warn/fail counts). One round-trip replaces what
+  was previously four separate verbs.
+- **`agent_quickstart` block in `textus boot`** — names the read verbs,
+  write verbs, writable zones, default propose zone, and current
+  `latest_seq` (the starting cursor for `pulse`). Lets an agent boot once
+  and immediately know how to talk and where to start polling.
+- **Audit log rotation.** Active `audit.log` rotates to `audit.log.1` when
+  it exceeds `audit.max_size` (default 10MB), keeping the last
+  `audit.keep` files (default 5). Each rotated file has a sidecar
+  `audit.log.N.meta.json` with `min_seq`/`max_seq`/`rotated_at`. Configure
+  via the new top-level `audit:` block in `manifest.yaml`.
+- **Monotonic `seq` on every audit row.** Foundation for cursor-based
+  queries; `audit --seq-since=N` and `pulse --since=N` both use it.
+- **`Textus::CursorExpired`** error class, raised by `pulse` and
+  `audit --seq-since` when the requested seq has rotated off disk. The
+  message names the oldest still-available seq and tells the agent to
+  re-orient via `textus boot`.
+- `docs/agent-integration.md` — boot → pulse → work loop reference, with
+  an example agent loop and cursor-expiry handling.
+
+### Changed
+- Audit rows now include a `seq` integer field (existing fields unchanged).
+- `textus boot` envelope gains `agent_quickstart` (additive — existing
+  consumers unaffected).
+
 ## 0.20.2 — 2026-05-27
 
 ### Fixed

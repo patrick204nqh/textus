@@ -99,7 +99,7 @@ module Textus
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor
-          textus intro
+          textus boot
 
           textus key {mv,uid,normalize}
           textus rule {list,explain}

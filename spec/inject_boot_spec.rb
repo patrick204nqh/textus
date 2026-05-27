@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "inject_intro:" do
+RSpec.describe "inject_boot:" do
   include_context "textus_store_fixture"
 
   before do
@@ -23,17 +23,17 @@ RSpec.describe "inject_intro:" do
           zone: output
           compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
-          inject_intro: true
+          inject_boot: true
     YAML
     File.write(File.join(root, "templates/root.mustache"), <<~TPL)
-      protocol={{intro.protocol}}
-      {{#intro.zones}}zone:{{name}}/{{purpose}}
-      {{/intro.zones}}
+      protocol={{boot.protocol}}
+      {{#boot.zones}}zone:{{name}}/{{purpose}}
+      {{/boot.zones}}
     TPL
     File.write(File.join(root, "zones/identity/id.md"), "---\nname: id\n---\nx\n")
   end
 
-  it "injects intro: into template data when the flag is true" do
+  it "injects boot: into template data when the flag is true" do
     store = Textus::Store.new(root)
     Textus::Operations.for(store, role: "builder").publish
     body = File.read(File.join(root, "zones/output/root.md"))
@@ -42,7 +42,7 @@ RSpec.describe "inject_intro:" do
     expect(body).to include("zone:output/")
   end
 
-  it "raises on inject_intro: on a non-derived entry" do
+  it "raises on inject_boot: on a non-derived entry" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -55,14 +55,14 @@ RSpec.describe "inject_intro:" do
           schema: null
           template: root.mustache
           compute: { kind: projection }
-          inject_intro: true
+          inject_boot: true
     YAML
-    expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*derived/)
+    expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_boot.*derived/)
   end
 
-  it "raises on inject_intro: when no template is declared" do
+  it "raises on inject_boot: when no template is declared" do
     # JSON derived entries do not require a template (template is an escape
-    # hatch). inject_intro: on a templateless derived entry must still raise.
+    # hatch). inject_boot: on a templateless derived entry must still raise.
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -77,12 +77,12 @@ RSpec.describe "inject_intro:" do
           zone: output
           format: json
           compute: { kind: projection, select: [identity.id], pluck: "*" }
-          inject_intro: true
+          inject_boot: true
     YAML
-    expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_intro.*template/)
+    expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_boot.*template/)
   end
 
-  it "does not inject intro: when flag is absent" do
+  it "does not inject boot: when flag is absent" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:

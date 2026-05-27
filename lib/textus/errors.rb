@@ -215,4 +215,20 @@ module Textus
       )
     end
   end
+
+  class CursorExpired < Error
+    attr_reader :requested, :min_available
+
+    def initialize(requested:, min_available:)
+      @requested = requested
+      @min_available = min_available
+      super(
+        "cursor_expired",
+        "audit cursor expired: requested seq=#{requested} but oldest available is #{min_available}; " \
+        "call `textus boot` to re-orient and resume from latest_seq",
+        details: { "requested" => requested, "min_available" => min_available },
+        hint: "call `textus boot` to get the current latest_seq and resume from there",
+      )
+    end
+  end
 end
