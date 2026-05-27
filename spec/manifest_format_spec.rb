@@ -62,7 +62,7 @@ RSpec.describe "Manifest format: field validation" do
         compute: { kind: projection, select: [working] }
     YAML
     expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /derived markdown entries require a template/)
+      .to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
   end
 
   it "accepts output json without template (templateless escape hatch is also OK)" do

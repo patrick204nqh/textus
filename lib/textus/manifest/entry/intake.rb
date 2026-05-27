@@ -4,12 +4,12 @@ module Textus
       class Intake < Base
         attr_reader :handler, :config, :events, :publish_to
 
-        def initialize(handler:, config: {}, events: {}, **rest)
+        def initialize(handler:, config: {}, events: {}, publish_to: [], **rest)
           super(**rest)
           @handler = handler
           @config = config || {}
           @events = events || {}
-          @publish_to = []
+          @publish_to = Array(publish_to)
         end
 
         def intake? = true

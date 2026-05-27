@@ -42,6 +42,11 @@ module Textus
 
               result = publish_leaf_entry(mentry, repo_root)
               built << result if result
+            when Textus::Manifest::Entry::Intake
+              next if Array(mentry.publish_to).empty?
+
+              result = publish_intake_entry(mentry, repo_root)
+              built << result if result
             end
           end
 
@@ -116,6 +121,26 @@ module Textus
 
         # Publish a standalone Leaf entry that has publish_to targets.
         def publish_leaf_entry(mentry, repo_root)
+          source_path = @manifest.resolver.resolve(mentry.key).path
+          envelope = reader.call(mentry.key)
+
+          mentry.publish_to.each do |rel|
+            target_abs = File.join(repo_root, rel)
+            Textus::Infra::Publisher.publish(source: source_path, target: target_abs, store_root: @root)
+            publish_event(:file_published,
+                          key: mentry.key,
+                          envelope: envelope,
+                          source: source_path,
+                          target: target_abs)
+          end
+
+          { "key" => mentry.key, "path" => source_path, "published_to" => mentry.publish_to }
+        end
+
+        # Publish a standalone Intake entry that has publish_to targets.
+        # The body is whatever the most recent :resolve_intake handler wrote
+        # into the store; Publish just fans it out, same as Leaf.
+        def publish_intake_entry(mentry, repo_root)
           source_path = @manifest.resolver.resolve(mentry.key).path
           envelope = reader.call(mentry.key)
 

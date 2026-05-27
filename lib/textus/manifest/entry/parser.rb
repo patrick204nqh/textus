@@ -59,7 +59,7 @@ module Textus
           handler = intake["handler"] || raw["intake_handler"] or
             raise UsageError.new("intake entry '#{key}' missing handler")
           config = intake["config"] || raw["intake_config"] || {}
-          Intake.new(handler: handler, config: config, events: raw["events"] || {}, **common)
+          Intake.new(handler: handler, config: config, events: raw["events"] || {}, publish_to: raw["publish_to"], **common)
         end
 
         def self.parse_source(raw, key)

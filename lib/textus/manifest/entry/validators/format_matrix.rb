@@ -15,11 +15,12 @@ module Textus
             end
 
             has_template = entry.respond_to?(:template) && !entry.template.nil?
-            is_external   = entry.derived? && entry.external?
-            return unless entry.in_generator_zone? && !has_template && !is_external &&
+            is_external  = entry.derived? && entry.external?
+            is_intake    = entry.intake?
+            return unless entry.in_generator_zone? && !has_template && !is_external && !is_intake &&
                           %w[markdown text].include?(entry.format) && !entry.nested?
 
-            raise UsageError.new("entry '#{entry.key}': derived #{entry.format} entries require a template")
+            raise UsageError.new("entry '#{entry.key}': #{entry.format} entries in a generator zone require a template")
           end
         end
       end
