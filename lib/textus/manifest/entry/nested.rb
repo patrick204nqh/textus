@@ -18,6 +18,13 @@ module Textus
 
         def nested? = true
 
+        # rubocop:disable Naming/PredicateMethod
+        # Back-compat shim so use-case code that probes .nested keeps working until T6.
+        def nested
+          true
+        end
+        # rubocop:enable Naming/PredicateMethod
+
         def publish_target_for(full_key)
           return nil if @publish_each.nil?
 

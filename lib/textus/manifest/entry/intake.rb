@@ -12,6 +12,11 @@ module Textus
         end
 
         def intake? = true
+
+        # Back-compat shims so use-case code that probes .intake_handler/.intake_config
+        # keeps working until T6 migrates them to type dispatch.
+        def intake_handler = @handler
+        def intake_config  = @config
       end
     end
   end

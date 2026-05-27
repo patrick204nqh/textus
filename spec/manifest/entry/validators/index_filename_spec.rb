@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Validators::IndexFilename do
   def entry_with(opts)
     instance_double(
-      Textus::Manifest::Entry,
+      Textus::Manifest::Entry::Base,
       key: "working.foo",
       index_filename: opts[:index_filename],
       nested: opts.fetch(:nested, true),

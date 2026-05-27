@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
   def entry_with(opts)
     instance_double(
-      Textus::Manifest::Entry,
+      Textus::Manifest::Entry::Base,
       key: "working.foo",
       path: opts.fetch(:path, "foo.md"),
       nested: opts.fetch(:nested, false),
