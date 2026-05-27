@@ -9,6 +9,46 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.20.2 — 2026-05-27
+
+### Fixed
+- Promotion predicate `accept_authority_signed` now checks the role's *kind*
+  via `manifest.role_kind`, so manifests with a renamed authority role (e.g.
+  `owner` instead of `human`) pass the promotion gate. The internal class
+  `Predicates::HumanAccept` was renamed to `Predicates::AcceptAuthoritySigned`.
+- `textus schema migrate` now writes as the manifest's declared
+  `accept_authority` role instead of the literal `"human"`, and raises a
+  clear `UsageError` (with a YAML hint) when no `accept_authority` role is
+  declared.
+- `textus accept` / `textus reject` no longer claim "only human role can
+  accept" when the manifest declares zero `accept_authority` roles — the
+  error now says "no role with accept_authority kind is declared in this
+  manifest; accept/reject is disabled".
+- `textus build` now resolves the build role from the manifest's declared
+  `generator` kind instead of hardcoding `"builder"`, so renamed generator
+  roles work correctly.
+- Manifest validator's "exactly one accept_authority" error message now
+  matches what the schema actually enforces.
+
+### Removed
+- Legacy `human_accept` promotion-predicate alias (string and symbol forms).
+  Manifests using `rules[].promotion.requires: [human_accept]` must change
+  to `[accept_authority_signed]`. The error on the old form is actionable:
+  `unknown promotion predicate: 'human_accept' (known: schema_valid,
+  accept_authority_signed)`.
+- `textus key normalize` verb and the underlying
+  `Textus::Application::Tools::MigrateKeys` module. Files dropped into nested
+  zones with illegal basenames are still reported by `textus doctor` with a
+  `key.illegal` finding; fix them by hand. The `--upgrade-manifest` flag and
+  its `Textus::Application::Tools::MigrateManifestToKinds` module (one-shot
+  0.19→0.20 manifest upgrader) are removed for the same reason — dead weight.
+- The `migrate-keys` audit-log payload string is no longer emitted (no writer
+  produces it).
+
+### Internal
+- Final cleanup of role-name leaks identified by the 0.20.2 architecture
+  audit (follow-on to 0.20.1 role-kinds refactor).
+
 ## 0.20.1 — 2026-05-27
 
 ### Added

@@ -1,7 +1,11 @@
+require_relative "authority_gate"
+
 module Textus
   module Application
     module Writes
       class Accept
+        include AuthorityGate
+
         def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
           @ctx          = ctx
           @manifest     = manifest
@@ -14,10 +18,7 @@ module Textus
         end
 
         def call(pending_key)
-          unless @manifest.role_kind(@ctx.role) == :accept_authority
-            authority = @manifest.roles_with_kind(:accept_authority).first || "human"
-            raise ProposalError.new("only #{authority} role can accept proposals; got '#{@ctx.role}'")
-          end
+          assert_accept_authority!("accept")
 
           env = Textus::Application::Reads::Get.new(
             ctx: @ctx, manifest: @manifest, file_store: @file_store,

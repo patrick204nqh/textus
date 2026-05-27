@@ -88,8 +88,8 @@ RSpec.describe Textus::Doctor do
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
     expect(issue).not_to be_nil
-    expect(issue["proposed_key"]).to eq("bad-name")
-    expect(issue["fix"]).to include("key normalize")
+    expect(issue["message"]).to include("Bad_Name")
+    expect(issue["fix"]).to match(/lowercase.*hyphen/i)
   end
 
   context "with index_filename on a nested entry" do
@@ -132,7 +132,7 @@ RSpec.describe Textus::Doctor do
       res = doctor
       issue = res["issues"].find { |i| i["code"] == "key.illegal" }
       expect(issue).not_to be_nil
-      expect(issue["proposed_key"]).to eq("bad-name")
+      expect(issue["message"]).to include("Bad_Name")
     end
   end
 

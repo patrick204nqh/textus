@@ -83,7 +83,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     )
     expect(Textus::CLI::Group::Key.subcommands).to eq(
       "mv" => Textus::CLI::Verb::Mv,
-      "normalize" => Textus::CLI::Verb::KeyNormalize,
       "uid" => Textus::CLI::Verb::Uid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(

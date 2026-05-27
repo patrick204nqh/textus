@@ -49,8 +49,14 @@ module Textus
           end
         raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
-        role = store.manifest.roles_with_kind(:accept_authority).first || "human"
-        ops = Textus::Operations.for(store, role: role)
+        authority = store.manifest.roles_with_kind(:accept_authority).first
+        if authority.nil?
+          raise UsageError.new(
+            "schema migrate requires a role with kind :accept_authority in the manifest; " \
+            "none declared (add e.g. `- { name: owner, kind: accept_authority }` to roles:)",
+          )
+        end
+        ops = Textus::Operations.for(store, role: authority)
         touched = []
         store.manifest.resolver.enumerate.each do |row|
           env = ops.get(row[:key])
