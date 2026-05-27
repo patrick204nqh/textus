@@ -74,6 +74,10 @@ tracks both additive improvements and breaking protocol bumps independently.
   future release adds `Operations` projections (e.g. `manifest_view`,
   `hooks_view`, `run_intake`) so these verbs route through the
   Operations boundary.
+- `Application::Writes::Delete#call` retains a `suppress_events:` kwarg
+  (used internally by `Reject`). A future release either lifts the
+  suppression into `EnvelopeIO`-direct usage (matching the `Mv` path)
+  or formalizes per-event suppression as part of the public hook API.
 
 ## 0.18.1 — 2026-05-27
 
