@@ -85,4 +85,35 @@ RSpec.describe "Manifest intake:" do
     expect(e).to be_a(Textus::Manifest::Entry::Leaf)
     expect(e).not_to be_intake
   end
+
+  it "parses intake.publish_to as a list of targets" do
+    e = load_entry(<<~YAML)
+      version: textus/3
+      zones: [{ name: working, write_policy: [runner] }]
+      entries:
+        - key: working.news
+          kind: intake
+          path: working/news.md
+          zone: working
+          publish_to: [NEWS.md, docs/news.md]
+          intake:
+            handler: news_handler
+    YAML
+    expect(e.publish_to).to eq(["NEWS.md", "docs/news.md"])
+  end
+
+  it "defaults publish_to to an empty array when omitted" do
+    e = load_entry(<<~YAML)
+      version: textus/3
+      zones: [{ name: working, write_policy: [runner] }]
+      entries:
+        - key: working.news
+          kind: intake
+          path: working/news.md
+          zone: working
+          intake:
+            handler: news_handler
+    YAML
+    expect(e.publish_to).to eq([])
+  end
 end
