@@ -61,5 +61,13 @@ RSpec.describe Textus::Application::Policy::Promotion do
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "owner")
       expect(result.ok?).to be true
     end
+
+    it "evaluate(role:) passes through the legacy 'human_accept' registry key" do
+      manifest = instance_double(Textus::Manifest)
+      allow(manifest).to receive(:role_kind).with("human").and_return(:accept_authority)
+      policy = described_class.from_names(%w[human_accept])
+      result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "human")
+      expect(result.ok?).to be true
+    end
   end
 end
