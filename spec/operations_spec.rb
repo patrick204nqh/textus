@@ -74,6 +74,27 @@ RSpec.describe Textus::Operations do
     end
   end
 
+  it "can be constructed from explicit ports without going through .for(store)" do
+    Dir.mktmpdir do |tmp|
+      Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
+      store = Textus::Store.new(File.join(tmp, ".textus"))
+      ops = described_class.new(
+        ctx: Textus::Application::Context.build(role: "human"),
+        manifest: store.manifest,
+        file_store: store.file_store,
+        schemas: store.schemas,
+        audit_log: store.audit_log,
+        bus: store.bus,
+        registry: store.registry,
+        root: store.root,
+        store: store,
+      )
+      env = ops.put("working.notes.alpha", body: "hi")
+      expect(env).to be_a(Textus::Envelope)
+      expect(ops.get("working.notes.alpha").body.strip).to eq("hi")
+    end
+  end
+
   it "with_role returns a new Operations with fresh memoization" do
     Dir.mktmpdir do |tmp|
       ops = init_ops(tmp)

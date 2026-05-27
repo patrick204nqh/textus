@@ -12,26 +12,42 @@ module Textus
     def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
       new(
         ctx: Application::Context.build(role: role, correlation_id: correlation_id, dry_run: dry_run),
+        manifest: store.manifest,
+        file_store: store.file_store,
+        schemas: store.schemas,
+        audit_log: store.audit_log,
+        bus: store.bus,
+        registry: store.registry,
+        root: store.root,
         store: store,
       )
     end
 
     attr_reader :ctx, :store
 
-    def initialize(ctx:, store:)
+    # rubocop:disable Metrics/ParameterLists
+    def initialize(ctx:, manifest:, file_store:, schemas:, audit_log:, bus:, registry:, root:, store:)
       @ctx        = ctx
+      @manifest   = manifest
+      @file_store = file_store
+      @schemas    = schemas
+      @audit_log  = audit_log
+      @bus        = bus
+      @registry   = registry
+      @root       = root
       @store      = store
-      @manifest   = store.manifest
-      @schemas    = store.schemas
-      @file_store = store.file_store
-      @audit_log  = store.audit_log
-      @bus        = store.bus
-      @registry   = store.registry
-      @root       = store.root
       @authorizer = Textus::Domain::Authorizer.new(manifest: @manifest)
     end
+    # rubocop:enable Metrics/ParameterLists
 
-    def with_role(role) = self.class.new(ctx: @ctx.with_role(role), store: @store)
+    def with_role(role)
+      self.class.new(
+        ctx: @ctx.with_role(role),
+        manifest: @manifest, file_store: @file_store, schemas: @schemas,
+        audit_log: @audit_log, bus: @bus, registry: @registry,
+        root: @root, store: @store
+      )
+    end
 
     # writes
     def put(...)     = put_op.call(...)
