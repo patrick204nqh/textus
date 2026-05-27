@@ -13,7 +13,7 @@ module Textus
 
         def call(key, if_etag: nil, suppress_events: false)
           @manifest.validate_key!(key)
-          mentry = @manifest.resolve(key).entry
+          mentry = @manifest.resolver.resolve(key).entry
 
           @authorizer.authorize_write!(mentry, role: @ctx.role)
 

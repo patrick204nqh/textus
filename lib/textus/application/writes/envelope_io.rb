@@ -26,7 +26,7 @@ module Textus
         # to inspect pre-move state (UID presence, content surfacing) so
         # the move pipeline can consolidate I/O in one place.
         def read_envelope(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           path = res.path
           return nil unless @file_store.exists?(path)
 
@@ -41,7 +41,7 @@ module Textus
         end
 
         def write(key, mentry:, payload:, if_etag: nil)
-          path = @manifest.resolve(key).path
+          path = @manifest.resolver.resolve(key).path
 
           meta = payload.meta || {}
           strategy = Entry.for_format(mentry.format)
@@ -82,8 +82,8 @@ module Textus
 
         def delete(key, mentry:, if_etag: nil)
           _ = mentry
-          path = @manifest.resolve(key).path
-          raise UnknownKey.new(key, suggestions: @manifest.suggestions_for(key)) unless @file_store.exists?(path)
+          path = @manifest.resolver.resolve(key).path
+          raise UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)) unless @file_store.exists?(path)
 
           etag_before = @file_store.etag(path)
           raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
@@ -97,9 +97,9 @@ module Textus
         end
 
         def move(from_key:, to_key:, new_mentry:, if_etag: nil)
-          from_path = @manifest.resolve(from_key).path
-          to_path   = @manifest.resolve(to_key).path
-          raise UnknownKey.new(from_key, suggestions: @manifest.suggestions_for(from_key)) unless @file_store.exists?(from_path)
+          from_path = @manifest.resolver.resolve(from_key).path
+          to_path   = @manifest.resolver.resolve(to_key).path
+          raise UnknownKey.new(from_key, suggestions: @manifest.resolver.suggestions_for(from_key)) unless @file_store.exists?(from_path)
 
           etag_before = @file_store.etag(from_path)
           raise EtagMismatch.new(from_key, if_etag, etag_before) if if_etag && if_etag != etag_before

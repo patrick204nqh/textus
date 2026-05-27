@@ -7,7 +7,7 @@ module Textus
         end
 
         def call(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           mentry = res.entry
           path = res.path
           { "protocol" => PROTOCOL, "key" => key, "zone" => mentry.zone, "owner" => mentry.owner, "path" => path }

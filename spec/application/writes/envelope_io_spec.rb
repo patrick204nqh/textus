@@ -54,7 +54,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         env = io.write("working.foo", mentry: mentry, payload: payload(body: "hi"))
 
@@ -68,7 +68,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         ctx = ctx_double
         io = build_io(textus_dir, ctx: ctx)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         first = io.write("working.foo", mentry: mentry, payload: payload(body: "one"))
         second = io.write("working.foo", mentry: mentry, payload: payload(body: "two"))
@@ -81,7 +81,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         expect do
           io.write("working.foo", mentry: mentry, payload: payload(meta: { "name" => "wrong" }, body: "x"))
@@ -93,7 +93,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.note").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.note").entry
 
         expect do
           io.write("working.note", mentry: mentry, payload: payload(meta: { "name" => "note" }, body: "x"))
@@ -105,7 +105,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         expect do
           io.write("working.foo", mentry: mentry, payload: payload(body: "anything"))
@@ -117,7 +117,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         expect do
           io.write("working.foo", mentry: mentry, payload: payload(body: "x"), if_etag: "deadbeef")
@@ -129,7 +129,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         first = io.write("working.foo", mentry: mentry, payload: payload(body: "v1"))
         env = io.write("working.foo", mentry: mentry, payload: payload(body: "v2"), if_etag: first.etag)
@@ -142,7 +142,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         io.write("working.foo", mentry: mentry, payload: payload(body: "v1"))
         expect do
@@ -155,7 +155,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         io.write("working.foo", mentry: mentry, payload: payload(body: "byte-for-byte"))
 
@@ -170,7 +170,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         ctx = ctx_double(role: :runner, correlation_id: "corr-99")
         io = build_io(textus_dir, ctx: ctx)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         io.write("working.foo", mentry: mentry, payload: payload(body: "hi"))
 
@@ -186,7 +186,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         expect do
           io.delete("working.foo", mentry: mentry)
@@ -198,7 +198,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         io.write("working.foo", mentry: mentry, payload: payload(body: "hi"))
         io.delete("working.foo", mentry: mentry)
@@ -216,7 +216,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
-        mentry = Textus::Manifest.load(textus_dir).resolve("working.foo").entry
+        mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
         io.write("working.foo", mentry: mentry, payload: payload(body: "hi"))
         expect do
@@ -233,8 +233,8 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         ctx = ctx_double(role: :runner, correlation_id: "corr-mv")
         io = build_io(textus_dir, ctx: ctx)
         manifest = Textus::Manifest.load(textus_dir)
-        old_mentry = manifest.resolve("working.foo").entry
-        new_mentry = manifest.resolve("working.bar").entry
+        old_mentry = manifest.resolver.resolve("working.foo").entry
+        new_mentry = manifest.resolver.resolve("working.bar").entry
 
         io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hello"))
         envelope = io.move(from_key: "working.foo", to_key: "working.bar",
@@ -260,8 +260,8 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
         manifest = Textus::Manifest.load(textus_dir)
-        old_mentry = manifest.resolve("working.foo").entry
-        new_mentry = manifest.resolve("working.bar").entry
+        old_mentry = manifest.resolver.resolve("working.foo").entry
+        new_mentry = manifest.resolver.resolve("working.bar").entry
 
         io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "hi"))
         expect do
@@ -276,8 +276,8 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
         manifest = Textus::Manifest.load(textus_dir)
-        old_mentry = manifest.resolve("working.foo").entry
-        new_mentry = manifest.resolve("working.bar").entry
+        old_mentry = manifest.resolver.resolve("working.foo").entry
+        new_mentry = manifest.resolver.resolve("working.bar").entry
 
         before = io.write("working.foo", mentry: old_mentry, payload: payload(meta: { "name" => "foo" }, body: "x"))
         after = io.move(from_key: "working.foo", to_key: "working.bar",
@@ -292,7 +292,7 @@ RSpec.describe Textus::Application::Writes::EnvelopeIO do
         textus_dir = build_textus(root)
         io = build_io(textus_dir, ctx: ctx_double)
         manifest = Textus::Manifest.load(textus_dir)
-        new_mentry = manifest.resolve("working.bar").entry
+        new_mentry = manifest.resolver.resolve("working.bar").entry
 
         expect do
           io.move(from_key: "working.foo", to_key: "working.bar",

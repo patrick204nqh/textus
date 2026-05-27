@@ -58,7 +58,7 @@ module Textus
         end
 
         def key_in_zone?(key, zone)
-          mentry = @manifest.resolve(key).entry
+          mentry = @manifest.resolver.resolve(key).entry
           mentry && mentry.zone == zone
         rescue Textus::Error
           false

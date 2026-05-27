@@ -8,7 +8,7 @@ module Textus
         end
 
         def call(key)
-          mentry = @manifest.resolve(key).entry
+          mentry = @manifest.resolver.resolve(key).entry
           schema = @schemas.fetch_or_nil(mentry.schema)
           { "protocol" => PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
         end

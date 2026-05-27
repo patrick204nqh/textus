@@ -90,7 +90,7 @@ RSpec.describe "Manifest format: field validation" do
     File.write(File.join(base, "beta.yml"), "k: 2\n")
 
     manifest = Textus::Manifest.load(root)
-    keys = manifest.enumerate.map { |r| r[:key] }.sort
+    keys = manifest.resolver.enumerate.map { |r| r[:key] }.sort
     expect(keys).to eq(%w[working.cfg.alpha working.cfg.beta])
   end
 
@@ -99,7 +99,7 @@ RSpec.describe "Manifest format: field validation" do
       - { key: working.cfg, path: working/cfg, zone: working, format: json, nested: true }
     YAML
     manifest = Textus::Manifest.load(root)
-    path = manifest.resolve("working.cfg.alpha").path
+    path = manifest.resolver.resolve("working.cfg.alpha").path
     expect(path).to end_with("zones/working/cfg/alpha.json")
   end
 end

@@ -31,8 +31,8 @@ module Textus
           @manifest.validate_key!(new_key)
           raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-          old_res = @manifest.resolve(old_key)
-          new_res = @manifest.resolve(new_key)
+          old_res = @manifest.resolver.resolve(old_key)
+          new_res = @manifest.resolver.resolve(new_key)
           raise UnknownKey.new(old_key) unless @envelope_io.exists?(old_res.path)
 
           validate_zone_and_format!(old_res.entry, new_res.entry)

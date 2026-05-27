@@ -11,8 +11,8 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## 0.20.0 — architecture redesign (unreleased)
 
-**BREAKING (pre-1.0):** Public top-level utility modules removed.
-Callers must use the `Operations` facade or the new internal namespaces.
+**BREAKING (pre-1.0):** Public top-level utility modules removed, and
+`Manifest` routing methods extracted into a dedicated resolver.
 
 ### Removed
 - `Textus::Dependencies` — use `Operations#deps`, `#rdeps`, `#published`.
@@ -22,6 +22,10 @@ Callers must use the `Operations` facade or the new internal namespaces.
 ### Changed
 - `Textus::Projection` moved to `Textus::Application::Projection`.
 - `Textus::MigrateKeys` moved to `Textus::Application::Tools::MigrateKeys`.
+- `Manifest#resolve`, `#enumerate`, and `#suggestions_for` removed from
+  the public `Manifest` API. Use `manifest.resolver.resolve(key)` etc.
+  via the new `Manifest::Resolver`. `Manifest` retains the data accessors
+  (`entries`, `zones`, `rules`, `permissions`, `validate_key!`).
 
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 

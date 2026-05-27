@@ -52,7 +52,7 @@ module Textus
 
         def check_source(src, gen_time)
           if src.match?(/\A[a-z0-9.][a-z0-9._-]*\z/) && !src.include?("/")
-            @manifest.enumerate(prefix: src).each do |row|
+            @manifest.resolver.enumerate(prefix: src).each do |row|
               return src if File.mtime(row[:path]) > gen_time
             end
             nil

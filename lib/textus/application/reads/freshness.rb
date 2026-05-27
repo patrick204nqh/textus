@@ -63,7 +63,7 @@ module Textus
         # Returns the raw envelope or nil. Nested entries (mentry.key is a
         # prefix, not a leaf) and missing files both resolve to nil.
         def safe_get(key)
-          res = @manifest.resolve(key)
+          res = @manifest.resolver.resolve(key)
           return nil unless @file_store.exists?(res.path)
 
           raw = @file_store.read(res.path)

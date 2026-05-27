@@ -28,7 +28,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   it "enumerates SKILL.md files keyed by parent directory" do
     write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
 
-    rows = Textus::Manifest.load(root).enumerate
+    rows = Textus::Manifest.load(root).resolver.enumerate
     keys = rows.map { |r| r[:key] }
 
     expect(keys).to contain_exactly("skills.ask", "skills.do")
@@ -37,7 +37,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   it "ignores sibling files (references/*) under index_filename mode" do
     write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
 
-    rows = Textus::Manifest.load(root).enumerate
+    rows = Textus::Manifest.load(root).resolver.enumerate
     paths = rows.map { |r| File.basename(r[:path]) }
 
     expect(paths).to all(eq("SKILL.md"))
@@ -46,7 +46,7 @@ RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-di
   it "resolve(key) returns the SKILL.md path for a sub-directory" do
     write_manifest("  - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md }")
 
-    path = Textus::Manifest.load(root).resolve("skills.ask").path
+    path = Textus::Manifest.load(root).resolver.resolve("skills.ask").path
 
     expect(path).to eq(File.join(root, "zones/skills/ask/SKILL.md"))
   end
