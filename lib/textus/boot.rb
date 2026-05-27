@@ -116,7 +116,28 @@ module Textus
       { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "pulse",
+        "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
     ].freeze
+
+    def self.agent_quickstart(manifest, store)
+      proposer_roles = manifest.roles_with_kind(:proposer)
+      agent_role = proposer_roles.first
+
+      writable_zones = manifest.zones.each_with_object([]) do |(zname, writers), acc|
+        acc << zname if agent_role && writers.include?(agent_role)
+      end
+
+      propose_zone = writable_zones.find { |z| z.include?("review") } || writable_zones.first
+
+      {
+        "read_verbs" => %w[boot get list audit pulse freshness doctor],
+        "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
+        "writable_zones" => writable_zones,
+        "propose_zone" => propose_zone,
+        "latest_seq" => store.audit_log.latest_seq,
+      }
+    end
 
     def self.agent_protocol(manifest)
       AGENT_PROTOCOL_TEMPLATE.merge(
@@ -139,6 +160,7 @@ module Textus
         "write_flows" => write_flows_for(store.manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(store.manifest),
+        "agent_quickstart" => agent_quickstart(store.manifest, store),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end
