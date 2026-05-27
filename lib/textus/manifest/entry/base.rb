@@ -25,8 +25,8 @@ module Textus
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone? = zone_writers.include?("builder")
-        def in_proposal_zone?  = zone_writers.include?("agent")
+        def in_generator_zone? = @manifest.zone_kinds(@zone).include?(:generator)
+        def in_proposal_zone?  = @manifest.zone_kinds(@zone).include?(:proposer)
 
         def nested?  = false
         def derived? = false

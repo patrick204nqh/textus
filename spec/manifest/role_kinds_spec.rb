@@ -101,4 +101,41 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
       expect(m.roles_with_kind(:accept_authority)).to eq([])
     end
   end
+
+  describe "Entry zone-kind predicates with renamed roles" do
+    it "recognizes a renamed generator zone" do
+      m = parse(<<~YAML)
+        version: textus/3
+        roles:
+          - { name: owner,    kind: accept_authority }
+          - { name: compiler, kind: generator }
+        zones:
+          - { name: self,  write_policy: [owner] }
+          - { name: build, write_policy: [compiler] }
+        entries:
+          - { key: out.report, kind: derived, zone: build, path: build/report.md, format: markdown,
+              template: report.mustache, compute: { kind: projection, select: "self.*" } }
+      YAML
+      entry = m.entries.first
+      expect(entry.in_generator_zone?).to be true
+      expect(entry.in_proposal_zone?).to be false
+    end
+
+    it "recognizes a renamed proposal zone" do
+      m = parse(<<~YAML)
+        version: textus/3
+        roles:
+          - { name: owner,    kind: accept_authority }
+          - { name: proposer, kind: proposer }
+        zones:
+          - { name: self,   write_policy: [owner] }
+          - { name: drafts, write_policy: [proposer, owner] }
+        entries:
+          - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
+      YAML
+      entry = m.entries.first
+      expect(entry.in_proposal_zone?).to be true
+      expect(entry.in_generator_zone?).to be false
+    end
+  end
 end
