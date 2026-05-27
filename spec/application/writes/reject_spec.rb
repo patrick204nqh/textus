@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Writes::Reject do
       events = []
       store.bus.subscribe(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
 
-      ctx = Textus::Application::Context.new(store: store, role: "human")
+      ctx = Textus::Application::Context.legacy(store: store, role: "human")
       res = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.draft")
 
       expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "review.draft", "target_key" => "identity.target")
@@ -41,7 +41,7 @@ RSpec.describe Textus::Application::Writes::Reject do
   it "rejects non-human callers" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "agent")
+      ctx = Textus::Application::Context.legacy(store: store, role: "agent")
       expect { described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("review.draft") }
         .to raise_error(Textus::ProposalError, /only human role can reject/)
     end
@@ -50,7 +50,7 @@ RSpec.describe Textus::Application::Writes::Reject do
   it "rejects entries that are not in a proposal zone" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "human")
+      ctx = Textus::Application::Context.legacy(store: store, role: "human")
       expect { described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("identity.target") }
         .to raise_error(Textus::ProposalError, /not in a proposal zone/)
     end

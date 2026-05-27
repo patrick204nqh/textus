@@ -24,7 +24,7 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "working", "foo.md"), "---\nkey: working.foo\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "del-1")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner", correlation_id: "del-1")
       events = []
       store.bus.subscribe(:entry_deleted, :capture) do |key:, correlation_id:, **|
         events << [:entry_deleted, key, correlation_id]
@@ -43,7 +43,7 @@ RSpec.describe Textus::Application::Writes::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
 
       expect do
         described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call("identity.bar")

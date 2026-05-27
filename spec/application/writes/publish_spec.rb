@@ -37,7 +37,7 @@ RSpec.describe Textus::Application::Writes::Publish do
       events = []
       store.registry.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = Textus::Application::Context.new(store: store, role: "builder")
+      ctx = Textus::Application::Context.legacy(store: store, role: "builder")
       res = described_class.new(ctx: ctx).call
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
@@ -48,7 +48,7 @@ RSpec.describe Textus::Application::Writes::Publish do
     end
 
     it "filters by prefix" do
-      ctx = Textus::Application::Context.new(store: store, role: "builder")
+      ctx = Textus::Application::Context.legacy(store: store, role: "builder")
       res = described_class.new(ctx: ctx).call(prefix: "working.agents.alice")
       expect(res["published_leaves"].map { |r| r["key"] }).to eq(["working.agents.alice"])
     end
@@ -75,7 +75,7 @@ RSpec.describe Textus::Application::Writes::Publish do
     end
 
     it "rejects publish_each targets that escape repo root" do
-      ctx = Textus::Application::Context.new(store: store, role: "builder")
+      ctx = Textus::Application::Context.legacy(store: store, role: "builder")
       expect do
         described_class.new(ctx: ctx).call
       end.to raise_error(Textus::PublishError, /escapes repo root/)

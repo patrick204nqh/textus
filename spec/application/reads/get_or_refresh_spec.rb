@@ -60,7 +60,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       pure_get = Textus::Application::Reads::Get.new(ctx: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)
@@ -75,7 +75,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       pure_get = Textus::Application::Reads::Get.new(ctx: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)
@@ -90,7 +90,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       pure_get = Textus::Application::Reads::Get.new(ctx: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)
@@ -103,7 +103,7 @@ RSpec.describe Textus::Application::Reads::GetOrRefresh do
   it "returns nil when the key has no envelope" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       pure_get = Textus::Application::Reads::Get.new(ctx: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(ctx: ctx, get: pure_get, orchestrator: orch)

@@ -14,7 +14,7 @@ RSpec.describe Textus::Projection do
       spec: spec,
       lister: ops.method(:list),
       transform_resolver: ->(name) { store.registry.rpc_callable(:transform_rows, name) },
-      transform_context: Textus::Application::Context.system(store),
+      transform_context: Textus::Application::Context.legacy(store: store),
     )
   end
 

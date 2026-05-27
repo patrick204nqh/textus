@@ -10,7 +10,7 @@ module Textus
   #   ops.refresh_all(prefix: ..., zone: ...)
   class Operations
     def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
-      ctx = Application::Context.new(
+      ctx = Application::Context.legacy(
         store: store,
         role: role,
         correlation_id: correlation_id,

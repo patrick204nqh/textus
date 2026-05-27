@@ -26,7 +26,7 @@ module Textus
         private
 
         def read_view
-          Application::Context.new(store: @ctx.store, role: @ctx.role)
+          Application::Context.legacy(store: @ctx.store, role: @ctx.role)
         end
 
         def fetch_timeout_for(key)

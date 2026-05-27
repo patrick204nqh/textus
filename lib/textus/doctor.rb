@@ -54,7 +54,7 @@ module Textus
 
     def run_registered_checks(store)
       out = []
-      view = Application::Context.system(store)
+      view = Application::Context.legacy(store: store)
       store.registry.rpc_names(:validate).each do |name|
         callable = store.registry.rpc_callable(:validate, name)
         begin

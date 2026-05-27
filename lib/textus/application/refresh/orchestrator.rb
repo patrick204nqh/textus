@@ -55,7 +55,7 @@ module Textus
 
             probe.release
 
-            store_view = @store ? Textus::Application::Context.new(store: @store, role: @role) : nil
+            store_view = @store ? Textus::Application::Context.legacy(store: @store, role: @role) : nil
             payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
             payload[:store] = store_view if store_view
             @store&.bus&.publish(:refresh_backgrounded, **payload)

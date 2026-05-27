@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "writes the envelope when role has permission" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       Textus::Infra::EventBus.new(registry: store.registry)
 
       envelope = described_class.new(ctx: ctx, envelope_io: build_envelope_io(ctx)).call(
@@ -38,7 +38,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "raises WriteForbidden when role lacks permission" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "runner")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner")
       Textus::Infra::EventBus.new(registry: store.registry)
 
       expect do
@@ -50,7 +50,7 @@ RSpec.describe Textus::Application::Writes::Put do
   it "fires :entry_put event with key, envelope, and correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = Textus::Application::Context.new(store: store, role: "runner", correlation_id: "corr-1")
+      ctx = Textus::Application::Context.legacy(store: store, role: "runner", correlation_id: "corr-1")
       events = []
       store.bus.subscribe(:entry_put, :capture) do |key:, correlation_id:, **|
         events << [:entry_put, key, correlation_id]

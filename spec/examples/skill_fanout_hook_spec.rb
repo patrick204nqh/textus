@@ -27,7 +27,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ctx) { Textus::Application::Context.new(store: store, role: "runner") }
+  let(:ctx) { Textus::Application::Context.legacy(store: store, role: "runner") }
   let(:ops) { Textus::Operations.for(store, role: "runner") }
 
   before do
