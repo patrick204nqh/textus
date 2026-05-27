@@ -79,7 +79,7 @@ module Textus
 
         raise BadManifest.new(
           "manifest declares #{accept_authority_count} accept_authority roles; " \
-          "exactly one accept_authority role is required",
+          "at most one accept_authority role is allowed",
         )
       end
 

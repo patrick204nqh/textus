@@ -42,7 +42,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
         - { name: identity, write_policy: [owner] }
       entries: []
     YAML
-    expect { parse(yaml) }.to raise_error(Textus::BadManifest, /exactly one accept_authority/)
+    expect { parse(yaml) }.to raise_error(Textus::BadManifest, /at most one accept_authority/)
   end
 
   it "rejects unknown keys inside a role entry" do
