@@ -12,10 +12,21 @@ tracks both additive improvements and breaking protocol bumps independently.
 ## 0.20.0 — architecture redesign (unreleased)
 
 **BREAKING (pre-1.0):** Public top-level utility modules removed,
-`Manifest` routing methods extracted into a dedicated resolver, and
-`Hooks::Dispatcher`/`Hooks::Registry` collapsed into a single bus.
-External hook files written against the 0.19 `register(event, name, ...)`
-API continue to work unchanged.
+`Manifest` routing methods extracted into a dedicated resolver,
+`Hooks::Dispatcher`/`Hooks::Registry` collapsed into a single bus, and
+pubsub hook payloads now ship `ctx:` (a `Textus::Hooks::Context`)
+instead of the raw store. External hook files written against the 0.19
+`register(event, name, ...)` API continue to work unchanged; pubsub
+hook bodies must update signatures from `|store:, ...|` to `|ctx:, ...|`
+and use `ctx.put`/`ctx.get`/`ctx.audit`/`ctx.publish_followup` in place
+of direct `store.*` access. RPC events (`transform_rows`, `resolve_intake`,
+`validate`) keep `store:`.
+
+### Added
+- `Textus::Hooks::Context` — narrow handle for user pubsub hooks. Exposes
+  `role`, `correlation_id`, `get`, `list`, `deps`, `freshness`, `put`,
+  `delete`, `audit`, and `publish_followup`. All writes route back through
+  `Operations` so authorization, audit, and validation cannot be bypassed.
 
 ### Removed
 - `Textus::Dependencies` — use `Operations#deps`, `#rdeps`, `#published`.
@@ -35,6 +46,9 @@ API continue to work unchanged.
   `Hooks::Loader.new(bus:)` now take a Bus instead of a Registry.
   `Operations.for` no longer accepts `registry:`. Use cases
   (`Writes::Build`, `Refresh::Worker`, `Refresh::All`) take `bus:`.
+- All pubsub events declare `ctx:` instead of `store:` in their kwargs
+  schema. Every `bus.publish` call site passes `ctx: hook_context`.
+  `Operations#hook_context` builds the per-`Operations` `Hooks::Context`.
 
 ## 0.19.1 — drop textus/2 migration hint (2026-05-27)
 
