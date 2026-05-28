@@ -2,16 +2,16 @@ require "fileutils"
 
 module Textus
   module Application
-    module Writes
+    module Envelope
       # Owns the write pipeline (validate, serialize, etag-check, write, audit).
       # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
-      # EnvelopeReader for the existing-uid lookup.
+      # Reader for the existing-uid lookup.
       #
       # Invariant: every public method's final action is @audit_log.append(...).
       #
       # No permission check, no event firing — those belong to the caller
       # (Application::Writes::Put / ::Delete / ::Mv).
-      class EnvelopeWriter
+      class Writer
         Payload = Data.define(:meta, :body, :content)
 
         def initialize(file_store:, manifest:, schemas:, audit_log:, ctx:, reader:)
@@ -51,7 +51,7 @@ module Textus
 
           @file_store.write(path, bytes)
           etag_after = Etag.for_bytes(bytes)
-          envelope = Envelope.build(
+          envelope = Textus::Envelope.build(
             key: key, mentry: mentry, path: path,
             meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
           )
@@ -97,7 +97,7 @@ module Textus
 
           raw = @file_store.read(to_path)
           parsed = Entry.for_format(new_mentry.format).parse(raw, path: to_path)
-          envelope = Envelope.build(
+          envelope = Textus::Envelope.build(
             key: to_key, mentry: new_mentry, path: to_path,
             meta: parsed["_meta"], body: parsed["body"],
             etag: etag_after, content: parsed["content"]

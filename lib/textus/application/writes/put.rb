@@ -20,7 +20,7 @@ module Textus
           envelope = @writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Application::Writes::EnvelopeWriter::Payload.new(meta: meta, body: body, content: content),
+            payload: Textus::Application::Envelope::Writer::Payload.new(meta: meta, body: body, content: content),
             if_etag: if_etag,
           )
 

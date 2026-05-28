@@ -1,13 +1,13 @@
 module Textus
   module Application
-    module Writes
+    module Envelope
       # Read-only counterpart to EnvelopeWriter. Resolves a key, reads the
       # bytes, parses them via the format strategy, and hands back an
       # Envelope. Used by Mv (pre-move inspection) and by EnvelopeWriter
       # (existing-uid lookup for the uid-preservation step in #put).
       #
       # No audit, no events, no permission checks — those live one layer up.
-      class EnvelopeReader
+      class Reader
         def initialize(file_store:, manifest:)
           @file_store = file_store
           @manifest   = manifest
@@ -21,7 +21,7 @@ module Textus
           mentry = res.entry
           raw = @file_store.read(path)
           parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-          Envelope.build(
+          Textus::Envelope.build(
             key: key, mentry: mentry, path: path,
             meta: parsed["_meta"], body: parsed["body"],
             etag: Etag.for_bytes(raw), content: parsed["content"]

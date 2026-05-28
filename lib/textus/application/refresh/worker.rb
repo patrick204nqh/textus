@@ -70,7 +70,7 @@ module Textus
           envelope = @writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Application::Writes::EnvelopeWriter::Payload.new(
+            payload: Textus::Application::Envelope::Writer::Payload.new(
               meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             ),
           )

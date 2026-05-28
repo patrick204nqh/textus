@@ -82,7 +82,7 @@ module Textus
 
           raw = @file_store.read(res.path)
           parsed = Entry.for_format(res.entry.format).parse(raw, path: res.path)
-          Envelope.build(
+          Textus::Envelope.build(
             key: key, mentry: res.entry, path: res.path,
             meta: parsed["_meta"], body: parsed["body"],
             etag: Etag.for_bytes(raw), content: parsed["content"]

@@ -15,14 +15,14 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Application::Writes::EnvelopeReader.new(
+    Textus::Application::Envelope::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
     )
   end
 
   def build_envelope_writer(store, ctx, reader: nil)
-    Textus::Application::Writes::EnvelopeWriter.new(
+    Textus::Application::Envelope::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,

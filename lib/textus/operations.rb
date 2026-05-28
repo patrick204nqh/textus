@@ -145,14 +145,14 @@ module Textus
     private
 
     def envelope_reader
-      @envelope_reader ||= Application::Writes::EnvelopeReader.new(
+      @envelope_reader ||= Application::Envelope::Reader.new(
         file_store: @ports.file_store,
         manifest: @ports.manifest,
       )
     end
 
     def envelope_writer
-      @envelope_writer ||= Application::Writes::EnvelopeWriter.new(
+      @envelope_writer ||= Application::Envelope::Writer.new(
         file_store: @ports.file_store,
         manifest: @ports.manifest,
         schemas: @ports.schemas,

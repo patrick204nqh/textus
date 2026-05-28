@@ -48,8 +48,8 @@ RSpec.describe Textus::Operations do
       ops.put("working.notes.alpha", body: "two")
       reader = ops.instance_variable_get(:@envelope_reader)
       writer = ops.instance_variable_get(:@envelope_writer)
-      expect(reader).to be_a(Textus::Application::Writes::EnvelopeReader)
-      expect(writer).to be_a(Textus::Application::Writes::EnvelopeWriter)
+      expect(reader).to be_a(Textus::Application::Envelope::Reader)
+      expect(writer).to be_a(Textus::Application::Envelope::Writer)
     end
   end
 

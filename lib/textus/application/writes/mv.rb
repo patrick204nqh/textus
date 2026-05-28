@@ -58,14 +58,14 @@ module Textus
 
         # If the source file lacks a UID, rewrite it in-place via the writer
         # so a UID gets injected before the move. This produces one "put"
-        # audit row, then the "mv" row from EnvelopeWriter#move.
+        # audit row, then the "mv" row from Writer#move.
         def ensure_uid!(old_key, old_mentry)
           pre_env = @reader.read(old_key)
           return if pre_env.uid
 
           @writer.put(
             old_key, mentry: old_mentry,
-                     payload: EnvelopeWriter::Payload.new(
+                     payload: Textus::Application::Envelope::Writer::Payload.new(
                        meta: pre_env.meta, body: pre_env.body, content: pre_env.content,
                      )
           )
