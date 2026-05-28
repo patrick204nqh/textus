@@ -63,6 +63,30 @@ module Textus
           )
           { "uid" => env.uid, "etag" => env.etag, "key" => target }
         end,
+
+        "refresh" => lambda do |s, store, args|
+          key = args.fetch("key") { raise ToolError.new("refresh: missing key") }
+          outcome = ops_for(s, store).refresh(key)
+          { "outcome" => outcome.class.name.split("::").last.downcase }
+        end,
+
+        "refresh_stale" => lambda do |s, store, args|
+          ops_for(s, store).refresh_all(zone: args["zone"], prefix: args["prefix"])
+        end,
+
+        "schema" => lambda do |_s, store, args|
+          family = args.fetch("family") { raise ToolError.new("schema: missing family") }
+          store.schemas.fetch(family)
+        end,
+
+        "rules" => lambda do |_s, store, args|
+          key = args.fetch("key") { raise ToolError.new("rules: missing key") }
+          set = store.manifest.rules_for(key)
+          {
+            "refresh" => set.refresh&.to_h,
+            "promote" => set.respond_to?(:promote) ? set.promote&.to_h : nil,
+          }.compact
+        end,
       }.freeze
     end
   end

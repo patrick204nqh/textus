@@ -99,4 +99,19 @@ RSpec.describe Textus::MCP::Tools do
       expect(File).to exist(File.join(root, "zones/review/proposal/x.md")).or be_truthy
     end
   end
+
+  describe ".call('schema', ...)" do
+    it "raises ToolError for an unknown family" do
+      expect do
+        described_class.call("schema", session: session, store: store, args: { "family" => "nope" })
+      end.to raise_error(Textus::MCP::ToolError)
+    end
+  end
+
+  describe ".call('rules', ...)" do
+    it "returns a hash for a known key" do
+      result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
+      expect(result).to be_a(Hash)
+    end
+  end
 end
