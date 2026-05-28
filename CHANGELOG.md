@@ -9,6 +9,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.25.0 — 2026-05-28
+
+### Added (additive — backward-compatible pulse fields)
+- `pulse.manifest_etag` — sha256 of `manifest.yaml`; lets agents detect contract drift without a second verb.
+- `pulse.next_due_at` — soonest `next_due_at` across all entries with a refresh policy. Schedulers sleep until this timestamp instead of polling.
+- `pulse.hook_errors` — recent hook failures since cursor; bounded in-memory ring on `Hooks::Bus#error_log` (default 256).
+
+### Changed
+- `Application::Reads::Freshness` memoizes the evaluator verdict by `(key, last_refreshed_at)` per request — pulse no longer pays O(N) evaluator calls when nothing has changed.
+- `Application::Refresh::Orchestrator` gains a cooperative-cancel fallback for `RefreshTimed` when `fork(2)` is unavailable (Windows). Previously degraded to `Failed("timed_sync requires fork")`; now executes within the budget on a Thread, killing it on budget exceeded.
+
+### Protocol
+- No wire-format change. `textus/3` envelopes are unchanged. Pulse fields are additive — existing consumers ignoring unknown keys continue to work.
+
 ## 0.24.0 — 2026-05-28
 
 ### Added

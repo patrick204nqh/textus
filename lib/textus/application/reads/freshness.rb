@@ -13,6 +13,19 @@ module Textus
           @manifest   = manifest
           @file_store = file_store
           @evaluator  = evaluator
+          @cache      = {}
+        end
+
+        # Returns the soonest `next_due_at` across all entries with a refresh
+        # policy, as an ISO-8601 string, or nil if none.
+        def soonest_due(prefix: nil, zone: nil)
+          times = call(prefix: prefix, zone: zone)
+                  .map { |r| r[:next_due_at] }
+                  .compact
+                  .map { |t| Time.parse(t) }
+          return nil if times.empty?
+
+          times.min.utc.iso8601
         end
 
         def call(prefix: nil, zone: nil)
@@ -37,7 +50,8 @@ module Textus
           return base_row(mentry, last).merge(status: :no_policy) if refresh.nil?
 
           fp = refresh.to_freshness_policy
-          verdict = @evaluator.call(fp, envelope, now: @ctx.now)
+          cache_key = [mentry.key, last]
+          verdict = (@cache[cache_key] ||= @evaluator.call(fp, envelope, now: @ctx.now))
           status = if verdict.fresh? then :fresh
                    elsif last.nil?   then :never_refreshed
                    else                   :stale

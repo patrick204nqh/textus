@@ -1,3 +1,6 @@
+require "digest"
+require "time"
+
 module Textus
   module Application
     module Reads
@@ -6,23 +9,27 @@ module Textus
       # APIs; pulse is sugar with a stable envelope shape and a monotonic
       # cursor (seq).
       class Pulse
-        def initialize(ctx:, manifest:, file_store:, audit_log:, root:, store:)
+        def initialize(ctx:, manifest:, file_store:, audit_log:, root:, store:, bus: store.bus) # rubocop:disable Metrics/ParameterLists
           @ctx        = ctx
           @manifest   = manifest
           @file_store = file_store
           @audit_log  = audit_log
           @root       = root
           @store      = store
+          @bus        = bus
         end
 
         def call(since: 0)
-          changed = audit_changes_since(since)
+          freshness_rows = freshness.call
           {
             "cursor" => @audit_log.latest_seq,
-            "changed" => changed,
-            "stale" => stale_keys,
+            "changed" => audit_changes_since(since),
+            "stale" => freshness_rows.select { |r| r[:status] == :stale }.map { |r| r[:key] },
             "pending_review" => review_keys,
             "doctor" => doctor_summary,
+            "manifest_etag" => manifest_etag,
+            "next_due_at" => soonest_due(freshness_rows),
+            "hook_errors" => hook_errors_since(since),
           }
         end
 
@@ -33,10 +40,15 @@ module Textus
                       .call(seq_since: seq)
         end
 
-        def stale_keys
-          # Freshness rows use symbol keys: { key: "x.y", status: :stale, ... }
-          rows = Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call
-          rows.select { |r| r[:status] == :stale }.map { |r| r[:key] }
+        def freshness
+          @freshness ||= Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store)
+        end
+
+        def soonest_due(rows)
+          times = rows.map { |r| r[:next_due_at] }.compact.map { |t| Time.parse(t) }
+          return nil if times.empty?
+
+          times.min.utc.iso8601
         end
 
         def review_keys
@@ -56,6 +68,24 @@ module Textus
             "warn" => issues.count { |i| i["level"] == "warning" },
             "fail" => issues.count { |i| i["level"] == "error" },
           }
+        end
+
+        def manifest_etag
+          Digest::SHA256.hexdigest(File.read(File.join(@root, "manifest.yaml")))
+        end
+
+        def hook_errors_since(seq)
+          @bus.error_log.since(seq).map do |r|
+            {
+              "seq" => r[:seq],
+              "event" => r[:event].to_s,
+              "hook" => r[:hook].to_s,
+              "key" => r[:key],
+              "error_class" => r[:error_class],
+              "error_message" => r[:error_message],
+              "at" => r[:at],
+            }
+          end
         end
       end
     end
