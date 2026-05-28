@@ -63,7 +63,7 @@ module Textus
       end
 
       # rubocop:disable Metrics/ParameterLists
-      def self.run(mentry:, manifest:, reader:, lister:, transform_resolver:, template_loader:,
+      def self.run(mentry:, manifest:, reader:, lister:, rpc:, template_loader:,
                    transform_context: nil, inject_boot: nil)
         # 1. Load sources + project + reduce
         data =
@@ -72,7 +72,7 @@ module Textus
               reader: reader,
               spec: mentry.source.to_h.transform_keys(&:to_s),
               lister: lister,
-              transform_resolver: transform_resolver,
+              rpc: rpc,
               transform_context: transform_context,
             ).run
           else

@@ -15,14 +15,14 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Application::Writes::EnvelopeReader.new(
+    Textus::Application::Envelope::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
     )
   end
 
   def build_envelope_writer(store, ctx, reader: nil)
-    Textus::Application::Writes::EnvelopeWriter.new(
+    Textus::Application::Envelope::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
@@ -32,77 +32,85 @@ module TextusSpecHelpers
     )
   end
 
-  # Builds the explicit-port kwargs that every Writes use case takes from
+  # Builds the explicit-caps kwargs that every Writes use case takes from
   # an explicit store + slim Context pair.
-  def writes_ports(store, ctx)
-    ports = Textus::Application::Ports.from_store(store)
-    ops = Textus::Operations.new(ctx: ctx, ports: ports)
+  def writes_caps(store, ctx)
+    _, write_caps, hook_caps = Textus::Application.caps_from_store(store)
     reader = build_envelope_reader(store)
     writer = build_envelope_writer(store, ctx, reader: reader)
+    # Build ops using the provided ctx so hook_context carries the same correlation_id.
+    read_caps, = Textus::Application.caps_from_store(store)
+    sess = Textus::Session.new(
+      ctx: ctx,
+      read_caps: read_caps,
+      write_caps: write_caps,
+      hook_caps: hook_caps,
+    )
     {
       ctx: ctx,
-      ports: ports,
+      caps: write_caps,
+      rpc: hook_caps.rpc,
       reader: reader,
       writer: writer,
-      authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
-      hook_context: ops.hook_context,
+      hook_context: sess.hook_context,
+      session: sess,
     }
   end
 
   def build_put(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Put.new(
-      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Put::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
+      hook_context: p[:hook_context]
     )
   end
 
   def build_delete(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Delete.new(
-      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Delete::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
+      hook_context: p[:hook_context]
     )
   end
 
   def build_mv(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Mv.new(
-      ctx: p[:ctx], ports: p[:ports],
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Mv::Impl.new(
+      ctx: p[:ctx], caps: p[:caps],
       reader: p[:reader], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+      hook_context: p[:hook_context]
     )
   end
 
   def build_accept(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Accept.new(
-      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Accept::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
+      hook_context: p[:hook_context]
     )
   end
 
   def build_reject(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Reject.new(
-      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Reject::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
+      hook_context: p[:hook_context]
     )
   end
 
   def build_worker(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Refresh::Worker.new(
-      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
-      authorizer: p[:authorizer], hook_context: p[:hook_context]
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::RefreshWorker::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc], writer: p[:writer],
+      hook_context: p[:hook_context]
     )
   end
 
   def build_publish(store, ctx)
-    p = writes_ports(store, ctx)
-    Textus::Application::Writes::Publish.new(
-      ctx: p[:ctx], ports: p[:ports],
-      boot: -> { Textus::Boot.run(store) },
+    p = writes_caps(store, ctx)
+    Textus::Application::Write::Publish::Impl.new(
+      ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
+      session: p[:session],
       hook_context: p[:hook_context]
     )
   end

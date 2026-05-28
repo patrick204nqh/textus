@@ -8,7 +8,7 @@ module Textus
         option :use_stdin, "--stdin"
         option :fetch_name, "--fetch=NAME"
 
-        def call(store) # rubocop:disable Metrics/AbcSize
+        def call(store)
           key = positional.shift or raise UsageError.new("put requires a key")
           raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
@@ -17,15 +17,17 @@ module Textus
           raw = @stdin.read
           payload =
             if fetch_name
-              callable = store.bus.rpc_callable(:resolve_intake, fetch_name)
               result =
                 begin
-                  Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
-                    callable.call(config: { "bytes" => raw }, store: store, args: {})
+                  Timeout.timeout(Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
+                    store.rpc.invoke(:resolve_intake, fetch_name,
+                                     caps: nil,
+                                     config: { "bytes" => raw },
+                                     args: {})
                   end
                 rescue Timeout::Error
                   raise UsageError.new(
-                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS}s timeout",
+                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
                   )
                 end
               basename = key.split(".").last
@@ -44,7 +46,7 @@ module Textus
           meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
-          result = Textus::Operations.for(store, role: role).put(key, meta: meta, body: body, if_etag: if_etag)
+          result = store.session(role: role).put(key, meta: meta, body: body, if_etag: if_etag)
           emit(result.to_h_for_wire)
         end
       end

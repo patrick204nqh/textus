@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
+RSpec.describe "Textus::Session#refresh_all (refresh_stale)" do
   let(:tmp) { Dir.mktmpdir }
   let(:textus) { File.join(tmp, ".textus") }
 
@@ -56,7 +56,7 @@ RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
 
     File.write(File.join(textus, "hooks", "counter.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :counter) do |store:, config:, args:|
+        reg.on(:resolve_intake, :counter) do |caps:, config:, args:|
           { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
         end
       end
@@ -67,7 +67,7 @@ RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
 
   it "refreshes every entry whose ttl has expired" do
     store = Textus::Store.new(textus)
-    result = Textus::Operations.for(store, role: "runner").refresh_all
+    result = store.session(role: "runner").refresh_all
 
     expect(result["ok"]).to be(true)
     expect(result["refreshed"]).to eq(["working.stale"])

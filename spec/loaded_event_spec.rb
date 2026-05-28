@@ -49,7 +49,7 @@ RSpec.describe ":store_loaded event" do
 
   it "fires :store_loaded before any subsequent :entry_put" do
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
+    store.session(role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
     order = $textus_event_log.map(&:first)
     expect(order.index(:store_loaded)).to be < order.index(:entry_put)
   end

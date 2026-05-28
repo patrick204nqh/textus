@@ -12,10 +12,10 @@ module Textus
         def call(store)
           if prefix
             p = positional.shift or raise UsageError.new("key delete --prefix requires <prefix>")
-            emit(operations_for(store).key_delete_prefix(prefix: p, dry_run: dry_run || false).to_h)
+            emit(session_for(store).key_delete_prefix(prefix: p, dry_run: dry_run || false).to_h)
           else
             key = positional.shift or raise UsageError.new("key delete requires <key>")
-            emit(operations_for(store).delete(key))
+            emit(session_for(store).delete(key))
           end
         end
       end

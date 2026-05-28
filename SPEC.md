@@ -888,10 +888,10 @@ Given a review entry `review.identity.self.patch` proposing a change to `identit
 
 Textus internals are organized into four layers. The dependency rule is one-way — each layer may only import from the layer beneath it.
 
-- **Interface** (`lib/textus/cli/`) — CLI verbs. Parses flags, calls a use case, formats JSON.
-- **Application** (`lib/textus/application/`) — Use cases: `Reads::Get`, `Refresh::Worker`, `Refresh::Orchestrator`, `Refresh::All`. Orchestrate domain + infra; no business rules.
-- **Domain** (`lib/textus/domain/`) — Pure values: `Freshness::Policy`, `Action`, `Outcome`, `Freshness::Verdict`, `Freshness::Evaluator`. No I/O, no globals, testable without disk.
-- **Infrastructure** (`lib/textus/infra/`) — Adapters: `EventBus`, `Clock`, `Refresh::Lock`, `Refresh::Detached`. Wrap OS / library primitives.
+- **Interface** (`lib/textus/cli/`, `lib/textus/mcp/`) — CLI verbs and the MCP gate. Parses flags / RPC, calls a use case, formats JSON.
+- **Application** (`lib/textus/application/`) — Use cases: `Read::Get`, `Write::Put`, `Write::RefreshWorker`, `Write::RefreshOrchestrator`, `Write::RefreshAll`, `Maintenance::Migrate`, etc. Orchestrate domain + infra; no business rules.
+- **Domain** (`lib/textus/domain/`) — Pure values: `Authorizer`, `Permission`, `Freshness::{Policy,Verdict,Evaluator}`, `Action`, `Outcome`, `Sentinel`, `Staleness`. No I/O, no globals, testable without disk.
+- **Infrastructure** (`lib/textus/infra/`) — Adapters: `Storage::FileStore`, `AuditLog`, `AuditSubscriber`, `Publisher`, `Clock`, `Refresh::Lock`, `Refresh::Detached`, `BuildLock`. Wrap OS / library primitives.
 
 The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
 
@@ -899,14 +899,14 @@ Plugin authors interact only with the Hook DSL (`Textus.hook { |reg| reg.on(:res
 
 Both read and write paths flow through the application layer:
 
-- **Reads** flow through `Application::Reads::Get`, which takes a `Context` and dispatches refresh via `Application::Refresh::Orchestrator`.
-- **Writes** flow through `Application::Writes::{Put,Delete,Build,Accept,Publish}`, each taking a `Context`. Permission checks happen at the use-case layer (via `Context#can_write?`); I/O happens at `Store::Writer#write_envelope_to_disk` (pure).
-- `Application::Context` is the universal request object: it carries `store`, `role`, `correlation_id`, `clock`, and `dry_run`. Use cases never thread these as separate kwargs.
-- `Textus::Operations` is the factory CLI verbs (and future MCP server / HTTP shim)
-  use to construct Contexts and use cases. `Operations.for(store, role:)` returns
-  a flat facade exposing one method per use case (`#put`, `#get`, `#refresh`, …);
-  internal use-case instances are memoized via `||=` and live under
-  `lib/textus/application/{reads,writes,refresh}/`.
+- **Reads** flow through `Application::Read::Get` (pure read + freshness annotation) or `Read::GetOrRefresh` (composes Get with `Write::RefreshOrchestrator`). Each takes a `caps:` slice and an `Application::Context`.
+- **Writes** flow through `Application::Write::{Put,Delete,Mv,Accept,Reject,Publish,RefreshWorker}`. Permission checks happen at the use-case layer (via `Domain::Authorizer#authorize_write!`); the audit-append invariant lives in `Application::Envelope::Writer`.
+- `Application::Context` is the slim request record: `role`, `correlation_id`, `now`, `dry_run`. Ports come from a `Caps` record (Read/Write/Hook), not from the Context.
+- `Textus::Session` is the factory CLI verbs and the MCP gate use to dispatch
+  use cases. `Session.for(store, role:)` returns a per-call object exposing one
+  method per registered use case (`#put`, `#get`, `#refresh`, …); methods are
+  generated from `Application::UseCase.entries` so adding a use case is a
+  single `UseCase.register(...)` line.
 
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 

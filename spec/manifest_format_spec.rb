@@ -30,27 +30,27 @@ RSpec.describe "Manifest format: field validation" do
   it "infers format: json from .json extension when not declared" do
     write_manifest("  - { key: working.x, path: working/x.json, zone: working, kind: leaf }")
     m = Textus::Manifest.load(root)
-    expect(m.entries.first.format).to eq("json")
+    expect(m.data.entries.first.format).to eq("json")
   end
 
   it "infers format: yaml from .yaml" do
     write_manifest("  - { key: working.x, path: working/x.yaml, zone: working, kind: leaf }")
-    expect(Textus::Manifest.load(root).entries.first.format).to eq("yaml")
+    expect(Textus::Manifest.load(root).data.entries.first.format).to eq("yaml")
   end
 
   it "infers format: yaml from .yml" do
     write_manifest("  - { key: working.x, path: working/x.yml, zone: working, kind: leaf }")
-    expect(Textus::Manifest.load(root).entries.first.format).to eq("yaml")
+    expect(Textus::Manifest.load(root).data.entries.first.format).to eq("yaml")
   end
 
   it "infers format: text from .txt" do
     write_manifest("  - { key: working.x, path: working/x.txt, zone: working, kind: leaf }")
-    expect(Textus::Manifest.load(root).entries.first.format).to eq("text")
+    expect(Textus::Manifest.load(root).data.entries.first.format).to eq("text")
   end
 
   it "defaults to markdown when no extension on leaf" do
     write_manifest("  - { key: working.x, path: working/x, zone: working, kind: leaf }")
-    expect(Textus::Manifest.load(root).entries.first.format).to eq("markdown")
+    expect(Textus::Manifest.load(root).data.entries.first.format).to eq("markdown")
   end
 
   it "rejects output markdown without template" do

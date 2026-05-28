@@ -13,7 +13,7 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/org_rules.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :org_rules) do |store:|
+          reg.on(:validate, :org_rules) do |caps:|
             [{ "code" => "org.bad_naming", "level" => "warning",
                "subject" => "test", "message" => "fake issue", "fix" => "n/a" }]
           end
@@ -21,7 +21,7 @@ RSpec.describe "registered doctor_check invocation" do
       RUBY
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       codes = report["issues"].map { |i| i["code"] }
       expect(codes).to include("org.bad_naming")
       expect(report["summary"]["warning"]).to be >= 1
@@ -33,12 +33,12 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :boom) { |store:| raise "kaboom" }
+          reg.on(:validate, :boom) { |caps:| raise "kaboom" }
         end
       RUBY
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       boom = report["issues"].find { |i| i["code"] == "doctor_check.failed" }
       expect(boom).not_to be_nil
       expect(boom["subject"]).to eq("boom")
@@ -51,7 +51,7 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :slow) { |store:| :unreached }
+          reg.on(:validate, :slow) { |caps:| :unreached }
         end
       RUBY
 
@@ -61,7 +61,7 @@ RSpec.describe "registered doctor_check invocation" do
         .and_raise(Timeout::Error)
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       slow = report["issues"].find { |i| i["code"] == "doctor_check.timeout" }
       expect(slow).not_to be_nil
       expect(slow["subject"]).to eq("slow")

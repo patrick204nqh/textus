@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   class Store
-    attr_reader :root, :manifest, :schemas, :file_store, :audit_log, :bus
+    attr_reader :root, :manifest, :schemas, :file_store, :audit_log, :events, :rpc
 
     def self.discover(start_dir = Dir.pwd, root: nil)
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
@@ -38,12 +38,17 @@ module Textus
         max_size: @manifest.data.audit_config[:max_size],
         keep: @manifest.data.audit_config[:keep],
       )
-      @bus = Hooks::Bus.new
-      Infra::AuditSubscriber.new(@audit_log).attach(@bus)
-      Hooks::Builtin.register_all(@bus)
-      Hooks::Loader.new(bus: @bus).load_dir(File.join(@root, "hooks"))
-      ops = Operations.for(self, role: Role::DEFAULT)
-      @bus.publish(:store_loaded, ctx: ops.hook_context)
+      @events = Hooks::EventBus.new
+      @rpc = Hooks::RpcRegistry.new
+      Infra::AuditSubscriber.new(@audit_log).attach(@events)
+      Hooks::Builtin.register_all(events: @events, rpc: @rpc)
+      Hooks::Loader.new(events: @events, rpc: @rpc).load_dir(File.join(@root, "hooks"))
+      sess = Session.for(self, role: Role::DEFAULT)
+      @events.publish(:store_loaded, ctx: sess.hook_context)
+    end
+
+    def session(role: Role::DEFAULT, correlation_id: nil, dry_run: false)
+      Session.for(self, role: role, correlation_id: correlation_id, dry_run: dry_run)
     end
   end
 end

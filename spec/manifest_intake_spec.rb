@@ -17,7 +17,7 @@ RSpec.describe "Manifest intake:" do
   end
 
   def load_entry(yaml)
-    load_manifest(yaml).entries.first
+    load_manifest(yaml).data.entries.first
   end
 
   it "parses intake.handler and intake.config" do
@@ -56,7 +56,7 @@ RSpec.describe "Manifest intake:" do
             on_stale: timed_sync
             sync_budget_ms: 800
     YAML
-    set = m.rules_for("working.news")
+    set = m.rules.for("working.news")
     expect(set.refresh).to be_a(Textus::Domain::Policy::Refresh)
     expect(set.refresh.ttl_seconds).to eq(600)
     expect(set.refresh.on_stale).to eq(:timed_sync)
@@ -71,7 +71,7 @@ RSpec.describe "Manifest intake:" do
         - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
     YAML
-    expect(m.rules_for("working.x").refresh).to be_nil
+    expect(m.rules.for("working.x").refresh).to be_nil
   end
 
   it "defaults to a Leaf entry when no intake block is present" do

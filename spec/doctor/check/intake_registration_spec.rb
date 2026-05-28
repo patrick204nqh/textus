@@ -21,7 +21,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       YAML
 
       store = Textus::Store.new(textus)
-      issues = described_class.new(store).call
+      issues = described_class.new(Textus::Session.for(store)).call
 
       offending = issues.find { |i| i["code"] == "intake.handler_missing" }
       expect(offending).not_to be_nil
@@ -47,7 +47,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       RUBY
 
       store = Textus::Store.new(textus)
-      issues = described_class.new(store).call
+      issues = described_class.new(Textus::Session.for(store)).call
 
       orphan = issues.find { |i| i["code"] == "intake.handler_orphan" }
       expect(orphan).not_to be_nil

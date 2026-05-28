@@ -2,29 +2,39 @@
 require "spec_helper"
 
 RSpec.describe "textus/3 canonical hook events" do
-  let(:registry) { Textus::Hooks::Bus.new }
+  let(:events) { Textus::Hooks::EventBus.new }
+  let(:rpc)    { Textus::Hooks::RpcRegistry.new }
 
   it "accepts canonical textus/3 event names" do
-    registry.on(:resolve_intake,    :handler_a)         { |**| { _meta: {}, body: "x" } }
-    registry.on(:transform_rows,    :reducer_a)         { |rows:, **| rows }
-    registry.on(:validate,          :checker_a)         { |**| [] }
-    registry.on(:entry_put,         :listener_a)        { |**| }
-    registry.on(:store_loaded,      :loaded_listener)   { |**| }
-    registry.on(:build_completed,   :built_listener)    { |**| }
-    registry.on(:proposal_accepted, :accepted_listener) { |**| }
-    registry.on(:proposal_rejected, :rejected_listener) { |**| }
-    registry.on(:file_published,    :published_listener) { |**| }
-    registry.on(:entry_renamed,     :renamed_listener) { |**| }
-    registry.on(:entry_refreshed,   :refreshed_listener) { |**| }
-    registry.on(:entry_deleted,     :deleted_listener)  { |**| }
-    registry.on(:refresh_started,   :started_listener)  { |**| }
-    registry.on(:refresh_backgrounded, :backgrounded_listener) { |**| }
-    registry.on(:refresh_failed, :failed_listener) { |**| }
+    rpc.register(:resolve_intake,    :handler_a)         { |**| { _meta: {}, body: "x" } }
+    rpc.register(:transform_rows,    :reducer_a)         { |rows:, **| rows }
+    rpc.register(:validate,          :checker_a)         { |**| [] }
+    events.on(:entry_put,         :listener_a)        { |**| }
+    events.on(:store_loaded,      :loaded_listener)   { |**| }
+    events.on(:build_completed,   :built_listener)    { |**| }
+    events.on(:proposal_accepted, :accepted_listener) { |**| }
+    events.on(:proposal_rejected, :rejected_listener) { |**| }
+    events.on(:file_published,    :published_listener) { |**| }
+    events.on(:entry_renamed,     :renamed_listener) { |**| }
+    events.on(:entry_refreshed,   :refreshed_listener) { |**| }
+    events.on(:entry_deleted,     :deleted_listener)  { |**| }
+    events.on(:refresh_started,   :started_listener)  { |**| }
+    events.on(:refresh_backgrounded, :backgrounded_listener) { |**| }
+    events.on(:refresh_failed, :failed_listener) { |**| }
 
-    canonical = %i[resolve_intake transform_rows validate entry_put entry_deleted entry_refreshed
-                   entry_renamed build_completed proposal_accepted proposal_rejected
-                   file_published store_loaded refresh_started refresh_failed refresh_backgrounded]
-    canonical.each { |ev| expect { registry.rpc_callable(ev, :_) }.to raise_error(Textus::UsageError) }
+    # RPC events should not be accessible on EventBus
+    rpc_events = %i[resolve_intake transform_rows validate]
+    rpc_events.each do |ev|
+      expect { events.on(ev, :_) { |**| } }.to raise_error(Textus::UsageError)
+    end
+
+    # Pubsub events should not be accessible on RpcRegistry
+    pubsub_events = %i[entry_put entry_deleted entry_refreshed entry_renamed build_completed
+                       proposal_accepted proposal_rejected file_published store_loaded
+                       refresh_started refresh_failed refresh_backgrounded]
+    pubsub_events.each do |ev|
+      expect { rpc.register(ev, :_) { |**| } }.to raise_error(Textus::UsageError)
+    end
   end
 end
 # rubocop:enable Lint/EmptyBlock

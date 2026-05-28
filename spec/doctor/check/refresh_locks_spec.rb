@@ -19,7 +19,7 @@ RSpec.describe Textus::Doctor::Check::RefreshLocks do
 
   it "returns no issues when .locks/ does not exist" do
     with_store do |store, _|
-      expect(described_class.new(store).call).to eq([])
+      expect(described_class.new(Textus::Session.for(store)).call).to eq([])
     end
   end
 
@@ -29,7 +29,7 @@ RSpec.describe Textus::Doctor::Check::RefreshLocks do
       FileUtils.mkdir_p(locks)
       File.write(File.join(locks, "intake.vendor.foo.lock"), Process.pid.to_s)
 
-      expect(described_class.new(store).call).to eq([])
+      expect(described_class.new(Textus::Session.for(store)).call).to eq([])
     end
   end
 
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor::Check::RefreshLocks do
       lock_path = File.join(locks, "intake.vendor.foo.lock")
       File.write(lock_path, dead_pid.to_s)
 
-      issues = described_class.new(store).call
+      issues = described_class.new(Textus::Session.for(store)).call
       expect(issues.length).to eq(1)
       expect(issues.first).to include(
         "code" => "refresh_lock.stale",
@@ -60,7 +60,7 @@ RSpec.describe Textus::Doctor::Check::RefreshLocks do
       File.write(File.join(locks, "empty.lock"), "")
       File.write(File.join(locks, "zero.lock"), "0")
 
-      expect(described_class.new(store).call).to eq([])
+      expect(described_class.new(Textus::Session.for(store)).call).to eq([])
     end
   end
 

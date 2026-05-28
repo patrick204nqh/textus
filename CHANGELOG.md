@@ -9,6 +9,19 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.26.0 — 2026-05-28
+
+### Breaking
+- Split `Textus::Hooks::Bus` into `Textus::Hooks::EventBus` (pubsub) and `Textus::Hooks::RpcRegistry` (named callables). The `Hooks::Bus` constant is removed.
+- Replaced `Textus::Application::Ports` with three capability records: `Textus::Application::ReadCaps`, `WriteCaps`, `HookCaps`.
+- Renamed `Textus::Operations` to `Textus::Session`. Access via `store.session(role:)`. `Operations.for(store, ...)` is removed.
+- Hook RPC callables (`resolve_intake`, `transform_rows`, `validate`) no longer accept `store:` — declare `caps:` (a `WriteCaps` for `resolve_intake`/`validate`, `ReadCaps` for `transform_rows`).
+- Removed all `Manifest` top-level deprecation shims (`zones`, `entries`, `zone_writers`, `permission_for`, etc.). Use `manifest.data.*` / `manifest.policy.*` / `manifest.resolver.*` / `manifest.rules.*`.
+- Moved `Textus::Application::Writes::EnvelopeReader`/`EnvelopeWriter` to `Textus::Application::Envelope::Reader`/`Writer`.
+- Renamed `Textus::Application::Writes` → `Textus::Application::Write`; `Textus::Application::Reads` → `Textus::Application::Read`; `Textus::Application::Restructure` → `Textus::Application::Maintenance`.
+- Merged `Textus::Application::Refresh::*` into `Textus::Application::Write::Refresh{Worker,Orchestrator,All}`.
+- Moved `Textus::Application::Policy::Promotion` and predicates to `Textus::Domain::Policy::Promotion`/`Predicates`.
+
 ## 0.25.1 — 2026-05-28
 
 ### Internal refactors

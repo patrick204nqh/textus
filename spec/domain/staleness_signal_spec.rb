@@ -48,7 +48,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
   it "flags a generator entry in a zone literally named 'output' (post-0.9.2 default)" do
     build_output_zone_fixture!
     store = Textus::Store.new(root)
-    rows = Textus::Operations.for(store).stale
+    rows = store.session.stale
     expect(rows.length).to eq(1)
     expect(rows.first["key"]).to eq("output.catalog")
     expect(rows.first["reason"]).to match(/working\.src/)
@@ -83,7 +83,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     # 'build', it must NOT be inspected by Staleness's generator pass.
 
     store = Textus::Store.new(root)
-    rows = Textus::Operations.for(store).stale
+    rows = store.session.stale
     expect(rows).to eq([])
   end
 end

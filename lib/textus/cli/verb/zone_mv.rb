@@ -11,7 +11,7 @@ module Textus
         def call(store)
           from = positional.shift or raise UsageError.new("zone mv requires <from> <to>")
           to   = positional.shift or raise UsageError.new("zone mv requires <from> <to>")
-          emit(operations_for(store).zone_mv(from: from, to: to, dry_run: dry_run || false).to_h)
+          emit(session_for(store).zone_mv(from: from, to: to, dry_run: dry_run || false).to_h)
         end
       end
     end

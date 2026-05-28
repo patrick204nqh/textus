@@ -1,8 +1,34 @@
 module Textus
   module Hooks
     class Loader
-      def initialize(bus:)
-        @bus = bus
+      # A small DSL object passed to user hook blocks. Routes `.on(...)` to the
+      # EventBus and `.rpc(...)` / `.register(...)` to the RpcRegistry.
+      class Dsl
+        def initialize(events:, rpc:)
+          @events = events
+          @rpc    = rpc
+        end
+
+        # Pubsub registration — delegates to EventBus.
+        # Also handles RPC event names by delegating to RpcRegistry.
+        def on(event, name, keys: nil, &)
+          if Hooks::RpcRegistry::EVENTS.key?(event.to_sym)
+            @rpc.register(event, name, &)
+          else
+            @events.register(event, name, keys: keys, &)
+          end
+        end
+
+        # Explicit RPC registration.
+        def register(event, name, &)
+          @rpc.register(event, name, &)
+        end
+      end
+
+      def initialize(events:, rpc:)
+        @events = events
+        @rpc    = rpc
+        @dsl    = Dsl.new(events: @events, rpc: @rpc)
       end
 
       def load_dir(dir)
@@ -18,7 +44,7 @@ module Textus
         end
 
         Textus.drain_hook_blocks.each do |blk|
-          blk.call(@bus)
+          blk.call(@dsl)
         rescue StandardError, ScriptError => e
           raise UsageError.new("failed registering hook: #{e.class}: #{e.message}")
         end

@@ -29,20 +29,20 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ops) { Textus::Operations.for(store, role: "runner") }
+  let(:ops) { store.session(role: "runner") }
 
   before do
     # The recipe queues its registration via Textus.hook. Drain and apply
     # against the per-store registry so the listener is wired up.
     Textus.drain_hook_blocks # discard any stale leftover from prior load
     TextusRecipes::SkillFanout.register
-    Textus.drain_hook_blocks.each { |b| b.call(store.bus) }
+    Textus.drain_hook_blocks.each { |b| b.call(Textus::Hooks::Loader::Dsl.new(events: store.events, rpc: store.rpc)) }
   end
 
   def trigger(key:, files:)
-    handler = store.bus.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
+    handler = store.events.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
-    ctx = Textus::Hooks::Context.new(ops: ops)
+    ctx = Textus::Hooks::Context.new(session: ops)
     handler[:callable].call(ctx: ctx, key: key, envelope: envelope, change: :updated)
   end
 

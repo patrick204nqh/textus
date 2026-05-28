@@ -6,8 +6,8 @@ RSpec.describe Textus::Hooks::Context do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
-  let(:ops)   { Textus::Operations.for(store, role: "agent") }
-  let(:ctx)   { described_class.new(ops: ops) }
+  let(:ops)   { store.session(role: "agent") }
+  let(:ctx)   { described_class.new(session: ops) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
@@ -39,7 +39,7 @@ RSpec.describe Textus::Hooks::Context do
 
   it "publish_followup routes through the bus with the same ctx" do
     seen = nil
-    store.bus.register(:entry_put, :spy) { |key:, **| seen = key }
+    store.events.register(:entry_put, :spy) { |key:, **| seen = key }
     ctx.publish_followup(:entry_put, key: "working.notes", envelope: nil)
     expect(seen).to eq("working.notes")
   end

@@ -11,7 +11,7 @@ RSpec.describe Textus::Manifest, "#audit_config" do
       zones: [{ name: working, write_policy: [human] }]
       entries: []
     YAML
-    expect(m.audit_config).to eq(max_size: 10_485_760, keep: 5)
+    expect(m.data.audit_config).to eq(max_size: 10_485_760, keep: 5)
   end
 
   it "reads max_size and keep from manifest" do
@@ -23,7 +23,7 @@ RSpec.describe Textus::Manifest, "#audit_config" do
       zones: [{ name: working, write_policy: [human] }]
       entries: []
     YAML
-    expect(m.audit_config).to eq(max_size: 1_048_576, keep: 3)
+    expect(m.data.audit_config).to eq(max_size: 1_048_576, keep: 3)
   end
 
   it "rejects unknown audit: keys" do

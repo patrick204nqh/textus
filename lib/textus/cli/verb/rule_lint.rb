@@ -10,7 +10,7 @@ module Textus
         def call(store)
           path = against or raise UsageError.new("rule lint --against=FILE required")
           yaml = File.read(path)
-          emit(operations_for(store).rule_lint(candidate_yaml: yaml).to_h)
+          emit(session_for(store).rule_lint(candidate_yaml: yaml).to_h)
         end
       end
     end

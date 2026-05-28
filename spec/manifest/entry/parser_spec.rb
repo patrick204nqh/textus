@@ -3,12 +3,14 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Parser do
   let(:manifest) do
     instance_double(Textus::Manifest).tap do |m|
-      allow(m).to receive(:zone_writers).with("working").and_return(["human"])
-      allow(m).to receive(:zone_writers).with("output").and_return(["builder"])
-      allow(m).to receive(:zone_writers).with("intake").and_return(["builder"])
-      allow(m).to receive(:zone_writers).with("z").and_return(["human"])
-      allow(m).to receive(:zone_writers).with("o").and_return(["builder"])
-      allow(m).to receive(:zone_writers).with("i").and_return(["builder"])
+      policy = instance_double(Textus::Manifest::Policy)
+      allow(m).to receive(:policy).and_return(policy)
+      allow(policy).to receive(:zone_writers).with("working").and_return(["human"])
+      allow(policy).to receive(:zone_writers).with("output").and_return(["builder"])
+      allow(policy).to receive(:zone_writers).with("intake").and_return(["builder"])
+      allow(policy).to receive(:zone_writers).with("z").and_return(["human"])
+      allow(policy).to receive(:zone_writers).with("o").and_return(["builder"])
+      allow(policy).to receive(:zone_writers).with("i").and_return(["builder"])
     end
   end
 

@@ -22,10 +22,10 @@ RSpec.describe "CLI hook verbs" do
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :stub) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
-        reg.on(:transform_rows, :r)    { |store:, rows:, config:| rows }
+        reg.on(:resolve_intake, :stub) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
+        reg.on(:transform_rows, :r)    { |caps:, rows:, config:| rows }
         reg.on(:entry_put, :h)         { |**| }
-        reg.on(:validate, :dc)         { |store:| [] }
+        reg.on(:validate, :dc)         { |caps:| [] }
       end
     RUBY
   end
@@ -67,7 +67,7 @@ RSpec.describe "CLI hook verbs" do
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :jbytes) { |store:, config:, args:| { _meta: {}, body: config["bytes"] } }
+        reg.on(:resolve_intake, :jbytes) { |caps:, config:, args:| { _meta: {}, body: config["bytes"] } }
       end
     RUBY
     out = StringIO.new

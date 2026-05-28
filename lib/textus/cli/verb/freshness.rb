@@ -8,7 +8,7 @@ module Textus
         option :zone, "--zone=Z"
 
         def call(store)
-          rows = operations_for(store).freshness(prefix: prefix, zone: zone)
+          rows = session_for(store).freshness(prefix: prefix, zone: zone)
           emit({ "verb" => "freshness", "rows" => rows })
         end
       end

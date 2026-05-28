@@ -10,7 +10,7 @@ module Textus
         def call(store)
           path = positional.shift or raise UsageError.new("migrate requires <plan.yaml>")
           plan_yaml = File.read(path)
-          emit(operations_for(store).migrate(plan_yaml: plan_yaml, dry_run: dry_run || false).to_h)
+          emit(session_for(store).migrate(plan_yaml: plan_yaml, dry_run: dry_run || false).to_h)
         end
       end
     end

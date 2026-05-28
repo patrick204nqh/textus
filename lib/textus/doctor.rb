@@ -30,7 +30,7 @@ module Textus
 
     module_function
 
-    def run(store, checks: nil)
+    def run(session, checks: nil)
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?
@@ -40,8 +40,8 @@ module Textus
       end
 
       selected = CHECKS.select { |c| selected_keys.include?(c.name_key) }
-      issues = selected.flat_map { |c| c.new(store).call }
-      issues.concat(run_registered_checks(store))
+      issues = selected.flat_map { |c| c.new(session).call }
+      issues.concat(run_registered_checks(session))
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }
       {
@@ -52,18 +52,14 @@ module Textus
       }
     end
 
-    def run_registered_checks(store)
-      ports = Textus::Application::Ports.from_store(store)
-      store.bus.rpc_names(:validate).flat_map { |name| invoke_registered_check(store, ports, name) }
+    def run_registered_checks(session)
+      session.rpc.names(:validate).flat_map { |name| invoke_registered_check(session, name) }
     end
 
-    def invoke_registered_check(store, ports, name)
-      callable = store.bus.rpc_callable(:validate, name)
-      kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
-        callable, ports: ports, error_log: store.bus.error_log,
-                  event: :validate, hook_name: name
-      )
-      result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(**kwargs) }
+    def invoke_registered_check(session, name)
+      result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
+        session.rpc.invoke(:validate, name, caps: session.write_caps)
+      end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 
       [fail_issue(name, code: "doctor_check.bad_return",

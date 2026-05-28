@@ -19,33 +19,33 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
     end
 
     it "maps human → accept_authority" do
-      expect(m.role_kind("human")).to eq(:accept_authority)
+      expect(m.policy.role_kind("human")).to eq(:accept_authority)
     end
 
     it "maps agent → proposer" do
-      expect(m.role_kind("agent")).to eq(:proposer)
+      expect(m.policy.role_kind("agent")).to eq(:proposer)
     end
 
     it "maps builder → generator" do
-      expect(m.role_kind("builder")).to eq(:generator)
+      expect(m.policy.role_kind("builder")).to eq(:generator)
     end
 
     it "maps runner → runner" do
-      expect(m.role_kind("runner")).to eq(:runner)
+      expect(m.policy.role_kind("runner")).to eq(:runner)
     end
 
     it "returns nil for unknown role names" do
-      expect(m.role_kind("nobody")).to be_nil
+      expect(m.policy.role_kind("nobody")).to be_nil
     end
 
     it "lists all roles with a given kind" do
-      expect(m.roles_with_kind(:accept_authority)).to eq(["human"])
+      expect(m.policy.roles_with_kind(:accept_authority)).to eq(["human"])
     end
 
     it "derives zone kinds from zone writers" do
-      expect(m.zone_kinds("review")).to eq(Set[:proposer])
-      expect(m.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.zone_kinds("working")).to eq(Set[:accept_authority, :proposer, :runner])
+      expect(m.policy.zone_kinds("review")).to eq(Set[:proposer])
+      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
+      expect(m.policy.zone_kinds("working")).to eq(Set[:accept_authority, :proposer, :runner])
     end
   end
 
@@ -69,21 +69,21 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
     end
 
     it "honors the declared mapping" do
-      expect(m.role_kind("owner")).to eq(:accept_authority)
-      expect(m.role_kind("compiler")).to eq(:generator)
-      expect(m.role_kind("proposer")).to eq(:proposer)
-      expect(m.role_kind("fetcher")).to eq(:runner)
+      expect(m.policy.role_kind("owner")).to eq(:accept_authority)
+      expect(m.policy.role_kind("compiler")).to eq(:generator)
+      expect(m.policy.role_kind("proposer")).to eq(:proposer)
+      expect(m.policy.role_kind("fetcher")).to eq(:runner)
     end
 
     it "does not fall back to defaults when roles: is declared" do
-      expect(m.role_kind("human")).to be_nil
-      expect(m.role_kind("builder")).to be_nil
+      expect(m.policy.role_kind("human")).to be_nil
+      expect(m.policy.role_kind("builder")).to be_nil
     end
 
     it "derives zone kinds from declared roles" do
-      expect(m.zone_kinds("library")).to eq(Set[:proposer])
-      expect(m.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.zone_kinds("memory")).to eq(Set[:proposer, :accept_authority])
+      expect(m.policy.zone_kinds("library")).to eq(Set[:proposer])
+      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
+      expect(m.policy.zone_kinds("memory")).to eq(Set[:proposer, :accept_authority])
     end
   end
 
@@ -97,8 +97,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: identity, write_policy: [] }
         entries: []
       YAML
-      expect(m.role_kind("anyone")).to be_nil
-      expect(m.roles_with_kind(:accept_authority)).to eq([])
+      expect(m.policy.role_kind("anyone")).to be_nil
+      expect(m.policy.roles_with_kind(:accept_authority)).to eq([])
     end
   end
 
@@ -116,7 +116,7 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { key: out.report, kind: derived, zone: build, path: build/report.md, format: markdown,
               template: report.mustache, compute: { kind: projection, select: "self.*" } }
       YAML
-      entry = m.entries.first
+      entry = m.data.entries.first
       expect(entry.in_generator_zone?).to be true
       expect(entry.in_proposal_zone?).to be false
     end
@@ -133,7 +133,7 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
         entries:
           - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
       YAML
-      entry = m.entries.first
+      entry = m.data.entries.first
       expect(entry.in_proposal_zone?).to be true
       expect(entry.in_generator_zone?).to be false
     end

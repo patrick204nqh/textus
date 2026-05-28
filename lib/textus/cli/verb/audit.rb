@@ -14,8 +14,8 @@ module Textus
         option :limit, "--limit=N"
 
         def call(store)
-          ops = operations_for(store)
-          since_time = since && Textus::Application::Reads::Audit.parse_since(since, now: ops.ctx.now)
+          ops = session_for(store)
+          since_time = since && Textus::Application::Read::Audit.parse_since(since, now: ops.ctx.now)
           rows = ops.audit(
             key: key_filter,
             zone: zone,

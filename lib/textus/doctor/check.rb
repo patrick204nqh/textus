@@ -14,8 +14,8 @@ module Textus
                           .downcase
       end
 
-      def initialize(store)
-        @store = store
+      def initialize(session)
+        @session = session
       end
 
       def call
@@ -24,7 +24,9 @@ module Textus
 
       protected
 
-      attr_reader :store
+      def root     = @session.read_caps.root
+      def manifest = @session.read_caps.manifest
+      def rpc      = @session.rpc
     end
   end
 end

@@ -35,7 +35,7 @@ RSpec.describe Textus::Doctor do
 
   def doctor
     store = Textus::Store.new(root)
-    described_class.run(store)
+    described_class.run(Textus::Session.for(store))
   end
 
   it "reports a clean store as ok: true with no error-level issues" do
@@ -75,7 +75,7 @@ RSpec.describe Textus::Doctor do
     File.rename(File.join(root, "hooks"), File.join(root, "hooks.disabled"))
     store = Textus::Store.new(root)
     File.rename(File.join(root, "hooks.disabled"), File.join(root, "hooks"))
-    res = described_class.run(store)
+    res = described_class.run(Textus::Session.for(store))
     issue = res["issues"].find { |i| i["code"] == "hook.load_failed" }
     expect(issue).not_to be_nil
     expect(issue["level"]).to eq("error")
@@ -203,7 +203,7 @@ RSpec.describe Textus::Doctor do
       end
     RUBY
     store = Textus::Store.new(root)
-    res = described_class.run(store)
+    res = described_class.run(Textus::Session.for(store))
     issue = res["issues"].find { |i| i["code"] == "doctor_check.failed" }
     expect(issue).not_to be_nil
     expect(issue["fix"]).to include(".textus/hooks/")
@@ -239,12 +239,12 @@ RSpec.describe Textus::Doctor do
 
       ra_store = Textus::Store.new(ra_root)
       # Write full_name as ai — violates maintained_by: human
-      Textus::Operations.for(ra_store, role: "agent").put(
+      Textus::Session.for(ra_store, role: "agent").put(
         "working.people.alice",
         meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "",
       )
 
-      res = Textus::Doctor.run(ra_store, checks: ["schema_violations"])
+      res = Textus::Doctor.run(Textus::Session.for(ra_store), checks: ["schema_violations"])
       codes = res["issues"].map { |i| i["code"] }
       expect(codes).to include("role_authority")
     end

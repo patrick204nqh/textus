@@ -70,7 +70,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
   it "migrate uses the declared accept_authority role (owner), not the literal human fallback" do
     store = build_store_with_roles
 
-    Textus::Operations.for(store, role: "owner").put(
+    store.session(role: "owner").put(
       "working.note",
       meta: { "name" => "note", "headline" => "My Headline" },
       body: "body text",
@@ -80,7 +80,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
 
     expect(res["migrated"]).to include("working.note")
 
-    env = Textus::Operations.for(store).get("working.note")
+    env = store.session.get("working.note")
     expect(env.meta).to have_key("title")
     expect(env.meta).not_to have_key("headline")
 

@@ -104,7 +104,7 @@ RSpec.describe "publish_each:" do
           publish_each: "out/{leaf}/k={key}/b={basename}.{ext}"
       Y
       m = Textus::Manifest.load(root)
-      entry = m.entries.first
+      entry = m.data.entries.first
       target = entry.publish_target_for("working.skills.writing.voice-writer")
       expect(target).to eq("out/writing/voice-writer/k=working.skills.writing.voice-writer/b=voice-writer.md")
     end
@@ -156,7 +156,7 @@ RSpec.describe "publish_each:" do
 
     it "publishes one file per leaf with sentinels under .textus/sentinels/" do
       store = Textus::Store.new(root)
-      envelope = Textus::Operations.for(store, role: "builder").publish
+      envelope = store.session(role: "builder").publish
 
       expect(envelope["published_leaves"].size).to eq(5)
 
@@ -180,7 +180,7 @@ RSpec.describe "publish_each:" do
 
     it "prefix: filter limits which leaves get published" do
       store = Textus::Store.new(root)
-      envelope = Textus::Operations.for(store, role: "builder").publish(prefix: "working.agents")
+      envelope = store.session(role: "builder").publish(prefix: "working.agents")
       keys = envelope["published_leaves"].map { |r| r["key"] }
       expect(keys).to contain_exactly("working.agents.voice-writer", "working.agents.fact-checker")
     end
@@ -200,7 +200,7 @@ RSpec.describe "publish_each:" do
       File.write(File.join(root, "zones/working/agents/x.md"), "---\nname: x\n---\n")
 
       store = Textus::Store.new(root)
-      expect { Textus::Operations.for(store, role: "builder").publish }
+      expect { store.session(role: "builder").publish }
         .to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end

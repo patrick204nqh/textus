@@ -20,12 +20,12 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
   it "returns empty array when the declared leaf file exists" do
     File.write(File.join(root, "zones/working/note.md"), "hi\n")
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 
   it "emits manifest.missing_file when the declared leaf is absent" do
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including(
                                 "code" => "manifest.missing_file",
                                 "level" => "info",
@@ -43,6 +43,6 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
 
     YAML
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 end

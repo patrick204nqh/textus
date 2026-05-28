@@ -23,20 +23,20 @@ RSpec.describe Textus::Doctor::Check::SchemaParseError do
         title: { type: string, maintained_by: human }
     YAML
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 
   it "returns empty array when the schemas directory does not exist" do
     FileUtils.rm_rf(File.join(root, "schemas"))
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 
   it "emits schema.parse_error for invalid YAML" do
     bad = File.join(root, "schemas/broken.yaml")
     File.write(bad, "::: not yaml :::")
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including(
                                 "code" => "schema.parse_error",
                                 "level" => "error",

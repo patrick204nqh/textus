@@ -16,8 +16,10 @@ loader.inflector.inflect(
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp/errors.rb", __dir__))
+loader.ignore(File.expand_path("textus/session.rb", __dir__))
 loader.setup
 loader.eager_load
+require_relative "textus/session"
 
 module Textus
   @hook_mutex  = Mutex.new

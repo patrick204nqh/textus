@@ -3,18 +3,17 @@
 module Textus
   module Infra
     # Writes an "event_error" audit row when a user hook raises during
-    # Hooks::Bus publish. Attached at Store boot.
+    # Hooks::EventBus publish. Attached at Store boot.
     #
-    # Integration: uses Hooks::Bus#on_error callback (chosen over a
+    # Integration: uses Hooks::EventBus#on_error callback (chosen over a
     # synthetic :hook_error event because the bus already owns the
     # rescue and the failure is a bus-internal concern, not a domain
     # event subscribers should be able to filter by key glob).
     #
-    # NOTE (0.16 scope): lifecycle audit rows for verb: "put" / "delete" /
-    # "rename" are still written directly by Store::Writer and
-    # Application::Writes::Mv. Moving those into this subscriber requires
-    # event payloads to carry etag_before/etag_after across many write paths;
-    # that is properly a 0.18 port-extraction concern.
+    # Lifecycle audit rows for verb: "put" / "delete" / "rename" are written
+    # by Application::Envelope::Writer directly (it owns the
+    # audit-append-as-final-step invariant); this subscriber covers the
+    # hook-failure case the writer never sees.
     class AuditSubscriber
       def initialize(audit_log)
         @audit_log = audit_log
