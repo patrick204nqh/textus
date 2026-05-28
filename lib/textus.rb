@@ -1,6 +1,8 @@
 require "zeitwerk"
 require_relative "textus/version"
 require_relative "textus/errors"
+require_relative "textus/mcp"
+require_relative "textus/mcp/errors"
 
 loader = Zeitwerk::Loader.for_gem
 loader.inflector.inflect(
@@ -9,8 +11,11 @@ loader.inflector.inflect(
   "yaml" => "Yaml",
   "hook_dsl_scanner" => "HookDSLScanner",
   "envelope_io" => "EnvelopeIO",
+  "mcp" => "MCP",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
+loader.ignore(File.expand_path("textus/mcp.rb", __dir__))
+loader.ignore(File.expand_path("textus/mcp/errors.rb", __dir__))
 loader.setup
 loader.eager_load
 
