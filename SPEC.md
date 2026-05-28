@@ -919,7 +919,7 @@ See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
 - **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
 - **Schema imports:** can one schema reference another (`type: $ref: person`)?
-- **Internationalization:** non-ASCII in keys? Spec currently restricts segments to `[a-z0-9_-]`. Revisit if community wants Unicode.
+- **Internationalization:** non-ASCII in keys? Spec currently restricts segments to `[a-z0-9][a-z0-9-]*`. Revisit if community wants Unicode.
 - **Generated content in `derived/`:** the spec says `schema: null` is allowed, but should there be a separate marker (`generated: true`) for clarity?
 
 ## 15. Implementation checklist
