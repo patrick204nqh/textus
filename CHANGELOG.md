@@ -9,6 +9,28 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.23.0 — 2026-05-28
+
+### Added
+- **Agent gate (MCP transport).** `textus mcp serve` — stdio JSON-RPC 2.0
+  server speaking MCP draft 2024-11-05. Wraps `Textus::Operations` as ten
+  auto-derived tools (`boot`, `tick`, `find`, `read`, `write`, `propose`,
+  `refresh`, `refresh_stale`, `schema`, `rules`). Session state (cursor,
+  role, manifest_etag) held server-side. Manifest drift surfaces as
+  `ContractDrift` (-32001); cursor expiry as `CursorExpired` (-32002).
+  See [`docs/mcp.md`](docs/mcp.md) and [ADR 0015](docs/architecture/decisions/0015-agent-gate-mcp.md).
+- `examples/claude-plugin/.mcp.json` and migrated skills/commands/agents —
+  zero `textus <verb>` shell strings remain in plugin markdown.
+
+### Changed (docs)
+- `ARCHITECTURE.md`: fixed stale `registry` references (now `bus`),
+  added Agent Surface section and complete Hooks::Bus event catalog.
+- `docs/agent-integration.md`: documents three transports (CLI, Ruby API,
+  MCP); points agent authors at the MCP transport by default.
+
+### Protocol
+- No wire-format change. `textus/3` envelopes are unchanged.
+
 ## 0.22.0 — 2026-05-28
 
 ### Changed (internal — no manifest-schema impact)

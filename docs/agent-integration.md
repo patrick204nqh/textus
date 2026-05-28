@@ -11,6 +11,18 @@ Textus exposes two distinct verbs for agents:
 | `boot`   | once per session     | static contract    | "how do I talk to this store?"   |
 | `pulse`  | per turn / per N sec | delta + cursor     | "what changed since I last looked?" |
 
+## Three transports
+
+`boot` and `pulse` are *concepts*, available over three transports:
+
+| Transport | Audience | How |
+|---|---|---|
+| CLI       | humans, scripts | `textus boot`, `textus pulse --since=N` |
+| Ruby API  | embedders       | `Textus::Operations.for(store, role:).pulse(since: N)` |
+| **MCP**   | agents, plugins | `textus mcp serve` — see [`mcp.md`](./mcp.md) |
+
+For agent code, prefer the MCP transport: schema-self-describing, session state held server-side, no shell-string composition.
+
 ## Boot — one-shot orientation
 
 ```sh
