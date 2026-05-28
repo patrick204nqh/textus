@@ -3,56 +3,58 @@ require_relative "authority_gate"
 module Textus
   module Application
     module Write
-      module Reject
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(
-            ctx: ctx, caps: caps,
-            writer: session.envelope_writer,
-            hook_context: session.hook_context
-          ).call(*, **)
+      class Reject
+        include AuthorityGate
+
+        def initialize(container:, call:, hook_context:)
+          @container    = container
+          @call         = call
+          @ctx          = call # AuthorityGate uses @ctx.role
+          @manifest     = container.manifest
+          @file_store   = container.file_store
+          @events       = container.events
+          @authorizer   = container.authorizer
+          @hook_context = hook_context
         end
 
-        class Impl
-          include AuthorityGate
+        def call(pending_key)
+          assert_accept_authority!("reject")
 
-          def initialize(ctx:, caps:, writer:, hook_context:)
-            @ctx          = ctx
-            @caps         = caps
-            @manifest     = caps.manifest
-            @writer       = writer
-            @events       = caps.events
-            @authorizer   = caps.authorizer
-            @hook_context = hook_context
+          mentry = @manifest.resolver.resolve(pending_key).entry
+          unless mentry.in_proposal_zone?
+            raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
           end
 
-          def call(pending_key)
-            assert_accept_authority!("reject")
+          env = Textus::Application::Read::Get::Impl.new(
+            ctx: @call, caps: read_caps_struct,
+          ).call(pending_key)
+          proposal = env.meta&.dig("proposal") or
+            raise ProposalError.new("entry has no proposal block: #{pending_key}")
+          target_key = proposal["target_key"] or
+            raise ProposalError.new("proposal missing target_key")
 
-            mentry = @manifest.resolver.resolve(pending_key).entry
-            unless mentry.in_proposal_zone?
-              raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
-            end
+          delete_op.call(pending_key, suppress_events: true)
 
-            env = Textus::Application::Read::Get::Impl.new(
-              ctx: @ctx, caps: @caps,
-            ).call(pending_key)
-            proposal = env.meta&.dig("proposal") or
-              raise ProposalError.new("entry has no proposal block: #{pending_key}")
-            target_key = proposal["target_key"] or
-              raise ProposalError.new("proposal missing target_key")
+          @events.publish(:proposal_rejected,
+                          ctx: @hook_context,
+                          key: pending_key,
+                          target_key: target_key)
 
-            Textus::Application::Write::Delete::Impl.new(
-              ctx: @ctx, caps: @caps, writer: @writer,
-              hook_context: @hook_context
-            ).call(pending_key, suppress_events: true)
+          { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
+        end
 
-            @events.publish(:proposal_rejected,
-                            ctx: @hook_context,
-                            key: pending_key,
-                            target_key: target_key)
+        private
 
-            { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
-          end
+        def delete_op
+          @delete_op ||= Textus::Application::Write::Delete.new(
+            container: @container, call: @call, hook_context: @hook_context,
+          )
+        end
+
+        def read_caps_struct
+          @read_caps_struct ||= Struct.new(:manifest, :file_store, :authorizer).new(
+            @manifest, @file_store, @authorizer
+          )
         end
       end
     end
