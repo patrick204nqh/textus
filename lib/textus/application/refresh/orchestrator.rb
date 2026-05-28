@@ -31,12 +31,37 @@ module Textus
         end
 
         def run_timed(budget_ms, key)
-          unless Textus::Infra::Refresh::Detached.supported?
+          return run_timed_with_fork(budget_ms, key) if Textus::Infra::Refresh::Detached.supported?
+
+          run_timed_cooperative(budget_ms, key)
+        end
+
+        def run_timed_cooperative(budget_ms, key)
+          result = nil
+          thread = Thread.new do
+            result = @worker.run(key)
+          rescue Textus::Error => e
+            result = e
+          end
+
+          thread.join(budget_ms / 1000.0)
+          if thread.alive?
+            thread.kill
             return Textus::Domain::Outcome::Failed.new(
-              error: Textus::UsageError.new("timed_sync requires fork (Unix only)"),
+              error: Textus::UsageError.new(
+                "refresh exceeded budget #{budget_ms}ms (no fork available — cooperative cancel)",
+              ),
             )
           end
 
+          if result.is_a?(Textus::Error)
+            Textus::Domain::Outcome::Failed.new(error: result)
+          else
+            Textus::Domain::Outcome::Refreshed.new(envelope: result)
+          end
+        end
+
+        def run_timed_with_fork(budget_ms, key)
           result = nil
           thread = Thread.new do
             result = @worker.run(key)
