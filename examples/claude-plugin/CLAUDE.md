@@ -10,35 +10,28 @@ generated:
 <!--
 This file is the orientation Claude Code (and any agent) reads on session
 start. It is the projection of textus over `.textus/zones/...`. Do not
-edit by hand — edit the source under `.textus/zones/working/...` and run
-`textus build`.
+edit by hand — edit the source under `.textus/zones/working/...` and
+trigger a rebuild via the textus MCP server.
 
 → Context store: `.textus/` (textus, protocol textus/3).
-→ Run `textus boot` for the full catalog shape and write flows.
-→ Per-turn heartbeat: `textus pulse --since=<cursor>`.
-  - Initial `cursor` comes from `boot.agent_quickstart.latest_seq`.
-  - Response advances `cursor` on every call. Re-run `boot` if you get `CursorExpired`.
-  - Use `changed[]` to refresh your view; `pending_review[]` shows proposals awaiting human accept; `stale[]` flags entries past their refresh policy.
-→ Write authority by zone:
-    - **identity** (human ) — slow-changing identity; human-only writes
-    - **working** (human agent runner ) — active project state; humans, AI, and scripts share this surface
-    - **review** (agent human ) — AI proposals awaiting human accept
-    - **output** (builder ) — build-computed outputs; never hand-edited
+→ Talk to textus only through the MCP `textus` server (declared in `.mcp.json`).
+   Do not shell out to the `textus` CLI from skills.
 
-→ Agent protocol (from `textus boot`):
-   • **read** — find and read an entry
-     `textus list --zone=ZONE --prefix=PREFIX  # discover keys`
-     `textus get KEY                            # returns envelope JSON`
-   • **write** — create or update an entry
-     `textus schema get FAMILY                  # learn the _meta field shape`
-     `build an envelope JSON: {_meta: {...}, body: "..."}`
-     `echo ENVELOPE | textus put KEY --as=ROLE --stdin`
-   • **propose** — agent suggests a change for human review
-     agent: `echo ENVELOPE | textus put review.KEY --as=agent --stdin`
-     human: `textus accept review.KEY --as=human       # promotes the proposal to its target zone`
-   • **refresh** — rebuild stale intake-zone caches from their declared actions
-     `textus freshness --zone=intake            # report fresh/stale per entry`
-     `textus refresh stale --zone=intake --as=runner`
+→ Tools (auto-discovered from the manifest):
+   • boot()                          — orientation; zones, entries, schemas, agent_quickstart
+   • tick({since})                   — delta since cursor; advances server-side
+   • find({zone?, prefix?})          — list keys
+   • read({key})                     — read envelope
+   • write({key, meta, body})        — create/update (gated by role)
+   • propose({key, meta, body})      — write a proposal to the review zone
+   • refresh({key}) / refresh_stale  — rebuild intake caches
+   • schema({family})                — field shape
+   • rules({key})                    — effective rules
+
+→ Session loop:
+   1. boot() once per session; cache zones + agent_quickstart.
+   2. tick() per turn; act on changed / stale / pending_review.
+   3. On ContractDrift (-32001) or CursorExpired (-32002): boot() again.
 -->
 
 
