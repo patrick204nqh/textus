@@ -126,6 +126,16 @@ Build always uses the pure path; injecting refresh into materialization caused t
 
 For multi-writer environments, **always pass `if_etag`** on `put`. The gem treats etag-less writes as last-writer-wins on purpose (single-writer scripts, fresh-file creation), but anything resembling a daemon or a long-running agent should round-trip the etag.
 
+## Application layering
+
+From 0.25.1, the application layer is organised around three composition records — `Manifest`, `Application::Ports`, and the read/write split — described by [ADR 0016](architecture/decisions/0016-application-ports-value.md), [ADR 0017](architecture/decisions/0017-envelope-io-split.md), and [ADR 0018](architecture/decisions/0018-manifest-composition.md).
+
+- **`Manifest` is a composition record** (`Data.define(:data, :resolver, :policy, :rules)`). Reach individual concerns through the field accessors: `manifest.data.entries`, `manifest.policy.permission_for(zone)`, `manifest.resolver.resolve(key)`, `manifest.rules.for_key(key)`. The legacy top-level shims (`manifest.permission_for`, `manifest.entries`, ...) still work via one-cycle bridges that warn until 0.26.0 — new code should call through the field accessors.
+- **Application use cases take a single `ports:` kwarg** of type `Textus::Application::Ports`. The record bundles six adapter handles (`manifest`, `file_store`, `schemas`, `audit_log`, `event_bus`, `rpc_registry`) plus the store root path. Use cases pull only the slice they need into local ivars; nobody passes the raw `Store` around the application layer.
+- **Write path is split**: `Application::Writes::EnvelopeReader` owns read/parse (existing-uid lookup, raw read, parse), and `Application::Writes::EnvelopeWriter` owns put/delete/move + the audit-append invariant (every public method's final action is `@audit_log.append(...)`).
+
+The user-facing CLI surface, the wire envelope shape, and the protocol version (`textus/3`) are unchanged.
+
 ## Pairing with other tools
 
 - **MCP servers**: a thin server that exposes `textus get` and `textus put` as tools is the recommended way to give Claude/agents access. Don't bake MCP into this gem.
