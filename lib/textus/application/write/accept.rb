@@ -3,96 +3,90 @@ require_relative "authority_gate"
 module Textus
   module Application
     module Write
-      module Accept
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(
-            ctx: ctx, caps: caps,
-            writer: session.envelope_writer,
-            hook_context: session.hook_context
-          ).call(*, **)
+      class Accept
+        include AuthorityGate
+
+        def initialize(container:, call:, hook_context:)
+          @container    = container
+          @call         = call
+          @ctx          = call # AuthorityGate uses @ctx.role
+          @manifest     = container.manifest
+          @file_store   = container.file_store
+          @schemas      = container.schemas
+          @events       = container.events
+          @authorizer   = container.authorizer
+          @hook_context = hook_context
         end
 
-        class Impl
-          include AuthorityGate
+        def call(pending_key)
+          assert_accept_authority!("accept")
 
-          def initialize(ctx:, caps:, writer:, hook_context:)
-            @ctx          = ctx
-            @caps         = caps
-            @manifest     = caps.manifest
-            @file_store   = caps.file_store
-            @schemas      = caps.schemas
-            @writer       = writer
-            @events       = caps.events
-            @authorizer   = caps.authorizer
-            @hook_context = hook_context
+          env = Textus::Application::Read::Get::Impl.new(
+            ctx: @call, caps: read_caps_struct,
+          ).call(pending_key)
+          proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
+          target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
+          action = proposal["action"] || "put"
+
+          evaluate_promotion!(env, target)
+
+          case action
+          when "put"
+            # Nested proposal "frontmatter" — the meta to write to the accepted
+            # target. Not related to the removed intake-handler legacy bridge.
+            target_meta = env.meta["frontmatter"] || {}
+            target_body = env.body
+            put_op.call(target, meta: target_meta, body: target_body)
+          when "delete"
+            delete_op.call(target)
+          else
+            raise ProposalError.new("unknown action: #{action}")
           end
 
-          def call(pending_key)
-            assert_accept_authority!("accept")
+          delete_op.call(pending_key)
 
-            env = Textus::Application::Read::Get::Impl.new(
-              ctx: @ctx, caps: @caps,
-            ).call(pending_key)
-            proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
-            target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
-            action = proposal["action"] || "put"
+          @events.publish(:proposal_accepted,
+                          ctx: @hook_context,
+                          key: pending_key,
+                          target_key: target)
 
-            evaluate_promotion!(env, target)
+          { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
+        end
 
-            case action
-            when "put"
-              # Nested proposal "frontmatter" — the meta to write to the accepted
-              # target. Not related to the removed intake-handler legacy bridge.
-              target_meta = env.meta["frontmatter"] || {}
-              target_body = env.body
-              put_op.call(target, meta: target_meta, body: target_body)
-            when "delete"
-              delete_op.call(target)
-            else
-              raise ProposalError.new("unknown action: #{action}")
-            end
+        private
 
-            delete_op.call(pending_key)
+        def put_op
+          @put_op ||= Textus::Application::Write::Put.new(
+            container: @container, call: @call, hook_context: @hook_context,
+          )
+        end
 
-            @events.publish(:proposal_accepted,
-                            ctx: @hook_context,
-                            key: pending_key,
-                            target_key: target)
+        def delete_op
+          @delete_op ||= Textus::Application::Write::Delete.new(
+            container: @container, call: @call, hook_context: @hook_context,
+          )
+        end
 
-            { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
-          end
+        def read_caps_struct
+          @read_caps_struct ||= Struct.new(:manifest, :file_store, :authorizer).new(
+            @manifest, @file_store, @authorizer
+          )
+        end
 
-          private
+        def evaluate_promotion!(env, target_key)
+          rules = @manifest.rules.for(target_key)
+          promote = rules.promote
+          return if promote.nil? || promote.requires.empty?
 
-          def put_op
-            @put_op ||= Textus::Application::Write::Put::Impl.new(
-              ctx: @ctx, caps: @caps, writer: @writer,
-              hook_context: @hook_context
-            )
-          end
+          policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
+          result = policy.evaluate(
+            entry: env, schemas: @schemas, manifest: @manifest, role: @call.role,
+          )
+          return if result.ok?
 
-          def delete_op
-            @delete_op ||= Textus::Application::Write::Delete::Impl.new(
-              ctx: @ctx, caps: @caps, writer: @writer,
-              hook_context: @hook_context
-            )
-          end
-
-          def evaluate_promotion!(env, target_key)
-            rules = @manifest.rules.for(target_key)
-            promote = rules.promote
-            return if promote.nil? || promote.requires.empty?
-
-            policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
-            result = policy.evaluate(
-              entry: env, schemas: @schemas, manifest: @manifest, role: @ctx.role,
-            )
-            return if result.ok?
-
-            raise ProposalError.new(
-              "promotion gate failed: #{result.reasons.join("; ")}",
-            )
-          end
+          raise ProposalError.new(
+            "promotion gate failed: #{result.reasons.join("; ")}",
+          )
         end
       end
     end

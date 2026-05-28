@@ -52,35 +52,6 @@ module Textus
             manifest: @container.manifest,
           )
         end
-
-        # Back-compat shim: Accept (still a Module) constructs Put::Impl with the
-        # old (ctx:, caps:, writer:, hook_context:) shape. Maps onto the new class.
-        # Removed when Accept is collapsed in Phase 5.
-        class Impl
-          def initialize(ctx:, caps:, writer:, hook_context:)
-            container = Textus::Container.new(
-              manifest: caps.manifest, file_store: caps.file_store,
-              schemas: caps.schemas, root: caps.root,
-              audit_log: caps.audit_log, events: caps.events,
-              rpc: nil, authorizer: caps.authorizer
-            )
-            call_value = Textus::Call.new(
-              role: ctx.role, correlation_id: ctx.correlation_id,
-              now: ctx.now, dry_run: ctx.dry_run
-            )
-            @impl = Put.new(
-              container: container, call: call_value, hook_context: hook_context,
-            )
-            @injected_writer = writer
-            # Override writer with the externally-built one so Accept's pre-built
-            # writer (with its reader cache, ctx, etc.) is preserved.
-            @impl.instance_variable_set(:@writer, writer)
-          end
-
-          def call(*, **)
-            @impl.call(*, **)
-          end
-        end
       end
     end
   end
