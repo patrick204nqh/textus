@@ -28,11 +28,14 @@ module Textus
         refresh_backgrounded: { mode: :pubsub, args: %i[ctx key started_at budget_ms] },
       }.freeze
 
-      def initialize
+      def initialize(error_log: ErrorLog.new)
         @rpc    = Hash.new { |h, k| h[k] = {} }
         @pubsub = Hash.new { |h, k| h[k] = [] }
         @error_handlers = []
+        @error_log = error_log
       end
+
+      attr_reader :error_log
 
       def on(event, name, keys: nil, &) = register(event, name, keys: keys, &)
 
@@ -116,6 +119,14 @@ module Textus
       end
 
       def notify_error(event, sub, key, kwargs, error)
+        @error_log.record(
+          seq: kwargs[:_audit_seq] || -1,
+          event: event,
+          hook: sub[:name],
+          key: key,
+          error_class: error.class.name,
+          error_message: error.message,
+        )
         @error_handlers.each do |handler|
           handler.call(event: event, hook: sub[:name], key: key, kwargs: kwargs, error: error)
         rescue StandardError => e
