@@ -6,11 +6,8 @@ RSpec.describe Textus::Application::Writes::Materializer do
   subject(:materializer) do
     Textus::Application::Writes::Materializer.new(
       ctx: ctx,
-      manifest: store.manifest,
-      file_store: store.file_store,
-      bus: store.bus,
-      root: root,
-      store: store,
+      ports: Textus::Application::Ports.from_store(store),
+      boot: -> { Textus::Boot.run(store) },
     )
   end
 

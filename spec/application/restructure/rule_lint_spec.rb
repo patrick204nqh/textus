@@ -24,7 +24,7 @@ RSpec.describe Textus::Application::Restructure::RuleLint do
   let(:ctx) { test_ctx(role: "human") }
 
   it "returns ok: true and zero diff lines when candidate is identical" do
-    result = described_class.new(ctx: ctx, store: store).call(
+    result = described_class.new(ctx: ctx, ports: Textus::Application::Ports.from_store(store)).call(
       candidate_yaml: File.read(File.join(root, "manifest.yaml")),
     )
     expect(result.steps).to eq([])
@@ -34,14 +34,14 @@ RSpec.describe Textus::Application::Restructure::RuleLint do
   it "reports an added rule" do
     candidate = File.read(File.join(root, "manifest.yaml")) +
                 %(  - { match: "intake.other", refresh: { ttl: 60, on_stale: error } }\n)
-    result = described_class.new(ctx: ctx, store: store).call(candidate_yaml: candidate)
+    result = described_class.new(ctx: ctx, ports: Textus::Application::Ports.from_store(store)).call(candidate_yaml: candidate)
     adds = result.steps.select { |s| s["op"] == "add_rule" }
     expect(adds.size).to eq(1)
   end
 
   it "errors on an invalid candidate" do
     expect do
-      described_class.new(ctx: ctx, store: store).call(candidate_yaml: "this is not yaml: : :")
+      described_class.new(ctx: ctx, ports: Textus::Application::Ports.from_store(store)).call(candidate_yaml: "this is not yaml: : :")
     end.to raise_error(Textus::Error)
   end
 end

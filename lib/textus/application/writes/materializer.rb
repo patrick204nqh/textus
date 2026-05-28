@@ -8,22 +8,21 @@ module Textus
       # Extracted from Application::Writes::Build so that Publish can reuse
       # it without creating a Build dependency.
       class Materializer
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:)
+        def initialize(ctx:, ports:, boot:)
           @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
-          @bus        = bus
-          @root       = root
-          @store      = store
+          @ports      = ports
+          @manifest   = ports.manifest
+          @file_store = ports.file_store
+          @bus        = ports.event_bus
+          @root       = ports.root
+          @boot       = boot
         end
 
         # Runs the builder pipeline for `mentry` and returns the on-disk
         # target_path string.
         def run(mentry)
-          reader = Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @manifest, file_store: @file_store,
-          )
-          lister = Textus::Application::Reads::List.new(manifest: @manifest)
+          reader = Textus::Application::Reads::Get.new(ctx: @ctx, ports: @ports)
+          lister = Textus::Application::Reads::List.new(ports: @ports)
           Builder::Pipeline.run(
             mentry: mentry,
             manifest: @manifest,
@@ -31,8 +30,8 @@ module Textus
             lister: lister.method(:call),
             transform_resolver: ->(name) { @bus.rpc_callable(:transform_rows, name) },
             template_loader: ->(name) { read_template(name) },
-            transform_context: @store,
-            inject_boot: -> { Textus::Boot.run(@store) },
+            transform_context: @ports,
+            inject_boot: @boot,
           )
         end
 

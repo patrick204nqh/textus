@@ -66,13 +66,7 @@ RSpec.describe Textus::Operations do
       store = Textus::Store.new(File.join(tmp, ".textus"))
       ops = described_class.new(
         ctx: Textus::Application::Context.build(role: "human"),
-        manifest: store.manifest,
-        file_store: store.file_store,
-        schemas: store.schemas,
-        audit_log: store.audit_log,
-        bus: store.bus,
-        root: store.root,
-        store: store,
+        ports: Textus::Application::Ports.from_store(store),
       )
       env = ops.put("working.notes.alpha", body: "hi")
       expect(env).to be_a(Textus::Envelope)

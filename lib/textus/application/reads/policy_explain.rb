@@ -4,8 +4,8 @@ module Textus
       # For one key, surface every matching policy block along with the
       # per-slot effective value (which loses ties win-by-specificity).
       class PolicyExplain
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(ports:)
+          @manifest = ports.manifest
         end
 
         def call(key:)

@@ -10,13 +10,14 @@ module Textus
       #
       # Return shape: { "protocol", "built", "published_leaves" }
       class Publish
-        def initialize(ctx:, manifest:, file_store:, bus:, root:, store:, hook_context:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, boot:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
-          @file_store   = file_store
-          @bus          = bus
-          @root         = root
-          @store        = store
+          @ports        = ports
+          @manifest     = ports.manifest
+          @file_store   = ports.file_store
+          @bus          = ports.event_bus
+          @root         = ports.root
+          @boot         = boot
           @hook_context = hook_context
         end
 
@@ -48,7 +49,8 @@ module Textus
             manifest: @manifest,
             file_store: @file_store,
             root: @root,
-            store: @store,
+            ports: @ports,
+            boot: @boot,
             ctx: @ctx,
             bus: @bus,
             hook_context: @hook_context,
@@ -71,9 +73,7 @@ module Textus
         end
 
         def reader
-          @reader ||= Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @manifest, file_store: @file_store,
-          )
+          @reader ||= Textus::Application::Reads::Get.new(ctx: @ctx, ports: @ports)
         end
       end
     end

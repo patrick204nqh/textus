@@ -12,39 +12,24 @@ module Textus
     def self.for(store, role: Role::DEFAULT, correlation_id: nil, dry_run: false)
       new(
         ctx: Application::Context.build(role: role, correlation_id: correlation_id, dry_run: dry_run),
-        manifest: store.manifest,
-        file_store: store.file_store,
-        schemas: store.schemas,
-        audit_log: store.audit_log,
-        bus: store.bus,
-        root: store.root,
-        store: store,
+        ports: Application::Ports.from_store(store),
+        boot: -> { Textus::Boot.run(store) },
+        doctor: -> { Textus::Doctor.run(store) },
       )
     end
 
-    attr_reader :ctx, :store
+    attr_reader :ctx, :ports
 
-    # rubocop:disable Metrics/ParameterLists
-    def initialize(ctx:, manifest:, file_store:, schemas:, audit_log:, bus:, root:, store:)
-      @ctx        = ctx
-      @manifest   = manifest
-      @file_store = file_store
-      @schemas    = schemas
-      @audit_log  = audit_log
-      @bus        = bus
-      @root       = root
-      @store      = store
-      @authorizer = Textus::Domain::Authorizer.new(manifest: @manifest)
+    def initialize(ctx:, ports:, boot: nil, doctor: nil)
+      @ctx    = ctx
+      @ports  = ports
+      @boot   = boot   || -> { {} }
+      @doctor = doctor || -> { { "ok" => true, "issues" => [] } }
+      @authorizer = Textus::Domain::Authorizer.new(manifest: @ports.manifest)
     end
-    # rubocop:enable Metrics/ParameterLists
 
     def with_role(role)
-      self.class.new(
-        ctx: @ctx.with_role(role),
-        manifest: @manifest, file_store: @file_store, schemas: @schemas,
-        audit_log: @audit_log, bus: @bus,
-        root: @root, store: @store
-      )
+      self.class.new(ctx: @ctx.with_role(role), ports: @ports, boot: @boot, doctor: @doctor)
     end
 
     def hook_context
@@ -54,83 +39,75 @@ module Textus
     # writes
     def put(...)
       Application::Writes::Put.new(
-        ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def delete(...)
       Application::Writes::Delete.new(
-        ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def mv(...)
       Application::Writes::Mv.new(
-        ctx: @ctx, manifest: @manifest, envelope_io: envelope_io,
-        bus: @bus, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def accept(...)
       Application::Writes::Accept.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store, schemas: @schemas,
-        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def reject(...)
       Application::Writes::Reject.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        envelope_io: envelope_io, bus: @bus, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def publish(...)
       Application::Writes::Publish.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        bus: @bus, root: @root, store: @store, hook_context: hook_context
+        ctx: @ctx, ports: @ports, boot: @boot, hook_context: hook_context,
       ).call(...)
     end
 
     # reads
-    def get(...)
-      Application::Reads::Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call(...)
-    end
+    def get(...) = Application::Reads::Get.new(ctx: @ctx, ports: @ports).call(...)
 
     def get_or_refresh(...)
       Application::Reads::GetOrRefresh.new(
-        manifest: @manifest,
-        get: Application::Reads::Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store),
+        ports: @ports,
+        get: Application::Reads::Get.new(ctx: @ctx, ports: @ports),
         orchestrator: orchestrator,
       ).call(...)
     end
 
-    def list(...)            = Application::Reads::List.new(manifest: @manifest).call(...)
-    def where(...)           = Application::Reads::Where.new(manifest: @manifest).call(...)
-    def uid(...)             = Application::Reads::Uid.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call(...)
-    def schema_envelope(...) = Application::Reads::SchemaEnvelope.new(manifest: @manifest, schemas: @schemas).call(...)
-    def deps(...)            = Application::Reads::Deps.new(manifest: @manifest).call(...)
-    def rdeps(...)           = Application::Reads::Rdeps.new(manifest: @manifest).call(...)
-    def published(...)       = Application::Reads::Published.new(manifest: @manifest).call(...)
-    def stale(...)           = Application::Reads::Stale.new(manifest: @manifest).call(...)
-    def audit(...)           = Application::Reads::Audit.new(manifest: @manifest, root: @root, audit_log: @audit_log).call(...)
-    def blame(...)           = Application::Reads::Blame.new(manifest: @manifest, root: @root).call(...)
-    def policy_explain(...)  = Application::Reads::PolicyExplain.new(manifest: @manifest).call(...)
-    def freshness(...)       = Application::Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call(...)
+    def list(...)            = Application::Reads::List.new(ports: @ports).call(...)
+    def where(...)           = Application::Reads::Where.new(ports: @ports).call(...)
+    def uid(...)             = Application::Reads::Uid.new(ctx: @ctx, ports: @ports).call(...)
+    def schema_envelope(...) = Application::Reads::SchemaEnvelope.new(ports: @ports).call(...)
+    def deps(...)            = Application::Reads::Deps.new(ports: @ports).call(...)
+    def rdeps(...)           = Application::Reads::Rdeps.new(ports: @ports).call(...)
+    def published(...)       = Application::Reads::Published.new(ports: @ports).call(...)
+    def stale(...)           = Application::Reads::Stale.new(ports: @ports).call(...)
+    def audit(...)           = Application::Reads::Audit.new(ports: @ports).call(...)
+    def blame(...)           = Application::Reads::Blame.new(ports: @ports).call(...)
+    def policy_explain(...)  = Application::Reads::PolicyExplain.new(ports: @ports).call(...)
+    def freshness(...)       = Application::Reads::Freshness.new(ctx: @ctx, ports: @ports).call(...)
 
     def pulse(...)
-      Application::Reads::Pulse.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store,
-        audit_log: @audit_log, root: @root, store: @store
-      ).call(...)
+      Application::Reads::Pulse.new(ctx: @ctx, ports: @ports, doctor: @doctor).call(...)
     end
 
     def validate_all(...)
-      Application::Reads::ValidateAll.new(
-        ctx: @ctx, manifest: @manifest, file_store: @file_store, schemas: @schemas, audit_log: @audit_log,
-      ).call(...)
+      Application::Reads::ValidateAll.new(ctx: @ctx, ports: @ports).call(...)
     end
 
     # refresh
@@ -138,57 +115,56 @@ module Textus
 
     def refresh_all(**)
       Application::Refresh::All.new(
-        ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        store: @store, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       ).call(**)
     end
 
     # restructure
     def key_mv_prefix(**)
-      Application::Restructure::KeyMvPrefix.new(ctx: @ctx, store: @store).call(**)
+      Application::Restructure::KeyMvPrefix.new(ctx: @ctx, ports: @ports, operations: self).call(**)
     end
 
     def key_delete_prefix(**)
-      Application::Restructure::KeyDeletePrefix.new(ctx: @ctx, store: @store).call(**)
+      Application::Restructure::KeyDeletePrefix.new(ctx: @ctx, ports: @ports, operations: self).call(**)
     end
 
     def zone_mv(**)
-      Application::Restructure::ZoneMv.new(ctx: @ctx, store: @store).call(**)
+      Application::Restructure::ZoneMv.new(ctx: @ctx, ports: @ports).call(**)
     end
 
     def rule_lint(**)
-      Application::Restructure::RuleLint.new(ctx: @ctx, store: @store).call(**)
+      Application::Restructure::RuleLint.new(ctx: @ctx, ports: @ports).call(**)
     end
 
     def migrate(**)
-      Application::Restructure::Migrate.new(ctx: @ctx, store: @store).call(**)
+      Application::Restructure::Migrate.new(ctx: @ctx, ports: @ports, operations: self).call(**)
     end
 
     private
 
     def envelope_io
       @envelope_io ||= Application::Writes::EnvelopeIO.new(
-        file_store: @file_store,
-        manifest: @manifest,
-        schemas: @schemas,
-        audit_log: @audit_log,
+        file_store: @ports.file_store,
+        manifest: @ports.manifest,
+        schemas: @ports.schemas,
+        audit_log: @ports.audit_log,
         ctx: @ctx,
       )
     end
 
     def refresh_worker
       @refresh_worker ||= Application::Refresh::Worker.new(
-        ctx: @ctx, manifest: @manifest, envelope_io: envelope_io, bus: @bus,
-        store: @store, authorizer: @authorizer, hook_context: hook_context
+        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        authorizer: @authorizer, hook_context: hook_context
       )
     end
 
     def orchestrator
       @orchestrator ||= Application::Refresh::Orchestrator.new(
         worker: refresh_worker,
-        store_root: @root,
-        bus: @bus,
-        store: @store,
+        store_root: @ports.root,
+        bus: @ports.event_bus,
         ctx: @ctx,
         hook_context: hook_context,
       )

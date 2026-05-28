@@ -51,7 +51,19 @@ module Textus
         name = @spec["transform"] or return rows
         callable = @transform_resolver.call(name)
         Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
-          callable.call(store: @transform_context, rows: rows, config: @spec["transform_config"] || {})
+          # `@transform_context` is a `Textus::Application::Ports` value
+          # today; we pass it under both `ports:` (preferred) and `store:`
+          # (one-cycle legacy bridge). The dual-name plumbing lives in
+          # `Textus::Hooks::Bus.inject_ports_kwargs`.
+          kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
+            callable,
+            ports: @transform_context,
+            error_log: nil, # projection has no audit channel; deprecation is silent here
+            event: :transform_rows,
+            hook_name: name,
+            other: { rows: rows, config: @spec["transform_config"] || {} },
+          )
+          callable.call(**kwargs)
         end
       rescue Timeout::Error
         raise UsageError.new("transform_rows '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")

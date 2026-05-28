@@ -6,12 +6,12 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:, manifest:, envelope_io:, bus:, store:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
+          @ports        = ports
+          @manifest     = ports.manifest
           @envelope_io  = envelope_io
-          @bus          = bus
-          @store        = store
+          @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -44,11 +44,18 @@ module Textus
         def call_intake(key, mentry, callable, remaining)
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
-            callable.call(
-              store: @store,
-              config: mentry.config,
-              args: { trigger_key: key, leaf_segments: remaining || [] },
+            kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
+              callable,
+              ports: @ports,
+              error_log: @bus.error_log,
+              event: :resolve_intake,
+              hook_name: mentry.handler,
+              other: {
+                config: mentry.config,
+                args: { trigger_key: key, leaf_segments: remaining || [] },
+              },
             )
+            callable.call(**kwargs)
           end
         rescue Timeout::Error
           @bus.publish(:refresh_failed, ctx: @hook_context, key: key,

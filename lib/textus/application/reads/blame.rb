@@ -8,13 +8,14 @@ module Textus
       # row. Falls back to `git => nil` when not in a git repo or when the
       # file is untracked.
       class Blame
-        def initialize(manifest:, root:)
-          @manifest = manifest
-          @root = root
+        def initialize(ports:)
+          @ports    = ports
+          @manifest = ports.manifest
+          @root     = ports.root
         end
 
         def call(key:, limit: nil)
-          audit_rows = Textus::Application::Reads::Audit.new(manifest: @manifest, root: @root).call(key: key, limit: limit)
+          audit_rows = Textus::Application::Reads::Audit.new(ports: @ports).call(key: key, limit: limit)
           path = resolve_path(key)
           return audit_rows.map { |r| r.merge("git" => nil) } unless git_tracked?(path)
 

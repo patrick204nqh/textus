@@ -9,14 +9,15 @@ module Textus
       # APIs; pulse is sugar with a stable envelope shape and a monotonic
       # cursor (seq).
       class Pulse
-        def initialize(ctx:, manifest:, file_store:, audit_log:, root:, store:, bus: store.bus) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, doctor:)
           @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
-          @audit_log  = audit_log
-          @root       = root
-          @store      = store
-          @bus        = bus
+          @ports      = ports
+          @manifest   = ports.manifest
+          @file_store = ports.file_store
+          @audit_log  = ports.audit_log
+          @root       = ports.root
+          @bus        = ports.event_bus
+          @doctor     = doctor
         end
 
         def call(since: 0)
@@ -36,12 +37,11 @@ module Textus
         private
 
         def audit_changes_since(seq)
-          Reads::Audit.new(manifest: @manifest, root: @root, audit_log: @audit_log)
-                      .call(seq_since: seq)
+          Reads::Audit.new(ports: @ports).call(seq_since: seq)
         end
 
         def freshness
-          @freshness ||= Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store)
+          @freshness ||= Reads::Freshness.new(ctx: @ctx, ports: @ports)
         end
 
         def soonest_due(rows)
@@ -56,12 +56,12 @@ module Textus
           # Guard: zones is a Hash keyed by name string.
           return [] unless @manifest.data.zones.key?("review")
 
-          rows = Reads::List.new(manifest: @manifest).call(zone: "review")
+          rows = Reads::List.new(ports: @ports).call(zone: "review")
           rows.map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
         end
 
         def doctor_summary
-          result  = Textus::Doctor.run(@store)
+          result  = @doctor.call
           issues  = result["issues"] || []
           {
             "ok" => result["ok"],

@@ -2,11 +2,11 @@ module Textus
   module Application
     module Writes
       class Mv
-        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
+          @manifest     = ports.manifest
+          @bus          = ports.event_bus
           @envelope_io  = envelope_io
-          @bus          = bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end

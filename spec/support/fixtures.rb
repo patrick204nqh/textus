@@ -27,27 +27,13 @@ module TextusSpecHelpers
   # Builds the explicit-port kwargs that every Writes use case takes from
   # an explicit store + slim Context pair.
   def writes_ports(store, ctx, envelope_io: nil)
-    ops = Textus::Operations.new(
-      ctx: ctx,
-      manifest: store.manifest,
-      file_store: store.file_store,
-      schemas: store.schemas,
-      audit_log: store.audit_log,
-      bus: store.bus,
-      root: store.root,
-      store: store,
-    )
+    ports = Textus::Application::Ports.from_store(store)
+    ops = Textus::Operations.new(ctx: ctx, ports: ports)
     {
       ctx: ctx,
-      manifest: store.manifest,
-      file_store: store.file_store,
-      schemas: store.schemas,
-      audit_log: store.audit_log,
+      ports: ports,
       envelope_io: envelope_io || build_envelope_io(store, ctx),
-      bus: store.bus,
       authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
-      root: store.root,
-      store: store,
       hook_context: ops.hook_context,
     }
   end
@@ -55,34 +41,32 @@ module TextusSpecHelpers
   def build_put(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Put.new(
-      ctx: p[:ctx], manifest: p[:manifest], envelope_io: p[:envelope_io],
-      bus: p[:bus], authorizer: p[:authorizer], hook_context: p[:hook_context]
+      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
   def build_delete(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Delete.new(
-      ctx: p[:ctx], manifest: p[:manifest], envelope_io: p[:envelope_io],
-      bus: p[:bus], authorizer: p[:authorizer], hook_context: p[:hook_context]
+      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
   def build_mv(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Mv.new(
-      ctx: p[:ctx], manifest: p[:manifest],
-      envelope_io: p[:envelope_io],
-      bus: p[:bus], authorizer: p[:authorizer], hook_context: p[:hook_context]
+      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
   def build_accept(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Accept.new(
-      ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      schemas: p[:schemas],
-      envelope_io: p[:envelope_io], bus: p[:bus],
+      ctx: p[:ctx], ports: p[:ports],
+      envelope_io: p[:envelope_io],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
@@ -90,27 +74,18 @@ module TextusSpecHelpers
   def build_reject(store, ctx, envelope_io: nil)
     p = writes_ports(store, ctx, envelope_io: envelope_io)
     Textus::Application::Writes::Reject.new(
-      ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      envelope_io: p[:envelope_io], bus: p[:bus],
+      ctx: p[:ctx], ports: p[:ports],
+      envelope_io: p[:envelope_io],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
   def build_worker(store, ctx)
-    ops = Textus::Operations.new(
-      ctx: ctx,
-      manifest: store.manifest,
-      file_store: store.file_store,
-      schemas: store.schemas,
-      audit_log: store.audit_log,
-      bus: store.bus,
-      root: store.root,
-      store: store,
-    )
+    ports = Textus::Application::Ports.from_store(store)
+    ops = Textus::Operations.new(ctx: ctx, ports: ports)
     Textus::Application::Refresh::Worker.new(
-      ctx: ctx, manifest: store.manifest, envelope_io: build_envelope_io(store, ctx),
-      bus: store.bus,
-      store: store, authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
+      ctx: ctx, ports: ports, envelope_io: build_envelope_io(store, ctx),
+      authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
       hook_context: ops.hook_context
     )
   end
@@ -118,8 +93,9 @@ module TextusSpecHelpers
   def build_publish(store, ctx)
     p = writes_ports(store, ctx)
     Textus::Application::Writes::Publish.new(
-      ctx: p[:ctx], manifest: p[:manifest], file_store: p[:file_store],
-      bus: p[:bus], root: p[:root], store: p[:store], hook_context: p[:hook_context]
+      ctx: p[:ctx], ports: p[:ports],
+      boot: -> { Textus::Boot.run(store) },
+      hook_context: p[:hook_context]
     )
   end
 end

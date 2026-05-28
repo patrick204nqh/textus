@@ -2,8 +2,8 @@ module Textus
   module Application
     module Reads
       class Rdeps
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(ports:)
+          @manifest = ports.manifest
         end
 
         def call(key)

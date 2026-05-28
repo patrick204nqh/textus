@@ -2,17 +2,17 @@ module Textus
   module Application
     module Reads
       class ValidateAll
-        def initialize(ctx:, manifest:, file_store:, schemas:, audit_log:)
-          @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
-          @schemas    = schemas
-          @audit_log  = audit_log
+        def initialize(ctx:, ports:)
+          @ctx     = ctx
+          @ports   = ports
+          @manifest  = ports.manifest
+          @schemas   = ports.schemas
+          @audit_log = ports.audit_log
         end
 
         def call
           Validator.new(
-            reader: Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store),
+            reader: Get.new(ctx: @ctx, ports: @ports),
             manifest: @manifest,
             audit_log: @audit_log,
             schema_for: ->(name) { @schemas.fetch_or_nil(name) },

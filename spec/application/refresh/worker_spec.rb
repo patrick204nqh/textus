@@ -21,6 +21,10 @@ RSpec.describe Textus::Application::Refresh::Worker do
       def rpc_callable(event, name)
         @delegate.rpc_callable(event, name)
       end
+
+      def error_log
+        @delegate.error_log
+      end
     end.new(real_bus)
   end
 

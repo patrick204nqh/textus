@@ -42,7 +42,7 @@ module Textus
         def index_filename = nil
 
         PublishContext = Struct.new(
-          :repo_root, :manifest, :file_store, :root, :store, :ctx, :bus, :hook_context,
+          :repo_root, :manifest, :file_store, :root, :ports, :boot, :ctx, :bus, :hook_context,
           :reader, :emit, # callables: reader.call(key) → envelope; emit.call(event, **payload)
           keyword_init: true
         )
