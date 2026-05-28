@@ -74,7 +74,7 @@ module Textus
           promote = rules.promote
           return if promote.nil? || promote.requires.empty?
 
-          policy = Textus::Application::Policy::Promotion.from_names(promote.requires)
+          policy = Textus::Domain::Policy::Promotion.from_names(promote.requires)
           result = policy.evaluate(
             entry: env, schemas: @schemas, manifest: @manifest, role: @ctx.role,
           )

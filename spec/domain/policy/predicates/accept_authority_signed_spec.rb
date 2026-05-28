@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Application::Policy::Predicates::AcceptAuthoritySigned do
+RSpec.describe Textus::Domain::Policy::Predicates::AcceptAuthoritySigned do
   let(:policy) { instance_double(Textus::Manifest::Policy) }
   let(:manifest) { instance_double(Textus::Manifest, policy: policy) }
 

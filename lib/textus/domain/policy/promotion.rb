@@ -2,7 +2,7 @@ require_relative "predicates/schema_valid"
 require_relative "predicates/accept_authority_signed"
 
 module Textus
-  module Application
+  module Domain
     module Policy
       class Promotion
         Result = Struct.new(:ok?, :reasons, keyword_init: true)

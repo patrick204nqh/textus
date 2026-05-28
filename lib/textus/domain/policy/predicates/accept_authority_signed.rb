@@ -1,5 +1,5 @@
 module Textus
-  module Application
+  module Domain
     module Policy
       module Predicates
         # Promotion predicate: the role driving the promotion must have

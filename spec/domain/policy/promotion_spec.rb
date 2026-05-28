@@ -1,12 +1,12 @@
 require "spec_helper"
 
-RSpec.describe Textus::Application::Policy::Promotion do
+RSpec.describe Textus::Domain::Policy::Promotion do
   let(:always_true) do
-    instance_double(Textus::Application::Policy::Predicates::SchemaValid,
+    instance_double(Textus::Domain::Policy::Predicates::SchemaValid,
                     name: "schema_valid", call: true, reason: nil)
   end
   let(:always_false) do
-    instance_double(Textus::Application::Policy::Predicates::SchemaValid,
+    instance_double(Textus::Domain::Policy::Predicates::SchemaValid,
                     name: "schema_valid", call: false, reason: "missing field 'name'")
   end
 

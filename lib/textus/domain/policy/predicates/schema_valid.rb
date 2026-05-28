@@ -1,5 +1,5 @@
 module Textus
-  module Application
+  module Domain
     module Policy
       module Predicates
         class SchemaValid
