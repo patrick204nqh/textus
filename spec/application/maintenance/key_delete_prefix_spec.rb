@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Restructure::KeyDeletePrefix do
+RSpec.describe Textus::Application::Maintenance::KeyDeletePrefix do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 
@@ -26,7 +26,7 @@ RSpec.describe Textus::Application::Restructure::KeyDeletePrefix do
   let(:ops) { store.session(role: ctx.role) }
 
   it "previews keys to delete without touching files" do
-    plan = described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
+    plan = described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
       prefix: "working.notes", dry_run: true,
     )
     expect(plan.steps.map { |s| s["key"] }).to contain_exactly("working.notes.a", "working.notes.b")
@@ -34,7 +34,7 @@ RSpec.describe Textus::Application::Restructure::KeyDeletePrefix do
   end
 
   it "deletes when dry_run: false" do
-    described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
+    described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
       prefix: "working.notes", dry_run: false,
     )
     expect(Dir.glob(File.join(root, "zones/working/notes/*.md"))).to be_empty

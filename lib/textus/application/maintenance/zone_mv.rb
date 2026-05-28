@@ -2,7 +2,7 @@ require "yaml"
 
 module Textus
   module Application
-    module Restructure
+    module Maintenance
       # Rename a zone — rewrites the manifest's zones[] entry, rewrites
       # the `zone:` field on every entry under the old zone, and moves
       # every file from zones/<old>/ to zones/<new>/.
@@ -57,4 +57,4 @@ module Textus
   end
 end
 
-Textus::Application::UseCase.register(:zone_mv, Textus::Application::Restructure::ZoneMv, caps: :write)
+Textus::Application::UseCase.register(:zone_mv, Textus::Application::Maintenance::ZoneMv, caps: :write)

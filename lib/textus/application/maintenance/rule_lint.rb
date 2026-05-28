@@ -2,7 +2,7 @@ require "yaml"
 
 module Textus
   module Application
-    module Restructure
+    module Maintenance
       # Compare the live manifest's `rules:` block against a candidate
       # YAML string. Returns a Plan describing rule additions/removals/
       # changes. Does NOT write anything.
@@ -62,4 +62,4 @@ module Textus
   end
 end
 
-Textus::Application::UseCase.register(:rule_lint, Textus::Application::Restructure::RuleLint, caps: :read)
+Textus::Application::UseCase.register(:rule_lint, Textus::Application::Maintenance::RuleLint, caps: :read)

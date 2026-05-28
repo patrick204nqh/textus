@@ -1,19 +1,18 @@
 module Textus
   module Application
-    module Restructure
+    module Maintenance
       # Bulk-rename every leaf key under `from_prefix` to `to_prefix`.
-      # Reuses Session#mv for the per-entry work — emits one audit
-      # row per file moved.
+      # Calls Write::Mv directly for each entry — emits one audit row per file moved.
       module KeyMvPrefix
         def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps, operations: session).call(*, **)
+          Impl.new(ctx: ctx, caps: caps, session: session).call(*, **)
         end
 
         class Impl
-          def initialize(ctx:, caps:, operations:)
-            @ctx        = ctx
-            @caps       = caps
-            @operations = operations
+          def initialize(ctx:, caps:, session:)
+            @ctx     = ctx
+            @caps    = caps
+            @session = session
           end
 
           def call(from_prefix:, to_prefix:, dry_run: false)
@@ -32,7 +31,13 @@ module Textus
             plan = Plan.new(steps: steps, warnings: warnings)
             return plan if dry_run
 
-            steps.each { |s| @operations.mv(s["from"], s["to"], dry_run: false) }
+            steps.each do |s|
+              Textus::Application::Write::Mv.call(
+                s["from"], s["to"],
+                session: @session, ctx: @ctx, caps: @session.write_caps,
+                dry_run: false
+              )
+            end
             plan
           end
 
@@ -49,4 +54,4 @@ module Textus
   end
 end
 
-Textus::Application::UseCase.register(:key_mv_prefix, Textus::Application::Restructure::KeyMvPrefix, caps: :write)
+Textus::Application::UseCase.register(:key_mv_prefix, Textus::Application::Maintenance::KeyMvPrefix, caps: :write)

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::Session restructure surface" do
+RSpec.describe "Textus::Session maintenance surface" do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 

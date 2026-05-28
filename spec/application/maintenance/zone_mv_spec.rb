@@ -3,7 +3,7 @@ require "tmpdir"
 require "fileutils"
 require "yaml"
 
-RSpec.describe Textus::Application::Restructure::ZoneMv do
+RSpec.describe Textus::Application::Maintenance::ZoneMv do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 

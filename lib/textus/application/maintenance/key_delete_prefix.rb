@@ -1,17 +1,17 @@
 module Textus
   module Application
-    module Restructure
+    module Maintenance
       # Bulk-delete every leaf key under `prefix`.
       module KeyDeletePrefix
         def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps, operations: session).call(*, **)
+          Impl.new(ctx: ctx, caps: caps, session: session).call(*, **)
         end
 
         class Impl
-          def initialize(ctx:, caps:, operations:)
-            @ctx        = ctx
-            @caps       = caps
-            @operations = operations
+          def initialize(ctx:, caps:, session:)
+            @ctx     = ctx
+            @caps    = caps
+            @session = session
           end
 
           def call(prefix:, dry_run: false)
@@ -27,7 +27,12 @@ module Textus
             plan = Plan.new(steps: steps, warnings: warnings)
             return plan if dry_run
 
-            steps.each { |s| @operations.delete(s["key"]) }
+            steps.each do |s|
+              Textus::Application::Write::Delete.call(
+                s["key"],
+                session: @session, ctx: @ctx, caps: @session.write_caps,
+              )
+            end
             plan
           end
         end
@@ -36,4 +41,4 @@ module Textus
   end
 end
 
-Textus::Application::UseCase.register(:key_delete_prefix, Textus::Application::Restructure::KeyDeletePrefix, caps: :write)
+Textus::Application::UseCase.register(:key_delete_prefix, Textus::Application::Maintenance::KeyDeletePrefix, caps: :write)

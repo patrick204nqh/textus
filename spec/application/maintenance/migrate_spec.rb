@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Restructure::Migrate do
+RSpec.describe Textus::Application::Maintenance::Migrate do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 
@@ -31,7 +31,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    plan = described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
+    plan = described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
       plan_yaml: plan_yaml, dry_run: false,
     )
     expect(plan.steps.map { |s| s["op"] }).to include("mv")
@@ -44,7 +44,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
+    described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
       plan_yaml: plan_yaml, dry_run: true,
     )
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(true)
@@ -52,7 +52,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
 
   it "raises on unknown op" do
     expect do
-      described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
+      described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
         plan_yaml: "version: 1\noperations:\n  - { op: bogus }\n", dry_run: true,
       )
     end.to raise_error(Textus::Error, /unknown op/)
