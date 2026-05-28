@@ -9,6 +9,44 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.25.1 — 2026-05-28
+
+### Internal refactors
+
+- **ADR 0018**: `Manifest` is now a composition record over `Data`,
+  `Resolver`, `Policy`, `Rules`. Top-level methods like
+  `Manifest#permission_for` are deprecated; use
+  `manifest.policy.permission_for(zone)`. One-cycle bridge — shims
+  warn until 0.26.0.
+
+- **ADR 0016**: Application use cases take a single `ports:` kwarg
+  bundling six adapters + the store root. Hook DSL callables that
+  declare `|store:|` continue to work with a one-shot deprecation
+  warning per (event, hook_name); declare `|ports:|` to silence it.
+
+- **ADR 0017**: `Application::Writes::EnvelopeIO` split into
+  `EnvelopeReader` (parse) and `EnvelopeWriter` (put/delete/move
+  + audit). Every public `EnvelopeWriter` method now ends with an
+  audit-row append — the write-without-audit failure mode is gone.
+
+### Breaking (internal)
+
+- `Operations#store` accessor removed. There is no clean deprecation
+  shim because `Ports` cannot reconstruct a `Store`. External
+  callers should use `ops.ports.X` directly.
+
+- `Textus::Manifest::Entry::Base::PublishContext` struct shape
+  changed: `:store` removed, `:ports` + `:boot` added. Affects
+  third-party plugins that build custom derived entries.
+
+- `transform_context` passed to `transform_rows` RPC callables is
+  now an `Application::Ports`, not a `Store`. Transforms that treat
+  it as opaque continue to work; transforms that reach `.x` need
+  updates.
+
+No CLI verb signatures changed. No wire envelopes changed.
+Protocol remains `textus/3`.
+
 ## 0.25.0 — 2026-05-28
 
 ### Added (additive — backward-compatible pulse fields)
