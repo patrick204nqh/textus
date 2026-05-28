@@ -7,6 +7,8 @@
 
 A context store for codebases that humans and AI agents both have to read and write. Dotted keys, schema-validated entries, role-gated writes, byte-copy publish, an audit log of every change. Built so an agent landing in your repo can run one command (`textus boot`) and know what to read, what to write, and what's off-limits.
 
+Use textus if you're shipping an AI agent or Claude/MCP plugin that needs durable, role-gated project memory across sessions — or if you want a deterministic file-based store rather than a vector-backed memory service.
+
 Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
 
 ## Versioning
@@ -14,7 +16,7 @@ Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
-- **Gem version:** semver, currently `0.18.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, decoupled from the protocol string. Internal refactors bump the gem; only wire-format changes bump the protocol. Current version is shown by the gem badge above.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
