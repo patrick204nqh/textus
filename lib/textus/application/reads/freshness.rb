@@ -13,6 +13,7 @@ module Textus
           @manifest   = manifest
           @file_store = file_store
           @evaluator  = evaluator
+          @cache      = {}
         end
 
         # Returns the soonest `next_due_at` across all entries with a refresh
@@ -49,7 +50,8 @@ module Textus
           return base_row(mentry, last).merge(status: :no_policy) if refresh.nil?
 
           fp = refresh.to_freshness_policy
-          verdict = @evaluator.call(fp, envelope, now: @ctx.now)
+          cache_key = [mentry.key, last]
+          verdict = (@cache[cache_key] ||= @evaluator.call(fp, envelope, now: @ctx.now))
           status = if verdict.fresh? then :fresh
                    elsif last.nil?   then :never_refreshed
                    else                   :stale
