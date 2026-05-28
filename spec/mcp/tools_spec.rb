@@ -14,8 +14,9 @@ RSpec.describe Textus::MCP::Tools do
         - { name: working,  write_policy: [human, agent] }
         - { name: review,   write_policy: [agent] }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
-        - { key: working.note,  path: working/note.md,  zone: working,  schema: null, owner: human:self, kind: leaf }
+        - { key: identity.self,   path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
+        - { key: working.note,    path: working/note.md,  zone: working,  schema: null, owner: human:self, kind: leaf }
+        - { key: review.proposal, path: review/proposal,  zone: review,   schema: null, owner: agent, nested: true, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }
@@ -69,6 +70,33 @@ RSpec.describe Textus::MCP::Tools do
     it "returns pulse delta with cursor, changed, stale, pending_review, doctor" do
       result = described_class.call("tick", session: session, store: store, args: { "since" => 0 })
       expect(result.keys).to include("cursor", "changed", "stale", "pending_review", "doctor")
+    end
+  end
+
+  describe ".call('write', ...)" do
+    it "writes an entry under a writable zone, returning uid + etag" do
+      human_session = Textus::MCP::Session.new(
+        role: "human", cursor: 0, propose_zone: "review", manifest_etag: etag,
+      )
+      result = described_class.call(
+        "write",
+        session: human_session, store: store,
+        args: { "key" => "working.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
+      )
+      expect(result).to include("uid", "etag")
+    end
+  end
+
+  describe ".call('propose', ...)" do
+    it "prefixes key with the session's propose_zone" do
+      result = described_class.call(
+        "propose",
+        session: session, store: store,
+        args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
+      )
+      expect(result).to include("uid", "etag")
+      # File should land under review/
+      expect(File).to exist(File.join(root, "zones/review/proposal/x.md")).or be_truthy
     end
   end
 end

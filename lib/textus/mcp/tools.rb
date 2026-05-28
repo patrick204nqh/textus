@@ -37,6 +37,32 @@ module Textus
           since = (args["since"] || s.cursor).to_i
           ops_for(s, store).pulse(since: since)
         end,
+
+        "write" => lambda do |s, store, args|
+          key = args.fetch("key") { raise ToolError.new("write: missing key") }
+          env = ops_for(s, store).put(
+            key,
+            meta: args["meta"] || {},
+            body: args["body"],
+            content: args["content"],
+            if_etag: args["if_etag"],
+          )
+          { "uid" => env.uid, "etag" => env.etag }
+        end,
+
+        "propose" => lambda do |s, store, args|
+          raise ToolError.new("propose: session has no propose_zone") unless s.propose_zone
+
+          rel = args.fetch("key") { raise ToolError.new("propose: missing key") }
+          target = "#{s.propose_zone}.#{rel}"
+          env = ops_for(s, store).put(
+            target,
+            meta: args["meta"] || {},
+            body: args["body"],
+            content: args["content"],
+          )
+          { "uid" => env.uid, "etag" => env.etag, "key" => target }
+        end,
       }.freeze
     end
   end
