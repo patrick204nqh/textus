@@ -12,6 +12,7 @@ loader.inflector.inflect(
   "hook_dsl_scanner" => "HookDSLScanner",
   "envelope_io" => "EnvelopeIO",
   "mcp" => "MCP",
+  "mcp_serve" => "MCPServe",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp.rb", __dir__))
