@@ -56,7 +56,7 @@ module Textus
     def doctor(...) = Textus::Doctor.run(@store, ...)
 
     def refresh_orchestrator
-      @refresh_orchestrator ||= Application::Refresh::Orchestrator.new(
+      @refresh_orchestrator ||= Application::Write::RefreshOrchestrator.new(
         worker: refresh_worker,
         store_root: @write_caps.root,
         events: @write_caps.events,
@@ -66,7 +66,7 @@ module Textus
     end
 
     def refresh_worker
-      @refresh_worker ||= Application::Refresh::Worker::Impl.new(
+      @refresh_worker ||= Application::Write::RefreshWorker::Impl.new(
         ctx: @ctx, caps: @write_caps,
         rpc: rpc, writer: envelope_writer, hook_context: hook_context
       )

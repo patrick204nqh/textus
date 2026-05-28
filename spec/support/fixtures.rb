@@ -58,7 +58,7 @@ module TextusSpecHelpers
 
   def build_put(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Put::Impl.new(
+    Textus::Application::Write::Put::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -66,7 +66,7 @@ module TextusSpecHelpers
 
   def build_delete(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Delete::Impl.new(
+    Textus::Application::Write::Delete::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -74,7 +74,7 @@ module TextusSpecHelpers
 
   def build_mv(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Mv::Impl.new(
+    Textus::Application::Write::Mv::Impl.new(
       ctx: p[:ctx], caps: p[:caps],
       reader: p[:reader], writer: p[:writer],
       hook_context: p[:hook_context]
@@ -83,7 +83,7 @@ module TextusSpecHelpers
 
   def build_accept(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Accept::Impl.new(
+    Textus::Application::Write::Accept::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -91,7 +91,7 @@ module TextusSpecHelpers
 
   def build_reject(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Reject::Impl.new(
+    Textus::Application::Write::Reject::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -99,7 +99,7 @@ module TextusSpecHelpers
 
   def build_worker(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Refresh::Worker::Impl.new(
+    Textus::Application::Write::RefreshWorker::Impl.new(
       ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -107,7 +107,7 @@ module TextusSpecHelpers
 
   def build_publish(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Publish::Impl.new(
+    Textus::Application::Write::Publish::Impl.new(
       ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
       boot: -> { Textus::Boot.run(store) },
       hook_context: p[:hook_context]

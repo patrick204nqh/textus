@@ -12,7 +12,7 @@ module Textus
     #
     # NOTE (0.16 scope): lifecycle audit rows for verb: "put" / "delete" /
     # "rename" are still written directly by Store::Writer and
-    # Application::Writes::Mv. Moving those into this subscriber requires
+    # Application::Write::Mv. Moving those into this subscriber requires
     # event payloads to carry etag_before/etag_after across many write paths;
     # that is properly a 0.18 port-extraction concern.
     class AuditSubscriber

@@ -15,7 +15,7 @@ module Textus
 
         def call(store)
           ops = operations_for(store)
-          since_time = since && Textus::Application::Reads::Audit.parse_since(since, now: ops.ctx.now)
+          since_time = since && Textus::Application::Read::Audit.parse_since(since, now: ops.ctx.now)
           rows = ops.audit(
             key: key_filter,
             zone: zone,

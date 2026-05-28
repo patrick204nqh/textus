@@ -19,7 +19,7 @@ module Textus
             if fetch_name
               result =
                 begin
-                  Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
+                  Timeout.timeout(Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
                     store.rpc.invoke(:resolve_intake, fetch_name,
                                      caps: nil,
                                      config: { "bytes" => raw },
@@ -27,7 +27,7 @@ module Textus
                   end
                 rescue Timeout::Error
                   raise UsageError.new(
-                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS}s timeout",
+                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
                   )
                 end
               basename = key.split(".").last

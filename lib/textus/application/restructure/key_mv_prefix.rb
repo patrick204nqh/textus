@@ -39,9 +39,9 @@ module Textus
           private
 
           def list_leaves_under(prefix)
-            Reads::List::Impl.new(caps: @caps)
-                             .call(prefix: prefix)
-                             .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
+            Read::List::Impl.new(caps: @caps)
+                            .call(prefix: prefix)
+                            .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
           end
         end
       end
