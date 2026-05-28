@@ -32,6 +32,11 @@ module Textus
           env = ops_for(s, store).get(key)
           env.to_h_for_wire
         end,
+
+        "tick" => lambda do |s, store, args|
+          since = (args["since"] || s.cursor).to_i
+          ops_for(s, store).pulse(since: since)
+        end,
       }.freeze
     end
   end

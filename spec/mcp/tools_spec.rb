@@ -64,4 +64,11 @@ RSpec.describe Textus::MCP::Tools do
       end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
     end
   end
+
+  describe ".call('tick', ...)" do
+    it "returns pulse delta with cursor, changed, stale, pending_review, doctor" do
+      result = described_class.call("tick", session: session, store: store, args: { "since" => 0 })
+      expect(result.keys).to include("cursor", "changed", "stale", "pending_review", "doctor")
+    end
+  end
 end
