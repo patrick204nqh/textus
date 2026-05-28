@@ -8,7 +8,7 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil)
-        @manifest.entries
+        @manifest.data.entries
                  .select { |m| entry_matches?(m, prefix: prefix, zone: zone) }
                  .flat_map { |m| @generator_check.rows_for(m) + @intake_check.rows_for(m) }
       end

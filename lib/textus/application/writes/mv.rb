@@ -27,8 +27,8 @@ module Textus
         private
 
         def prepare(old_key, new_key)
-          @manifest.validate_key!(old_key)
-          @manifest.validate_key!(new_key)
+          Textus::Manifest::Data.validate_key!(old_key)
+          Textus::Manifest::Data.validate_key!(new_key)
           raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
           old_res = @manifest.resolver.resolve(old_key)

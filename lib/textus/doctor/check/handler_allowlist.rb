@@ -7,12 +7,12 @@ module Textus
       class HandlerAllowlist < Check
         def call
           out = []
-          store.manifest.entries.each do |mentry|
+          store.manifest.data.entries.each do |mentry|
             next unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
             handler = mentry.handler
 
-            allow = store.manifest.rules_for(mentry.key).handler_allowlist
+            allow = store.manifest.rules.for(mentry.key).handler_allowlist
             next if allow.nil?
             next if allow.allows?(handler)
 

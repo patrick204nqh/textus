@@ -54,7 +54,7 @@ module Textus
         def review_keys
           # List constructor takes only manifest:; returns hashes with string keys.
           # Guard: zones is a Hash keyed by name string.
-          return [] unless @manifest.zones.key?("review")
+          return [] unless @manifest.data.zones.key?("review")
 
           rows = Reads::List.new(manifest: @manifest).call(zone: "review")
           rows.map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }

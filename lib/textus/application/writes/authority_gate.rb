@@ -7,9 +7,9 @@ module Textus
       # reads on its own line.
       module AuthorityGate
         def assert_accept_authority!(verb)
-          return if @manifest.role_kind(@ctx.role) == :accept_authority
+          return if @manifest.policy.role_kind(@ctx.role) == :accept_authority
 
-          authority = @manifest.roles_with_kind(:accept_authority).first
+          authority = @manifest.policy.roles_with_kind(:accept_authority).first
           if authority.nil?
             raise ProposalError.new(
               "no role with accept_authority kind is declared in this manifest; #{verb} is disabled",

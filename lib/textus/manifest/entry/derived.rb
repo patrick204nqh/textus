@@ -2,8 +2,8 @@ module Textus
   class Manifest
     class Entry
       class Derived < Base
-        Projection = Data.define(:select, :pluck, :sort_by, :transform)
-        External   = Data.define(:sources, :runner)
+        Projection = ::Data.define(:select, :pluck, :sort_by, :transform)
+        External   = ::Data.define(:sources, :runner)
 
         attr_reader :source, :template, :inject_boot, :events
 

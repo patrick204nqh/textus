@@ -86,7 +86,7 @@ module Textus
         bytes = klass.new(template_loader: template_loader).call(mentry: mentry, data: data)
 
         # 3. Write (idempotent: skip if only generated_at would differ)
-        target_path = Key::Path.resolve(manifest, mentry)
+        target_path = Key::Path.resolve(manifest.data, mentry)
         FileUtils.mkdir_p(File.dirname(target_path))
         write_if_changed(target_path, bytes, mentry.format)
 

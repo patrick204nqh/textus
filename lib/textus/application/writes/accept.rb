@@ -69,7 +69,7 @@ module Textus
         end
 
         def evaluate_promotion!(env, target_key)
-          rules = @manifest.rules_for(target_key)
+          rules = @manifest.rules.for(target_key)
           promote = rules.promote
           return if promote.nil? || promote.requires.empty?
 

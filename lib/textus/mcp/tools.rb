@@ -81,7 +81,7 @@ module Textus
 
         "rules" => lambda do |_s, store, args|
           key = args.fetch("key") { raise ToolError.new("rules: missing key") }
-          set = store.manifest.rules_for(key)
+          set = store.manifest.rules.for(key)
           {
             "refresh" => set.refresh&.to_h,
             "promote" => set.respond_to?(:promote) ? set.promote&.to_h : nil,

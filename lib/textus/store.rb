@@ -35,8 +35,8 @@ module Textus
       @file_store = Infra::Storage::FileStore.new
       @audit_log  = Infra::AuditLog.new(
         @root,
-        max_size: @manifest.audit_config[:max_size],
-        keep: @manifest.audit_config[:keep],
+        max_size: @manifest.data.audit_config[:max_size],
+        keep: @manifest.data.audit_config[:keep],
       )
       @bus = Hooks::Bus.new
       Infra::AuditSubscriber.new(@audit_log).attach(@bus)

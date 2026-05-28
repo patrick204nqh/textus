@@ -26,7 +26,7 @@ module Textus
         "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
       end,
       proposer: lambda do |name, manifest|
-        authority = manifest.roles_with_kind(:accept_authority).first || "accept_authority"
+        authority = manifest.policy.roles_with_kind(:accept_authority).first || "accept_authority"
         "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
           "the #{authority} role runs 'textus accept' to apply"
       end,
@@ -39,7 +39,7 @@ module Textus
     }.freeze
 
     def self.write_flows_for(manifest)
-      manifest.role_mapping.each_with_object({}) do |(name, kind), acc|
+      manifest.policy.role_mapping.each_with_object({}) do |(name, kind), acc|
         tmpl = WRITE_FLOW_TEMPLATES[kind]
         acc[name] = tmpl.call(name, manifest) if tmpl
       end
@@ -121,10 +121,10 @@ module Textus
     ].freeze
 
     def self.agent_quickstart(manifest, store)
-      proposer_roles = manifest.roles_with_kind(:proposer)
+      proposer_roles = manifest.policy.roles_with_kind(:proposer)
       agent_role = proposer_roles.first
 
-      writable_zones = manifest.zones.each_with_object([]) do |(zname, writers), acc|
+      writable_zones = manifest.data.zones.each_with_object([]) do |(zname, writers), acc|
         acc << zname if agent_role && writers.include?(agent_role)
       end
 
@@ -144,7 +144,7 @@ module Textus
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "default 'human'",
-          "roles" => manifest.role_mapping.keys,
+          "roles" => manifest.policy.role_mapping.keys,
           "ref" => "SPEC.md §5",
         },
       )
@@ -166,7 +166,7 @@ module Textus
     end
 
     def self.zones_for(store)
-      store.manifest.zones.map do |name, writers|
+      store.manifest.data.zones.map do |name, writers|
         row = { "name" => name, "writers" => Array(writers) }
         purpose = ZONE_PURPOSES[name]
         row["purpose"] = purpose if purpose
@@ -175,8 +175,8 @@ module Textus
     end
 
     def self.entries_for(store)
-      store.manifest.entries.map do |e|
-        derived = store.manifest.zone_kinds(e.zone).include?(:generator)
+      store.manifest.data.entries.map do |e|
+        derived = store.manifest.policy.zone_kinds(e.zone).include?(:generator)
         {
           "key" => e.key,
           "zone" => e.zone,

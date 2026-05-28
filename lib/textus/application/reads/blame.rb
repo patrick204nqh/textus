@@ -30,7 +30,7 @@ module Textus
           # Nested entries resolve to a file under the entry path; leaf entries
           # already have a fully-resolved path. Either way `path` is what git
           # needs to know about.
-          path || Textus::Key::Path.resolve(@manifest, mentry)
+          path || Textus::Key::Path.resolve(@manifest.data, mentry)
         rescue Textus::Error
           nil
         end

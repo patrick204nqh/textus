@@ -1,7 +1,7 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = Data.define(:refresh, :handler_allowlist, :promote, :retention)
+      RuleSet = ::Data.define(:refresh, :handler_allowlist, :promote, :retention)
       EMPTY_SET = RuleSet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
 
       def self.parse(raw)

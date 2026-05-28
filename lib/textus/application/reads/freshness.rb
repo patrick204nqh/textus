@@ -30,7 +30,7 @@ module Textus
 
         def call(prefix: nil, zone: nil)
           rows = []
-          @manifest.entries.each do |mentry|
+          @manifest.data.entries.each do |mentry|
             next if prefix && !mentry.key.start_with?(prefix)
             next if zone && mentry.zone != zone
 
@@ -42,7 +42,7 @@ module Textus
         private
 
         def row_for(mentry)
-          set = @manifest.rules_for(mentry.key)
+          set = @manifest.rules.for(mentry.key)
           refresh = set.refresh
           envelope = safe_get(mentry.key)
           last = envelope&.meta&.dig("last_refreshed_at")

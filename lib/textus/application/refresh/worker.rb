@@ -31,7 +31,7 @@ module Textus
         private
 
         def fetch_timeout_for(key)
-          rule = @manifest.rules_for(key)
+          rule = @manifest.rules.for(key)
           rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
         end
 

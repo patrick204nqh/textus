@@ -11,7 +11,7 @@ module Textus
         def call
           out = []
           rules = store.manifest.rules
-          store.manifest.entries.each do |mentry|
+          store.manifest.data.entries.each do |mentry|
             matches = rules.explain(mentry.key)
             next if matches.length < 2
 

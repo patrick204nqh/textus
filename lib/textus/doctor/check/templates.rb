@@ -4,7 +4,7 @@ module Textus
       class Templates < Check
         def call
           out = []
-          store.manifest.entries.each do |entry|
+          store.manifest.data.entries.each do |entry|
             template = entry.respond_to?(:template) ? entry.template : nil
             next if template.nil?
 

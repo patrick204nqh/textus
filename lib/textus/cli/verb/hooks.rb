@@ -31,7 +31,7 @@ module Textus
               end
             end
           end
-          store.manifest.entries.each do |e|
+          store.manifest.data.entries.each do |e|
             (e.respond_to?(:events) ? e.events : {}).each do |evt, defs|
               Array(defs).each do |defn|
                 next unless defn["exec"]

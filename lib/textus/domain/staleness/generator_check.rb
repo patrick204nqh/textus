@@ -19,7 +19,7 @@ module Textus
           src = mentry.source
           return [] unless src.is_a?(Textus::Manifest::Entry::Derived::External)
 
-          path = Textus::Key::Path.resolve(@manifest, mentry)
+          path = Textus::Key::Path.resolve(@manifest.data, mentry)
           return [stale_row(mentry, path, "derived entry has never been generated")] unless File.exist?(path)
 
           parsed = Entry.for_format(mentry.format).parse(File.binread(path), path: path)
@@ -63,7 +63,7 @@ module Textus
         end
 
         def check_filesystem_source(src, gen_time)
-          abs = File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.root), src)
+          abs = File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.data.root), src)
           if File.directory?(abs)
             Dir.glob(File.join(abs, "**", "*")).each do |fp|
               next unless File.file?(fp)

@@ -13,10 +13,10 @@ module Textus
         def rows_for(mentry)
           return [] unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
-          ttl = @manifest.rules_for(mentry.key).refresh&.ttl_seconds
+          ttl = @manifest.rules.for(mentry.key).refresh&.ttl_seconds
           return [] unless ttl
 
-          path = Textus::Key::Path.resolve(@manifest, mentry)
+          path = Textus::Key::Path.resolve(@manifest.data, mentry)
           return [row(mentry, path, "never refreshed")] unless File.exist?(path)
 
           meta = Entry.for_format(mentry.format).parse(File.binread(path), path: path)["_meta"]

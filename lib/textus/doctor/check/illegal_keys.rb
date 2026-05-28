@@ -4,7 +4,7 @@ module Textus
       class IllegalKeys < Check
         def call
           out = []
-          store.manifest.entries.each do |entry|
+          store.manifest.data.entries.each do |entry|
             next unless entry.nested?
 
             base = File.join(store.root, "zones", entry.path)

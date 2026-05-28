@@ -21,7 +21,7 @@ module Textus
           return nil if envelope.nil?
           return envelope unless envelope.freshness&.stale
 
-          policy_set = @manifest.rules_for(key)
+          policy_set = @manifest.rules.for(key)
           refresh_policy = policy_set.refresh
           return envelope if refresh_policy.nil?
 

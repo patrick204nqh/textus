@@ -25,7 +25,7 @@ module Textus
           leaves = []
           context = build_context
 
-          @manifest.entries.each do |mentry|
+          @manifest.data.entries.each do |mentry|
             next if prefix && !entry_matches_prefix?(mentry, prefix)
 
             result = mentry.publish_via(context, prefix: prefix)

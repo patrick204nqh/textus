@@ -6,7 +6,7 @@ RSpec.describe Textus::Manifest::Resolver do
   include_context "textus_store_fixture"
 
   let(:manifest) { Textus::Manifest.load(root) }
-  let(:resolver) { described_class.new(manifest) }
+  let(:resolver) { described_class.new(manifest.data) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))

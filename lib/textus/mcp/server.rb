@@ -50,10 +50,10 @@ module Textus
       end
 
       def handle_initialize(rid, _params)
-        proposer = @store.manifest.roles_with_kind(:proposer).first
+        proposer = @store.manifest.policy.roles_with_kind(:proposer).first
         propose_zone = nil
         if proposer
-          @store.manifest.zones.each do |zname, writers|
+          @store.manifest.data.zones.each do |zname, writers|
             if writers.include?(proposer) && zname.include?("review")
               propose_zone = zname
               break

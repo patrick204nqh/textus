@@ -14,12 +14,12 @@ module Textus
 
         def call(from:, to:, dry_run: false)
           raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
-          raise UsageError.new("zone '#{from}' not declared") unless @store.manifest.zones.key?(from)
+          raise UsageError.new("zone '#{from}' not declared") unless @store.manifest.data.zones.key?(from)
 
           dest_dir = File.join(@store.root, "zones", to)
           raise UsageError.new("destination 'zones/#{to}' already exists") if File.exist?(dest_dir)
 
-          affected_keys = @store.manifest.entries.select { |e| e.zone == from }.map(&:key)
+          affected_keys = @store.manifest.data.entries.select { |e| e.zone == from }.map(&:key)
 
           steps  = [{ "op" => "rename_zone", "from" => from, "to" => to }]
           steps += affected_keys.map { |k| { "op" => "mv", "from" => k, "to" => "#{to}#{k[from.length..]}" } }

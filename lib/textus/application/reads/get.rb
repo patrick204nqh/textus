@@ -18,7 +18,7 @@ module Textus
           envelope = read_raw_envelope(key)
           return nil if envelope.nil?
 
-          policy_set = @manifest.rules_for(key)
+          policy_set = @manifest.rules.for(key)
           refresh_policy = policy_set.refresh
           return annotate_fresh(envelope) if refresh_policy.nil?
 
