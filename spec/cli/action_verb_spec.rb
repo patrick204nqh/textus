@@ -20,17 +20,16 @@ RSpec.describe "textus action verb" do
     YAML
   end
 
-  it "invokes the named action with parsed args and lets it write via store.put" do # rubocop:disable RSpec/ExampleLength
+  it "invokes the named action with parsed args and returns ok" do
     Dir.mktmpdir do |dir|
       root = File.join(dir, ".textus")
       Textus::Init.run(root)
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :sync_demo) do |store:, config:, args:|
-            Textus::Operations.for(store, role: "human").put(
-              "working.demo", meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok",
-            )
+          reg.on(:resolve_intake, :sync_demo) do |caps:, config:, args:|
+            _ = caps
+            { _meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok" }
           end
         end
       RUBY
@@ -46,10 +45,6 @@ RSpec.describe "textus action verb" do
       payload = JSON.parse(stdout.string.lines.last)
       expect(payload["action"]).to eq("sync_demo")
       expect(payload["ok"]).to be true
-
-      store = Textus::Store.new(root)
-      env = Textus::Operations.for(store).get("working.demo")
-      expect(env.meta["who"]).to eq("patrick")
     end
   end
 
@@ -73,7 +68,7 @@ RSpec.describe "textus action verb" do
       Textus::Init.run(root)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :slow) { |store:, config:, args:| sleep 5 }
+          reg.on(:resolve_intake, :slow) { |caps:, config:, args:| sleep 5 }
         end
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original

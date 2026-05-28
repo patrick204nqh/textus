@@ -24,7 +24,6 @@ RSpec.describe Textus::Application::Writes::Put do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = test_ctx(role: "runner")
-      Textus::Infra::EventBus.new(bus: store.bus)
 
       envelope = build_put(store, ctx).call(
         "working.foo",
@@ -41,7 +40,6 @@ RSpec.describe Textus::Application::Writes::Put do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = test_ctx(role: "runner")
-      Textus::Infra::EventBus.new(bus: store.bus)
 
       expect do
         build_put(store, ctx).call("identity.bar", meta: {}, body: "x")
@@ -54,7 +52,7 @@ RSpec.describe Textus::Application::Writes::Put do
       store = build_store(File.join(root, ".textus"))
       ctx = test_ctx(role: "runner", correlation_id: "corr-1")
       events = []
-      store.bus.register(:entry_put, :capture) do |ctx:, key:, **|
+      store.events.register(:entry_put, :capture) do |ctx:, key:, **|
         events << [:entry_put, key, ctx.correlation_id]
       end
 

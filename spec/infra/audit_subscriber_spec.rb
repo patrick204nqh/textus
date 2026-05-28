@@ -7,7 +7,8 @@ require "tmpdir"
 RSpec.describe Textus::Infra::AuditSubscriber do
   let(:tmpdir)    { Dir.mktmpdir }
   let(:audit_log) { Textus::Infra::AuditLog.new(tmpdir) }
-  let(:bus)       { Textus::Hooks::Bus.new }
+  let(:bus)       { Textus::Hooks::EventBus.new }
+  let(:ctx)       { double("ctx") } # rubocop:disable RSpec/VerifiedDoubles
 
   after { FileUtils.remove_entry(tmpdir) }
 
@@ -24,7 +25,7 @@ RSpec.describe Textus::Infra::AuditSubscriber do
   it "appends an event_error row when a user hook raises" do
     described_class.new(audit_log).attach(bus)
     bus.register(:entry_put, :boom) { |**| raise "bang" }
-    bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
+    bus.publish(:entry_put, key: "k", envelope: {}, ctx: ctx)
 
     rows = read_rows
     expect(rows.size).to eq(1)
@@ -46,9 +47,9 @@ RSpec.describe Textus::Infra::AuditSubscriber do
   it "appends an event_error row when a hook times out" do
     described_class.new(audit_log).attach(bus)
     # Override the deadline so the test runs fast.
-    stub_const("Textus::Hooks::Bus::HOOK_TIMEOUT_SECONDS", 0.05)
+    stub_const("Textus::Hooks::EventBus::HOOK_TIMEOUT_SECONDS", 0.05)
     bus.register(:entry_put, :slow) { |**| sleep 1 }
-    bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
+    bus.publish(:entry_put, key: "k", envelope: {}, ctx: ctx)
 
     row = read_rows.first
     expect(row).to include(
@@ -60,13 +61,13 @@ RSpec.describe Textus::Infra::AuditSubscriber do
       "event" => "entry_put",
       "hook" => "slow",
     )
-    expect(row.dig("extras", "error")).to start_with("Textus::Hooks::Bus::HookTimeout:")
+    expect(row.dig("extras", "error")).to start_with("Textus::Hooks::EventBus::HookTimeout:")
   end
 
   it "matches the canonical row format (key ordering and field set)" do
     described_class.new(audit_log).attach(bus)
     bus.register(:entry_put, :boom) { |**| raise "bang" }
-    bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
+    bus.publish(:entry_put, key: "k", envelope: {}, ctx: ctx)
 
     line = File.read(audit_path).lines.first.chomp
     parsed = JSON.parse(line)
@@ -76,7 +77,7 @@ RSpec.describe Textus::Infra::AuditSubscriber do
   it "writes nothing when a hook succeeds" do
     described_class.new(audit_log).attach(bus)
     bus.register(:entry_put, :ok) { |**| :fine }
-    bus.publish(:entry_put, key: "k", envelope: {}, store: nil)
+    bus.publish(:entry_put, key: "k", envelope: {}, ctx: ctx)
 
     expect(read_rows).to eq([])
   end
@@ -90,6 +91,6 @@ RSpec.describe Textus::Infra::AuditSubscriber do
     # Subscriber wraps sentinel but is never triggered on success path.
     described_class.new(sentinel).attach(bus)
     bus.register(:entry_put, :ok) { |**| :fine }
-    expect { bus.publish(:entry_put, key: "k", envelope: {}, store: nil) }.not_to raise_error
+    expect { bus.publish(:entry_put, key: "k", envelope: {}, ctx: ctx) }.not_to raise_error
   end
 end

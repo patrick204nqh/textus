@@ -3,29 +3,24 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe Textus::Application::Refresh::Worker do
-  # A simple test bus that records published events. Delegates rpc_callable
-  # to the real bus so intake handlers registered at store boot are accessible.
-  def make_test_bus(real_bus)
+  # A simple test events object that records published events, delegating nothing.
+  def make_test_events
     Class.new do
       attr_reader :events
 
-      def initialize(delegate)
+      def initialize
         @events = []
-        @delegate = delegate
       end
 
       def publish(event, **payload)
         @events << [event, payload]
-      end
-
-      def rpc_callable(event, name)
-        @delegate.rpc_callable(event, name)
+        Textus::Hooks::FireReport.new(fired: [], errored: [], timed_out: [])
       end
 
       def error_log
-        @delegate.error_log
+        Textus::Hooks::ErrorLog.new
       end
-    end.new(real_bus)
+    end.new
   end
 
   def build_store(root, intake_body:)
@@ -54,13 +49,13 @@ RSpec.describe Textus::Application::Refresh::Worker do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+          reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
         end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      test_bus = make_test_bus(store.bus)
-      store.instance_variable_set(:@bus, test_bus)
+      test_events = make_test_events
+      store.instance_variable_set(:@events, test_events)
       ctx = test_ctx(role: "runner")
       worker = build_worker(store, ctx)
 
@@ -69,11 +64,11 @@ RSpec.describe Textus::Application::Refresh::Worker do
       expect(envelope).not_to be_nil
       expect(envelope.body).to eq("hello")
 
-      event_names = test_bus.events.map(&:first)
+      event_names = test_events.events.map(&:first)
       expect(event_names).to include(:refresh_started)
       expect(event_names).to include(:entry_refreshed)
 
-      refreshed_payload = test_bus.events.find { |name, _| name == :entry_refreshed }.last
+      refreshed_payload = test_events.events.find { |name, _| name == :entry_refreshed }.last
       expect(refreshed_payload[:change]).to eq(:created)
       expect(refreshed_payload[:key]).to eq("intake.item")
     end
@@ -83,13 +78,13 @@ RSpec.describe Textus::Application::Refresh::Worker do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) { |store:, config:, args:| raise "something went wrong" }
+          reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| raise "something went wrong" }
         end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      test_bus = make_test_bus(store.bus)
-      store.instance_variable_set(:@bus, test_bus)
+      test_events = make_test_events
+      store.instance_variable_set(:@events, test_events)
       ctx = test_ctx(role: "runner")
       worker = build_worker(store, ctx)
 
@@ -97,7 +92,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
         worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
-      failed_events = test_bus.events.filter { |ev| ev.first == :refresh_failed }
+      failed_events = test_events.events.filter { |ev| ev.first == :refresh_failed }
       expect(failed_events).not_to be_empty
       expect(failed_events.first.last[:key]).to eq("intake.item")
     end
@@ -124,7 +119,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
   it "honors a per-rule fetch_timeout_seconds override in the timeout error message" do
     Dir.mktmpdir do |root|
-      hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |store:, config:, args:| sleep 5 } }"
+      hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |caps:, config:, args:| sleep 5 } }"
       store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
       ctx = test_ctx(role: "runner")
       worker = build_worker(store, ctx)
@@ -192,7 +187,7 @@ RSpec.describe Textus::Application::Refresh::Worker do
 
       File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :capturing_intake) do |store:, config:, args:|
+          reg.on(:resolve_intake, :capturing_intake) do |caps:, config:, args:|
             Thread.current[:captured_args] = args
             { _meta: { "name" => "agent-eval" }, body: "x" }
           end

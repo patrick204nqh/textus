@@ -11,7 +11,7 @@ RSpec.describe Textus::Application::Writes::Mv do
       ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       events = []
-      store.bus.register(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
+      store.events.register(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
 
       ctx = test_ctx(role: "human")
       result = build_mv(store, ctx).call("working.notes.alpha",

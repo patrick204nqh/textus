@@ -24,7 +24,7 @@ RSpec.describe "Textus::Operations#refresh" do
     YAML
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
+        reg.on(:resolve_intake, :stub_fetch) do |caps:, config:, args:|
           {
             _meta: { "name" => "repos", "last_refreshed_at" => "2026-01-01T00:00:00Z" },
             body: config["word"]
@@ -51,7 +51,7 @@ RSpec.describe "Textus::Operations#refresh" do
   it "wraps intake in a timeout" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :stub_fetch) { |config:, store:, args:| sleep 100 }
+        reg.on(:resolve_intake, :stub_fetch) { |caps:, config:, args:| sleep 100 }
       end
     RUBY
     store = Textus::Store.new(root)
@@ -76,7 +76,7 @@ RSpec.describe "Textus::Operations#refresh" do
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
+          reg.on(:resolve_intake, :stub_fetch) do |caps:, config:, args:|
             { content: { "items" => [{ "id" => 1 }, { "id" => 2 }] } }
           end
         end
@@ -104,7 +104,7 @@ RSpec.describe "Textus::Operations#refresh" do
       YAML
       File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :stub_fetch) do |config:, store:, args:|
+          reg.on(:resolve_intake, :stub_fetch) do |caps:, config:, args:|
             { body: "raw bytes\\nline 2\\n" }
           end
         end
@@ -118,7 +118,7 @@ RSpec.describe "Textus::Operations#refresh" do
   it "wraps intake exceptions with the handler name" do
     File.write(File.join(root, "hooks/stub.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :stub_fetch) { |config:, store:, args:| raise "network down" }
+        reg.on(:resolve_intake, :stub_fetch) { |caps:, config:, args:| raise "network down" }
       end
     RUBY
     store = Textus::Store.new(root)

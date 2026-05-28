@@ -5,7 +5,7 @@ module Textus
         def initialize(ctx:, ports:, reader:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @reader       = reader
           @writer       = writer
           @authorizer   = authorizer
@@ -72,12 +72,12 @@ module Textus
         end
 
         def publish_renamed(old_key, new_key, envelope)
-          @bus.publish(:entry_renamed,
-                       ctx: @hook_context,
-                       key: new_key,
-                       from_key: old_key,
-                       to_key: new_key,
-                       envelope: envelope)
+          @events.publish(:entry_renamed,
+                          ctx: @hook_context,
+                          key: new_key,
+                          from_key: old_key,
+                          to_key: new_key,
+                          envelope: envelope)
         end
 
         def dry_run_result(old_key, new_key, old_res, new_res)

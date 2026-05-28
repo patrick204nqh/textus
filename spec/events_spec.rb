@@ -75,7 +75,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
           reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -96,7 +96,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
+          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
           reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -114,7 +114,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
           reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -130,7 +130,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |store:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
+          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
           reg.on(:entry_put, :p) { |key:, **| $log << [:entry_put, key] }
           reg.on(:entry_refreshed, :r) { |key:, change:, **| $log << [:entry_refreshed, key, change] }
         end

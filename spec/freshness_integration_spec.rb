@@ -43,7 +43,7 @@ RSpec.describe "Reader honors on_stale policy" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+          reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
             Thread.current[:refresh_count] ||= 0
             Thread.current[:refresh_count] += 1
             { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
@@ -66,7 +66,7 @@ RSpec.describe "Reader honors on_stale policy" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+          reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
             { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh body" }
           end
         end
@@ -116,7 +116,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       File.write(File.join(textus, "hooks", "slow_intake.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :slow_intake) do |store:, config:, args:|
+          reg.on(:resolve_intake, :slow_intake) do |caps:, config:, args:|
             sleep 0.5
             { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
           end
@@ -186,7 +186,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) do |store:, config:, args:|
+          reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
             { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
           end
         end
@@ -200,7 +200,7 @@ RSpec.describe "Reader honors on_stale policy" do
       end
 
       store = Textus::Store.new(textus)
-      Textus::Infra::EventBus.new(bus: store.bus)
+      Textus::Infra::EventBus.new(bus: store.events)
       ctx = Textus::Operations.for(store, role: "builder").ctx
       build_publish(store, ctx).call
 

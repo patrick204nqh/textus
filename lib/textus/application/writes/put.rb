@@ -5,7 +5,7 @@ module Textus
         def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
@@ -24,10 +24,10 @@ module Textus
             if_etag: if_etag,
           )
 
-          @bus.publish(:entry_put,
-                       ctx: @hook_context,
-                       key: key,
-                       envelope: envelope)
+          @events.publish(:entry_put,
+                          ctx: @hook_context,
+                          key: key,
+                          envelope: envelope)
 
           envelope
         end

@@ -28,7 +28,7 @@ RSpec.describe Textus::Application::Writes::Delete do
 
       ctx = test_ctx(role: "runner", correlation_id: "del-1")
       events = []
-      store.bus.register(:entry_deleted, :capture) do |ctx:, key:, **|
+      store.events.register(:entry_deleted, :capture) do |ctx:, key:, **|
         events << [:entry_deleted, key, ctx.correlation_id]
       end
 

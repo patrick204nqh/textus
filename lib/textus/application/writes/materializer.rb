@@ -13,7 +13,7 @@ module Textus
           @ports      = ports
           @manifest   = ports.manifest
           @file_store = ports.file_store
-          @bus        = ports.event_bus
+          @rpc        = ports.rpc_registry
           @root       = ports.root
           @boot       = boot
         end
@@ -28,7 +28,7 @@ module Textus
             manifest: @manifest,
             reader: reader.method(:call),
             lister: lister.method(:call),
-            transform_resolver: ->(name) { @bus.rpc_callable(:transform_rows, name) },
+            rpc: @rpc,
             template_loader: ->(name) { read_template(name) },
             transform_context: @ports,
             inject_boot: @boot,

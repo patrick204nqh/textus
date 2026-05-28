@@ -173,7 +173,7 @@ module Textus
       @orchestrator ||= Application::Refresh::Orchestrator.new(
         worker: refresh_worker,
         store_root: @ports.root,
-        bus: @ports.event_bus,
+        events: @ports.event_bus,
         ctx: @ctx,
         hook_context: hook_context,
       )

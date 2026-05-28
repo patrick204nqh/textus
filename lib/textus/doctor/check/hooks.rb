@@ -8,11 +8,12 @@ module Textus
           return out unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort
-            bus = Textus::Hooks::Bus.new
+            events = Textus::Hooks::EventBus.new
+            rpc    = Textus::Hooks::RpcRegistry.new
             Textus.drain_hook_blocks
             begin
               load(f)
-              Textus.drain_hook_blocks.each { |b| b.call(bus) }
+              Textus.drain_hook_blocks.each { |b| b.call(Textus::Hooks::Loader::Dsl.new(events: events, rpc: rpc)) }
             end
           rescue StandardError, ScriptError => e
             out << {

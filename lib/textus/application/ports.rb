@@ -10,10 +10,8 @@ module Textus
     # the slice it needs into local ivars.
     #
     # WHY two fields for one object: `event_bus` and `rpc_registry` are
-    # aliases of the same `Hooks::Bus` object today, but they're carried as
-    # separate fields against the ADR 0019 split of `Hooks::Bus` into two
-    # narrower classes. Collapsing them back into one field would re-couple
-    # callers to today's accident and un-do that forward compat.
+    # `event_bus` and `rpc_registry` are now separate objects after ADR 0019
+    # split of `Hooks::Bus` into `Hooks::EventBus` and `Hooks::RpcRegistry`.
     Ports = Data.define(
       :manifest, :file_store, :schemas, :audit_log,
       :event_bus, :rpc_registry, :root
@@ -24,8 +22,8 @@ module Textus
           file_store: store.file_store,
           schemas: store.schemas,
           audit_log: store.audit_log,
-          event_bus: store.bus,
-          rpc_registry: store.bus,
+          event_bus: store.events,
+          rpc_registry: store.rpc,
           root: store.root,
         )
       end

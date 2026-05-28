@@ -8,7 +8,7 @@ module Textus
         option :use_stdin, "--stdin"
         option :fetch_name, "--fetch=NAME"
 
-        def call(store) # rubocop:disable Metrics/AbcSize
+        def call(store)
           key = positional.shift or raise UsageError.new("put requires a key")
           raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
@@ -17,11 +17,13 @@ module Textus
           raw = @stdin.read
           payload =
             if fetch_name
-              callable = store.bus.rpc_callable(:resolve_intake, fetch_name)
               result =
                 begin
                   Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
-                    callable.call(config: { "bytes" => raw }, store: store, args: {})
+                    store.rpc.invoke(:resolve_intake, fetch_name,
+                                     caps: nil,
+                                     config: { "bytes" => raw },
+                                     args: {})
                   end
                 rescue Timeout::Error
                   raise UsageError.new(

@@ -11,14 +11,14 @@ module Textus
       #   semantics: pure read (`ops.get`) for materialization paths;
       #   `ops.get_or_refresh` if you want refresh-on-stale.
       # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
-      # `transform_resolver` — a callable `->(name) { callable_or_raise }`.
-      # `transform_context` — `Application::Context` handed to the transform reducer.
-      def initialize(reader:, spec:, lister:, transform_resolver:, transform_context:)
-        @reader             = reader
-        @spec               = spec || {}
-        @lister             = lister
-        @transform_resolver = transform_resolver
-        @transform_context  = transform_context
+      # `rpc` — a `Hooks::RpcRegistry` used to dispatch `transform_rows` callables.
+      # `transform_context` — capability object handed to transform reducers as `caps:`.
+      def initialize(reader:, spec:, lister:, rpc:, transform_context:)
+        @reader            = reader
+        @spec              = spec || {}
+        @lister            = lister
+        @rpc               = rpc
+        @transform_context = transform_context
         @limit = (@spec["limit"] || MAX_LIMIT).to_i
         raise InvalidProjection.new("limit #{@limit} exceeds max #{MAX_LIMIT}") if @limit > MAX_LIMIT
       end
@@ -49,21 +49,11 @@ module Textus
 
       def apply_reducer(rows)
         name = @spec["transform"] or return rows
-        callable = @transform_resolver.call(name)
         Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
-          # `@transform_context` is a `Textus::Application::Ports` value
-          # today; we pass it under both `ports:` (preferred) and `store:`
-          # (one-cycle legacy bridge). The dual-name plumbing lives in
-          # `Textus::Hooks::Bus.inject_ports_kwargs`.
-          kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
-            callable,
-            ports: @transform_context,
-            error_log: nil, # projection has no audit channel; deprecation is silent here
-            event: :transform_rows,
-            hook_name: name,
-            other: { rows: rows, config: @spec["transform_config"] || {} },
-          )
-          callable.call(**kwargs)
+          @rpc.invoke(:transform_rows, name,
+                      caps: @transform_context,
+                      rows: rows,
+                      config: @spec["transform_config"] || {})
         end
       rescue Timeout::Error
         raise UsageError.new("transform_rows '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")

@@ -11,7 +11,7 @@ module Textus
           @ports        = ports
           @manifest     = ports.manifest
           @writer       = writer
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -37,10 +37,10 @@ module Textus
             authorizer: @authorizer, hook_context: @hook_context
           ).call(pending_key, suppress_events: true)
 
-          @bus.publish(:proposal_rejected,
-                       ctx: @hook_context,
-                       key: pending_key,
-                       target_key: target_key)
+          @events.publish(:proposal_rejected,
+                          ctx: @hook_context,
+                          key: pending_key,
+                          target_key: target_key)
 
           { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
         end

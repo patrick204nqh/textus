@@ -27,11 +27,10 @@ module Textus
           end
 
           Role.resolve(flag: as_flag, env: ENV, root: store.root)
-          callable = store.bus.rpc_callable(:resolve_intake, name)
 
           begin
             Timeout.timeout(Textus::Application::Refresh::Worker::FETCH_TIMEOUT_SECONDS) do
-              callable.call(config: {}, store: store, args: args)
+              store.rpc.invoke(:resolve_intake, name, caps: nil, config: {}, args: args)
             end
           rescue Timeout::Error
             raise UsageError.new(

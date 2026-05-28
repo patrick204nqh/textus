@@ -11,7 +11,8 @@ module Textus
           @ports        = ports
           @manifest     = ports.manifest
           @writer       = writer
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
+          @rpc          = ports.rpc_registry
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -24,7 +25,7 @@ module Textus
           raise UsageError.new("no intake declared for '#{key}'") unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
           before_etag = File.exist?(path) ? Etag.for_file(path) : nil
-          result = fetch_with_bus(key, mentry, remaining)
+          result = fetch_with_events(key, mentry, remaining)
           persist_and_notify(key, mentry, result, before_etag)
         end
 
@@ -35,40 +36,31 @@ module Textus
           rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
         end
 
-        def fetch_with_bus(key, mentry, remaining)
-          callable = @bus.rpc_callable(:resolve_intake, mentry.handler)
-          @bus.publish(:refresh_started, ctx: @hook_context, key: key, mode: :sync)
-          call_intake(key, mentry, callable, remaining)
+        def fetch_with_events(key, mentry, remaining)
+          @events.publish(:refresh_started, ctx: @hook_context, key: key, mode: :sync)
+          call_intake(key, mentry, remaining)
         end
 
-        def call_intake(key, mentry, callable, remaining)
+        def call_intake(key, mentry, remaining)
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
-            kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
-              callable,
-              ports: @ports,
-              error_log: @bus.error_log,
-              event: :resolve_intake,
-              hook_name: mentry.handler,
-              other: {
-                config: mentry.config,
-                args: { trigger_key: key, leaf_segments: remaining || [] },
-              },
-            )
-            callable.call(**kwargs)
+            @rpc.invoke(:resolve_intake, mentry.handler,
+                        caps: @ports,
+                        config: mentry.config,
+                        args: { trigger_key: key, leaf_segments: remaining || [] })
           end
         rescue Timeout::Error
-          @bus.publish(:refresh_failed, ctx: @hook_context, key: key,
-                                        error_class: "Timeout::Error",
-                                        error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
+          @events.publish(:refresh_failed, ctx: @hook_context, key: key,
+                                           error_class: "Timeout::Error",
+                                           error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
           raise UsageError.new("intake '#{mentry.handler}' exceeded #{timeout}s timeout")
         rescue Textus::Error => e
-          @bus.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
-                                        error_message: e.message)
+          @events.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
+                                           error_message: e.message)
           raise
         rescue StandardError => e
-          @bus.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
-                                        error_message: e.message)
+          @events.publish(:refresh_failed, ctx: @hook_context, key: key, error_class: e.class.name,
+                                           error_message: e.message)
           raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
         end
 
@@ -83,7 +75,7 @@ module Textus
             ),
           )
           change = detect_change(before_etag, envelope)
-          @bus.publish(:entry_refreshed, ctx: @hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
+          @events.publish(:entry_refreshed, ctx: @hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
           envelope
         end
 

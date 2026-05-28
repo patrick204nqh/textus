@@ -54,16 +54,13 @@ module Textus
 
     def run_registered_checks(store)
       ports = Textus::Application::Ports.from_store(store)
-      store.bus.rpc_names(:validate).flat_map { |name| invoke_registered_check(store, ports, name) }
+      store.rpc.names(:validate).flat_map { |name| invoke_registered_check(store, ports, name) }
     end
 
     def invoke_registered_check(store, ports, name)
-      callable = store.bus.rpc_callable(:validate, name)
-      kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
-        callable, ports: ports, error_log: store.bus.error_log,
-                  event: :validate, hook_name: name
-      )
-      result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(**kwargs) }
+      result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
+        store.rpc.invoke(:validate, name, caps: ports)
+      end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 
       [fail_issue(name, code: "doctor_check.bad_return",

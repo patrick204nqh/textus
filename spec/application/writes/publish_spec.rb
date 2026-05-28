@@ -36,7 +36,7 @@ RSpec.describe Textus::Application::Writes::Publish do
 
     it "publishes each nested leaf to its publish_each target" do
       events = []
-      store.bus.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+      store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
       ctx = test_ctx(role: "builder")
       res = build_publish(store, ctx).call
@@ -126,8 +126,8 @@ RSpec.describe Textus::Application::Writes::Publish do
     it "fires :build_completed for derived entries and :file_published for all copies" do
       build_completed = []
       file_published  = []
-      store.bus.register(:build_completed, :cap1) { |key:, **| build_completed << key }
-      store.bus.register(:file_published,  :cap2) { |key:, **| file_published  << key }
+      store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
+      store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
 
       ctx = test_ctx(role: "builder")
       build_publish(store, ctx).call
@@ -162,7 +162,7 @@ RSpec.describe Textus::Application::Writes::Publish do
 
     it "fans out the intake body to each publish_to target" do
       events = []
-      store.bus.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+      store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
       ctx = test_ctx(role: "builder")
       res = build_publish(store, ctx).call

@@ -15,7 +15,7 @@ module Textus
           @ports        = ports
           @manifest     = ports.manifest
           @file_store   = ports.file_store
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @root         = ports.root
           @boot         = boot
           @hook_context = hook_context
@@ -52,10 +52,10 @@ module Textus
             ports: @ports,
             boot: @boot,
             ctx: @ctx,
-            bus: @bus,
+            bus: @events,
             hook_context: @hook_context,
             reader: reader,
-            emit: ->(event, **payload) { @bus.publish(event, ctx: @hook_context, **payload) },
+            emit: ->(event, **payload) { @events.publish(event, ctx: @hook_context, **payload) },
           )
         end
 

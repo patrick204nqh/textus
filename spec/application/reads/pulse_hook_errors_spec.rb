@@ -26,7 +26,7 @@ RSpec.describe "Pulse hook_errors" do
   end
 
   it "includes a row when a hook errors" do
-    store.bus.error_log.record(
+    store.events.error_log.record(
       seq: 1, event: :entry_put, hook: :sample,
       key: "working.note", error_class: "RuntimeError", error_message: "boom"
     )
@@ -36,8 +36,8 @@ RSpec.describe "Pulse hook_errors" do
   end
 
   it "filters by since seq" do
-    store.bus.error_log.record(seq: 1, event: :x, hook: :a, key: nil, error_class: "E", error_message: "m")
-    store.bus.error_log.record(seq: 5, event: :x, hook: :b, key: nil, error_class: "E", error_message: "m")
+    store.events.error_log.record(seq: 1, event: :x, hook: :a, key: nil, error_class: "E", error_message: "m")
+    store.events.error_log.record(seq: 5, event: :x, hook: :b, key: nil, error_class: "E", error_message: "m")
     result = Textus::Operations.for(store, role: "human").pulse(since: 3)
     expect(result["hook_errors"].map { |r| r["seq"] }).to eq([5])
   end

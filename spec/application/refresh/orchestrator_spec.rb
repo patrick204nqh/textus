@@ -3,7 +3,7 @@ require "tmpdir"
 require "fileutils"
 
 RSpec.describe Textus::Application::Refresh::Orchestrator do
-  let(:fake_bus) do
+  let(:fake_events) do
     Class.new do
       attr_reader :published
 
@@ -34,9 +34,9 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
   end
 
   let(:fake_store) do
-    bus = fake_bus
+    events = fake_events
     Class.new do
-      define_method(:bus) { bus }
+      define_method(:events) { events }
     end.new
   end
 
@@ -44,7 +44,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
     described_class.new(
       worker: worker,
       store_root: "/tmp/fake",
-      bus: fake_bus,
+      events: fake_events,
       detached_spawner: spawner,
     )
   end
@@ -98,7 +98,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
       orch = described_class.new(
         worker: slow_worker,
-        bus: fake_bus,
+        events: fake_events,
         store_root: "/tmp/fake",
         detached_spawner: spawner,
       )
@@ -110,7 +110,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
       expect(spawner_calls).to include("slow.key")
-      expect(fake_bus.published.map(&:first)).to include(:refresh_backgrounded)
+      expect(fake_events.published.map(&:first)).to include(:refresh_backgrounded)
     end
 
     it "returns Detached without forking when the per-leaf lock is already held (Bug 1)",
@@ -132,7 +132,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
         orch = described_class.new(
           worker: slow_worker,
-          bus: fake_bus,
+          events: fake_events,
           store_root: store_root,
           detached_spawner: spawner,
         )
@@ -144,7 +144,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
 
         expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
         expect(spawner_calls).to be_empty
-        expect(fake_bus.published.map(&:first)).not_to include(:refresh_backgrounded)
+        expect(fake_events.published.map(&:first)).not_to include(:refresh_backgrounded)
       end
     end
 

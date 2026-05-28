@@ -5,7 +5,7 @@ module Textus
         def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
@@ -20,9 +20,9 @@ module Textus
           @writer.delete(key, mentry: mentry, if_etag: if_etag)
 
           unless suppress_events
-            @bus.publish(:entry_deleted,
-                         ctx: @hook_context,
-                         key: key)
+            @events.publish(:entry_deleted,
+                            ctx: @hook_context,
+                            key: key)
           end
 
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }

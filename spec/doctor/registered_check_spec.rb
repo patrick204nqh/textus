@@ -13,7 +13,7 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/org_rules.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :org_rules) do |store:|
+          reg.on(:validate, :org_rules) do |caps:|
             [{ "code" => "org.bad_naming", "level" => "warning",
                "subject" => "test", "message" => "fake issue", "fix" => "n/a" }]
           end
@@ -33,7 +33,7 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :boom) { |store:| raise "kaboom" }
+          reg.on(:validate, :boom) { |caps:| raise "kaboom" }
         end
       RUBY
 
@@ -51,7 +51,7 @@ RSpec.describe "registered doctor_check invocation" do
       root = init_store(dir)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:validate, :slow) { |store:| :unreached }
+          reg.on(:validate, :slow) { |caps:| :unreached }
         end
       RUBY
 

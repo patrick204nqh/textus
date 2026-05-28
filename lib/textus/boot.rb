@@ -193,15 +193,12 @@ module Textus
     end
 
     def self.hooks_for(store)
-      bus = store.bus
       sections = {}
-      Hooks::Bus::EVENTS.each do |event, spec|
-        case spec[:mode]
-        when :rpc
-          sections[event.to_s] = bus.rpc_names(event).map(&:to_s).sort
-        when :pubsub
-          sections[event.to_s] = bus.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
-        end
+      Hooks::RpcRegistry::EVENTS.each_key do |event|
+        sections[event.to_s] = store.rpc.names(event).map(&:to_s).sort
+      end
+      Hooks::EventBus::EVENTS.each_key do |event|
+        sections[event.to_s] = store.events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
       end
       sections
     end

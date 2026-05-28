@@ -56,7 +56,7 @@ RSpec.describe "Textus::Operations#refresh_all (refresh_stale)" do
 
     File.write(File.join(textus, "hooks", "counter.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :counter) do |store:, config:, args:|
+        reg.on(:resolve_intake, :counter) do |caps:, config:, args:|
           { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
         end
       end

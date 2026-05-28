@@ -3,9 +3,9 @@
 module Textus
   module Infra
     # Writes an "event_error" audit row when a user hook raises during
-    # Hooks::Bus publish. Attached at Store boot.
+    # Hooks::EventBus publish. Attached at Store boot.
     #
-    # Integration: uses Hooks::Bus#on_error callback (chosen over a
+    # Integration: uses Hooks::EventBus#on_error callback (chosen over a
     # synthetic :hook_error event because the bus already owns the
     # rescue and the failure is a bus-internal concern, not a domain
     # event subscribers should be able to filter by key glob).

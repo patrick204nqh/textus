@@ -13,7 +13,7 @@ module Textus
           @file_store   = ports.file_store
           @schemas      = ports.schemas
           @writer       = writer
-          @bus          = ports.event_bus
+          @events       = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -45,10 +45,10 @@ module Textus
 
           delete_op.call(pending_key)
 
-          @bus.publish(:proposal_accepted,
-                       ctx: @hook_context,
-                       key: pending_key,
-                       target_key: target)
+          @events.publish(:proposal_accepted,
+                          ctx: @hook_context,
+                          key: pending_key,
+                          target_key: target)
 
           { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
         end

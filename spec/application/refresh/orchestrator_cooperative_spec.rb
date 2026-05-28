@@ -22,7 +22,8 @@ RSpec.describe Textus::Application::Refresh::Orchestrator, "cooperative fallback
   end
 
   it "uses cooperative-cancel fallback when fork is unavailable and budget is met" do
-    orch = described_class.new(worker: fake_worker, store_root: "/tmp/fake-store")
+    orch = described_class.new(worker: fake_worker, store_root: "/tmp/fake-store",
+                               events: instance_double(Textus::Hooks::EventBus, publish: nil))
     outcome = orch.execute(Textus::Domain::Action::RefreshTimed.new(budget_ms: 1000), key: "k")
     expect(outcome).to be_a(Textus::Domain::Outcome::Refreshed)
   end
@@ -34,7 +35,8 @@ RSpec.describe Textus::Application::Refresh::Orchestrator, "cooperative fallback
         raise "should not reach"
       end
     end.new
-    orch = described_class.new(worker: slow_worker, store_root: "/tmp/fake-store")
+    orch = described_class.new(worker: slow_worker, store_root: "/tmp/fake-store",
+                               events: instance_double(Textus::Hooks::EventBus, publish: nil))
     outcome = orch.execute(Textus::Domain::Action::RefreshTimed.new(budget_ms: 50), key: "k")
     expect(outcome).to be_a(Textus::Domain::Outcome::Failed)
     expect(outcome.error.message).to match(/timed.out|exceeded budget/i)

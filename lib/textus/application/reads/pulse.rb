@@ -16,7 +16,7 @@ module Textus
           @file_store = ports.file_store
           @audit_log  = ports.audit_log
           @root       = ports.root
-          @bus        = ports.event_bus
+          @events     = ports.event_bus
           @doctor     = doctor
         end
 
@@ -75,7 +75,7 @@ module Textus
         end
 
         def hook_errors_since(seq)
-          @bus.error_log.since(seq).map do |r|
+          @events.error_log.since(seq).map do |r|
             {
               "seq" => r[:seq],
               "event" => r[:event].to_s,
