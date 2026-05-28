@@ -9,6 +9,21 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.24.0 — 2026-05-28
+
+### Added
+- **Context-structure ergonomics** (ADR 0015 Phase 2):
+  - `textus key mv --prefix OLD NEW` — bulk rename leaves under a prefix; preserves UIDs.
+  - `textus key delete --prefix P` — bulk delete leaves.
+  - `textus zone mv FROM TO` — rename a zone; refuses if destination exists; rewrites manifest + moves files.
+  - `textus rule lint --against=FILE` — diff candidate manifest YAML's `rules:` block against the live manifest.
+  - `textus migrate PLAN.yaml` — run a multi-op declarative migration plan (ops: `key_mv_prefix`, `key_delete_prefix`, `zone_mv`).
+  - All five operations also surface as MCP tools (`key_mv_prefix`, `key_delete_prefix`, `zone_mv`, `rule_lint`, `migrate`).
+- `Textus::Application::Restructure` module with `Plan` value object and one use case per operation.
+
+### Protocol
+- No wire-format change. `textus/3` envelopes are unchanged.
+
 ## 0.23.0 — 2026-05-28
 
 ### Added
