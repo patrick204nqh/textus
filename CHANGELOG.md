@@ -9,7 +9,7 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## [Unreleased] — 0.26.0
+## 0.26.0 — 2026-05-28
 
 ### Breaking
 - Split `Textus::Hooks::Bus` into `Textus::Hooks::EventBus` (pubsub) and `Textus::Hooks::RpcRegistry` (named callables). The `Hooks::Bus` constant is removed.
