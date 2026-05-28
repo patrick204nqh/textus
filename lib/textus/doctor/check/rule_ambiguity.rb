@@ -10,8 +10,8 @@ module Textus
 
         def call
           out = []
-          rules = store.manifest.rules
-          store.manifest.data.entries.each do |mentry|
+          rules = manifest.rules
+          manifest.data.entries.each do |mentry|
             matches = rules.explain(mentry.key)
             next if matches.length < 2
 

@@ -21,7 +21,7 @@ RSpec.describe "registered doctor_check invocation" do
       RUBY
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       codes = report["issues"].map { |i| i["code"] }
       expect(codes).to include("org.bad_naming")
       expect(report["summary"]["warning"]).to be >= 1
@@ -38,7 +38,7 @@ RSpec.describe "registered doctor_check invocation" do
       RUBY
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       boom = report["issues"].find { |i| i["code"] == "doctor_check.failed" }
       expect(boom).not_to be_nil
       expect(boom["subject"]).to eq("boom")
@@ -61,7 +61,7 @@ RSpec.describe "registered doctor_check invocation" do
         .and_raise(Timeout::Error)
 
       store = Textus::Store.new(root)
-      report = Textus::Doctor.run(store)
+      report = Textus::Doctor.run(Textus::Session.for(store))
       slow = report["issues"].find { |i| i["code"] == "doctor_check.timeout" }
       expect(slow).not_to be_nil
       expect(slow["subject"]).to eq("slow")

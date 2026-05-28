@@ -23,10 +23,10 @@ module Textus
           }]
         end
 
-        # Doctor check interface: store.root is the .textus/ directory itself,
+        # Doctor check interface: root is the .textus/ directory itself,
         # so manifest.yaml lives directly inside it.
         def call
-          path = File.join(store.root, "manifest.yaml")
+          path = File.join(root, "manifest.yaml")
           return [] unless File.exist?(path)
 
           doc = YAML.safe_load_file(path, aliases: false) || {}

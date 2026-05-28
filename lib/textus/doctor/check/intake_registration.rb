@@ -6,7 +6,7 @@ module Textus
 
         def call
           declared = collect_declared_handlers
-          registered = store.rpc.names(:resolve_intake).to_set
+          registered = rpc.names(:resolve_intake).to_set
 
           out = (declared - registered).map do |name|
             {
@@ -35,7 +35,7 @@ module Textus
 
         def collect_declared_handlers
           set = Set.new
-          store.manifest.data.entries.each do |mentry|
+          manifest.data.entries.each do |mentry|
             set << mentry.handler.to_sym if mentry.is_a?(Textus::Manifest::Entry::Intake)
           end
           set

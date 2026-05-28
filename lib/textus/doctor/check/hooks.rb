@@ -4,7 +4,7 @@ module Textus
       class Hooks < Check
         def call
           out = []
-          dir = File.join(store.root, "hooks")
+          dir = File.join(root, "hooks")
           return out unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.rb")).sort.each do |f| # rubocop:disable Lint/RedundantDirGlobSort

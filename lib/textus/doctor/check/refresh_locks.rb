@@ -1,7 +1,7 @@
 module Textus
   module Doctor
     class Check
-      # Lists per-key refresh lock files under <store.root>/.locks/ whose
+      # Lists per-key refresh lock files under <root>/.locks/ whose
       # recorded PID is no longer running. These are forensic artifacts only:
       # Refresh::Lock uses flock(2), which the kernel releases on process
       # death, so stale files do not block subsequent acquires. The check
@@ -9,7 +9,7 @@ module Textus
       # (e.g. a refresh path that crashes repeatedly).
       class RefreshLocks < Check
         def call
-          dir = File.join(store.root, ".locks")
+          dir = File.join(root, ".locks")
           return [] unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.lock")).filter_map { |path| inspect_lock(path) }

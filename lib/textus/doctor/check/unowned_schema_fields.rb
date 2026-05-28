@@ -3,7 +3,7 @@ module Textus
     class Check
       class UnownedSchemaFields < Check
         def call
-          dir = File.join(store.root, "schemas")
+          dir = File.join(root, "schemas")
           return [] unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.yaml")).flat_map do |path|

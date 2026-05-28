@@ -23,13 +23,13 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
   it "returns empty array when no sentinels directory exists" do
     FileUtils.rm_rf(sentinels_dir)
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 
   it "emits sentinel.parse_error for malformed JSON" do
     File.write(File.join(sentinels_dir, "bad.md.textus-managed.json"), "{not json")
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including("code" => "sentinel.parse_error", "level" => "warning"))
   end
 
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
                                                                              "mode" => "copy",
                                                                            ))
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including("code" => "sentinel.orphan", "level" => "warning"))
   end
 
@@ -58,7 +58,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
                                                                            ))
     File.binwrite(target, "tampered\n")
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including("code" => "sentinel.drift", "level" => "warning"))
   end
 
@@ -73,6 +73,6 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
                                                                         "mode" => "copy",
                                                                       ))
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 end

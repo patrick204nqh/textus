@@ -30,7 +30,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     YAML
 
     with_store(manifest) do |store|
-      issues = described_class.new(store).call
+      issues = described_class.new(Textus::Session.for(store)).call
       expect(issues).to eq([])
     end
   end
@@ -53,7 +53,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     YAML
 
     with_store(manifest) do |store|
-      issues = described_class.new(store).call
+      issues = described_class.new(Textus::Session.for(store)).call
       bad = issues.find { |i| i["code"] == "policy.handler_not_allowed" }
       expect(bad).not_to be_nil
       expect(bad["subject"]).to eq("intake.notes")
@@ -78,7 +78,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     YAML
 
     with_store(manifest) do |store|
-      expect(described_class.new(store).call).to eq([])
+      expect(described_class.new(Textus::Session.for(store)).call).to eq([])
     end
   end
 end

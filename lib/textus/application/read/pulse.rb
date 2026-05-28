@@ -10,11 +10,11 @@ module Textus
       # cursor (seq).
       module Pulse
         def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps, doctor: session.method(:doctor)).call(*, **)
+          Impl.new(ctx: ctx, caps: caps, session: session).call(*, **)
         end
 
         class Impl
-          def initialize(ctx:, caps:, doctor:)
+          def initialize(ctx:, caps:, session:)
             @ctx = ctx
             @caps = caps
             @manifest   = caps.manifest
@@ -22,7 +22,7 @@ module Textus
             @audit_log  = caps.audit_log
             @root       = caps.root
             @events     = caps.events
-            @doctor     = doctor
+            @session    = session
           end
 
           def call(since: 0)
@@ -66,7 +66,7 @@ module Textus
           end
 
           def doctor_summary
-            result  = @doctor.call
+            result  = Textus::Doctor.run(@session)
             issues  = result["issues"] || []
             {
               "ok" => result["ok"],

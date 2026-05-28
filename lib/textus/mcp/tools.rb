@@ -21,7 +21,7 @@ module Textus
       end
 
       REGISTRY = {
-        "boot" => ->(_s, store, _a) { Textus::Boot.run(store) },
+        "boot" => ->(_s, store, _a) { Textus::Boot.run(Textus::Session.for(store)) },
 
         "find" => lambda do |s, store, args|
           ops_for(s, store).list(zone: args["zone"], prefix: args["prefix"])

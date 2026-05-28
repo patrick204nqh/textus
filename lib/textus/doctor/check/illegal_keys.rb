@@ -4,10 +4,10 @@ module Textus
       class IllegalKeys < Check
         def call
           out = []
-          store.manifest.data.entries.each do |entry|
+          manifest.data.entries.each do |entry|
             next unless entry.nested?
 
-            base = File.join(store.root, "zones", entry.path)
+            base = File.join(root, "zones", entry.path)
             next unless File.directory?(base)
 
             index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil

@@ -4,11 +4,11 @@ module Textus
       class Templates < Check
         def call
           out = []
-          store.manifest.data.entries.each do |entry|
+          manifest.data.entries.each do |entry|
             template = entry.respond_to?(:template) ? entry.template : nil
             next if template.nil?
 
-            tp = File.join(store.root, "templates", template)
+            tp = File.join(root, "templates", template)
             next if File.exist?(tp)
 
             out << {

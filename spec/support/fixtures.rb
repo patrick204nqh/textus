@@ -53,6 +53,7 @@ module TextusSpecHelpers
       reader: reader,
       writer: writer,
       hook_context: sess.hook_context,
+      session: sess,
     }
   end
 
@@ -109,7 +110,7 @@ module TextusSpecHelpers
     p = writes_caps(store, ctx)
     Textus::Application::Write::Publish::Impl.new(
       ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
-      boot: -> { Textus::Boot.run(store) },
+      session: p[:session],
       hook_context: p[:hook_context]
     )
   end

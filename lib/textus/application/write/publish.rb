@@ -14,13 +14,13 @@ module Textus
           Impl.new(
             ctx: ctx, caps: caps,
             rpc: session.rpc,
-            boot: session.method(:boot),
+            session: session,
             hook_context: session.hook_context
           ).call(*, **)
         end
 
         class Impl
-          def initialize(ctx:, caps:, rpc:, boot:, hook_context:)
+          def initialize(ctx:, caps:, rpc:, session:, hook_context:)
             @ctx          = ctx
             @caps         = caps
             @manifest     = caps.manifest
@@ -28,7 +28,7 @@ module Textus
             @events       = caps.events
             @root         = caps.root
             @rpc          = rpc
-            @boot         = boot
+            @session      = session
             @hook_context = hook_context
           end
 
@@ -62,7 +62,7 @@ module Textus
               root: @root,
               caps: @caps,
               rpc: @rpc,
-              boot: @boot,
+              session: @session,
               ctx: @ctx,
               bus: @events,
               hook_context: @hook_context,

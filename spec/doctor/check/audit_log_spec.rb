@@ -17,13 +17,13 @@ RSpec.describe Textus::Doctor::Check::AuditLog do
 
   it "returns empty array when there is no audit log" do
     store = Textus::Store.new(root)
-    expect(described_class.new(store).call).to eq([])
+    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
   end
 
   it "emits audit.parse_error for an invalid-JSON line" do
     File.write(File.join(root, "audit.log"), "{not json\n")
     store = Textus::Store.new(root)
-    issues = described_class.new(store).call
+    issues = described_class.new(Textus::Session.for(store)).call
     expect(issues).to include(hash_including(
                                 "code" => "audit.parse_error",
                                 "level" => "warning",

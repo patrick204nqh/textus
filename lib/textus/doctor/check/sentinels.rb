@@ -3,10 +3,10 @@ module Textus
     class Check
       class Sentinels < Check
         def call
-          dir = File.join(store.root, "sentinels")
+          dir = File.join(root, "sentinels")
           return [] unless File.directory?(dir)
 
-          repo_root = File.dirname(store.root)
+          repo_root = File.dirname(root)
           Dir.glob(File.join(dir, "**", "*#{Textus::Domain::Sentinel::SUFFIX}")).flat_map do |sentinel_path|
             inspect_sentinel(sentinel_path, repo_root)
           end

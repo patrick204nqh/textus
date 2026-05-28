@@ -30,7 +30,7 @@ module Textus
 
     module_function
 
-    def run(store, checks: nil)
+    def run(session, checks: nil)
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?
@@ -40,8 +40,8 @@ module Textus
       end
 
       selected = CHECKS.select { |c| selected_keys.include?(c.name_key) }
-      issues = selected.flat_map { |c| c.new(store).call }
-      issues.concat(run_registered_checks(store))
+      issues = selected.flat_map { |c| c.new(session).call }
+      issues.concat(run_registered_checks(session))
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }
       {
@@ -52,14 +52,13 @@ module Textus
       }
     end
 
-    def run_registered_checks(store)
-      _, write_caps, = Textus::Application.caps_from_store(store)
-      store.rpc.names(:validate).flat_map { |name| invoke_registered_check(store, write_caps, name) }
+    def run_registered_checks(session)
+      session.rpc.names(:validate).flat_map { |name| invoke_registered_check(session, name) }
     end
 
-    def invoke_registered_check(store, caps, name)
+    def invoke_registered_check(session, name)
       result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
-        store.rpc.invoke(:validate, name, caps: caps)
+        session.rpc.invoke(:validate, name, caps: session.write_caps)
       end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 

@@ -120,7 +120,7 @@ module Textus
         "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
     ].freeze
 
-    def self.agent_quickstart(manifest, store)
+    def self.agent_quickstart(manifest, session)
       proposer_roles = manifest.policy.roles_with_kind(:proposer)
       agent_role = proposer_roles.first
 
@@ -135,7 +135,7 @@ module Textus
         "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
         "writable_zones" => writable_zones,
         "propose_zone" => propose_zone,
-        "latest_seq" => store.audit_log.latest_seq,
+        "latest_seq" => session.write_caps.audit_log.latest_seq,
       }
     end
 
@@ -150,23 +150,24 @@ module Textus
       )
     end
 
-    def self.run(store)
+    def self.run(session)
+      manifest = session.read_caps.manifest
       {
         "protocol" => PROTOCOL_ID,
-        "store_root" => store.root,
-        "zones" => zones_for(store),
-        "entries" => entries_for(store),
-        "hooks" => hooks_for(store),
-        "write_flows" => write_flows_for(store.manifest),
+        "store_root" => session.read_caps.root,
+        "zones" => zones_for(manifest),
+        "entries" => entries_for(manifest),
+        "hooks" => hooks_for(session),
+        "write_flows" => write_flows_for(manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
-        "agent_protocol" => agent_protocol(store.manifest),
-        "agent_quickstart" => agent_quickstart(store.manifest, store),
+        "agent_protocol" => agent_protocol(manifest),
+        "agent_quickstart" => agent_quickstart(manifest, session),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end
 
-    def self.zones_for(store)
-      store.manifest.data.zones.map do |name, writers|
+    def self.zones_for(manifest)
+      manifest.data.zones.map do |name, writers|
         row = { "name" => name, "writers" => Array(writers) }
         purpose = ZONE_PURPOSES[name]
         row["purpose"] = purpose if purpose
@@ -174,9 +175,9 @@ module Textus
       end
     end
 
-    def self.entries_for(store)
-      store.manifest.data.entries.map do |e|
-        derived = store.manifest.policy.zone_kinds(e.zone).include?(:generator)
+    def self.entries_for(manifest)
+      manifest.data.entries.map do |e|
+        derived = manifest.policy.zone_kinds(e.zone).include?(:generator)
         {
           "key" => e.key,
           "zone" => e.zone,
@@ -192,13 +193,13 @@ module Textus
       end
     end
 
-    def self.hooks_for(store)
+    def self.hooks_for(session)
       sections = {}
       Hooks::RpcRegistry::EVENTS.each_key do |event|
-        sections[event.to_s] = store.rpc.names(event).map(&:to_s).sort
+        sections[event.to_s] = session.rpc.names(event).map(&:to_s).sort
       end
       Hooks::EventBus::EVENTS.each_key do |event|
-        sections[event.to_s] = store.events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
+        sections[event.to_s] = session.events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
       end
       sections
     end

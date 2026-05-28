@@ -8,24 +8,21 @@ module Textus
       read_caps, write_caps, hook_caps = Application.caps_from_store(store)
       new(
         ctx: Application::Context.build(role: role, correlation_id: correlation_id, dry_run: dry_run),
-        read_caps: read_caps, write_caps: write_caps, hook_caps: hook_caps,
-        store: store
+        read_caps: read_caps, write_caps: write_caps, hook_caps: hook_caps
       )
     end
 
-    def initialize(ctx:, read_caps:, write_caps:, hook_caps:, store: nil)
+    def initialize(ctx:, read_caps:, write_caps:, hook_caps:)
       @ctx        = ctx
       @read_caps  = read_caps
       @write_caps = write_caps
       @hook_caps  = hook_caps
-      @store      = store
     end
 
     def with_role(role)
       self.class.new(
         ctx: @ctx.with_role(role),
-        read_caps: @read_caps, write_caps: @write_caps, hook_caps: @hook_caps,
-        store: @store
+        read_caps: @read_caps, write_caps: @write_caps, hook_caps: @hook_caps
       )
     end
 
@@ -50,10 +47,8 @@ module Textus
       )
     end
 
-    # Boot/Doctor: take session (will be cleaned up in Task 9 — Boot.run/Doctor.run
-    # still accept store in 0.26.0). Pass @store directly.
-    def boot(...) = Textus::Boot.run(@store, ...)
-    def doctor(...) = Textus::Doctor.run(@store, ...)
+    def boot(...) = Textus::Boot.run(self, ...)
+    def doctor(...) = Textus::Doctor.run(self, ...)
 
     def refresh_orchestrator
       @refresh_orchestrator ||= Application::Write::RefreshOrchestrator.new(
