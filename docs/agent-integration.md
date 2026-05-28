@@ -66,11 +66,20 @@ Returns a delta envelope. The agent advances the cursor each turn.
   "changed":         [ { "seq": 1843, "key": "working.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
   "stale":           [ "output.marketplace" ],
   "pending_review":  [ "review.proposal.123" ],
-  "doctor":          { "ok": true, "warn": 0, "fail": 0 }
+  "doctor":          { "ok": true, "warn": 0, "fail": 0 },
+  "manifest_etag":   "sha256:abc123...",
+  "next_due_at":     "2026-05-28T12:34:56Z",
+  "hook_errors":     [ { "seq": 1844, "event": "entry_put", "hook": "audit_extra", "key": "working.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
 }
 ```
 
 `changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from `freshness`. `pending_review` lists keys in the review zone. `doctor` is a count summary.
+
+### New in 0.25.0
+
+- **`manifest_etag`** — sha256 of `manifest.yaml`. If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
+- **`next_due_at`** — earliest `next_due_at` across all entries with a refresh policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
+- **`hook_errors`** — list of recent hook failures since cursor: `{seq, event, hook, key, error_class, error_message, at}`. Bounded in-memory ring (256 most recent); older entries are evicted.
 
 Every audit row carries a `seq` integer — a monotonic counter stamped on each write. The `cursor` in pulse is always the `latest_seq` from the audit log; passing it back to the next `pulse --since=<cursor>` produces only rows written after that point.
 
