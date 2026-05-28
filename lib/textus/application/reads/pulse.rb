@@ -1,3 +1,5 @@
+require "digest"
+
 module Textus
   module Application
     module Reads
@@ -23,6 +25,7 @@ module Textus
             "stale" => stale_keys,
             "pending_review" => review_keys,
             "doctor" => doctor_summary,
+            "manifest_etag" => manifest_etag,
           }
         end
 
@@ -56,6 +59,10 @@ module Textus
             "warn" => issues.count { |i| i["level"] == "warning" },
             "fail" => issues.count { |i| i["level"] == "error" },
           }
+        end
+
+        def manifest_etag
+          Digest::SHA256.hexdigest(File.read(File.join(@root, "manifest.yaml")))
         end
       end
     end
