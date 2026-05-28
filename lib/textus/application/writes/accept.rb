@@ -6,13 +6,13 @@ module Textus
       class Accept
         include AuthorityGate
 
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @ports        = ports
           @manifest     = ports.manifest
           @file_store   = ports.file_store
           @schemas      = ports.schemas
-          @envelope_io  = envelope_io
+          @writer       = writer
           @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
@@ -57,14 +57,14 @@ module Textus
 
         def put_op
           @put_op ||= Textus::Application::Writes::Put.new(
-            ctx: @ctx, ports: @ports, envelope_io: @envelope_io,
+            ctx: @ctx, ports: @ports, writer: @writer,
             authorizer: @authorizer, hook_context: @hook_context
           )
         end
 
         def delete_op
           @delete_op ||= Textus::Application::Writes::Delete.new(
-            ctx: @ctx, ports: @ports, envelope_io: @envelope_io,
+            ctx: @ctx, ports: @ports, writer: @writer,
             authorizer: @authorizer, hook_context: @hook_context
           )
         end

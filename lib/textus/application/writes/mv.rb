@@ -2,11 +2,12 @@ module Textus
   module Application
     module Writes
       class Mv
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, reader:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
           @bus          = ports.event_bus
-          @envelope_io  = envelope_io
+          @reader       = reader
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -16,7 +17,7 @@ module Textus
           return dry_run_result(old_key, new_key, old_res, new_res) if dry_run
 
           ensure_uid!(old_key, old_res.entry)
-          envelope = @envelope_io.move(
+          envelope = @writer.move(
             from_key: old_key, to_key: new_key,
             new_mentry: new_res.entry
           )
@@ -33,12 +34,12 @@ module Textus
 
           old_res = @manifest.resolver.resolve(old_key)
           new_res = @manifest.resolver.resolve(new_key)
-          raise UnknownKey.new(old_key) unless @envelope_io.exists?(old_res.path)
+          raise UnknownKey.new(old_key) unless @reader.exists?(old_key)
 
           validate_zone_and_format!(old_res.entry, new_res.entry)
           @authorizer.authorize_write!(old_res.entry, role: @ctx.role)
           @authorizer.authorize_write!(new_res.entry, role: @ctx.role)
-          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if @envelope_io.exists?(new_res.path)
+          raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if @reader.exists?(new_key)
 
           [old_res, new_res]
         end
@@ -55,17 +56,16 @@ module Textus
           raise UsageError.new("mv: format mismatch (#{old_mentry.format} → #{new_mentry.format}); refusing.")
         end
 
-        # If the source file lacks a UID, rewrite it in-place via EnvelopeIO#write
-        # so a UID gets injected before the move. This replaces the previous
-        # Put(suppress_events: true) bypass with a direct EnvelopeIO call —
-        # producing one "put" audit row, then the "mv" row from EnvelopeIO#move.
+        # If the source file lacks a UID, rewrite it in-place via the writer
+        # so a UID gets injected before the move. This produces one "put"
+        # audit row, then the "mv" row from EnvelopeWriter#move.
         def ensure_uid!(old_key, old_mentry)
-          pre_env = @envelope_io.read_envelope(old_key)
+          pre_env = @reader.read(old_key)
           return if pre_env.uid
 
-          @envelope_io.write(
+          @writer.put(
             old_key, mentry: old_mentry,
-                     payload: EnvelopeIO::Payload.new(
+                     payload: EnvelopeWriter::Payload.new(
                        meta: pre_env.meta, body: pre_env.body, content: pre_env.content,
                      )
           )
@@ -81,7 +81,7 @@ module Textus
         end
 
         def dry_run_result(old_key, new_key, old_res, new_res)
-          pre_env = @envelope_io.read_envelope(old_key)
+          pre_env = @reader.read(old_key)
           {
             "protocol" => PROTOCOL, "ok" => true, "dry_run" => true,
             "from_key" => old_key, "to_key" => new_key,

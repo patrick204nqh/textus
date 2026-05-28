@@ -2,17 +2,17 @@ module Textus
   module Application
     module Refresh
       class All
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @ports        = ports
-          @envelope_io  = envelope_io
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
 
         def call(prefix: nil, zone: nil)
           worker = Textus::Application::Refresh::Worker.new(
-            ctx: @ctx, ports: @ports, envelope_io: @envelope_io,
+            ctx: @ctx, ports: @ports, writer: @writer,
             authorizer: @authorizer, hook_context: @hook_context
           )
 

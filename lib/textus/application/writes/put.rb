@@ -2,11 +2,11 @@ module Textus
   module Application
     module Writes
       class Put
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
           @bus          = ports.event_bus
-          @envelope_io  = envelope_io
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -17,10 +17,10 @@ module Textus
 
           @authorizer.authorize_write!(mentry, role: @ctx.role)
 
-          envelope = @envelope_io.write(
+          envelope = @writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Application::Writes::EnvelopeIO::Payload.new(meta: meta, body: body, content: content),
+            payload: Textus::Application::Writes::EnvelopeWriter::Payload.new(meta: meta, body: body, content: content),
             if_etag: if_etag,
           )
 

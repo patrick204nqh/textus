@@ -41,13 +41,15 @@ RSpec.describe Textus::Operations do
     end
   end
 
-  it "memoizes shared collaborators (envelope_io, orchestrator) across calls" do
+  it "memoizes shared collaborators (envelope_reader/writer, orchestrator) across calls" do
     Dir.mktmpdir do |tmp|
       ops = init_ops(tmp)
       ops.put("working.notes.alpha", body: "one")
       ops.put("working.notes.alpha", body: "two")
-      envelope_io = ops.instance_variable_get(:@envelope_io)
-      expect(envelope_io).to be_a(Textus::Application::Writes::EnvelopeIO)
+      reader = ops.instance_variable_get(:@envelope_reader)
+      writer = ops.instance_variable_get(:@envelope_writer)
+      expect(reader).to be_a(Textus::Application::Writes::EnvelopeReader)
+      expect(writer).to be_a(Textus::Application::Writes::EnvelopeWriter)
     end
   end
 

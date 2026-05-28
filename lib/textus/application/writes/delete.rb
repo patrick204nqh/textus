@@ -2,11 +2,11 @@ module Textus
   module Application
     module Writes
       class Delete
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @manifest     = ports.manifest
           @bus          = ports.event_bus
-          @envelope_io  = envelope_io
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -17,7 +17,7 @@ module Textus
 
           @authorizer.authorize_write!(mentry, role: @ctx.role)
 
-          @envelope_io.delete(key, mentry: mentry, if_etag: if_etag)
+          @writer.delete(key, mentry: mentry, if_etag: if_etag)
 
           unless suppress_events
             @bus.publish(:entry_deleted,

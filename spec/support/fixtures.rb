@@ -14,79 +14,87 @@ module TextusSpecHelpers
     )
   end
 
-  def build_envelope_io(store, ctx)
-    Textus::Application::Writes::EnvelopeIO.new(
+  def build_envelope_reader(store)
+    Textus::Application::Writes::EnvelopeReader.new(
+      file_store: store.file_store,
+      manifest: store.manifest,
+    )
+  end
+
+  def build_envelope_writer(store, ctx, reader: nil)
+    Textus::Application::Writes::EnvelopeWriter.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
       audit_log: store.audit_log,
       ctx: ctx,
+      reader: reader || build_envelope_reader(store),
     )
   end
 
   # Builds the explicit-port kwargs that every Writes use case takes from
   # an explicit store + slim Context pair.
-  def writes_ports(store, ctx, envelope_io: nil)
+  def writes_ports(store, ctx)
     ports = Textus::Application::Ports.from_store(store)
     ops = Textus::Operations.new(ctx: ctx, ports: ports)
+    reader = build_envelope_reader(store)
+    writer = build_envelope_writer(store, ctx, reader: reader)
     {
       ctx: ctx,
       ports: ports,
-      envelope_io: envelope_io || build_envelope_io(store, ctx),
+      reader: reader,
+      writer: writer,
       authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
       hook_context: ops.hook_context,
     }
   end
 
-  def build_put(store, ctx, envelope_io: nil)
-    p = writes_ports(store, ctx, envelope_io: envelope_io)
+  def build_put(store, ctx)
+    p = writes_ports(store, ctx)
     Textus::Application::Writes::Put.new(
-      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
-  def build_delete(store, ctx, envelope_io: nil)
-    p = writes_ports(store, ctx, envelope_io: envelope_io)
+  def build_delete(store, ctx)
+    p = writes_ports(store, ctx)
     Textus::Application::Writes::Delete.new(
-      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
-  def build_mv(store, ctx, envelope_io: nil)
-    p = writes_ports(store, ctx, envelope_io: envelope_io)
+  def build_mv(store, ctx)
+    p = writes_ports(store, ctx)
     Textus::Application::Writes::Mv.new(
-      ctx: p[:ctx], ports: p[:ports], envelope_io: p[:envelope_io],
+      ctx: p[:ctx], ports: p[:ports],
+      reader: p[:reader], writer: p[:writer],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
-  def build_accept(store, ctx, envelope_io: nil)
-    p = writes_ports(store, ctx, envelope_io: envelope_io)
+  def build_accept(store, ctx)
+    p = writes_ports(store, ctx)
     Textus::Application::Writes::Accept.new(
-      ctx: p[:ctx], ports: p[:ports],
-      envelope_io: p[:envelope_io],
+      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
-  def build_reject(store, ctx, envelope_io: nil)
-    p = writes_ports(store, ctx, envelope_io: envelope_io)
+  def build_reject(store, ctx)
+    p = writes_ports(store, ctx)
     Textus::Application::Writes::Reject.new(
-      ctx: p[:ctx], ports: p[:ports],
-      envelope_io: p[:envelope_io],
+      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
       authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 
   def build_worker(store, ctx)
-    ports = Textus::Application::Ports.from_store(store)
-    ops = Textus::Operations.new(ctx: ctx, ports: ports)
+    p = writes_ports(store, ctx)
     Textus::Application::Refresh::Worker.new(
-      ctx: ctx, ports: ports, envelope_io: build_envelope_io(store, ctx),
-      authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
-      hook_context: ops.hook_context
+      ctx: p[:ctx], ports: p[:ports], writer: p[:writer],
+      authorizer: p[:authorizer], hook_context: p[:hook_context]
     )
   end
 

@@ -6,11 +6,11 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @ports        = ports
           @manifest     = ports.manifest
-          @envelope_io  = envelope_io
+          @writer       = writer
           @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
@@ -75,10 +75,10 @@ module Textus
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = self.class.send(:normalize_action_result, result, format: mentry.format)
           @authorizer.authorize_write!(mentry, role: @ctx.role)
-          envelope = @envelope_io.write(
+          envelope = @writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Application::Writes::EnvelopeIO::Payload.new(
+            payload: Textus::Application::Writes::EnvelopeWriter::Payload.new(
               meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             ),
           )

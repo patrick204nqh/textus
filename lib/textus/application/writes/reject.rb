@@ -6,11 +6,11 @@ module Textus
       class Reject
         include AuthorityGate
 
-        def initialize(ctx:, ports:, envelope_io:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
           @ports        = ports
           @manifest     = ports.manifest
-          @envelope_io  = envelope_io
+          @writer       = writer
           @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
@@ -33,7 +33,7 @@ module Textus
             raise ProposalError.new("proposal missing target_key")
 
           Textus::Application::Writes::Delete.new(
-            ctx: @ctx, ports: @ports, envelope_io: @envelope_io,
+            ctx: @ctx, ports: @ports, writer: @writer,
             authorizer: @authorizer, hook_context: @hook_context
           ).call(pending_key, suppress_events: true)
 

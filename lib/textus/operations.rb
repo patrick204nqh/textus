@@ -39,35 +39,36 @@ module Textus
     # writes
     def put(...)
       Application::Writes::Put.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def delete(...)
       Application::Writes::Delete.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def mv(...)
       Application::Writes::Mv.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports,
+        reader: envelope_reader, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def accept(...)
       Application::Writes::Accept.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
 
     def reject(...)
       Application::Writes::Reject.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(...)
     end
@@ -115,7 +116,7 @@ module Textus
 
     def refresh_all(**)
       Application::Refresh::All.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       ).call(**)
     end
@@ -143,19 +144,27 @@ module Textus
 
     private
 
-    def envelope_io
-      @envelope_io ||= Application::Writes::EnvelopeIO.new(
+    def envelope_reader
+      @envelope_reader ||= Application::Writes::EnvelopeReader.new(
+        file_store: @ports.file_store,
+        manifest: @ports.manifest,
+      )
+    end
+
+    def envelope_writer
+      @envelope_writer ||= Application::Writes::EnvelopeWriter.new(
         file_store: @ports.file_store,
         manifest: @ports.manifest,
         schemas: @ports.schemas,
         audit_log: @ports.audit_log,
         ctx: @ctx,
+        reader: envelope_reader,
       )
     end
 
     def refresh_worker
       @refresh_worker ||= Application::Refresh::Worker.new(
-        ctx: @ctx, ports: @ports, envelope_io: envelope_io,
+        ctx: @ctx, ports: @ports, writer: envelope_writer,
         authorizer: @authorizer, hook_context: hook_context
       )
     end

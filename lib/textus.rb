@@ -10,7 +10,6 @@ loader.inflector.inflect(
   "json" => "Json",
   "yaml" => "Yaml",
   "hook_dsl_scanner" => "HookDSLScanner",
-  "envelope_io" => "EnvelopeIO",
   "mcp" => "MCP",
   "mcp_serve" => "MCPServe",
 )
