@@ -76,8 +76,17 @@ module Textus
       caps_sym = entry.caps_kind
 
       define_method(verb) do |*args, **kwargs|
-        fixed = { session: self, ctx: @ctx, caps: caps_sym == :read ? @read_caps : @write_caps }
-        mod.call(*args, **fixed, **kwargs)
+        if mod.is_a?(Class)
+          container = Textus::Container.from_store_caps(@read_caps, @write_caps, @hook_caps)
+          call_value = Textus::Call.new(
+            role: @ctx.role, correlation_id: @ctx.correlation_id,
+            now: @ctx.now, dry_run: @ctx.dry_run
+          )
+          mod.new(container: container, call: call_value, hook_context: hook_context).call(*args, **kwargs)
+        else
+          fixed = { session: self, ctx: @ctx, caps: caps_sym == :read ? @read_caps : @write_caps }
+          mod.call(*args, **fixed, **kwargs)
+        end
       end
     end
   end

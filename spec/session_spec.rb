@@ -44,12 +44,17 @@ RSpec.describe Textus::Session do
   it "memoizes shared collaborators (envelope_reader/writer) across calls" do
     Dir.mktmpdir do |tmp|
       sess = init_session(tmp)
-      sess.put("working.notes.alpha", body: "one")
-      sess.put("working.notes.alpha", body: "two")
-      reader = sess.instance_variable_get(:@envelope_reader)
-      writer = sess.instance_variable_get(:@envelope_writer)
-      expect(reader).to be_a(Textus::Application::Envelope::Reader)
-      expect(writer).to be_a(Textus::Application::Envelope::Writer)
+      # Touch session-built collaborators directly. Put no longer routes through
+      # Session#envelope_writer post-0.27 collapse, but module-shaped use cases
+      # still do — and we want to keep the memoization contract for those.
+      r1 = sess.envelope_reader
+      w1 = sess.envelope_writer
+      r2 = sess.envelope_reader
+      w2 = sess.envelope_writer
+      expect(r1).to be_a(Textus::Application::Envelope::Reader)
+      expect(w1).to be_a(Textus::Application::Envelope::Writer)
+      expect(r1).to be(r2)
+      expect(w1).to be(w2)
     end
   end
 

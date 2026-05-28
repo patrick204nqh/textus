@@ -1,44 +1,84 @@
 module Textus
   module Application
     module Write
-      module Put
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(
-            ctx: ctx, caps: caps,
-            writer: session.envelope_writer,
-            hook_context: session.hook_context
-          ).call(*, **)
+      class Put
+        def initialize(container:, call:, hook_context:)
+          @container    = container
+          @call         = call
+          @manifest     = container.manifest
+          @authorizer   = container.authorizer
+          @events       = container.events
+          @hook_context = hook_context
         end
 
+        def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
+          Textus::Manifest::Data.validate_key!(key)
+          mentry = @manifest.resolver.resolve(key).entry
+          @authorizer.authorize_write!(mentry, role: @call.role)
+
+          envelope = writer.put(
+            key,
+            mentry: mentry,
+            payload: Textus::Application::Envelope::Writer::Payload.new(
+              meta: meta, body: body, content: content,
+            ),
+            if_etag: if_etag,
+          )
+
+          @events.publish(:entry_put,
+                          ctx: @hook_context,
+                          key: key,
+                          envelope: envelope)
+
+          envelope
+        end
+
+        private
+
+        def writer
+          @writer ||= Textus::Application::Envelope::Writer.new(
+            file_store: @container.file_store,
+            manifest: @container.manifest,
+            schemas: @container.schemas,
+            audit_log: @container.audit_log,
+            ctx: @call,
+            reader: reader,
+          )
+        end
+
+        def reader
+          @reader ||= Textus::Application::Envelope::Reader.new(
+            file_store: @container.file_store,
+            manifest: @container.manifest,
+          )
+        end
+
+        # Back-compat shim: Accept (still a Module) constructs Put::Impl with the
+        # old (ctx:, caps:, writer:, hook_context:) shape. Maps onto the new class.
+        # Removed when Accept is collapsed in Phase 5.
         class Impl
           def initialize(ctx:, caps:, writer:, hook_context:)
-            @ctx          = ctx
-            @manifest     = caps.manifest
-            @events       = caps.events
-            @authorizer   = caps.authorizer
-            @writer       = writer
-            @hook_context = hook_context
+            container = Textus::Container.new(
+              manifest: caps.manifest, file_store: caps.file_store,
+              schemas: caps.schemas, root: caps.root,
+              audit_log: caps.audit_log, events: caps.events,
+              rpc: nil, authorizer: caps.authorizer
+            )
+            call_value = Textus::Call.new(
+              role: ctx.role, correlation_id: ctx.correlation_id,
+              now: ctx.now, dry_run: ctx.dry_run
+            )
+            @impl = Put.new(
+              container: container, call: call_value, hook_context: hook_context,
+            )
+            @injected_writer = writer
+            # Override writer with the externally-built one so Accept's pre-built
+            # writer (with its reader cache, ctx, etc.) is preserved.
+            @impl.instance_variable_set(:@writer, writer)
           end
 
-          def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
-            Textus::Manifest::Data.validate_key!(key)
-            mentry = @manifest.resolver.resolve(key).entry
-
-            @authorizer.authorize_write!(mentry, role: @ctx.role)
-
-            envelope = @writer.put(
-              key,
-              mentry: mentry,
-              payload: Textus::Application::Envelope::Writer::Payload.new(meta: meta, body: body, content: content),
-              if_etag: if_etag,
-            )
-
-            @events.publish(:entry_put,
-                            ctx: @hook_context,
-                            key: key,
-                            envelope: envelope)
-
-            envelope
+          def call(*, **)
+            @impl.call(*, **)
           end
         end
       end
