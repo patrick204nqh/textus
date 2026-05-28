@@ -138,6 +138,10 @@ entries:
 rules:
   - match: intake.**
     refresh: { ttl: 6h, on_stale: warn }
+
+audit:
+  max_size: 10485760   # bytes before rotating (default: 10 485 760 = 10 MiB)
+  keep: 5              # rotated files to retain (default: 5)
 ```
 
 Zone names are conventional — the manifest is the source of truth for write permissions; rename freely.
@@ -438,6 +442,35 @@ Schema (one JSON object per line, no interior whitespace):
 `ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag).
 
 For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
+
+**Rotation.** After every successful append the implementation checks whether `audit.log` exceeds `max_size` bytes (checked inside the held `flock`, so the check sees the post-write size). If it does, the active log is rotated:
+
+1. The seq range (`min_seq`, `max_seq`) of the active log is scanned, and a JSON sidecar (`audit.log.1.meta.json`) is written with those values plus a `rotated_at` ISO 8601 timestamp.
+2. Existing rotated files are shifted: `audit.log.(N)` → `audit.log.(N+1)` for N = `keep-1` down to 1 (with their `.meta.json` sidecars).
+3. `audit.log` is renamed to `audit.log.1`.
+4. The file that would be shifted to `audit.log.(keep+1)` — i.e., `audit.log.keep` and its sidecar — is deleted before the shift.
+5. The next append creates a fresh `audit.log` via `O_CREAT`. Seq numbering continues from the previous maximum; there is no reset.
+
+Rotation is triggered by **byte size only** — there is no row-count or time-based trigger.
+
+**Rotation knobs** (configured via the optional `audit:` block in `manifest.yaml`):
+
+| Key        | Default      | Meaning |
+|------------|--------------|---------|
+| `max_size` | `10485760`   | Maximum size of `audit.log` in bytes (10 MiB) before rotation is triggered. |
+| `keep`     | `5`          | Number of rotated files retained on disk. When this limit is exceeded the oldest rotated file and its sidecar are deleted. |
+
+Both keys are optional. Omitting `audit:` entirely uses the defaults above.
+
+**`CursorExpired`.** When `audit --seq-since=N` or `pulse --since=N` is called with a cursor `N`, the implementation checks whether `N` is below the oldest sequence number still available on disk (`min_available_seq`, derived from the oldest retained rotated file's sidecar). The condition that raises `CursorExpired` is:
+
+```
+N < min_available_seq - 1
+```
+
+The error includes `requested` (the supplied cursor value) and `min_available` (the oldest seq still on disk).
+
+**Recommended caller behavior on `CursorExpired`.** Call `textus boot` (without `--since`) to obtain a fresh `latest_seq` from the current audit log state, then resume `pulse` calls using that new cursor. Do not attempt to replay from an expired cursor — the intervening rows are gone.
 
 ### 5.7 Security bounds
 
