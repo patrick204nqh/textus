@@ -15,6 +15,18 @@ module Textus
           @evaluator  = evaluator
         end
 
+        # Returns the soonest `next_due_at` across all entries with a refresh
+        # policy, as an ISO-8601 string, or nil if none.
+        def soonest_due(prefix: nil, zone: nil)
+          times = call(prefix: prefix, zone: zone)
+                  .map { |r| r[:next_due_at] }
+                  .compact
+                  .map { |t| Time.parse(t) }
+          return nil if times.empty?
+
+          times.min.utc.iso8601
+        end
+
         def call(prefix: nil, zone: nil)
           rows = []
           @manifest.entries.each do |mentry|

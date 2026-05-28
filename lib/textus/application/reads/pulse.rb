@@ -1,4 +1,5 @@
 require "digest"
+require "time"
 
 module Textus
   module Application
@@ -18,14 +19,15 @@ module Textus
         end
 
         def call(since: 0)
-          changed = audit_changes_since(since)
+          freshness_rows = freshness.call
           {
             "cursor" => @audit_log.latest_seq,
-            "changed" => changed,
-            "stale" => stale_keys,
+            "changed" => audit_changes_since(since),
+            "stale" => freshness_rows.select { |r| r[:status] == :stale }.map { |r| r[:key] },
             "pending_review" => review_keys,
             "doctor" => doctor_summary,
             "manifest_etag" => manifest_etag,
+            "next_due_at" => soonest_due(freshness_rows),
           }
         end
 
@@ -36,10 +38,15 @@ module Textus
                       .call(seq_since: seq)
         end
 
-        def stale_keys
-          # Freshness rows use symbol keys: { key: "x.y", status: :stale, ... }
-          rows = Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store).call
-          rows.select { |r| r[:status] == :stale }.map { |r| r[:key] }
+        def freshness
+          @freshness ||= Reads::Freshness.new(ctx: @ctx, manifest: @manifest, file_store: @file_store)
+        end
+
+        def soonest_due(rows)
+          times = rows.map { |r| r[:next_due_at] }.compact.map { |t| Time.parse(t) }
+          return nil if times.empty?
+
+          times.min.utc.iso8601
         end
 
         def review_keys
