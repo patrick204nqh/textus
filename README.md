@@ -165,7 +165,7 @@ See [`docs/agent-integration.md`](docs/agent-integration.md) for the agent boot 
 bundle exec rspec
 ```
 
-~637 examples; includes conformance fixtures A–I from SPEC §12.
+~880 examples; includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 
