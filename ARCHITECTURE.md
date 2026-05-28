@@ -87,3 +87,49 @@
 ## Hook payload contract
 
 Hooks/intakes/transforms receive the actual `Textus::Store` (the composition root) as `store:`. Every write/refresh event payload carries `role:` directly so hook authors observe the actor without reaching through `store:`.
+
+## Agent surface (boot + pulse + MCP)
+
+Agents and plugins talk to a textus store through three layers:
+
+```
+soul (skill/agent)  ──▶  gate (CLI | MCP)  ──▶  Operations  ──▶  memory (.textus/)
+```
+
+Two transports, one façade:
+
+- **CLI** — human/script surface. `textus boot`, `textus pulse --since=N`, `textus get/put/...`.
+- **MCP** (added in 0.23.0) — agent surface. `textus mcp serve` runs a stdio JSON-RPC 2.0 server speaking MCP draft 2024-11-05. Tools are auto-derived from the manifest. Session state (cursor, role, manifest_etag) is server-side.
+
+Both transports call `Operations.for(store, role:)`. No duplicate logic.
+
+The agent loop (cadence guide in `docs/agent-integration.md`):
+
+1. **Session start:** `boot()` → contract envelope (zones, entries, schemas, write_flows, agent_quickstart with `latest_seq`).
+2. **Per turn:** `tick(since=cursor)` → `{cursor, changed, stale, pending_review, doctor}`.
+3. **On demand:** `read`, `write`, `propose`, `refresh`, `schema`, `rules`.
+
+Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
+
+## Hooks::Bus event catalog
+
+RPC (single handler):
+- `resolve_intake(store:, config:, args:)` — intake fetch handler.
+- `transform_rows(store:, rows:, config:)` — row transform for intakes.
+- `validate(store:)` — custom doctor validator.
+
+Pub-sub (0..N handlers, kwargs include `ctx:` instead of `store:`):
+- `entry_put(ctx:, key:, envelope:)`
+- `entry_deleted(ctx:, key:)`
+- `entry_refreshed(ctx:, key:, envelope:, change:)`
+- `entry_renamed(ctx:, key:, from_key:, to_key:, envelope:)`
+- `build_completed(ctx:, key:, envelope:, sources:)`
+- `proposal_accepted(ctx:, key:, target_key:)`
+- `proposal_rejected(ctx:, key:, target_key:)`
+- `file_published(ctx:, key:, envelope:, source:, target:)`
+- `store_loaded(ctx:)`
+- `refresh_started(ctx:, key:, mode:)`
+- `refresh_failed(ctx:, key:, error_class:, error_message:)`
+- `refresh_backgrounded(ctx:, key:, started_at:, budget_ms:)`
+
+Authoritative source: `lib/textus/hooks/bus.rb` `EVENTS`.
