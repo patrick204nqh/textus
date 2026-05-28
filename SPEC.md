@@ -397,7 +397,7 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=runner` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(config:, store:, args: {})`, and writes the result under role `runner`.
+1. **In-process** — `textus refresh KEY --as=runner` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under role `runner`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=runner --stdin`. The CLI verb `textus refresh stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
 Both paths share the same role gate, audit-log entry, and `:entry_refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
@@ -495,11 +495,11 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 ```ruby
 # Canonical form — works for every event:
 Textus.hook do |reg|
-  reg.on(:resolve_intake,  :my_source)              { |config:, args:, **|  … }
-  reg.on(:transform_rows,  :rank_by_recency)         { |rows:, **|            … }
-  reg.on(:validate,        :storage_writable)        { |store:|               … }
-  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+  reg.on(:resolve_intake,  :my_source)              { |caps:, config:, args:, **|  … }
+  reg.on(:transform_rows,  :rank_by_recency)         { |caps:, rows:, **|            … }
+  reg.on(:validate,        :storage_writable)        { |caps:|                        … }
+  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
+  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -509,21 +509,21 @@ end
 
 | Event                   | Mode    | Args                                                      | Return                | Failure       |
 |-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| `:resolve_intake`       | rpc     | store:, config:, args:                                    | {_meta:, body:}       | aborts op     |
-| `:transform_rows`       | rpc     | store:, rows:, config:                                    | rows array            | aborts op     |
-| `:validate`             | rpc     | store:                                                    | issues array          | aborts doctor |
-| `:entry_put`            | pubsub  | store:, key:, envelope:                                   | (discarded)           | logged        |
-| `:entry_deleted`        | pubsub  | store:, key:                                              | (discarded)           | logged        |
-| `:entry_refreshed`      | pubsub  | store:, key:, envelope:, change:                          | (discarded)           | logged        |
-| `:build_completed`      | pubsub  | store:, key:, envelope:, sources:                         | (discarded)           | logged        |
-| `:proposal_accepted`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| `:file_published`       | pubsub  | store:, key:, envelope:, source:, target:                 | (discarded)           | logged        |
-| `:entry_renamed`        | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
-| `:proposal_rejected`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| `:store_loaded`         | pubsub  | store:                                                    | (discarded)           | logged        |
-| `:refresh_started`      | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
-| `:refresh_failed`       | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
-| `:refresh_backgrounded` | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
+| `:resolve_intake`       | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
+| `:transform_rows`       | rpc     | caps:, rows:, config:                                     | rows array            | aborts op     |
+| `:validate`             | rpc     | caps:                                                     | issues array          | aborts doctor |
+| `:entry_put`            | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
+| `:entry_deleted`        | pubsub  | ctx:, key:                                                | (discarded)           | logged        |
+| `:entry_refreshed`      | pubsub  | ctx:, key:, envelope:, change:                            | (discarded)           | logged        |
+| `:build_completed`      | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
+| `:proposal_accepted`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
+| `:file_published`       | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
+| `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
+| `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
+| `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
+| `:refresh_started`      | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
+| `:refresh_failed`       | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
+| `:refresh_backgrounded` | pubsub  | ctx:, key:, started_at:, budget_ms:                       | (discarded)           | logged        |
 
 The three `:refresh_*` lifecycle events report the progress and failures of background (timed_sync) refreshes.
 
@@ -533,13 +533,18 @@ The three `:refresh_*` lifecycle events report the progress and failures of back
 
 **`:refresh_backgrounded`** fires when a `timed_sync` refresh exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
 
-**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
+**Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
+
+- **RPC hooks** (`rpc` mode) receive `caps:` — a `ReadCaps` or `WriteCaps` slice (`Textus::Application::ReadCaps` / `WriteCaps`). Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
+- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that wraps the session and exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
+
+Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
+
+The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
 
 **RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `compute.transform: NAME`). Failure or timeout aborts the calling operation.
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
-
-The `store:` argument is always a read-only store proxy. Write attempts raise `UsageError`.
 
 Each handler runs under `Timeout.timeout(2)`.
 
