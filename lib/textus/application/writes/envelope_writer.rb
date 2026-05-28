@@ -3,9 +3,9 @@ require "fileutils"
 module Textus
   module Application
     module Writes
-      # Owns the write pipeline (validate, serialize, etag-check, write, audit)
-      # extracted from EnvelopeIO. Talks to ports (FileStore, Schemas,
-      # AuditLog, Manifest) and an EnvelopeReader for the existing-uid lookup.
+      # Owns the write pipeline (validate, serialize, etag-check, write, audit).
+      # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
+      # EnvelopeReader for the existing-uid lookup.
       #
       # Invariant: every public method's final action is @audit_log.append(...).
       #
@@ -27,13 +27,12 @@ module Textus
           path = @manifest.resolver.resolve(key).path
 
           meta = payload.meta || {}
-          strategy = Entry.for_format(mentry.format)
 
           existing_uid = @reader.existing_uid(key)
           meta, content = ensure_uid(mentry.format, meta, payload.content, existing_uid)
 
           bytes, eff_meta, eff_body, eff_content = serialize_for_put(
-            mentry: mentry, path: path, strategy: strategy,
+            mentry: mentry, path: path,
             meta: meta, body: payload.body, content: content
           )
 
@@ -64,8 +63,10 @@ module Textus
           envelope
         end
 
-        def delete(key, mentry:, if_etag: nil)
-          _ = mentry
+        def delete(key, mentry: nil, if_etag: nil) # rubocop:disable Lint/UnusedMethodArgument
+          # `mentry:` is accepted for symmetry with `put` / `move` and to
+          # leave room for future format-specific delete hooks; no field
+          # on it is needed today.
           path = @manifest.resolver.resolve(key).path
           raise UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)) unless @file_store.exists?(path)
 
@@ -128,8 +129,7 @@ module Textus
           Textus::Entry.for_format(format).enforce_name_match!(path, meta)
         end
 
-        def serialize_for_put(mentry:, path:, strategy:, meta:, body:, content:)
-          _ = strategy
+        def serialize_for_put(mentry:, path:, meta:, body:, content:)
           Textus::Entry.for_format(mentry.format).serialize_for_put(
             meta: meta, body: body, content: content, path: path,
           )
