@@ -20,7 +20,7 @@ module Textus
             role_str = role&.to_s
             return true if role_str.nil? || role_str.empty?
 
-            kind = manifest.role_kind(role_str)
+            kind = manifest.policy.role_kind(role_str)
             return true if kind == :accept_authority
 
             @reason = "role '#{role_str}' has kind '#{kind.inspect}', expected ':accept_authority'"

@@ -4,7 +4,7 @@ module Textus
       class Schemas < Check
         def call
           out = []
-          store.manifest.entries.each do |entry|
+          store.manifest.data.entries.each do |entry|
             next if entry.schema.nil?
 
             sp = File.join(store.root, "schemas", "#{entry.schema}.yaml")

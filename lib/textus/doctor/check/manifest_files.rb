@@ -3,10 +3,10 @@ module Textus
     class Check
       class ManifestFiles < Check
         def call
-          store.manifest.entries.each_with_object([]) do |entry, out|
+          store.manifest.data.entries.each_with_object([]) do |entry, out|
             next if entry.nested?
 
-            path = Textus::Key::Path.resolve(store.manifest, entry)
+            path = Textus::Key::Path.resolve(store.manifest.data, entry)
             next if File.exist?(path)
 
             out << {

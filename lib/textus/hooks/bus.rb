@@ -144,6 +144,54 @@ module Textus
         kwargs.slice(*accepted)
       end
 
+      # Track which (event, hook_name) pairs have already received the
+      # store-deprecation notice so we only emit it once per pair.
+      @ports_store_deprecation_seen = {}
+
+      class << self
+        # Builds the kwargs hash to pass to an RPC callable, injecting the
+        # current `ports` value under whichever name the callable declares:
+        # `ports:` (preferred) or `store:` (legacy, one-cycle bridge — emits
+        # a deprecation entry into the error_log on first use per
+        # (event, hook_name) pair).
+        #
+        # The `other:` hash holds non-port kwargs (config, args, rows, etc.)
+        # which are passed through unchanged.
+        def inject_ports_kwargs(callable, ports:, error_log:, event:, hook_name:, other: {})
+          params = callable.parameters
+          accepts_keyrest = params.any? { |type, _| type == :keyrest }
+          declared = params.each_with_object([]) { |(t, n), acc| acc << n if %i[key keyreq].include?(t) }
+
+          out = other.dup
+          out[:ports] = ports if accepts_keyrest || declared.include?(:ports)
+          if accepts_keyrest || declared.include?(:store)
+            out[:store] = ports
+            emit_store_deprecation(error_log, event: event, hook_name: hook_name)
+          end
+          out
+        end
+
+        private
+
+        def emit_store_deprecation(error_log, event:, hook_name:)
+          key = [event, hook_name]
+          return if @ports_store_deprecation_seen[key]
+
+          @ports_store_deprecation_seen[key] = true
+          return unless error_log
+
+          error_log.record(
+            seq: -1,
+            event: event,
+            hook: hook_name,
+            key: "-",
+            error_class: "DeprecationNotice",
+            error_message: "callable for #{event} '#{hook_name}' declares `store:` — rename to `ports:` " \
+                           "(Textus::Application::Ports). `store:` is a one-cycle bridge and will be removed.",
+          )
+        end
+      end
+
       def shape_check!(event, spec, blk)
         required = spec[:args]
         provided = blk.parameters.select { |t, _| %i[keyreq key keyrest].include?(t) } # rubocop:disable Style/HashSlice

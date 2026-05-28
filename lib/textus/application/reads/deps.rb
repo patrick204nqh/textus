@@ -2,12 +2,12 @@ module Textus
   module Application
     module Reads
       class Deps
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(ports:)
+          @manifest = ports.manifest
         end
 
         def call(key)
-          entry = @manifest.entries.find { |e| e.key == key } or return []
+          entry = @manifest.data.entries.find { |e| e.key == key } or return []
           return [] unless entry.is_a?(Textus::Manifest::Entry::Derived)
 
           src = entry.source

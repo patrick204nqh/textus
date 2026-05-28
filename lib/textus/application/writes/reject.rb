@@ -6,12 +6,12 @@ module Textus
       class Reject
         include AuthorityGate
 
-        def initialize(ctx:, manifest:, file_store:, envelope_io:, bus:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
-          @file_store   = file_store
-          @envelope_io  = envelope_io
-          @bus          = bus
+          @ports        = ports
+          @manifest     = ports.manifest
+          @writer       = writer
+          @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -25,7 +25,7 @@ module Textus
           end
 
           env = Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @manifest, file_store: @file_store,
+            ctx: @ctx, ports: @ports,
           ).call(pending_key)
           proposal = env.meta&.dig("proposal") or
             raise ProposalError.new("entry has no proposal block: #{pending_key}")
@@ -33,8 +33,8 @@ module Textus
             raise ProposalError.new("proposal missing target_key")
 
           Textus::Application::Writes::Delete.new(
-            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, ports: @ports, writer: @writer,
+            authorizer: @authorizer, hook_context: @hook_context
           ).call(pending_key, suppress_events: true)
 
           @bus.publish(:proposal_rejected,

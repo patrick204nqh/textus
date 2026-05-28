@@ -49,13 +49,7 @@ module Textus
           end
         raise UsageError.new("schema migrate needs --rename=OLD:NEW or schema.evolution.migrate_from") if renames.empty?
 
-        authority = store.manifest.roles_with_kind(:accept_authority).first
-        if authority.nil?
-          raise UsageError.new(
-            "schema migrate requires a role with kind :accept_authority in the manifest; " \
-            "none declared (add e.g. `- { name: owner, kind: accept_authority }` to roles:)",
-          )
-        end
+        authority = accept_authority_for(store)
         ops = Textus::Operations.for(store, role: authority)
         touched = []
         store.manifest.resolver.enumerate.each do |row|
@@ -91,6 +85,16 @@ module Textus
         store.schemas.fetch(name)
       rescue IoError
         raise UsageError.new("schema not found: #{name}")
+      end
+
+      def self.accept_authority_for(store)
+        authority = store.manifest.policy.roles_with_kind(:accept_authority).first
+        return authority if authority
+
+        raise UsageError.new(
+          "schema migrate requires a role with kind :accept_authority in the manifest; " \
+          "none declared (add e.g. `- { name: owner, kind: accept_authority }` to roles:)",
+        )
       end
     end
   end

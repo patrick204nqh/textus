@@ -3,54 +3,36 @@ require "fileutils"
 module Textus
   module Application
     module Writes
-      # Owns the write pipeline (validate, serialize, etag-check, write, audit)
-      # extracted from Store::Writer. Talks to ports (FileStore, Schemas,
-      # AuditLog, Manifest) instead of File/FileUtils and Store directly.
+      # Owns the write pipeline (validate, serialize, etag-check, write, audit).
+      # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
+      # EnvelopeReader for the existing-uid lookup.
+      #
+      # Invariant: every public method's final action is @audit_log.append(...).
       #
       # No permission check, no event firing — those belong to the caller
       # (Application::Writes::Put / ::Delete / ::Mv).
-      class EnvelopeIO
+      class EnvelopeWriter
         Payload = Data.define(:meta, :body, :content)
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, ctx:)
+        def initialize(file_store:, manifest:, schemas:, audit_log:, ctx:, reader:)
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas
           @audit_log  = audit_log
           @ctx        = ctx
+          @reader     = reader
         end
 
-        def exists?(path) = @file_store.exists?(path)
-
-        # Reads an envelope by key, returning nil when absent. Used by Mv
-        # to inspect pre-move state (UID presence, content surfacing) so
-        # the move pipeline can consolidate I/O in one place.
-        def read_envelope(key)
-          res = @manifest.resolver.resolve(key)
-          path = res.path
-          return nil unless @file_store.exists?(path)
-
-          mentry = res.entry
-          raw = @file_store.read(path)
-          parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-          Envelope.build(
-            key: key, mentry: mentry, path: path,
-            meta: parsed["_meta"], body: parsed["body"],
-            etag: Etag.for_bytes(raw), content: parsed["content"]
-          )
-        end
-
-        def write(key, mentry:, payload:, if_etag: nil)
+        def put(key, mentry:, payload:, if_etag: nil)
           path = @manifest.resolver.resolve(key).path
 
           meta = payload.meta || {}
-          strategy = Entry.for_format(mentry.format)
 
-          existing_uid = existing_uid_for(mentry, path)
+          existing_uid = @reader.existing_uid(key)
           meta, content = ensure_uid(mentry.format, meta, payload.content, existing_uid)
 
           bytes, eff_meta, eff_body, eff_content = serialize_for_put(
-            mentry: mentry, path: path, strategy: strategy,
+            mentry: mentry, path: path,
             meta: meta, body: payload.body, content: content
           )
 
@@ -69,19 +51,22 @@ module Textus
 
           @file_store.write(path, bytes)
           etag_after = Etag.for_bytes(bytes)
+          envelope = Envelope.build(
+            key: key, mentry: mentry, path: path,
+            meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
+          )
           @audit_log.append(
             role: @ctx.role, verb: "put", key: key,
             etag_before: etag_before, etag_after: etag_after,
             extras: @ctx.correlation_id ? { "correlation_id" => @ctx.correlation_id } : nil
           )
-          Envelope.build(
-            key: key, mentry: mentry, path: path,
-            meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
-          )
+          envelope
         end
 
-        def delete(key, mentry:, if_etag: nil)
-          _ = mentry
+        def delete(key, mentry: nil, if_etag: nil) # rubocop:disable Lint/UnusedMethodArgument
+          # `mentry:` is accepted for symmetry with `put` / `move` and to
+          # leave room for future format-specific delete hooks; no field
+          # on it is needed today.
           path = @manifest.resolver.resolve(key).path
           raise UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)) unless @file_store.exists?(path)
 
@@ -136,16 +121,6 @@ module Textus
 
         private
 
-        def existing_uid_for(mentry, path)
-          return nil unless @file_store.exists?(path)
-
-          raw = @file_store.read(path)
-          parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-          Envelope.extract_uid(parsed["_meta"])
-        rescue StandardError
-          nil
-        end
-
         def ensure_uid(format, meta, content, existing_uid)
           Textus::Entry.for_format(format).inject_uid(meta, content, existing_uid)
         end
@@ -154,8 +129,7 @@ module Textus
           Textus::Entry.for_format(format).enforce_name_match!(path, meta)
         end
 
-        def serialize_for_put(mentry:, path:, strategy:, meta:, body:, content:)
-          _ = strategy
+        def serialize_for_put(mentry:, path:, meta:, body:, content:)
           Textus::Entry.for_format(mentry.format).serialize_for_put(
             meta: meta, body: body, content: content, path: path,
           )

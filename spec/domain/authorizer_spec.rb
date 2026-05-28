@@ -3,13 +3,13 @@
 require "spec_helper"
 
 RSpec.describe Textus::Domain::Authorizer do
-  let(:manifest) do
+  let(:policy) do
     instance_double(
-      Textus::Manifest,
+      Textus::Manifest::Policy,
       zone_writers: %w[human],
       zone_readers: { "working" => :all, "identity" => %w[human] },
-    ).tap do |m|
-      allow(m).to receive(:permission_for) do |zone|
+    ).tap do |p|
+      allow(p).to receive(:permission_for) do |zone|
         Textus::Domain::Permission.new(
           zone: zone,
           write_policy: %w[human],
@@ -18,6 +18,7 @@ RSpec.describe Textus::Domain::Authorizer do
       end
     end
   end
+  let(:manifest) { instance_double(Textus::Manifest, policy: policy) }
 
   let(:mentry) { instance_double(Textus::Manifest::Entry::Base, zone: "working", key: "working.foo") }
 

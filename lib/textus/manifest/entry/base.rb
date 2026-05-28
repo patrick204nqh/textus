@@ -19,13 +19,13 @@ module Textus
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
         def zone_writers
-          @manifest.zone_writers(@zone)
+          @manifest.policy.zone_writers(@zone)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone? = @manifest.zone_kinds(@zone).include?(:generator)
-        def in_proposal_zone?  = @manifest.zone_kinds(@zone).include?(:proposer)
+        def in_generator_zone? = @manifest.policy.zone_kinds(@zone).include?(:generator)
+        def in_proposal_zone?  = @manifest.policy.zone_kinds(@zone).include?(:proposer)
 
         def nested?  = false
         def derived? = false
@@ -42,7 +42,7 @@ module Textus
         def index_filename = nil
 
         PublishContext = Struct.new(
-          :repo_root, :manifest, :file_store, :root, :store, :ctx, :bus, :hook_context,
+          :repo_root, :manifest, :file_store, :root, :ports, :boot, :ctx, :bus, :hook_context,
           :reader, :emit, # callables: reader.call(key) → envelope; emit.call(event, **payload)
           keyword_init: true
         )

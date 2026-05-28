@@ -11,24 +11,24 @@ module Textus
       end
 
       def can_write?(zone, role:)
-        @manifest.permission_for(zone.to_s).allows_write?(role)
+        @manifest.policy.permission_for(zone.to_s).allows_write?(role)
       end
 
       def can_read?(zone, role:)
-        @manifest.permission_for(zone.to_s).allows_read?(role)
+        @manifest.policy.permission_for(zone.to_s).allows_read?(role)
       end
 
       def authorize_write!(mentry, role:)
         return if can_write?(mentry.zone, role: role)
 
-        writers = @manifest.zone_writers(mentry.zone)
+        writers = @manifest.policy.zone_writers(mentry.zone)
         raise WriteForbidden.new(mentry.key, mentry.zone, writers: writers)
       end
 
       def authorize_read!(mentry, role:)
         return if can_read?(mentry.zone, role: role)
 
-        readers = @manifest.zone_readers[mentry.zone]
+        readers = @manifest.policy.zone_readers[mentry.zone]
         readers = nil if readers == :all
         raise ReadForbidden.new(mentry.key, mentry.zone, readers: readers)
       end

@@ -2,11 +2,10 @@ module Textus
   module Application
     module Refresh
       class Orchestrator
-        def initialize(worker:, store_root:, bus: nil, store: nil, ctx: nil, hook_context: nil, detached_spawner: nil) # rubocop:disable Metrics/ParameterLists
+        def initialize(worker:, store_root:, bus: nil, ctx: nil, hook_context: nil, detached_spawner: nil)
           @worker       = worker
           @store_root   = store_root
           @bus          = bus
-          @store        = store
           @ctx          = ctx
           @hook_context = hook_context
           @detached_spawner = detached_spawner || default_spawner

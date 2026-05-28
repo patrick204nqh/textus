@@ -7,9 +7,9 @@ module Textus
       # YAML string. Returns a Plan describing rule additions/removals/
       # changes. Does NOT write anything.
       class RuleLint
-        def initialize(ctx:, store:)
-          @ctx   = ctx
-          @store = store
+        def initialize(ctx:, ports:)
+          @ctx  = ctx
+          @root = ports.root
         end
 
         def call(candidate_yaml:)
@@ -38,7 +38,7 @@ module Textus
         private
 
         def current_rules
-          raw = YAML.safe_load_file(File.join(@store.root, "manifest.yaml"),
+          raw = YAML.safe_load_file(File.join(@root, "manifest.yaml"),
                                     permitted_classes: [Symbol], aliases: false)
           Array(raw["rules"])
         end

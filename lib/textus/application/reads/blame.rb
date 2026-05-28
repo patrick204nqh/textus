@@ -8,13 +8,14 @@ module Textus
       # row. Falls back to `git => nil` when not in a git repo or when the
       # file is untracked.
       class Blame
-        def initialize(manifest:, root:)
-          @manifest = manifest
-          @root = root
+        def initialize(ports:)
+          @ports    = ports
+          @manifest = ports.manifest
+          @root     = ports.root
         end
 
         def call(key:, limit: nil)
-          audit_rows = Textus::Application::Reads::Audit.new(manifest: @manifest, root: @root).call(key: key, limit: limit)
+          audit_rows = Textus::Application::Reads::Audit.new(ports: @ports).call(key: key, limit: limit)
           path = resolve_path(key)
           return audit_rows.map { |r| r.merge("git" => nil) } unless git_tracked?(path)
 
@@ -30,7 +31,7 @@ module Textus
           # Nested entries resolve to a file under the entry path; leaf entries
           # already have a fully-resolved path. Either way `path` is what git
           # needs to know about.
-          path || Textus::Key::Path.resolve(@manifest, mentry)
+          path || Textus::Key::Path.resolve(@manifest.data, mentry)
         rescue Textus::Error
           nil
         end

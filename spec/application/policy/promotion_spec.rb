@@ -51,8 +51,9 @@ RSpec.describe Textus::Application::Policy::Promotion do
 
   describe "accept_authority predicate routing" do
     it "evaluate(role:) fails for non-authority role and reports the kind seen" do
-      manifest = instance_double(Textus::Manifest)
-      allow(manifest).to receive(:role_kind).with("agent").and_return(:proposer)
+      mpolicy = instance_double(Textus::Manifest::Policy)
+      allow(mpolicy).to receive(:role_kind).with("agent").and_return(:proposer)
+      manifest = instance_double(Textus::Manifest, policy: mpolicy)
       policy = described_class.from_names(%w[accept_authority_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "agent")
       expect(result.ok?).to be false
@@ -60,8 +61,9 @@ RSpec.describe Textus::Application::Policy::Promotion do
     end
 
     it "evaluate(role:) passes for the manifest's accept_authority role regardless of name" do
-      manifest = instance_double(Textus::Manifest)
-      allow(manifest).to receive(:role_kind).with("owner").and_return(:accept_authority)
+      mpolicy = instance_double(Textus::Manifest::Policy)
+      allow(mpolicy).to receive(:role_kind).with("owner").and_return(:accept_authority)
+      manifest = instance_double(Textus::Manifest, policy: mpolicy)
       policy = described_class.from_names(%w[accept_authority_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "owner")
       expect(result.ok?).to be true

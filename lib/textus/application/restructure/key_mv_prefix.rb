@@ -5,9 +5,10 @@ module Textus
       # Reuses Operations#mv for the per-entry work — emits one audit
       # row per file moved.
       class KeyMvPrefix
-        def initialize(ctx:, store:)
-          @ctx   = ctx
-          @store = store
+        def initialize(ctx:, ports:, operations:)
+          @ctx        = ctx
+          @ports      = ports
+          @operations = operations
         end
 
         def call(from_prefix:, to_prefix:, dry_run: false)
@@ -26,15 +27,14 @@ module Textus
           plan = Plan.new(steps: steps, warnings: warnings)
           return plan if dry_run
 
-          ops = Operations.for(@store, role: @ctx.role, correlation_id: @ctx.correlation_id)
-          steps.each { |s| ops.mv(s["from"], s["to"], dry_run: false) }
+          steps.each { |s| @operations.mv(s["from"], s["to"], dry_run: false) }
           plan
         end
 
         private
 
         def list_leaves_under(prefix)
-          Reads::List.new(manifest: @store.manifest)
+          Reads::List.new(ports: @ports)
                      .call(prefix: prefix)
                      .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
         end

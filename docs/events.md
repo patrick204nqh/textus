@@ -446,6 +446,20 @@ end
 
 A non-empty return array surfaces as a doctor failure with each issue listed.
 
+#### `store:` is deprecated in 0.25.1 — declare `ports:` (removed in 0.26.0)
+
+From 0.25.1, RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) should declare `|ports:|` instead of `|store:|`. The kwarg is a `Textus::Application::Ports` — a value record over six adapter handles (`manifest`, `file_store`, `schemas`, `audit_log`, `event_bus`, `rpc_registry`) plus the store root. `store:` continues to work via a one-cycle deprecation bridge and will be **removed in 0.26.0**; on first use, a `DeprecationNotice` row is recorded into `Hooks::Bus#error_log` per (event, hook_name) pair. Declare `ports:` to silence it.
+
+```ruby
+Textus.hook do |reg|
+  reg.on(:validate, :no_drafts_in_identity) do |ports:|
+    Textus::Application::Reads::List.new(manifest: ports.manifest).call(zone: "identity")
+      .select { |e| e["frontmatter"]["status"] == "draft" }
+      .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
+  end
+end
+```
+
 ---
 
 ## Where to go from here

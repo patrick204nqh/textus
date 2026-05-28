@@ -6,13 +6,14 @@ module Textus
       class Accept
         include AuthorityGate
 
-        def initialize(ctx:, manifest:, file_store:, schemas:, envelope_io:, bus:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
-          @file_store   = file_store
-          @schemas      = schemas
-          @envelope_io  = envelope_io
-          @bus          = bus
+          @ports        = ports
+          @manifest     = ports.manifest
+          @file_store   = ports.file_store
+          @schemas      = ports.schemas
+          @writer       = writer
+          @bus          = ports.event_bus
           @authorizer   = authorizer
           @hook_context = hook_context
         end
@@ -21,7 +22,7 @@ module Textus
           assert_accept_authority!("accept")
 
           env = Textus::Application::Reads::Get.new(
-            ctx: @ctx, manifest: @manifest, file_store: @file_store,
+            ctx: @ctx, ports: @ports,
           ).call(pending_key)
           proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
@@ -56,20 +57,20 @@ module Textus
 
         def put_op
           @put_op ||= Textus::Application::Writes::Put.new(
-            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, ports: @ports, writer: @writer,
+            authorizer: @authorizer, hook_context: @hook_context
           )
         end
 
         def delete_op
           @delete_op ||= Textus::Application::Writes::Delete.new(
-            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io,
-            bus: @bus, authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, ports: @ports, writer: @writer,
+            authorizer: @authorizer, hook_context: @hook_context
           )
         end
 
         def evaluate_promotion!(env, target_key)
-          rules = @manifest.rules_for(target_key)
+          rules = @manifest.rules.for(target_key)
           promote = rules.promote
           return if promote.nil? || promote.requires.empty?
 

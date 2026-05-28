@@ -2,25 +2,25 @@ module Textus
   module Application
     module Writes
       class Put
-        def initialize(ctx:, manifest:, envelope_io:, bus:, authorizer:, hook_context:)
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
-          @envelope_io  = envelope_io
-          @bus          = bus
+          @manifest     = ports.manifest
+          @bus          = ports.event_bus
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
 
         def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
-          @manifest.validate_key!(key)
+          Textus::Manifest::Data.validate_key!(key)
           mentry = @manifest.resolver.resolve(key).entry
 
           @authorizer.authorize_write!(mentry, role: @ctx.role)
 
-          envelope = @envelope_io.write(
+          envelope = @writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Application::Writes::EnvelopeIO::Payload.new(meta: meta, body: body, content: content),
+            payload: Textus::Application::Writes::EnvelopeWriter::Payload.new(meta: meta, body: body, content: content),
             if_etag: if_etag,
           )
 

@@ -2,10 +2,9 @@ module Textus
   module Application
     module Reads
       class Uid
-        def initialize(ctx:, manifest:, file_store:)
-          @ctx        = ctx
-          @manifest   = manifest
-          @file_store = file_store
+        def initialize(ctx:, ports:)
+          @ctx   = ctx
+          @ports = ports
         end
 
         def call(key)
@@ -15,7 +14,7 @@ module Textus
         private
 
         def get
-          @get ||= Get.new(ctx: @ctx, manifest: @manifest, file_store: @file_store)
+          @get ||= Get.new(ctx: @ctx, ports: @ports)
         end
       end
     end

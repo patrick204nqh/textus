@@ -2,12 +2,12 @@ module Textus
   module Application
     module Reads
       class Rdeps
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(ports:)
+          @manifest = ports.manifest
         end
 
         def call(key)
-          @manifest.entries.each_with_object([]) do |e, acc|
+          @manifest.data.entries.each_with_object([]) do |e, acc|
             next unless e.is_a?(Textus::Manifest::Entry::Derived)
 
             src = e.source

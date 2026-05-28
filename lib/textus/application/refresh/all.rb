@@ -2,23 +2,21 @@ module Textus
   module Application
     module Refresh
       class All
-        def initialize(ctx:, manifest:, envelope_io:, bus:, store:, authorizer:, hook_context:) # rubocop:disable Metrics/ParameterLists
+        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
           @ctx          = ctx
-          @manifest     = manifest
-          @envelope_io  = envelope_io
-          @bus          = bus
-          @store        = store
+          @ports        = ports
+          @writer       = writer
           @authorizer   = authorizer
           @hook_context = hook_context
         end
 
         def call(prefix: nil, zone: nil)
           worker = Textus::Application::Refresh::Worker.new(
-            ctx: @ctx, manifest: @manifest, envelope_io: @envelope_io, bus: @bus,
-            store: @store, authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, ports: @ports, writer: @writer,
+            authorizer: @authorizer, hook_context: @hook_context
           )
 
-          stale_rows = Textus::Application::Reads::Stale.new(manifest: @manifest).call(prefix: prefix, zone: zone)
+          stale_rows = Textus::Application::Reads::Stale.new(ports: @ports).call(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

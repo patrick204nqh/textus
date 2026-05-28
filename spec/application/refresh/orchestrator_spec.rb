@@ -45,7 +45,6 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       worker: worker,
       store_root: "/tmp/fake",
       bus: fake_bus,
-      store: fake_store,
       detached_spawner: spawner,
     )
   end
@@ -100,7 +99,6 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       orch = described_class.new(
         worker: slow_worker,
         bus: fake_bus,
-        store: fake_store,
         store_root: "/tmp/fake",
         detached_spawner: spawner,
       )
@@ -115,7 +113,7 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
       expect(fake_bus.published.map(&:first)).to include(:refresh_backgrounded)
     end
 
-    it "returns Detached without forking when the per-leaf lock is already held (Bug 1)", # rubocop:disable RSpec/ExampleLength
+    it "returns Detached without forking when the per-leaf lock is already held (Bug 1)",
        skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
       Dir.mktmpdir do |store_root|
         slow_worker = Class.new do
@@ -135,7 +133,6 @@ RSpec.describe Textus::Application::Refresh::Orchestrator do
         orch = described_class.new(
           worker: slow_worker,
           bus: fake_bus,
-          store: fake_store,
           store_root: store_root,
           detached_spawner: spawner,
         )

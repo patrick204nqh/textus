@@ -7,19 +7,20 @@ module Textus
       # the `zone:` field on every entry under the old zone, and moves
       # every file from zones/<old>/ to zones/<new>/.
       class ZoneMv
-        def initialize(ctx:, store:)
-          @ctx   = ctx
-          @store = store
+        def initialize(ctx:, ports:)
+          @ctx      = ctx
+          @manifest = ports.manifest
+          @root     = ports.root
         end
 
         def call(from:, to:, dry_run: false)
           raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
-          raise UsageError.new("zone '#{from}' not declared") unless @store.manifest.zones.key?(from)
+          raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.zones.key?(from)
 
-          dest_dir = File.join(@store.root, "zones", to)
+          dest_dir = File.join(@root, "zones", to)
           raise UsageError.new("destination 'zones/#{to}' already exists") if File.exist?(dest_dir)
 
-          affected_keys = @store.manifest.entries.select { |e| e.zone == from }.map(&:key)
+          affected_keys = @manifest.data.entries.select { |e| e.zone == from }.map(&:key)
 
           steps  = [{ "op" => "rename_zone", "from" => from, "to" => to }]
           steps += affected_keys.map { |k| { "op" => "mv", "from" => k, "to" => "#{to}#{k[from.length..]}" } }
@@ -28,14 +29,14 @@ module Textus
           return plan if dry_run
 
           rewrite_manifest!(from, to)
-          FileUtils.mv(File.join(@store.root, "zones", from), dest_dir)
+          FileUtils.mv(File.join(@root, "zones", from), dest_dir)
           plan
         end
 
         private
 
         def rewrite_manifest!(from, to)
-          path = File.join(@store.root, "manifest.yaml")
+          path = File.join(@root, "manifest.yaml")
           raw = YAML.safe_load_file(path, permitted_classes: [Symbol], aliases: false)
           raw["zones"].each { |z| z["name"] = to if z["name"] == from }
           raw["entries"].each do |e|

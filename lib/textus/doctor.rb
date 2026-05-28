@@ -53,29 +53,30 @@ module Textus
     end
 
     def run_registered_checks(store)
-      out = []
-      store.bus.rpc_names(:validate).each do |name|
-        callable = store.bus.rpc_callable(:validate, name)
-        begin
-          result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(store: store) }
-          if result.is_a?(Array)
-            out.concat(result.map { |h| h.transform_keys(&:to_s) })
-          else
-            out << fail_issue(name, code: "doctor_check.bad_return",
-                                    message: "doctor_check '#{name}' returned #{result.class} (expected Array)",
-                                    fix: "return an array of issue hashes from the doctor_check block")
-          end
-        rescue Timeout::Error
-          out << fail_issue(name, code: "doctor_check.timeout",
-                                  message: "doctor_check '#{name}' exceeded #{DOCTOR_CHECK_TIMEOUT_SECONDS}s",
-                                  fix: "shorten the check or split it into smaller checks")
-        rescue StandardError => e
-          out << fail_issue(name, code: "doctor_check.failed",
-                                  message: "#{e.class}: #{e.message}",
-                                  fix: "fix the :validate hook in .textus/hooks/")
-        end
-      end
-      out
+      ports = Textus::Application::Ports.from_store(store)
+      store.bus.rpc_names(:validate).flat_map { |name| invoke_registered_check(store, ports, name) }
+    end
+
+    def invoke_registered_check(store, ports, name)
+      callable = store.bus.rpc_callable(:validate, name)
+      kwargs = Textus::Hooks::Bus.inject_ports_kwargs(
+        callable, ports: ports, error_log: store.bus.error_log,
+                  event: :validate, hook_name: name
+      )
+      result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) { callable.call(**kwargs) }
+      return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
+
+      [fail_issue(name, code: "doctor_check.bad_return",
+                        message: "doctor_check '#{name}' returned #{result.class} (expected Array)",
+                        fix: "return an array of issue hashes from the doctor_check block")]
+    rescue Timeout::Error
+      [fail_issue(name, code: "doctor_check.timeout",
+                        message: "doctor_check '#{name}' exceeded #{DOCTOR_CHECK_TIMEOUT_SECONDS}s",
+                        fix: "shorten the check or split it into smaller checks")]
+    rescue StandardError => e
+      [fail_issue(name, code: "doctor_check.failed",
+                        message: "#{e.class}: #{e.message}",
+                        fix: "fix the :validate hook in .textus/hooks/")]
     end
 
     def fail_issue(name, code:, message:, fix:)
@@ -88,6 +89,6 @@ module Textus
       }
     end
 
-    private_class_method :run_registered_checks, :fail_issue
+    private_class_method :run_registered_checks, :invoke_registered_check, :fail_issue
   end
 end

@@ -2,8 +2,8 @@ module Textus
   module Application
     module Reads
       class List
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(ports:)
+          @manifest = ports.manifest
         end
 
         def call(prefix: nil, zone: nil)

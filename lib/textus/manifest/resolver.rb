@@ -1,19 +1,19 @@
 module Textus
   class Manifest
     class Resolver
-      Resolution = Data.define(:entry, :path, :remaining)
+      Resolution = ::Data.define(:entry, :path, :remaining)
 
-      def initialize(manifest)
-        @manifest = manifest
+      def initialize(data)
+        @data = data
       end
 
       def resolve(key)
-        @manifest.validate_key!(key)
+        @data.validate_key!(key)
         segments = key.split(".")
-        candidates = @manifest.entries
-                              .map { |e| [e, e.key.split(".")] }
-                              .select { |(_, esegs)| esegs == segments[0, esegs.length] }
-                              .sort_by { |(_, esegs)| -esegs.length }
+        candidates = @data.entries
+                          .map { |e| [e, e.key.split(".")] }
+                          .select { |(_, esegs)| esegs == segments[0, esegs.length] }
+                          .sort_by { |(_, esegs)| -esegs.length }
         raise UnknownKey.new(key, suggestions: suggestions_for(key)) if candidates.empty?
 
         entry, esegs = candidates.first
@@ -23,7 +23,7 @@ module Textus
 
       def suggestions_for(key)
         candidates = enumerate.map { |r| r[:key] }
-        candidates.concat(@manifest.entries.reject { |e| nested_entry?(e) }.map(&:key))
+        candidates.concat(@data.entries.reject { |e| nested_entry?(e) }.map(&:key))
         candidates.uniq!
         Key::Distance.suggest(key, candidates, limit: 5)
       rescue StandardError
@@ -31,7 +31,7 @@ module Textus
       end
 
       def enumerate(prefix: nil)
-        out = @manifest.entries.flat_map { |entry| nested_entry?(entry) ? enumerate_nested(entry) : enumerate_leaf(entry) }
+        out = @data.entries.flat_map { |entry| nested_entry?(entry) ? enumerate_nested(entry) : enumerate_leaf(entry) }
         out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
         out.sort_by { |row| row[:key] }
       end
@@ -53,10 +53,10 @@ module Textus
 
           index_fn = entry.index_filename
           path = if index_fn
-                   File.join(@manifest.root, "zones", entry.path, *remaining, index_fn)
+                   File.join(@data.root, "zones", entry.path, *remaining, index_fn)
                  else
                    primary_ext = Textus::Entry.for_format(entry.format).extensions.first
-                   File.join(@manifest.root, "zones", entry.path, *remaining) + primary_ext
+                   File.join(@data.root, "zones", entry.path, *remaining) + primary_ext
                  end
           Resolution.new(entry: entry, path: path, remaining: remaining)
         end
@@ -68,7 +68,7 @@ module Textus
       end
 
       def enumerate_nested(entry)
-        base = File.join(@manifest.root, "zones", entry.path)
+        base = File.join(@data.root, "zones", entry.path)
         return [] unless File.directory?(base)
 
         entry_index_filename = entry.index_filename
@@ -101,7 +101,7 @@ module Textus
       end
 
       def resolve_leaf_path(entry)
-        Textus::Key::Path.resolve(@manifest, entry)
+        Textus::Key::Path.resolve(@data, entry)
       end
 
       def nested_glob(format)

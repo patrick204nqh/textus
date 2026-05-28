@@ -3,15 +3,16 @@ module Textus
     module Restructure
       # Bulk-delete every leaf key under `prefix`.
       class KeyDeletePrefix
-        def initialize(ctx:, store:)
-          @ctx   = ctx
-          @store = store
+        def initialize(ctx:, ports:, operations:)
+          @ctx        = ctx
+          @ports      = ports
+          @operations = operations
         end
 
         def call(prefix:, dry_run: false)
           raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
-          leaves = Reads::List.new(manifest: @store.manifest)
+          leaves = Reads::List.new(ports: @ports)
                               .call(prefix: prefix)
                               .map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
 
@@ -21,8 +22,7 @@ module Textus
           plan = Plan.new(steps: steps, warnings: warnings)
           return plan if dry_run
 
-          ops = Operations.for(@store, role: @ctx.role, correlation_id: @ctx.correlation_id)
-          steps.each { |s| ops.delete(s["key"]) }
+          steps.each { |s| @operations.delete(s["key"]) }
           plan
         end
       end
