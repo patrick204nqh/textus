@@ -6,7 +6,7 @@ RSpec.describe Textus::Hooks::Context do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
-  let(:ops)   { Textus::Operations.for(store, role: "agent") }
+  let(:ops)   { store.session(role: "agent") }
   let(:ctx)   { described_class.new(ops: ops) }
 
   before do

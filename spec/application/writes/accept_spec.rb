@@ -23,7 +23,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "applies the proposal target action and deletes the review entry" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").put(
+      store.session(role: "agent").put(
         "review.2026-05-19-add-bob",
         meta: {
           "name" => "2026-05-19-add-bob",
@@ -47,7 +47,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "raises ProposalError when role is not human" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").put(
+      store.session(role: "agent").put(
         "review.foo",
         meta: {
           "name" => "foo",
@@ -66,7 +66,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "fires :accepted event with correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").put(
+      store.session(role: "agent").put(
         "review.p1",
         meta: {
           "name" => "p1",
@@ -94,7 +94,7 @@ RSpec.describe Textus::Application::Writes::Accept do
   it "raises ProposalError when entry has no proposal block" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      Textus::Operations.for(store, role: "agent").put(
+      store.session(role: "agent").put(
         "review.noproposal",
         meta: { "name" => "noproposal" },
         body: "no proposal here",
@@ -124,7 +124,7 @@ RSpec.describe Textus::Application::Writes::Accept do
         rules: []
       YAML
       store = Textus::Store.new(textus_dir)
-      Textus::Operations.for(store, role: "agent").put(
+      store.session(role: "agent").put(
         "review.p",
         meta: { "name" => "p", "proposal" => { "target_key" => "working.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
         body: "b",
@@ -187,7 +187,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "passes the gate when schema_valid predicate succeeds (all required fields present)" do
       Dir.mktmpdir do |root|
         store = build_store_with_promotion(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").put(
+        store.session(role: "agent").put(
           "review.valid-proposal",
           meta: {
             "name" => "valid-proposal",
@@ -206,7 +206,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "raises ProposalError when schema_valid predicate fails (missing required field)" do
       Dir.mktmpdir do |root|
         store = build_store_with_promotion(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").put(
+        store.session(role: "agent").put(
           "review.bad-proposal",
           meta: {
             "name" => "bad-proposal",
@@ -246,7 +246,7 @@ RSpec.describe Textus::Application::Writes::Accept do
     it "accept_authority_signed predicate passes when role has accept_authority kind" do
       Dir.mktmpdir do |root|
         store = build_promotion_gate_store(File.join(root, ".textus"))
-        Textus::Operations.for(store, role: "agent").put(
+        store.session(role: "agent").put(
           "review.ha-proposal",
           meta: {
             "name" => "ha-proposal",

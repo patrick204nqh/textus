@@ -35,7 +35,7 @@ RSpec.describe "inject_boot:" do
 
   it "injects boot: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "builder").publish
+    store.session(role: "builder").publish
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
@@ -99,7 +99,7 @@ RSpec.describe "inject_boot:" do
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    Textus::Operations.for(store, role: "builder").publish
+    store.session(role: "builder").publish
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).not_to include("protocol=textus/3")
   end

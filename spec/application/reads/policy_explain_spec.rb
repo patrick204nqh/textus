@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
   it "lists every matching block with per-slot presence flags" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.policy_explain(key: "working.doc")
 
       expect(result[:key]).to eq("working.doc")
@@ -42,7 +42,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
   it "surfaces the per-slot effective winner (most-specific match)" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.policy_explain(key: "working.doc")
 
       expect(result[:effective][:refresh][:ttl_seconds]).to eq(300)
@@ -65,7 +65,7 @@ RSpec.describe Textus::Application::Reads::PolicyExplain do
 
       YAML
       store = Textus::Store.new(textus)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.policy_explain(key: "working.doc")
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:refresh]).to be_nil

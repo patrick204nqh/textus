@@ -9,43 +9,55 @@ module Textus
       #
       # Pure reads (build, projection, schema tooling) should use
       # `Reads::Get` directly; it has no orchestrator dependency.
-      class GetOrRefresh
-        def initialize(caps:, get:, orchestrator:)
-          @manifest     = caps.manifest
-          @get          = get
-          @orchestrator = orchestrator
+      module GetOrRefresh
+        def self.call(*, session:, ctx:, caps:, **)
+          Impl.new(
+            caps: caps,
+            get: Reads::Get::Impl.new(ctx: ctx, caps: caps),
+            orchestrator: session.refresh_orchestrator,
+          ).call(*, **)
         end
 
-        def call(key)
-          envelope = @get.call(key)
-          return nil if envelope.nil?
-          return envelope unless envelope.freshness&.stale
+        class Impl
+          def initialize(caps:, get:, orchestrator:)
+            @manifest     = caps.manifest
+            @get          = get
+            @orchestrator = orchestrator
+          end
 
-          policy_set = @manifest.rules.for(key)
-          refresh_policy = policy_set.refresh
-          return envelope if refresh_policy.nil?
+          def call(key)
+            envelope = @get.call(key)
+            return nil if envelope.nil?
+            return envelope unless envelope.freshness&.stale
 
-          policy = refresh_policy.to_freshness_policy
-          verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness.reason)
-          action = policy.decide(verdict)
-          outcome = @orchestrator.execute(action, key: key)
+            policy_set = @manifest.rules.for(key)
+            refresh_policy = policy_set.refresh
+            return envelope if refresh_policy.nil?
 
-          case outcome
-          when Textus::Domain::Outcome::Skipped
-            envelope
-          when Textus::Domain::Outcome::Refreshed
-            outcome.envelope.with(
-              freshness: Textus::Domain::Freshness.build(stale: false, reason: nil, refreshing: false),
-            )
-          when Textus::Domain::Outcome::Detached
-            envelope.with(freshness: envelope.freshness.with(refreshing: true))
-          when Textus::Domain::Outcome::Failed
-            envelope.with(
-              freshness: envelope.freshness.with(refresh_error: outcome.error.message),
-            )
+            policy = refresh_policy.to_freshness_policy
+            verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness.reason)
+            action = policy.decide(verdict)
+            outcome = @orchestrator.execute(action, key: key)
+
+            case outcome
+            when Textus::Domain::Outcome::Skipped
+              envelope
+            when Textus::Domain::Outcome::Refreshed
+              outcome.envelope.with(
+                freshness: Textus::Domain::Freshness.build(stale: false, reason: nil, refreshing: false),
+              )
+            when Textus::Domain::Outcome::Detached
+              envelope.with(freshness: envelope.freshness.with(refreshing: true))
+            when Textus::Domain::Outcome::Failed
+              envelope.with(
+                freshness: envelope.freshness.with(refresh_error: outcome.error.message),
+              )
+            end
           end
         end
       end
     end
   end
 end
+
+Textus::Application::UseCase.register(:get_or_refresh, Textus::Application::Reads::GetOrRefresh, caps: :write)

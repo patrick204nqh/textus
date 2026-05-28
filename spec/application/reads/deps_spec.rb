@@ -33,7 +33,7 @@ RSpec.describe Textus::Application::Reads::Deps do
   it "returns the keys that output.catalogs.people depends on" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.deps("output.catalogs.people")
       expect(result).to include("working.people")
     end

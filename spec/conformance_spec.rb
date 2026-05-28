@@ -80,7 +80,7 @@ RSpec.describe "textus/3 conformance" do
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
-      env = Textus::Operations.for(store).get("working.network.org.jane")
+      env = store.session.get("working.network.org.jane")
 
       aggregate_failures do
         expect(env.protocol).to eq("textus/3")
@@ -105,8 +105,8 @@ RSpec.describe "textus/3 conformance" do
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an agent tries to write identity" do
       expect do
-        Textus::Operations.for(store, role: "agent").put("identity.self",
-                                                         meta: { "name" => "self" }, body: "n/a")
+        store.session(role: "agent").put("identity.self",
+                                         meta: { "name" => "self" }, body: "n/a")
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
@@ -118,7 +118,7 @@ RSpec.describe "textus/3 conformance" do
   describe "Fixture C — schema validation" do
     it "raises SchemaViolation listing the missing required field" do
       expect do
-        Textus::Operations.for(store, role: "human").put(
+        store.session(role: "human").put(
           "working.network.org.bob",
           meta: { "name" => "bob", "org" => "acme" },
           body: "",
@@ -150,7 +150,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = Textus::Operations.for(store).stale(zone: "output")
+      rows = store.session.stale(zone: "output")
       expect(rows.length).to eq(1)
       row = rows.first
       expect(row["key"]).to eq("output.catalogs.skills")
@@ -178,7 +178,7 @@ RSpec.describe "textus/3 conformance" do
 
   describe "intake staleness via TTL" do
     it "flags intake entries that were never refreshed" do
-      rows = Textus::Operations.for(store).stale(zone: "intake")
+      rows = store.session.stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["key"]).to eq("intake.calendar.events")
       expect(rows.first["reason"]).to match(/never refreshed/)
@@ -194,7 +194,7 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = Textus::Operations.for(store).stale(zone: "intake")
+      rows = store.session.stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
@@ -209,7 +209,7 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = Textus::Operations.for(store).stale(zone: "intake")
+      rows = store.session.stale(zone: "intake")
       expect(rows).to be_empty
     end
   end
@@ -297,13 +297,13 @@ RSpec.describe "textus/3 conformance" do
 
   describe "--zone filter on list" do
     it "returns only entries in the named zone" do
-      expect(Textus::Operations.for(store).list(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
+      expect(store.session.list(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
     end
   end
 
   describe "store#validate_all" do
     it "returns ok when every entry conforms" do
-      res = Textus::Operations.for(store).validate_all
+      res = store.session.validate_all
       expect(res["ok"]).to be true
       expect(res["violations"]).to be_empty
     end
@@ -311,7 +311,7 @@ RSpec.describe "textus/3 conformance" do
     it "reports schema violations and bad frontmatter" do
       File.write(File.join(root, "zones/working/network/org/broken.md"),
                  "---\nname: broken\n---\n")
-      res = Textus::Operations.for(store).validate_all
+      res = store.session.validate_all
       expect(res["ok"]).to be false
       keys = res["violations"].map { |v| v["key"] }
       expect(keys).to include("working.network.org.broken")

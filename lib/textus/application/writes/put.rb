@@ -1,37 +1,49 @@
 module Textus
   module Application
     module Writes
-      class Put
-        def initialize(ctx:, caps:, writer:, hook_context:)
-          @ctx          = ctx
-          @manifest     = caps.manifest
-          @events       = caps.events
-          @authorizer   = caps.authorizer
-          @writer       = writer
-          @hook_context = hook_context
+      module Put
+        def self.call(*, session:, ctx:, caps:, **)
+          Impl.new(
+            ctx: ctx, caps: caps,
+            writer: session.envelope_writer,
+            hook_context: session.hook_context
+          ).call(*, **)
         end
 
-        def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
-          Textus::Manifest::Data.validate_key!(key)
-          mentry = @manifest.resolver.resolve(key).entry
+        class Impl
+          def initialize(ctx:, caps:, writer:, hook_context:)
+            @ctx          = ctx
+            @manifest     = caps.manifest
+            @events       = caps.events
+            @authorizer   = caps.authorizer
+            @writer       = writer
+            @hook_context = hook_context
+          end
 
-          @authorizer.authorize_write!(mentry, role: @ctx.role)
+          def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
+            Textus::Manifest::Data.validate_key!(key)
+            mentry = @manifest.resolver.resolve(key).entry
 
-          envelope = @writer.put(
-            key,
-            mentry: mentry,
-            payload: Textus::Application::Envelope::Writer::Payload.new(meta: meta, body: body, content: content),
-            if_etag: if_etag,
-          )
+            @authorizer.authorize_write!(mentry, role: @ctx.role)
 
-          @events.publish(:entry_put,
-                          ctx: @hook_context,
-                          key: key,
-                          envelope: envelope)
+            envelope = @writer.put(
+              key,
+              mentry: mentry,
+              payload: Textus::Application::Envelope::Writer::Payload.new(meta: meta, body: body, content: content),
+              if_etag: if_etag,
+            )
 
-          envelope
+            @events.publish(:entry_put,
+                            ctx: @hook_context,
+                            key: key,
+                            envelope: envelope)
+
+            envelope
+          end
         end
       end
     end
   end
 end
+
+Textus::Application::UseCase.register(:put, Textus::Application::Writes::Put, caps: :write)

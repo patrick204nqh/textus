@@ -20,7 +20,7 @@ RSpec.describe "correlation_id in audit rows" do
   it "put is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-put")
+      ops = store.session(role: "human", correlation_id: "test-corr-put")
 
       ops.put(
         "working.foo",
@@ -38,7 +38,7 @@ RSpec.describe "correlation_id in audit rows" do
   it "delete is audit-logged with the request's correlation_id" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ops = Textus::Operations.for(store, role: "human", correlation_id: "test-corr-del")
+      ops = store.session(role: "human", correlation_id: "test-corr-del")
 
       ops.put(
         "working.foo",

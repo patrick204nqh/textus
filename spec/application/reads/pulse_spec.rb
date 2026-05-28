@@ -23,7 +23,7 @@ RSpec.describe Textus::Application::Reads::Pulse do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:ops)   { Textus::Operations.for(store, role: "human") }
+  let(:ops)   { store.session(role: "human") }
 
   it "returns an envelope with cursor, changed, stale, pending_review, doctor" do
     result = ops.pulse(since: 0)

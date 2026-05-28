@@ -23,10 +23,10 @@ RSpec.describe Textus::Application::Restructure::KeyDeletePrefix do
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
   let(:caps) { Textus::Application.caps_from_store(store)[1] }
-  let(:ops) { Textus::Operations.for(store, role: ctx.role) }
+  let(:ops) { store.session(role: ctx.role) }
 
   it "previews keys to delete without touching files" do
-    plan = described_class.new(ctx: ctx, caps: caps, operations: ops).call(
+    plan = described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
       prefix: "working.notes", dry_run: true,
     )
     expect(plan.steps.map { |s| s["key"] }).to contain_exactly("working.notes.a", "working.notes.b")
@@ -34,7 +34,7 @@ RSpec.describe Textus::Application::Restructure::KeyDeletePrefix do
   end
 
   it "deletes when dry_run: false" do
-    described_class.new(ctx: ctx, caps: caps, operations: ops).call(
+    described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
       prefix: "working.notes", dry_run: false,
     )
     expect(Dir.glob(File.join(root, "zones/working/notes/*.md"))).to be_empty

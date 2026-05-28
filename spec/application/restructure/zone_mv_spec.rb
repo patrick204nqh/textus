@@ -24,8 +24,8 @@ RSpec.describe Textus::Application::Restructure::ZoneMv do
   let(:ctx) { test_ctx(role: "human") }
 
   it "previews zone rename + key relocation + manifest rewrite" do
-    plan = described_class.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
-                                                                                                   dry_run: true)
+    plan = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
+                                                                                                         dry_run: true)
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to include("rename_zone", "mv")
     expect(File.exist?(File.join(root, "zones/scratch/note.md"))).to be(true)
@@ -35,12 +35,14 @@ RSpec.describe Textus::Application::Restructure::ZoneMv do
     FileUtils.mkdir_p(File.join(root, "zones/sandbox"))
     File.write(File.join(root, "zones/sandbox/.keep"), "")
     expect do
-      described_class.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox", dry_run: true)
+      described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
+                                                                                                    dry_run: true)
     end.to raise_error(Textus::UsageError, /already exists/)
   end
 
   it "applies the rename and rewrites manifest" do
-    described_class.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox", dry_run: false)
+    described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
+                                                                                                  dry_run: false)
     raw = YAML.safe_load_file(File.join(root, "manifest.yaml"))
     zone_names = raw["zones"].map { |z| z["name"] }
     expect(zone_names).to include("sandbox")

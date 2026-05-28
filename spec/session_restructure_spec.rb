@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::Operations restructure surface" do
+RSpec.describe "Textus::Session restructure surface" do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 
@@ -19,11 +19,11 @@ RSpec.describe "Textus::Operations restructure surface" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:ops)   { Textus::Operations.for(store, role: "human") }
+  let(:sess)  { store.session(role: "human") }
 
   it "exposes key_mv_prefix, key_delete_prefix, zone_mv, rule_lint, migrate" do
     %i[key_mv_prefix key_delete_prefix zone_mv rule_lint migrate].each do |m|
-      expect(ops).to respond_to(m)
+      expect(sess).to respond_to(m)
     end
   end
 end

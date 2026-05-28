@@ -25,10 +25,10 @@ RSpec.describe Textus::Application::Restructure::KeyMvPrefix do
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
   let(:caps) { Textus::Application.caps_from_store(store)[1] }
-  let(:ops) { Textus::Operations.for(store, role: ctx.role) }
+  let(:ops) { store.session(role: ctx.role) }
 
   it "previews a bulk rename without touching files when dry_run" do
-    plan = described_class.new(ctx: ctx, caps: caps, operations: ops).call(
+    plan = described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
       from_prefix: "working.old", to_prefix: "working.new", dry_run: true,
     )
     ops = plan.steps.map { |s| s["op"] }
@@ -41,7 +41,7 @@ RSpec.describe Textus::Application::Restructure::KeyMvPrefix do
   end
 
   it "applies the rename when dry_run: false" do
-    described_class.new(ctx: ctx, caps: caps, operations: ops).call(
+    described_class::Impl.new(ctx: ctx, caps: caps, operations: ops).call(
       from_prefix: "working.old", to_prefix: "working.new", dry_run: false,
     )
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(false)

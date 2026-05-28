@@ -6,62 +6,70 @@ module Textus
       #
       # For interactive reads that want refresh-on-stale, use
       # `Reads::GetOrRefresh`, which composes this with the orchestrator.
-      class Get
-        def initialize(ctx:, caps:, evaluator: Textus::Domain::Freshness::Evaluator)
-          @ctx        = ctx
-          @manifest   = caps.manifest
-          @file_store = caps.file_store
-          @evaluator  = evaluator
+      module Get
+        def self.call(*, session:, ctx:, caps:, **) # rubocop:disable Lint/UnusedMethodArgument
+          Impl.new(ctx: ctx, caps: caps).call(*, **)
         end
 
-        def call(key)
-          envelope = read_raw_envelope(key)
-          return nil if envelope.nil?
+        class Impl
+          def initialize(ctx:, caps:, evaluator: Textus::Domain::Freshness::Evaluator)
+            @ctx        = ctx
+            @manifest   = caps.manifest
+            @file_store = caps.file_store
+            @evaluator  = evaluator
+          end
 
-          policy_set = @manifest.rules.for(key)
-          refresh_policy = policy_set.refresh
-          return annotate_fresh(envelope) if refresh_policy.nil?
+          def call(key)
+            envelope = read_raw_envelope(key)
+            return nil if envelope.nil?
 
-          policy = refresh_policy.to_freshness_policy
-          verdict = @evaluator.call(policy, envelope, now: @ctx.now)
+            policy_set = @manifest.rules.for(key)
+            refresh_policy = policy_set.refresh
+            return annotate_fresh(envelope) if refresh_policy.nil?
 
-          envelope.with(freshness: Textus::Domain::Freshness.build(
-            stale: verdict.stale?,
-            reason: verdict.reason,
-            refreshing: false,
-          ))
-        end
+            policy = refresh_policy.to_freshness_policy
+            verdict = @evaluator.call(policy, envelope, now: @ctx.now)
 
-        # Strict variant: raises UnknownKey when the entry is missing.
-        # Used by consumers (e.g. Validator) that need to distinguish absence
-        # from emptiness.
-        def get(key)
-          call(key) || raise(UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)))
-        end
+            envelope.with(freshness: Textus::Domain::Freshness.build(
+              stale: verdict.stale?,
+              reason: verdict.reason,
+              refreshing: false,
+            ))
+          end
 
-        private
+          # Strict variant: raises UnknownKey when the entry is missing.
+          # Used by consumers (e.g. Validator) that need to distinguish absence
+          # from emptiness.
+          def get(key)
+            call(key) || raise(UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)))
+          end
 
-        def read_raw_envelope(key)
-          res = @manifest.resolver.resolve(key)
-          mentry = res.entry
-          path = res.path
-          return nil unless @file_store.exists?(path)
+          private
 
-          raw = @file_store.read(path)
-          parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-          Textus::Envelope.build(
-            key: key, mentry: mentry, path: path,
-            meta: parsed["_meta"], body: parsed["body"],
-            etag: Etag.for_bytes(raw), content: parsed["content"]
-          )
-        end
+          def read_raw_envelope(key)
+            res = @manifest.resolver.resolve(key)
+            mentry = res.entry
+            path = res.path
+            return nil unless @file_store.exists?(path)
 
-        def annotate_fresh(envelope)
-          envelope.with(freshness: Textus::Domain::Freshness.build(
-            stale: false, reason: nil, refreshing: false,
-          ))
+            raw = @file_store.read(path)
+            parsed = Entry.for_format(mentry.format).parse(raw, path: path)
+            Textus::Envelope.build(
+              key: key, mentry: mentry, path: path,
+              meta: parsed["_meta"], body: parsed["body"],
+              etag: Etag.for_bytes(raw), content: parsed["content"]
+            )
+          end
+
+          def annotate_fresh(envelope)
+            envelope.with(freshness: Textus::Domain::Freshness.build(
+              stale: false, reason: nil, refreshing: false,
+            ))
+          end
         end
       end
     end
   end
 end
+
+Textus::Application::UseCase.register(:get, Textus::Application::Reads::Get, caps: :read)

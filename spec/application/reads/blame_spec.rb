@@ -51,7 +51,7 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.blame(key: "working.doc")
       expect(result.length).to eq(1)
       row = result.first
@@ -68,7 +68,7 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.blame(key: "working.doc")
       expect(result.length).to eq(1)
       expect(result.first["git"]).to be_nil
@@ -83,7 +83,7 @@ RSpec.describe Textus::Application::Reads::Blame do
       write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
                            "verb" => "put", "key" => "working.doc" })
 
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.blame(key: "working.doc")
       expect(result.first["git"]).to be_nil
     end

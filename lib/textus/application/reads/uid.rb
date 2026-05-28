@@ -1,22 +1,30 @@
 module Textus
   module Application
     module Reads
-      class Uid
-        def initialize(ctx:, caps:)
-          @ctx = ctx
-          @caps = caps
+      module Uid
+        def self.call(*, session:, ctx:, caps:, **) # rubocop:disable Lint/UnusedMethodArgument
+          Impl.new(ctx: ctx, caps: caps).call(*, **)
         end
 
-        def call(key)
-          get.get(key).uid
-        end
+        class Impl
+          def initialize(ctx:, caps:)
+            @ctx = ctx
+            @caps = caps
+          end
 
-        private
+          def call(key)
+            get.get(key).uid
+          end
 
-        def get
-          @get ||= Get.new(ctx: @ctx, caps: @caps)
+          private
+
+          def get
+            @get ||= Get::Impl.new(ctx: @ctx, caps: @caps)
+          end
         end
       end
     end
   end
 end
+
+Textus::Application::UseCase.register(:uid, Textus::Application::Reads::Uid, caps: :read)

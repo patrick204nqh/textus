@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Reads::Stale do
   it "returns an Array" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.stale
       expect(result).to be_an(Array)
     end

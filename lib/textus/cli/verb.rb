@@ -100,12 +100,12 @@ module Textus
       # Convenience for verbs whose only pre-call boilerplate is
       # resolving the role and wrapping it in a context.
       def context_for(store)
-        Textus::Operations.for(store, role: resolved_role(store)).ctx
+        store.session(role: resolved_role(store)).ctx
       end
 
-      # Returns an Operations instance bound to the resolved role.
+      # Returns a Session instance bound to the resolved role.
       def operations_for(store)
-        Textus::Operations.for(store, role: resolved_role(store))
+        store.session(role: resolved_role(store))
       end
     end
   end

@@ -23,7 +23,7 @@ RSpec.describe "Pulse manifest_etag" do
   let(:expected_etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
 
   it "includes manifest_etag in the pulse envelope" do
-    result = Textus::Operations.for(store, role: "human").pulse(since: 0)
+    result = store.session(role: "human").pulse(since: 0)
     expect(result["manifest_etag"]).to eq(expected_etag)
   end
 end

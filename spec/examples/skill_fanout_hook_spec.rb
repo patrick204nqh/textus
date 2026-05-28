@@ -29,7 +29,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ops) { Textus::Operations.for(store, role: "runner") }
+  let(:ops) { store.session(role: "runner") }
 
   before do
     # The recipe queues its registration via Textus.hook. Drain and apply

@@ -40,7 +40,7 @@ module TextusSpecHelpers
     writer = build_envelope_writer(store, ctx, reader: reader)
     # Build ops using the provided ctx so hook_context carries the same correlation_id.
     read_caps, = Textus::Application.caps_from_store(store)
-    ops = Textus::Operations.new(
+    sess = Textus::Session.new(
       ctx: ctx,
       read_caps: read_caps,
       write_caps: write_caps,
@@ -52,13 +52,13 @@ module TextusSpecHelpers
       rpc: hook_caps.rpc,
       reader: reader,
       writer: writer,
-      hook_context: ops.hook_context,
+      hook_context: sess.hook_context,
     }
   end
 
   def build_put(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Put.new(
+    Textus::Application::Writes::Put::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -66,7 +66,7 @@ module TextusSpecHelpers
 
   def build_delete(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Delete.new(
+    Textus::Application::Writes::Delete::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -74,7 +74,7 @@ module TextusSpecHelpers
 
   def build_mv(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Mv.new(
+    Textus::Application::Writes::Mv::Impl.new(
       ctx: p[:ctx], caps: p[:caps],
       reader: p[:reader], writer: p[:writer],
       hook_context: p[:hook_context]
@@ -83,7 +83,7 @@ module TextusSpecHelpers
 
   def build_accept(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Accept.new(
+    Textus::Application::Writes::Accept::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -91,7 +91,7 @@ module TextusSpecHelpers
 
   def build_reject(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Reject.new(
+    Textus::Application::Writes::Reject::Impl.new(
       ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -99,7 +99,7 @@ module TextusSpecHelpers
 
   def build_worker(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Refresh::Worker.new(
+    Textus::Application::Refresh::Worker::Impl.new(
       ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc], writer: p[:writer],
       hook_context: p[:hook_context]
     )
@@ -107,7 +107,7 @@ module TextusSpecHelpers
 
   def build_publish(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Writes::Publish.new(
+    Textus::Application::Writes::Publish::Impl.new(
       ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
       boot: -> { Textus::Boot.run(store) },
       hook_context: p[:hook_context]

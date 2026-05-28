@@ -17,7 +17,7 @@ module Textus
       end
 
       def ops_for(session, store)
-        Textus::Operations.for(store, role: session.role)
+        store.session(role: session.role)
       end
 
       REGISTRY = {

@@ -8,7 +8,7 @@ RSpec.describe Textus::Application::Projection do
   let(:store) { Textus::Store.new(root) }
 
   def build_projection(spec)
-    ops = Textus::Operations.for(store)
+    ops = store.session
     Textus::Application::Projection.new(
       reader: ops.method(:get),
       spec: spec,

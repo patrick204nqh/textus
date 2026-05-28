@@ -43,8 +43,12 @@ module Textus
       Infra::AuditSubscriber.new(@audit_log).attach(@events)
       Hooks::Builtin.register_all(events: @events, rpc: @rpc)
       Hooks::Loader.new(events: @events, rpc: @rpc).load_dir(File.join(@root, "hooks"))
-      ops = Operations.for(self, role: Role::DEFAULT)
-      @events.publish(:store_loaded, ctx: ops.hook_context)
+      sess = Session.for(self, role: Role::DEFAULT)
+      @events.publish(:store_loaded, ctx: sess.hook_context)
+    end
+
+    def session(role: Role::DEFAULT, correlation_id: nil, dry_run: false)
+      Session.for(self, role: role, correlation_id: correlation_id, dry_run: dry_run)
     end
   end
 end

@@ -51,7 +51,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
       write_envelope(root, "working/doc.md",   last_refreshed_at: Time.now.utc.iso8601)
       write_envelope(root, "working/stale.md", last_refreshed_at: (Time.now.utc - 3600).iso8601)
 
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       rows = ops.freshness
 
       keys = rows.map { |r| r[:key] }
@@ -69,7 +69,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "filters by zone" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       rows = ops.freshness(zone: "identity")
 
       expect(rows.map { |r| r[:key] }).to eq(["identity.note"])
@@ -79,7 +79,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "filters by prefix" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       rows = ops.freshness(prefix: "working")
 
       expect(rows.map { |r| r[:key] }).to contain_exactly("working.doc", "working.stale")
@@ -89,7 +89,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
   it "reports :never_refreshed when policy exists but envelope is absent" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       rows = ops.freshness(prefix: "working.doc")
       expect(rows.first[:status]).to eq(:never_refreshed)
       expect(rows.first[:next_due_at]).to be_nil
@@ -101,7 +101,7 @@ RSpec.describe Textus::Application::Reads::Freshness do
       store = build_store(root)
       t = Time.utc(2026, 1, 1, 12, 0, 0)
       write_envelope(root, "working/doc.md", last_refreshed_at: t.iso8601)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       rows = ops.freshness(prefix: "working.doc")
       expect(Time.parse(rows.first[:next_due_at])).to eq(t + 3600)
     end

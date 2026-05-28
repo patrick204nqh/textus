@@ -53,7 +53,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       Thread.current[:refresh_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.foo")
+      envelope = store.session(role: "runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -73,7 +73,7 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.foo")
+      envelope = store.session(role: "runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
@@ -125,7 +125,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = Textus::Operations.for(store, role: "runner").get_or_refresh("working.slow")
+      envelope = store.session(role: "runner").get_or_refresh("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
@@ -201,7 +201,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       store = Textus::Store.new(textus)
       Textus::Infra::EventBus.new(bus: store.events)
-      ctx = Textus::Operations.for(store, role: "builder").ctx
+      ctx = store.session(role: "builder").ctx
       build_publish(store, ctx).call
 
       expect(orchestrator_calls).to be_empty

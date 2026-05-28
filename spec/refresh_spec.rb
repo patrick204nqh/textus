@@ -2,7 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe "Textus::Operations#refresh" do
+RSpec.describe "Textus::Session#refresh" do
   include_context "textus_store_fixture"
 
   before do
@@ -36,7 +36,7 @@ RSpec.describe "Textus::Operations#refresh" do
 
   it "invokes the action, writes the entry under role=runner, returns the envelope" do
     store = Textus::Store.new(root)
-    env = Textus::Operations.for(store, role: "runner").refresh("intake.repos")
+    env = store.session(role: "runner").refresh("intake.repos")
     expect(env.body).to eq("hello")
     expect(env.zone).to eq("intake")
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
@@ -44,7 +44,7 @@ RSpec.describe "Textus::Operations#refresh" do
 
   it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    expect { Textus::Operations.for(store, role: "runner").refresh("intake.manual") }
+    expect { store.session(role: "runner").refresh("intake.manual") }
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
@@ -57,7 +57,7 @@ RSpec.describe "Textus::Operations#refresh" do
     store = Textus::Store.new(root)
     # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
     allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
-    expect { Textus::Operations.for(store, role: "runner").refresh("intake.repos") }
+    expect { store.session(role: "runner").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
 
@@ -82,7 +82,7 @@ RSpec.describe "Textus::Operations#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = Textus::Operations.for(store, role: "runner").refresh("intake.repos")
+      env = store.session(role: "runner").refresh("intake.repos")
       expect(env.format).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
       parsed = JSON.parse(File.read(path))
@@ -110,7 +110,7 @@ RSpec.describe "Textus::Operations#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      Textus::Operations.for(store, role: "runner").refresh("intake.notes")
+      store.session(role: "runner").refresh("intake.notes")
       expect(File.read(File.join(root, "zones/intake/notes.txt"))).to eq("raw bytes\nline 2\n")
     end
   end
@@ -122,20 +122,20 @@ RSpec.describe "Textus::Operations#refresh" do
       end
     RUBY
     store = Textus::Store.new(root)
-    expect { Textus::Operations.for(store, role: "runner").refresh("intake.repos") }
+    expect { store.session(role: "runner").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 
   describe "Infra::Refresh::Detached" do
-    it "runs a refresh through Operations when spawned" do
+    it "runs a refresh through Session when spawned" do
       skip "Process.fork not available on this platform" unless Process.respond_to?(:fork)
 
       fake_store = instance_double(Textus::Store)
-      ops        = instance_spy(Textus::Operations)
+      sess       = instance_spy(Textus::Session)
       fake_lock  = instance_double(Textus::Infra::Refresh::Lock, try_acquire: true, release: nil)
 
       allow(Textus::Store).to receive(:new).and_return(fake_store)
-      allow(Textus::Operations).to receive(:for).with(fake_store, role: "runner").and_return(ops)
+      allow(fake_store).to receive(:session).with(role: "runner").and_return(sess)
       allow(Textus::Infra::Refresh::Lock).to receive(:new).and_return(fake_lock)
       allow(Process).to receive(:fork) do |&blk|
         blk.call
@@ -149,7 +149,7 @@ RSpec.describe "Textus::Operations#refresh" do
 
       Textus::Infra::Refresh::Detached.spawn(store_root: root, key: "intake.x")
 
-      expect(ops).to have_received(:refresh).with("intake.x")
+      expect(sess).to have_received(:refresh).with("intake.x")
     end
   end
 end

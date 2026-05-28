@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Reads::SchemaEnvelope do
   it "returns a hash with key, schema_ref, and schema as a Hash for a declared schema" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = Textus::Operations.for(store, role: "human")
+      ops = store.session(role: "human")
       result = ops.schema_envelope("working.person")
 
       expect(result).to include(

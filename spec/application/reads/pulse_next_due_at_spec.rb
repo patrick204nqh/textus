@@ -33,7 +33,7 @@ RSpec.describe "Pulse next_due_at" do
   let(:store) { Textus::Store.new(root) }
 
   it "includes next_due_at: ISO-8601 string of the soonest-to-go-stale entry" do
-    result = Textus::Operations.for(store, role: "human").pulse(since: 0)
+    result = store.session(role: "human").pulse(since: 0)
     expect(result["next_due_at"]).to be_a(String)
     expect { Time.parse(result["next_due_at"]) }.not_to raise_error
   end
@@ -53,7 +53,7 @@ RSpec.describe "Pulse next_due_at" do
     YAML
     # Reinitialize store with fresh manifest (no rules)
     fresh_store = Textus::Store.new(root)
-    result = Textus::Operations.for(fresh_store, role: "human").pulse(since: 0)
+    result = fresh_store.session(role: "human").pulse(since: 0)
     expect(result["next_due_at"]).to be_nil
   end
 end
