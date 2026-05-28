@@ -107,6 +107,49 @@ HookCaps  = Data.define(:events, :rpc, :manifest, :root)
 
 `Session.for(store, role:)` builds all three via `Application.caps_from_store(store)`; the dispatch method picks `read_caps` or `write_caps` based on the `caps_kind` declared at registration time. RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) receive a `caps:` kwarg that is the appropriate Read/Write slice — legacy `store:` is rejected by `Hooks::RpcRegistry#invoke`.
 
+## Ports
+
+Ports are infrastructure adapters with an interface defined by the domain. Each port is independently replaceable — swap the implementation for tests or alternative runtimes without touching application or domain code.
+
+| Class | Role |
+|---|---|
+| `Infra::Storage::FileStore` | Bytes-only FS I/O — `read`, `write`, `delete`, `exists?`, `etag`. No knowledge of envelopes or schemas. |
+| `Infra::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, and rotation. |
+| `Infra::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
+| `Infra::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
+| `Infra::Refresh::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent refresh workers from racing on the same entry. |
+| `Infra::Refresh::Detached` | Spawns a background thread for async refresh; the caller receives a `refresh_backgrounded` event instead of blocking. |
+| `Infra::BuildLock` | Process-exclusive `flock` guard over the materializer build pipeline. Raises `BuildInProgress` if a build is already running. |
+
+Application use cases access ports only through `Caps` fields — never through the raw `Store`.
+
+### EnvelopeIO
+
+`Application::Envelope::Reader` and `Application::Envelope::Writer` split the envelope pipeline into read-only parse and write-with-audit halves.
+
+**Reader** (`lib/textus/application/envelope/reader.rb`) — resolves a key through `manifest.resolver`, reads bytes via `FileStore`, delegates parsing to the format strategy (`Entry.for_format`), and returns an `Envelope`. No audit, no events, no permission checks. Also used by `Writer` for the existing-uid lookup on `put`.
+
+**Writer** (`lib/textus/application/envelope/writer.rb`) — owns the full write pipeline: serialize → schema-validate → etag-check → `FileStore#write` → `AuditLog#append`. The class comment states the invariant directly: every public method's final action is `@audit_log.append(...)`. If the audit append fails, the caller sees the underlying error — the byte write already happened, but the pipeline contract treats audit as the commit step. No permission check, no event firing — those stay in the calling use case (`Write::Put`, `Write::Delete`, `Write::Mv`).
+
+The three public methods are `put`, `delete`, and `move`; all follow the same validate → write → audit sequence.
+
+## Manifest carving
+
+Manifest carving means slicing the parsed manifest YAML into four purpose-specific sub-objects. Each consumer sees only the fields it needs; none reach into the full raw document.
+
+`Manifest` itself is a `Data.define` struct — a composition record with four named members:
+
+| Member | Class | Responsibility |
+|---|---|---|
+| `data` | `Manifest::Data` | Frozen value: `raw`, `root`, `zones`, `entries`, `audit_config`, `role_mapping`. Structural data only — no behaviour beyond accessors and key validation. |
+| `resolver` | `Manifest::Resolver` | Key → `Resolution(entry, path, remaining)`. Handles nested entry enumeration and fuzzy-match suggestions. |
+| `policy` | `Manifest::Policy` | Zone/role authority — `zone_writers`, `zone_kinds`, `permission_for`, `role_kind`, `roles_with_kind`. Derived from a `Data` snapshot; no filesystem I/O. |
+| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(refresh, handler_allowlist, promote, retention)` by evaluating all `match:` blocks against the key. |
+
+Rationale: cleaner test seams — a use case that only needs key resolution constructs a `Manifest::Resolver` from a stub `Data`; one that only needs rule lookup constructs a `Manifest::Rules` directly. No consumer is forced to build the full manifest to exercise one sub-view.
+
+The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Manifest::Data` constructs `Policy` internally during `initialize`; the others are assembled by the loader and handed in as named arguments.
+
 ## Read path (`session.get(key)`)
 
 1. CLI verb (or MCP tool) builds `session = Session.for(store, role:)` then `session.get(key)`.
