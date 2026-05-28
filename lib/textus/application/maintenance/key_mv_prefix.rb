@@ -32,11 +32,7 @@ module Textus
             return plan if dry_run
 
             steps.each do |s|
-              Textus::Application::Write::Mv.call(
-                s["from"], s["to"],
-                session: @session, ctx: @ctx, caps: @session.write_caps,
-                dry_run: false
-              )
+              @session.mv(s["from"], s["to"], dry_run: false)
             end
             plan
           end
