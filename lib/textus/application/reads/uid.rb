@@ -2,9 +2,9 @@ module Textus
   module Application
     module Reads
       class Uid
-        def initialize(ctx:, ports:)
-          @ctx   = ctx
-          @ports = ports
+        def initialize(ctx:, caps:)
+          @ctx = ctx
+          @caps = caps
         end
 
         def call(key)
@@ -14,7 +14,7 @@ module Textus
         private
 
         def get
-          @get ||= Get.new(ctx: @ctx, ports: @ports)
+          @get ||= Get.new(ctx: @ctx, caps: @caps)
         end
       end
     end

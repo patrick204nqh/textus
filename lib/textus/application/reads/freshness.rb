@@ -8,10 +8,10 @@ module Textus
       # current status. Status is one of :fresh, :stale, :never_refreshed, or
       # :no_policy.
       class Freshness
-        def initialize(ctx:, ports:, evaluator: Textus::Domain::Freshness::Evaluator)
+        def initialize(ctx:, caps:, evaluator: Textus::Domain::Freshness::Evaluator)
           @ctx        = ctx
-          @manifest   = ports.manifest
-          @file_store = ports.file_store
+          @manifest   = caps.manifest
+          @file_store = caps.file_store
           @evaluator  = evaluator
           @cache      = {}
         end

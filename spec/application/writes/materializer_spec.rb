@@ -4,9 +4,11 @@ require "fileutils"
 
 RSpec.describe Textus::Application::Writes::Materializer do
   subject(:materializer) do
+    _, write_caps, hook_caps = Textus::Application.caps_from_store(store)
     Textus::Application::Writes::Materializer.new(
       ctx: ctx,
-      ports: Textus::Application::Ports.from_store(store),
+      caps: write_caps,
+      rpc: hook_caps.rpc,
       boot: -> { Textus::Boot.run(store) },
     )
   end

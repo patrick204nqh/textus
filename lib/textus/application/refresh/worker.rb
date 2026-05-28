@@ -6,14 +6,14 @@ module Textus
       class Worker
         FETCH_TIMEOUT_SECONDS = 30
 
-        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
+        def initialize(ctx:, caps:, rpc:, writer:, hook_context:)
           @ctx          = ctx
-          @ports        = ports
-          @manifest     = ports.manifest
+          @caps         = caps
+          @manifest     = caps.manifest
           @writer       = writer
-          @events       = ports.event_bus
-          @rpc          = ports.rpc_registry
-          @authorizer   = authorizer
+          @events       = caps.events
+          @rpc          = rpc
+          @authorizer   = caps.authorizer
           @hook_context = hook_context
         end
 
@@ -45,7 +45,7 @@ module Textus
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
             @rpc.invoke(:resolve_intake, mentry.handler,
-                        caps: @ports,
+                        caps: @caps,
                         config: mentry.config,
                         args: { trigger_key: key, leaf_segments: remaining || [] })
           end

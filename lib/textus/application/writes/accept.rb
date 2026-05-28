@@ -6,15 +6,15 @@ module Textus
       class Accept
         include AuthorityGate
 
-        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
+        def initialize(ctx:, caps:, writer:, hook_context:)
           @ctx          = ctx
-          @ports        = ports
-          @manifest     = ports.manifest
-          @file_store   = ports.file_store
-          @schemas      = ports.schemas
+          @caps         = caps
+          @manifest     = caps.manifest
+          @file_store   = caps.file_store
+          @schemas      = caps.schemas
           @writer       = writer
-          @events       = ports.event_bus
-          @authorizer   = authorizer
+          @events       = caps.events
+          @authorizer   = caps.authorizer
           @hook_context = hook_context
         end
 
@@ -22,7 +22,7 @@ module Textus
           assert_accept_authority!("accept")
 
           env = Textus::Application::Reads::Get.new(
-            ctx: @ctx, ports: @ports,
+            ctx: @ctx, caps: @caps,
           ).call(pending_key)
           proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
@@ -57,15 +57,15 @@ module Textus
 
         def put_op
           @put_op ||= Textus::Application::Writes::Put.new(
-            ctx: @ctx, ports: @ports, writer: @writer,
-            authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, caps: @caps, writer: @writer,
+            hook_context: @hook_context
           )
         end
 
         def delete_op
           @delete_op ||= Textus::Application::Writes::Delete.new(
-            ctx: @ctx, ports: @ports, writer: @writer,
-            authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, caps: @caps, writer: @writer,
+            hook_context: @hook_context
           )
         end
 

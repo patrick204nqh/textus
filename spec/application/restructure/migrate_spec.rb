@@ -22,7 +22,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
 
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
-  let(:ports) { Textus::Application::Ports.from_store(store) }
+  let(:caps) { Textus::Application.caps_from_store(store)[1] }
   let(:ops) { Textus::Operations.for(store, role: ctx.role) }
 
   it "runs a multi-op migration plan and returns combined Plan" do
@@ -31,7 +31,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    plan = described_class.new(ctx: ctx, ports: ports, operations: ops).call(
+    plan = described_class.new(ctx: ctx, caps: caps, operations: ops).call(
       plan_yaml: plan_yaml, dry_run: false,
     )
     expect(plan.steps.map { |s| s["op"] }).to include("mv")
@@ -44,7 +44,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    described_class.new(ctx: ctx, ports: ports, operations: ops).call(
+    described_class.new(ctx: ctx, caps: caps, operations: ops).call(
       plan_yaml: plan_yaml, dry_run: true,
     )
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(true)
@@ -52,7 +52,7 @@ RSpec.describe Textus::Application::Restructure::Migrate do
 
   it "raises on unknown op" do
     expect do
-      described_class.new(ctx: ctx, ports: ports, operations: ops).call(
+      described_class.new(ctx: ctx, caps: caps, operations: ops).call(
         plan_yaml: "version: 1\noperations:\n  - { op: bogus }\n", dry_run: true,
       )
     end.to raise_error(Textus::Error, /unknown op/)

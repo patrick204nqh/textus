@@ -9,14 +9,14 @@ module Textus
       # APIs; pulse is sugar with a stable envelope shape and a monotonic
       # cursor (seq).
       class Pulse
-        def initialize(ctx:, ports:, doctor:)
-          @ctx        = ctx
-          @ports      = ports
-          @manifest   = ports.manifest
-          @file_store = ports.file_store
-          @audit_log  = ports.audit_log
-          @root       = ports.root
-          @events     = ports.event_bus
+        def initialize(ctx:, caps:, doctor:)
+          @ctx = ctx
+          @caps = caps
+          @manifest   = caps.manifest
+          @file_store = caps.file_store
+          @audit_log  = caps.audit_log
+          @root       = caps.root
+          @events     = caps.events
           @doctor     = doctor
         end
 
@@ -37,11 +37,11 @@ module Textus
         private
 
         def audit_changes_since(seq)
-          Reads::Audit.new(ports: @ports).call(seq_since: seq)
+          Reads::Audit.new(caps: @caps).call(seq_since: seq)
         end
 
         def freshness
-          @freshness ||= Reads::Freshness.new(ctx: @ctx, ports: @ports)
+          @freshness ||= Reads::Freshness.new(ctx: @ctx, caps: @caps)
         end
 
         def soonest_due(rows)
@@ -56,7 +56,7 @@ module Textus
           # Guard: zones is a Hash keyed by name string.
           return [] unless @manifest.data.zones.key?("review")
 
-          rows = Reads::List.new(ports: @ports).call(zone: "review")
+          rows = Reads::List.new(caps: @caps).call(zone: "review")
           rows.map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
         end
 

@@ -2,9 +2,9 @@ module Textus
   module Application
     module Reads
       class SchemaEnvelope
-        def initialize(ports:)
-          @manifest = ports.manifest
-          @schemas  = ports.schemas
+        def initialize(caps:)
+          @manifest = caps.manifest
+          @schemas  = caps.schemas
         end
 
         def call(key)

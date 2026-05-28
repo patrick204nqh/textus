@@ -2,21 +2,21 @@ module Textus
   module Application
     module Refresh
       class All
-        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
+        def initialize(ctx:, caps:, rpc:, writer:, hook_context:)
           @ctx          = ctx
-          @ports        = ports
+          @caps         = caps
+          @rpc          = rpc
           @writer       = writer
-          @authorizer   = authorizer
           @hook_context = hook_context
         end
 
         def call(prefix: nil, zone: nil)
           worker = Textus::Application::Refresh::Worker.new(
-            ctx: @ctx, ports: @ports, writer: @writer,
-            authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, caps: @caps, rpc: @rpc, writer: @writer,
+            hook_context: @hook_context
           )
 
-          stale_rows = Textus::Application::Reads::Stale.new(ports: @ports).call(prefix: prefix, zone: zone)
+          stale_rows = Textus::Application::Reads::Stale.new(caps: @caps).call(prefix: prefix, zone: zone)
           refreshed = []
           failed = []
           skipped = []

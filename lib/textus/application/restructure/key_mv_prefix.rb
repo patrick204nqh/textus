@@ -5,9 +5,9 @@ module Textus
       # Reuses Operations#mv for the per-entry work — emits one audit
       # row per file moved.
       class KeyMvPrefix
-        def initialize(ctx:, ports:, operations:)
+        def initialize(ctx:, caps:, operations:)
           @ctx        = ctx
-          @ports      = ports
+          @caps       = caps
           @operations = operations
         end
 
@@ -34,7 +34,7 @@ module Textus
         private
 
         def list_leaves_under(prefix)
-          Reads::List.new(ports: @ports)
+          Reads::List.new(caps: @caps)
                      .call(prefix: prefix)
                      .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
         end

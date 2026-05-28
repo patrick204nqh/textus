@@ -23,7 +23,7 @@ module Textus
           return nil unless in_generator_zone?
 
           target_path = Textus::Application::Writes::Materializer.new(
-            ctx: pctx.ctx, ports: pctx.ports, boot: pctx.boot,
+            ctx: pctx.ctx, caps: pctx.caps, rpc: pctx.rpc, boot: pctx.boot,
           ).run(self)
 
           envelope = pctx.reader.call(@key)

@@ -10,13 +10,14 @@ module Textus
       #
       # Return shape: { "protocol", "built", "published_leaves" }
       class Publish
-        def initialize(ctx:, ports:, boot:, hook_context:)
+        def initialize(ctx:, caps:, rpc:, boot:, hook_context:)
           @ctx          = ctx
-          @ports        = ports
-          @manifest     = ports.manifest
-          @file_store   = ports.file_store
-          @events       = ports.event_bus
-          @root         = ports.root
+          @caps         = caps
+          @manifest     = caps.manifest
+          @file_store   = caps.file_store
+          @events       = caps.events
+          @root         = caps.root
+          @rpc          = rpc
           @boot         = boot
           @hook_context = hook_context
         end
@@ -49,7 +50,8 @@ module Textus
             manifest: @manifest,
             file_store: @file_store,
             root: @root,
-            ports: @ports,
+            caps: @caps,
+            rpc: @rpc,
             boot: @boot,
             ctx: @ctx,
             bus: @events,
@@ -73,7 +75,7 @@ module Textus
         end
 
         def reader
-          @reader ||= Textus::Application::Reads::Get.new(ctx: @ctx, ports: @ports)
+          @reader ||= Textus::Application::Reads::Get.new(ctx: @ctx, caps: @caps)
         end
       end
     end

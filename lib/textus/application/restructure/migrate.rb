@@ -12,9 +12,9 @@ module Textus
           "zone_mv" => ZoneMv,
         }.freeze
 
-        def initialize(ctx:, ports:, operations:)
+        def initialize(ctx:, caps:, operations:)
           @ctx        = ctx
-          @ports      = ports
+          @caps       = caps
           @operations = operations
         end
 
@@ -42,9 +42,9 @@ module Textus
         def invoke(klass, op_hash, dry_run:)
           args = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
           if klass.instance_method(:initialize).parameters.any? { |_t, n| n == :operations }
-            klass.new(ctx: @ctx, ports: @ports, operations: @operations).call(**args)
+            klass.new(ctx: @ctx, caps: @caps, operations: @operations).call(**args)
           else
-            klass.new(ctx: @ctx, ports: @ports).call(**args)
+            klass.new(ctx: @ctx, caps: @caps).call(**args)
           end
         end
       end

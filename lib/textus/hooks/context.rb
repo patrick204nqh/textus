@@ -23,11 +23,11 @@ module Textus
       # write (authorized + audited)
       def put(key, **)          = @ops.put(key, **)
       def delete(key, **)       = @ops.delete(key, **)
-      def audit(verb, key:, **) = @ops.ports.audit_log.append(role: @role, verb: verb, key: key, **)
+      def audit(verb, key:, **) = @ops.write_caps.audit_log.append(role: @role, verb: verb, key: key, **)
 
       # fan-out
       def publish_followup(event, **)
-        @ops.ports.event_bus.publish(event, ctx: self, **)
+        @ops.write_caps.events.publish(event, ctx: self, **)
       end
 
       def inspect

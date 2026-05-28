@@ -10,8 +10,8 @@ module Textus
       # Pure reads (build, projection, schema tooling) should use
       # `Reads::Get` directly; it has no orchestrator dependency.
       class GetOrRefresh
-        def initialize(ports:, get:, orchestrator:)
-          @manifest     = ports.manifest
+        def initialize(caps:, get:, orchestrator:)
+          @manifest     = caps.manifest
           @get          = get
           @orchestrator = orchestrator
         end

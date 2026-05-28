@@ -7,10 +7,10 @@ module Textus
       # For interactive reads that want refresh-on-stale, use
       # `Reads::GetOrRefresh`, which composes this with the orchestrator.
       class Get
-        def initialize(ctx:, ports:, evaluator: Textus::Domain::Freshness::Evaluator)
+        def initialize(ctx:, caps:, evaluator: Textus::Domain::Freshness::Evaluator)
           @ctx        = ctx
-          @manifest   = ports.manifest
-          @file_store = ports.file_store
+          @manifest   = caps.manifest
+          @file_store = caps.file_store
           @evaluator  = evaluator
         end
 

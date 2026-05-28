@@ -7,9 +7,9 @@ module Textus
       # YAML string. Returns a Plan describing rule additions/removals/
       # changes. Does NOT write anything.
       class RuleLint
-        def initialize(ctx:, ports:)
+        def initialize(ctx:, caps:)
           @ctx  = ctx
-          @root = ports.root
+          @root = caps.root
         end
 
         def call(candidate_yaml:)

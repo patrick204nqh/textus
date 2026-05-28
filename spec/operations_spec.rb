@@ -62,13 +62,16 @@ RSpec.describe Textus::Operations do
     end
   end
 
-  it "can be constructed from explicit ports without going through .for(store)" do
+  it "can be constructed from explicit caps without going through .for(store)" do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
+      read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
       ops = described_class.new(
         ctx: Textus::Application::Context.build(role: "human"),
-        ports: Textus::Application::Ports.from_store(store),
+        read_caps: read_caps,
+        write_caps: write_caps,
+        hook_caps: hook_caps,
       )
       env = ops.put("working.notes.alpha", body: "hi")
       expect(env).to be_a(Textus::Envelope)

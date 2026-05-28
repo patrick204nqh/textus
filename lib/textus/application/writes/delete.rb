@@ -2,12 +2,12 @@ module Textus
   module Application
     module Writes
       class Delete
-        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
+        def initialize(ctx:, caps:, writer:, hook_context:)
           @ctx          = ctx
-          @manifest     = ports.manifest
-          @events       = ports.event_bus
+          @manifest     = caps.manifest
+          @events       = caps.events
+          @authorizer   = caps.authorizer
           @writer       = writer
-          @authorizer   = authorizer
           @hook_context = hook_context
         end
 

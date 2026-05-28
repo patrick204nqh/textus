@@ -53,13 +53,13 @@ module Textus
     end
 
     def run_registered_checks(store)
-      ports = Textus::Application::Ports.from_store(store)
-      store.rpc.names(:validate).flat_map { |name| invoke_registered_check(store, ports, name) }
+      _, write_caps, = Textus::Application.caps_from_store(store)
+      store.rpc.names(:validate).flat_map { |name| invoke_registered_check(store, write_caps, name) }
     end
 
-    def invoke_registered_check(store, ports, name)
+    def invoke_registered_check(store, caps, name)
       result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
-        store.rpc.invoke(:validate, name, caps: ports)
+        store.rpc.invoke(:validate, name, caps: caps)
       end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 

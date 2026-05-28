@@ -8,11 +8,11 @@ module Textus
       # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
       # rows produce nil and are skipped).
       class Audit
-        def initialize(ports:)
-          @manifest  = ports.manifest
-          @root      = ports.root
-          @log_path  = File.join(ports.root, "audit.log")
-          @audit_log = ports.audit_log
+        def initialize(caps:)
+          @manifest  = caps.manifest
+          @root      = caps.root
+          @log_path  = File.join(caps.root, "audit.log")
+          @audit_log = caps.audit_log
         end
 
         # rubocop:disable Metrics/ParameterLists, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity

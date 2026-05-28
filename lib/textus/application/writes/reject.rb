@@ -6,13 +6,13 @@ module Textus
       class Reject
         include AuthorityGate
 
-        def initialize(ctx:, ports:, writer:, authorizer:, hook_context:)
+        def initialize(ctx:, caps:, writer:, hook_context:)
           @ctx          = ctx
-          @ports        = ports
-          @manifest     = ports.manifest
+          @caps         = caps
+          @manifest     = caps.manifest
           @writer       = writer
-          @events       = ports.event_bus
-          @authorizer   = authorizer
+          @events       = caps.events
+          @authorizer   = caps.authorizer
           @hook_context = hook_context
         end
 
@@ -25,7 +25,7 @@ module Textus
           end
 
           env = Textus::Application::Reads::Get.new(
-            ctx: @ctx, ports: @ports,
+            ctx: @ctx, caps: @caps,
           ).call(pending_key)
           proposal = env.meta&.dig("proposal") or
             raise ProposalError.new("entry has no proposal block: #{pending_key}")
@@ -33,8 +33,8 @@ module Textus
             raise ProposalError.new("proposal missing target_key")
 
           Textus::Application::Writes::Delete.new(
-            ctx: @ctx, ports: @ports, writer: @writer,
-            authorizer: @authorizer, hook_context: @hook_context
+            ctx: @ctx, caps: @caps, writer: @writer,
+            hook_context: @hook_context
           ).call(pending_key, suppress_events: true)
 
           @events.publish(:proposal_rejected,

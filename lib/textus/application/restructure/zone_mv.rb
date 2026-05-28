@@ -7,10 +7,10 @@ module Textus
       # the `zone:` field on every entry under the old zone, and moves
       # every file from zones/<old>/ to zones/<new>/.
       class ZoneMv
-        def initialize(ctx:, ports:)
+        def initialize(ctx:, caps:)
           @ctx      = ctx
-          @manifest = ports.manifest
-          @root     = ports.root
+          @manifest = caps.manifest
+          @root     = caps.root
         end
 
         def call(from:, to:, dry_run: false)

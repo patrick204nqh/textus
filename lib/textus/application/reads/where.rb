@@ -2,8 +2,8 @@ module Textus
   module Application
     module Reads
       class Where
-        def initialize(ports:)
-          @manifest = ports.manifest
+        def initialize(caps:)
+          @manifest = caps.manifest
         end
 
         def call(key)
