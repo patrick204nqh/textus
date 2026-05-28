@@ -7,6 +7,8 @@
 
 A context store for codebases that humans and AI agents both have to read and write. Dotted keys, schema-validated entries, role-gated writes, byte-copy publish, an audit log of every change. Built so an agent landing in your repo can run one command (`textus boot`) and know what to read, what to write, and what's off-limits.
 
+Use textus if you're shipping an AI agent or Claude/MCP plugin that needs durable, role-gated project memory across sessions — or if you want a deterministic file-based store rather than a vector-backed memory service.
+
 Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
 
 ## Versioning
@@ -14,7 +16,7 @@ Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC
 Two versions, deliberately independent:
 
 - **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
-- **Gem version:** semver, currently `0.18.0`. Decoupled from the protocol string — internal refactors bump the gem; only wire-format changes bump the protocol.
+- **Gem version:** semver, decoupled from the protocol string. Internal refactors bump the gem; only wire-format changes bump the protocol. Current version is shown by the gem badge above.
 
 Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
 
@@ -75,7 +77,7 @@ textus audit --limit=20              # query the audit log
 
 For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake action — see [`examples/claude-plugin/`](examples/claude-plugin/).
 
-## What ships today
+## Shipped
 
 - **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/output/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `transform`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
@@ -83,7 +85,7 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 - **Typed envelopes (v0.14.0).** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key normalize --dry-run|--write` rewrites existing stores with illegal segments deterministically.
-- **`textus boot`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table, and an `agent_quickstart` block (read/write verbs, writable zones, propose zone, latest audit seq). The boot signal for any agent — one tool call and it knows your store.
+- **`textus boot`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table, and an `agent_quickstart` block (read/write verbs, writable zones, propose zone, latest audit seq).
 - **`textus pulse [--since=N]`.** Per-turn heartbeat for agents: changed entries since cursor N, stale keys, pending review proposals, and a doctor summary. Cursor is a monotonic seq stamped on every audit row; rotation keeps the last 5 files (configurable via `audit:` in the manifest) and raises `CursorExpired` when the requested cursor has fallen off disk.
 - **`textus doctor`.** Health check across 9 categories: missing schemas/templates, broken hooks, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
 - **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
@@ -163,7 +165,7 @@ See [`docs/agent-integration.md`](docs/agent-integration.md) for the agent boot 
 bundle exec rspec
 ```
 
-~637 examples; includes conformance fixtures A–I from SPEC §12.
+~880 examples; includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 

@@ -1,6 +1,6 @@
 # Contributing
 
-textus is a young project. Bugs, missing fixtures, and rough edges are expected — issues and PRs are welcome.
+textus is a young project. Bugs, missing fixtures, and rough edges are expected. Open an issue with a failing fixture name, or send a PR.
 
 ## Before you open a PR
 
@@ -30,11 +30,11 @@ textus is deliberately small. Before adding a new verb, action, or extension hoo
 - Does it belong in the gem or in `.textus/extensions/`? Project-local extensions are encouraged — that's what the DSL exists for.
 - Is the wire format affected? Then it needs a SPEC update too.
 
-Honest tradeoffs in PR descriptions are appreciated. "This adds X; the cost is Y" beats "this adds X."
+Name the cost in the PR description. "Adds X; costs Y" beats "adds X."
 
 ## Commit and PR style
 
-- Conventional-ish prefixes (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) but not strict.
+- Conventional prefixes preferred, not enforced.
 - One logical change per PR. Keep diffs reviewable.
 - Update `CHANGELOG.md` under `## [Unreleased]` for anything user-visible.
 
@@ -48,4 +48,4 @@ See [`SECURITY.md`](SECURITY.md).
 
 ## Sources of truth
 
-Treat `SPEC.md`, `ARCHITECTURE.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version. Per-release implementation plans are kept locally by maintainers and are not part of the published tree.
+`ARCHITECTURE.md` — read this first for orientation. `SPEC.md` is the wire contract you reach for once you know the layout. Treat `SPEC.md`, `ARCHITECTURE.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version. Per-release implementation plans live under `docs/plans/` as scratch artifacts — not gating documents. Contributors are not expected to write or follow them.

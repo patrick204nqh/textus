@@ -10,7 +10,7 @@
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol that lets humans, agents, and runners read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
+A storage convention and JSON wire protocol for humans, agents, and runners to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
 
 The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/build/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
@@ -68,10 +68,10 @@ The root is `.textus/` at the project working directory. A typical tree:
 .textus/
   manifest.yaml          # internal: key → subtree mapping + zones declarations
   audit.log              # internal, append-only NDJSON log of every successful write
-  role                   # internal, role token (one line, e.g. "human")
   schemas/               # internal: YAML schema files
   templates/             # internal: Mustache templates referenced by derived entries
-  parsers/               # internal: project-local parser extensions
+  hooks/                 # internal: one Ruby file per hook
+  sentinels/             # internal: bookkeeping for byte-copied publish targets (see §5.3)
   zones/                 # ALL user content lives here
     identity/            # zone: identity (human-only)
     working/             # zone: working (human, agent, runner)
@@ -80,7 +80,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     output/              # zone: output (builder only — computed outputs)
 ```
 
-Textus internals (`manifest.yaml`, `audit.log`, `role`, `schemas/`, `templates/`, `parsers/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
+Textus internals (`manifest.yaml`, `audit.log`, `schemas/`, `templates/`, `hooks/`, `sentinels/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
 
 Zone directories under `zones/` are conventional; their write semantics are declared in the manifest, not the directory name.
 
@@ -138,6 +138,10 @@ entries:
 rules:
   - match: intake.**
     refresh: { ttl: 6h, on_stale: warn }
+
+audit:
+  max_size: 10485760   # bytes before rotating (default: 10 485 760 = 10 MiB)
+  keep: 5              # rotated files to retain (default: 5)
 ```
 
 Zone names are conventional — the manifest is the source of truth for write permissions; rename freely.
@@ -397,7 +401,7 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Refresh paths.** Two are supported:
 
-1. **In-process** — `textus refresh KEY --as=runner` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(config:, store:, args: {})`, and writes the result under role `runner`.
+1. **In-process** — `textus refresh KEY --as=runner` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under role `runner`.
 2. **External runner** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=runner --stdin`. The CLI verb `textus refresh stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
 Both paths share the same role gate, audit-log entry, and `:entry_refreshed` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
@@ -439,6 +443,35 @@ Schema (one JSON object per line, no interior whitespace):
 
 For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
 
+**Rotation.** After every successful append the implementation checks whether `audit.log` exceeds `max_size` bytes (checked inside the held `flock`, so the check sees the post-write size). If it does, the active log is rotated:
+
+1. The seq range (`min_seq`, `max_seq`) of the active log is scanned, and a JSON sidecar (`audit.log.1.meta.json`) is written with those values plus a `rotated_at` ISO 8601 timestamp.
+2. Existing rotated files are shifted: `audit.log.(N)` → `audit.log.(N+1)` for N = `keep-1` down to 1 (with their `.meta.json` sidecars).
+3. `audit.log` is renamed to `audit.log.1`.
+4. The file that would be shifted to `audit.log.(keep+1)` — i.e., `audit.log.keep` and its sidecar — is deleted before the shift.
+5. The next append creates a fresh `audit.log` via `O_CREAT`. Seq numbering continues from the previous maximum; there is no reset.
+
+Rotation is triggered by **byte size only** — there is no row-count or time-based trigger.
+
+**Rotation knobs** (configured via the optional `audit:` block in `manifest.yaml`):
+
+| Key        | Default      | Meaning |
+|------------|--------------|---------|
+| `max_size` | `10485760`   | Maximum size of `audit.log` in bytes (10 MiB) before rotation is triggered. |
+| `keep`     | `5`          | Number of rotated files retained on disk. When this limit is exceeded the oldest rotated file and its sidecar are deleted. |
+
+Both keys are optional. Omitting `audit:` entirely uses the defaults above.
+
+**`CursorExpired`.** When `audit --seq-since=N` or `pulse --since=N` is called with a cursor `N`, the implementation checks whether `N` is below the oldest sequence number still available on disk (`min_available_seq`, derived from the oldest retained rotated file's sidecar). The condition that raises `CursorExpired` is:
+
+```
+N < min_available_seq - 1
+```
+
+The error includes `requested` (the supplied cursor value) and `min_available` (the oldest seq still on disk).
+
+**Recommended caller behavior on `CursorExpired`.** Call `textus boot` (without `--since`) to obtain a fresh `latest_seq` from the current audit log state, then resume `pulse` calls using that new cursor. Do not attempt to replay from an expired cursor — the intervening rows are gone.
+
 ### 5.7 Security bounds
 
 textus enforces fixed bounds to keep behavior predictable under hostile or buggy input:
@@ -478,7 +511,7 @@ evolution:
 
 **Defaults:** when `fields:` and `evolution:` are absent, `schema.maintained_by(field)` returns `nil` for every field and `schema.evolution` returns `{}`.
 
-**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over agent/runner-managed data — humans curating canon over agent-written embeddings is a feature, not a bug. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
+**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. Humans override agent-maintained fields by design: schema field ownership (`maintained_by:`) makes the boundary explicit, not implicit. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
 ### 5.9 Row transforms
 
@@ -495,11 +528,11 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 ```ruby
 # Canonical form — works for every event:
 Textus.hook do |reg|
-  reg.on(:resolve_intake,  :my_source)              { |config:, args:, **|  … }
-  reg.on(:transform_rows,  :rank_by_recency)         { |rows:, **|            … }
-  reg.on(:validate,        :storage_writable)        { |store:|               … }
-  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |key:, envelope:, **| … }
-  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |target:, **| `git add #{target.shellescape}` }
+  reg.on(:resolve_intake,  :my_source)              { |caps:, config:, args:, **|  … }
+  reg.on(:transform_rows,  :rank_by_recency)         { |caps:, rows:, **|            … }
+  reg.on(:validate,        :storage_writable)        { |caps:|                        … }
+  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
+  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -509,21 +542,21 @@ end
 
 | Event                   | Mode    | Args                                                      | Return                | Failure       |
 |-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| `:resolve_intake`       | rpc     | store:, config:, args:                                    | {_meta:, body:}       | aborts op     |
-| `:transform_rows`       | rpc     | store:, rows:, config:                                    | rows array            | aborts op     |
-| `:validate`             | rpc     | store:                                                    | issues array          | aborts doctor |
-| `:entry_put`            | pubsub  | store:, key:, envelope:                                   | (discarded)           | logged        |
-| `:entry_deleted`        | pubsub  | store:, key:                                              | (discarded)           | logged        |
-| `:entry_refreshed`      | pubsub  | store:, key:, envelope:, change:                          | (discarded)           | logged        |
-| `:build_completed`      | pubsub  | store:, key:, envelope:, sources:                         | (discarded)           | logged        |
-| `:proposal_accepted`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| `:file_published`       | pubsub  | store:, key:, envelope:, source:, target:                 | (discarded)           | logged        |
-| `:entry_renamed`        | pubsub  | store:, key:, from_key:, to_key:, envelope:               | (discarded)           | logged        |
-| `:proposal_rejected`    | pubsub  | store:, key:, target_key:                                 | (discarded)           | logged        |
-| `:store_loaded`         | pubsub  | store:                                                    | (discarded)           | logged        |
-| `:refresh_started`      | pubsub  | store:, key:, mode:                                       | (discarded)           | logged        |
-| `:refresh_failed`       | pubsub  | store:, key:, error_class:, error_message:                | (discarded)           | logged        |
-| `:refresh_backgrounded` | pubsub  | store:, key:, started_at:, budget_ms:                     | (discarded)           | logged        |
+| `:resolve_intake`       | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
+| `:transform_rows`       | rpc     | caps:, rows:, config:                                     | rows array            | aborts op     |
+| `:validate`             | rpc     | caps:                                                     | issues array          | aborts doctor |
+| `:entry_put`            | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
+| `:entry_deleted`        | pubsub  | ctx:, key:                                                | (discarded)           | logged        |
+| `:entry_refreshed`      | pubsub  | ctx:, key:, envelope:, change:                            | (discarded)           | logged        |
+| `:build_completed`      | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
+| `:proposal_accepted`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
+| `:file_published`       | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
+| `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
+| `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
+| `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
+| `:refresh_started`      | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
+| `:refresh_failed`       | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
+| `:refresh_backgrounded` | pubsub  | ctx:, key:, started_at:, budget_ms:                       | (discarded)           | logged        |
 
 The three `:refresh_*` lifecycle events report the progress and failures of background (timed_sync) refreshes.
 
@@ -533,13 +566,18 @@ The three `:refresh_*` lifecycle events report the progress and failures of back
 
 **`:refresh_backgrounded`** fires when a `timed_sync` refresh exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
 
-**Signature invariant** — every hook receives `store:` as its first keyword argument. Event-specific kwargs follow in stable left-to-right order. The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
+**Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
+
+- **RPC hooks** (`rpc` mode) receive `caps:` — a `ReadCaps` or `WriteCaps` slice (`Textus::Application::ReadCaps` / `WriteCaps`). Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
+- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that wraps the session and exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
+
+Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
+
+The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
 
 **RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `compute.transform: NAME`). Failure or timeout aborts the calling operation.
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
-
-The `store:` argument is always a read-only store proxy. Write attempts raise `UsageError`.
 
 Each handler runs under `Timeout.timeout(2)`.
 
@@ -914,7 +952,7 @@ See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 
 - **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
 - **Schema imports:** can one schema reference another (`type: $ref: person`)?
-- **Internationalization:** non-ASCII in keys? Spec currently restricts segments to `[a-z0-9_-]`. Revisit if community wants Unicode.
+- **Internationalization:** non-ASCII in keys? Spec currently restricts segments to `[a-z0-9][a-z0-9-]*`. Revisit if community wants Unicode.
 - **Generated content in `derived/`:** the spec says `schema: null` is allowed, but should there be a separate marker (`generated: true`) for clarity?
 
 ## 15. Implementation checklist

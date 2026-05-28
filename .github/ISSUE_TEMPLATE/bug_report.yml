@@ -1,0 +1,23 @@
+name: Bug report
+description: Something in textus doesn't behave as documented.
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: textus version
+      description: Output of `textus --version`
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, what you got. Include the failing envelope or audit row if you have one.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal repro
+      description: Smallest command sequence that reproduces the issue.

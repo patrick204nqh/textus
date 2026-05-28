@@ -1,0 +1,20 @@
+name: Feature request / proposal
+description: Suggest a new capability, verb, or protocol clarification.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Concrete scenario you hit, not a general "it would be nice if".
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: Proposed shape
+      description: CLI surface, manifest field, or wire envelope change you have in mind. SPEC reference if applicable.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
