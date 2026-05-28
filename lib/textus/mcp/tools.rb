@@ -87,6 +87,42 @@ module Textus
             "promote" => set.respond_to?(:promote) ? set.promote&.to_h : nil,
           }.compact
         end,
+
+        "key_mv_prefix" => lambda do |s, store, args|
+          ops_for(s, store).key_mv_prefix(
+            from_prefix: args.fetch("from_prefix") { raise ToolError.new("key_mv_prefix: missing from_prefix") },
+            to_prefix: args.fetch("to_prefix") { raise ToolError.new("key_mv_prefix: missing to_prefix") },
+            dry_run: args["dry_run"] || false,
+          ).to_h
+        end,
+
+        "key_delete_prefix" => lambda do |s, store, args|
+          ops_for(s, store).key_delete_prefix(
+            prefix: args.fetch("prefix") { raise ToolError.new("key_delete_prefix: missing prefix") },
+            dry_run: args["dry_run"] || false,
+          ).to_h
+        end,
+
+        "zone_mv" => lambda do |s, store, args|
+          ops_for(s, store).zone_mv(
+            from: args.fetch("from") { raise ToolError.new("zone_mv: missing from") },
+            to: args.fetch("to") { raise ToolError.new("zone_mv: missing to") },
+            dry_run: args["dry_run"] || false,
+          ).to_h
+        end,
+
+        "rule_lint" => lambda do |s, store, args|
+          ops_for(s, store).rule_lint(
+            candidate_yaml: args.fetch("candidate_yaml") { raise ToolError.new("rule_lint: missing candidate_yaml") },
+          ).to_h
+        end,
+
+        "migrate" => lambda do |s, store, args|
+          ops_for(s, store).migrate(
+            plan_yaml: args.fetch("plan_yaml") { raise ToolError.new("migrate: missing plan_yaml") },
+            dry_run: args["dry_run"] || false,
+          ).to_h
+        end,
       }.freeze
     end
   end

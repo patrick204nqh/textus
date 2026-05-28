@@ -143,6 +143,27 @@ module Textus
       ).call(**)
     end
 
+    # restructure
+    def key_mv_prefix(**)
+      Application::Restructure::KeyMvPrefix.new(ctx: @ctx, store: @store).call(**)
+    end
+
+    def key_delete_prefix(**)
+      Application::Restructure::KeyDeletePrefix.new(ctx: @ctx, store: @store).call(**)
+    end
+
+    def zone_mv(**)
+      Application::Restructure::ZoneMv.new(ctx: @ctx, store: @store).call(**)
+    end
+
+    def rule_lint(**)
+      Application::Restructure::RuleLint.new(ctx: @ctx, store: @store).call(**)
+    end
+
+    def migrate(**)
+      Application::Restructure::Migrate.new(ctx: @ctx, store: @store).call(**)
+    end
+
     private
 
     def envelope_io

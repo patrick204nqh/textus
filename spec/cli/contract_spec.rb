@@ -64,11 +64,13 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "pulse" => Textus::CLI::Verb::Pulse,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::Rdeps,
+      "migrate" => Textus::CLI::Verb::Migrate,
       "refresh" => Textus::CLI::Group::Refresh,
       "reject" => Textus::CLI::Verb::Reject,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
       "where" => Textus::CLI::Verb::Where,
+      "zone" => Textus::CLI::Group::Zone,
     }
     expect(Textus::CLI.verbs).to eq(expected)
   end
@@ -84,12 +86,17 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "run" => Textus::CLI::Verb::HookRun,
     )
     expect(Textus::CLI::Group::Key.subcommands).to eq(
+      "delete" => Textus::CLI::Verb::KeyDelete,
       "mv" => Textus::CLI::Verb::Mv,
       "uid" => Textus::CLI::Verb::Uid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
       "explain" => Textus::CLI::Verb::RuleExplain,
+      "lint" => Textus::CLI::Verb::RuleLint,
       "list" => Textus::CLI::Verb::RuleList,
+    )
+    expect(Textus::CLI::Group::Zone.subcommands).to eq(
+      "mv" => Textus::CLI::Verb::ZoneMv,
     )
     expect(Textus::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::CLI::Verb::SchemaDiff,

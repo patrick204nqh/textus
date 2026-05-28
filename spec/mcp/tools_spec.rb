@@ -114,4 +114,14 @@ RSpec.describe Textus::MCP::Tools do
       expect(result).to be_a(Hash)
     end
   end
+
+  describe ".call('key_mv_prefix', ..., dry_run: true)" do
+    it "returns a plan without mutating files" do
+      result = described_class.call(
+        "key_mv_prefix", session: session, store: store,
+                         args: { "from_prefix" => "working", "to_prefix" => "renamed", "dry_run" => true }
+      )
+      expect(result).to include("steps", "warnings")
+    end
+  end
 end
