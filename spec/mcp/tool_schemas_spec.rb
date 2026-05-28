@@ -24,5 +24,11 @@ RSpec.describe Textus::MCP::ToolSchemas do
       expect(boot[:inputSchema][:properties]).to eq({})
       expect(boot[:inputSchema][:required]).to eq([])
     end
+
+    it "includes the restructure tools" do
+      names = described_class.all.map { |t| t[:name] }
+      expect(names).to include("key_mv_prefix", "key_delete_prefix",
+                               "zone_mv", "rule_lint", "migrate")
+    end
   end
 end
