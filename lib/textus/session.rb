@@ -27,7 +27,7 @@ module Textus
     end
 
     def hook_context
-      @hook_context ||= Hooks::Context.new(ops: self)
+      @hook_context ||= Hooks::Context.new(session: self)
     end
 
     def rpc = @hook_caps.rpc

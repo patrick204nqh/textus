@@ -128,11 +128,11 @@ For multi-writer environments, **always pass `if_etag`** on `put`. The gem treat
 
 ## Application layering
 
-From 0.25.1, the application layer is organised around three composition records — `Manifest`, `Application::Ports`, and the read/write split — described by [ADR 0016](architecture/decisions/0016-application-ports-value.md), [ADR 0017](architecture/decisions/0017-envelope-io-split.md), and [ADR 0018](architecture/decisions/0018-manifest-composition.md).
+The application layer is organised around three patterns — `Manifest` as a composition record, capability slices (`Caps`) handed to use cases, and a split envelope reader/writer. See [ADR 0018](architecture/decisions/0018-manifest-carving.md), [ADR 0017](architecture/decisions/0017-envelope-io-split.md), [ADR 0020](architecture/decisions/0020-capability-records.md), and [ADR 0021](architecture/decisions/0021-session-and-module-use-cases.md).
 
-- **`Manifest` is a composition record** (`Data.define(:data, :resolver, :policy, :rules)`). Reach individual concerns through the field accessors: `manifest.data.entries`, `manifest.policy.permission_for(zone)`, `manifest.resolver.resolve(key)`, `manifest.rules.for_key(key)`. The legacy top-level shims (`manifest.permission_for`, `manifest.entries`, ...) still work via one-cycle bridges that warn until 0.26.0 — new code should call through the field accessors.
-- **Application use cases take a single `ports:` kwarg** of type `Textus::Application::Ports`. The record bundles six adapter handles (`manifest`, `file_store`, `schemas`, `audit_log`, `event_bus`, `rpc_registry`) plus the store root path. Use cases pull only the slice they need into local ivars; nobody passes the raw `Store` around the application layer.
-- **Write path is split**: `Application::Writes::EnvelopeReader` owns read/parse (existing-uid lookup, raw read, parse), and `Application::Writes::EnvelopeWriter` owns put/delete/move + the audit-append invariant (every public method's final action is `@audit_log.append(...)`).
+- **`Manifest` is a composition record** (`Data.define(:data, :resolver, :policy, :rules)`). Reach individual concerns through the field accessors: `manifest.data.entries`, `manifest.policy.permission_for(zone)`, `manifest.resolver.resolve(key)`, `manifest.rules.for(key)`. (The legacy top-level shims were removed in 0.26.0.)
+- **Application use cases take `session:`, `ctx:`, `caps:`** and are registered with `Application::UseCase.register(:verb, mod, caps: :read|:write)`. Each use case is a module with a `self.call(...)` entry point and a nested `class Impl` for state. `Caps` is a `Data.define` slice of the Store (`ReadCaps`, `WriteCaps`, `HookCaps`) — use cases pull only what they need into ivars; nobody passes the raw `Store` around the application layer.
+- **Write path is split**: `Application::Envelope::Reader` owns read/parse (existing-uid lookup, raw read, parse), and `Application::Envelope::Writer` owns put/delete/move + the audit-append invariant (every public method's final action is `@audit_log.append(...)`).
 
 The user-facing CLI surface, the wire envelope shape, and the protocol version (`textus/3`) are unchanged.
 

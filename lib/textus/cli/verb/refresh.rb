@@ -6,7 +6,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("refresh requires a key")
-          emit(operations_for(store).refresh(key).to_h_for_wire)
+          emit(session_for(store).refresh(key).to_h_for_wire)
         end
       end
     end

@@ -42,7 +42,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   def trigger(key:, files:)
     handler = store.events.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
-    ctx = Textus::Hooks::Context.new(ops: ops)
+    ctx = Textus::Hooks::Context.new(session: ops)
     handler[:callable].call(ctx: ctx, key: key, envelope: envelope, change: :updated)
   end
 

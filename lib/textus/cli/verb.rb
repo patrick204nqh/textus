@@ -104,7 +104,7 @@ module Textus
       end
 
       # Returns a Session instance bound to the resolved role.
-      def operations_for(store)
+      def session_for(store)
         store.session(role: resolved_role(store))
       end
     end

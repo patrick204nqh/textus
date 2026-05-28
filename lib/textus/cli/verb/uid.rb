@@ -7,7 +7,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("uid requires a key")
-          emit({ "key" => key, "uid" => operations_for(store).uid(key) })
+          emit({ "key" => key, "uid" => session_for(store).uid(key) })
         end
       end
     end

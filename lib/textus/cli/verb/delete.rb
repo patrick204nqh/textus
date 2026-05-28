@@ -9,7 +9,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("delete requires a key")
-          emit(operations_for(store).delete(key, if_etag: if_etag))
+          emit(session_for(store).delete(key, if_etag: if_etag))
         end
       end
     end

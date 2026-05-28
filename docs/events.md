@@ -215,7 +215,7 @@ Hook files wrap a single `Textus.hook { |reg| ... }` block. The block receives t
 ```ruby
 # RPC and pub-sub register the same way — through reg.on.
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_file) do |store:, config:, args:|
+  reg.on(:resolve_intake, :local_file) do |caps:, config:, args:|
     { _meta: {}, body: File.read(config["path"]) }
   end
 
@@ -234,9 +234,9 @@ Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them
 
 Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_put, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
 
-All writes via `ctx` route through `Operations` so authorization, schema validation, and audit logging always fire — there are no bypass paths.
+All writes via `ctx` route through the `Session` use-case dispatch so authorization, schema validation, and audit logging always fire — there are no bypass paths.
 
-RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and still receive `store:`.
+RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `ReadCaps` or `WriteCaps` record (the appropriate adapter slice of the Store). Legacy `store:` is rejected by the registry.
 
 If you don't need `ctx:`, absorb it with `**`:
 
@@ -324,11 +324,13 @@ Wrapping pattern:
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :remote_rss) do |store:, config:, args:|
+  reg.on(:resolve_intake, :remote_rss) do |caps:, config:, args:|
     bytes = Net::HTTP.get(URI(config["url"]))
-    # :resolve_intake is RPC — store: is available for RPC event handlers
-    callable = store.bus.rpc_callable(:resolve_intake, :rss)
-    callable.call(store: store, config: { "bytes" => bytes }, args: args)
+    # Parse the bytes inline — the built-in :rss handler is also available
+    # but invoking it from a sibling hook requires plumbing the RpcRegistry
+    # through; for a single-format wrapper, parse directly here.
+    rows = MyRssParser.parse(bytes)
+    { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: rows.to_json }
   end
 end
 ```
@@ -344,16 +346,16 @@ RSpec.describe "my notion hook" do
   let(:reg) { Textus::Hooks::Registry.new }
 
   it "registers under :notion" do
-    reg.on(:resolve_intake, :notion) { |store:, config:, args:| { _meta: {}, body: "stub" } }
+    reg.on(:resolve_intake, :notion) { |caps:, config:, args:| { _meta: {}, body: "stub" } }
     expect(reg.rpc_names(:resolve_intake)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    reg.on(:resolve_intake, :notion) do |store:, config:, args:|
+    reg.on(:resolve_intake, :notion) do |caps:, config:, args:|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
     handler = reg.rpc_callable(:resolve_intake, :notion)
-    result  = handler.call(store: nil, config: {}, args: {})
+    result  = handler.call(caps: nil, config: {}, args: {})
     expect(result[:body]).to eq("hello")
   end
 end
@@ -383,7 +385,7 @@ See `spec/hooks/registry_spec.rb` for the canonical patterns.
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :linear) do |store:, config:, args:|
+  reg.on(:resolve_intake, :linear) do |caps:, config:, args:|
     bytes = LinearClient.fetch(config["team_id"])
     { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
   end
@@ -436,8 +438,8 @@ end
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:validate, :no_drafts_in_identity) do |store:|
-    Textus::Application::Reads::List.new(manifest: store.manifest).call(zone: "identity")
+  reg.on(:validate, :no_drafts_in_identity) do |caps:|
+    Textus::Application::Read::List::Impl.new(caps: caps).call(zone: "identity")
       .select { |e| e["frontmatter"]["status"] == "draft" }
       .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
   end
@@ -446,19 +448,7 @@ end
 
 A non-empty return array surfaces as a doctor failure with each issue listed.
 
-#### `store:` is deprecated in 0.25.1 — declare `ports:` (removed in 0.26.0)
-
-From 0.25.1, RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) should declare `|ports:|` instead of `|store:|`. The kwarg is a `Textus::Application::Ports` — a value record over six adapter handles (`manifest`, `file_store`, `schemas`, `audit_log`, `event_bus`, `rpc_registry`) plus the store root. `store:` continues to work via a one-cycle deprecation bridge and will be **removed in 0.26.0**; on first use, a `DeprecationNotice` row is recorded into `Hooks::Bus#error_log` per (event, hook_name) pair. Declare `ports:` to silence it.
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:validate, :no_drafts_in_identity) do |ports:|
-    Textus::Application::Reads::List.new(manifest: ports.manifest).call(zone: "identity")
-      .select { |e| e["frontmatter"]["status"] == "draft" }
-      .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
-  end
-end
-```
+`caps:` is a `Textus::Application::WriteCaps` (for `:validate`, since doctor checks may need write access for diagnostics) bundling `manifest`, `file_store`, `schemas`, `audit_log`, `events`, `authorizer`, and the store `root`. Pull the slice you need into a local; never reach for the raw Store.
 
 ---
 

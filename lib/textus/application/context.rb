@@ -7,8 +7,8 @@ module Textus
     # writes should be suppressed (dry_run).
     #
     # Collaborators (manifest, file_store, bus, audit log, authorizer) are
-    # never read from Context — use cases declare them as explicit
-    # constructor ports, and Operations wires them in from the Store.
+    # never read from Context — use cases pull them from a Caps record
+    # (Read/Write/Hook) that Session derives from the Store.
     Context = Data.define(:role, :correlation_id, :now, :dry_run) do
       def self.build(role:, correlation_id: nil, now: nil, dry_run: false)
         new(

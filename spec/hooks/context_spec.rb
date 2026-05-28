@@ -7,7 +7,7 @@ RSpec.describe Textus::Hooks::Context do
 
   let(:store) { Textus::Store.new(root) }
   let(:ops)   { store.session(role: "agent") }
-  let(:ctx)   { described_class.new(ops: ops) }
+  let(:ctx)   { described_class.new(session: ops) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))

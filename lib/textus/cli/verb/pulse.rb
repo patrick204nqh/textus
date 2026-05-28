@@ -7,7 +7,7 @@ module Textus
         option :since, "--since=N"
 
         def call(store)
-          ops = operations_for(store)
+          ops = session_for(store)
           since_n = (since || "0").to_i
           emit(ops.pulse(since: since_n))
         end
