@@ -28,10 +28,7 @@ module Textus
             return plan if dry_run
 
             steps.each do |s|
-              Textus::Application::Write::Delete.call(
-                s["key"],
-                session: @session, ctx: @ctx, caps: @session.write_caps,
-              )
+              @session.delete(s["key"])
             end
             plan
           end
