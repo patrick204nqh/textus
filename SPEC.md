@@ -10,7 +10,7 @@
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol that lets humans, agents, and runners read and write structured project memory **deterministically**, with addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
+A storage convention and JSON wire protocol for humans, agents, and runners to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, role-based write gates, declarative compute, and copy-based publish targets.
 
 The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees and declares which roles may write to each zone. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/build/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
@@ -511,7 +511,7 @@ evolution:
 
 **Defaults:** when `fields:` and `evolution:` are absent, `schema.maintained_by(field)` returns `nil` for every field and `schema.evolution` returns `{}`.
 
-**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. This preserves human authority over agent/runner-managed data — humans curating canon over agent-written embeddings is a feature, not a bug. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
+**Override rule:** the role `human` is permitted to write any `maintained_by` field, regardless of declared owner. Humans override agent-maintained fields by design: schema field ownership (`maintained_by:`) makes the boundary explicit, not implicit. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
 ### 5.9 Row transforms
 
