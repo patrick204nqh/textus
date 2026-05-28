@@ -17,6 +17,12 @@ RSpec.describe "Hooks::Bus store -> ports kwarg bridge" do
     Textus::Hooks::Bus.instance_variable_set(:@ports_store_deprecation_seen, {})
   end
 
+  after do
+    # Avoid leaking primed (event, hook_name) entries into later specs that
+    # exercise the same bridge — the memo is class-scoped.
+    Textus::Hooks::Bus.instance_variable_set(:@ports_store_deprecation_seen, {})
+  end
+
   def deprecation_rows
     error_log.since(-2).select { |r| r[:error_class] == "DeprecationNotice" }
   end
