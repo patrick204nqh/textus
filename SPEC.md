@@ -68,10 +68,10 @@ The root is `.textus/` at the project working directory. A typical tree:
 .textus/
   manifest.yaml          # internal: key → subtree mapping + zones declarations
   audit.log              # internal, append-only NDJSON log of every successful write
-  role                   # internal, role token (one line, e.g. "human")
   schemas/               # internal: YAML schema files
   templates/             # internal: Mustache templates referenced by derived entries
-  parsers/               # internal: project-local parser extensions
+  hooks/                 # internal: one Ruby file per hook
+  sentinels/             # internal: bookkeeping for byte-copied publish targets (see §5.3)
   zones/                 # ALL user content lives here
     identity/            # zone: identity (human-only)
     working/             # zone: working (human, agent, runner)
@@ -80,7 +80,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     output/              # zone: output (builder only — computed outputs)
 ```
 
-Textus internals (`manifest.yaml`, `audit.log`, `role`, `schemas/`, `templates/`, `parsers/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
+Textus internals (`manifest.yaml`, `audit.log`, `schemas/`, `templates/`, `hooks/`, `sentinels/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
 
 Zone directories under `zones/` are conventional; their write semantics are declared in the manifest, not the directory name.
 
