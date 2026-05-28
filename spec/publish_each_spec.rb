@@ -104,7 +104,7 @@ RSpec.describe "publish_each:" do
           publish_each: "out/{leaf}/k={key}/b={basename}.{ext}"
       Y
       m = Textus::Manifest.load(root)
-      entry = m.entries.first
+      entry = m.data.entries.first
       target = entry.publish_target_for("working.skills.writing.voice-writer")
       expect(target).to eq("out/writing/voice-writer/k=working.skills.writing.voice-writer/b=voice-writer.md")
     end

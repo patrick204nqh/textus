@@ -51,7 +51,7 @@ RSpec.describe Textus::Application::Write::Materializer do
   end
 
   it "materializes a Derived entry and writes rendered content to disk" do
-    mentry = store.manifest.entries.find { |e| e.key == "output.catalogs.people" }
+    mentry = store.manifest.data.entries.find { |e| e.key == "output.catalogs.people" }
     expect(mentry).to be_a(Textus::Manifest::Entry::Derived)
 
     target_path = materializer.run(mentry)

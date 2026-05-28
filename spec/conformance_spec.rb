@@ -228,8 +228,8 @@ RSpec.describe "textus/3 conformance" do
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
-      expect(m.zone_writers("identity")).to eq(["human"])
-      expect(m.zone_writers("working")).to contain_exactly("human", "agent", "runner")
+      expect(m.policy.zone_writers("identity")).to eq(["human"])
+      expect(m.policy.zone_writers("working")).to contain_exactly("human", "agent", "runner")
     end
 
     it "raises BadFrontmatter if zones block is absent" do

@@ -24,7 +24,7 @@ RSpec.describe Textus::Manifest::Entry do
           pluck: [name]
           transform: marketplace_indexer
     YAML
-    e = mf.entries.first
+    e = mf.data.entries.first
     expect(e).to be_a(Textus::Manifest::Entry::Derived)
     expect(e).to be_projection
     expect(e.source.transform).to eq("marketplace_indexer")
@@ -43,7 +43,7 @@ RSpec.describe Textus::Manifest::Entry do
           command: "rake build:big-index"
           sources: [working.docs]
     YAML
-    e = mf.entries.first
+    e = mf.data.entries.first
     expect(e).to be_a(Textus::Manifest::Entry::Derived)
     expect(e).to be_external
     expect(e.source.runner).to be_nil
