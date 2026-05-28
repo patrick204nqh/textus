@@ -9,7 +9,7 @@
 │  Or, for embedders bringing their own ports:               │
 │              Operations.new(ctx:, manifest:, file_store:,  │
 │                             schemas:, audit_log:, bus:,    │
-│                             bus:, root:, store:)      │
+│                             root:, store:)                 │
 └──────────────────────┬─────────────────────────────────────┘
                        │
 ┌─ Application ────────▼─────────────────────────────────────┐
