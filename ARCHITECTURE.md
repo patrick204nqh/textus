@@ -9,7 +9,7 @@
 │  Or, for embedders bringing their own ports:               │
 │              Operations.new(ctx:, manifest:, file_store:,  │
 │                             schemas:, audit_log:, bus:,    │
-│                             registry:, root:, store:)      │
+│                             bus:, root:, store:)      │
 └──────────────────────┬─────────────────────────────────────┘
                        │
 ┌─ Application ────────▼─────────────────────────────────────┐
@@ -41,7 +41,7 @@
 │  Manifest           (Entry, Rules, Schema, permission_for) │
 │  Schemas            (eager-load cache)                     │
 │  AuditLog                                                  │
-│  Hooks::{Registry,Dispatcher,Loader,FireReport}            │
+│  Hooks::{Bus,Loader,Context,FireReport,Builtin}            │
 │  Infra::{Publisher,EventBus,Clock,Refresh::Lock,           │
 │          Refresh::Detached,BuildLock,AuditSubscriber}      │
 │  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
@@ -77,7 +77,7 @@
 
 1. CLI `Verb::Refresh` builds `ops = Operations.for(store, role: "runner")` then calls `ops.refresh(key)`.
 2. `Refresh::Worker#run(key)`:
-   - Resolves the manifest entry, looks up the intake handler via `@registry.rpc_callable(:resolve_intake, mentry.intake_handler)`.
+   - Resolves the manifest entry, looks up the intake handler via `@bus.rpc_callable(:resolve_intake, mentry.handler)`.
    - Publishes `:refresh_started` with `role:` in the payload.
    - Invokes the handler under a 30s thread-join deadline.
    - On any error: publishes `:refresh_failed`, then re-raises.
