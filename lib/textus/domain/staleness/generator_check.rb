@@ -8,8 +8,10 @@ module Textus
       # entry's `_meta.generated.at` timestamp. Returns an Array of row hashes
       # (possibly empty) per entry.
       class GeneratorCheck
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(manifest:, file_stat:, clock:)
+          @manifest  = manifest
+          @file_stat = file_stat
+          @clock     = clock
         end
 
         def rows_for(mentry)
@@ -20,9 +22,9 @@ module Textus
           return [] unless src.is_a?(Textus::Manifest::Entry::Derived::External)
 
           path = Textus::Key::Path.resolve(@manifest.data, mentry)
-          return [stale_row(mentry, path, "derived entry has never been generated")] unless File.exist?(path)
+          return [stale_row(mentry, path, "derived entry has never been generated")] unless @file_stat.exists?(path)
 
-          parsed = Entry.for_format(mentry.format).parse(File.binread(path), path: path)
+          parsed = Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)
           generated_at = parsed["_meta"].dig("generated", "at")
           return [stale_row(mentry, path, "missing generated.at frontmatter")] unless generated_at
 
@@ -54,7 +56,7 @@ module Textus
         def check_source(src, gen_time)
           if src.match?(/\A[a-z0-9.][a-z0-9._-]*\z/) && !src.include?("/")
             @manifest.resolver.enumerate(prefix: src).each do |row|
-              return src if File.mtime(row[:path]) > gen_time
+              return src if @file_stat.mtime(row[:path]) > gen_time
             end
             nil
           else
@@ -64,13 +66,13 @@ module Textus
 
         def check_filesystem_source(src, gen_time)
           abs = File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.data.root), src)
-          if File.directory?(abs)
-            Dir.glob(File.join(abs, "**", "*")).each do |fp|
-              next unless File.file?(fp)
-              return src if File.mtime(fp) > gen_time
+          if @file_stat.directory?(abs)
+            @file_stat.glob(File.join(abs, "**", "*")).each do |fp|
+              next unless !@file_stat.directory?(fp) && @file_stat.exists?(fp)
+              return src if @file_stat.mtime(fp) > gen_time
             end
             nil
-          elsif File.exist?(abs) && File.mtime(abs) > gen_time
+          elsif @file_stat.exists?(abs) && @file_stat.mtime(abs) > gen_time
             src
           end
         end
