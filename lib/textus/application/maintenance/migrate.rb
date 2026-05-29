@@ -52,5 +52,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:migrate, Textus::Application::Maintenance::Migrate, caps: :write)

@@ -101,5 +101,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:freshness, Textus::Application::Read::Freshness, caps: :read)

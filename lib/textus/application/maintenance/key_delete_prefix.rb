@@ -37,5 +37,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:key_delete_prefix, Textus::Application::Maintenance::KeyDeletePrefix, caps: :write)

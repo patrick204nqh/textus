@@ -66,5 +66,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:get, Textus::Application::Read::Get, caps: :read)

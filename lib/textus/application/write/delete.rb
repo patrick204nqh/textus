@@ -51,5 +51,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:delete, Textus::Application::Write::Delete, caps: :write)

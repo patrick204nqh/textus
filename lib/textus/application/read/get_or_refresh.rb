@@ -66,5 +66,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:get_or_refresh, Textus::Application::Read::GetOrRefresh, caps: :write)

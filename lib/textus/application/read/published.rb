@@ -15,5 +15,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:published, Textus::Application::Read::Published, caps: :read)

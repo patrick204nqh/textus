@@ -45,5 +45,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:refresh_all, Textus::Application::Write::RefreshAll, caps: :write)

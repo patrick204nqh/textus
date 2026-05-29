@@ -37,5 +37,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:policy_explain, Textus::Application::Read::PolicyExplain, caps: :read)

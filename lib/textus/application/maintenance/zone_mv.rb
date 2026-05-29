@@ -51,5 +51,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:zone_mv, Textus::Application::Maintenance::ZoneMv, caps: :write)

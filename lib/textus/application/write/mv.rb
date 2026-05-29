@@ -120,5 +120,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:mv, Textus::Application::Write::Mv, caps: :write)

@@ -56,5 +56,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:rule_lint, Textus::Application::Maintenance::RuleLint, caps: :read)

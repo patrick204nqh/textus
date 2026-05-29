@@ -52,5 +52,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:reject, Textus::Application::Write::Reject, caps: :write)

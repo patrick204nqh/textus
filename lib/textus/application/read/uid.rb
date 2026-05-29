@@ -20,5 +20,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:uid, Textus::Application::Read::Uid, caps: :read)

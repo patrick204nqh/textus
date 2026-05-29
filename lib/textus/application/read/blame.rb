@@ -81,5 +81,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:blame, Textus::Application::Read::Blame, caps: :read)

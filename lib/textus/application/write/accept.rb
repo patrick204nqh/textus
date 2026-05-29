@@ -84,5 +84,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:accept, Textus::Application::Write::Accept, caps: :write)

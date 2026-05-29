@@ -25,5 +25,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:rdeps, Textus::Application::Read::Rdeps, caps: :read)

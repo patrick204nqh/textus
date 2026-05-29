@@ -90,5 +90,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:pulse, Textus::Application::Read::Pulse, caps: :read)

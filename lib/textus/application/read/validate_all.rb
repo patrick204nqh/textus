@@ -22,5 +22,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:validate_all, Textus::Application::Read::ValidateAll, caps: :read)

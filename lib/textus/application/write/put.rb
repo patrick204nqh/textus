@@ -56,5 +56,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:put, Textus::Application::Write::Put, caps: :write)

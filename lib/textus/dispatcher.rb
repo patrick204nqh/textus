@@ -1,10 +1,7 @@
 module Textus
-  # Static verb → use-case map. Replaces the Application::UseCase registry
-  # whose entries were populated by file-load side effects.
-  #
-  # During Phase 3 of the 0.27.0 redesign this table coexists with
-  # Application::UseCase. The registry is removed in Phase 7; Dispatcher
-  # becomes the canonical lookup.
+  # Static verb → use-case map. Canonical lookup as of 0.27.0; replaces the
+  # Application::UseCase registry whose entries were populated by file-load
+  # side effects in 0.26.x.
   module Dispatcher
     VERBS = {
       # Write

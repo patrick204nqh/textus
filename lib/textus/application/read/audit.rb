@@ -92,5 +92,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:audit, Textus::Application::Read::Audit, caps: :read)

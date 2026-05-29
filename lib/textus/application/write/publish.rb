@@ -91,5 +91,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:publish, Textus::Application::Write::Publish, caps: :write)

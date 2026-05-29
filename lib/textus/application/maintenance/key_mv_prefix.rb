@@ -47,5 +47,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:key_mv_prefix, Textus::Application::Maintenance::KeyMvPrefix, caps: :write)

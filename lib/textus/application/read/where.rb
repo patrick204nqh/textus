@@ -16,5 +16,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:where, Textus::Application::Read::Where, caps: :read)

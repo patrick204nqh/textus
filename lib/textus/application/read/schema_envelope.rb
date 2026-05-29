@@ -16,5 +16,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:schema_envelope, Textus::Application::Read::SchemaEnvelope, caps: :read)

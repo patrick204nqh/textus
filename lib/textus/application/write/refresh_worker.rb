@@ -147,5 +147,3 @@ module Textus
     end
   end
 end
-
-Textus::Application::UseCase.register(:refresh, Textus::Application::Write::RefreshWorker, caps: :write)
