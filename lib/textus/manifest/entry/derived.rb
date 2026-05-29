@@ -23,19 +23,19 @@ module Textus
           return nil unless in_generator_zone?(pctx.manifest.policy)
 
           target_path = Textus::Application::Write::Materializer.new(
-            ctx: pctx.ctx, caps: pctx.caps, rpc: pctx.rpc, container: pctx.container,
+            container: pctx.container, call: pctx.call,
           ).run(self)
 
           envelope = pctx.reader.call(@key)
           Array(publish_to).each do |rel|
             target_abs = File.join(pctx.repo_root, rel)
             Textus::Infra::Publisher.publish(source: target_path, target: target_abs, store_root: pctx.root)
-            pctx.emit.call(:file_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
+            pctx.emit(:file_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
           end
 
           src = @source
           selects = src.is_a?(Projection) ? Array(src.select).compact : []
-          pctx.emit.call(:build_completed, key: @key, envelope: envelope, sources: selects)
+          pctx.emit(:build_completed, key: @key, envelope: envelope, sources: selects)
 
           { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
         end

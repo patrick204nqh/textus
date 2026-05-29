@@ -50,11 +50,11 @@ module Textus
             end
 
             Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
-            pctx.emit.call(:file_published,
-                           key: row[:key],
-                           envelope: pctx.reader.call(row[:key]),
-                           source: row[:path],
-                           target: target_abs)
+            pctx.emit(:file_published,
+                      key: row[:key],
+                      envelope: pctx.reader.call(row[:key]),
+                      source: row[:path],
+                      target: target_abs)
             leaves << { "key" => row[:key], "source" => row[:path], "target" => target_abs }
           end
 

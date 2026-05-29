@@ -50,7 +50,7 @@ module Textus
           timeout = fetch_timeout_for(key)
           Timeout.timeout(timeout) do
             @rpc.invoke(:resolve_intake, mentry.handler,
-                        caps: caps_struct,
+                        caps: @container,
                         config: mentry.config,
                         args: { trigger_key: key, leaf_segments: remaining || [] })
           end
@@ -106,17 +106,6 @@ module Textus
           @reader ||= Textus::Application::Envelope::Reader.new(
             file_store: @container.file_store,
             manifest: @container.manifest,
-          )
-        end
-
-        # Caps shape required by RPC handlers (resolve_intake) that still
-        # consume the old caps record.
-        def caps_struct
-          @caps_struct ||= Struct.new(
-            :manifest, :file_store, :schemas, :root, :audit_log, :events, :authorizer
-          ).new(
-            @manifest, @container.file_store, @container.schemas, @container.root,
-            @container.audit_log, @events, @authorizer
           )
         end
 

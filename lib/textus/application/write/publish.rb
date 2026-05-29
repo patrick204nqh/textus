@@ -10,14 +10,10 @@ module Textus
       #
       # Return shape: { "protocol", "built", "published_leaves" }
       class Publish
-        def initialize(container:, call:, hook_context:)
+        def initialize(container:, call:, hook_context: nil)
           @container    = container
           @call         = call
           @manifest     = container.manifest
-          @file_store   = container.file_store
-          @events       = container.events
-          @root         = container.root
-          @rpc          = container.rpc
           @hook_context = hook_context
         end
 
@@ -45,29 +41,9 @@ module Textus
 
         def build_context
           Textus::Manifest::Entry::Base::PublishContext.new(
-            repo_root: File.dirname(@root),
-            manifest: @manifest,
-            file_store: @file_store,
-            root: @root,
-            caps: caps_struct,
-            rpc: @rpc,
             container: @container,
-            ctx: @call,
-            bus: @events,
-            hook_context: @hook_context,
+            call: @call,
             reader: reader,
-            emit: ->(event, **payload) { @events.publish(event, ctx: @hook_context, **payload) },
-          )
-        end
-
-        # Reconstruct a write-caps-shaped struct for downstream consumers
-        # (Materializer) that still take caps:. Mirrors WriteCaps fields.
-        def caps_struct
-          @caps_struct ||= Struct.new(
-            :manifest, :file_store, :schemas, :root, :audit_log, :events, :authorizer
-          ).new(
-            @manifest, @file_store, @container.schemas, @root,
-            @container.audit_log, @events, @container.authorizer
           )
         end
 

@@ -6,10 +6,8 @@ RSpec.describe Textus::Application::Write::Materializer do
   subject(:materializer) do
     container = store.container
     Textus::Application::Write::Materializer.new(
-      ctx: ctx,
-      caps: container,
-      rpc: container.rpc,
       container: container,
+      call: ctx,
     )
   end
 
