@@ -27,22 +27,25 @@ module Textus
     end
 
     def run(argv)
-      OptionParser.new { |o| o.on("--root=PATH") { |v| @root_arg = v } }.order!(argv)
+      # Define --version/--help ourselves so OptionParser doesn't intercept them
+      # with its built-in handlers (which print "version unknown" and a bare usage
+      # line, then exit before we ever reach the verb dispatch below).
+      show_version = false
+      show_help = false
+      OptionParser.new do |o|
+        o.on("--root=PATH") { |v| @root_arg = v }
+        o.on("--version", "-v") { show_version = true }
+        o.on("--help", "-h") { show_help = true }
+      end.order!(argv)
+
+      return @stdout.puts(VERSION) || 0 if show_version
+      return print_help || 0 if show_help
+
       verb = argv.shift
       raise UsageError.new("missing verb") if verb.nil?
 
-      result =
-        case verb
-        when "--version", "-v" then @stdout.puts(VERSION)
-                                    0
-        when "--help", "-h"    then print_help
-                                    0
-        else
-          klass = self.class.verbs[verb] or raise UsageError.new("unknown verb: #{verb}")
-          dispatch(klass, argv)
-        end
-
-      coerce_exit_code(result)
+      klass = self.class.verbs[verb] or raise UsageError.new("unknown verb: #{verb}")
+      coerce_exit_code(dispatch(klass, argv))
     rescue Textus::Error => e
       emit_error(e)
     end
@@ -94,9 +97,9 @@ module Textus
           textus doctor
           textus boot
 
-          textus key {mv,uid,normalize}
-          textus rule {list,explain}
-          textus schema {show,init,diff,migrate}
+          textus key {delete,mv,uid}
+          textus rule {explain,lint,list}
+          textus schema {diff,init,migrate,show}
           textus hook {list,run}
       HELP
     end

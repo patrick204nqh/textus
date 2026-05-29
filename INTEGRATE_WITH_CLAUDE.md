@@ -40,9 +40,12 @@ Create `.mcp.json` at your project root:
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `pulse`, `get`, `list`, `put`, `accept`, `audit`, `freshness`,
-`doctor`. The agent calls them as MCP tools — no shell strings, no
-parsing.
+`boot`, `tick`, `find`, `read`, `write`, `propose`, `refresh`,
+`refresh_stale`, `schema`, `rules` (plus maintenance tools). The agent
+calls them as MCP tools — no shell strings, no parsing. The MCP tool
+names differ from the CLI verbs (`tick` is the MCP name for `pulse`,
+`find` for `list`, `read` for `get`, `write` for `put`); the full
+catalog with arguments is in [`docs/mcp.md`](docs/mcp.md).
 
 ## 4. Tell Claude how to use it
 
@@ -52,24 +55,25 @@ Add to your `CLAUDE.md` (or create one if you don't have it):
 ## Context store
 
 This project uses textus for durable agent memory. On session start,
-call the `textus.boot` MCP tool — it returns the manifest, your
-write authority, and the list of available verbs. Use `textus.pulse`
-once per turn to see what changed since you last looked.
+call the `boot` MCP tool — it returns the manifest, your write
+authority, and the tool catalog. Call `tick` once per turn to see
+what changed since you last looked.
 
-You write to `review.*` only. A human runs `textus accept` to
-promote your proposals to `working/`.
+You can't write to `working/` or `identity/` directly. Use the
+`propose` tool to land a change in the `review/` queue; a human runs
+`textus accept` to promote it to `working/`.
 ```
 
 That's the full integration. Claude Code reads `CLAUDE.md` on session
 start, sees the MCP tools advertised in the `.mcp.json`, and follows
-the boot/pulse protocol.
+the boot/tick protocol.
 
 ## What you get
 
 - **`boot` once per session:** the agent knows your zone topology,
   schemas, write policies, and verb catalog without you explaining
   them in `CLAUDE.md`.
-- **`pulse` per turn:** the agent sees what files changed since its
+- **`tick` per turn:** the agent sees what files changed since its
   last turn — no full re-read of the project.
 - **Role-gated writes:** the agent cannot write to `working/` or
   `identity/` directly; it can only propose to `review/`. You

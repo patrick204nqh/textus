@@ -25,6 +25,16 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 | `schema` | Field shape | `family: string` |
 | `rules` | Effective rules for a key | `key: string` |
 
+Maintenance tools (admin / bulk operations):
+
+| Tool | Returns | Args |
+|---|---|---|
+| `key_mv_prefix` | Plan or applied move | `from_prefix, to_prefix, dry_run?` |
+| `key_delete_prefix` | Plan or applied delete | `prefix, dry_run?` |
+| `zone_mv` | Renamed zone (manifest + files) | `from, to, dry_run?` |
+| `rule_lint` | Rule diff vs. live manifest (no writes) | `candidate_yaml` |
+| `migrate` | Result of a YAML migration plan | `plan_yaml, dry_run?` |
+
 ## Errors
 
 | Code | Class | Meaning |
@@ -50,7 +60,7 @@ Add an `.mcp.json` next to the plugin's `CLAUDE.md`:
 }
 ```
 
-The agent now sees ten textus tools in its registry. No `textus get` strings in the plugin's markdown.
+The agent now sees the full textus tool catalog in its registry (fifteen tools). No `textus get` strings in the plugin's markdown.
 
 ## See also
 
