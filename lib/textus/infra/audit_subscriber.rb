@@ -11,7 +11,7 @@ module Textus
     # event subscribers should be able to filter by key glob).
     #
     # Lifecycle audit rows for verb: "put" / "delete" / "rename" are written
-    # by Application::Envelope::Writer directly (it owns the
+    # by Envelope::IO::Writer directly (it owns the
     # audit-append-as-final-step invariant); this subscriber covers the
     # hook-failure case the writer never sees.
     class AuditSubscriber

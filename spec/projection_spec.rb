@@ -2,14 +2,14 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Textus::Application::Projection do
+RSpec.describe Textus::Projection do
   let(:tmp)  { Dir.mktmpdir("textus-proj") }
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
 
   def build_projection(spec)
     ops = store.as(Textus::Role::DEFAULT)
-    Textus::Application::Projection.new(
+    Textus::Projection.new(
       reader: ops.method(:get),
       spec: spec,
       lister: ops.method(:list),

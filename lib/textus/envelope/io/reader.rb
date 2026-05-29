@@ -1,6 +1,6 @@
 module Textus
-  module Application
-    module Envelope
+  class Envelope
+    module IO
       # Read-only counterpart to EnvelopeWriter. Resolves a key, reads the
       # bytes, parses them via the format strategy, and hands back an
       # Envelope. Used by Mv (pre-move inspection) and by EnvelopeWriter

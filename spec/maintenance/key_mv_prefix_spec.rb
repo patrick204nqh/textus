@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Maintenance::KeyMvPrefix do
+RSpec.describe Textus::Maintenance::KeyMvPrefix do
   include_context "textus_store_fixture"
   include TextusSpecHelpers
 

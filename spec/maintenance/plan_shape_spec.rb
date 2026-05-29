@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Application::Maintenance do
+RSpec.describe Textus::Maintenance do
   it "exposes Plan as a Data class with steps and warnings" do
     plan = described_class::Plan.new(steps: [{ "op" => "mv", "from" => "a", "to" => "b" }], warnings: ["w1"])
     expect(plan.steps).to eq([{ "op" => "mv", "from" => "a", "to" => "b" }])

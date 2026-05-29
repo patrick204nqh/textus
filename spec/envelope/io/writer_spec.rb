@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Envelope::Writer do
+RSpec.describe Textus::Envelope::IO::Writer do
   def build_textus(root)
     textus_dir = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
@@ -23,7 +23,7 @@ RSpec.describe Textus::Application::Envelope::Writer do
     file_store = Textus::Infra::Storage::FileStore.new
     schemas    = Textus::Schemas.new(File.join(textus_dir, "schemas"))
     audit      = Textus::Infra::AuditLog.new(textus_dir)
-    reader     = Textus::Application::Envelope::Reader.new(
+    reader     = Textus::Envelope::IO::Reader.new(
       file_store: file_store, manifest: manifest,
     )
     described_class.new(

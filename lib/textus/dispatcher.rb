@@ -33,11 +33,11 @@ module Textus
       validate_all: Textus::Read::ValidateAll,
 
       # Maintenance
-      migrate: Textus::Application::Maintenance::Migrate,
-      zone_mv: Textus::Application::Maintenance::ZoneMv,
-      key_mv_prefix: Textus::Application::Maintenance::KeyMvPrefix,
-      key_delete_prefix: Textus::Application::Maintenance::KeyDeletePrefix,
-      rule_lint: Textus::Application::Maintenance::RuleLint,
+      migrate: Textus::Maintenance::Migrate,
+      zone_mv: Textus::Maintenance::ZoneMv,
+      key_mv_prefix: Textus::Maintenance::KeyMvPrefix,
+      key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,
+      rule_lint: Textus::Maintenance::RuleLint,
     }.freeze
 
     def self.fetch(verb)

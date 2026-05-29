@@ -1,8 +1,8 @@
 require "fileutils"
 
 module Textus
-  module Application
-    module Envelope
+  class Envelope
+    module IO
       # Owns the write pipeline (validate, serialize, etag-check, write, audit).
       # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
       # Reader for the existing-uid lookup.
@@ -10,7 +10,7 @@ module Textus
       # Invariant: every public method's final action is @audit_log.append(...).
       #
       # No permission check, no event firing — those belong to the caller
-      # (Application::Write::Put / ::Delete / ::Mv).
+      # (Write::Put / ::Delete / ::Mv).
       class Writer
         Payload = Data.define(:meta, :body, :content)
 

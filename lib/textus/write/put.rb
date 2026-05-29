@@ -18,7 +18,7 @@ module Textus
         envelope = writer.put(
           key,
           mentry: mentry,
-          payload: Textus::Application::Envelope::Writer::Payload.new(
+          payload: Textus::Envelope::IO::Writer::Payload.new(
             meta: meta, body: body, content: content,
           ),
           if_etag: if_etag,
@@ -35,7 +35,7 @@ module Textus
       private
 
       def writer
-        @writer ||= Textus::Application::Envelope::Writer.new(
+        @writer ||= Textus::Envelope::IO::Writer.new(
           file_store: @container.file_store,
           manifest: @container.manifest,
           schemas: @container.schemas,
@@ -46,7 +46,7 @@ module Textus
       end
 
       def reader
-        @reader ||= Textus::Application::Envelope::Reader.new(
+        @reader ||= Textus::Envelope::IO::Reader.new(
           file_store: @container.file_store,
           manifest: @container.manifest,
         )
