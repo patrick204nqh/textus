@@ -9,6 +9,28 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.27.0 — 2026-05-29
+
+### Breaking
+
+- Removed `Textus::Session`. Use `store.as(role).put(...)` or `store.put(..., role:)` instead of `store.session(role:).put(...)`.
+- Removed `Textus::Application::UseCase` registry. Verb dispatch is now via the static `Textus::Dispatcher::VERBS` table.
+- Replaced `Textus::Application::ReadCaps` / `WriteCaps` / `HookCaps` with a single `Textus::Container` record (field names preserved: `manifest`, `file_store`, `schemas`, `root`, `audit_log`, `events`, `rpc`, `authorizer`).
+- Renamed `Textus::Application::Context` to `Textus::Call`. Field shape identical.
+- Use-case classes are no longer `module Foo; def self.call; Impl.new(...).call; end`. They are plain classes: `class Foo; def initialize(container:, call:); def call(...); end`.
+- Flattened `Textus::Application::Write::*` → `Textus::Write::*`, `Application::Read::*` → `Read::*`, `Application::Envelope::*` → `Envelope::IO::*`, `Application::Maintenance::*` → `Maintenance::*`, `Application::Projection` → `Projection`.
+- Renamed `Textus::Infra::*` → `Textus::Ports::*`.
+- `Manifest::Entry::Base#zone_writers` / `#in_generator_zone?` / `#in_proposal_zone?` now take an explicit `policy` argument; entries no longer carry an `@manifest` back-reference.
+- `PublishContext` shrunk from 12 fields to `(container, call, reader)` with derived accessors. Custom derived entries that destructured `pctx.caps` / `pctx.session` / `pctx.ctx` / `pctx.bus` need to use `pctx.container` / construct a `RoleScope` / `pctx.call` / `pctx.events`.
+- Hook RPC callables (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps: container` (a `Textus::Container`) instead of `caps: <WriteCaps>`. Field names preserved, so handlers reading `caps.manifest` / `caps.events` / etc. continue to work.
+
+### Internal
+
+- ~600 LOC removed net across ~60 files.
+- No wire-format change. Protocol stays at `textus/3`.
+- CLI verb signatures unchanged. No envelope shape changes.
+- See [ADR 0022](docs/architecture/decisions/0022-container-call-dispatcher.md) for the design rationale.
+
 ## 0.26.0 — 2026-05-28
 
 ### Breaking
