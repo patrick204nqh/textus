@@ -23,9 +23,18 @@ RSpec.describe Textus::Application::Maintenance::ZoneMv do
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
 
+  def build_zone_mv
+    read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
+    container = Textus::Container.from_store_caps(read_caps, write_caps, hook_caps)
+    call_value = Textus::Call.new(
+      role: ctx.role, correlation_id: ctx.correlation_id,
+      now: ctx.now, dry_run: ctx.dry_run
+    )
+    described_class.new(container: container, call: call_value)
+  end
+
   it "previews zone rename + key relocation + manifest rewrite" do
-    plan = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
-                                                                                                         dry_run: true)
+    plan = build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: true)
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to include("rename_zone", "mv")
     expect(File.exist?(File.join(root, "zones/scratch/note.md"))).to be(true)
@@ -35,14 +44,12 @@ RSpec.describe Textus::Application::Maintenance::ZoneMv do
     FileUtils.mkdir_p(File.join(root, "zones/sandbox"))
     File.write(File.join(root, "zones/sandbox/.keep"), "")
     expect do
-      described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
-                                                                                                    dry_run: true)
+      build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: true)
     end.to raise_error(Textus::UsageError, /already exists/)
   end
 
   it "applies the rename and rewrites manifest" do
-    described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(from: "scratch", to: "sandbox",
-                                                                                                  dry_run: false)
+    build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: false)
     raw = YAML.safe_load_file(File.join(root, "manifest.yaml"))
     zone_names = raw["zones"].map { |z| z["name"] }
     expect(zone_names).to include("sandbox")
