@@ -21,13 +21,13 @@ module TextusSpecHelpers
     )
   end
 
-  def build_envelope_writer(store, ctx, reader: nil)
+  def build_envelope_writer(store, call, reader: nil)
     Textus::Envelope::IO::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
       audit_log: store.audit_log,
-      ctx: ctx,
+      call: call,
       reader: reader || build_envelope_reader(store),
     )
   end

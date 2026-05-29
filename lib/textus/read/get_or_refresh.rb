@@ -26,7 +26,7 @@ module Textus
         )
         Textus::Write::RefreshOrchestrator.new(
           worker: worker, store_root: @container.root, events: @container.events,
-          ctx: @call, hook_context: @hook_context
+          call: @call, hook_context: @hook_context
         )
       end
 

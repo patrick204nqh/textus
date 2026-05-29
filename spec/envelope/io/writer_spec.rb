@@ -28,7 +28,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
     )
     described_class.new(
       file_store: file_store, manifest: manifest,
-      schemas: schemas, audit_log: audit, ctx: ctx, reader: reader
+      schemas: schemas, audit_log: audit, call: ctx, reader: reader
     )
   end
 

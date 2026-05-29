@@ -40,7 +40,7 @@ module Textus
           manifest: @container.manifest,
           schemas: @container.schemas,
           audit_log: @container.audit_log,
-          ctx: @call,
+          call: @call,
           reader: reader,
         )
       end

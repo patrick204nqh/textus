@@ -1,11 +1,11 @@
 module Textus
   module Write
     class RefreshOrchestrator
-      def initialize(worker:, store_root:, events:, ctx: nil, hook_context: nil, detached_spawner: nil)
+      def initialize(worker:, store_root:, events:, call: nil, hook_context: nil, detached_spawner: nil)
         @worker       = worker
         @store_root   = store_root
         @events       = events
-        @ctx          = ctx
+        @call         = call
         @hook_context = hook_context
         @detached_spawner = detached_spawner || default_spawner
       end

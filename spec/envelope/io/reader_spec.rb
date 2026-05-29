@@ -34,7 +34,7 @@ RSpec.describe Textus::Envelope::IO::Reader do
     )
     Textus::Envelope::IO::Writer.new(
       file_store: file_store, manifest: manifest,
-      schemas: schemas, audit_log: audit, ctx: ctx, reader: reader
+      schemas: schemas, audit_log: audit, call: ctx, reader: reader
     )
   end
 
