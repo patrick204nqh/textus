@@ -106,14 +106,19 @@ version: textus/3
 
 zones:
   - name: identity
+    kind: origin
     write_policy: [human]
   - name: working
+    kind: origin
     write_policy: [human, agent, runner]
   - name: intake
+    kind: quarantine
     write_policy: [runner]
   - name: review
+    kind: queue
     write_policy: [agent, human]
   - name: output
+    kind: derived
     write_policy: [builder]
 
 entries:

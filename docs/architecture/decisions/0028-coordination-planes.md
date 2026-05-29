@@ -125,9 +125,11 @@ recorded here as direction; each lands under its own change with its own review:
 
 ## Consequences
 
-**No wire or schema change in this ADR.** `textus/3` is unchanged; this ratifies a
-principle. The follow-on moves that *do* touch the manifest schema (move 1, possibly 2)
-will carry their own ADRs and version notes.
+**No wire change in this ADR.** `textus/3` is unchanged; this ratifies a principle.
+Move 1 (shipped in 0.30.0) did introduce a **manifest-schema change**: `kind:` is now a
+required field on every zone, and manifests without it are rejected at load. No other
+moves in this ADR touch the manifest schema; any that do will carry their own ADRs and
+version notes.
 
 **Predicates are the growth surface.** Adding a capability means adding a pure
 predicate to `Domain::Policy::predicates/` and referencing it from `rules:` — not
