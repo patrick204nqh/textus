@@ -46,7 +46,8 @@ RSpec.describe Textus::Application::Read::Freshness, "verdict cache" do # ruboco
       end
     end.new
 
-    fr = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0], evaluator: counter)
+    container = Textus::Container.from_store(store)
+    fr = described_class.new(container: container, call: ctx, evaluator: counter)
     fr.call
     fr.call
     expect(counter.calls).to eq(1)

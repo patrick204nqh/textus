@@ -46,7 +46,7 @@ module Textus
           end
 
           def freshness
-            @freshness ||= Read::Freshness::Impl.new(ctx: @ctx, caps: @caps)
+            @freshness ||= Read::Freshness.new(container: @caps, call: @ctx)
           end
 
           def soonest_due(rows)
