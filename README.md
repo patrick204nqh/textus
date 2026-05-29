@@ -5,13 +5,33 @@
 [![Ruby](https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**A context store for codebases that humans and AI agents both have to read and write.** An agent landing in your repo runs `textus boot` and knows what's there, what it's allowed to change, and where to put proposals. A human accepts the good proposals; the rest stay in a review queue. Every write is audited.
+**Durable, multi-writer context for codebases that humans and AI agents both touch.** Your agent forgets everything between sessions; your runbooks and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is the memory that survives the model, the session, and the vendor — a shared workspace where humans, agents, and runners write into separate lanes, propose changes through a review queue, and leave an audit trail behind every byte.
 
-## What it solves
+*textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together." The protocol weaves human edits, agent proposals, and runner intake into one durable fabric. The shape of that fabric is yours; the rules for writing into it are textus's.
 
-You have an AI agent (Claude Code, a custom Claude plugin, Cursor, whatever) and today it forgets everything between sessions. You don't want it editing your runbooks or your `CLAUDE.md` directly — you want it to *propose* changes that you can review. You want every write logged. You want a deterministic, file-based store, not a vector-DB memory service.
+## The idea
 
-In four commands:
+Three actors write to your repo today:
+
+- **Humans** — you, your team. Authoritative on identity, decisions, voice.
+- **Agents** — Claude, Cursor, custom assistants. Smart, fast, forgetful, and not always right.
+- **Runners** — cron jobs, fetchers, CI. Bring outside data in.
+
+Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** (a zone), routes everything they can't write directly through a **review queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
+
+```
+identity/   human only          — who you are, what you decide, how you sound
+working/    human + agent + runner — day-to-day catalog
+intake/     runner only         — declared external inputs
+review/     agent + human       — proposals waiting on a human accept
+output/     builder only        — computed, published artifacts
+```
+
+An agent that tries to write directly into `working/` or `identity/` gets `write_forbidden`. It writes to `review/` instead. You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
+
+That's the load-bearing claim: **coordination is a protocol invariant, not a library convenience.**
+
+## See it in four commands
 
 ```sh
 gem install textus
@@ -19,31 +39,28 @@ textus init                          # creates .textus/ with zones + schemas
 # agent proposes a change to review/
 echo '{"_meta":{"name":"oncall","proposal":{"target_key":"working.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
   | textus put review.notes.oncall --as=agent --stdin
-# you accept it — textus promotes it to working/ and audits the move
+# you accept it — textus promotes to working/ and audits the move
 textus accept review.notes.oncall --as=human
 ```
 
-Trying the role gate the other way (`textus put working.notes.X --as=agent`) returns `write_forbidden`. That's the load-bearing safety textus adds over just writing files in a folder.
+Try the gate the other way (`textus put working.notes.X --as=agent`) and you get `write_forbidden`, with the role that *would* be allowed named in the error. That refusal is the whole point.
 
 ## Try it
 
 - **5-command worked demo** — single terminal scroll, no MCP, no schemas: [`examples/hello/`](examples/hello/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`INTEGRATE_WITH_CLAUDE.md`](INTEGRATE_WITH_CLAUDE.md)
-- **Use textus as your own project's context store** (not shipping anything): [`examples/project/`](examples/project/)
+- **Use textus as your own project's context store**: [`examples/project/`](examples/project/)
 - **Use textus to author a Claude plugin** (textus is the source-of-truth, build publishes to `agents/`, `skills/`, `commands/`): [`examples/claude-plugin/`](examples/claude-plugin/)
 
-Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
+## Protocol, not just a gem
 
-## Versioning
+This Ruby gem is the reference implementation of **`textus/3`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/zone gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/3`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
 
-Two versions, deliberately independent:
+- Specification: [`SPEC.md`](SPEC.md)
+- Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Per-release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
-- **Protocol wire string:** `textus/3`. Breaking changes require `textus/4`.
-- **Gem version:** semver, decoupled from the protocol string. Internal refactors bump the gem; only wire-format changes bump the protocol. Current version is shown by the gem badge above.
-
-Envelope payloads carry the `protocol` field. The gem version is irrelevant to the wire format.
-
-See [CHANGELOG.md](CHANGELOG.md) for per-release notes.
+A second implementation in another language would share the same `.textus/` directory and the same audit log. That's deliberate.
 
 ## Install
 
@@ -100,12 +117,12 @@ textus audit --limit=20              # query the audit log
 
 For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake action — see [`examples/claude-plugin/`](examples/claude-plugin/).
 
-## Shipped
+## What's shipped
 
 - **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/output/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `transform`).
 - **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
 - **Build and publish in one pass.** `Application::Write::Publish` materializes generator-zone entries and copies nested leaves to their `publish_each` targets. The `textus build` CLI verb dispatches to it; the wire envelope is unchanged.
-- **Typed envelopes (v0.14.0).** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
+- **Typed envelopes.** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
 - **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key normalize --dry-run|--write` rewrites existing stores with illegal segments deterministically.
 - **`textus boot`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table, and an `agent_quickstart` block (read/write verbs, writable zones, propose zone, latest audit seq).
