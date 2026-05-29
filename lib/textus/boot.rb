@@ -150,7 +150,7 @@ module Textus
       )
     end
 
-    def self.run_via(container:, role: Textus::Role::DEFAULT) # rubocop:disable Lint/UnusedMethodArgument
+    def self.build(container:)
       manifest = container.manifest
       {
         "protocol" => PROTOCOL_ID,

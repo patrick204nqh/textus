@@ -23,7 +23,7 @@ RSpec.describe Textus::Boot do
 
   describe ".run / agent_quickstart" do
     it "exposes agent_quickstart with read_verbs, write_verbs, writable_zones, propose_zone, latest_seq" do
-      out = described_class.run_via(container: Textus::Store.new(root).container, role: Textus::Role::DEFAULT)
+      out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs).to be_a(Hash)
       expect(qs["read_verbs"]).to include("boot", "get", "list", "audit", "pulse", "freshness", "doctor")
@@ -35,7 +35,7 @@ RSpec.describe Textus::Boot do
     end
 
     it "includes pulse in the cli_verbs list" do
-      out = described_class.run_via(container: Textus::Store.new(root).container, role: Textus::Role::DEFAULT)
+      out = described_class.build(container: Textus::Store.new(root).container)
       names = out["cli_verbs"].map { |v| v["name"] }
       expect(names).to include("pulse")
     end
@@ -49,7 +49,7 @@ RSpec.describe Textus::Boot do
           - { name: working, write_policy: [human] }
         entries: []
       YAML
-      out = described_class.run_via(container: Textus::Store.new(root).container, role: Textus::Role::DEFAULT)
+      out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs["write_verbs"]).to eq([])
       expect(qs["writable_zones"]).to eq([])
