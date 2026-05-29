@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::Session#refresh_all (refresh_stale)" do
+RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
   let(:tmp) { Dir.mktmpdir }
   let(:textus) { File.join(tmp, ".textus") }
 

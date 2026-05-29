@@ -46,10 +46,6 @@ module Textus
       @events.publish(:store_loaded, ctx: Hooks::Context.new(scope: as(Role::DEFAULT)))
     end
 
-    def session(role: Role::DEFAULT, correlation_id: nil, dry_run: false)
-      Session.for(self, role: role, correlation_id: correlation_id, dry_run: dry_run)
-    end
-
     def container
       @container ||= Textus::Container.from_store(self)
     end

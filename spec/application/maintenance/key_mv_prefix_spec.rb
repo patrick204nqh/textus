@@ -26,8 +26,7 @@ RSpec.describe Textus::Application::Maintenance::KeyMvPrefix do
   let(:ctx) { test_ctx(role: "human") }
 
   def build_key_mv_prefix
-    read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
-    container = Textus::Container.from_store_caps(read_caps, write_caps, hook_caps)
+    container = store.container
     call_value = Textus::Call.new(
       role: ctx.role, correlation_id: ctx.correlation_id,
       now: ctx.now, dry_run: ctx.dry_run

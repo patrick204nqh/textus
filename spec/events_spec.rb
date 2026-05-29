@@ -102,7 +102,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      store2.session(role: "runner").refresh("intake.x")
+      store2.as("runner").refresh("intake.x")
       expect($log.last).to eq(["intake.x", :updated])
     end
 
@@ -120,7 +120,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      store2.session(role: "runner").refresh("intake.x")
+      store2.as("runner").refresh("intake.x")
       # Two refreshes with identical action body (both "v1") — only the first
       # should fire :entry_refreshed (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])

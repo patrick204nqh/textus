@@ -61,10 +61,10 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
+      ctx = test_ctx(role: "runner")
+      pure_get = Textus::Application::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
-      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, get: pure_get,
+      use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                      orchestrator: orch)
 
       env = use_case.call("working.doc")
@@ -77,10 +77,10 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
+      ctx = test_ctx(role: "runner")
+      pure_get = Textus::Application::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
-      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, get: pure_get,
+      use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                      orchestrator: orch)
 
       env = use_case.call("working.doc")
@@ -93,10 +93,10 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
+      ctx = test_ctx(role: "runner")
+      pure_get = Textus::Application::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
-      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, get: pure_get,
+      use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                      orchestrator: orch)
 
       env = use_case.call("working.doc")
@@ -107,10 +107,10 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
   it "returns nil when the key has no envelope" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
+      ctx = test_ctx(role: "runner")
+      pure_get = Textus::Application::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
-      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, get: pure_get,
+      use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                      orchestrator: orch)
 
       expect(use_case.call("working.doc")).to be_nil

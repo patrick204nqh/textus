@@ -14,8 +14,8 @@ module Textus
                           .downcase
       end
 
-      def initialize(container_or_session)
-        @container = container_or_session
+      def initialize(container)
+        @container = container
       end
 
       def call
@@ -24,31 +24,18 @@ module Textus
 
       protected
 
-      # Accepts either a Textus::Container (preferred) or a legacy
-      # Textus::Session (which exposes the same fields through read_caps).
-      def root
-        @container.is_a?(Textus::Container) ? @container.root : @container.read_caps.root
-      end
+      def root     = @container.root
+      def manifest = @container.manifest
+      def rpc      = @container.rpc
 
-      def manifest
-        @container.is_a?(Textus::Container) ? @container.manifest : @container.read_caps.manifest
-      end
-
-      def rpc = @container.rpc
-
-      # Dispatch a verb. Works whether initialized with a Container (the new
-      # API) or a legacy Session.
+      # Dispatch a verb through the static Dispatcher table.
       def dispatch(verb, *, **)
-        if @container.is_a?(Textus::Container)
-          klass = Textus::Dispatcher.fetch(verb)
-          call_value = Textus::Call.build(role: Textus::Role::DEFAULT)
-          init_kwargs = { container: @container, call: call_value }
-          params = klass.instance_method(:initialize).parameters.map { |_, n| n }
-          init_kwargs[:hook_context] = nil if params.include?(:hook_context)
-          klass.new(**init_kwargs).call(*, **)
-        else
-          @container.public_send(verb, *, **)
-        end
+        klass = Textus::Dispatcher.fetch(verb)
+        call_value = Textus::Call.build(role: Textus::Role::DEFAULT)
+        init_kwargs = { container: @container, call: call_value }
+        params = klass.instance_method(:initialize).parameters.map { |_, n| n }
+        init_kwargs[:hook_context] = nil if params.include?(:hook_context)
+        klass.new(**init_kwargs).call(*, **)
       end
     end
   end

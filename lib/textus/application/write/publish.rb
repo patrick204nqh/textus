@@ -51,7 +51,6 @@ module Textus
             root: @root,
             caps: caps_struct,
             rpc: @rpc,
-            session: nil,
             container: @container,
             ctx: @call,
             bus: @events,
