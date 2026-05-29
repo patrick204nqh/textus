@@ -39,7 +39,12 @@ module Textus
         raise UsageError.new("#{event_sym} is an RPC event; register on RpcRegistry") if RPC_EVENTS.include?(event_sym)
 
         required = EVENTS[event_sym] or raise UsageError.new("unknown event: #{event}")
-        shape_check!(event_sym, required, blk)
+        sig = Signature.new(blk)
+        missing = sig.missing(required)
+        if missing.any?
+          raise UsageError.new("#{event_sym} hooks must accept kwargs: #{required.join(", ")} (missing: #{missing.join(", ")})")
+        end
+
         name = name.to_sym
         raise UsageError.new("#{event_sym} hook '#{name}' already registered") if @pubsub[event_sym].any? { |h| h[:name] == name }
 
@@ -79,8 +84,9 @@ module Textus
       private
 
       def invoke(event, sub, key, kwargs)
-        accepted = filter_kwargs(sub[:callable], kwargs)
+        accepted = Signature.new(sub[:callable]).filter(kwargs)
         error = nil
+        # Thread#kill is unsafe in general but bounded here: post-commit, isolated, only a runaway user hook is affected.
         thread = Thread.new do
           sub[:callable].call(**accepted)
         rescue StandardError => e
@@ -113,24 +119,6 @@ module Textus
         rescue StandardError => e
           warn "[textus] error handler failed: #{e.class}: #{e.message}"
         end
-      end
-
-      def filter_kwargs(callable, kwargs)
-        params = callable.parameters
-        return kwargs if params.any? { |type, _| type == :keyrest }
-
-        accepted = params.each_with_object([]) { |(t, n), acc| acc << n if %i[key keyreq].include?(t) }
-        kwargs.slice(*accepted)
-      end
-
-      def shape_check!(event, required, blk)
-        provided = blk.parameters.select { |t, _| %i[keyreq key keyrest].include?(t) } # rubocop:disable Style/HashSlice
-        return if provided.any? { |t, _| t == :keyrest }
-
-        missing = required - provided.map { |_, n| n }
-        return if missing.empty?
-
-        raise UsageError.new("#{event} hooks must accept kwargs: #{required.join(", ")} (missing: #{missing.join(", ")})")
       end
 
       def match?(globs, key)
