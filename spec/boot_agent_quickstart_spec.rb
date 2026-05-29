@@ -16,7 +16,7 @@ RSpec.describe Textus::Boot do
         - { name: agent, kind: proposer }
       zones:
         - { name: working, kind: origin, write_policy: [human] }
-        - { name: review,  kind: origin, write_policy: [agent] }
+        - { name: review,  kind: queue, write_policy: [agent] }
       entries: []
     YAML
   end

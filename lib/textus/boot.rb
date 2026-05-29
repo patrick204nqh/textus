@@ -128,7 +128,7 @@ module Textus
         acc << zname if agent_role && writers.include?(agent_role)
       end
 
-      propose_zone = manifest.policy.propose_zone_for(agent_role) || writable_zones.first
+      propose_zone = manifest.policy.propose_zone_for(agent_role)
 
       {
         "read_verbs" => %w[boot get list audit pulse freshness doctor],
