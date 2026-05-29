@@ -155,13 +155,13 @@ RSpec.describe Textus::Write::RefreshWorker do
 
   describe "#normalize_action_result" do
     it "wraps body strings for markdown" do
-      out = described_class.send(:normalize_action_result, { "body" => "hi" }, format: "markdown")
+      out = described_class.normalize_action_result({ "body" => "hi" }, format: "markdown")
       expect(out).to eq(meta: {}, body: "hi", content: nil)
     end
 
     it "raises for json with neither body nor content" do
       expect do
-        described_class.send(:normalize_action_result, {}, format: "json")
+        described_class.normalize_action_result({}, format: "json")
       end.to raise_error(Textus::UsageError, /neither content nor body/)
     end
   end
