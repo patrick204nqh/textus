@@ -10,11 +10,10 @@ module Textus
       #
       # Return shape: { "protocol", "built", "published_leaves" }
       class Publish
-        def initialize(container:, call:, hook_context: nil)
-          @container    = container
-          @call         = call
-          @manifest     = container.manifest
-          @hook_context = hook_context
+        def initialize(container:, call:)
+          @container = container
+          @call      = call
+          @manifest  = container.manifest
         end
 
         def call(prefix: nil)

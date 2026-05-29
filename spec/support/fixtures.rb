@@ -93,10 +93,7 @@ module TextusSpecHelpers
   end
 
   def build_publish(store, ctx)
-    container = fresh_container(store)
-    Textus::Application::Write::Publish.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Application::Write::Publish.new(container: fresh_container(store), call: ctx)
   end
 end
 
