@@ -102,21 +102,11 @@ module Textus
       end
 
       def writer
-        @writer ||= Textus::Envelope::IO::Writer.new(
-          file_store: @container.file_store,
-          manifest: @container.manifest,
-          schemas: @container.schemas,
-          audit_log: @container.audit_log,
-          call: @call,
-          reader: reader,
-        )
+        @writer ||= Textus::Envelope::IO::Writer.from(container: @container, call: @call)
       end
 
       def reader
-        @reader ||= Textus::Envelope::IO::Reader.new(
-          file_store: @container.file_store,
-          manifest: @container.manifest,
-        )
+        @reader ||= Textus::Envelope::IO::Reader.from(container: @container)
       end
     end
   end

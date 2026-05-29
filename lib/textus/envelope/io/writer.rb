@@ -14,6 +14,14 @@ module Textus
       class Writer
         Payload = Data.define(:meta, :body, :content)
 
+        def self.from(container:, call:)
+          new(
+            file_store: container.file_store, manifest: container.manifest,
+            schemas: container.schemas, audit_log: container.audit_log,
+            call: call, reader: Reader.from(container: container)
+          )
+        end
+
         def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:)
           @file_store = file_store
           @manifest   = manifest
