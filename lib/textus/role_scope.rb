@@ -38,11 +38,12 @@ module Textus
 
     Textus::Dispatcher::VERBS.each_key do |verb|
       define_method(verb) do |*args, **kwargs|
-        klass = Textus::Dispatcher.fetch(verb)
         call_value = Textus::Call.build(
           role: @role, correlation_id: @correlation_id, dry_run: @dry_run,
         )
-        klass.new(container: @container, call: call_value).call(*args, **kwargs)
+        Textus::Dispatcher.invoke(
+          verb, container: @container, call: call_value, args: args, kwargs: kwargs
+        )
       end
     end
   end
