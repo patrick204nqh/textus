@@ -36,10 +36,6 @@ module Textus
       self.class.new(container: @container, role: @role, dry_run: true, correlation_id: @correlation_id)
     end
 
-    # Boot/Doctor convenience — Store#as(role).boot / .doctor.
-    def boot(**) = Textus::Boot.run_via(container: @container, role: @role, **)
-    def doctor(**) = Textus::Doctor.run_via(container: @container, role: @role, **)
-
     Textus::Dispatcher::VERBS.each_key do |verb|
       define_method(verb) do |*args, **kwargs|
         klass = Textus::Dispatcher.fetch(verb)
