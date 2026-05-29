@@ -23,8 +23,18 @@ RSpec.describe Textus::Application::Maintenance::RuleLint do
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
 
+  def build_rule_lint
+    read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
+    container = Textus::Container.from_store_caps(read_caps, write_caps, hook_caps)
+    call_value = Textus::Call.new(
+      role: ctx.role, correlation_id: ctx.correlation_id,
+      now: ctx.now, dry_run: ctx.dry_run
+    )
+    described_class.new(container: container, call: call_value)
+  end
+
   it "returns ok: true and zero diff lines when candidate is identical" do
-    result = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(
+    result = build_rule_lint.call(
       candidate_yaml: File.read(File.join(root, "manifest.yaml")),
     )
     expect(result.steps).to eq([])
@@ -34,14 +44,14 @@ RSpec.describe Textus::Application::Maintenance::RuleLint do
   it "reports an added rule" do
     candidate = File.read(File.join(root, "manifest.yaml")) +
                 %(  - { match: "intake.other", refresh: { ttl: 60, on_stale: error } }\n)
-    result = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(candidate_yaml: candidate)
+    result = build_rule_lint.call(candidate_yaml: candidate)
     adds = result.steps.select { |s| s["op"] == "add_rule" }
     expect(adds.size).to eq(1)
   end
 
   it "errors on an invalid candidate" do
     expect do
-      described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[1]).call(candidate_yaml: "this is not yaml: : :")
+      build_rule_lint.call(candidate_yaml: "this is not yaml: : :")
     end.to raise_error(Textus::Error)
   end
 end
