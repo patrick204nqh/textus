@@ -193,10 +193,6 @@ module Textus
       end
     end
 
-    def self.hooks_for(session)
-      hooks_for_container_internal(rpc: session.rpc, events: session.events)
-    end
-
     def self.hooks_for_container(container)
       hooks_for_container_internal(rpc: container.rpc, events: container.events)
     end
