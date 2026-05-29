@@ -1,22 +1,16 @@
 module Textus
   module Application
     module Read
-      module SchemaEnvelope
-        def self.call(*, session:, ctx:, caps:, **) # rubocop:disable Lint/UnusedMethodArgument
-          Impl.new(caps: caps).call(*, **)
+      class SchemaEnvelope
+        def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+          @manifest = container.manifest
+          @schemas  = container.schemas
         end
 
-        class Impl
-          def initialize(caps:)
-            @manifest = caps.manifest
-            @schemas  = caps.schemas
-          end
-
-          def call(key)
-            mentry = @manifest.resolver.resolve(key).entry
-            schema = @schemas.fetch_or_nil(mentry.schema)
-            { "protocol" => PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
-          end
+        def call(key)
+          mentry = @manifest.resolver.resolve(key).entry
+          schema = @schemas.fetch_or_nil(mentry.schema)
+          { "protocol" => PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
         end
       end
     end
