@@ -67,12 +67,11 @@ RSpec.describe Textus::RoleScope do
     end
   end
 
-  it "#dry_run returns a RoleScope with dry_run=true" do
+  it "#with_dry_run returns a RoleScope with dry_run=true" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      scope = store.as("human").dry_run
+      scope = store.as("human").with_dry_run
       expect(scope).to be_a(Textus::RoleScope)
-      # the attr_reader was shadowed by #dry_run; introspect via ivar.
       expect(scope.dry_run?).to be(true)
     end
   end

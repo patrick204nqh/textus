@@ -9,9 +9,6 @@ module Textus
   class RoleScope
     attr_reader :container, :role, :correlation_id
 
-    # NOTE: #dry_run is overridden below to return a *new* RoleScope.
-    # Use instance_variable_get(:@dry_run) (or #dry_run?) to read the flag.
-
     def dry_run?
       @dry_run
     end
@@ -35,7 +32,7 @@ module Textus
       @hook_context ||= Textus::Hooks::Context.new(scope: self)
     end
 
-    def dry_run
+    def with_dry_run
       self.class.new(container: @container, role: @role, dry_run: true, correlation_id: @correlation_id)
     end
 
