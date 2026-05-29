@@ -20,7 +20,7 @@ module Textus
           end
 
           def call(key:, limit: nil)
-            audit_rows = Textus::Application::Read::Audit::Impl.new(caps: @caps).call(key: key, limit: limit)
+            audit_rows = Textus::Application::Read::Audit.new(container: @caps).call(key: key, limit: limit)
             path = resolve_path(key)
             return audit_rows.map { |r| r.merge("git" => nil) } unless git_tracked?(path)
 

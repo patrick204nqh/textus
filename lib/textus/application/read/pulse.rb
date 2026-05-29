@@ -42,7 +42,7 @@ module Textus
           private
 
           def audit_changes_since(seq)
-            Read::Audit::Impl.new(caps: @caps).call(seq_since: seq)
+            Read::Audit.new(container: @caps).call(seq_since: seq)
           end
 
           def freshness
