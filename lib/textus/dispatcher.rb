@@ -32,6 +32,7 @@ module Textus
       schema_envelope: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
+      boot: Textus::Read::Boot,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,
