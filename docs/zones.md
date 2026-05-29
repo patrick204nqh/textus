@@ -104,6 +104,26 @@ zones:
   - { name: <zone-name>, write_policy: [<role>, <role>, ...] }
 ```
 
+### Declaring a zone's kind
+
+A zone may declare its data-flow role with `kind:` — one of `origin`,
+`quarantine`, `queue`, `derived`:
+
+```yaml
+zones:
+  - { name: working, kind: origin,     write_policy: [human] }
+  - { name: intake,  kind: quarantine, write_policy: [runner] }
+  - { name: review,  kind: queue,      write_policy: [agent, human] }
+  - { name: output,  kind: derived,    write_policy: [builder] }
+```
+
+`kind:` is optional and back-compatible — omit it and the engine infers the
+role from the writers' kinds. Declaring it makes the topology explicit (so you
+can rename `review` to `inbox` without breaking proposal routing) and lets
+`textus boot` report each zone's role. Rules: at most one `queue` zone, and the
+declared kind must match the writers (a `derived` zone needs a `generator`
+writer, `queue` a `proposer`, `quarantine` a `runner`).
+
 ### Renaming defaults
 
 `identity`, `working`, etc. have no privileged status in the code — only `build` does. Rename freely:

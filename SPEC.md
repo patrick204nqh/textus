@@ -211,6 +211,15 @@ Each zone declares which **roles** may write to it via `write_policy:` in the ma
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `write_policy` list, the write returns `write_forbidden`.
 
+Each zone MAY declare an optional `kind:` describing its role in the data-flow
+graph. The vocabulary is closed: `origin` (authored truth), `quarantine`
+(external bytes pending validation), `queue` (proposals awaiting promotion),
+`derived` (computed from other zones). When omitted, the engine infers the
+zone's kind from its writers' role-kinds. A manifest MUST declare at most one
+`queue` zone, and a declared `kind:` MUST agree with the zone's writers:
+`derived` ⇒ a `generator` writer, `queue` ⇒ a `proposer`, `quarantine` ⇒ a
+`runner`. `origin` imposes no writer constraint.
+
 ### 5.1 Role resolution
 
 The effective role for any CLI invocation is resolved in this order; the first match wins:
