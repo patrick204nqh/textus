@@ -39,57 +39,28 @@ module TextusSpecHelpers
     Textus::Container.from_store(store)
   end
 
-  # Returns a RoleScope-derived Hooks::Context suitable for use cases that
-  # take hook_context:. Mirrors the wiring RoleScope does at runtime.
-  def build_hook_context(store, ctx, container: nil)
-    container ||= fresh_container(store)
-    scope = Textus::RoleScope.new(
-      container: container, role: ctx.role,
-      dry_run: ctx.dry_run, correlation_id: ctx.correlation_id
-    )
-    Textus::Hooks::Context.new(scope: scope)
-  end
-
   def build_put(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::Put.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::Put.new(container: fresh_container(store), call: ctx)
   end
 
   def build_delete(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::Delete.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::Delete.new(container: fresh_container(store), call: ctx)
   end
 
   def build_mv(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::Mv.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::Mv.new(container: fresh_container(store), call: ctx)
   end
 
   def build_accept(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::Accept.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::Accept.new(container: fresh_container(store), call: ctx)
   end
 
   def build_reject(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::Reject.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::Reject.new(container: fresh_container(store), call: ctx)
   end
 
   def build_worker(store, ctx)
-    container = fresh_container(store)
-    Textus::Write::RefreshWorker.new(
-      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
-    )
+    Textus::Write::RefreshWorker.new(container: fresh_container(store), call: ctx)
   end
 
   def build_publish(store, ctx)

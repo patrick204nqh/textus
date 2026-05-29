@@ -1,13 +1,12 @@
 module Textus
   module Write
     class Mv
-      def initialize(container:, call:, hook_context:)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
         @manifest     = container.manifest
         @events       = container.events
         @authorizer   = container.authorizer
-        @hook_context = hook_context
       end
 
       def call(old_key, new_key, dry_run: false)
@@ -24,6 +23,10 @@ module Textus
       end
 
       private
+
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
 
       def prepare(old_key, new_key)
         Textus::Manifest::Data.validate_key!(old_key)
@@ -71,7 +74,7 @@ module Textus
 
       def publish_renamed(old_key, new_key, envelope)
         @events.publish(:entry_renamed,
-                        ctx: @hook_context,
+                        ctx: hook_context,
                         key: new_key,
                         from_key: old_key,
                         to_key: new_key,

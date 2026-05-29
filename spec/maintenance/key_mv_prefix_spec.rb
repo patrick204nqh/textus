@@ -33,7 +33,6 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
     )
     described_class.new(
       container: container, call: call_value,
-      hook_context: store.as(ctx.role).hook_context
     )
   end
 

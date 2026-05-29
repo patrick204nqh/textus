@@ -3,10 +3,9 @@ module Textus
     # Bulk-rename every leaf key under `from_prefix` to `to_prefix`.
     # Calls Write::Mv directly for each entry — emits one audit row per file moved.
     class KeyMvPrefix
-      def initialize(container:, call:, hook_context: nil)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
-        @hook_context = hook_context
       end
 
       def call(from_prefix:, to_prefix:, dry_run: false)
@@ -40,7 +39,7 @@ module Textus
       end
 
       def mv
-        Write::Mv.new(container: @container, call: @call, hook_context: @hook_context)
+        Write::Mv.new(container: @container, call: @call)
       end
     end
   end

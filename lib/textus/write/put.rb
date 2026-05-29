@@ -1,13 +1,12 @@
 module Textus
   module Write
     class Put
-      def initialize(container:, call:, hook_context:)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
         @manifest     = container.manifest
         @authorizer   = container.authorizer
         @events       = container.events
-        @hook_context = hook_context
       end
 
       def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
@@ -25,7 +24,7 @@ module Textus
         )
 
         @events.publish(:entry_put,
-                        ctx: @hook_context,
+                        ctx: hook_context,
                         key: key,
                         envelope: envelope)
 
@@ -33,6 +32,10 @@ module Textus
       end
 
       private
+
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
 
       def writer
         @writer ||= Textus::Envelope::IO::Writer.new(

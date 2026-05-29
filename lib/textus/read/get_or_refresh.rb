@@ -9,24 +9,27 @@ module Textus
     # Pure reads (build, projection, schema tooling) should use
     # `Read::Get` directly; it has no orchestrator dependency.
     class GetOrRefresh
-      def initialize(container:, call:, hook_context: nil, get: nil, orchestrator: nil)
+      def initialize(container:, call:, get: nil, orchestrator: nil)
         @container    = container
         @call         = call
         @manifest     = container.manifest
-        @hook_context = hook_context
         @get          = get || Read::Get.new(container: container, call: call)
         @orchestrator = orchestrator || build_orchestrator
       end
 
       private
 
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
+
       def build_orchestrator
         worker = Textus::Write::RefreshWorker.new(
-          container: @container, call: @call, hook_context: @hook_context,
+          container: @container, call: @call,
         )
         Textus::Write::RefreshOrchestrator.new(
           worker: worker, store_root: @container.root, events: @container.events,
-          call: @call, hook_context: @hook_context
+          call: @call, hook_context: hook_context
         )
       end
 
