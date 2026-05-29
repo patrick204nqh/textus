@@ -35,7 +35,7 @@ RSpec.describe Textus::Doctor do
 
   def doctor
     store = Textus::Store.new(root)
-    described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
+    described_class.build(container: store.container)
   end
 
   it "reports a clean store as ok: true with no error-level issues" do
@@ -75,7 +75,7 @@ RSpec.describe Textus::Doctor do
     File.rename(File.join(root, "hooks"), File.join(root, "hooks.disabled"))
     store = Textus::Store.new(root)
     File.rename(File.join(root, "hooks.disabled"), File.join(root, "hooks"))
-    res = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
+    res = described_class.build(container: store.container)
     issue = res["issues"].find { |i| i["code"] == "hook.load_failed" }
     expect(issue).not_to be_nil
     expect(issue["level"]).to eq("error")
@@ -203,7 +203,7 @@ RSpec.describe Textus::Doctor do
       end
     RUBY
     store = Textus::Store.new(root)
-    res = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
+    res = described_class.build(container: store.container)
     issue = res["issues"].find { |i| i["code"] == "doctor_check.failed" }
     expect(issue).not_to be_nil
     expect(issue["fix"]).to include(".textus/hooks/")
@@ -244,7 +244,7 @@ RSpec.describe Textus::Doctor do
         meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "",
       )
 
-      res = Textus::Doctor.run_via(container: ra_store.container, role: Textus::Role::DEFAULT, checks: ["schema_violations"])
+      res = Textus::Doctor.build(container: ra_store.container, checks: ["schema_violations"])
       codes = res["issues"].map { |i| i["code"] }
       expect(codes).to include("role_authority")
     end
