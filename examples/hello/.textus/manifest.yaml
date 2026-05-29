@@ -4,8 +4,8 @@ version: textus/3
 # textus value over "just writing Markdown files in a folder":
 # role-gated writes + a review queue + an audit log of every change.
 zones:
-  - { name: working, write_policy: [human],         read_policy: [all] }
-  - { name: review,  write_policy: [agent, human], read_policy: [all] }
+  - { name: working, kind: origin, write_policy: [human],        read_policy: [all] }
+  - { name: review,  kind: queue,  write_policy: [agent, human], read_policy: [all] }
 
 # Two entry families, both nested (any leaf under the prefix is valid).
 # `note` is the human's source of truth; `proposal` is where the agent
