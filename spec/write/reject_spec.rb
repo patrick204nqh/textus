@@ -9,7 +9,7 @@ RSpec.describe Textus::Write::Reject do
       version: textus/3
       zones:
         - { name: identity, kind: origin, write_policy: [human] }
-        - { name: review, kind: origin, write_policy: [agent, human] }
+        - { name: review, kind: queue,  write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o, kind: leaf}
 

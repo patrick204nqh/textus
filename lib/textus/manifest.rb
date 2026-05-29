@@ -6,10 +6,11 @@ module Textus
   #
   #   * data     — frozen value: raw, root, zones, entries, audit_config, role_mapping
   #   * resolver — resolves keys → entry + path
-  #   * policy   — zone/role authority (zone_writers, zone_kinds, permission_for, …)
+  #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
+  #     queue_zone?, permission_for, …)
   #   * rules    — match-block rule engine (refresh, handler allowlist, promotion, …)
   #
-  # Use `manifest.data.entries`, `manifest.policy.zone_kinds(z)`, etc.
+  # Use `manifest.data.entries`, `manifest.policy.declared_kind(z)`, etc.
   Manifest = Data.define(:data, :resolver, :policy, :rules)
 end
 

@@ -17,7 +17,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       version: textus/3
       zones:
         - { name: identity, kind: origin, write_policy: [human] }
-        - { name: review,   kind: origin, write_policy: [agent, human] }
+        - { name: review,   kind: queue,  write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
@@ -81,7 +81,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         version: textus/3
         zones:
           - { name: identity, kind: origin, write_policy: [human] }
-          - { name: review,   kind: origin, write_policy: [agent, human] }
+          - { name: review,   kind: queue,  write_policy: [agent, human] }
         entries:
           - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
 

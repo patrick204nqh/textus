@@ -2,7 +2,10 @@ module Textus
   class Manifest
     # Authority over zones and roles derived from a Manifest::Data snapshot.
     # Encapsulates the lookups previously living on Manifest itself
-    # (zone_writers, zone_kinds, permission_for, role_kind, roles_with_kind).
+    # (zone_writers, permission_for, role_kind, roles_with_kind). Derived /
+    # proposal-queue status is authoritative via the declared-kind family
+    # (declared_kind, derived_zone?, queue_zone?, queue_zone), not inferred
+    # from writers; zone_kinds remains for role-kind set queries only.
     class Policy
       def initialize(data)
         @data = data
@@ -45,6 +48,11 @@ module Textus
       # A zone is derived iff it declares kind: derived.
       def derived_zone?(zone_name)
         declared_kind(zone_name) == :derived
+      end
+
+      # A zone is a proposal queue iff it declares kind: queue.
+      def queue_zone?(zone_name)
+        declared_kind(zone_name) == :queue
       end
 
       def role_mapping

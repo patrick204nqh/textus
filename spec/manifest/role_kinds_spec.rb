@@ -129,7 +129,7 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: proposer, kind: proposer }
         zones:
           - { name: self,   kind: origin, write_policy: [owner] }
-          - { name: drafts, kind: origin, write_policy: [proposer, owner] }
+          - { name: drafts, kind: queue,  write_policy: [proposer, owner] }
         entries:
           - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
       YAML
