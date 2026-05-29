@@ -23,7 +23,7 @@ module Textus
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone?(policy) = policy.zone_kinds(@zone).include?(:generator)
+        def in_generator_zone?(policy) = policy.derived_zone?(@zone)
         def in_proposal_zone?(policy)  = policy.zone_kinds(@zone).include?(:proposer)
 
         def nested?  = false

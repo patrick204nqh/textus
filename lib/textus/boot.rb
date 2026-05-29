@@ -128,7 +128,7 @@ module Textus
         acc << zname if agent_role && writers.include?(agent_role)
       end
 
-      propose_zone = writable_zones.find { |z| z.include?("review") } || writable_zones.first
+      propose_zone = manifest.policy.propose_zone_for(agent_role) || writable_zones.first
 
       {
         "read_verbs" => %w[boot get list audit pulse freshness doctor],
@@ -169,6 +169,8 @@ module Textus
     def self.zones_for(manifest)
       manifest.data.zones.map do |name, writers|
         row = { "name" => name, "writers" => Array(writers) }
+        kind = manifest.policy.declared_kind(name)
+        row["kind"] = kind.to_s if kind
         purpose = ZONE_PURPOSES[name]
         row["purpose"] = purpose if purpose
         row
@@ -177,7 +179,7 @@ module Textus
 
     def self.entries_for(manifest)
       manifest.data.entries.map do |e|
-        derived = manifest.policy.zone_kinds(e.zone).include?(:generator)
+        derived = manifest.policy.derived_zone?(e.zone)
         {
           "key" => e.key,
           "zone" => e.zone,

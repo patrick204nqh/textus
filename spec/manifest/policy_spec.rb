@@ -185,6 +185,20 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
+  it "Entry#in_generator_zone? delegates to derived_zone?" do
+    raw2 = YAML.safe_load(<<~YAML, aliases: false)
+      version: textus/3
+      roles: [{ name: builder, kind: generator }]
+      zones: [{ name: output, kind: derived, write_policy: [builder] }]
+      entries:
+        - { key: output.x, path: output/x.md, zone: output, schema: null, owner: builder:auto, kind: derived,
+            compute: { kind: projection, select: [working.notes], pluck: "*" }, template: x.mustache }
+    YAML
+    d2 = Textus::Manifest::Data.parse(raw2, root: ".")
+    entry = d2.entries.first
+    expect(entry.in_generator_zone?(d2.policy)).to be(true)
+  end
+
   describe "declared zone kinds on Data" do
     let(:yaml) do
       <<~YAML
