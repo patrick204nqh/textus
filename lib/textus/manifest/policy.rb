@@ -32,6 +32,22 @@ module Textus
         end.freeze
       end
 
+      # The kind declared on a zone in the manifest, or nil if undeclared.
+      def declared_kind(zone_name)
+        @data.declared_zone_kinds[zone_name]
+      end
+
+      # The single zone declaring `kind: queue`, or nil. Schema guarantees <=1.
+      def queue_zone
+        @data.declared_zone_kinds.key(:queue)
+      end
+
+      # A zone is derived if it declares `kind: derived` or (back-compat) its
+      # writers include a generator role.
+      def derived_zone?(zone_name)
+        declared_kind(zone_name) == :derived || zone_kinds(zone_name).include?(:generator)
+      end
+
       def role_mapping
         @data.role_mapping
       end

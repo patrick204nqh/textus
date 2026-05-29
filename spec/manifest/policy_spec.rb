@@ -118,6 +118,49 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
+  describe "zone-kind lookups" do
+    let(:yaml) do
+      <<~YAML
+        version: textus/3
+        roles:
+          - { name: human,   kind: accept_authority }
+          - { name: agent,   kind: proposer }
+          - { name: builder, kind: generator }
+        zones:
+          - { name: working, kind: origin,  write_policy: [human] }
+          - { name: review,  kind: queue,   write_policy: [agent, human] }
+          - { name: output,  kind: derived, write_policy: [builder] }
+        entries: []
+      YAML
+    end
+
+    it "returns the declared kind for a zone" do
+      expect(policy.declared_kind("review")).to eq(:queue)
+      expect(policy.declared_kind("working")).to eq(:origin)
+    end
+
+    it "finds the queue zone by declared kind" do
+      expect(policy.queue_zone).to eq("review")
+    end
+
+    it "treats a kind: derived zone as derived" do
+      expect(policy.derived_zone?("output")).to be(true)
+      expect(policy.derived_zone?("working")).to be(false)
+    end
+
+    it "still treats a generator-written zone as derived when no kind is declared (back-compat)" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles: [{ name: builder, kind: generator }]
+        zones: [{ name: out, write_policy: [builder] }]
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.derived_zone?("out")).to be(true)
+      expect(p2.queue_zone).to be_nil
+    end
+  end
+
   describe "declared zone kinds on Data" do
     let(:yaml) do
       <<~YAML
