@@ -9,6 +9,21 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.30.0 — 2026-05-29
+
+Explicit zone kind and entry retention (ADR 0028, moves 1 & 4). Additive — no wire format (`textus/3`) change. `kind:` is optional and `retention:` was a previously reserved rule slot, so existing manifests load unchanged.
+
+### Added
+
+- Optional zone `kind:` field — closed vocabulary `origin | quarantine | queue | derived`. Makes the coordination topology explicit; surfaced in `textus boot` zone rows. A manifest declares at most one `queue` zone, and a declared kind must agree with its writers (`derived` ⇒ a `generator` writer, `queue` ⇒ a `proposer`, `quarantine` ⇒ a `runner`); `origin` is unconstrained.
+- `Manifest::Policy#declared_kind`, `#queue_zone`, `#derived_zone?`. `propose_zone_for` now prefers the declared `queue` zone (falling back to the legacy `"review"` name match), so renaming the review zone no longer breaks proposal routing.
+- `retention:` rule block (`expire_after`, `archive_after`) parsed into `Domain::Policy::Retention`. New `textus retain --as=ROLE` sweep expires (deletes) or archives leaves past their window — `expire_after` deletes, `archive_after` copies to `.textus/archive/` then deletes; age is the leaf's mtime. `--prefix`/`--zone` narrow the sweep; rows whose zone the role can't write surface as failures. Retention appears in `textus rule explain`.
+- `Textus::Domain::Duration.seconds` — shared duration parser (`30s`/`90m`/`12h`/`30d`/bare seconds), now also backing `Refresh#ttl_seconds`.
+
+### Internal
+
+- `Manifest::Entry::Base#in_generator_zone?` and `boot` derived/proposal detection route through `Policy#derived_zone?` / `#propose_zone_for`; the two `"review"` substring matches (`Manifest::Policy`, `boot`) are now driven by the declared queue zone.
+
 ## 0.29.2 — 2026-05-29
 
 Hook-registry convergence and MCP transport de-leak (ADR 0027). Every change is additive or internal — no wire format (`textus/3`) or manifest-schema change, no public class renamed or removed.
