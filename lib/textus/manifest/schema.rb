@@ -42,7 +42,9 @@ module Textus
       def self.validate_zones!(zones)
         Array(zones).each_with_index do |z, i|
           walk(z, ZONE_KEYS, "$.zones[#{i}]")
-          next if z["kind"].nil?
+          if z["kind"].nil?
+            raise BadManifest.new("zone '#{z["name"]}' at '$.zones[#{i}]' must declare a kind (one of: #{ZONE_KINDS.join(", ")})")
+          end
           next if ZONE_KINDS.include?(z["kind"])
 
           raise BadManifest.new(

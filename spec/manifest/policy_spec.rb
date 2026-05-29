@@ -221,9 +221,10 @@ RSpec.describe Textus::Manifest::Policy do
       )
     end
 
-    it "maps an undeclared kind to nil" do
+    it "rejects a manifest whose zone declares no kind" do
       raw2 = YAML.safe_load("version: textus/3\nzones:\n  - { name: w, write_policy: [human] }\nentries: []\n", aliases: false)
-      expect(Textus::Manifest::Data.parse(raw2, root: ".").declared_zone_kinds).to eq("w" => nil)
+      expect { Textus::Manifest::Data.parse(raw2, root: ".") }
+        .to raise_error(Textus::BadManifest, /must declare a kind/)
     end
   end
 end
