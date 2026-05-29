@@ -1,0 +1,28 @@
+version: textus/3
+
+# Two roles, three zones. Smallest manifest that demonstrates the
+# textus value over "just writing Markdown files in a folder":
+# role-gated writes + a review queue + an audit log of every change.
+zones:
+  - { name: working, write_policy: [human],         read_policy: [all] }
+  - { name: review,  write_policy: [agent, human], read_policy: [all] }
+
+# Two entry families, both nested (any leaf under the prefix is valid).
+# `note` is the human's source of truth; `proposal` is where the agent
+# parks suggestions until a human accepts them.
+entries:
+  - key: working.notes
+    path: working/notes
+    zone: working
+    schema: note
+    owner: human:self
+    nested: true
+    kind: nested
+
+  - key: review.notes
+    path: review/notes
+    zone: review
+    schema: note
+    owner: agent:self
+    nested: true
+    kind: nested

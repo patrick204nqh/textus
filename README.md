@@ -5,9 +5,32 @@
 [![Ruby](https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A context store for codebases that humans and AI agents both have to read and write. Dotted keys, schema-validated entries, role-gated writes, byte-copy publish, an audit log of every change. Built so an agent landing in your repo can run one command (`textus boot`) and know what to read, what to write, and what's off-limits.
+**A context store for codebases that humans and AI agents both have to read and write.** An agent landing in your repo runs `textus boot` and knows what's there, what it's allowed to change, and where to put proposals. A human accepts the good proposals; the rest stay in a review queue. Every write is audited.
 
-Use textus if you're shipping an AI agent or Claude/MCP plugin that needs durable, role-gated project memory across sessions — or if you want a deterministic file-based store rather than a vector-backed memory service.
+## What it solves
+
+You have an AI agent (Claude Code, a custom Claude plugin, Cursor, whatever) and today it forgets everything between sessions. You don't want it editing your runbooks or your `CLAUDE.md` directly — you want it to *propose* changes that you can review. You want every write logged. You want a deterministic, file-based store, not a vector-DB memory service.
+
+In four commands:
+
+```sh
+gem install textus
+textus init                          # creates .textus/ with zones + schemas
+# agent proposes a change to review/
+echo '{"_meta":{"name":"oncall","proposal":{"target_key":"working.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
+  | textus put review.notes.oncall --as=agent --stdin
+# you accept it — textus promotes it to working/ and audits the move
+textus accept review.notes.oncall --as=human
+```
+
+Trying the role gate the other way (`textus put working.notes.X --as=agent`) returns `write_forbidden`. That's the load-bearing safety textus adds over just writing files in a folder.
+
+## Try it
+
+- **5-command worked demo** — single terminal scroll, no MCP, no schemas: [`examples/hello/`](examples/hello/)
+- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`INTEGRATE_WITH_CLAUDE.md`](INTEGRATE_WITH_CLAUDE.md)
+- **Use textus as your own project's context store** (not shipping anything): [`examples/project/`](examples/project/)
+- **Use textus to author a Claude plugin** (textus is the source-of-truth, build publishes to `agents/`, `skills/`, `commands/`): [`examples/claude-plugin/`](examples/claude-plugin/)
 
 Reference implementation in Ruby. Wire format `textus/3`. SPEC: [`SPEC.md`](SPEC.md). Implementation notes: [`docs/`](docs/).
 
