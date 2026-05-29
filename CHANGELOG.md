@@ -9,6 +9,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.29.1 — 2026-05-29
+
+Construction-side cleanup of the use-case layer (ADR 0026). Every change is additive or internal — no public class renamed or removed, wire format (`textus/3`) and CLI unchanged.
+
+### Added
+
+- `Envelope::IO::Writer.from(container:, call:)` and `Envelope::IO::Reader.from(container:)` — named constructors that build the envelope IO collaborators from a `Container`. `Writer.new`/`Reader.new` are unchanged.
+- `Write::IntakeFetch.invoke(rpc:, handler:, config:, args:, label:, timeout:)` — the transport-side "invoke a `:resolve_intake` handler under a timeout" kernel; now the canonical home of `FETCH_TIMEOUT_SECONDS`.
+- `Dispatcher.invoke(verb, container:, call:, args:, kwargs:)` — single home for the uniform use-case invocation protocol.
+
+### Internal
+
+- `Write::{Put,Delete,Mv,RefreshWorker}` no longer hand-wire `Envelope::IO::Writer`/`Reader`; they call `Writer.from`. Removed ~60 lines of byte-identical construction boilerplate.
+- `cli/verb/put.rb` (`--fetch`) and `cli/verb/hook_run.rb` no longer inline `Timeout.timeout { store.rpc.invoke(:resolve_intake, …) }`; both route through `Write::IntakeFetch`. No intake-fetch mechanics remain under `lib/textus/cli/`.
+- `RoleScope`'s verb loop delegates the instantiate-and-call step to `Dispatcher.invoke`; it still builds the `Call`. `Store`'s role-selecting verb loop is unchanged.
+- `RefreshWorker::FETCH_TIMEOUT_SECONDS` is now an alias of `IntakeFetch::FETCH_TIMEOUT_SECONDS`.
+
 ## 0.29.0 — 2026-05-29
 
 A domain-purity pass that routes all filesystem and wall-clock I/O through injected ports. Breaking changes are Ruby-API only; the wire format (`textus/3`) and CLI are unchanged.
