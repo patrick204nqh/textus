@@ -11,10 +11,8 @@ module Textus
           @call         = call
           @ctx          = call # AuthorityGate uses @ctx.role
           @manifest     = container.manifest
-          @file_store   = container.file_store
           @schemas      = container.schemas
           @events       = container.events
-          @authorizer   = container.authorizer
           @hook_context = hook_context
         end
 
@@ -64,12 +62,6 @@ module Textus
         def delete_op
           @delete_op ||= Textus::Application::Write::Delete.new(
             container: @container, call: @call, hook_context: @hook_context,
-          )
-        end
-
-        def read_caps_struct
-          @read_caps_struct ||= Struct.new(:manifest, :file_store, :authorizer).new(
-            @manifest, @file_store, @authorizer
           )
         end
 
