@@ -31,6 +31,7 @@ module Textus
       published: Textus::Read::Published,
       schema_envelope: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
+      doctor: Textus::Read::Doctor,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,
