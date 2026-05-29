@@ -41,14 +41,28 @@ module Textus
             kwargs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
             case op_name
             when "key_mv_prefix"
-              KeyMvPrefix.call(session: @session, ctx: @ctx, caps: @caps, **kwargs)
+              dispatch(KeyMvPrefix, kwargs)
             when "key_delete_prefix"
               KeyDeletePrefix.call(session: @session, ctx: @ctx, caps: @caps, **kwargs)
             when "zone_mv"
-              ZoneMv.call(session: @session, ctx: @ctx, caps: @caps, **kwargs)
+              dispatch(ZoneMv, kwargs)
             else
               raise UsageError.new("unknown op: #{op_name}")
             end
+          end
+
+          def dispatch(klass, kwargs)
+            container = Textus::Container.from_store_caps(
+              @session.read_caps, @session.write_caps, @session.hook_caps
+            )
+            call_value = Textus::Call.new(
+              role: @ctx.role, correlation_id: @ctx.correlation_id,
+              now: @ctx.now, dry_run: @ctx.dry_run
+            )
+            klass.new(
+              container: container, call: call_value,
+              hook_context: @session.hook_context
+            ).call(**kwargs)
           end
         end
       end
