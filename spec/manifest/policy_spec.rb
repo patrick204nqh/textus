@@ -40,7 +40,7 @@ RSpec.describe Textus::Manifest::Policy do
   end
 
   describe "#propose_zone_for" do
-    context "when the role writes a zone whose name contains 'review'" do
+    context "when the role writes the declared kind: queue zone" do
       let(:yaml) do
         <<~YAML
           version: textus/3
@@ -48,7 +48,7 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: human, kind: proposer }
             - { name: builder, kind: generator }
           zones:
-            - { name: review, kind: origin, write_policy: [human] }
+            - { name: review, kind: queue, write_policy: [human] }
             - { name: draft,  kind: derived, write_policy: [builder] }
           entries:
             - { key: review.notes, path: review/notes.md, zone: review, schema: null, owner: human:self, kind: leaf }
@@ -58,28 +58,24 @@ RSpec.describe Textus::Manifest::Policy do
       it "returns that zone name" do
         expect(policy.propose_zone_for("human")).to eq("review")
       end
+    end
 
-      it "matches a zone whose name contains 'review' as a substring (e.g. 'peer-review')" do
-        peer_yaml = <<~YAML
+    context "when no zone declares kind: queue" do
+      it "returns nil (no substring fallback)" do
+        raw2 = YAML.safe_load(<<~YAML, aliases: false)
           version: textus/3
-          roles:
-            - { name: human, kind: proposer }
-            - { name: builder, kind: generator }
-          zones:
-            - { name: peer-review, kind: origin, write_policy: [human] }
-            - { name: draft,       kind: derived, write_policy: [builder] }
-          entries:
-            - { key: peer-review.notes, path: peer-review/notes.md, zone: peer-review, schema: null, owner: human:self, kind: leaf }
+          roles: [{ name: agent, kind: proposer }]
+          zones: [{ name: review, kind: origin, write_policy: [agent] }]
+          entries: []
         YAML
-        peer_raw  = YAML.safe_load(peer_yaml, aliases: false)
-        peer_data = Textus::Manifest::Data.parse(peer_raw, root: ".")
-        expect(described_class.new(peer_data).propose_zone_for("human")).to eq("peer-review")
+        p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+        expect(p2.propose_zone_for("agent")).to be_nil
       end
     end
 
-    context "when the role writes only non-review zones" do
+    context "when the role writes only non-queue zones" do
       it "returns nil" do
-        # default fixture: human writes 'working' (no 'review' substring)
+        # default fixture: human writes 'working' (kind: origin)
         expect(policy.propose_zone_for("human")).to be_nil
       end
     end
@@ -96,7 +92,7 @@ RSpec.describe Textus::Manifest::Policy do
       end
     end
 
-    context "when the role writes multiple zones — a non-review zone declared first, then a review zone" do
+    context "when the role writes multiple zones — a non-queue zone declared first, then the queue zone" do
       let(:yaml) do
         <<~YAML
           version: textus/3
@@ -105,14 +101,14 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: builder, kind: generator }
           zones:
             - { name: working, kind: origin, write_policy: [human] }
-            - { name: review,  kind: origin, write_policy: [human] }
+            - { name: review,  kind: queue,  write_policy: [human] }
           entries:
             - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
             - { key: review.notes,  path: review/notes.md,  zone: review,  schema: null, owner: human:self, kind: leaf }
         YAML
       end
 
-      it "returns the review zone, skipping the non-review zone declared first" do
+      it "returns the queue zone, skipping the non-queue zone declared first" do
         expect(policy.propose_zone_for("human")).to eq("review")
       end
     end
@@ -148,16 +144,15 @@ RSpec.describe Textus::Manifest::Policy do
       expect(policy.derived_zone?("working")).to be(false)
     end
 
-    it "still treats a generator-written zone as derived when no kind is declared (back-compat)" do
+    it "does NOT treat a generator-written zone as derived unless it declares kind: derived" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles: [{ name: builder, kind: generator }]
-        zones: [{ name: out, kind: derived, write_policy: [builder] }]
+        zones: [{ name: out, kind: origin, write_policy: [builder] }]
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.derived_zone?("out")).to be(true)
-      expect(p2.queue_zone).to be_nil
+      expect(p2.derived_zone?("out")).to be(false)
     end
   end
 

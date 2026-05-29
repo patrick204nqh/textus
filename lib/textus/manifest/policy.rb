@@ -42,10 +42,9 @@ module Textus
         @data.declared_zone_kinds.key(:queue)
       end
 
-      # A zone is derived if it declares `kind: derived` or (back-compat) its
-      # writers include a generator role.
+      # A zone is derived iff it declares kind: derived.
       def derived_zone?(zone_name)
-        declared_kind(zone_name) == :derived || zone_kinds(zone_name).include?(:generator)
+        declared_kind(zone_name) == :derived
       end
 
       def role_mapping
@@ -60,17 +59,16 @@ module Textus
         @data.role_mapping.each_with_object([]) { |(name, k), acc| acc << name if k == kind }
       end
 
-      # The zone a proposer role writes proposals into. Prefers the zone that
-      # declares `kind: queue` (when the role can write it); falls back to the
-      # legacy "first writable zone whose name contains review" convention for
-      # manifests that have not adopted zone kinds yet.
+      # The zone a proposer role writes proposals into: the single zone that
+      # declares kind: queue, when the role can write it. Returns nil if there
+      # is no queue zone or the role cannot write it.
       def propose_zone_for(role)
         return nil if role.nil?
 
         q = queue_zone
-        return q if q && zone_writers(q).include?(role)
+        return nil unless q && zone_writers(q).include?(role)
 
-        @data.zones.find { |zname, writers| writers.include?(role) && zname.include?("review") }&.first
+        q
       end
     end
   end
