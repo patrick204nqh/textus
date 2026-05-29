@@ -26,27 +26,27 @@ RSpec.describe "Textus UID" do
   end
 
   it "auto-mints a uid on first put for markdown" do
-    env = store.session(role: "human").put("working.md", meta: { "name" => "md" }, body: "hi")
+    env = store.as("human").put("working.md", meta: { "name" => "md" }, body: "hi")
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
   end
 
   it "preserves the uid on subsequent puts" do
-    ops = store.session(role: "human")
+    ops = store.as("human")
     e1 = ops.put("working.md", meta: { "name" => "md" }, body: "hi")
     uid = e1.uid
     e2 = ops.put("working.md", meta: { "name" => "md" }, body: "again")
     expect(e2.uid).to eq(uid)
-    e3 = store.session.get("working.md")
+    e3 = store.as(Textus::Role::DEFAULT).get("working.md")
     expect(e3.uid).to eq(uid)
   end
 
   it "shows nil uid for existing files that have none, then mints on put" do
     path = File.join(root, "zones/working/md.md")
     File.write(path, "---\nname: md\n---\nhand-rolled\n")
-    expect(store.session.get("working.md").uid).to be_nil
+    expect(store.as(Textus::Role::DEFAULT).get("working.md").uid).to be_nil
 
-    existing = store.session.get("working.md")
-    env = store.session(role: "human").put(
+    existing = store.as(Textus::Role::DEFAULT).get("working.md")
+    env = store.as("human").put(
       "working.md",
       meta: existing.meta,
       body: existing.body,
@@ -55,24 +55,24 @@ RSpec.describe "Textus UID" do
   end
 
   it "stores uid in _meta.uid for json entries (accessible via env['_meta'])" do
-    env = store.session(role: "human").put("working.j", content: { "name" => "j", "x" => 1 })
+    env = store.as("human").put("working.j", content: { "name" => "j", "x" => 1 })
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
     expect(env.meta["uid"]).to eq(env.uid)
   end
 
   it "stores uid in _meta.uid for yaml entries (accessible via env['_meta'])" do
-    env = store.session(role: "human").put("working.y", content: { "name" => "y", "x" => 1 })
+    env = store.as("human").put("working.y", content: { "name" => "y", "x" => 1 })
     expect(env.uid).to match(/\A[a-f0-9]{12,}\z/)
     expect(env.meta["uid"]).to eq(env.uid)
   end
 
   it "yields nil uid for text entries even after put" do
-    env = store.session(role: "human").put("working.t", body: "plain text")
+    env = store.as("human").put("working.t", body: "plain text")
     expect(env.uid).to be_nil
   end
 
   it "Store#uid returns the uid for a key" do
-    env = store.session(role: "human").put("working.md", meta: { "name" => "md" }, body: "hi")
-    expect(store.session.uid("working.md")).to eq(env.uid)
+    env = store.as("human").put("working.md", meta: { "name" => "md" }, body: "hi")
+    expect(store.as(Textus::Role::DEFAULT).uid("working.md")).to eq(env.uid)
   end
 end

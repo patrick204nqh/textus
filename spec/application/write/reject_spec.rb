@@ -36,7 +36,7 @@ RSpec.describe Textus::Application::Write::Reject do
 
       expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "review.draft", "target_key" => "identity.target")
       expect(events).to eq([["review.draft", "identity.target"]])
-      expect(store.session.get("review.draft")).to be_nil
+      expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
     end
   end
 

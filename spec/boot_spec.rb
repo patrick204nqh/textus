@@ -75,17 +75,17 @@ RSpec.describe Textus::Boot do
   end
 
   def session_for(s)
-    Textus::Session.for(s)
+    s.as(Textus::Role::DEFAULT)
   end
 
   it "returns an envelope with protocol + store_root" do
-    env = described_class.run(session_for(store))
+    env = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
     expect(env["protocol"]).to eq("textus/3")
     expect(env["store_root"]).to eq(root)
   end
 
   it "lists zones with writers and purposes for known zones" do
-    env = described_class.run(session_for(store))
+    env = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
     names = env["zones"].map { |z| z["name"] }
     expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
     identity = env["zones"].find { |z| z["name"] == "identity" }
@@ -108,13 +108,13 @@ RSpec.describe Textus::Boot do
 
     YAML
     s = Textus::Store.new(root)
-    env = described_class.run(session_for(s))
+    env = described_class.run_via(container: s.container, role: Textus::Role::DEFAULT)
     weird = env["zones"].find { |z| z["name"] == "weird" }
     expect(weird).not_to have_key("purpose")
   end
 
   it "lists entries with derived, intake, publish_to flags" do
-    env = described_class.run(session_for(store))
+    env = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
     by_key = env["entries"].to_h { |e| [e["key"], e] }
 
     expect(by_key["identity.self"]["derived"]).to be false
@@ -131,7 +131,7 @@ RSpec.describe Textus::Boot do
   end
 
   it "lists hooks grouped by event, sorted alphabetically" do
-    env = described_class.run(session_for(store))
+    env = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
     ext = env["hooks"]
     expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
     # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
@@ -142,7 +142,7 @@ RSpec.describe Textus::Boot do
   end
 
   it "includes verbatim write_flows and cli_verbs" do
-    env = described_class.run(session_for(store))
+    env = described_class.run_via(container: store.container, role: Textus::Role::DEFAULT)
     expect(env["write_flows"]).to include("human", "agent", "runner", "builder")
     expect(env["write_flows"]["agent"]).to include("proposal:")
 
@@ -152,7 +152,7 @@ RSpec.describe Textus::Boot do
 
   describe "agent_protocol block" do
     it "includes envelope_shape, role_resolution, and recipes" do
-      result = Textus::Boot.run(session_for(store))
+      result = Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT)
       expect(result).to have_key("agent_protocol")
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
@@ -161,12 +161,12 @@ RSpec.describe Textus::Boot do
     end
 
     it "does not change the wire protocol field" do
-      result = Textus::Boot.run(session_for(store))
+      result = Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT)
       expect(result["protocol"]).to eq("textus/3")
     end
 
     it "is omitted from per-recipe output by default (no example field)" do
-      result = Textus::Boot.run(session_for(store))
+      result = Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT)
       result["agent_protocol"]["recipes"].each_value do |r|
         expect(r).not_to have_key("example")
       end
@@ -175,7 +175,7 @@ RSpec.describe Textus::Boot do
 
   describe "backward compatibility" do
     it "keeps every pre-0.12.3 top-level key with its original shape" do
-      result = Textus::Boot.run(session_for(store))
+      result = Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT)
       expect(result["protocol"]).to be_a(String).and eq("textus/3")
       expect(result["store_root"]).to be_a(String)
       expect(result["zones"]).to be_a(Array)
@@ -212,7 +212,7 @@ RSpec.describe Textus::Boot do
         entries: []
       YAML
       s = build_store(yaml)
-      env = described_class.run(session_for(s))
+      env = described_class.run_via(container: s.container, role: Textus::Role::DEFAULT)
       flows = env["write_flows"]
       expect(flows.keys).to contain_exactly("owner", "proposer", "fetcher", "compiler")
       expect(flows["owner"]).to include("owner")
@@ -235,7 +235,7 @@ RSpec.describe Textus::Boot do
         entries: []
       YAML
       s = build_store(yaml)
-      env = described_class.run(session_for(s))
+      env = described_class.run_via(container: s.container, role: Textus::Role::DEFAULT)
       flows = env["write_flows"]
       expect(flows.keys).to contain_exactly("human", "agent", "runner", "builder")
 

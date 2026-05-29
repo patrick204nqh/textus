@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Read::Uid do
   it "returns the uid declared in the entry frontmatter" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       result = ops.uid("working.doc")
       expect(result).to eq("abc123def456")
     end

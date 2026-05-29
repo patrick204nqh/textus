@@ -31,6 +31,10 @@ module Textus
       self.class.new(container: @container, role: @role, dry_run: @dry_run, correlation_id: cid)
     end
 
+    def hook_context
+      @hook_context ||= Textus::Hooks::Context.new(scope: self)
+    end
+
     def dry_run
       self.class.new(container: @container, role: @role, dry_run: true, correlation_id: @correlation_id)
     end

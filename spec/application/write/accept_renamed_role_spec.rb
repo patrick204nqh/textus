@@ -27,7 +27,7 @@ RSpec.describe Textus::Application::Write::Accept do
     it "lets the renamed accept_authority role accept proposals" do
       Dir.mktmpdir do |root|
         store = build_store(File.join(root, ".textus"))
-        store.session(role: "proposer").put(
+        store.as("proposer").put(
           "review.2026-05-19-add-bob",
           meta: {
             "name" => "2026-05-19-add-bob",
@@ -48,7 +48,7 @@ RSpec.describe Textus::Application::Write::Accept do
     it "rejects callers whose role does not have accept_authority kind, using the configured name" do
       Dir.mktmpdir do |root|
         store = build_store(File.join(root, ".textus"))
-        store.session(role: "proposer").put(
+        store.as("proposer").put(
           "review.foo",
           meta: {
             "name" => "foo",

@@ -81,7 +81,7 @@ RSpec.describe Textus::Schema::Tools do
 
     res = Textus::Schema::Tools.migrate(store, name: "person", rename: nil)
     expect(res["migrated"]).not_to be_empty
-    env = store.session.get(res["migrated"].first)
+    env = store.as(Textus::Role::DEFAULT).get(res["migrated"].first)
     expect(env.meta).to have_key("full_name")
     expect(env.meta).not_to have_key("name")
   end
@@ -102,7 +102,7 @@ RSpec.describe Textus::Schema::Tools do
     res = Textus::Schema::Tools.migrate(store, name: "person", rename: "org:organization")
     expect(res["migrated"]).to eq(["working.people.alice"])
 
-    env = store.session.get("working.people.alice")
+    env = store.as(Textus::Role::DEFAULT).get("working.people.alice")
     expect(env.meta["organization"]).to eq("acme")
     expect(env.meta).not_to have_key("org")
   end

@@ -48,7 +48,7 @@ RSpec.describe Textus::Application::Read::Audit do
   it "returns [] when audit.log does not exist" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       expect(ops.audit).to eq([])
     end
   end
@@ -61,7 +61,7 @@ RSpec.describe Textus::Application::Read::Audit do
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
                 ])
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.audit(key: "working.doc")
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
@@ -80,7 +80,7 @@ RSpec.describe Textus::Application::Read::Audit do
                   { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
                     "extras" => { "correlation_id" => cid } },
                 ])
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.audit(correlation_id: cid)
       expect(rows.length).to eq(2)
       expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
@@ -94,7 +94,7 @@ RSpec.describe Textus::Application::Read::Audit do
                   { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
                 ])
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.audit(zone: "identity")
       expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
     end
@@ -107,7 +107,7 @@ RSpec.describe Textus::Application::Read::Audit do
                   { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                   { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
                 ])
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.audit(since: Time.parse("2026-05-01T00:00:00Z"))
       expect(rows.map { |r| r["ts"] }).to eq(["2026-05-02T00:00:00Z"])
     end
@@ -120,7 +120,7 @@ RSpec.describe Textus::Application::Read::Audit do
         { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" }
       end
       write_log(root, rows)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       out = ops.audit(limit: 2)
       expect(out.length).to eq(2)
     end

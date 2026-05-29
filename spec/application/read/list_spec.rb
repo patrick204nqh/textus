@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Read::List do
   it "returns all entries when called with no filters" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.list
       expect(rows.map { |r| r["key"] }).to contain_exactly(
         "working.alpha", "working.beta", "notes.report"
@@ -40,7 +40,7 @@ RSpec.describe Textus::Application::Read::List do
   it "filters by prefix" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.list(prefix: "working")
       expect(rows.map { |r| r["key"] }).to contain_exactly("working.alpha", "working.beta")
     end
@@ -49,7 +49,7 @@ RSpec.describe Textus::Application::Read::List do
   it "filters by zone" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       rows = ops.list(zone: "notes")
       expect(rows.map { |r| r["key"] }).to eq(["notes.report"])
     end

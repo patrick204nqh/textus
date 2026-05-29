@@ -21,7 +21,7 @@ RSpec.describe "Pulse hook_errors" do
   let(:store) { Textus::Store.new(root) }
 
   it "returns an empty array when no hooks have failed" do
-    result = store.session(role: "human").pulse(since: 0)
+    result = store.as("human").pulse(since: 0)
     expect(result["hook_errors"]).to eq([])
   end
 
@@ -30,7 +30,7 @@ RSpec.describe "Pulse hook_errors" do
       seq: 1, event: :entry_put, hook: :sample,
       key: "working.note", error_class: "RuntimeError", error_message: "boom"
     )
-    result = store.session(role: "human").pulse(since: 0)
+    result = store.as("human").pulse(since: 0)
     expect(result["hook_errors"].size).to eq(1)
     expect(result["hook_errors"][0]).to include("event" => "entry_put", "hook" => "sample", "error_class" => "RuntimeError")
   end
@@ -38,7 +38,7 @@ RSpec.describe "Pulse hook_errors" do
   it "filters by since seq" do
     store.events.error_log.record(seq: 1, event: :x, hook: :a, key: nil, error_class: "E", error_message: "m")
     store.events.error_log.record(seq: 5, event: :x, hook: :b, key: nil, error_class: "E", error_message: "m")
-    result = store.session(role: "human").pulse(since: 3)
+    result = store.as("human").pulse(since: 3)
     expect(result["hook_errors"].map { |r| r["seq"] }).to eq([5])
   end
 end

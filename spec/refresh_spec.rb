@@ -36,7 +36,7 @@ RSpec.describe "Textus::Session#refresh" do
 
   it "invokes the action, writes the entry under role=runner, returns the envelope" do
     store = Textus::Store.new(root)
-    env = store.session(role: "runner").refresh("intake.repos")
+    env = store.as("runner").refresh("intake.repos")
     expect(env.body).to eq("hello")
     expect(env.zone).to eq("intake")
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
@@ -44,7 +44,7 @@ RSpec.describe "Textus::Session#refresh" do
 
   it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    expect { store.session(role: "runner").refresh("intake.manual") }
+    expect { store.as("runner").refresh("intake.manual") }
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
@@ -57,7 +57,7 @@ RSpec.describe "Textus::Session#refresh" do
     store = Textus::Store.new(root)
     # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
     allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
-    expect { store.session(role: "runner").refresh("intake.repos") }
+    expect { store.as("runner").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
 
@@ -82,7 +82,7 @@ RSpec.describe "Textus::Session#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = store.session(role: "runner").refresh("intake.repos")
+      env = store.as("runner").refresh("intake.repos")
       expect(env.format).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
       parsed = JSON.parse(File.read(path))
@@ -110,7 +110,7 @@ RSpec.describe "Textus::Session#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      store.session(role: "runner").refresh("intake.notes")
+      store.as("runner").refresh("intake.notes")
       expect(File.read(File.join(root, "zones/intake/notes.txt"))).to eq("raw bytes\nline 2\n")
     end
   end
@@ -122,7 +122,7 @@ RSpec.describe "Textus::Session#refresh" do
       end
     RUBY
     store = Textus::Store.new(root)
-    expect { store.session(role: "runner").refresh("intake.repos") }
+    expect { store.as("runner").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 

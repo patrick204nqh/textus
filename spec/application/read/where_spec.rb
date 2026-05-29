@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Read::Where do
   it "returns a hash with protocol, key, zone, owner, path for a known key" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       result = ops.where("working.doc")
 
       expect(result).to include(

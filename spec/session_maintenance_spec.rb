@@ -19,7 +19,7 @@ RSpec.describe "Textus::Session maintenance surface" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:sess)  { store.session(role: "human") }
+  let(:sess)  { store.as("human") }
 
   it "exposes key_mv_prefix, key_delete_prefix, zone_mv, rule_lint, migrate" do
     %i[key_mv_prefix key_delete_prefix zone_mv rule_lint migrate].each do |m|

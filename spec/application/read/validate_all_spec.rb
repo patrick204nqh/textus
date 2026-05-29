@@ -21,7 +21,7 @@ RSpec.describe Textus::Application::Read::ValidateAll do
   it "returns a Hash with key ok" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       result = ops.validate_all
       expect(result).to be_a(Hash)
       expect(result).to have_key("ok")

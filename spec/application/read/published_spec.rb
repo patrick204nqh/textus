@@ -34,7 +34,7 @@ RSpec.describe Textus::Application::Read::Published do
   it "returns entries that have publish_to, including output.catalogs.people" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       result = ops.published
       expect(result.map { |r| r["key"] }).to include("output.catalogs.people")
     end

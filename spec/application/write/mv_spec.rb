@@ -7,7 +7,7 @@ RSpec.describe Textus::Application::Write::Mv do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      ops = store.session(role: "human")
+      ops = store.as("human")
       ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       events = []
@@ -29,7 +29,7 @@ RSpec.describe Textus::Application::Write::Mv do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      ops = store.session(role: "human")
+      ops = store.as("human")
       ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       ctx = test_ctx(role: "human")
@@ -46,7 +46,7 @@ RSpec.describe Textus::Application::Write::Mv do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      store.session(role: "human").put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
+      store.as("human").put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
 
       ctx = test_ctx(role: "human", correlation_id: "cid-test")
       build_mv(store, ctx).call("working.notes.alpha", "working.notes.beta")

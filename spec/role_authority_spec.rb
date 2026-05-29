@@ -32,12 +32,12 @@ RSpec.describe "Role authority via schema.maintained_by" do
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   it "flags fields written by the wrong role" do
-    store.session(role: "agent").put(
+    store.as("agent").put(
       "working.people.alice",
       meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
       body: "",
     )
-    res = store.session.validate_all
+    res = store.as(Textus::Role::DEFAULT).validate_all
     codes = res["violations"].map { |v| v["code"] }
     expect(codes).to include("role_authority")
     bad = res["violations"].find { |v| v["code"] == "role_authority" }
@@ -47,12 +47,12 @@ RSpec.describe "Role authority via schema.maintained_by" do
   end
 
   it "allows human to override ai-owned fields" do
-    store.session(role: "human").put(
+    store.as("human").put(
       "working.people.bob",
       meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
       body: "",
     )
-    res = store.session.validate_all
+    res = store.as(Textus::Role::DEFAULT).validate_all
     expect(res["violations"]).to be_empty
   end
 
@@ -87,12 +87,12 @@ RSpec.describe "Role authority via schema.maintained_by" do
     end
 
     it "allows the renamed accept_authority role to override proposer-owned fields" do
-      store.session(role: "owner").put(
+      store.as("owner").put(
         "working.people.carol",
         meta: { "name" => "carol", "full_name" => "Carol Override", "embedding" => [0.5] },
         body: "",
       )
-      res = store.session.validate_all
+      res = store.as(Textus::Role::DEFAULT).validate_all
       authority = res["violations"].select { |v| v["code"] == "role_authority" }
       expect(authority).to be_empty
     end
