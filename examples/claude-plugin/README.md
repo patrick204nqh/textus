@@ -97,8 +97,8 @@ voice-tools/
   - `output.claude-root` → `claude_root` transform + `claude-root.mustache`
     template (with `inject_boot: true`) → `CLAUDE.md`
 
-The `inject_boot: true` flag on `output.claude-root` makes `Boot.run(store)`
-available inside the template as `{{boot.*}}` — the rendered `CLAUDE.md`
+The `inject_boot: true` flag on `output.claude-root` makes the `store.boot`
+envelope available inside the template as `{{boot.*}}` — the rendered `CLAUDE.md`
 auto-projects zone authority and the tool surface straight from textus's
 own boot envelope. The template instructs agents to call `boot()` once
 per session and `tick()` per turn via the textus MCP server, teaching
