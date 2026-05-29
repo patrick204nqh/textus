@@ -50,15 +50,7 @@ module Textus
 
       def handle_initialize(rid, _params)
         proposer = @store.manifest.policy.roles_with_kind(:proposer).first
-        propose_zone = nil
-        if proposer
-          @store.manifest.data.zones.each do |zname, writers|
-            if writers.include?(proposer) && zname.include?("review")
-              propose_zone = zname
-              break
-            end
-          end
-        end
+        propose_zone = @store.manifest.policy.propose_zone_for(proposer)
 
         @session = Session.new(
           role: @role,
