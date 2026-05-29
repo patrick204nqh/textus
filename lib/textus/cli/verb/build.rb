@@ -9,7 +9,7 @@ module Textus
         def call(store)
           Textus::Infra::BuildLock.with(root: store.root) do
             role = store.manifest.policy.roles_with_kind(:generator).first || "builder"
-            ops = store.session(role: role)
+            ops = store.as(role)
             result = ops.publish(prefix: prefix)
             emit(result)
           end

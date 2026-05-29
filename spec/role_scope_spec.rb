@@ -45,11 +45,10 @@ RSpec.describe Textus::RoleScope do
   it "passes correlation_id: through to the audit record" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      store.as("human").put(
+      store.as("human", correlation_id: "test-corr-rolescope").put(
         "working.foo",
         meta: { "name" => "foo" },
         body: "hi",
-        correlation_id: "test-corr-rolescope",
       )
 
       row = File.readlines(File.join(root, ".textus/audit.log")).last

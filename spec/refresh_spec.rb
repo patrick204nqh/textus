@@ -131,11 +131,11 @@ RSpec.describe "Textus::Session#refresh" do
       skip "Process.fork not available on this platform" unless Process.respond_to?(:fork)
 
       fake_store = instance_double(Textus::Store)
-      sess       = instance_spy(Textus::Session)
+      sess       = instance_spy(Textus::RoleScope)
       fake_lock  = instance_double(Textus::Infra::Refresh::Lock, try_acquire: true, release: nil)
 
       allow(Textus::Store).to receive(:new).and_return(fake_store)
-      allow(fake_store).to receive(:session).with(role: "runner").and_return(sess)
+      allow(fake_store).to receive(:as).with("runner").and_return(sess)
       allow(Textus::Infra::Refresh::Lock).to receive(:new).and_return(fake_lock)
       allow(Process).to receive(:fork) do |&blk|
         blk.call

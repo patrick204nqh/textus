@@ -5,7 +5,7 @@ module Textus
         command_name "boot"
 
         def call(store)
-          emit(Textus::Boot.run(Textus::Session.for(store)))
+          emit(Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT))
         end
       end
     end

@@ -43,8 +43,7 @@ module Textus
       Infra::AuditSubscriber.new(@audit_log).attach(@events)
       Hooks::Builtin.register_all(events: @events, rpc: @rpc)
       Hooks::Loader.new(events: @events, rpc: @rpc).load_dir(File.join(@root, "hooks"))
-      sess = Session.for(self, role: Role::DEFAULT)
-      @events.publish(:store_loaded, ctx: sess.hook_context)
+      @events.publish(:store_loaded, ctx: Hooks::Context.new(scope: as(Role::DEFAULT)))
     end
 
     def session(role: Role::DEFAULT, correlation_id: nil, dry_run: false)
@@ -55,8 +54,8 @@ module Textus
       @container ||= Textus::Container.from_store(self)
     end
 
-    def as(role, dry_run: false)
-      RoleScope.new(container: container, role: role, dry_run: dry_run)
+    def as(role, dry_run: false, correlation_id: nil)
+      RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end
 
     Textus::Dispatcher::VERBS.each_key do |verb|

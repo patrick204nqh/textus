@@ -17,11 +17,11 @@ module Textus
       end
 
       def ops_for(session, store)
-        store.session(role: session.role)
+        store.as(session.role)
       end
 
       REGISTRY = {
-        "boot" => ->(_s, store, _a) { Textus::Boot.run(Textus::Session.for(store)) },
+        "boot" => ->(_s, store, _a) { Textus::Boot.run_via(container: store.container, role: Textus::Role::DEFAULT) },
 
         "find" => lambda do |s, store, args|
           ops_for(s, store).list(zone: args["zone"], prefix: args["prefix"])

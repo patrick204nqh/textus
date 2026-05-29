@@ -46,7 +46,7 @@ module Textus
           meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
-          result = store.session(role: role).put(key, meta: meta, body: body, if_etag: if_etag)
+          result = store.as(role).put(key, meta: meta, body: body, if_etag: if_etag)
           emit(result.to_h_for_wire)
         end
       end
