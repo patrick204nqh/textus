@@ -8,7 +8,6 @@ module Textus
       def initialize(container:, call:, hook_context:)
         @container    = container
         @call         = call
-        @ctx          = call # AuthorityGate uses @ctx.role
         @manifest     = container.manifest
         @schemas      = container.schemas
         @events       = container.events

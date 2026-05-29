@@ -6,7 +6,7 @@ module Textus
     # reads on its own line.
     module AuthorityGate
       def assert_accept_authority!(verb)
-        return if @manifest.policy.role_kind(@ctx.role) == :accept_authority
+        return if @manifest.policy.role_kind(@call.role) == :accept_authority
 
         authority = @manifest.policy.roles_with_kind(:accept_authority).first
         if authority.nil?
@@ -16,7 +16,7 @@ module Textus
         end
 
         raise ProposalError.new(
-          "only #{authority} role can #{verb} proposals; got '#{@ctx.role}'",
+          "only #{authority} role can #{verb} proposals; got '#{@call.role}'",
         )
       end
     end
