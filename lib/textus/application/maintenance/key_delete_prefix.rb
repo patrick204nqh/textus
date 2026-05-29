@@ -2,36 +2,36 @@ module Textus
   module Application
     module Maintenance
       # Bulk-delete every leaf key under `prefix`.
-      module KeyDeletePrefix
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps, session: session).call(*, **)
+      class KeyDeletePrefix
+        def initialize(container:, call:, hook_context: nil)
+          @container    = container
+          @call         = call
+          @hook_context = hook_context
         end
 
-        class Impl
-          def initialize(ctx:, caps:, session:)
-            @ctx     = ctx
-            @caps    = caps
-            @session = session
+        def call(prefix:, dry_run: false)
+          raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
+
+          leaves = Read::List.new(container: @container)
+                             .call(prefix: prefix)
+                             .map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
+
+          warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
+          steps = leaves.map { |k| { "op" => "delete", "key" => k } }
+
+          plan = Plan.new(steps: steps, warnings: warnings)
+          return plan if dry_run
+
+          steps.each do |s|
+            delete.call(s["key"])
           end
+          plan
+        end
 
-          def call(prefix:, dry_run: false)
-            raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
+        private
 
-            leaves = Read::List.new(container: @caps)
-                               .call(prefix: prefix)
-                               .map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
-
-            warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
-            steps = leaves.map { |k| { "op" => "delete", "key" => k } }
-
-            plan = Plan.new(steps: steps, warnings: warnings)
-            return plan if dry_run
-
-            steps.each do |s|
-              @session.delete(s["key"])
-            end
-            plan
-          end
+        def delete
+          Write::Delete.new(container: @container, call: @call, hook_context: @hook_context)
         end
       end
     end

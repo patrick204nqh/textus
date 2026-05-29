@@ -43,7 +43,7 @@ module Textus
             when "key_mv_prefix"
               dispatch(KeyMvPrefix, kwargs)
             when "key_delete_prefix"
-              KeyDeletePrefix.call(session: @session, ctx: @ctx, caps: @caps, **kwargs)
+              dispatch(KeyDeletePrefix, kwargs)
             when "zone_mv"
               dispatch(ZoneMv, kwargs)
             else
