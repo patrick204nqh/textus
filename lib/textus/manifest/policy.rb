@@ -60,12 +60,15 @@ module Textus
         @data.role_mapping.each_with_object([]) { |(name, k), acc| acc << name if k == kind }
       end
 
-      # The zone a proposer role writes proposals into: its first writable zone
-      # whose name contains "review". Returns nil if the role is nil or has no
-      # such zone. This zone-naming convention lives here (was inlined in the
-      # MCP transport before 0.29.2).
+      # The zone a proposer role writes proposals into. Prefers the zone that
+      # declares `kind: queue` (when the role can write it); falls back to the
+      # legacy "first writable zone whose name contains review" convention for
+      # manifests that have not adopted zone kinds yet.
       def propose_zone_for(role)
         return nil if role.nil?
+
+        q = queue_zone
+        return q if q && zone_writers(q).include?(role)
 
         @data.zones.find { |zname, writers| writers.include?(role) && zname.include?("review") }&.first
       end

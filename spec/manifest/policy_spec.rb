@@ -161,6 +161,30 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
+  describe "#propose_zone_for with declared queue" do
+    let(:yaml) do
+      <<~YAML
+        version: textus/3
+        roles:
+          - { name: human, kind: accept_authority }
+          - { name: agent, kind: proposer }
+        zones:
+          - { name: working, kind: origin, write_policy: [human] }
+          - { name: inbox,   kind: queue,  write_policy: [agent, human] }
+        entries: []
+      YAML
+    end
+
+    it "returns the kind: queue zone even when its name is not 'review'" do
+      expect(policy.propose_zone_for("agent")).to eq("inbox")
+    end
+
+    it "returns the queue zone for any role that can write it, and nil for a non-writer" do
+      expect(policy.propose_zone_for("human")).to eq("inbox")
+      expect(policy.propose_zone_for("nobody")).to be_nil
+    end
+  end
+
   describe "declared zone kinds on Data" do
     let(:yaml) do
       <<~YAML
