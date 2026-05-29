@@ -1,7 +1,7 @@
 # ADR 0009 — AuditSubscriber split from Hooks::Dispatcher
 
 **Date:** 2026-05-26
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) (`Infra::AuditSubscriber` is now `Ports::AuditSubscriber`; `Application::Writes::Mv` is now `Write::Mv`). The subscriber-split decision stands.
 **Depends on:** [ADR 0008](./0008-freshness-and-resolution-types.md)
 
 ## Context

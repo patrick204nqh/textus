@@ -18,7 +18,7 @@ Textus exposes two distinct verbs for agents:
 | Transport | Audience | How |
 |---|---|---|
 | CLI       | humans, scripts | `textus boot`, `textus pulse --since=N` |
-| Ruby API  | embedders       | `Textus::Session.for(store, role:).pulse(since: N)` |
+| Ruby API  | embedders       | `store.pulse(since: N, role:)` |
 | **MCP**   | agents, plugins | `textus mcp serve` — see [`mcp.md`](./mcp.md) |
 
 For agent code, prefer the MCP transport: schema-self-describing, session state held server-side, no shell-string composition.

@@ -1,7 +1,7 @@
 # ADR 0014 — Explicit Dependencies
 
 **Date:** 2026-05-27
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) (`Application::Context` renamed to `Call`; `Application::*` namespace flattened; `Infra::*` renamed to `Ports::*`). The explicit-dependencies principle stands.
 **Depends on:** ADR 0011 (authorize-bang-in-context), ADR 0013 (port extraction)
 
 ## Context

@@ -439,7 +439,8 @@ end
 ```ruby
 Textus.hook do |reg|
   reg.on(:validate, :no_drafts_in_identity) do |caps:|
-    Textus::Application::Read::List::Impl.new(caps: caps).call(zone: "identity")
+    call = Textus::Call.new(role: "doctor")
+    Textus::Read::List.new(container: caps, call: call).call(zone: "identity")
       .select { |e| e["frontmatter"]["status"] == "draft" }
       .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
   end
@@ -448,7 +449,7 @@ end
 
 A non-empty return array surfaces as a doctor failure with each issue listed.
 
-`caps:` is a `Textus::Application::WriteCaps` (for `:validate`, since doctor checks may need write access for diagnostics) bundling `manifest`, `file_store`, `schemas`, `audit_log`, `events`, `authorizer`, and the store `root`. Pull the slice you need into a local; never reach for the raw Store.
+`caps:` is a `Textus::Container` bundling `manifest`, `file_store`, `schemas`, `audit_log`, `events`, `rpc`, `authorizer`, and the store `root`. Pull the slice you need into a local; never reach for the raw Store.
 
 ---
 
