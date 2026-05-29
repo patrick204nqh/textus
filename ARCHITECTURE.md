@@ -48,7 +48,7 @@
 │  Ports::{AuditLog,AuditSubscriber,Publisher,Clock,         │
 │          Refresh::Lock,Refresh::Detached,BuildLock}        │
 │  Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,   │
-│          Builtin,ErrorLog}                                 │
+│          Signature,Builtin,ErrorLog}                       │
 │  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
 └────────────────────────────────────────────────────────────┘
 
@@ -148,7 +148,7 @@ Manifest carving means slicing the parsed manifest YAML into four purpose-specif
 |---|---|---|
 | `data` | `Manifest::Data` | Frozen value: `raw`, `root`, `zones`, `entries`, `audit_config`, `role_mapping`. Structural data only — no behaviour beyond accessors and key validation. |
 | `resolver` | `Manifest::Resolver` | Key → `Resolution(entry, path, remaining)`. Handles nested entry enumeration and fuzzy-match suggestions. |
-| `policy` | `Manifest::Policy` | Zone/role authority — `zone_writers`, `zone_kinds`, `permission_for`, `role_kind`, `roles_with_kind`. Derived from a `Data` snapshot; no filesystem I/O. |
+| `policy` | `Manifest::Policy` | Zone/role authority — `zone_writers`, `zone_kinds`, `permission_for`, `role_kind`, `roles_with_kind`, `propose_zone_for(role)`. Derived from a `Data` snapshot; no filesystem I/O. `propose_zone_for` owns the "first writable zone whose name contains `review`" convention used by `MCP::Server` (ADR 0027). |
 | `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(refresh, handler_allowlist, promote, retention)` by evaluating all `match:` blocks against the key. |
 
 Rationale: cleaner test seams — a use case that only needs key resolution constructs a `Manifest::Resolver` from a stub `Data`; one that only needs rule lookup constructs a `Manifest::Rules` directly. No consumer is forced to build the full manifest to exercise one sub-view.
@@ -217,6 +217,8 @@ The agent loop (cadence guide in `docs/agent-integration.md`):
 Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
 
 ## Hooks::EventBus event catalog
+
+`Hooks::Signature` is the single home of callable keyword-introspection — both `EventBus` (pub-sub dispatch) and `RpcRegistry` (RPC dispatch) delegate to it for `accepts_keyrest?`, `declared_keys`, `missing`, and `filter` rather than each maintaining a hand-rolled copy (ADR 0027).
 
 RPC (single handler, declares `caps:`):
 - `resolve_intake(caps:, config:, args:)` — intake fetch handler.

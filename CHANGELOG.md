@@ -9,6 +9,26 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.29.2 — 2026-05-29
+
+Hook-registry convergence and MCP transport de-leak (ADR 0027). Every change is additive or internal — no wire format (`textus/3`) or manifest-schema change, no public class renamed or removed.
+
+### Added
+
+- `Textus::Hooks::Signature` — single home of callable keyword-introspection (`accepts_keyrest?`, `declared_keys`, `missing`, `filter`), shared by both `EventBus` and `RpcRegistry`.
+- `Manifest::Policy#propose_zone_for(role)` — owns the "first writable zone whose name contains `review`" convention; `MCP::Server#handle_initialize` delegates to it instead of scanning `manifest.data.zones` inline.
+
+### Internal
+
+- `EventBus` and `RpcRegistry` both delegate callable introspection to `Hooks::Signature`; both `shape_check!` copies and the hand-rolled `filter_kwargs`/`invoke` derivations are deleted.
+- Removed the `store:`→`caps:` legacy shim from `RpcRegistry`: a handler declaring `store:` (instead of `caps:`) is now rejected at registration time with an honest message, not at invoke time. Stale in-repo RPC hook fixtures and the `textus init` scaffold example are migrated to `caps:`.
+- `MCP::Server#handle_initialize` no longer iterates `manifest.data.zones`; it calls `policy.propose_zone_for(proposer)`. No zone-selection logic remains in the JSON-RPC transport handler.
+- `MCP::Session` converted from a hand-rolled immutable class to `Data.define(:role, :cursor, :propose_zone, :manifest_etag)`, matching the house convention used by all other value objects.
+
+### Behavior change (non-breaking in practice)
+
+- RPC handlers declaring `store:` previously registered successfully and failed only at first invocation (with a misleading message). They now fail at registration time with a message naming the correct kwarg (`caps:`). No handler using `store:` was valid before; only the timing and clarity of the error change.
+
 ## 0.29.1 — 2026-05-29
 
 Construction-side cleanup of the use-case layer (ADR 0026). Every change is additive or internal — no public class renamed or removed, wire format (`textus/3`) and CLI unchanged.
