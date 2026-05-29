@@ -21,6 +21,11 @@ RSpec.describe Textus::Hooks::Signature do
       expect(sig.declared_keys).to eq(%i[a b])
     end
 
+    it "includes optional keyword args (:key) alongside required ones" do
+      sig = described_class.new(->(a:, b: nil) {})
+      expect(sig.declared_keys).to eq(%i[a b])
+    end
+
     it "excludes the keyrest name from declared_keys" do
       sig = described_class.new(->(**kw) {})
       expect(sig.declared_keys).to eq([])
