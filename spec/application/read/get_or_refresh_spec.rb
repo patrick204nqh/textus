@@ -64,7 +64,8 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       ctx = Textus::Application::Context.build(role: "runner")
       pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
-      use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
+      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, session: nil, get: pure_get,
+                                     orchestrator: orch)
 
       env = use_case.call("working.doc")
       expect(env).not_to be_nil
@@ -79,7 +80,8 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       ctx = Textus::Application::Context.build(role: "runner")
       pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
-      use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
+      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, session: nil, get: pure_get,
+                                     orchestrator: orch)
 
       env = use_case.call("working.doc")
       expect(env.freshness.stale).to be(true)
@@ -94,7 +96,8 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       ctx = Textus::Application::Context.build(role: "runner")
       pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
-      use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
+      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, session: nil, get: pure_get,
+                                     orchestrator: orch)
 
       env = use_case.call("working.doc")
       expect(env.freshness.refreshing).to be(true)
@@ -107,7 +110,8 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       ctx = Textus::Application::Context.build(role: "runner")
       pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
-      use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
+      use_case = described_class.new(container: Textus::Application.caps_from_store(store)[0], call: ctx, session: nil, get: pure_get,
+                                     orchestrator: orch)
 
       expect(use_case.call("working.doc")).to be_nil
     end
