@@ -1,10 +1,10 @@
 module Textus
   module Domain
     class Staleness
-      def initialize(manifest:)
+      def initialize(manifest:, file_stat:, clock:)
         @manifest = manifest
-        @generator_check = GeneratorCheck.new(manifest: manifest)
-        @intake_check = IntakeCheck.new(manifest: manifest)
+        @generator_check = GeneratorCheck.new(manifest: manifest, file_stat: file_stat)
+        @intake_check    = IntakeCheck.new(manifest: manifest, file_stat: file_stat, clock: clock)
       end
 
       def call(prefix: nil, zone: nil)

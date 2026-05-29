@@ -1,5 +1,4 @@
 require "json"
-require "digest"
 
 module Textus
   module MCP
@@ -107,7 +106,7 @@ module Textus
       end
 
       def manifest_etag
-        Digest::SHA256.hexdigest(File.read(File.join(@store.root, "manifest.yaml")))
+        @store.file_store.etag(File.join(@store.root, "manifest.yaml"))
       end
 
       def emit_result(rid, result)

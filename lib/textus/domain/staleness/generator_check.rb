@@ -8,34 +8,43 @@ module Textus
       # entry's `_meta.generated.at` timestamp. Returns an Array of row hashes
       # (possibly empty) per entry.
       class GeneratorCheck
-        def initialize(manifest:)
-          @manifest = manifest
+        def initialize(manifest:, file_stat:)
+          @manifest  = manifest
+          @file_stat = file_stat
         end
 
         def rows_for(mentry)
-          return [] unless mentry.in_generator_zone?(@manifest.policy)
-          return [] unless mentry.is_a?(Textus::Manifest::Entry::Derived)
-
-          src = mentry.source
-          return [] unless src.is_a?(Textus::Manifest::Entry::Derived::External)
+          return [] unless applicable?(mentry)
 
           path = Textus::Key::Path.resolve(@manifest.data, mentry)
-          return [stale_row(mentry, path, "derived entry has never been generated")] unless File.exist?(path)
-
-          parsed = Entry.for_format(mentry.format).parse(File.binread(path), path: path)
-          generated_at = parsed["_meta"].dig("generated", "at")
-          return [stale_row(mentry, path, "missing generated.at frontmatter")] unless generated_at
-
-          gen_time = parse_time(generated_at)
-          return [stale_row(mentry, path, "unparseable generated.at: #{generated_at.inspect}")] unless gen_time
-
-          offender = newest_source_after(src, gen_time)
-          return [stale_row(mentry, path, "source '#{offender}' modified after generated.at")] if offender
-
-          []
+          reason = stale_reason(mentry, path)
+          reason ? [stale_row(mentry, path, reason)] : []
         end
 
         private
+
+        def applicable?(mentry)
+          mentry.in_generator_zone?(@manifest.policy) &&
+            mentry.is_a?(Textus::Manifest::Entry::Derived) &&
+            mentry.source.is_a?(Textus::Manifest::Entry::Derived::External)
+        end
+
+        def stale_reason(mentry, path)
+          return "derived entry has never been generated" unless @file_stat.exists?(path)
+
+          generated_at = generated_at_of(mentry, path)
+          return "missing generated.at frontmatter" unless generated_at
+
+          gen_time = parse_time(generated_at)
+          return "unparseable generated.at: #{generated_at.inspect}" unless gen_time
+
+          offender = newest_source_after(mentry.source, gen_time)
+          "source '#{offender}' modified after generated.at" if offender
+        end
+
+        def generated_at_of(mentry, path)
+          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"].dig("generated", "at")
+        end
 
         def parse_time(str)
           Time.parse(str.to_s)
@@ -54,7 +63,7 @@ module Textus
         def check_source(src, gen_time)
           if src.match?(/\A[a-z0-9.][a-z0-9._-]*\z/) && !src.include?("/")
             @manifest.resolver.enumerate(prefix: src).each do |row|
-              return src if File.mtime(row[:path]) > gen_time
+              return src if @file_stat.mtime(row[:path]) > gen_time
             end
             nil
           else
@@ -63,17 +72,28 @@ module Textus
         end
 
         def check_filesystem_source(src, gen_time)
-          abs = File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.data.root), src)
-          if File.directory?(abs)
-            Dir.glob(File.join(abs, "**", "*")).each do |fp|
-              next unless File.file?(fp)
-              return src if File.mtime(fp) > gen_time
-            end
-            nil
-          elsif File.exist?(abs) && File.mtime(abs) > gen_time
+          abs = absolutize_source(src)
+          if @file_stat.directory?(abs)
+            dir_has_newer_file?(abs, gen_time) ? src : nil
+          elsif @file_stat.exists?(abs) && @file_stat.mtime(abs) > gen_time
             src
           end
         end
+
+        def absolutize_source(src)
+          File.absolute_path?(src) ? src : File.join(File.dirname(@manifest.data.root), src)
+        end
+
+        def dir_has_newer_file?(abs, gen_time)
+          @file_stat.glob(File.join(abs, "**", "*")).any? do |fpath|
+            file?(fpath) && @file_stat.mtime(fpath) > gen_time
+          end
+        end
+
+        # FileStat substitute for File.file?: excludes directories but treats
+        # special files (FIFOs/sockets/devices) as regular files — acceptable
+        # because a generator source tree won't contain them.
+        def file?(fpath) = !@file_stat.directory?(fpath) && @file_stat.exists?(fpath)
 
         def stale_row(mentry, path, reason)
           {

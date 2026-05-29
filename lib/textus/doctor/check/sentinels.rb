@@ -3,22 +3,24 @@ module Textus
     class Check
       class Sentinels < Check
         def call
-          dir = File.join(root, "sentinels")
-          return [] unless File.directory?(dir)
+          store      = Textus::Ports::SentinelStore.new
+          file_stat  = Textus::Ports::Storage::FileStat.new
+          dir        = File.join(root, "sentinels")
+          return [] unless file_stat.directory?(dir)
 
           repo_root = File.dirname(root)
-          Dir.glob(File.join(dir, "**", "*#{Textus::Domain::Sentinel::SUFFIX}")).flat_map do |sentinel_path|
-            inspect_sentinel(sentinel_path, repo_root)
+          file_stat.glob(File.join(dir, "**", "*#{Textus::Ports::SentinelStore::SUFFIX}")).flat_map do |sentinel_path|
+            inspect_sentinel(sentinel_path, repo_root, store, file_stat)
           end
         end
 
         private
 
-        def inspect_sentinel(sentinel_path, repo_root)
-          sentinel = Textus::Domain::Sentinel.load(sentinel_path, repo_root)
+        def inspect_sentinel(sentinel_path, repo_root, store, file_stat)
+          sentinel = store.load(sentinel_path, repo_root)
           return [parse_error_issue(sentinel_path)] if sentinel.nil?
-          return [orphan_issue(sentinel_path, sentinel)] if sentinel.orphan?
-          return [drift_issue(sentinel)] if sentinel.drift?
+          return [orphan_issue(sentinel_path, sentinel)] if sentinel.orphan?(file_stat)
+          return [drift_issue(sentinel)] if sentinel.drift?(file_stat)
 
           []
         end

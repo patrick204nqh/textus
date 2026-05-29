@@ -17,7 +17,7 @@
 │  RoleScope        (Store#as(role) — forwards verb calls)   │
 │                                                            │
 │  read/{get,get_or_refresh,list,where,uid,schema_envelope,  │
-│        deps,rdeps,published,stale,validate_all,            │
+│        deps,rdeps,published,stale,validate_all,boot,doctor,│
 │        freshness,audit,blame,policy_explain,pulse}.rb      │
 │  write/{put,delete,mv,accept,reject,publish,               │
 │         materializer,authority_gate,                       │
@@ -52,8 +52,12 @@
 │  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
 └────────────────────────────────────────────────────────────┘
 
-   Dependency rule: arrows point DOWN. Domain has zero outbound
-   imports. Application imports Domain + Ports.
+   Dependency rule: arrows point DOWN. Domain performs no direct
+   File/Dir/Time.now I/O — all disk and clock access is routed through
+   injected ports (FileStat, Clock). Pure path math (File.join/dirname/
+   absolute_path?/expand_path/basename), Digest hashing of injected
+   bytes, and Time.parse of stored strings are NOT I/O and are allowed.
+   Application imports Domain + Ports.
    Use cases are plain classes on (container:, call:).
    Verbs are looked up in the static Dispatcher::VERBS table.
 ```
@@ -80,6 +84,11 @@ end
 ```
 
 Verbs are looked up in a static frozen table (`Textus::Dispatcher::VERBS`) that maps `:get → Textus::Read::Get`, `:put → Textus::Write::Put`, etc. `Store#put` / `Store#get` / `Store#as(role).<verb>(...)` instantiate the use case on `(container:, call:)` and invoke `#call`. Adding a new verb is **one entry in `Dispatcher::VERBS`** plus the class — no metaprogramming.
+
+`boot` and `doctor` are read verbs like any other: `Read::Boot` / `Read::Doctor`
+are thin `(container:, call:)` use cases that delegate to the `Textus::Boot` /
+`Textus::Doctor` report-builder libraries (`build(container:, ...)`). They are
+reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
 
 Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 

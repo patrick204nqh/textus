@@ -23,8 +23,17 @@ module Textus
         return if observed_etag == @manifest_etag
 
         raise ContractDrift.new(
-          "manifest changed (was #{@manifest_etag[0, 8]}, now #{observed_etag[0, 8]}); re-run boot",
+          "manifest changed (was #{short_etag(@manifest_etag)}, now #{short_etag(observed_etag)}); re-run boot",
         )
+      end
+
+      private
+
+      # First 8 hex chars after the "sha256:" prefix — a stable short id for
+      # the drift diagnostic. Tolerates non-prefixed values (delete_prefix is
+      # a no-op when the prefix is absent).
+      def short_etag(etag)
+        etag.to_s.delete_prefix("sha256:")[0, 8]
       end
     end
   end

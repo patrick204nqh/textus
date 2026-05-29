@@ -1,7 +1,6 @@
 require "spec_helper"
 require "tmpdir"
 require "fileutils"
-require "digest"
 
 RSpec.describe "Pulse manifest_etag" do
   include_context "textus_store_fixture"
@@ -20,7 +19,7 @@ RSpec.describe "Pulse manifest_etag" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:expected_etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
+  let(:expected_etag) { Textus::Etag.for_file(File.join(root, "manifest.yaml")) }
 
   it "includes manifest_etag in the pulse envelope" do
     result = store.as("human").pulse(since: 0)

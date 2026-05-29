@@ -9,7 +9,7 @@ module Textus
       new(
         role: role.to_s,
         correlation_id: correlation_id || SecureRandom.uuid,
-        now: now || Time.now,
+        now: now || Textus::Ports::Clock.now,
         dry_run: dry_run,
       )
     end

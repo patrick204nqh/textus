@@ -1,4 +1,3 @@
-require "digest"
 require "time"
 
 module Textus
@@ -59,7 +58,7 @@ module Textus
       end
 
       def doctor_summary
-        result  = Textus::Doctor.run_via(container: @container, role: @call.role)
+        result  = Textus::Doctor.build(container: @container)
         issues  = result["issues"] || []
         {
           "ok" => result["ok"],
@@ -69,7 +68,7 @@ module Textus
       end
 
       def manifest_etag
-        Digest::SHA256.hexdigest(File.read(File.join(@root, "manifest.yaml")))
+        @file_store.etag(File.join(@root, "manifest.yaml"))
       end
 
       def hook_errors_since(seq)

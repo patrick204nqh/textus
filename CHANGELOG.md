@@ -9,6 +9,39 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.29.0 — 2026-05-29
+
+A domain-purity pass that routes all filesystem and wall-clock I/O through injected ports. Breaking changes are Ruby-API only; the wire format (`textus/3`) and CLI are unchanged.
+
+### Breaking
+
+- `Domain::Staleness#initialize` now requires `file_stat:` and `clock:` (was `manifest:` only).
+- `Domain::Staleness::IntakeCheck#initialize` now requires `file_stat:` and `clock:`.
+- `Domain::Staleness::GeneratorCheck#initialize` now requires `file_stat:` (no clock — `GeneratorCheck` has no wall-clock dependency).
+- `Domain::Sentinel` is now a pure value object. Its persistence class methods (`write!`, `load`, `sentinel_path`) and `SUFFIX`/`DIR` constants have moved to the new `Ports::SentinelStore`.
+- `Domain::Sentinel#orphan?` and `#drift?` now take a `file_stat` argument.
+- `Textus::Boot.run_via(container:, role:)` → `Textus::Boot.build(container:)` (the `role:` parameter was unused).
+- `Textus::Doctor.run_via(container:, role:, checks:)` → `Textus::Doctor.build(container:, checks:)` (the `role:` parameter was unused).
+- `RoleScope#boot` / `#doctor` are removed as special cases; `boot` and `doctor` are now entries in `Dispatcher::VERBS`. `store.boot`, `store.doctor`, and `store.as(role).boot` are unchanged.
+
+### Added
+
+- `Ports::Storage::FileStat` — read-only filesystem query port (`exists?`, `directory?`, `read`, `mtime`, `glob`); the narrow interface pure domain logic depends on (distinct from the write-side `FileStore`).
+- `Ports::SentinelStore` — sentinel persistence + path-layout adapter, extracted from `Domain::Sentinel`.
+- `Read::Boot` and `Read::Doctor` — dispatched use-case classes on the uniform `(container:, call:)` shape.
+
+### Changed
+
+- `manifest_etag` (in `pulse` output and the MCP session drift token) is now the system-standard `sha256:`-prefixed etag, computed via `FileStore#etag`, instead of a bare SHA-256 hex digest. The token is opaque (compared for equality, never parsed).
+
+### Internal
+
+- The domain layer no longer performs direct filesystem or wall-clock I/O; all disk/clock access is routed through injected ports (`FileStat`, `Clock`). Enforced by a new `spec/domain_purity_spec.rb` that fails on any regression.
+- Freshness request timestamps now originate from `Ports::Clock` (via `Call.build`) rather than a bare `Time.now`.
+- Cosmetic refactors: deduped the audit limit guard; made `RefreshWorker.normalize_action_result` a public class method (dropped a `send`); extracted staleness guard helpers.
+- New guard spec `spec/no_handrolled_manifest_etag_spec.rb` forbids `Digest::SHA256.hexdigest(File.read(...))` from reappearing in `lib/` (exempt: `etag.rb` and `sentinel_store.rb`, the latter being a wire-pinned integrity checksum, not an etag).
+- See [ADR 0024](docs/architecture/decisions/0024-domain-purity-ports.md) for the design rationale.
+
 ## 0.28.0 — 2026-05-29
 
 A consistency-and-cleanup pass that finishes the seams [ADR 0022](docs/architecture/decisions/0022-container-call-dispatcher.md) left behind. Breaking changes are Ruby-API only.

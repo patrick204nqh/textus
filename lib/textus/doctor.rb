@@ -30,7 +30,7 @@ module Textus
 
     module_function
 
-    def run_via(container:, role: Textus::Role::DEFAULT, checks: nil) # rubocop:disable Lint/UnusedMethodArgument
+    def build(container:, checks: nil)
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?

@@ -6,7 +6,11 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil)
-        Textus::Domain::Staleness.new(manifest: @manifest).call(prefix: prefix, zone: zone)
+        Textus::Domain::Staleness.new(
+          manifest: @manifest,
+          file_stat: Textus::Ports::Storage::FileStat.new,
+          clock: Textus::Ports::Clock,
+        ).call(prefix: prefix, zone: zone)
       end
     end
   end
