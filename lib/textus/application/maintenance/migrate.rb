@@ -5,64 +5,47 @@ module Textus
     module Maintenance
       # Loads a YAML migration plan and dispatches each op to the
       # appropriate Maintenance use case. Concatenates resulting Plans.
-      module Migrate
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps, session: session).call(*, **)
+      class Migrate
+        def initialize(container:, call:, hook_context: nil)
+          @container    = container
+          @call         = call
+          @hook_context = hook_context
         end
 
-        class Impl
-          def initialize(ctx:, caps:, session:)
-            @ctx     = ctx
-            @caps    = caps
-            @session = session
+        def call(plan_yaml:, dry_run: false)
+          raw = YAML.safe_load(plan_yaml, permitted_classes: [Symbol], aliases: false)
+          raise UsageError.new("migration plan must be a YAML mapping") unless raw.is_a?(Hash)
+
+          ops = Array(raw["operations"])
+          all_steps = []
+          warnings = []
+
+          ops.each do |op_hash|
+            op_name = op_hash["op"]
+            sub_plan = invoke_op(op_name, op_hash, dry_run: dry_run)
+            all_steps.concat(sub_plan.steps)
+            warnings.concat(sub_plan.warnings)
           end
 
-          def call(plan_yaml:, dry_run: false)
-            raw = YAML.safe_load(plan_yaml, permitted_classes: [Symbol], aliases: false)
-            raise UsageError.new("migration plan must be a YAML mapping") unless raw.is_a?(Hash)
+          Plan.new(steps: all_steps, warnings: warnings)
+        end
 
-            ops = Array(raw["operations"])
-            all_steps = []
-            warnings = []
+        private
 
-            ops.each do |op_hash|
-              op_name = op_hash["op"]
-              sub_plan = invoke_op(op_name, op_hash, dry_run: dry_run)
-              all_steps.concat(sub_plan.steps)
-              warnings.concat(sub_plan.warnings)
-            end
+        def invoke_op(op_name, op_hash, dry_run:)
+          kwargs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
+          klass = op_class(op_name)
+          klass.new(
+            container: @container, call: @call, hook_context: @hook_context,
+          ).call(**kwargs)
+        end
 
-            Plan.new(steps: all_steps, warnings: warnings)
-          end
-
-          private
-
-          def invoke_op(op_name, op_hash, dry_run:)
-            kwargs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
-            case op_name
-            when "key_mv_prefix"
-              dispatch(KeyMvPrefix, kwargs)
-            when "key_delete_prefix"
-              dispatch(KeyDeletePrefix, kwargs)
-            when "zone_mv"
-              dispatch(ZoneMv, kwargs)
-            else
-              raise UsageError.new("unknown op: #{op_name}")
-            end
-          end
-
-          def dispatch(klass, kwargs)
-            container = Textus::Container.from_store_caps(
-              @session.read_caps, @session.write_caps, @session.hook_caps
-            )
-            call_value = Textus::Call.new(
-              role: @ctx.role, correlation_id: @ctx.correlation_id,
-              now: @ctx.now, dry_run: @ctx.dry_run
-            )
-            klass.new(
-              container: container, call: call_value,
-              hook_context: @session.hook_context
-            ).call(**kwargs)
+        def op_class(op_name)
+          case op_name
+          when "key_mv_prefix"     then KeyMvPrefix
+          when "key_delete_prefix" then KeyDeletePrefix
+          when "zone_mv"           then ZoneMv
+          else raise UsageError.new("unknown op: #{op_name}")
           end
         end
       end

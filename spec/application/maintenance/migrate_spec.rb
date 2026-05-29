@@ -22,8 +22,19 @@ RSpec.describe Textus::Application::Maintenance::Migrate do
 
   let(:store) { Textus::Store.new(root) }
   let(:ctx) { test_ctx(role: "human") }
-  let(:caps) { Textus::Application.caps_from_store(store)[1] }
-  let(:ops) { store.session(role: ctx.role) }
+
+  def build_migrate
+    read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
+    container = Textus::Container.from_store_caps(read_caps, write_caps, hook_caps)
+    call_value = Textus::Call.new(
+      role: ctx.role, correlation_id: ctx.correlation_id,
+      now: ctx.now, dry_run: ctx.dry_run
+    )
+    described_class.new(
+      container: container, call: call_value,
+      hook_context: store.session(role: ctx.role).hook_context
+    )
+  end
 
   it "runs a multi-op migration plan and returns combined Plan" do
     plan_yaml = <<~YAML
@@ -31,9 +42,7 @@ RSpec.describe Textus::Application::Maintenance::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    plan = described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
-      plan_yaml: plan_yaml, dry_run: false,
-    )
+    plan = build_migrate.call(plan_yaml: plan_yaml, dry_run: false)
     expect(plan.steps.map { |s| s["op"] }).to include("mv")
     expect(File.exist?(File.join(root, "zones/working/new/a.md"))).to be(true)
   end
@@ -44,15 +53,13 @@ RSpec.describe Textus::Application::Maintenance::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
-      plan_yaml: plan_yaml, dry_run: true,
-    )
+    build_migrate.call(plan_yaml: plan_yaml, dry_run: true)
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(true)
   end
 
   it "raises on unknown op" do
     expect do
-      described_class::Impl.new(ctx: ctx, caps: caps, session: ops).call(
+      build_migrate.call(
         plan_yaml: "version: 1\noperations:\n  - { op: bogus }\n", dry_run: true,
       )
     end.to raise_error(Textus::Error, /unknown op/)
