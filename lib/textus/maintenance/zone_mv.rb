@@ -6,7 +6,7 @@ module Textus
     # the `zone:` field on every entry under the old zone, and moves
     # every file from zones/<old>/ to zones/<new>/.
     class ZoneMv
-      def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:)
         @container = container
         @call      = call
         @manifest  = container.manifest

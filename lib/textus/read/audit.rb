@@ -7,7 +7,7 @@ module Textus
     # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
     # rows produce nil and are skipped).
     class Audit
-      def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest  = container.manifest
         @root      = container.root
         @log_path  = File.join(container.root, "audit.log")

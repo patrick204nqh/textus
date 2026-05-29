@@ -3,7 +3,7 @@ module Textus
     # For one key, surface every matching policy block along with the
     # per-slot effective value (which loses ties win-by-specificity).
     class PolicyExplain
-      def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end
 

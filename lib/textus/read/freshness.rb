@@ -7,7 +7,7 @@ module Textus
     # current status. Status is one of :fresh, :stale, :never_refreshed, or
     # :no_policy.
     class Freshness
-      def initialize(container:, call:, hook_context: nil, evaluator: Textus::Domain::Freshness::Evaluator) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
         @call       = call
         @manifest   = container.manifest

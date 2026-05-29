@@ -1,7 +1,7 @@
 module Textus
   module Read
     class Where
-      def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end
 

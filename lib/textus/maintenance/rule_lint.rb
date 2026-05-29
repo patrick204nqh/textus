@@ -6,7 +6,7 @@ module Textus
     # YAML string. Returns a Plan describing rule additions/removals/
     # changes. Does NOT write anything.
     class RuleLint
-      def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:)
         @container = container
         @call      = call
         @root      = container.root
