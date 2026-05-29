@@ -9,84 +9,84 @@ module Textus
       # logic.
       #
       # Return shape: { "protocol", "built", "published_leaves" }
-      module Publish
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(
-            ctx: ctx, caps: caps,
-            rpc: session.rpc,
-            session: session,
-            hook_context: session.hook_context
-          ).call(*, **)
+      class Publish
+        def initialize(container:, call:, hook_context:, session:)
+          @container    = container
+          @call         = call
+          @manifest     = container.manifest
+          @file_store   = container.file_store
+          @events       = container.events
+          @root         = container.root
+          @rpc          = container.rpc
+          @session      = session
+          @hook_context = hook_context
         end
 
-        class Impl
-          def initialize(ctx:, caps:, rpc:, session:, hook_context:)
-            @ctx          = ctx
-            @caps         = caps
-            @manifest     = caps.manifest
-            @file_store   = caps.file_store
-            @events       = caps.events
-            @root         = caps.root
-            @rpc          = rpc
-            @session      = session
-            @hook_context = hook_context
-          end
+        def call(prefix: nil)
+          built  = []
+          leaves = []
+          context = build_context
 
-          def call(prefix: nil)
-            built  = []
-            leaves = []
-            context = build_context
+          @manifest.data.entries.each do |mentry|
+            next if prefix && !entry_matches_prefix?(mentry, prefix)
 
-            @manifest.data.entries.each do |mentry|
-              next if prefix && !entry_matches_prefix?(mentry, prefix)
+            result = mentry.publish_via(context, prefix: prefix)
+            next if result.nil?
 
-              result = mentry.publish_via(context, prefix: prefix)
-              next if result.nil?
-
-              case result[:kind]
-              when :built  then built << result[:value]
-              when :leaves then leaves.concat(result[:value])
-              end
-            end
-
-            { "protocol" => Textus::PROTOCOL, "built" => built, "published_leaves" => leaves }
-          end
-
-          private
-
-          def build_context
-            Textus::Manifest::Entry::Base::PublishContext.new(
-              repo_root: File.dirname(@root),
-              manifest: @manifest,
-              file_store: @file_store,
-              root: @root,
-              caps: @caps,
-              rpc: @rpc,
-              session: @session,
-              ctx: @ctx,
-              bus: @events,
-              hook_context: @hook_context,
-              reader: reader,
-              emit: ->(event, **payload) { @events.publish(event, ctx: @hook_context, **payload) },
-            )
-          end
-
-          # Whether the entry should be processed for the given prefix filter.
-          def entry_matches_prefix?(mentry, prefix)
-            return true unless prefix
-
-            case mentry
-            when Textus::Manifest::Entry::Nested
-              mentry.key.start_with?(prefix) ||
-                prefix.start_with?("#{mentry.key}.")
-            else
-              mentry.key.start_with?(prefix)
+            case result[:kind]
+            when :built  then built << result[:value]
+            when :leaves then leaves.concat(result[:value])
             end
           end
 
-          def reader
-            @reader ||= Textus::Application::Read::Get::Impl.new(ctx: @ctx, caps: @caps)
+          { "protocol" => Textus::PROTOCOL, "built" => built, "published_leaves" => leaves }
+        end
+
+        private
+
+        def build_context
+          Textus::Manifest::Entry::Base::PublishContext.new(
+            repo_root: File.dirname(@root),
+            manifest: @manifest,
+            file_store: @file_store,
+            root: @root,
+            caps: caps_struct,
+            rpc: @rpc,
+            session: @session,
+            ctx: @call,
+            bus: @events,
+            hook_context: @hook_context,
+            reader: reader,
+            emit: ->(event, **payload) { @events.publish(event, ctx: @hook_context, **payload) },
+          )
+        end
+
+        # Reconstruct a write-caps-shaped struct for downstream consumers
+        # (Materializer) that still take caps:. Mirrors WriteCaps fields.
+        def caps_struct
+          @caps_struct ||= Struct.new(
+            :manifest, :file_store, :schemas, :root, :audit_log, :events, :authorizer
+          ).new(
+            @manifest, @file_store, @container.schemas, @root,
+            @container.audit_log, @events, @container.authorizer
+          )
+        end
+
+        # Whether the entry should be processed for the given prefix filter.
+        def entry_matches_prefix?(mentry, prefix)
+          return true unless prefix
+
+          case mentry
+          when Textus::Manifest::Entry::Nested
+            mentry.key.start_with?(prefix) ||
+              prefix.start_with?("#{mentry.key}.")
+          else
+            mentry.key.start_with?(prefix)
           end
+        end
+
+        def reader
+          @reader ||= Textus::Application::Read::Get::Impl.new(ctx: @call, caps: caps_struct)
         end
       end
     end

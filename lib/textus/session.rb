@@ -82,7 +82,12 @@ module Textus
             role: @ctx.role, correlation_id: @ctx.correlation_id,
             now: @ctx.now, dry_run: @ctx.dry_run
           )
-          mod.new(container: container, call: call_value, hook_context: hook_context).call(*args, **kwargs)
+          init_kwargs = { container: container, call: call_value, hook_context: hook_context }
+          # Use cases that need to re-enter the verb dispatcher (Publish,
+          # RefreshOrchestrator, RefreshAll) accept an optional session: kwarg.
+          params = mod.instance_method(:initialize).parameters.map { |_, n| n }
+          init_kwargs[:session] = self if params.include?(:session)
+          mod.new(**init_kwargs).call(*args, **kwargs)
         else
           fixed = { session: self, ctx: @ctx, caps: caps_sym == :read ? @read_caps : @write_caps }
           mod.call(*args, **fixed, **kwargs)

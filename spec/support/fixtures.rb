@@ -132,10 +132,15 @@ module TextusSpecHelpers
 
   def build_publish(store, ctx)
     p = writes_caps(store, ctx)
-    Textus::Application::Write::Publish::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
-      session: p[:session],
-      hook_context: p[:hook_context]
+    read_caps, write_caps, hook_caps = Textus::Application.caps_from_store(store)
+    container = Textus::Container.from_store_caps(read_caps, write_caps, hook_caps)
+    call_value = Textus::Call.new(
+      role: ctx.role, correlation_id: ctx.correlation_id,
+      now: ctx.now, dry_run: ctx.dry_run
+    )
+    Textus::Application::Write::Publish.new(
+      container: container, call: call_value,
+      hook_context: p[:hook_context], session: p[:session]
     )
   end
 end
