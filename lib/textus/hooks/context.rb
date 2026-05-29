@@ -8,6 +8,16 @@ module Textus
     class Context
       attr_reader :role, :correlation_id
 
+      def self.for(container:, call:)
+        scope = Textus::RoleScope.new(
+          container: container,
+          role: call.role,
+          correlation_id: call.correlation_id,
+          dry_run: call.dry_run,
+        )
+        new(scope: scope)
+      end
+
       def initialize(scope:)
         @scope          = scope
         @role           = scope.role

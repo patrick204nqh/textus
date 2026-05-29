@@ -53,6 +53,10 @@ module Textus
     end
 
     module Pipeline
+      Deps = Data.define(
+        :manifest, :reader, :lister, :rpc, :template_loader, :transform_context, :inject_boot
+      )
+
       def self.renderers
         @renderers ||= {
           "markdown" => Renderer::Markdown,
@@ -62,37 +66,34 @@ module Textus
         }
       end
 
-      # rubocop:disable Metrics/ParameterLists
-      def self.run(mentry:, manifest:, reader:, lister:, rpc:, template_loader:,
-                   transform_context: nil, inject_boot: nil)
+      def self.run(mentry:, deps:)
         # 1. Load sources + project + reduce
         data =
           if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
             Textus::Projection.new(
-              reader: reader,
+              reader: deps.reader,
               spec: mentry.source.to_h.transform_keys(&:to_s),
-              lister: lister,
-              rpc: rpc,
-              transform_context: transform_context,
+              lister: deps.lister,
+              rpc: deps.rpc,
+              transform_context: deps.transform_context,
             ).run
           else
             { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
           end
-        data = data.merge("boot" => inject_boot.call) if mentry.inject_boot && inject_boot
+        data = data.merge("boot" => deps.inject_boot.call) if mentry.inject_boot && deps.inject_boot
 
         # 2. Render
         klass = renderers[mentry.format] or
           raise UsageError.new("builder: unsupported format #{mentry.format.inspect} for '#{mentry.key}'")
-        bytes = klass.new(template_loader: template_loader).call(mentry: mentry, data: data)
+        bytes = klass.new(template_loader: deps.template_loader).call(mentry: mentry, data: data)
 
         # 3. Write (idempotent: skip if only generated_at would differ)
-        target_path = Key::Path.resolve(manifest.data, mentry)
+        target_path = Key::Path.resolve(deps.manifest.data, mentry)
         FileUtils.mkdir_p(File.dirname(target_path))
         write_if_changed(target_path, bytes, mentry.format)
 
         target_path
       end
-      # rubocop:enable Metrics/ParameterLists
 
       def self.write_if_changed(target_path, bytes, format)
         if File.exist?(target_path)

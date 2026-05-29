@@ -14,12 +14,12 @@ module Textus
       class Writer
         Payload = Data.define(:meta, :body, :content)
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, ctx:, reader:)
+        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:)
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas
           @audit_log  = audit_log
-          @ctx        = ctx
+          @call       = call
           @reader     = reader
         end
 
@@ -56,9 +56,9 @@ module Textus
             meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
           )
           @audit_log.append(
-            role: @ctx.role, verb: "put", key: key,
+            role: @call.role, verb: "put", key: key,
             etag_before: etag_before, etag_after: etag_after,
-            extras: @ctx.correlation_id ? { "correlation_id" => @ctx.correlation_id } : nil
+            extras: @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
           )
           envelope
         end
@@ -75,9 +75,9 @@ module Textus
 
           @file_store.delete(path)
           @audit_log.append(
-            role: @ctx.role, verb: "delete", key: key,
+            role: @call.role, verb: "delete", key: key,
             etag_before: etag_before, etag_after: nil,
-            extras: @ctx.correlation_id ? { "correlation_id" => @ctx.correlation_id } : nil
+            extras: @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
           )
         end
 
@@ -108,10 +108,10 @@ module Textus
             "from_path" => from_path, "to_path" => to_path,
             "uid" => envelope.uid
           }
-          extras["correlation_id"] = @ctx.correlation_id if @ctx.correlation_id
+          extras["correlation_id"] = @call.correlation_id if @call.correlation_id
 
           @audit_log.append(
-            role: @ctx.role, verb: "mv", key: to_key,
+            role: @call.role, verb: "mv", key: to_key,
             etag_before: etag_before, etag_after: etag_after,
             extras: extras
           )

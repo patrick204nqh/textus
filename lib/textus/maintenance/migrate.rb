@@ -5,10 +5,9 @@ module Textus
     # Loads a YAML migration plan and dispatches each op to the
     # appropriate Maintenance use case. Concatenates resulting Plans.
     class Migrate
-      def initialize(container:, call:, hook_context: nil)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
-        @hook_context = hook_context
       end
 
       def call(plan_yaml:, dry_run: false)
@@ -35,7 +34,7 @@ module Textus
         kwargs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
         klass = op_class(op_name)
         klass.new(
-          container: @container, call: @call, hook_context: @hook_context,
+          container: @container, call: @call,
         ).call(**kwargs)
       end
 

@@ -8,7 +8,7 @@ module Textus
     # APIs; pulse is sugar with a stable envelope shape and a monotonic
     # cursor (seq).
     class Pulse
-      def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:)
         @container  = container
         @call       = call
         @manifest   = container.manifest

@@ -1,13 +1,12 @@
 module Textus
   module Write
     class Delete
-      def initialize(container:, call:, hook_context:)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
         @manifest     = container.manifest
         @authorizer   = container.authorizer
         @events       = container.events
-        @hook_context = hook_context
       end
 
       def call(key, if_etag: nil, suppress_events: false)
@@ -20,7 +19,7 @@ module Textus
 
         unless suppress_events
           @events.publish(:entry_deleted,
-                          ctx: @hook_context,
+                          ctx: hook_context,
                           key: key)
         end
 
@@ -29,13 +28,17 @@ module Textus
 
       private
 
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
+
       def writer
         @writer ||= Textus::Envelope::IO::Writer.new(
           file_store: @container.file_store,
           manifest: @container.manifest,
           schemas: @container.schemas,
           audit_log: @container.audit_log,
-          ctx: @call,
+          call: @call,
           reader: reader,
         )
       end

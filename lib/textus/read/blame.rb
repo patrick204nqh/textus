@@ -7,7 +7,7 @@ module Textus
     # row. Falls back to `git => nil` when not in a git repo or when the
     # file is untracked.
     class Blame
-      def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @container = container
         @manifest  = container.manifest
         @root      = container.root

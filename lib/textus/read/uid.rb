@@ -1,7 +1,7 @@
 module Textus
   module Read
     class Uid
-      def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:)
         @container = container
         @call      = call
       end

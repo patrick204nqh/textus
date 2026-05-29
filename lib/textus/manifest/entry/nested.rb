@@ -1,5 +1,3 @@
-require_relative "validators/publish_each"
-
 module Textus
   class Manifest
     class Entry

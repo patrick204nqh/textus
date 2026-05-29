@@ -23,13 +23,15 @@ module Textus
         lister = Textus::Read::List.new(container: @container)
         Builder::Pipeline.run(
           mentry: mentry,
-          manifest: @manifest,
-          reader: reader.method(:call),
-          lister: lister.method(:call),
-          rpc: @rpc,
-          template_loader: ->(name) { read_template(name) },
-          transform_context: @container,
-          inject_boot: -> { Textus::Boot.run_via(container: @container, role: @call.role) },
+          deps: Builder::Pipeline::Deps.new(
+            manifest: @manifest,
+            reader: reader.method(:call),
+            lister: lister.method(:call),
+            rpc: @rpc,
+            template_loader: ->(name) { read_template(name) },
+            transform_context: @container,
+            inject_boot: -> { Textus::Boot.run_via(container: @container, role: @call.role) },
+          ),
         )
       end
 

@@ -6,7 +6,7 @@ module Textus
     # For interactive reads that want refresh-on-stale, use
     # `Read::GetOrRefresh`, which composes this with the orchestrator.
     class Get
-      def initialize(container:, call:, hook_context: nil, evaluator: Textus::Domain::Freshness::Evaluator) # rubocop:disable Lint/UnusedMethodArgument
+      def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
         @call       = call
         @manifest   = container.manifest

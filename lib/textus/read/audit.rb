@@ -7,16 +7,39 @@ module Textus
     # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
     # rows produce nil and are skipped).
     class Audit
-      def initialize(container:, call: nil, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      # Value object that carries all filter parameters for an audit query.
+      # `matches?` checks the manifest-independent predicates so the loop body
+      # only needs to handle the zone check (which requires manifest access).
+      Query = Data.define(:key, :zone, :role, :verb, :since, :seq_since, :correlation_id, :limit) do
+        # rubocop:disable Metrics/ParameterLists
+        def self.build(key: nil, zone: nil, role: nil, verb: nil,
+                       since: nil, seq_since: nil, correlation_id: nil, limit: nil)
+          new(key:, zone:, role:, verb:, since:, seq_since:, correlation_id:, limit:)
+        end
+        # rubocop:enable Metrics/ParameterLists
+
+        def matches?(row)
+          return false if key && row["key"] != key
+          return false if role && row["role"] != role
+          return false if verb && row["verb"] != verb
+          return false if since && (row["ts"].nil? || Time.parse(row["ts"]) < since)
+          return false if seq_since && (row["seq"].nil? || row["seq"] <= seq_since)
+          return false if correlation_id && row.dig("extras", "correlation_id") != correlation_id
+
+          true
+        end
+      end
+
+      def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest  = container.manifest
         @root      = container.root
         @log_path  = File.join(container.root, "audit.log")
         @audit_log = container.audit_log
       end
 
-      # rubocop:disable Metrics/ParameterLists, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-      def call(key: nil, zone: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil)
-        check_cursor_expiry!(seq_since)
+      def call(**filters)
+        query = Query.build(**filters)
+        check_cursor_expiry!(query.seq_since)
 
         files = all_log_files
         return [] if files.empty?
@@ -26,22 +49,16 @@ module Textus
           File.foreach(file) do |line|
             parsed = parse_row(line.chomp)
             next unless parsed
-            next if key && parsed["key"] != key
-            next if role && parsed["role"] != role
-            next if verb && parsed["verb"] != verb
-            next if zone && !key_in_zone?(parsed["key"], zone)
-            next if since && (parsed["ts"].nil? || Time.parse(parsed["ts"]) < since)
-            next if seq_since && (parsed["seq"].nil? || parsed["seq"] <= seq_since)
-            next if correlation_id && parsed.dig("extras", "correlation_id") != correlation_id
+            next unless query.matches?(parsed)
+            next if query.zone && !key_in_zone?(parsed["key"], query.zone)
 
             rows << parsed
-            break if limit && rows.length >= limit
+            break if query.limit && rows.length >= query.limit
           end
-          break if limit && rows.length >= limit
+          break if query.limit && rows.length >= query.limit
         end
         rows
       end
-      # rubocop:enable Metrics/ParameterLists, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       # Accepts ISO8601 ("2026-01-15", "2026-01-15T10:00:00Z") or a relative
       # offset matching /\A(\d+)([smhd])\z/. Returns nil for unparseable input.

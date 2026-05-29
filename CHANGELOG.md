@@ -9,6 +9,27 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.28.0 — 2026-05-29
+
+A consistency-and-cleanup pass that finishes the seams [ADR 0022](docs/architecture/decisions/0022-container-call-dispatcher.md) left behind. Breaking changes are Ruby-API only.
+
+### Breaking
+
+- Use-case constructors no longer accept `hook_context:`. Use cases that emit events derive their `Hooks::Context` internally from `(container, call)` via the new `Textus::Hooks::Context.for(container:, call:)` factory. Every use case now has the uniform shape `def initialize(container:, call:)`.
+- `Textus::Envelope::IO::Writer` and `Textus::Write::RefreshOrchestrator` constructors take `call:` instead of `ctx:` (both received a `Call` already; the kwarg name is corrected).
+- `Read::Audit#call` now accepts filter keywords and builds a `Read::Audit::Query` value object internally — keyword callers (`store.audit(key:, limit:)`) are unchanged.
+- `Builder::Pipeline.run` takes `(mentry:, deps:)` where `deps` is a `Builder::Pipeline::Deps` record, instead of eight loose keyword collaborators.
+- Removed the `CLI::VERBS` const-missing shim (use `CLI.verbs`).
+- Removed the `Manifest::Entry::PUBLISH_EACH_VARS` / `PUBLISH_EACH_VAR_RE` re-exports (use `Manifest::Entry::Validators::PublishEach::KNOWN_VARS` / `::VAR_RE`).
+
+### Internal
+
+- Removed the runtime `initialize`-parameter reflection from both `RoleScope` and `Doctor::Check`; verb dispatch is now an unconditional `klass.new(container:, call:).call(...)`.
+- `Lint/UnusedMethodArgument` disables dropped from 27 to 20; two `Metrics/ParameterLists` (and two complexity) disables removed by the value-object refactors. `Metrics/ParameterLists` ceiling documented and kept at `Max 6` (the honest ceiling for value-object constructors, `AuditLog#append`, and the public `put` API).
+- `ARCHITECTURE.md`'s "uniform `(container:, call:)`" claim is now accurate; active docs refreshed to the 0.27/0.28 vocabulary.
+- No wire-format change. Protocol stays at `textus/3`. CLI verb signatures unchanged. Hook callable surfaces (`ctx:` for pub-sub, `caps:` for RPC) unchanged.
+- See [ADR 0023](docs/architecture/decisions/0023-uniform-use-case-shape.md) for the design rationale.
+
 ## 0.27.0 — 2026-05-29
 
 ### Breaking

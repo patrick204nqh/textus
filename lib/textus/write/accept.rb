@@ -5,14 +5,12 @@ module Textus
     class Accept
       include AuthorityGate
 
-      def initialize(container:, call:, hook_context:)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
-        @ctx          = call # AuthorityGate uses @ctx.role
         @manifest     = container.manifest
         @schemas      = container.schemas
         @events       = container.events
-        @hook_context = hook_context
       end
 
       def call(pending_key)
@@ -43,7 +41,7 @@ module Textus
         delete_op.call(pending_key)
 
         @events.publish(:proposal_accepted,
-                        ctx: @hook_context,
+                        ctx: hook_context,
                         key: pending_key,
                         target_key: target)
 
@@ -52,15 +50,19 @@ module Textus
 
       private
 
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
+
       def put_op
         @put_op ||= Textus::Write::Put.new(
-          container: @container, call: @call, hook_context: @hook_context,
+          container: @container, call: @call,
         )
       end
 
       def delete_op
         @delete_op ||= Textus::Write::Delete.new(
-          container: @container, call: @call, hook_context: @hook_context,
+          container: @container, call: @call,
         )
       end
 

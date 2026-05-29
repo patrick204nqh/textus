@@ -1,15 +1,14 @@
 module Textus
   module Write
     class RefreshAll
-      def initialize(container:, call:, hook_context:)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
-        @hook_context = hook_context
       end
 
       def call(prefix: nil, zone: nil)
         worker = Textus::Write::RefreshWorker.new(
-          container: @container, call: @call, hook_context: @hook_context,
+          container: @container, call: @call,
         )
 
         stale_rows = Textus::Read::Stale.new(container: @container, call: @call).call(prefix: prefix, zone: zone)

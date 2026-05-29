@@ -2,10 +2,9 @@ module Textus
   module Maintenance
     # Bulk-delete every leaf key under `prefix`.
     class KeyDeletePrefix
-      def initialize(container:, call:, hook_context: nil)
+      def initialize(container:, call:)
         @container    = container
         @call         = call
-        @hook_context = hook_context
       end
 
       def call(prefix:, dry_run: false)
@@ -30,7 +29,7 @@ module Textus
       private
 
       def delete
-        Write::Delete.new(container: @container, call: @call, hook_context: @hook_context)
+        Write::Delete.new(container: @container, call: @call)
       end
     end
   end

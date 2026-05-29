@@ -75,7 +75,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
 
 `changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from `freshness`. `pending_review` lists keys in the review zone. `doctor` is a count summary.
 
-### New in 0.25.0
+### Drift, scheduling, and hook-error signals
 
 - **`manifest_etag`** — sha256 of `manifest.yaml`. If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
 - **`next_due_at`** — earliest `next_due_at` across all entries with a refresh policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
