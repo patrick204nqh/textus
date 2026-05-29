@@ -10,7 +10,7 @@ module Textus
       #
       # Return shape: { "protocol", "built", "published_leaves" }
       class Publish
-        def initialize(container:, call:, hook_context:, session:)
+        def initialize(container:, call:, hook_context:)
           @container    = container
           @call         = call
           @manifest     = container.manifest
@@ -18,7 +18,6 @@ module Textus
           @events       = container.events
           @root         = container.root
           @rpc          = container.rpc
-          @session      = session
           @hook_context = hook_context
         end
 
@@ -52,7 +51,8 @@ module Textus
             root: @root,
             caps: caps_struct,
             rpc: @rpc,
-            session: @session,
+            session: nil,
+            container: @container,
             ctx: @call,
             bus: @events,
             hook_context: @hook_context,

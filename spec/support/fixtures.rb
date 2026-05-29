@@ -145,7 +145,7 @@ module TextusSpecHelpers
     )
     Textus::Application::Write::Publish.new(
       container: container, call: call_value,
-      hook_context: p[:hook_context], session: p[:session]
+      hook_context: p[:hook_context]
     )
   end
 end

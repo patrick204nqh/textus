@@ -8,26 +8,41 @@ module Textus
     class Context
       attr_reader :role, :correlation_id
 
-      def initialize(session:)
+      def initialize(session: nil, scope: nil)
         @session = session
-        @role = session.ctx.role
-        @correlation_id = session.ctx.correlation_id
+        @scope   = scope
+        if session
+          @role = session.ctx.role
+          @correlation_id = session.ctx.correlation_id
+        elsif scope
+          @role = scope.role
+          @correlation_id = scope.correlation_id
+        end
+      end
+
+      def backend
+        @session || @scope
       end
 
       # read
-      def get(key)                = @session.get(key)
-      def list(**)                = @session.list(**)
-      def deps(key)               = @session.deps(key)
-      def freshness(key)          = @session.freshness(key)
+      def get(key)                = backend.get(key)
+      def list(**)                = backend.list(**)
+      def deps(key)               = backend.deps(key)
+      def freshness(key)          = backend.freshness(key)
 
       # write (authorized + audited)
-      def put(key, **)          = @session.put(key, **)
-      def delete(key, **)       = @session.delete(key, **)
-      def audit(verb, key:, **) = @session.write_caps.audit_log.append(role: @role, verb: verb, key: key, **)
+      def put(key, **)          = backend.put(key, **)
+      def delete(key, **)       = backend.delete(key, **)
+
+      def audit(verb, key:, **)
+        log = @session ? @session.write_caps.audit_log : @scope.container.audit_log
+        log.append(role: @role, verb: verb, key: key, **)
+      end
 
       # fan-out
       def publish_followup(event, **)
-        @session.write_caps.events.publish(event, ctx: self, **)
+        bus = @session ? @session.write_caps.events : @scope.container.events
+        bus.publish(event, ctx: self, **)
       end
 
       def inspect

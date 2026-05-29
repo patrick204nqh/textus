@@ -9,7 +9,7 @@ module Textus
       # APIs; pulse is sugar with a stable envelope shape and a monotonic
       # cursor (seq).
       class Pulse
-        def initialize(container:, call:, session:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+        def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
           @container  = container
           @call       = call
           @manifest   = container.manifest
@@ -17,7 +17,6 @@ module Textus
           @audit_log  = container.audit_log
           @root       = container.root
           @events     = container.events
-          @session    = session
         end
 
         def call(since: 0)
@@ -61,7 +60,7 @@ module Textus
         end
 
         def doctor_summary
-          result  = Textus::Doctor.run(@session)
+          result  = Textus::Doctor.run_via(container: @container, role: @call.role)
           issues  = result["issues"] || []
           {
             "ok" => result["ok"],
