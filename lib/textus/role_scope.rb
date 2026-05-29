@@ -46,10 +46,7 @@ module Textus
         call_value = Textus::Call.build(
           role: @role, correlation_id: @correlation_id, dry_run: @dry_run,
         )
-        params = klass.instance_method(:initialize).parameters.map { |_, n| n }
-        init_kwargs = { container: @container, call: call_value }
-        init_kwargs[:hook_context] = Textus::Hooks::Context.new(scope: self) if params.include?(:hook_context)
-        klass.new(**init_kwargs).call(*args, **kwargs)
+        klass.new(container: @container, call: call_value).call(*args, **kwargs)
       end
     end
   end

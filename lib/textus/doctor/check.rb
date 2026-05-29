@@ -32,10 +32,7 @@ module Textus
       def dispatch(verb, *, **)
         klass = Textus::Dispatcher.fetch(verb)
         call_value = Textus::Call.build(role: Textus::Role::DEFAULT)
-        init_kwargs = { container: @container, call: call_value }
-        params = klass.instance_method(:initialize).parameters.map { |_, n| n }
-        init_kwargs[:hook_context] = nil if params.include?(:hook_context)
-        klass.new(**init_kwargs).call(*, **)
+        klass.new(container: @container, call: call_value).call(*, **)
       end
     end
   end

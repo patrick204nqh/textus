@@ -1,6 +1,9 @@
 module Textus
   module Write
     class RefreshOrchestrator
+      # Collaborator (not a Dispatcher verb): constructed directly by RefreshWorker /
+      # GetOrRefresh, which pass their derived hook_context in. That's why this takes
+      # hook_context: explicitly while verb use cases derive their own.
       def initialize(worker:, store_root:, events:, call: nil, hook_context: nil, detached_spawner: nil)
         @worker       = worker
         @store_root   = store_root
