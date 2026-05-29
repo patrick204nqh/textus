@@ -62,6 +62,11 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Max: 15
 Metrics/ParameterLists:
+  # Honest ceiling for this codebase: value-object constructors/factories
+  # (Envelope.build, Entry, Error, Freshness.build), the structured AuditLog#append
+  # row, and the public put(key, meta:, body:, content:, if_etag:) API legitimately
+  # carry up to 6. Behavioural methods that ballooned past this (Read::Audit,
+  # Builder::Pipeline) were refactored to value objects in 0.28.0.
   Max: 6
 Metrics/BlockLength:
   Exclude:
