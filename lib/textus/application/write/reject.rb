@@ -19,7 +19,7 @@ module Textus
           assert_accept_authority!("reject")
 
           mentry = @manifest.resolver.resolve(pending_key).entry
-          unless mentry.in_proposal_zone?
+          unless mentry.in_proposal_zone?(@manifest.policy)
             raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
           end
 

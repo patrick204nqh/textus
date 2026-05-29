@@ -3,7 +3,7 @@ module Textus
     class Entry
       module Validators
         module IndexFilename
-          def self.call(entry)
+          def self.call(entry, policy: nil) # rubocop:disable Lint/UnusedMethodArgument
             # Use raw to detect misuse on non-nested entries (typed attr stubs nil on Base).
             index_filename = entry.nested? ? entry.index_filename : entry.raw["index_filename"]
             return if index_filename.nil?

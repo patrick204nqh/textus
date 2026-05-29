@@ -60,8 +60,8 @@ module Textus
 
       def build_entries(raw)
         Array(raw["entries"]).map do |e|
-          entry = Manifest::Entry::Parser.call(self, e)
-          Manifest::Entry::Validators.run_all(entry)
+          entry = Manifest::Entry::Parser.call(e)
+          Manifest::Entry::Validators.run_all(entry, policy: @policy)
           entry
         end.freeze
       end

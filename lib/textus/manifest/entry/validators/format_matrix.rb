@@ -3,7 +3,7 @@ module Textus
     class Entry
       module Validators
         module FormatMatrix
-          def self.call(entry)
+          def self.call(entry, policy:)
             begin
               Textus::Entry.for_format(entry.format).validate_path_extension(entry.path, entry.nested?)
             rescue UsageError => e
@@ -17,7 +17,7 @@ module Textus
             has_template = !entry.template.nil?
             is_external  = entry.derived? && entry.external?
             is_intake    = entry.intake?
-            return unless entry.in_generator_zone? && !has_template && !is_external && !is_intake &&
+            return unless entry.in_generator_zone?(policy) && !has_template && !is_external && !is_intake &&
                           %w[markdown text].include?(entry.format) && !entry.nested?
 
             raise UsageError.new("entry '#{entry.key}': #{entry.format} entries in a generator zone require a template")

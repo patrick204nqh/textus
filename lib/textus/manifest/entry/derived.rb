@@ -20,7 +20,7 @@ module Textus
         def external?   = @source.is_a?(External)
 
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          return nil unless in_generator_zone?
+          return nil unless in_generator_zone?(pctx.manifest.policy)
 
           target_path = Textus::Application::Write::Materializer.new(
             ctx: pctx.ctx, caps: pctx.caps, rpc: pctx.rpc, container: pctx.container,

@@ -2,11 +2,10 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :manifest, :publish_to
+        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :publish_to
 
         # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
-        def initialize(manifest:, raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
-          @manifest = manifest
+        def initialize(raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
           @raw = raw
           @key = key
           @path = path
@@ -18,14 +17,14 @@ module Textus
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
-        def zone_writers
-          @manifest.policy.zone_writers(@zone)
+        def zone_writers(policy)
+          policy.zone_writers(@zone)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone? = @manifest.policy.zone_kinds(@zone).include?(:generator)
-        def in_proposal_zone?  = @manifest.policy.zone_kinds(@zone).include?(:proposer)
+        def in_generator_zone?(policy) = policy.zone_kinds(@zone).include?(:generator)
+        def in_proposal_zone?(policy)  = policy.zone_kinds(@zone).include?(:proposer)
 
         def nested?  = false
         def derived? = false

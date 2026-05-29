@@ -117,8 +117,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
               template: report.mustache, compute: { kind: projection, select: "self.*" } }
       YAML
       entry = m.data.entries.first
-      expect(entry.in_generator_zone?).to be true
-      expect(entry.in_proposal_zone?).to be false
+      expect(entry.in_generator_zone?(m.policy)).to be true
+      expect(entry.in_proposal_zone?(m.policy)).to be false
     end
 
     it "recognizes a renamed proposal zone" do
@@ -134,8 +134,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
       YAML
       entry = m.data.entries.first
-      expect(entry.in_proposal_zone?).to be true
-      expect(entry.in_generator_zone?).to be false
+      expect(entry.in_proposal_zone?(m.policy)).to be true
+      expect(entry.in_generator_zone?(m.policy)).to be false
     end
   end
 end

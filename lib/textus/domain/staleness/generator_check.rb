@@ -13,7 +13,7 @@ module Textus
         end
 
         def rows_for(mentry)
-          return [] unless mentry.in_generator_zone?
+          return [] unless mentry.in_generator_zone?(@manifest.policy)
           return [] unless mentry.is_a?(Textus::Manifest::Entry::Derived)
 
           src = mentry.source

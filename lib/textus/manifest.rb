@@ -43,17 +43,12 @@ module Textus # rubocop:disable Style/OneClassPerFile
 
       def build(raw, root)
         data = Manifest::Data.parse(raw, root: root)
-        composition = new(
+        new(
           data: data,
           resolver: Manifest::Resolver.new(data),
           policy: data.policy,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
-        # Re-point entries' back-reference from Data to the composition
-        # record. Entries call `@manifest.policy.*` / `@manifest.resolver.*`
-        # at use time (see Entry::Base, Entry::Nested).
-        data.entries.each { |e| e.instance_variable_set(:@manifest, composition) }
-        composition
       end
 
       def check_version!(raw, source)

@@ -37,7 +37,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
-          @manifest.resolver.enumerate(prefix: @key).each do |row|
+          pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
 

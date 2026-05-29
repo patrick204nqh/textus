@@ -4,7 +4,7 @@ module Textus
       module Parser
         COMPUTE_KINDS = %w[projection external].freeze
 
-        def self.call(manifest, raw)
+        def self.call(raw)
           key = raw["key"] or raise UsageError.new("manifest entry missing key")
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
           zone = raw["zone"] or raise UsageError.new("manifest entry '#{key}' missing zone")
@@ -14,7 +14,7 @@ module Textus
           format = resolve_format(raw, path)
 
           common = {
-            manifest: manifest, raw: raw,
+            raw: raw,
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
             format: format,
