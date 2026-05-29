@@ -13,7 +13,7 @@ module Textus
         def self.call(*, session:, ctx:, caps:, **)
           Impl.new(
             caps: caps,
-            get: Read::Get::Impl.new(ctx: ctx, caps: caps),
+            get: Read::Get.new(container: caps, call: ctx),
             orchestrator: session.refresh_orchestrator,
           ).call(*, **)
         end

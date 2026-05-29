@@ -17,7 +17,7 @@ module Textus
 
           def call
             Validator.new(
-              reader: Get::Impl.new(ctx: @ctx, caps: @caps),
+              reader: Get.new(container: @caps, call: @ctx),
               manifest: @manifest,
               audit_log: @audit_log,
               schema_for: ->(name) { @schemas.fetch_or_nil(name) },

@@ -21,8 +21,8 @@ module Textus
         def call(pending_key)
           assert_accept_authority!("accept")
 
-          env = Textus::Application::Read::Get::Impl.new(
-            ctx: @call, caps: read_caps_struct,
+          env = Textus::Application::Read::Get.new(
+            container: @container, call: @call,
           ).call(pending_key)
           proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
           target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")

@@ -63,11 +63,16 @@ RSpec.describe Textus::Application::Read::Get do
     MD
   end
 
+  def build_use_case(store)
+    container = Textus::Container.from_store(store)
+    call = Textus::Call.build(role: "runner")
+    described_class.new(container: container, call: call)
+  end
+
   it "returns nil when the file does not exist on disk" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
-      ctx = Textus::Application::Context.build(role: "runner")
-      use_case = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0])
+      use_case = build_use_case(store)
       expect(use_case.call("working.doc")).to be_nil
     end
   end
@@ -76,8 +81,7 @@ RSpec.describe Textus::Application::Read::Get do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
       write_doc(root)
-      ctx = Textus::Application::Context.build(role: "runner")
-      env = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0]).call("working.doc")
+      env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(false)
       expect(env.freshness.refreshing).to be(false)
     end
@@ -87,8 +91,7 @@ RSpec.describe Textus::Application::Read::Get do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = Textus::Application::Context.build(role: "runner")
-      env = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0]).call("working.doc")
+      env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(false)
     end
   end
@@ -97,8 +100,7 @@ RSpec.describe Textus::Application::Read::Get do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = Textus::Application::Context.build(role: "runner")
-      env = described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0]).call("working.doc")
+      env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(true)
       expect(env.freshness.refreshing).to be(false)
     end
@@ -107,9 +109,10 @@ RSpec.describe Textus::Application::Read::Get do
   it "does not accept an orchestrator: kwarg (signal of the contract)" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
-      ctx = Textus::Application::Context.build(role: "runner")
+      container = Textus::Container.from_store(store)
+      call = Textus::Call.build(role: "runner")
       expect do
-        described_class::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0], orchestrator: Object.new)
+        described_class.new(container: container, call: call, orchestrator: Object.new)
       end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
     end
   end

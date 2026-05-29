@@ -21,7 +21,7 @@ module Textus
         # Runs the builder pipeline for `mentry` and returns the on-disk
         # target_path string.
         def run(mentry)
-          reader = Textus::Application::Read::Get::Impl.new(ctx: @ctx, caps: @caps)
+          reader = Textus::Application::Read::Get.new(container: @caps, call: @ctx)
           lister = Textus::Application::Read::List::Impl.new(caps: @caps)
           Builder::Pipeline.run(
             mentry: mentry,

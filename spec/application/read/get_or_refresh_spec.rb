@@ -62,7 +62,7 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
       ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0])
+      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
 
@@ -77,7 +77,7 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
       ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0])
+      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
       use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
 
@@ -92,7 +92,7 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
       ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0])
+      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
       use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
 
@@ -105,7 +105,7 @@ RSpec.describe Textus::Application::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       ctx = Textus::Application::Context.build(role: "runner")
-      pure_get = Textus::Application::Read::Get::Impl.new(ctx: ctx, caps: Textus::Application.caps_from_store(store)[0])
+      pure_get = Textus::Application::Read::Get.new(container: Textus::Application.caps_from_store(store)[0], call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class::Impl.new(caps: Textus::Application.caps_from_store(store)[0], get: pure_get, orchestrator: orch)
 

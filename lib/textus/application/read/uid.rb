@@ -19,7 +19,7 @@ module Textus
           private
 
           def get
-            @get ||= Get::Impl.new(ctx: @ctx, caps: @caps)
+            @get ||= Get.new(container: @caps, call: @ctx)
           end
         end
       end
