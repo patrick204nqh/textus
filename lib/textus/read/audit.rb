@@ -53,9 +53,9 @@ module Textus
             next if query.zone && !key_in_zone?(parsed["key"], query.zone)
 
             rows << parsed
-            break if query.limit && rows.length >= query.limit
+            break if limit_reached?(rows, query)
           end
-          break if query.limit && rows.length >= query.limit
+          break if limit_reached?(rows, query)
         end
         rows
       end
@@ -72,6 +72,8 @@ module Textus
       end
 
       private
+
+      def limit_reached?(rows, query) = query.limit && rows.length >= query.limit
 
       def check_cursor_expiry!(seq_since)
         return unless seq_since
