@@ -20,7 +20,7 @@ RSpec.describe "textus rule group" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -42,6 +42,26 @@ RSpec.describe "textus rule group" do
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["working.*", "working.doc"])
       expect(payload["policies"].first["refresh"]["ttl_seconds"]).to eq(3600)
+    end
+
+    it "serializes retention as a plain hash with integer seconds" do
+      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        zones:
+          - { name: working, kind: origin, write_policy: [human, runner] }
+        entries:
+          - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
+        rules:
+          - match: working.doc
+            retention: { expire_after: 30d }
+      YAML
+      rc = run(%w[rule list])
+      expect(rc).to eq(0)
+      payload = JSON.parse(stdout.string)
+      block = payload["policies"].find { |b| b["match"] == "working.doc" }
+      expect(block["retention"]).to eq("expire_after" => 2_592_000, "archive_after" => nil)
     end
   end
 

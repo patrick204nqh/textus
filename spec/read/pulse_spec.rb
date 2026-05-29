@@ -16,8 +16,8 @@ RSpec.describe Textus::Read::Pulse do
         - { name: human, kind: accept_authority }
         - { name: agent, kind: proposer }
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: review,  write_policy: [agent] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: review,  kind: origin, write_policy: [agent] }
       entries: []
     YAML
   end

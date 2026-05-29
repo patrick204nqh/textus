@@ -12,8 +12,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: output,   write_policy: [builder] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: output,   kind: derived, write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 
@@ -46,7 +46,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
+        - { name: identity, kind: origin, write_policy: [human] }
       entries:
         - key: identity.bad
           kind: derived
@@ -66,8 +66,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: output,   write_policy: [builder] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: output,   kind: derived, write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 
@@ -86,8 +86,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: output,   write_policy: [builder] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: output,   kind: derived, write_policy: [builder] }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 

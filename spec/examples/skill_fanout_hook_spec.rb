@@ -17,8 +17,8 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, write_policy: [human, runner, agent] }
-        - { name: vendor, write_policy: [human, runner, agent] }
+        - { name: intake, kind: origin, write_policy: [human, runner, agent] }
+        - { name: vendor, kind: origin, write_policy: [human, runner, agent] }
       entries:
         - { key: intake.skills, path: intake/skills, zone: intake, schema: null, owner: o, nested: true, kind: nested}
 

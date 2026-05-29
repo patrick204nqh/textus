@@ -106,14 +106,19 @@ version: textus/3
 
 zones:
   - name: identity
+    kind: origin
     write_policy: [human]
   - name: working
+    kind: origin
     write_policy: [human, agent, runner]
   - name: intake
+    kind: quarantine
     write_policy: [runner]
   - name: review
+    kind: queue
     write_policy: [agent, human]
   - name: output
+    kind: derived
     write_policy: [builder]
 
 entries:
@@ -201,15 +206,26 @@ A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/work
 
 Each zone declares which **roles** may write to it via `write_policy:` in the manifest. An optional `read_policy:` (default `[all]`) gates reads. Writes are gated; reads are unrestricted by default.
 
-| Zone | `write_policy` | Use case |
-|---|---|---|
-| `identity` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
-| `working` | `[human, agent, runner]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
-| `intake` | `[runner]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or agents directly. |
-| `review` | `[agent, human]` | Agent-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
-| `output` | `[builder]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
+| Zone | `kind` | `write_policy` | Use case |
+|---|---|---|---|
+| `identity` | `origin` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
+| `working` | `origin` | `[human, agent, runner]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
+| `intake` | `quarantine` | `[runner]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or agents directly. |
+| `review` | `queue` | `[agent, human]` | Agent-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
+| `output` | `derived` | `[builder]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `write_policy` list, the write returns `write_forbidden`.
+
+Every zone MUST declare a `kind:` describing its role in the data-flow graph.
+The vocabulary is closed: `origin` (authored truth), `quarantine` (external
+bytes pending validation), `queue` (proposals awaiting promotion), `derived`
+(computed from other zones). A manifest MUST declare at most one `queue` zone,
+and a zone's `kind:` MUST agree with its writers (`derived` ⇒ a `generator`
+writer, `queue` ⇒ a `proposer`, `quarantine` ⇒ a `runner`; `origin` is
+unconstrained). Coordination is keyed off the declared kind: a zone is derived
+only if it declares `kind: derived`, and proposals route to the declared
+`queue` zone — there is no name-based fallback. A manifest with a kind-less
+zone is rejected at load.
 
 ### 5.1 Role resolution
 
@@ -606,7 +622,15 @@ rules:
 | `refresh` | `{ ttl, on_stale, sync_budget_ms }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
 | `promotion` | `{ requires: [...] }` | Predicates a `review` entry must satisfy before `textus accept` will promote it. Built-in predicates: `schema_valid` (entry passes schema validation) and `human_accept` (the accepting role must be `human`). Additional predicates may be registered via `:validate` hooks. Enforced — `textus accept` refuses if any predicate fails. |
-| `retention` | (reserved) | Slot reserved for future retention policy (cap by age / count). Implementations parse it but otherwise ignore. |
+| `retention` | `{ expire_after:, archive_after: }` | Pruning policy for matched leaves. Duration strings: `30s`, `90m`, `12h`, `30d`, or bare integer seconds. `textus retain --as=ROLE` sweeps matched leaves: `expire_after` is checked first, so a leaf older than `expire_after` is deleted (and audited); otherwise a leaf older than `archive_after` is copied to `<store>/archive/<relative-path>` and then deleted. Age is measured from the leaf file's modification time. The `--as` role must be allowed to write the matched zone. |
+
+Both retention windows are optional, and `expire_after` is evaluated before
+`archive_after` — so when both apply, a leaf past the (longer) `expire_after`
+window is deleted rather than archived. The usual configuration is therefore
+`archive_after < expire_after` (archive a leaf, then delete it once older).
+`textus retain --as=ROLE` runs the sweep; `--prefix` and `--zone` narrow it, and
+any leaf whose zone the `--as` role cannot write is reported as a failure rather
+than aborting the run.
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 

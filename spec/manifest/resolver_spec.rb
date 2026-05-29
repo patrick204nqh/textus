@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Resolver do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human] }
+        - { name: working, kind: origin, write_policy: [human] }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf}
 

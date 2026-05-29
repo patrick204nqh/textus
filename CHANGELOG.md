@@ -9,6 +9,25 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.30.0 — 2026-05-29
+
+Explicit zone kind (strict) and entry retention (ADR 0028, moves 1 & 4). No wire format (`textus/3`) change.
+
+### Changed (BREAKING)
+
+- Zone `kind:` is now **required** on every zone (`origin | quarantine | queue | derived`); a manifest with a kind-less zone is rejected at load. The kind is authoritative: a zone is `derived` only if it declares `kind: derived`, and proposals route only to the zone declaring `kind: queue`. The previous writers→kind inference, the `"review"`-name proposal fallback, and boot's arbitrary-zone propose default were removed. No `textus/3` wire-format change; existing manifests must add `kind:` to every zone.
+
+### Added
+
+- `Manifest::Policy#declared_kind`, `#queue_zone`, `#derived_zone?`. `propose_zone_for` now resolves through the declared `queue` zone exclusively.
+- `retention:` rule block (`expire_after`, `archive_after`) parsed into `Domain::Policy::Retention`. New `textus retain --as=ROLE` sweep expires (deletes) or archives leaves past their window — `expire_after` deletes, `archive_after` copies to `.textus/archive/` then deletes; age is the leaf's mtime. `--prefix`/`--zone` narrow the sweep; rows whose zone the role can't write surface as failures. Retention appears in `textus rule explain`.
+- `Textus::Domain::Duration.seconds` — shared duration parser (`30s`/`90m`/`12h`/`30d`/bare seconds), now also backing `Refresh#ttl_seconds`.
+
+### Internal
+
+- `Manifest::Entry::Base#in_generator_zone?` and `boot` derived/proposal detection route through `Policy#derived_zone?` / `#propose_zone_for`; all `"review"` substring matches and the `Policy#zone_kinds` inference method are removed.
+- Dead `Policy#zone_kinds` method removed.
+
 ## 0.29.2 — 2026-05-29
 
 Hook-registry convergence and MCP transport de-leak (ADR 0027). Every change is additive or internal — no wire format (`textus/3`) or manifest-schema change, no public class renamed or removed.

@@ -15,8 +15,8 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: output,  write_policy: [builder] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: output,  kind: derived, write_policy: [builder] }
       entries:
         - key: working.src
           kind: leaf
@@ -69,7 +69,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: output, write_policy: [builder] }
+        - { name: output, kind: derived, write_policy: [builder] }
       entries:
         - key: output.report
           kind: derived
@@ -107,8 +107,8 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: derived, write_policy: [human] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: derived, kind: origin, write_policy: [human] }
       entries:
         - key: working.src
           kind: leaf

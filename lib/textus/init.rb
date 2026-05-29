@@ -7,14 +7,15 @@ module Textus
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human],               read_policy: [all] }
-        - { name: working,  write_policy: [human, agent, runner], read_policy: [all] }
-        - { name: intake,   write_policy: [runner],              read_policy: [all] }
-        - { name: review,   write_policy: [agent, human],        read_policy: [all] }
-        - { name: output,   write_policy: [builder],             read_policy: [all] }
+        - { name: identity, kind: origin,     write_policy: [human],          read_policy: [all] }
+        - { name: working,  kind: origin,     write_policy: [human],          read_policy: [all] }
+        - { name: intake,   kind: quarantine, write_policy: [runner],         read_policy: [all] }
+        - { name: review,   kind: queue,      write_policy: [agent, human],   read_policy: [all] }
+        - { name: output,   kind: derived,    write_policy: [builder],        read_policy: [all] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
         - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true, kind: nested }
+        - { key: review.notes,  path: review/notes,     zone: review,   schema: null, owner: agent:self, nested: true, kind: nested }
     YAML
 
     HOOKS_README = <<~MD

@@ -11,7 +11,7 @@ RSpec.describe Textus::Maintenance::Migrate do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human] }
+        - { name: working, kind: origin, write_policy: [human] }
       entries:
         - { key: working.old, path: working/old, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
         - { key: working.new, path: working/new, zone: working, schema: null, owner: human:self, kind: nested, nested: true }

@@ -12,7 +12,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, write_policy: [human] }]
+        zones: [{ name: working, kind: origin, write_policy: [human] }]
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -64,7 +64,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, write_policy: [runner] }]
+        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
         entries:
           - key: intake.x
             kind: intake
@@ -151,8 +151,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human] }
-          - { name: output,  write_policy: [builder] }
+          - { name: working, kind: origin, write_policy: [human] }
+          - { name: output,  kind: derived, write_policy: [builder] }
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -197,8 +197,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human] }
-          - { name: review,  write_policy: [agent, human] }
+          - { name: working, kind: origin, write_policy: [human] }
+          - { name: review,  kind: origin, write_policy: [agent, human] }
         entries:
           - { key: working.bob, path: working/bob.md, zone: working, kind: leaf}
 

@@ -13,7 +13,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
       entries:
         - key: working.fresh
           kind: intake

@@ -2,11 +2,13 @@
 version: textus/3
 zones:
 - name: identity
+  kind: origin
   write_policy:
   - human
   read_policy:
   - all
 - name: working
+  kind: origin
   write_policy:
   - human
   - agent
@@ -14,12 +16,14 @@ zones:
   read_policy:
   - all
 - name: review
+  kind: queue
   write_policy:
   - agent
   - human
   read_policy:
   - all
 - name: output
+  kind: derived
   write_policy:
   - builder
   read_policy:

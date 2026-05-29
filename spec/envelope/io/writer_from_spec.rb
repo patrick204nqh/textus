@@ -9,7 +9,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
     YAML

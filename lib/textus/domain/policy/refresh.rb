@@ -21,21 +21,7 @@ module Textus
         end
 
         def ttl_seconds
-          return nil if @ttl.nil?
-
-          str = @ttl.to_s.strip
-          return str.to_i if str.match?(/\A\d+\z/)
-
-          m = str.match(/\A(\d+)\s*([smhd])\z/)
-          return nil unless m
-
-          n = m[1].to_i
-          case m[2]
-          when "s" then n
-          when "m" then n * 60
-          when "h" then n * 3600
-          when "d" then n * 86_400
-          end
+          Textus::Domain::Duration.seconds(@ttl)
         end
 
         def to_freshness_policy

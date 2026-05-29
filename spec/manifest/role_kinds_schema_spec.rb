@@ -14,7 +14,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
         - { name: proposer, kind: proposer }
         - { name: fetcher,  kind: runner }
       zones:
-        - { name: identity, write_policy: [owner] }
+        - { name: identity, kind: origin, write_policy: [owner] }
       entries: []
     YAML
     expect { parse(yaml) }.not_to raise_error
@@ -26,7 +26,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
       roles:
         - { name: weirdo, kind: jester }
       zones:
-        - { name: identity, write_policy: [weirdo] }
+        - { name: identity, kind: origin, write_policy: [weirdo] }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown role kind .*jester/)
@@ -39,7 +39,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
         - { name: owner,     kind: accept_authority }
         - { name: co_owner,  kind: accept_authority }
       zones:
-        - { name: identity, write_policy: [owner] }
+        - { name: identity, kind: origin, write_policy: [owner] }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /at most one accept_authority/)
@@ -51,7 +51,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
       roles:
         - { name: owner, kind: accept_authority, color: blue }
       zones:
-        - { name: identity, write_policy: [owner] }
+        - { name: identity, kind: origin, write_policy: [owner] }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown key 'color'/)
@@ -61,7 +61,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
     yaml = <<~YAML
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
+        - { name: identity, kind: origin, write_policy: [human] }
       entries: []
     YAML
     expect { parse(yaml) }.not_to raise_error
@@ -73,7 +73,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
       roles:
         - { name: owner, kind: accept_authority }
       zones:
-        - { name: identity, write_policy: [owner, ghost] }
+        - { name: identity, kind: origin, write_policy: [owner, ghost] }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /undeclared role 'ghost'/)
@@ -83,7 +83,7 @@ RSpec.describe "Textus::Manifest::Schema role declarations" do
     yaml = <<~YAML
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human, mystery] }
+        - { name: identity, kind: origin, write_policy: [human, mystery] }
       entries: []
     YAML
     expect { parse(yaml) }.not_to raise_error

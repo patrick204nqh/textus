@@ -50,9 +50,9 @@ bundle exec ../../exe/textus audit --limit=5
 ```sh
 # Try to skip the review queue — agent writes directly to working.
 # Rejected by the zone's write_policy. This is the load-bearing safety.
-printf '{"_meta":{"name":"shortcut"},"body":"skip review\n"}' \
+printf '%s' '{"_meta":{"name":"shortcut"},"body":"skip review\n"}' \
   | bundle exec ../../exe/textus put working.notes.shortcut --as=agent --stdin
-# → write_forbidden: zone 'working' is not agent-writable
+# → write_forbidden: zone 'working' is not agent-writable for key 'working.notes'
 ```
 
 ## Layout

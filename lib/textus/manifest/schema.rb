@@ -4,8 +4,14 @@ module Textus
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name kind].freeze
       ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
-      ZONE_KEYS    = %w[name write_policy read_policy].freeze
-      ENTRY_KEYS   = %w[
+      ZONE_KEYS    = %w[name kind write_policy read_policy].freeze
+      ZONE_KINDS   = %w[origin quarantine queue derived].freeze
+      KIND_REQUIRES_ROLE_KIND = {
+        "derived" => "generator",
+        "queue" => "proposer",
+        "quarantine" => "runner",
+      }.freeze
+      ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each
         intake events inject_boot index_filename
@@ -15,8 +21,9 @@ module Textus
       RULE_KEYS    = %w[match refresh intake_handler_allowlist promotion retention].freeze
       REFRESH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
       FETCH_TIMEOUT_SECONDS_CEILING = 3600
-      PROMOTION_KEYS = %w[requires].freeze
-      AUDIT_KEYS     = %w[max_size keep].freeze
+      PROMOTION_KEYS  = %w[requires].freeze
+      RETENTION_KEYS  = %w[expire_after archive_after].freeze
+      AUDIT_KEYS = %w[max_size keep].freeze
 
       def self.validate!(raw)
         raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
@@ -28,11 +35,21 @@ module Textus
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_zone_writers_declared!(raw)
+        validate_single_queue!(raw)
+        validate_zone_kind_consistency!(raw)
       end
 
       def self.validate_zones!(zones)
         Array(zones).each_with_index do |z, i|
           walk(z, ZONE_KEYS, "$.zones[#{i}]")
+          if z["kind"].nil?
+            raise BadManifest.new("zone '#{z["name"]}' at '$.zones[#{i}]' must declare a kind (one of: #{ZONE_KINDS.join(", ")})")
+          end
+          next if ZONE_KINDS.include?(z["kind"])
+
+          raise BadManifest.new(
+            "unknown zone kind '#{z["kind"]}' at '$.zones[#{i}]' (known: #{ZONE_KINDS.join(", ")})",
+          )
         end
       end
 
@@ -54,6 +71,7 @@ module Textus
             validate_fetch_timeout!(r["refresh"]["fetch_timeout_seconds"], "#{path}.refresh.fetch_timeout_seconds")
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
+          walk(r["retention"], RETENTION_KEYS, "#{path}.retention") if r["retention"].is_a?(Hash)
         end
       end
 
@@ -113,6 +131,38 @@ module Textus
           next if allowed.include?(k)
 
           raise BadManifest.new("unknown key '#{k}' at '#{path}'")
+        end
+      end
+
+      def self.validate_single_queue!(raw)
+        queues = Array(raw["zones"]).select { |z| z["kind"] == "queue" }.map { |z| z["name"] }
+        return if queues.size <= 1
+
+        raise BadManifest.new(
+          "at most one zone may declare kind: queue (found: #{queues.join(", ")})",
+        )
+      end
+
+      def self.validate_zone_kind_consistency!(raw)
+        mapping = role_kind_mapping(raw)
+        Array(raw["zones"]).each do |z|
+          required = KIND_REQUIRES_ROLE_KIND[z["kind"]] or next
+          writers  = Array(z["write_policy"])
+          next if writers.any? { |w| mapping[w] == required }
+
+          raise BadManifest.new(
+            "zone '#{z["name"]}' declares kind: #{z["kind"]} but no writer is a #{required} " \
+            "(writers: #{writers.join(", ")})",
+          )
+        end
+      end
+
+      # name => kind string, honouring an explicit roles: block or the default mapping.
+      def self.role_kind_mapping(raw)
+        if raw["roles"].nil?
+          RoleKinds::DEFAULT_MAPPING.transform_values(&:to_s)
+        else
+          Array(raw["roles"]).to_h { |r| [r["name"], r["kind"]] }
         end
       end
     end

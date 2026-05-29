@@ -12,8 +12,8 @@ RSpec.describe Textus::Write::Accept do
         - { name: owner,    kind: accept_authority }
         - { name: proposer, kind: proposer }
       zones:
-        - { name: working, write_policy: [owner, proposer] }
-        - { name: review,  write_policy: [proposer, owner] }
+        - { name: working, kind: origin, write_policy: [owner, proposer] }
+        - { name: review,  kind: origin, write_policy: [proposer, owner] }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 

@@ -10,8 +10,8 @@ RSpec.describe Textus::Manifest::Data do
         - { name: human, kind: proposer }
         - { name: builder, kind: generator }
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: review,  write_policy: [builder] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: review,  kind: derived, write_policy: [builder] }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML

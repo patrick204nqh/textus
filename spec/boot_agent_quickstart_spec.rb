@@ -15,8 +15,8 @@ RSpec.describe Textus::Boot do
         - { name: human, kind: accept_authority }
         - { name: agent, kind: proposer }
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: review,  write_policy: [agent] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: review,  kind: queue, write_policy: [agent] }
       entries: []
     YAML
   end
@@ -46,7 +46,7 @@ RSpec.describe Textus::Boot do
         roles:
           - { name: human, kind: accept_authority }
         zones:
-          - { name: working, write_policy: [human] }
+          - { name: working, kind: origin, write_policy: [human] }
         entries: []
       YAML
       out = described_class.build(container: Textus::Store.new(root).container)

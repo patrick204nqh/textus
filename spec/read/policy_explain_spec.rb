@@ -9,7 +9,7 @@ RSpec.describe Textus::Read::PolicyExplain do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -22,6 +22,8 @@ RSpec.describe Textus::Read::PolicyExplain do
         - match: "**"
           promotion:
             requires: [schema_valid]
+        - match: working.doc
+          retention: { expire_after: 30d }
     YAML
     Textus::Store.new(textus)
   end
@@ -33,9 +35,9 @@ RSpec.describe Textus::Read::PolicyExplain do
       result = ops.policy_explain(key: "working.doc")
 
       expect(result[:key]).to eq("working.doc")
-      expect(result[:matched_blocks].length).to eq(3)
+      expect(result[:matched_blocks].length).to eq(4)
       matches = result[:matched_blocks].map { |b| b[:match] }
-      expect(matches).to contain_exactly("working.*", "working.doc", "**")
+      expect(matches).to contain_exactly("working.*", "working.doc", "**", "working.doc")
     end
   end
 
@@ -52,6 +54,15 @@ RSpec.describe Textus::Read::PolicyExplain do
     end
   end
 
+  it "reports retention windows in the matched blocks and effective output" do
+    Dir.mktmpdir do |root|
+      store = build_store(root)
+      result = store.as("human").policy_explain(key: "working.doc")
+      expect(result[:effective][:retention]).to eq(expire_after: 2_592_000, archive_after: nil)
+      expect(result[:matched_blocks].any? { |b| b[:retention] }).to be(true)
+    end
+  end
+
   it "returns nil-valued effective slots when no policy matches" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
@@ -59,7 +70,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, runner] }
+          - { name: working, kind: origin, write_policy: [human, runner] }
         entries:
           - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 

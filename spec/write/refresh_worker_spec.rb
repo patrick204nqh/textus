@@ -31,7 +31,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, write_policy: [runner] }
+        - { name: intake, kind: origin, write_policy: [runner] }
       entries:
         - key: intake.item
           kind: intake
@@ -105,7 +105,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, write_policy: [runner] }
+        - { name: intake, kind: origin, write_policy: [runner] }
       entries:
         - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake }, kind: intake}
 
@@ -138,7 +138,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: plain, write_policy: [human] }
+          - { name: plain, kind: origin, write_policy: [human] }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
 
@@ -175,7 +175,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: intake, write_policy: [runner] }
+          - { name: intake, kind: origin, write_policy: [runner] }
         entries:
           - key: intake.vendor
             kind: intake

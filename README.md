@@ -21,7 +21,7 @@ Without coordination, they overwrite each other and nothing remembers why. textu
 
 ```
 identity/   human only          — who you are, what you decide, how you sound
-working/    human + agent + runner — day-to-day catalog
+working/    human only          — day-to-day catalog (agents propose via review/, runners feed via intake/)
 intake/     runner only         — declared external inputs
 review/     agent + human       — proposals waiting on a human accept
 output/     builder only        — computed, published artifacts
@@ -37,7 +37,7 @@ That's the load-bearing claim: **coordination is a protocol invariant, not a lib
 gem install textus
 textus init                          # creates .textus/ with zones + schemas
 # agent proposes a change to review/
-echo '{"_meta":{"name":"oncall","proposal":{"target_key":"working.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
+printf '%s' '{"_meta":{"name":"oncall","proposal":{"target_key":"working.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
   | textus put review.notes.oncall --as=agent --stdin
 # you accept it — textus promotes to working/ and audits the move
 textus accept review.notes.oncall --as=human
@@ -99,15 +99,15 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
     output/           # builder only — computed outputs
 ```
 
-Manifest `path:` fields are relative to `.textus/zones/`. So `working.network.org.jane` lives at `.textus/zones/working/network/org/jane.md`.
+Manifest `path:` fields are relative to `.textus/zones/`. So `working.notes.org.jane` lives at `.textus/zones/working/notes/org/jane.md`.
 
 Read and write:
 
 ```sh
-textus get working.network.org.jane
+textus get working.notes.org.jane
 textus list --zone=working
-echo '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
-  | textus put working.network.org.bob --as=human --stdin
+printf '%s' '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
+  | textus put working.notes.bob --as=human --stdin
 textus freshness --zone=output       # per-entry fresh/stale/never_refreshed/no_policy
 textus rule list                     # show every rule block
 textus audit --limit=20              # query the audit log
@@ -124,10 +124,10 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 - **Build and publish in one pass.** `Textus::Write::Publish` materializes generator-zone entries and copies nested leaves to their `publish_each` targets. The `textus build` CLI verb dispatches to it; the wire envelope is unchanged.
 - **Typed envelopes.** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
 - **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
-- **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus key normalize --dry-run|--write` rewrites existing stores with illegal segments deterministically.
+- **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus doctor` flags any illegal segments with a rename hint; `textus key mv old.key new.key` renames in place (uid survives).
 - **`textus boot`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table, and an `agent_quickstart` block (read/write verbs, writable zones, propose zone, latest audit seq).
 - **`textus pulse [--since=N]`.** Per-turn heartbeat for agents: changed entries since cursor N, stale keys, pending review proposals, and a doctor summary. Cursor is a monotonic seq stamped on every audit row; rotation keeps the last 5 files (configurable via `audit:` in the manifest) and raises `CursorExpired` when the requested cursor has fallen off disk.
-- **`textus doctor`.** Health check across 9 categories: missing schemas/templates, broken hooks, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
+- **`textus doctor`.** Health check across 15 checks — among them: missing schemas/templates, broken hooks, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
 - **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
 - **Compute.** Derived entries declare `compute: { kind: projection, ... }` (declarative rows + template) or `compute: { kind: external, ... }` (build runner produces the file; textus tracks sources for staleness). Inside projection computes, `transform:` names the row-shaping hook.
 
@@ -205,7 +205,7 @@ See [`docs/agent-integration.md`](docs/agent-integration.md) for the agent boot 
 bundle exec rspec
 ```
 
-~880 examples; includes conformance fixtures A–I from SPEC §12.
+~920 examples; includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 

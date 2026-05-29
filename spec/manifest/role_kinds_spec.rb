@@ -10,10 +10,10 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
       parse(<<~YAML)
         version: textus/3
         zones:
-          - { name: identity, write_policy: [human] }
-          - { name: working,  write_policy: [human, agent, runner] }
-          - { name: review,   write_policy: [agent] }
-          - { name: build,    write_policy: [builder] }
+          - { name: identity, kind: origin, write_policy: [human] }
+          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+          - { name: review,   kind: origin, write_policy: [agent] }
+          - { name: build,    kind: derived, write_policy: [builder] }
         entries: []
       YAML
     end
@@ -41,12 +41,6 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
     it "lists all roles with a given kind" do
       expect(m.policy.roles_with_kind(:accept_authority)).to eq(["human"])
     end
-
-    it "derives zone kinds from zone writers" do
-      expect(m.policy.zone_kinds("review")).to eq(Set[:proposer])
-      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.policy.zone_kinds("working")).to eq(Set[:accept_authority, :proposer, :runner])
-    end
   end
 
   describe "user-declared roles: block" do
@@ -59,11 +53,11 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: proposer, kind: proposer }
           - { name: fetcher,  kind: runner }
         zones:
-          - { name: self,    write_policy: [owner] }
-          - { name: world,   write_policy: [fetcher] }
-          - { name: memory,  write_policy: [proposer, owner] }
-          - { name: library, write_policy: [proposer] }
-          - { name: build,   write_policy: [compiler] }
+          - { name: self,    kind: origin, write_policy: [owner] }
+          - { name: world,   kind: origin, write_policy: [fetcher] }
+          - { name: memory,  kind: origin, write_policy: [proposer, owner] }
+          - { name: library, kind: origin, write_policy: [proposer] }
+          - { name: build,   kind: derived, write_policy: [compiler] }
         entries: []
       YAML
     end
@@ -79,12 +73,6 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
       expect(m.policy.role_kind("human")).to be_nil
       expect(m.policy.role_kind("builder")).to be_nil
     end
-
-    it "derives zone kinds from declared roles" do
-      expect(m.policy.zone_kinds("library")).to eq(Set[:proposer])
-      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.policy.zone_kinds("memory")).to eq(Set[:proposer, :accept_authority])
-    end
   end
 
   describe "empty roles: []" do
@@ -94,7 +82,7 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
         version: textus/3
         roles: []
         zones:
-          - { name: identity, write_policy: [] }
+          - { name: identity, kind: origin, write_policy: [] }
         entries: []
       YAML
       expect(m.policy.role_kind("anyone")).to be_nil
@@ -110,8 +98,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: owner,    kind: accept_authority }
           - { name: compiler, kind: generator }
         zones:
-          - { name: self,  write_policy: [owner] }
-          - { name: build, write_policy: [compiler] }
+          - { name: self,  kind: origin, write_policy: [owner] }
+          - { name: build, kind: derived, write_policy: [compiler] }
         entries:
           - { key: out.report, kind: derived, zone: build, path: build/report.md, format: markdown,
               template: report.mustache, compute: { kind: projection, select: "self.*" } }
@@ -128,8 +116,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: owner,    kind: accept_authority }
           - { name: proposer, kind: proposer }
         zones:
-          - { name: self,   write_policy: [owner] }
-          - { name: drafts, write_policy: [proposer, owner] }
+          - { name: self,   kind: origin, write_policy: [owner] }
+          - { name: drafts, kind: queue,  write_policy: [proposer, owner] }
         entries:
           - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
       YAML
