@@ -3,7 +3,7 @@ require "timeout"
 module Textus
   module Write
     class RefreshWorker
-      FETCH_TIMEOUT_SECONDS = 30
+      FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)
         @container    = container
