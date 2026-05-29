@@ -51,7 +51,7 @@ module Textus
           @refresh = parse_refresh(raw["refresh"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @promote = parse_promotion(raw["promotion"])
-          @retention = raw["retention"] # reserved — passthrough only
+          @retention = parse_retention(raw["retention"])
         end
 
         private
@@ -79,6 +79,15 @@ module Textus
           raise Textus::BadManifest.new("promotion: must be a hash with a 'requires:' array") unless h.is_a?(Hash) && h.key?("requires")
 
           Textus::Domain::Policy::Promote.new(requires: Array(h["requires"]))
+        end
+
+        def parse_retention(h)
+          return nil if h.nil?
+
+          Textus::Domain::Policy::Retention.new(
+            expire_after: h["expire_after"],
+            archive_after: h["archive_after"],
+          )
         end
       end
     end
