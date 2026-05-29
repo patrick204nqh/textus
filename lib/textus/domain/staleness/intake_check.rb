@@ -19,19 +19,25 @@ module Textus
           return [] unless ttl
 
           path = Textus::Key::Path.resolve(@manifest.data, mentry)
-          return [row(mentry, path, "never refreshed")] unless @file_stat.exists?(path)
-
-          meta = Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
-          last_str = meta["last_refreshed_at"]
-          return [row(mentry, path, "never refreshed (no last_refreshed_at)")] if last_str.nil?
-
-          last = parse_time(last_str)
-          return [row(mentry, path, "ttl exceeded (#{ttl}s)")] if last.nil? || (@clock.now - last) > ttl
-
-          []
+          reason = ttl_reason(mentry, path, ttl)
+          reason ? [row(mentry, path, reason)] : []
         end
 
         private
+
+        def ttl_reason(mentry, path, ttl)
+          return "never refreshed" unless @file_stat.exists?(path)
+
+          last_str = last_refreshed_of(mentry, path)
+          return "never refreshed (no last_refreshed_at)" if last_str.nil?
+
+          last = parse_time(last_str)
+          "ttl exceeded (#{ttl}s)" if last.nil? || (@clock.now - last) > ttl
+        end
+
+        def last_refreshed_of(mentry, path)
+          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]["last_refreshed_at"]
+        end
 
         def parse_time(str)
           Time.parse(str.to_s)
