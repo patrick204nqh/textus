@@ -36,13 +36,12 @@ RSpec.describe Textus::Hooks::RpcRegistry do
     expect(received).to be(caps)
   end
 
-  it "raises UsageError if a callable still declares legacy `store:`" do
-    rpc.register(:transform_rows, :legacy) do |store:, rows:, **|
-      _ = store
-      rows
-    end
+  it "raises UsageError at registration if a callable declares legacy `store:` instead of `caps:`" do
     expect do
-      rpc.invoke(:transform_rows, :legacy, caps: double, rows: [], config: {})
-    end.to raise_error(Textus::UsageError, /declares legacy `store:`/)
+      rpc.register(:transform_rows, :legacy) do |store:, rows:, _config:|
+        _ = store
+        rows
+      end
+    end.to raise_error(Textus::UsageError, /must accept kwargs.*missing: caps/)
   end
 end
