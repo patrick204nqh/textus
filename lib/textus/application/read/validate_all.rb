@@ -1,28 +1,22 @@
 module Textus
   module Application
     module Read
-      module ValidateAll
-        def self.call(*, session:, ctx:, caps:, **) # rubocop:disable Lint/UnusedMethodArgument
-          Impl.new(ctx: ctx, caps: caps).call(*, **)
+      class ValidateAll
+        def initialize(container:, call:, hook_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+          @container = container
+          @call      = call
+          @manifest  = container.manifest
+          @schemas   = container.schemas
+          @audit_log = container.audit_log
         end
 
-        class Impl
-          def initialize(ctx:, caps:)
-            @ctx = ctx
-            @caps = caps
-            @manifest  = caps.manifest
-            @schemas   = caps.schemas
-            @audit_log = caps.audit_log
-          end
-
-          def call
-            Validator.new(
-              reader: Get.new(container: @caps, call: @ctx),
-              manifest: @manifest,
-              audit_log: @audit_log,
-              schema_for: ->(name) { @schemas.fetch_or_nil(name) },
-            ).call
-          end
+        def call
+          Validator.new(
+            reader: Get.new(container: @container, call: @call),
+            manifest: @manifest,
+            audit_log: @audit_log,
+            schema_for: ->(name) { @schemas.fetch_or_nil(name) },
+          ).call
         end
       end
     end
