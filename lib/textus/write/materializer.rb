@@ -30,7 +30,7 @@ module Textus
             rpc: @rpc,
             template_loader: ->(name) { read_template(name) },
             transform_context: @container,
-            inject_boot: -> { Textus::Boot.run_via(container: @container, role: @call.role) },
+            inject_boot: -> { Textus::Boot.build(container: @container) },
           ),
         )
       end

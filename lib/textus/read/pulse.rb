@@ -59,7 +59,7 @@ module Textus
       end
 
       def doctor_summary
-        result  = Textus::Doctor.run_via(container: @container, role: @call.role)
+        result  = Textus::Doctor.build(container: @container)
         issues  = result["issues"] || []
         {
           "ok" => result["ok"],
