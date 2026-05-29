@@ -5,11 +5,10 @@ module Textus
     # (zone_writers, permission_for, role_kind, roles_with_kind). Derived /
     # proposal-queue status is authoritative via the declared-kind family
     # (declared_kind, derived_zone?, queue_zone?, queue_zone), not inferred
-    # from writers; zone_kinds remains for role-kind set queries only.
+    # from writers.
     class Policy
       def initialize(data)
         @data = data
-        @zone_kinds_cache = {}
       end
 
       def zone_writers(zone_name)
@@ -26,13 +25,6 @@ module Textus
           write_policy: zone_writers(zone_name),
           read_policy: @data.zone_readers[zone_name] || :all,
         )
-      end
-
-      def zone_kinds(zone_name)
-        @zone_kinds_cache[zone_name] ||= zone_writers(zone_name).each_with_object(Set.new) do |w, acc|
-          k = role_kind(w)
-          acc << k if k
-        end.freeze
       end
 
       # The kind declared on a zone in the manifest, or nil if undeclared.

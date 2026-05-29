@@ -41,12 +41,6 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
     it "lists all roles with a given kind" do
       expect(m.policy.roles_with_kind(:accept_authority)).to eq(["human"])
     end
-
-    it "derives zone kinds from zone writers" do
-      expect(m.policy.zone_kinds("review")).to eq(Set[:proposer])
-      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.policy.zone_kinds("working")).to eq(Set[:accept_authority, :proposer, :runner])
-    end
   end
 
   describe "user-declared roles: block" do
@@ -78,12 +72,6 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
     it "does not fall back to defaults when roles: is declared" do
       expect(m.policy.role_kind("human")).to be_nil
       expect(m.policy.role_kind("builder")).to be_nil
-    end
-
-    it "derives zone kinds from declared roles" do
-      expect(m.policy.zone_kinds("library")).to eq(Set[:proposer])
-      expect(m.policy.zone_kinds("build")).to eq(Set[:generator])
-      expect(m.policy.zone_kinds("memory")).to eq(Set[:proposer, :accept_authority])
     end
   end
 

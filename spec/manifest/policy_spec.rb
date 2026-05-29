@@ -23,12 +23,6 @@ RSpec.describe Textus::Manifest::Policy do
     expect(policy.permission_for("working")).to be_a(Textus::Domain::Permission)
   end
 
-  it "memoises zone_kinds across calls" do
-    a = policy.zone_kinds("working")
-    b = policy.zone_kinds("working")
-    expect(a).to be(b) # same object
-  end
-
   it "raises UsageError on undeclared zone" do
     expect { policy.zone_writers("nope") }.to raise_error(Textus::UsageError)
   end
