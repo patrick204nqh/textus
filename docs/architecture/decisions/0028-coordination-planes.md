@@ -109,10 +109,11 @@ answer; everything else in this ADR follows from it.
 Naming the model exposes four moves that bring the code into line with it. They are
 recorded here as direction; each lands under its own change with its own review:
 
-1. **[Shipped in 0.30.0]** **Declare a zone's kind explicitly** instead of inferring it
-   from writers' role-kinds and string-matching `"review"`. This removes the rename-bug in
-   `Manifest::Policy#propose_zone_for` and lets tooling reason about topology. *(Touches
-   the manifest schema — see Open questions.)*
+1. **[Shipped in 0.30.0, strict]** **Declare a zone's kind explicitly.** `kind:` is
+   required and authoritative; the writers-inference and `"review"` substring
+   fallbacks were never released — the cleanup was folded into 0.30.0 (no
+   external users to migrate). A manifest with a kind-less zone is rejected at
+   load; proposals route only to the zone declaring `kind: queue`.
 2. **Generalize `promotion.requires:`** from role-kind names to predicate references, so
    a guard can read `requires: [accept_authority_signed, schema_valid, fresh_within: 1h]`.
 3. **Unify the guard** so every transition — not only `accept` — evaluates one `Guard`
@@ -137,10 +138,10 @@ editing `write/`. The verbs and zone-kinds are stable ground to build on.
 crossing would be refused before it is attempted, and the `write_forbidden` /
 guard-failure message names the unmet predicate.
 
-**`propose_zone_for` is on notice.** ADR 0027 gave the `"review"` convention a single
-home in `Manifest::Policy`; this ADR marks that home as a placeholder for an explicit
-zone kind (move 1). Until then the string-match remains the known cost of the
-rename-freely promise.
+**`propose_zone_for` resolved.** ADR 0027 gave the `"review"` convention a single home
+in `Manifest::Policy`; move 1 (shipped 0.30.0) replaced it — `propose_zone_for` now
+resolves through `kind: queue` exclusively. The string-match and rename-fragility are
+gone.
 
 **Single-writer authority keeps consensus out.** Because exactly one authority
 originates in each zone (except `review`), there is no concurrent-origin conflict to
@@ -170,8 +171,8 @@ sequenced as move 1.
 - **Predicate vocabulary for v1.** `schema_valid` and `accept_authority_signed` exist.
   Which join them — `fresh_within`, `owner_is`, `quorum(n)`? Is `AND`-composition
   enough, or is `OR` needed? (Blocks move 2; route through `product-capability`.)
-- **Explicit zone kind — schema shape.** A new `kind:` field vs deriving a canonical
-  kind and storing it. (Blocks move 1; manifest-schema change → its own ADR.)
+- **Explicit zone kind — schema shape.** ~~Resolved in 0.30.0~~ — `kind:` is a required
+  manifest field; existing manifests must declare it on every zone.
 - **Agent memory zone (`scratch`).** Agents have a *proposal* lane (`review`) but no
   *memory* lane, contradicting the README promise that agents stop forgetting between
   sessions. Ship as a default zone, or document as an opt-in pattern?
