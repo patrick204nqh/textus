@@ -12,7 +12,7 @@ module Textus
           container: @container, call: @call, hook_context: @hook_context,
         )
 
-        stale_rows = Textus::Application::Read::Stale.new(container: @container, call: @call).call(prefix: prefix, zone: zone)
+        stale_rows = Textus::Read::Stale.new(container: @container, call: @call).call(prefix: prefix, zone: zone)
         refreshed = []
         failed = []
         skipped = []

@@ -59,7 +59,7 @@ module Textus
       end
 
       def reader
-        @reader ||= Textus::Application::Read::Get.new(container: @container, call: @call)
+        @reader ||= Textus::Read::Get.new(container: @container, call: @call)
       end
     end
   end
