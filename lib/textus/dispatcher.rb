@@ -45,5 +45,11 @@ module Textus
     def self.fetch(verb)
       VERBS.fetch(verb.to_sym) { raise UsageError.new("unknown verb: #{verb.inspect}") }
     end
+
+    # Single home for the uniform use-case invocation protocol (ADR 0023):
+    # look up the verb, construct on (container:, call:), and invoke #call.
+    def self.invoke(verb, container:, call:, args: [], kwargs: {})
+      fetch(verb).new(container: container, call: call).call(*args, **kwargs)
+    end
   end
 end

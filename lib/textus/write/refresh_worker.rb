@@ -3,7 +3,7 @@ require "timeout"
 module Textus
   module Write
     class RefreshWorker
-      FETCH_TIMEOUT_SECONDS = 30
+      FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)
         @container    = container
@@ -117,21 +117,7 @@ module Textus
       end
 
       def writer
-        @writer ||= Textus::Envelope::IO::Writer.new(
-          file_store: @container.file_store,
-          manifest: @container.manifest,
-          schemas: @container.schemas,
-          audit_log: @container.audit_log,
-          call: @call,
-          reader: reader,
-        )
-      end
-
-      def reader
-        @reader ||= Textus::Envelope::IO::Reader.new(
-          file_store: @container.file_store,
-          manifest: @container.manifest,
-        )
+        @writer ||= Textus::Envelope::IO::Writer.from(container: @container, call: @call)
       end
     end
   end

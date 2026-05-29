@@ -8,6 +8,10 @@ module Textus
       #
       # No audit, no events, no permission checks — those live one layer up.
       class Reader
+        def self.from(container:)
+          new(file_store: container.file_store, manifest: container.manifest)
+        end
+
         def initialize(file_store:, manifest:)
           @file_store = file_store
           @manifest   = manifest

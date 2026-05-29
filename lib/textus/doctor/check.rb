@@ -28,11 +28,14 @@ module Textus
       def manifest = @container.manifest
       def rpc      = @container.rpc
 
-      # Dispatch a verb through the static Dispatcher table.
-      def dispatch(verb, *, **)
-        klass = Textus::Dispatcher.fetch(verb)
-        call_value = Textus::Call.build(role: Textus::Role::DEFAULT)
-        klass.new(container: @container, call: call_value).call(*, **)
+      # Dispatch a verb through the single use-case invocation seam (ADR 0026).
+      def dispatch(verb, *args, **kwargs)
+        Textus::Dispatcher.invoke(
+          verb,
+          container: @container,
+          call: Textus::Call.build(role: Textus::Role::DEFAULT),
+          args: args, kwargs: kwargs
+        )
       end
     end
   end

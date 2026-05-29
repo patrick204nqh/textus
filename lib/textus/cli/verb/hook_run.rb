@@ -29,12 +29,8 @@ module Textus
           Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
           begin
-            Timeout.timeout(Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
-              store.rpc.invoke(:resolve_intake, name, caps: nil, config: {}, args: args)
-            end
-          rescue Timeout::Error
-            raise UsageError.new(
-              "hook run '#{name}' exceeded #{Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
+            Textus::Write::IntakeFetch.invoke(
+              rpc: store.rpc, handler: name, config: {}, args: args, label: "hook run",
             )
           rescue Textus::Error
             raise

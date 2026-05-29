@@ -17,19 +17,10 @@ module Textus
           raw = @stdin.read
           payload =
             if fetch_name
-              result =
-                begin
-                  Timeout.timeout(Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
-                    store.rpc.invoke(:resolve_intake, fetch_name,
-                                     caps: nil,
-                                     config: { "bytes" => raw },
-                                     args: {})
-                  end
-                rescue Timeout::Error
-                  raise UsageError.new(
-                    "fetch '#{fetch_name}' exceeded #{Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
-                  )
-                end
+              result = Textus::Write::IntakeFetch.invoke(
+                rpc: store.rpc, handler: fetch_name,
+                config: { "bytes" => raw }, args: {}, label: "fetch"
+              )
               basename = key.split(".").last
               {
                 "_meta" => {
