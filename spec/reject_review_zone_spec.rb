@@ -2,14 +2,16 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-# Regression test for the 0.9.2 zone-rename: a zone named `review` (or any
-# non-"pending" name) whose writable_by signals proposal-kind ([ai, human])
-# must be acceptable to store.reject. Prior to signal-based detection this
-# raised ProposalError because Writer#reject hardcoded `zone == "pending"`.
-RSpec.describe "store.reject with signal-based proposal-zone detection" do
+# Regression test for proposal-zone detection: store.reject must accept a
+# proposal in any zone that declares `kind: queue` (regardless of its name),
+# and refuse in a non-queue zone. Detection keys off the declared zone kind
+# (`in_proposal_zone?` => `declared_kind == :queue`), not the zone name or its
+# writers. (Historically this was a hardcoded `zone == "pending"` check, then a
+# writer-signal heuristic; 0.30.0 made the declared kind authoritative.)
+RSpec.describe "store.reject with declared-kind proposal-zone detection" do
   include_context "textus_store_fixture"
 
-  it "accepts a proposal in a zone literally named 'review' (post-0.9.2 default)" do
+  it "accepts a proposal in a zone declaring kind: queue (named 'review')" do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/review"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -37,9 +39,9 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
   end
 
-  it "negative-signal: a zone literally named 'pending' but without [ai] writers is NOT proposal-kind" do
-    # Pure signal check: even though the zone is *named* pending, without an
-    # `ai` writer it is not proposal-kind and reject must refuse.
+  it "refuses: a zone declaring kind: origin is not a proposal zone (even if named 'pending')" do
+    # Declared-kind check: the zone is not kind: queue, so it is not a proposal
+    # zone and reject must refuse — regardless of the zone's name.
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/pending"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
