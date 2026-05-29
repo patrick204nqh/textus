@@ -22,7 +22,7 @@ module Textus
         # target_path string.
         def run(mentry)
           reader = Textus::Application::Read::Get.new(container: @caps, call: @ctx)
-          lister = Textus::Application::Read::List::Impl.new(caps: @caps)
+          lister = Textus::Application::Read::List.new(container: @caps)
           Builder::Pipeline.run(
             mentry: mentry,
             manifest: @manifest,

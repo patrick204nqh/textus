@@ -17,9 +17,9 @@ module Textus
           def call(prefix:, dry_run: false)
             raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
-            leaves = Read::List::Impl.new(caps: @caps)
-                                     .call(prefix: prefix)
-                                     .map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
+            leaves = Read::List.new(container: @caps)
+                               .call(prefix: prefix)
+                               .map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
 
             warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
             steps = leaves.map { |k| { "op" => "delete", "key" => k } }
