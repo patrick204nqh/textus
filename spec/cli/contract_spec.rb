@@ -11,7 +11,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human] }
+          - { name: working, kind: origin, write_policy: [human] }
         entries: []
       YAML
       yield root

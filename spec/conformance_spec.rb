@@ -21,10 +21,10 @@ RSpec.describe "textus/3 conformance" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: working,  write_policy: [human, agent, runner] }
-        - { name: output,   write_policy: [builder] }
-        - { name: intake,   write_policy: [runner] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: intake,   kind: origin, write_policy: [runner] }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick, kind: leaf}
 
@@ -221,8 +221,8 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: identity, write_policy: [human] }
-          - { name: working,  write_policy: [human, agent, runner] }
+          - { name: identity, kind: origin, write_policy: [human] }
+          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick, kind: leaf}
 

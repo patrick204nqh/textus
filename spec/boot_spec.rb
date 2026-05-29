@@ -20,11 +20,11 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: working,  write_policy: [human, agent, runner] }
-        - { name: intake,   write_policy: [runner] }
-        - { name: review,   write_policy: [agent] }
-        - { name: output,   write_policy: [builder] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+        - { name: intake,   kind: origin, write_policy: [runner] }
+        - { name: review,   kind: origin, write_policy: [agent] }
+        - { name: output,   kind: derived, write_policy: [builder] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf}
 
@@ -101,8 +101,8 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: weird,    write_policy: [human] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: weird,    kind: origin, write_policy: [human] }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
 
@@ -204,11 +204,11 @@ RSpec.describe Textus::Boot do
           - { name: fetcher,  kind: runner }
           - { name: compiler, kind: generator }
         zones:
-          - { name: self,    write_policy: [owner] }
-          - { name: working, write_policy: [owner, proposer, fetcher] }
-          - { name: review,  write_policy: [proposer, owner] }
-          - { name: world,   write_policy: [fetcher] }
-          - { name: build,   write_policy: [compiler] }
+          - { name: self,    kind: origin, write_policy: [owner] }
+          - { name: working, kind: origin, write_policy: [owner, proposer, fetcher] }
+          - { name: review,  kind: origin, write_policy: [proposer, owner] }
+          - { name: world,   kind: origin, write_policy: [fetcher] }
+          - { name: build,   kind: derived, write_policy: [compiler] }
         entries: []
       YAML
       s = build_store(yaml)
@@ -228,10 +228,10 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         zones:
-          - { name: identity, write_policy: [human] }
-          - { name: working,  write_policy: [human, agent, runner] }
-          - { name: review,   write_policy: [agent] }
-          - { name: output,   write_policy: [builder] }
+          - { name: identity, kind: origin, write_policy: [human] }
+          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+          - { name: review,   kind: origin, write_policy: [agent] }
+          - { name: output,   kind: derived, write_policy: [builder] }
         entries: []
       YAML
       s = build_store(yaml)

@@ -16,7 +16,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   end
 
   it "accepts a zone with no kind (kind is optional)" do
-    expect { parse("  - { name: working, write_policy: [human] }") }.not_to raise_error
+    expect { parse("  - { name: working, kind: origin, write_policy: [human] }") }.not_to raise_error
   end
 
   it "rejects an unknown kind" do

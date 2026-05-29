@@ -15,8 +15,8 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: review,   write_policy: [agent, human] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: review,   kind: origin, write_policy: [agent, human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
@@ -45,8 +45,8 @@ RSpec.describe "store.reject with signal-based proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, write_policy: [human] }
-        - { name: pending,  write_policy: [human] }
+        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: pending,  kind: origin, write_policy: [human] }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 

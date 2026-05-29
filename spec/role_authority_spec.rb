@@ -14,7 +14,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, agent, runner] }
+        - { name: working, kind: origin, write_policy: [human, agent, runner] }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
 
@@ -71,7 +71,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
           - { name: owner,    kind: accept_authority }
           - { name: proposer, kind: proposer }
         zones:
-          - { name: working, write_policy: [owner, proposer] }
+          - { name: working, kind: origin, write_policy: [owner, proposer] }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: person, owner: owner:patrick, nested: true, kind: nested}
 

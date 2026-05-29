@@ -10,7 +10,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, write_policy: [runner] }]
+      zones: [{ name: intake, kind: origin, write_policy: [runner] }]
       entries:
         - key: intake.repos
           kind: intake
@@ -65,7 +65,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     it "accepts {content:} for a format: json entry and writes valid JSON" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, write_policy: [runner] }]
+        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
         entries:
           - key: intake.repos
             kind: intake
@@ -93,7 +93,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     it "accepts {body:} for a format: text entry and writes bytes verbatim" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, write_policy: [runner] }]
+        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
         entries:
           - key: intake.notes
             kind: intake

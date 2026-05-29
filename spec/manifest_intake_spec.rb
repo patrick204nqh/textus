@@ -23,7 +23,7 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.handler and intake.config" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [runner] }]
+      zones: [{ name: working, kind: origin, write_policy: [runner] }]
       entries:
         - key: working.news
           kind: intake
@@ -41,7 +41,7 @@ RSpec.describe "Manifest intake:" do
   it "exposes refresh rule via Manifest#rules_for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [runner] }]
+      zones: [{ name: working, kind: origin, write_policy: [runner] }]
       entries:
         - key: working.news
           kind: intake
@@ -66,7 +66,7 @@ RSpec.describe "Manifest intake:" do
   it "returns an empty RuleSet for keys with no matching refresh rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [human] }]
+      zones: [{ name: working, kind: origin, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -77,7 +77,7 @@ RSpec.describe "Manifest intake:" do
   it "defaults to a Leaf entry when no intake block is present" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [human] }]
+      zones: [{ name: working, kind: origin, write_policy: [human] }]
       entries:
         - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -89,7 +89,7 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.publish_to as a list of targets" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [runner] }]
+      zones: [{ name: working, kind: origin, write_policy: [runner] }]
       entries:
         - key: working.news
           kind: intake
@@ -105,7 +105,7 @@ RSpec.describe "Manifest intake:" do
   it "defaults publish_to to an empty array when omitted" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [runner] }]
+      zones: [{ name: working, kind: origin, write_policy: [runner] }]
       entries:
         - key: working.news
           kind: intake

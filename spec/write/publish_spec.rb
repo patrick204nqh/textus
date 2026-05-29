@@ -17,7 +17,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, agent, runner, builder] }
+          - { name: working, kind: derived, write_policy: [human, agent, runner, builder] }
         entries:
           - key: working.agents
             kind: nested
@@ -64,8 +64,8 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, agent, runner] }
-          - { name: output, write_policy: [builder] }
+          - { name: working, kind: origin, write_policy: [human, agent, runner] }
+          - { name: output, kind: derived, write_policy: [builder] }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested }
 
@@ -144,7 +144,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: output, write_policy: [runner, builder] }
+          - { name: output, kind: derived, write_policy: [runner, builder] }
         entries:
           - key: output.catalog
             kind: intake
@@ -183,7 +183,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: output, write_policy: [runner, builder] }
+          - { name: output, kind: derived, write_policy: [runner, builder] }
         entries:
           - key: output.catalog
             kind: intake
@@ -207,7 +207,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, agent, runner, builder] }
+          - { name: working, kind: derived, write_policy: [human, agent, runner, builder] }
         entries:
           - key: working.bad
             kind: nested

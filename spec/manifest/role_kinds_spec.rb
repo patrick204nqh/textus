@@ -10,10 +10,10 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
       parse(<<~YAML)
         version: textus/3
         zones:
-          - { name: identity, write_policy: [human] }
-          - { name: working,  write_policy: [human, agent, runner] }
-          - { name: review,   write_policy: [agent] }
-          - { name: build,    write_policy: [builder] }
+          - { name: identity, kind: origin, write_policy: [human] }
+          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+          - { name: review,   kind: origin, write_policy: [agent] }
+          - { name: build,    kind: derived, write_policy: [builder] }
         entries: []
       YAML
     end
@@ -59,11 +59,11 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: proposer, kind: proposer }
           - { name: fetcher,  kind: runner }
         zones:
-          - { name: self,    write_policy: [owner] }
-          - { name: world,   write_policy: [fetcher] }
-          - { name: memory,  write_policy: [proposer, owner] }
-          - { name: library, write_policy: [proposer] }
-          - { name: build,   write_policy: [compiler] }
+          - { name: self,    kind: origin, write_policy: [owner] }
+          - { name: world,   kind: origin, write_policy: [fetcher] }
+          - { name: memory,  kind: origin, write_policy: [proposer, owner] }
+          - { name: library, kind: origin, write_policy: [proposer] }
+          - { name: build,   kind: derived, write_policy: [compiler] }
         entries: []
       YAML
     end
@@ -94,7 +94,7 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
         version: textus/3
         roles: []
         zones:
-          - { name: identity, write_policy: [] }
+          - { name: identity, kind: origin, write_policy: [] }
         entries: []
       YAML
       expect(m.policy.role_kind("anyone")).to be_nil
@@ -110,8 +110,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: owner,    kind: accept_authority }
           - { name: compiler, kind: generator }
         zones:
-          - { name: self,  write_policy: [owner] }
-          - { name: build, write_policy: [compiler] }
+          - { name: self,  kind: origin, write_policy: [owner] }
+          - { name: build, kind: derived, write_policy: [compiler] }
         entries:
           - { key: out.report, kind: derived, zone: build, path: build/report.md, format: markdown,
               template: report.mustache, compute: { kind: projection, select: "self.*" } }
@@ -128,8 +128,8 @@ RSpec.describe "Textus::Manifest role-kind accessors" do
           - { name: owner,    kind: accept_authority }
           - { name: proposer, kind: proposer }
         zones:
-          - { name: self,   write_policy: [owner] }
-          - { name: drafts, write_policy: [proposer, owner] }
+          - { name: self,   kind: origin, write_policy: [owner] }
+          - { name: drafts, kind: origin, write_policy: [proposer, owner] }
         entries:
           - { key: drafts.note, kind: leaf, zone: drafts, path: drafts/note.md, format: markdown }
       YAML

@@ -12,7 +12,7 @@ RSpec.describe "CLI hook verbs" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, write_policy: [runner] }]
+      zones: [{ name: intake, kind: origin, write_policy: [runner] }]
       entries:
         - key: intake.x
           kind: intake
@@ -62,7 +62,7 @@ RSpec.describe "CLI hook verbs" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, write_policy: [human, runner] }]
+      zones: [{ name: working, kind: origin, write_policy: [human, runner] }]
       entries: [{ key: working.j, path: working/j.md, zone: working, kind: leaf }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)

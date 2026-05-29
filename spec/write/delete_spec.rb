@@ -9,8 +9,8 @@ RSpec.describe Textus::Write::Delete do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
-        - { name: identity,   write_policy: [human] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: identity,   kind: origin, write_policy: [human] }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
 

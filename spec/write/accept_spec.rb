@@ -9,8 +9,8 @@ RSpec.describe Textus::Write::Accept do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, agent, runner] }
-        - { name: review, write_policy: [agent, human] }
+        - { name: working, kind: origin, write_policy: [human, agent, runner] }
+        - { name: review, kind: origin, write_policy: [agent, human] }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 
@@ -116,8 +116,8 @@ RSpec.describe Textus::Write::Accept do
           - { name: agent, kind: proposer }
           - { name: runner, kind: runner }
         zones:
-          - { name: working, write_policy: [agent, runner] }
-          - { name: review, write_policy: [agent] }
+          - { name: working, kind: origin, write_policy: [agent, runner] }
+          - { name: review, kind: origin, write_policy: [agent] }
         entries:
           - { key: working.n, path: working/n.md, zone: working, schema: null, owner: o, kind: leaf }
           - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
@@ -169,8 +169,8 @@ RSpec.describe Textus::Write::Accept do
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, agent, runner] }
-          - { name: review, write_policy: [agent, human] }
+          - { name: working, kind: origin, write_policy: [human, agent, runner] }
+          - { name: review, kind: origin, write_policy: [agent, human] }
         entries:
           - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested}
 
@@ -228,8 +228,8 @@ RSpec.describe Textus::Write::Accept do
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, write_policy: [human, agent, runner] }
-          - { name: review, write_policy: [agent, human] }
+          - { name: working, kind: origin, write_policy: [human, agent, runner] }
+          - { name: review, kind: origin, write_policy: [agent, human] }
         entries:
           - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 

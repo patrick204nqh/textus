@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
       entries:
         - key: working.doc
           kind: intake

@@ -10,8 +10,8 @@ RSpec.describe Textus::Manifest::Policy do
         - { name: human, kind: proposer }
         - { name: builder, kind: generator }
       zones:
-        - { name: working, write_policy: [human] }
-        - { name: review,  write_policy: [builder] }
+        - { name: working, kind: origin, write_policy: [human] }
+        - { name: review,  kind: derived, write_policy: [builder] }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
@@ -48,8 +48,8 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: human, kind: proposer }
             - { name: builder, kind: generator }
           zones:
-            - { name: review, write_policy: [human] }
-            - { name: draft,  write_policy: [builder] }
+            - { name: review, kind: origin, write_policy: [human] }
+            - { name: draft,  kind: derived, write_policy: [builder] }
           entries:
             - { key: review.notes, path: review/notes.md, zone: review, schema: null, owner: human:self, kind: leaf }
         YAML
@@ -66,8 +66,8 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: human, kind: proposer }
             - { name: builder, kind: generator }
           zones:
-            - { name: peer-review, write_policy: [human] }
-            - { name: draft,       write_policy: [builder] }
+            - { name: peer-review, kind: origin, write_policy: [human] }
+            - { name: draft,       kind: derived, write_policy: [builder] }
           entries:
             - { key: peer-review.notes, path: peer-review/notes.md, zone: peer-review, schema: null, owner: human:self, kind: leaf }
         YAML
@@ -104,8 +104,8 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: human, kind: proposer }
             - { name: builder, kind: generator }
           zones:
-            - { name: working, write_policy: [human] }
-            - { name: review,  write_policy: [human] }
+            - { name: working, kind: origin, write_policy: [human] }
+            - { name: review,  kind: origin, write_policy: [human] }
           entries:
             - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
             - { key: review.notes,  path: review/notes.md,  zone: review,  schema: null, owner: human:self, kind: leaf }
@@ -152,7 +152,7 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles: [{ name: builder, kind: generator }]
-        zones: [{ name: out, write_policy: [builder] }]
+        zones: [{ name: out, kind: derived, write_policy: [builder] }]
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))

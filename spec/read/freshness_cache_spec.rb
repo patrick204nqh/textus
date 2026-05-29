@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, write_policy: [runner] }
+        - { name: intake, kind: origin, write_policy: [runner] }
       entries:
         - key: intake.feed
           path: intake/feed.md

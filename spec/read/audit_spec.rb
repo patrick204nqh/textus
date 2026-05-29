@@ -12,8 +12,8 @@ RSpec.describe Textus::Read::Audit do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, write_policy: [human, runner] }
-        - { name: identity,   write_policy: [human] }
+        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: identity,   kind: origin, write_policy: [human] }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
