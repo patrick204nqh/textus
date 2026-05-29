@@ -8,7 +8,7 @@ module Textus
 
         def call(store)
           check_list = checks&.split(",")&.map(&:strip)
-          res = Textus::Doctor.run_via(container: store.container, role: Textus::Role::DEFAULT, checks: check_list)
+          res = store.doctor(checks: check_list)
           emit(res, exit_code: res["ok"] ? 0 : 1)
         end
       end
