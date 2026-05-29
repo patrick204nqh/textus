@@ -615,7 +615,15 @@ rules:
 | `refresh` | `{ ttl, on_stale, sync_budget_ms }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
 | `promotion` | `{ requires: [...] }` | Predicates a `review` entry must satisfy before `textus accept` will promote it. Built-in predicates: `schema_valid` (entry passes schema validation) and `human_accept` (the accepting role must be `human`). Additional predicates may be registered via `:validate` hooks. Enforced — `textus accept` refuses if any predicate fails. |
-| `retention` | (reserved) | Slot reserved for future retention policy (cap by age / count). Implementations parse it but otherwise ignore. |
+| `retention` | `{ expire_after:, archive_after: }` | Pruning policy for matched leaves. Duration strings: `30s`, `90m`, `12h`, `30d`, or bare integer seconds. `textus retain --as=ROLE` sweeps matched leaves: `expire_after` is checked first, so a leaf older than `expire_after` is deleted (and audited); otherwise a leaf older than `archive_after` is copied to `<store>/archive/<relative-path>` and then deleted. Age is measured from the leaf file's modification time. The `--as` role must be allowed to write the matched zone. |
+
+Both retention windows are optional, and `expire_after` is evaluated before
+`archive_after` — so when both apply, a leaf past the (longer) `expire_after`
+window is deleted rather than archived. The usual configuration is therefore
+`archive_after < expire_after` (archive a leaf, then delete it once older).
+`textus retain --as=ROLE` runs the sweep; `--prefix` and `--zone` narrow it, and
+any leaf whose zone the `--as` role cannot write is reported as a failure rather
+than aborting the run.
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 

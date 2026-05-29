@@ -292,6 +292,28 @@ rules:
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being refreshed and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](events.md#7a-resolve_intake-args).
 
+### Aging entries out — `retention`
+
+Queue and quarantine zones accumulate; `retention` lets them self-prune. Declare
+it in a `rules:` block, matched by glob:
+
+```yaml
+rules:
+  - match: review.**
+    retention: { expire_after: 30d }   # delete accepted/abandoned proposals
+  - match: intake.**
+    retention: { archive_after: 90d }  # move stale external bytes aside
+```
+
+Then `textus retain --as=ROLE` performs the sweep (the role must be allowed to
+write the matched zone). `expire_after` deletes the leaf; `archive_after` moves
+it to `.textus/archive/` and then deletes the original. If a rule sets both,
+`expire_after` is checked first, so a leaf wins deletion once it passes that
+window. Age is measured from the
+leaf's file modification time. Narrow a sweep with `--prefix` or `--zone`, and
+inspect what a key is subject to with `textus rule explain KEY` — retention
+appears in the effective output.
+
 ---
 
 ## 7. Wiring data out — derived entries and publishing
