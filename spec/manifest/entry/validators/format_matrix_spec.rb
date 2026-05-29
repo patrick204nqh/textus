@@ -49,25 +49,25 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
 
   it "accepts intake text in a generator zone with no template" do
     expect do
-      described_class.call(intake_entry(format: "text", path: "catalog.txt"))
+      described_class.call(intake_entry(format: "text", path: "catalog.txt"), policy: nil)
     end.not_to raise_error
   end
 
   it "accepts intake markdown in a generator zone with no template" do
     expect do
-      described_class.call(intake_entry(format: "markdown", path: "catalog.md"))
+      described_class.call(intake_entry(format: "markdown", path: "catalog.md"), policy: nil)
     end.not_to raise_error
   end
 
   it "delegates path-extension validation to the format strategy" do
     expect do
-      described_class.call(leaf_entry(format: "markdown", path: "foo.json"))
+      described_class.call(leaf_entry(format: "markdown", path: "foo.json"), policy: nil)
     end.to raise_error(Textus::UsageError, /entry 'working.foo':/)
   end
 
   it "rejects text + schema" do
     expect do
-      described_class.call(leaf_entry(format: "text", path: "foo.txt", schema: "note"))
+      described_class.call(leaf_entry(format: "text", path: "foo.txt", schema: "note"), policy: nil)
     end.to raise_error(Textus::UsageError, /text format must not declare a schema/)
   end
 
@@ -76,7 +76,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       described_class.call(derived_entry(
                              format: "markdown", in_generator_zone: true,
                              template: nil, external: false
-                           ))
+                           ), policy: nil)
     end.to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
   end
 
@@ -85,7 +85,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       described_class.call(derived_entry(
                              format: "text", path: "x.txt", in_generator_zone: true,
                              template: "x.mustache", external: false
-                           ))
+                           ), policy: nil)
     end.not_to raise_error
   end
 
@@ -94,7 +94,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       described_class.call(derived_entry(
                              format: "markdown", in_generator_zone: true,
                              template: nil, external: true
-                           ))
+                           ), policy: nil)
     end.not_to raise_error
   end
 end

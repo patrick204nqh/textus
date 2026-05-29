@@ -14,8 +14,8 @@ module Textus
                           .downcase
       end
 
-      def initialize(session)
-        @session = session
+      def initialize(container)
+        @container = container
       end
 
       def call
@@ -24,9 +24,19 @@ module Textus
 
       protected
 
-      def root     = @session.read_caps.root
-      def manifest = @session.read_caps.manifest
-      def rpc      = @session.rpc
+      def root     = @container.root
+      def manifest = @container.manifest
+      def rpc      = @container.rpc
+
+      # Dispatch a verb through the static Dispatcher table.
+      def dispatch(verb, *, **)
+        klass = Textus::Dispatcher.fetch(verb)
+        call_value = Textus::Call.build(role: Textus::Role::DEFAULT)
+        init_kwargs = { container: @container, call: call_value }
+        params = klass.instance_method(:initialize).parameters.map { |_, n| n }
+        init_kwargs[:hook_context] = nil if params.include?(:hook_context)
+        klass.new(**init_kwargs).call(*, **)
+      end
     end
   end
 end

@@ -3,7 +3,7 @@ require "fileutils"
 require "json"
 require "tmpdir"
 
-RSpec.describe Textus::Infra::Publisher do
+RSpec.describe Textus::Ports::Publisher do
   let(:tmp) { Dir.mktmpdir }
   let(:store_root) { File.join(tmp, ".textus") }
   let(:src) { File.join(store_root, "zones", "output", "out.md") }
@@ -18,13 +18,13 @@ RSpec.describe Textus::Infra::Publisher do
   after { FileUtils.remove_entry(tmp) }
 
   it "copies source bytes verbatim to the target" do
-    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.symlink?(dst)).to be false
     expect(File.binread(dst)).to eq(File.binread(src))
   end
 
   it "writes the sentinel under <store_root>/sentinels/ with repo-relative source/target fields" do
-    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.exist?(sentinel)).to be true
 
     data = JSON.parse(File.read(sentinel))
@@ -36,27 +36,27 @@ RSpec.describe Textus::Infra::Publisher do
 
   it "mirrors nested target paths in the sentinel tree" do
     nested = File.join(tmp, ".claude-plugin", "marketplace.json")
-    Textus::Infra::Publisher.publish(source: src, target: nested, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: nested, store_root: store_root)
     expected_sentinel = File.join(store_root, "sentinels", ".claude-plugin", "marketplace.json.textus-managed.json")
     expect(File.exist?(expected_sentinel)).to be true
   end
 
   it "refuses to clobber an unmanaged file" do
     File.write(dst, "preexisting")
-    expect { Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root) }
+    expect { Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root) }
       .to raise_error(Textus::PublishError, /clobber/)
   end
 
   it "overwrites when the target is already textus-managed (new-location sentinel)" do
-    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root)
     File.binwrite(src, "world\n")
-    Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root)
     expect(File.binread(dst)).to eq("world\n")
   end
 
   it "creates parent directories that don't yet exist" do
     nested = File.join(tmp, "a", "b", "c", "out.md")
-    Textus::Infra::Publisher.publish(source: src, target: nested, store_root: store_root)
+    Textus::Ports::Publisher.publish(source: src, target: nested, store_root: store_root)
     expect(File.binread(nested)).to eq(File.binread(src))
   end
 
@@ -64,7 +64,7 @@ RSpec.describe Textus::Infra::Publisher do
     other = File.join(tmp, "other.md")
     File.binwrite(other, "preexisting\n")
     File.symlink(other, dst)
-    expect { Textus::Infra::Publisher.publish(source: src, target: dst, store_root: store_root) }
+    expect { Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root) }
       .to raise_error(Textus::PublishError, /clobber/)
   end
 end

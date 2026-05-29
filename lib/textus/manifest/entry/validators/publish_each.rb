@@ -7,7 +7,7 @@ module Textus
           VAR_RE = /\{([a-z]+)\}/
           REQUIRED_DISCRIMINATOR_VARS = %w[leaf basename key].freeze
 
-          def self.call(entry)
+          def self.call(entry, policy: nil) # rubocop:disable Lint/UnusedMethodArgument
             # Use raw to detect misuse on non-nested entries (typed attr stubs nil on Base).
             publish_each = entry.nested? ? entry.publish_each : entry.raw["publish_each"]
             return if publish_each.nil?

@@ -37,7 +37,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
-          @manifest.resolver.enumerate(prefix: @key).each do |row|
+          pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
 
@@ -49,12 +49,12 @@ module Textus
               )
             end
 
-            Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
-            pctx.emit.call(:file_published,
-                           key: row[:key],
-                           envelope: pctx.reader.call(row[:key]),
-                           source: row[:path],
-                           target: target_abs)
+            Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
+            pctx.emit(:file_published,
+                      key: row[:key],
+                      envelope: pctx.reader.call(row[:key]),
+                      source: row[:path],
+                      target: target_abs)
             leaves << { "key" => row[:key], "source" => row[:path], "target" => target_abs }
           end
 

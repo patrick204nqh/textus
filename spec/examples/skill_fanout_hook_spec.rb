@@ -5,8 +5,8 @@ require "tmpdir"
 require_relative "../../examples/claude-plugin/recipes/skill_fanout"
 
 # Exercises the skill_fanout recipe against a real Textus::Store so the
-# spec depends only on the public Application::Context + Operations
-# contract that hooks actually receive at runtime.
+# spec depends only on the public Hooks::Context + RoleScope contract
+# that hooks actually receive at runtime.
 RSpec.describe "skill_fanout :entry_refreshed listener" do
   include_context "textus_store_fixture"
 
@@ -29,7 +29,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ops) { store.session(role: "runner") }
+  let(:ops) { store.as("runner") }
 
   before do
     # The recipe queues its registration via Textus.hook. Drain and apply
@@ -42,7 +42,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   def trigger(key:, files:)
     handler = store.events.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
-    ctx = Textus::Hooks::Context.new(session: ops)
+    ctx = Textus::Hooks::Context.new(scope: ops)
     handler[:callable].call(ctx: ctx, key: key, envelope: envelope, change: :updated)
   end
 

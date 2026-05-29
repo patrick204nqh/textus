@@ -1,7 +1,7 @@
 # ADR 0013 — Port extraction: Store as composition root
 
 **Date:** 2026-05-27
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) (`Infra::*` renamed to `Ports::*`; `Application::Writes::EnvelopeIO` flattened to `Envelope::IO`). The composition-root role of `Store` is unchanged.
 **Depends on:** [ADR 0005](./0005-store-facade-final-removal.md), [ADR 0006](./0006-format-strategy-extraction.md), [ADR 0007](./0007-envelope-data-class.md)
 
 ## Context

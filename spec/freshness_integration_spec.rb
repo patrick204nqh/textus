@@ -53,7 +53,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       Thread.current[:refresh_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = store.session(role: "runner").get_or_refresh("working.foo")
+      envelope = store.as("runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -73,7 +73,7 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = store.session(role: "runner").get_or_refresh("working.foo")
+      envelope = store.as("runner").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
@@ -125,7 +125,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = store.session(role: "runner").get_or_refresh("working.slow")
+      envelope = store.as("runner").get_or_refresh("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
@@ -193,14 +193,14 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       orchestrator_calls = []
-      allow_any_instance_of(Textus::Application::Write::RefreshOrchestrator) # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(Textus::Write::RefreshOrchestrator) # rubocop:disable RSpec/AnyInstance
         .to receive(:execute) do |_, *args, **kwargs|
         orchestrator_calls << [args, kwargs]
         raise "orchestrator must not be called during build (issue #59)"
       end
 
       store = Textus::Store.new(textus)
-      ctx = store.session(role: "builder").ctx
+      ctx = Textus::Call.build(role: "builder")
       build_publish(store, ctx).call
 
       expect(orchestrator_calls).to be_empty

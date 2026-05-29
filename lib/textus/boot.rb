@@ -120,7 +120,7 @@ module Textus
         "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
     ].freeze
 
-    def self.agent_quickstart(manifest, session)
+    def self.agent_quickstart(manifest, audit_log)
       proposer_roles = manifest.policy.roles_with_kind(:proposer)
       agent_role = proposer_roles.first
 
@@ -135,7 +135,7 @@ module Textus
         "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
         "writable_zones" => writable_zones,
         "propose_zone" => propose_zone,
-        "latest_seq" => session.write_caps.audit_log.latest_seq,
+        "latest_seq" => audit_log.latest_seq,
       }
     end
 
@@ -150,18 +150,18 @@ module Textus
       )
     end
 
-    def self.run(session)
-      manifest = session.read_caps.manifest
+    def self.run_via(container:, role: Textus::Role::DEFAULT) # rubocop:disable Lint/UnusedMethodArgument
+      manifest = container.manifest
       {
         "protocol" => PROTOCOL_ID,
-        "store_root" => session.read_caps.root,
+        "store_root" => container.root,
         "zones" => zones_for(manifest),
         "entries" => entries_for(manifest),
-        "hooks" => hooks_for(session),
+        "hooks" => hooks_for_container(container),
         "write_flows" => write_flows_for(manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(manifest),
-        "agent_quickstart" => agent_quickstart(manifest, session),
+        "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
         "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
       }
     end
@@ -193,13 +193,17 @@ module Textus
       end
     end
 
-    def self.hooks_for(session)
+    def self.hooks_for_container(container)
+      hooks_for_container_internal(rpc: container.rpc, events: container.events)
+    end
+
+    def self.hooks_for_container_internal(rpc:, events:)
       sections = {}
       Hooks::RpcRegistry::EVENTS.each_key do |event|
-        sections[event.to_s] = session.rpc.names(event).map(&:to_s).sort
+        sections[event.to_s] = rpc.names(event).map(&:to_s).sort
       end
       Hooks::EventBus::EVENTS.each_key do |event|
-        sections[event.to_s] = session.events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
+        sections[event.to_s] = events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
       end
       sections
     end

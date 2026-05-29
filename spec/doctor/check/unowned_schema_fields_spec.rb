@@ -23,7 +23,7 @@ RSpec.describe Textus::Doctor::Check::UnownedSchemaFields do
         title: { type: string, maintained_by: human }
     YAML
     store = Textus::Store.new(root)
-    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
+    expect(described_class.new(store.container).call).to eq([])
   end
 
   it "emits schema.unowned_fields when a field lacks maintained_by" do
@@ -34,7 +34,7 @@ RSpec.describe Textus::Doctor::Check::UnownedSchemaFields do
         summary: { type: string }
     YAML
     store = Textus::Store.new(root)
-    issues = described_class.new(Textus::Session.for(store)).call
+    issues = described_class.new(store.container).call
     expect(issues).to include(hash_including(
                                 "code" => "schema.unowned_fields",
                                 "level" => "info",
@@ -46,6 +46,6 @@ RSpec.describe Textus::Doctor::Check::UnownedSchemaFields do
   it "ignores schemas that fail to parse (handled by SchemaParseError check)" do
     File.write(File.join(root, "schemas/broken.yaml"), "::: not yaml :::")
     store = Textus::Store.new(root)
-    expect(described_class.new(Textus::Session.for(store)).call).to eq([])
+    expect(described_class.new(store.container).call).to eq([])
   end
 end

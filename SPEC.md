@@ -568,8 +568,8 @@ The three `:refresh_*` lifecycle events report the progress and failures of back
 
 **Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
 
-- **RPC hooks** (`rpc` mode) receive `caps:` — a `ReadCaps` or `WriteCaps` slice (`Textus::Application::ReadCaps` / `WriteCaps`). Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
-- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that wraps the session and exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
+- **RPC hooks** (`rpc` mode) receive `caps:` — a `Textus::Container`. Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
+- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
 
 Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
 
@@ -937,14 +937,13 @@ Plugin authors interact only with the Hook DSL (`Textus.hook { |reg| reg.on(:res
 
 Both read and write paths flow through the application layer:
 
-- **Reads** flow through `Application::Read::Get` (pure read + freshness annotation) or `Read::GetOrRefresh` (composes Get with `Write::RefreshOrchestrator`). Each takes a `caps:` slice and an `Application::Context`.
-- **Writes** flow through `Application::Write::{Put,Delete,Mv,Accept,Reject,Publish,RefreshWorker}`. Permission checks happen at the use-case layer (via `Domain::Authorizer#authorize_write!`); the audit-append invariant lives in `Application::Envelope::Writer`.
-- `Application::Context` is the slim request record: `role`, `correlation_id`, `now`, `dry_run`. Ports come from a `Caps` record (Read/Write/Hook), not from the Context.
-- `Textus::Session` is the factory CLI verbs and the MCP gate use to dispatch
-  use cases. `Session.for(store, role:)` returns a per-call object exposing one
-  method per registered use case (`#put`, `#get`, `#refresh`, …); methods are
-  generated from `Application::UseCase.entries` so adding a use case is a
-  single `UseCase.register(...)` line.
+- **Reads** flow through `Textus::Read::Get` (pure read + freshness annotation) or `Read::GetOrRefresh` (composes Get with `Write::RefreshOrchestrator`). Each takes a `container:` and a `call:`.
+- **Writes** flow through `Textus::Write::{Put,Delete,Mv,Accept,Reject,Publish,RefreshWorker}`. Permission checks happen at the use-case layer (via `Domain::Authorizer#authorize_write!`); the audit-append invariant lives in `Textus::Envelope::IO::Writer`.
+- `Textus::Call` is the slim per-invocation record: `role`, `correlation_id`, `now`, `dry_run`. Ports come from `Textus::Container`, not from the Call.
+- `Textus::Store` is the composition root and verb dispatcher. CLI verbs and the
+  MCP gate call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`).
+  Verbs are looked up in the static `Textus::Dispatcher::VERBS` table; adding a
+  use case is a single entry in `VERBS` plus the class.
 
 See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
 

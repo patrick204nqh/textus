@@ -3,7 +3,7 @@ module Textus
     class Check
       class SchemaViolations < Check
         def call
-          res = @session.validate_all
+          res = dispatch(:validate_all)
           res["violations"].map do |v|
             fix = v["expected"] &&
                   "field '#{v["field"]}' should be written by '#{v["expected"]}' (last writer: #{v["last_writer"]})"

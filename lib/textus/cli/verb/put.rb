@@ -19,7 +19,7 @@ module Textus
             if fetch_name
               result =
                 begin
-                  Timeout.timeout(Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
+                  Timeout.timeout(Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS) do
                     store.rpc.invoke(:resolve_intake, fetch_name,
                                      caps: nil,
                                      config: { "bytes" => raw },
@@ -27,7 +27,7 @@ module Textus
                   end
                 rescue Timeout::Error
                   raise UsageError.new(
-                    "fetch '#{fetch_name}' exceeded #{Textus::Application::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
+                    "fetch '#{fetch_name}' exceeded #{Textus::Write::RefreshWorker::FETCH_TIMEOUT_SECONDS}s timeout",
                   )
                 end
               basename = key.split(".").last
@@ -46,7 +46,7 @@ module Textus
           meta = payload["_meta"] || {}
           body = payload["body"] || ""
           if_etag = payload["if_etag"]
-          result = store.session(role: role).put(key, meta: meta, body: body, if_etag: if_etag)
+          result = store.as(role).put(key, meta: meta, body: body, if_etag: if_etag)
           emit(result.to_h_for_wire)
         end
       end

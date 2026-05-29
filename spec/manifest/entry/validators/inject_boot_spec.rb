@@ -12,24 +12,24 @@ RSpec.describe Textus::Manifest::Entry::Validators::InjectBoot do
   end
 
   it "no-ops when inject_boot is false" do
-    expect { described_class.call(entry_with(inject_boot: false)) }.not_to raise_error
+    expect { described_class.call(entry_with(inject_boot: false), policy: nil) }.not_to raise_error
   end
 
   it "requires generator zone" do
     expect do
-      described_class.call(entry_with(inject_boot: true, in_generator_zone: false, template: "x"))
+      described_class.call(entry_with(inject_boot: true, in_generator_zone: false, template: "x"), policy: nil)
     end.to raise_error(Textus::UsageError, /only valid on derived entries/)
   end
 
   it "requires a template" do
     expect do
-      described_class.call(entry_with(inject_boot: true, in_generator_zone: true, template: nil))
+      described_class.call(entry_with(inject_boot: true, in_generator_zone: true, template: nil), policy: nil)
     end.to raise_error(Textus::UsageError, /requires a template/)
   end
 
   it "accepts a valid configuration" do
     expect do
-      described_class.call(entry_with(inject_boot: true, in_generator_zone: true, template: "claude-root.mustache"))
+      described_class.call(entry_with(inject_boot: true, in_generator_zone: true, template: "claude-root.mustache"), policy: nil)
     end.not_to raise_error
   end
 end

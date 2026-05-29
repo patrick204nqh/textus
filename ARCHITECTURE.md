@@ -2,21 +2,19 @@
 
 ```
 ┌─ Interface ────────────────────────────────────────────────┐
-│  CLI verbs:  session = Session.for(store, role:)           │
-│              session.<name>(...)   # one method per         │
-│                                # registered use case        │
-│                                # (put/get/refresh/…)        │
+│  CLI verbs:  store.<verb>(..., role:)                      │
+│              store.as(role).<verb>(...)                    │
+│                                # (put/get/refresh/…)       │
 │                                                            │
 │  MCP gate:   textus mcp serve — same use cases, JSON-RPC.  │
 └──────────────────────┬─────────────────────────────────────┘
                        │
 ┌─ Application ────────▼─────────────────────────────────────┐
-│  Context          (slim Data: role, correlation_id, now,   │
+│  Call             (slim Data: role, correlation_id, now,   │
 │                    dry_run — request state only)           │
-│  Caps             (Read/Write/Hook records — store slices) │
-│  Session          (per-call dispatch; methods generated    │
-│                    from UseCase registry)                  │
-│  UseCase          (registry: verb → module, caps_kind)     │
+│  Container        (single record — wired ports + manifest) │
+│  Dispatcher       (static VERBS table: verb → use-case)    │
+│  RoleScope        (Store#as(role) — forwards verb calls)   │
 │                                                            │
 │  read/{get,get_or_refresh,list,where,uid,schema_envelope,  │
 │        deps,rdeps,published,stale,validate_all,            │
@@ -26,7 +24,7 @@
 │         refresh_worker,refresh_orchestrator,refresh_all}   │
 │  maintenance/{migrate,key_mv_prefix,key_delete_prefix,     │
 │               zone_mv,rule_lint}.rb                        │
-│  envelope/{reader,writer}.rb  (split: parse vs persist)    │
+│  envelope/io/{reader,writer}.rb  (split: parse vs persist) │
 │  projection.rb                                             │
 └──────────┬───────────────────────────────┬─────────────────┘
            │ uses domain                   │ uses ports
@@ -42,12 +40,12 @@
                                            │ implements
 ┌─ Infrastructure ─────────────────────────▼─────────────────┐
 │  Store              (composition root — wires ports,       │
-│                      vends Sessions)                       │
+│                      vends a Container + dispatches verbs) │
 │  Storage::FileStore (bytes-only port: read/write/delete/   │
 │                      exists?/etag)                         │
 │  Manifest           (Data, Resolver, Policy, Rules)        │
 │  Schemas            (eager-load cache)                     │
-│  Infra::{AuditLog,AuditSubscriber,Publisher,Clock,         │
+│  Ports::{AuditLog,AuditSubscriber,Publisher,Clock,         │
 │          Refresh::Lock,Refresh::Detached,BuildLock}        │
 │  Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,   │
 │          Builtin,ErrorLog}                                 │
@@ -55,57 +53,51 @@
 └────────────────────────────────────────────────────────────┘
 
    Dependency rule: arrows point DOWN. Domain has zero outbound
-   imports. Application imports Domain + Infra (via ports).
-   Use cases declare their real collaborators in their Impl
-   constructor; UseCase.register hooks them into Session.
+   imports. Application imports Domain + Ports.
+   Use cases are plain classes on (container:, call:).
+   Verbs are looked up in the static Dispatcher::VERBS table.
 ```
 
 ## How a verb becomes a method
 
-Each application use case is a module under `lib/textus/application/{read,write,maintenance}/`. The shape is uniform:
+Each application use case is a plain class under `lib/textus/{read,write,maintenance}/`. The shape is uniform:
 
 ```ruby
 module Textus
-  module Application
-    module Read
-      module Get
-        def self.call(*, session:, ctx:, caps:, **)
-          Impl.new(ctx: ctx, caps: caps).call(*, **)
-        end
+  module Read
+    class Get
+      def initialize(container:, call:)
+        @container = container
+        @call      = call
+      end
 
-        class Impl
-          def initialize(ctx:, caps:, ...)
-            @ctx = ctx; @manifest = caps.manifest; ...
-          end
-
-          def call(key) ... end
-        end
+      def call(key)
+        ...
       end
     end
   end
 end
-
-Textus::Application::UseCase.register(:get, Textus::Application::Read::Get, caps: :read)
 ```
 
-`Session` generates one dispatch method per registered entry (see `lib/textus/session.rb` — the `Application::UseCase.each do |entry| ... end` block at the bottom). Adding a new verb is **one `UseCase.register` line** plus the module — no edits to `Session`.
+Verbs are looked up in a static frozen table (`Textus::Dispatcher::VERBS`) that maps `:get → Textus::Read::Get`, `:put → Textus::Write::Put`, etc. `Store#put` / `Store#get` / `Store#as(role).<verb>(...)` instantiate the use case on `(container:, call:)` and invoke `#call`. Adding a new verb is **one entry in `Dispatcher::VERBS`** plus the class — no metaprogramming.
 
-Two collaborators live outside the registry because they're composed by other use cases, not invoked as verbs:
+Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 
-- `Application::Write::RefreshOrchestrator` — composes `RefreshWorker` with the freshness `Action` returned by `Domain::Freshness`. Session memoizes one (`session.refresh_orchestrator`).
-- `Application::Envelope::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`. Session memoizes both.
+- `Write::RefreshOrchestrator` — composes `RefreshWorker` with the freshness `Action` returned by `Domain::Freshness`.
+- `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
-## Caps
+## Container
 
-Use cases never see the raw `Store`. `Application::Caps` defines three role-scoped slices:
+Use cases never see the raw `Store`. `Textus::Container` is a single record holding the wired collaborators:
 
 ```ruby
-ReadCaps  = Data.define(:manifest, :file_store, :schemas, :root, :audit_log, :events)
-WriteCaps = Data.define(:manifest, :file_store, :schemas, :root, :audit_log, :events, :authorizer)
-HookCaps  = Data.define(:events, :rpc, :manifest, :root)
+Container = Data.define(
+  :manifest, :file_store, :schemas, :root,
+  :audit_log, :events, :rpc, :authorizer
+)
 ```
 
-`Session.for(store, role:)` builds all three via `Application.caps_from_store(store)`; the dispatch method picks `read_caps` or `write_caps` based on the `caps_kind` declared at registration time. RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) receive a `caps:` kwarg that is the appropriate Read/Write slice — legacy `store:` is rejected by `Hooks::RpcRegistry#invoke`.
+The `Store` builds one `Container` at boot; every use case receives it via `(container:, call:)`. RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps: <Container>` — field names match what the prior `WriteCaps` exposed, so handlers reading `caps.manifest`, `caps.events`, etc. continue to work.
 
 ## Ports
 
@@ -113,23 +105,23 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 
 | Class | Role |
 |---|---|
-| `Infra::Storage::FileStore` | Bytes-only FS I/O — `read`, `write`, `delete`, `exists?`, `etag`. No knowledge of envelopes or schemas. |
-| `Infra::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, and rotation. |
-| `Infra::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
-| `Infra::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
-| `Infra::Refresh::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent refresh workers from racing on the same entry. |
-| `Infra::Refresh::Detached` | Spawns a background thread for async refresh; the caller receives a `refresh_backgrounded` event instead of blocking. |
-| `Infra::BuildLock` | Process-exclusive `flock` guard over the materializer build pipeline. Raises `BuildInProgress` if a build is already running. |
+| `Ports::Storage::FileStore` | Bytes-only FS I/O — `read`, `write`, `delete`, `exists?`, `etag`. No knowledge of envelopes or schemas. |
+| `Ports::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, and rotation. |
+| `Ports::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
+| `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
+| `Ports::Refresh::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent refresh workers from racing on the same entry. |
+| `Ports::Refresh::Detached` | Spawns a background thread for async refresh; the caller receives a `refresh_backgrounded` event instead of blocking. |
+| `Ports::BuildLock` | Process-exclusive `flock` guard over the materializer build pipeline. Raises `BuildInProgress` if a build is already running. |
 
-Application use cases access ports only through `Caps` fields — never through the raw `Store`.
+Application use cases access ports only through `Container` fields — never through the raw `Store`.
 
 ### EnvelopeIO
 
-`Application::Envelope::Reader` and `Application::Envelope::Writer` split the envelope pipeline into read-only parse and write-with-audit halves.
+`Envelope::IO::Reader` and `Envelope::IO::Writer` split the envelope pipeline into read-only parse and write-with-audit halves.
 
-**Reader** (`lib/textus/application/envelope/reader.rb`) — resolves a key through `manifest.resolver`, reads bytes via `FileStore`, delegates parsing to the format strategy (`Entry.for_format`), and returns an `Envelope`. No audit, no events, no permission checks. Also used by `Writer` for the existing-uid lookup on `put`.
+**Reader** (`lib/textus/envelope/io/reader.rb`) — resolves a key through `manifest.resolver`, reads bytes via `FileStore`, delegates parsing to the format strategy (`Entry.for_format`), and returns an `Envelope`. No audit, no events, no permission checks. Also used by `Writer` for the existing-uid lookup on `put`.
 
-**Writer** (`lib/textus/application/envelope/writer.rb`) — owns the full write pipeline: serialize → schema-validate → etag-check → `FileStore#write` → `AuditLog#append`. The class comment states the invariant directly: every public method's final action is `@audit_log.append(...)`. If the audit append fails, the caller sees the underlying error — the byte write already happened, but the pipeline contract treats audit as the commit step. No permission check, no event firing — those stay in the calling use case (`Write::Put`, `Write::Delete`, `Write::Mv`).
+**Writer** (`lib/textus/envelope/io/writer.rb`) — owns the full write pipeline: serialize → schema-validate → etag-check → `FileStore#write` → `AuditLog#append`. The class comment states the invariant directly: every public method's final action is `@audit_log.append(...)`. If the audit append fails, the caller sees the underlying error — the byte write already happened, but the pipeline contract treats audit as the commit step. No permission check, no event firing — those stay in the calling use case (`Write::Put`, `Write::Delete`, `Write::Mv`).
 
 The three public methods are `put`, `delete`, and `move`; all follow the same validate → write → audit sequence.
 
@@ -150,50 +142,50 @@ Rationale: cleaner test seams — a use case that only needs key resolution cons
 
 The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Manifest::Data` constructs `Policy` internally during `initialize`; the others are assembled by the loader and handed in as named arguments.
 
-## Read path (`session.get(key)`)
+## Read path (`store.get(key)`)
 
-1. CLI verb (or MCP tool) builds `session = Session.for(store, role:)` then `session.get(key)`.
-2. `Session#get` dispatches to `Application::Read::Get.call(key, session:, ctx:, caps:)`.
-3. `Read::Get::Impl#call` resolves the path through `caps.manifest`, reads bytes via `caps.file_store`, parses the envelope.
-4. Looks up the refresh policy via `caps.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
+1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
+2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`.
+3. `Read::Get#call` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope.
+4. Looks up the refresh policy via `container.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
 5. Otherwise `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`; the envelope is annotated with `stale`, `reason`, `refreshing: false`.
 
-`session.get_or_refresh(key)` composes `Read::Get` with `Write::RefreshOrchestrator` to optionally refresh on stale.
+`store.get_or_refresh(key)` composes `Read::Get` with `Write::RefreshOrchestrator` to optionally refresh on stale.
 
-## Write path (`session.put(key, ...)`)
+## Write path (`store.put(key, ...)`)
 
-1. CLI verb calls `session = Session.for(store, role:)` then `session.put(key, meta:, body:, content:, if_etag:)`.
-2. `Write::Put::Impl#call` validates the key, resolves the manifest entry, and calls `@authorizer.authorize_write!(mentry, role: @ctx.role)` — raises `WriteForbidden` if denied.
-3. Delegates persistence to `session.envelope_writer.put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
-4. Publishes `:entry_put` via `caps.events` with `ctx: session.hook_context`, `key:`, `envelope:`.
+1. CLI verb calls `store.put(key, meta:, body:, content:, if_etag:, role:)`.
+2. `Write::Put#call` validates the key, resolves the manifest entry, and calls `container.authorizer.authorize_write!(mentry, role: call.role)` — raises `WriteForbidden` if denied.
+3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
+4. Publishes `:entry_put` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
-`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit caps, `Authorizer` for authz, `Envelope::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit container, `Authorizer` for authz, `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
-`Write::Mv` delegates the file-move + audit to `Envelope::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::Writer#write` directly — no `Put` bypass.
+`Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
-## Refresh path (`session.refresh(key)`)
+## Refresh path (`store.refresh(key)`)
 
-1. CLI `Verb::Refresh` builds `session = Session.for(store, role: "runner")` then calls `session.refresh(key)`.
-2. `Write::RefreshWorker::Impl#run(key)`:
-   - Resolves the manifest entry, looks up the intake handler via `caps.rpc.callable(:resolve_intake, mentry.handler)`.
+1. CLI `Verb::Refresh` calls `store.refresh(key, role: "runner")`.
+2. `Write::RefreshWorker#run(key)`:
+   - Resolves the manifest entry, looks up the intake handler via `container.rpc.callable(:resolve_intake, mentry.handler)`.
    - Publishes `:refresh_started` with the hook context.
    - Invokes the handler under a 30s thread-join deadline.
    - On any error: publishes `:refresh_failed`, then re-raises.
-   - On success: applies `@authorizer.authorize_write!` and persists via `Envelope::Writer#write` directly (no `Put` round-trip); publishes `:entry_refreshed` unless etag is unchanged.
-3. `session.refresh_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `Worker#run` per entry; returns `{ refreshed:, failed:, skipped: }`.
+   - On success: applies `container.authorizer.authorize_write!` and persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_refreshed` unless etag is unchanged.
+3. `store.refresh_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `Worker#run` per entry; returns `{ refreshed:, failed:, skipped: }`.
 
 ## Hook payload contract
 
-Pub-sub hooks (`:entry_put`, `:entry_refreshed`, …) receive `ctx:` — a `Textus::Hooks::Context` that wraps the session and exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
+Pub-sub hooks (`:entry_put`, `:entry_refreshed`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
 
-RPC hooks (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps:` — a `ReadCaps` or `WriteCaps` slice. They are gem-internal: the framework calls them, not user pub-sub.
+RPC hooks (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps:` — a `Textus::Container`. They are gem-internal: the framework calls them, not user pub-sub.
 
 ## Agent surface (boot + pulse + MCP)
 
 Agents and plugins talk to a textus store through three layers:
 
 ```
-soul (skill/agent)  ──▶  gate (CLI | MCP)  ──▶  Session  ──▶  memory (.textus/)
+soul (skill/agent)  ──▶  gate (CLI | MCP)  ──▶  Store  ──▶  memory (.textus/)
 ```
 
 Two transports, one façade:
@@ -201,7 +193,7 @@ Two transports, one façade:
 - **CLI** — human/script surface. `textus boot`, `textus pulse --since=N`, `textus get/put/...`.
 - **MCP** — agent surface. `textus mcp serve` runs a stdio JSON-RPC 2.0 server speaking MCP draft 2024-11-05. Tools are auto-derived from the manifest. Session state (cursor, role, manifest_etag) is server-side.
 
-Both transports call `Session.for(store, role:)`. No duplicate logic.
+Both transports call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`). No duplicate logic.
 
 The agent loop (cadence guide in `docs/agent-integration.md`):
 

@@ -30,7 +30,7 @@ module Textus
 
     module_function
 
-    def run(session, checks: nil)
+    def run_via(container:, role: Textus::Role::DEFAULT, checks: nil) # rubocop:disable Lint/UnusedMethodArgument
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?
@@ -40,8 +40,8 @@ module Textus
       end
 
       selected = CHECKS.select { |c| selected_keys.include?(c.name_key) }
-      issues = selected.flat_map { |c| c.new(session).call }
-      issues.concat(run_registered_checks(session))
+      issues = selected.flat_map { |c| c.new(container).call }
+      issues.concat(run_registered_checks(container))
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }
       {
@@ -52,13 +52,13 @@ module Textus
       }
     end
 
-    def run_registered_checks(session)
-      session.rpc.names(:validate).flat_map { |name| invoke_registered_check(session, name) }
+    def run_registered_checks(container)
+      container.rpc.names(:validate).flat_map { |name| invoke_registered_check(container, name) }
     end
 
-    def invoke_registered_check(session, name)
+    def invoke_registered_check(container, name)
       result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
-        session.rpc.invoke(:validate, name, caps: session.write_caps)
+        container.rpc.invoke(:validate, name, caps: container)
       end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 

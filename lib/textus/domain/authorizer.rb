@@ -3,8 +3,8 @@
 module Textus
   module Domain
     # Authorization service. Single source of truth for "given a manifest
-    # entry and a role, may this caller read/write?". Extracted from
-    # Application::Context so the rule lives in Domain alongside Permission.
+    # entry and a role, may this caller read/write?". Lives in Domain
+    # alongside Permission.
     class Authorizer
       def initialize(manifest:)
         @manifest = manifest

@@ -39,9 +39,9 @@ RSpec.describe ":entry_renamed event" do
 
   it "fires :entry_renamed with from_key, to_key, and envelope after a successful mv" do
     store = Textus::Store.new(root)
-    store.session(role: "human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.session(role: "human").mv("working.a", "working.b")
+    store.as("human").mv("working.a", "working.b")
     mv_events = $textus_event_log.select { |e| e[0] == :entry_renamed }
     expect(mv_events.length).to eq(1)
     expect(mv_events.first[1]).to eq("working.a")
@@ -51,17 +51,17 @@ RSpec.describe ":entry_renamed event" do
 
   it "does NOT fire :entry_put or :entry_deleted on mv (entry_renamed is its own signal)" do
     store = Textus::Store.new(root)
-    store.session(role: "human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.session(role: "human").mv("working.a", "working.b")
+    store.as("human").mv("working.a", "working.b")
     expect($textus_event_log.map(&:first)).not_to include(:entry_put, :entry_deleted)
   end
 
   it "does NOT fire :entry_renamed on dry_run" do
     store = Textus::Store.new(root)
-    store.session(role: "human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.session(role: "human").mv("working.a", "working.b", dry_run: true)
+    store.as("human").mv("working.a", "working.b", dry_run: true)
     expect($textus_event_log).to be_empty
   end
 
@@ -75,8 +75,8 @@ RSpec.describe ":entry_renamed event" do
     RUBY
     $textus_scoped_log = []
     store = Textus::Store.new(root)
-    store.session(role: "human").put("working.a", meta: { "name" => "a" }, body: "hi")
-    store.session(role: "human").mv("working.a", "working.b")
+    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").mv("working.a", "working.b")
     expect($textus_scoped_log.map(&:first)).to eq([:match])
   ensure
     $textus_scoped_log = nil

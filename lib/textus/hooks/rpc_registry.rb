@@ -44,7 +44,7 @@ module Textus
         if declared.include?(:store)
           raise UsageError.new(
             "RPC callable for #{event} '#{name}' declares legacy `store:`; rename to `caps:` " \
-            "(Textus::Application::ReadCaps / WriteCaps)",
+            "(Textus::Container)",
           )
         end
 

@@ -26,7 +26,7 @@ RSpec.describe "textus audit --seq-since" do
 
   it "returns only rows with seq > N" do
     with_store do |root, textus|
-      log = Textus::Infra::AuditLog.new(textus)
+      log = Textus::Ports::AuditLog.new(textus)
       log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
       log.append(role: "human", verb: "put", key: "b", etag_before: nil, etag_after: "e2")
       log.append(role: "human", verb: "put", key: "c", etag_before: nil, etag_after: "e3")
@@ -45,7 +45,7 @@ RSpec.describe "textus audit --seq-since" do
       File.write(File.join(textus, "audit.log.1.meta.json"),
                  JSON.generate({ "min_seq" => 11, "max_seq" => 20, "rotated_at" => Time.now.utc.iso8601 }))
       File.write(File.join(textus, "audit.log.1"), "") # rotated file exists (content not needed for this test)
-      log = Textus::Infra::AuditLog.new(textus)
+      log = Textus::Ports::AuditLog.new(textus)
       # Append one fresh row so latest_seq > 20
       log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
 
@@ -71,7 +71,7 @@ RSpec.describe "textus audit --seq-since" do
                  [row1, row2].join("\n") + "\n")
       File.write(File.join(textus, "audit.log.1.meta.json"),
                  JSON.generate({ "min_seq" => 1, "max_seq" => 2, "rotated_at" => Time.now.utc.iso8601 }))
-      log = Textus::Infra::AuditLog.new(textus)
+      log = Textus::Ports::AuditLog.new(textus)
       log.append(role: "human", verb: "put", key: "new1", etag_before: nil, etag_after: "e")
       # active log now has seq=3
 

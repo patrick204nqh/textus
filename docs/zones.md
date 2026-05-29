@@ -336,7 +336,7 @@ For every entry in a build-writable zone:
 
 ### The sentinel guard
 
-`Textus::Infra::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and build will refuse rather than clobber it.
+`Textus::Ports::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and build will refuse rather than clobber it.
 
 ---
 

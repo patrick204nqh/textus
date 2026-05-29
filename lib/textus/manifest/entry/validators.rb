@@ -10,8 +10,8 @@ module Textus
           FormatMatrix,
         ].freeze
 
-        def self.run_all(entry)
-          REGISTERED.each { |v| v.call(entry) }
+        def self.run_all(entry, policy:)
+          REGISTERED.each { |v| v.call(entry, policy: policy) }
           nil
         end
       end

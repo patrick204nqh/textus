@@ -21,7 +21,7 @@ RSpec.describe Textus::Entry do
   describe "Manifest::Entry::Base contract" do
     def build_leaf(extra = {})
       Textus::Manifest::Entry::Leaf.new(
-        manifest: nil, raw: {}, key: "working.x", path: "x.md",
+        raw: {}, key: "working.x", path: "x.md",
         zone: "working", schema: nil, owner: "human:self", format: "markdown",
         **extra
       )

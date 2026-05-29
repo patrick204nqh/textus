@@ -41,7 +41,7 @@ RSpec.describe "textus pulse CLI" do
       _code, out1 = run_cli(%w[pulse --since=0], cwd: root)
       c1 = JSON.parse(out1)["cursor"]
 
-      Textus::Infra::AuditLog.new(textus).append(
+      Textus::Ports::AuditLog.new(textus).append(
         role: "human",
         verb: "put",
         key: "a",

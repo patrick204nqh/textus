@@ -25,14 +25,14 @@ RSpec.describe Textus::Doctor::Check::Schemas do
 
   it "returns empty array when all referenced schemas exist" do
     store = Textus::Store.new(root)
-    issues = described_class.new(Textus::Session.for(store)).call
+    issues = described_class.new(store.container).call
     expect(issues).to eq([])
   end
 
   it "returns an error issue when a referenced schema is missing" do
     File.delete(File.join(root, "schemas/note.yaml"))
     store = Textus::Store.new(root)
-    issues = described_class.new(Textus::Session.for(store)).call
+    issues = described_class.new(store.container).call
     expect(issues).to include(hash_including("code" => "schema.missing", "level" => "error"))
     expect(issues.first["fix"]).to include("note")
   end

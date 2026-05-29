@@ -68,7 +68,7 @@ module Textus
         # 1. Load sources + project + reduce
         data =
           if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
-            Application::Projection.new(
+            Textus::Projection.new(
               reader: reader,
               spec: mentry.source.to_h.transform_keys(&:to_s),
               lister: lister,

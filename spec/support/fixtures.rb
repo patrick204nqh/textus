@@ -5,24 +5,24 @@ RSpec.shared_context "textus_store_fixture" do
 end
 
 module TextusSpecHelpers
-  # Builds a slim Application::Context for tests. Callers pass the role
-  # (and optionally correlation_id, dry_run) — collaborators come from the
-  # store, not from Context.
+  # Builds a Textus::Call value for tests. Callers pass the role (and
+  # optionally correlation_id, dry_run) — collaborators come from the
+  # Store/Container, not from Call.
   def test_ctx(role: "human", correlation_id: nil, dry_run: false)
-    Textus::Application::Context.build(
+    Textus::Call.build(
       role: role, correlation_id: correlation_id, dry_run: dry_run,
     )
   end
 
   def build_envelope_reader(store)
-    Textus::Application::Envelope::Reader.new(
+    Textus::Envelope::IO::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
     )
   end
 
   def build_envelope_writer(store, ctx, reader: nil)
-    Textus::Application::Envelope::Writer.new(
+    Textus::Envelope::IO::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
@@ -32,87 +32,68 @@ module TextusSpecHelpers
     )
   end
 
-  # Builds the explicit-caps kwargs that every Writes use case takes from
-  # an explicit store + slim Context pair.
-  def writes_caps(store, ctx)
-    _, write_caps, hook_caps = Textus::Application.caps_from_store(store)
-    reader = build_envelope_reader(store)
-    writer = build_envelope_writer(store, ctx, reader: reader)
-    # Build ops using the provided ctx so hook_context carries the same correlation_id.
-    read_caps, = Textus::Application.caps_from_store(store)
-    sess = Textus::Session.new(
-      ctx: ctx,
-      read_caps: read_caps,
-      write_caps: write_caps,
-      hook_caps: hook_caps,
+  # Builds a fresh Container from the Store. Tests sometimes mutate
+  # @events/@rpc on the Store after construction (e.g. to install a probe
+  # event bus); using fresh containers ensures we see those mutations.
+  def fresh_container(store)
+    Textus::Container.from_store(store)
+  end
+
+  # Returns a RoleScope-derived Hooks::Context suitable for use cases that
+  # take hook_context:. Mirrors the wiring RoleScope does at runtime.
+  def build_hook_context(store, ctx, container: nil)
+    container ||= fresh_container(store)
+    scope = Textus::RoleScope.new(
+      container: container, role: ctx.role,
+      dry_run: ctx.dry_run, correlation_id: ctx.correlation_id
     )
-    {
-      ctx: ctx,
-      caps: write_caps,
-      rpc: hook_caps.rpc,
-      reader: reader,
-      writer: writer,
-      hook_context: sess.hook_context,
-      session: sess,
-    }
+    Textus::Hooks::Context.new(scope: scope)
   end
 
   def build_put(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Put::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::Put.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_delete(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Delete::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::Delete.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_mv(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Mv::Impl.new(
-      ctx: p[:ctx], caps: p[:caps],
-      reader: p[:reader], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::Mv.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_accept(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Accept::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::Accept.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_reject(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Reject::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::Reject.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_worker(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::RefreshWorker::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc], writer: p[:writer],
-      hook_context: p[:hook_context]
+    container = fresh_container(store)
+    Textus::Write::RefreshWorker.new(
+      container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_publish(store, ctx)
-    p = writes_caps(store, ctx)
-    Textus::Application::Write::Publish::Impl.new(
-      ctx: p[:ctx], caps: p[:caps], rpc: p[:rpc],
-      session: p[:session],
-      hook_context: p[:hook_context]
-    )
+    Textus::Write::Publish.new(container: fresh_container(store), call: ctx)
   end
 end
 

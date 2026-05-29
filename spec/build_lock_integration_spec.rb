@@ -36,7 +36,7 @@ RSpec.describe "textus build concurrency" do
   end
 
   it "second concurrent build exits 75 with build_in_progress code" do
-    lock_path = File.join(root, Textus::Infra::BuildLock::LOCK_FILENAME)
+    lock_path = File.join(root, Textus::Ports::BuildLock::LOCK_FILENAME)
     # rubocop:disable Style/FileOpen
     lock_fd = File.open(lock_path, File::RDWR | File::CREAT, 0o644)
     # rubocop:enable Style/FileOpen

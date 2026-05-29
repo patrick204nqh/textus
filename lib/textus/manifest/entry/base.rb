@@ -2,11 +2,10 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :manifest, :publish_to
+        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :publish_to
 
         # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
-        def initialize(manifest:, raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
-          @manifest = manifest
+        def initialize(raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
           @raw = raw
           @key = key
           @path = path
@@ -18,14 +17,14 @@ module Textus
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
-        def zone_writers
-          @manifest.policy.zone_writers(@zone)
+        def zone_writers(policy)
+          policy.zone_writers(@zone)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone? = @manifest.policy.zone_kinds(@zone).include?(:generator)
-        def in_proposal_zone?  = @manifest.policy.zone_kinds(@zone).include?(:proposer)
+        def in_generator_zone?(policy) = policy.zone_kinds(@zone).include?(:generator)
+        def in_proposal_zone?(policy)  = policy.zone_kinds(@zone).include?(:proposer)
 
         def nested?  = false
         def derived? = false
@@ -41,11 +40,32 @@ module Textus
         def publish_each   = nil
         def index_filename = nil
 
-        PublishContext = Struct.new(
-          :repo_root, :manifest, :file_store, :root, :caps, :rpc, :session, :ctx, :bus, :hook_context,
-          :reader, :emit, # callables: reader.call(key) → envelope; emit.call(event, **payload)
-          keyword_init: true
-        )
+        # Minimal context object passed into entry `publish_via` hooks.
+        # Everything beyond the three primitives is derived. Data.define
+        # instances are frozen, so we recompute per-call rather than
+        # memoizing — RoleScope/Hooks::Context construction is cheap.
+        PublishContext = ::Data.define(:container, :call, :reader) do
+          def manifest   = container.manifest
+          def root       = container.root
+          def repo_root  = File.dirname(container.root)
+          def events     = container.events
+
+          def hook_context
+            Textus::Hooks::Context.new(scope: scope_for_hooks)
+          end
+
+          def emit(event, **payload)
+            events.publish(event, ctx: hook_context, **payload)
+          end
+
+          private
+
+          def scope_for_hooks
+            Textus::RoleScope.new(
+              container: container, role: call.role, dry_run: call.dry_run,
+            )
+          end
+        end
 
         # Subclasses override to customize publish behavior.
         # Default: copy the stored file to each publish_to target.
@@ -59,12 +79,12 @@ module Textus
 
           publish_to.each do |rel|
             target_abs = File.join(pctx.repo_root, rel)
-            Textus::Infra::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
-            pctx.emit.call(:file_published,
-                           key: @key,
-                           envelope: envelope,
-                           source: source_path,
-                           target: target_abs)
+            Textus::Ports::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
+            pctx.emit(:file_published,
+                      key: @key,
+                      envelope: envelope,
+                      source: source_path,
+                      target: target_abs)
           end
 
           { kind: :built, value: { "key" => @key, "path" => source_path, "published_to" => publish_to } }

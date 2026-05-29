@@ -31,13 +31,13 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_put after a write" do
       store = Textus::Store.new(root)
-      store.session(role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
+      store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
       expect($textus_event_log).to include([:entry_put, "working.x"])
     end
 
     it "fires :entry_deleted after a delete" do
       store = Textus::Store.new(root)
-      ops = store.session(role: "human")
+      ops = store.as("human")
       ops.put("working.x", meta: { "name" => "x" }, body: "hi")
       ops.delete("working.x")
       expect($textus_event_log).to include([:entry_deleted, "working.x"])
@@ -50,7 +50,7 @@ RSpec.describe "Lifecycle events" do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = store.session(role: "human").put("working.x", meta: { "name" => "x" }, body: "hi")
+      env = store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
       expect(env.body).to eq("hi") # write succeeded
       last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
       expect(last["extras"]["event"]).to eq("entry_put")
@@ -86,13 +86,13 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_refreshed with change=:created on first refresh" do
       store = Textus::Store.new(root)
-      store.session(role: "runner").refresh("intake.x")
+      store.as("runner").refresh("intake.x")
       expect($log).to eq([["intake.x", :created]])
     end
 
     it "fires :entry_refreshed with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
-      store.session(role: "runner").refresh("intake.x")
+      store.as("runner").refresh("intake.x")
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
@@ -102,13 +102,13 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      store2.session(role: "runner").refresh("intake.x")
+      store2.as("runner").refresh("intake.x")
       expect($log.last).to eq(["intake.x", :updated])
     end
 
     it "does NOT fire :entry_refreshed when the intake bytes are identical to the previous bytes" do
       store = Textus::Store.new(root)
-      store.session(role: "runner").refresh("intake.x")
+      store.as("runner").refresh("intake.x")
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -120,7 +120,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      store2.session(role: "runner").refresh("intake.x")
+      store2.as("runner").refresh("intake.x")
       # Two refreshes with identical action body (both "v1") — only the first
       # should fire :entry_refreshed (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])
@@ -137,7 +137,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       $log = []
       store = Textus::Store.new(root)
-      store.session(role: "runner").refresh("intake.x")
+      store.as("runner").refresh("intake.x")
       expect($log.count { |e| e[0] == :entry_put }).to eq(0)
       expect($log.count { |e| e[0] == :entry_refreshed }).to eq(1)
     end
@@ -184,7 +184,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
-      store.session(role: "builder").publish
+      store.as("builder").publish
       expect($log).to include([:build_completed, "output.summary", ["working"]])
     end
   end
@@ -231,7 +231,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :proposal_accepted after Proposal.accept completes" do
       store = Textus::Store.new(root)
-      store.session(role: "human").accept("review.bob")
+      store.as("human").accept("review.bob")
       expect($log).to include([:proposal_accepted, "review.bob", "working.bob"])
     end
 
@@ -242,7 +242,7 @@ RSpec.describe "Lifecycle events" do
         end
       RUBY
       store = Textus::Store.new(root)
-      store.session(role: "human").accept("review.bob")
+      store.as("human").accept("review.bob")
       audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
       err = audit_lines.find { |h| h["verb"] == "event_error" }
       expect(err).not_to be_nil

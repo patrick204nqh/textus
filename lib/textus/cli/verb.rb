@@ -96,16 +96,16 @@ module Textus
         Role.resolve(flag: flag, env: ENV, root: store.root)
       end
 
-      # Returns an Application::Context bound to the resolved role.
-      # Convenience for verbs whose only pre-call boilerplate is
-      # resolving the role and wrapping it in a context.
+      # Returns a Call value bound to the resolved role. Convenience for
+      # verbs whose only pre-call boilerplate is resolving the role and
+      # wrapping it in a Call.
       def context_for(store)
-        store.session(role: resolved_role(store)).ctx
+        Textus::Call.build(role: resolved_role(store))
       end
 
-      # Returns a Session instance bound to the resolved role.
+      # Returns a RoleScope bound to the resolved role.
       def session_for(store)
-        store.session(role: resolved_role(store))
+        store.as(resolved_role(store))
       end
     end
   end

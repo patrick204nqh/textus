@@ -4,7 +4,7 @@ require "fileutils"
 
 module Textus
   module Domain
-    # Value object for sentinel files written by Infra::Publisher and inspected
+    # Value object for sentinel files written by Ports::Publisher and inspected
     # by Doctor::Check::Sentinels. Owns the JSON shape ({source, target,
     # sha256, mode}) and the on-disk path layout (<store_root>/sentinels/
     # <target-rel-to-repo>.textus-managed.json). Target/source are repo-relative

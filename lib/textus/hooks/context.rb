@@ -3,31 +3,38 @@
 module Textus
   module Hooks
     # A narrow handle passed to user hooks in place of the raw Store.
-    # All writes route back through the Session so authorization, audit
+    # All writes route back through the RoleScope so authorization, audit
     # logging, and schema validation always fire.
     class Context
       attr_reader :role, :correlation_id
 
-      def initialize(session:)
-        @session = session
-        @role = session.ctx.role
-        @correlation_id = session.ctx.correlation_id
+      def initialize(scope:)
+        @scope          = scope
+        @role           = scope.role
+        @correlation_id = scope.correlation_id
+      end
+
+      def backend
+        @scope
       end
 
       # read
-      def get(key)                = @session.get(key)
-      def list(**)                = @session.list(**)
-      def deps(key)               = @session.deps(key)
-      def freshness(key)          = @session.freshness(key)
+      def get(key)                = @scope.get(key)
+      def list(**)                = @scope.list(**)
+      def deps(key)               = @scope.deps(key)
+      def freshness(key)          = @scope.freshness(key)
 
       # write (authorized + audited)
-      def put(key, **)          = @session.put(key, **)
-      def delete(key, **)       = @session.delete(key, **)
-      def audit(verb, key:, **) = @session.write_caps.audit_log.append(role: @role, verb: verb, key: key, **)
+      def put(key, **)          = @scope.put(key, **)
+      def delete(key, **)       = @scope.delete(key, **)
+
+      def audit(verb, key:, **)
+        @scope.container.audit_log.append(role: @role, verb: verb, key: key, **)
+      end
 
       # fan-out
       def publish_followup(event, **)
-        @session.write_caps.events.publish(event, ctx: self, **)
+        @scope.container.events.publish(event, ctx: self, **)
       end
 
       def inspect

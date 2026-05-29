@@ -3,10 +3,12 @@ module Textus
     class Entry
       module Validators
         module InjectBoot
-          def self.call(entry)
+          def self.call(entry, policy:)
             return unless entry.inject_boot
 
-            raise UsageError.new("entry '#{entry.key}': inject_boot: is only valid on derived entries") unless entry.in_generator_zone?
+            unless entry.in_generator_zone?(policy)
+              raise UsageError.new("entry '#{entry.key}': inject_boot: is only valid on derived entries")
+            end
 
             return unless entry.template.nil?
 

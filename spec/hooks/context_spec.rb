@@ -6,8 +6,8 @@ RSpec.describe Textus::Hooks::Context do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }
-  let(:ops)   { store.session(role: "agent") }
-  let(:ctx)   { described_class.new(session: ops) }
+  let(:ops)   { store.as("agent", correlation_id: SecureRandom.uuid) }
+  let(:ctx)   { described_class.new(scope: ops) }
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
