@@ -117,4 +117,32 @@ RSpec.describe Textus::Manifest::Policy do
       end
     end
   end
+
+  describe "declared zone kinds on Data" do
+    let(:yaml) do
+      <<~YAML
+        version: textus/3
+        roles:
+          - { name: human,   kind: accept_authority }
+          - { name: agent,   kind: proposer }
+          - { name: builder, kind: generator }
+        zones:
+          - { name: working, kind: origin,  write_policy: [human] }
+          - { name: review,  kind: queue,   write_policy: [agent, human] }
+          - { name: output,  kind: derived, write_policy: [builder] }
+        entries: []
+      YAML
+    end
+
+    it "exposes declared_zone_kinds keyed by zone name with symbol values" do
+      expect(data.declared_zone_kinds).to eq(
+        "working" => :origin, "review" => :queue, "output" => :derived,
+      )
+    end
+
+    it "maps an undeclared kind to nil" do
+      raw2 = YAML.safe_load("version: textus/3\nzones:\n  - { name: w, write_policy: [human] }\nentries: []\n", aliases: false)
+      expect(Textus::Manifest::Data.parse(raw2, root: ".").declared_zone_kinds).to eq("w" => nil)
+    end
+  end
 end

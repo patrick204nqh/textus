@@ -11,7 +11,8 @@ module Textus
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
 
-      attr_reader :raw, :root, :entries, :zones, :zone_readers, :audit_config, :role_mapping, :policy
+      attr_reader :raw, :root, :entries, :zones, :zone_readers, :declared_zone_kinds,
+                  :audit_config, :role_mapping, :policy
 
       def self.validate_key!(key)
         raise UsageError.new("empty key") if key.nil? || key.empty?
@@ -37,6 +38,9 @@ module Textus
         @zone_readers = Array(raw["zones"]).to_h do |z|
           rp = z["read_policy"]
           [z["name"], rp.nil? ? :all : Array(rp)]
+        end
+        @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
+          [z["name"], z["kind"]&.to_sym]
         end
         @audit_config = build_audit_config(raw)
         @role_mapping = RoleKinds.resolve(raw["roles"])
