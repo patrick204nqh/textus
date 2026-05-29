@@ -201,24 +201,26 @@ A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/work
 
 Each zone declares which **roles** may write to it via `write_policy:` in the manifest. An optional `read_policy:` (default `[all]`) gates reads. Writes are gated; reads are unrestricted by default.
 
-| Zone | `write_policy` | Use case |
-|---|---|---|
-| `identity` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
-| `working` | `[human, agent, runner]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
-| `intake` | `[runner]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or agents directly. |
-| `review` | `[agent, human]` | Agent-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
-| `output` | `[builder]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
+| Zone | `kind` | `write_policy` | Use case |
+|---|---|---|---|
+| `identity` | `origin` | `[human]` | Identity, voice, immutable principles — things only a human edits. |
+| `working` | `origin` | `[human, agent, runner]` | Active project state: notes, decisions, network — what humans and agents update day-to-day. |
+| `intake` | `quarantine` | `[runner]` | Declared external inputs (calendar, feeds, scraped pages). Refreshed by external runner scripts; never by humans or agents directly. |
+| `review` | `queue` | `[agent, human]` | Agent-generated proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
+| `output` | `derived` | `[builder]` | Computed outputs (catalogs, indexes, published context). Written only by the build runner via `textus build`. |
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role is not in the target zone's `write_policy` list, the write returns `write_forbidden`.
 
-Each zone MAY declare an optional `kind:` describing its role in the data-flow
-graph. The vocabulary is closed: `origin` (authored truth), `quarantine`
-(external bytes pending validation), `queue` (proposals awaiting promotion),
-`derived` (computed from other zones). When omitted, the engine infers the
-zone's kind from its writers' role-kinds. A manifest MUST declare at most one
-`queue` zone, and a declared `kind:` MUST agree with the zone's writers:
-`derived` ⇒ a `generator` writer, `queue` ⇒ a `proposer`, `quarantine` ⇒ a
-`runner`. `origin` imposes no writer constraint.
+Every zone MUST declare a `kind:` describing its role in the data-flow graph.
+The vocabulary is closed: `origin` (authored truth), `quarantine` (external
+bytes pending validation), `queue` (proposals awaiting promotion), `derived`
+(computed from other zones). A manifest MUST declare at most one `queue` zone,
+and a zone's `kind:` MUST agree with its writers (`derived` ⇒ a `generator`
+writer, `queue` ⇒ a `proposer`, `quarantine` ⇒ a `runner`; `origin` is
+unconstrained). Coordination is keyed off the declared kind: a zone is derived
+only if it declares `kind: derived`, and proposals route to the declared
+`queue` zone — there is no name-based fallback. A manifest with a kind-less
+zone is rejected at load.
 
 ### 5.1 Role resolution
 
