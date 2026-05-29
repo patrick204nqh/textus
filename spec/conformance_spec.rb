@@ -45,7 +45,7 @@ RSpec.describe "textus/3 conformance" do
       rules:
         - match: intake.calendar.events
           refresh:
-            ttl: 1s
+            ttl: 300s
             on_stale: warn
     YAML
 
@@ -186,7 +186,9 @@ RSpec.describe "textus/3 conformance" do
 
     it "flags intake entries past their TTL" do
       intake_path = File.join(root, "zones/intake/calendar/events.md")
-      stale_time = (Time.now - 10).utc.iso8601
+      # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
+      # iso8601 second-truncation in last_refreshed_at.
+      stale_time = (Time.now - 3600).utc.iso8601
       File.write(intake_path, <<~MD)
         ---
         name: events
