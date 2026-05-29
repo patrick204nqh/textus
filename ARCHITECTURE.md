@@ -52,8 +52,12 @@
 │  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
 └────────────────────────────────────────────────────────────┘
 
-   Dependency rule: arrows point DOWN. Domain has zero outbound
-   imports. Application imports Domain + Ports.
+   Dependency rule: arrows point DOWN. Domain performs no direct
+   File/Dir/Time.now I/O — all disk and clock access is routed through
+   injected ports (FileStat, Clock). Pure path math (File.join/dirname/
+   absolute_path?/expand_path/basename), Digest hashing of injected
+   bytes, and Time.parse of stored strings are NOT I/O and are allowed.
+   Application imports Domain + Ports.
    Use cases are plain classes on (container:, call:).
    Verbs are looked up in the static Dispatcher::VERBS table.
 ```
