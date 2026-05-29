@@ -4,7 +4,8 @@ module Textus
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name kind].freeze
       ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
-      ZONE_KEYS    = %w[name write_policy read_policy].freeze
+      ZONE_KEYS    = %w[name kind write_policy read_policy].freeze
+      ZONE_KINDS   = %w[origin quarantine queue derived].freeze
       ENTRY_KEYS   = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each
@@ -33,6 +34,12 @@ module Textus
       def self.validate_zones!(zones)
         Array(zones).each_with_index do |z, i|
           walk(z, ZONE_KEYS, "$.zones[#{i}]")
+          next if z["kind"].nil?
+          next if ZONE_KINDS.include?(z["kind"])
+
+          raise BadManifest.new(
+            "unknown zone kind '#{z["kind"]}' at '$.zones[#{i}]' (known: #{ZONE_KINDS.join(", ")})",
+          )
         end
       end
 
