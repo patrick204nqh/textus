@@ -7,7 +7,7 @@ module Textus
         option :prefix, "--prefix=K"
 
         def call(store)
-          Textus::Infra::BuildLock.with(root: store.root) do
+          Textus::Ports::BuildLock.with(root: store.root) do
             role = store.manifest.policy.roles_with_kind(:generator).first || "builder"
             ops = store.as(role)
             result = ops.publish(prefix: prefix)

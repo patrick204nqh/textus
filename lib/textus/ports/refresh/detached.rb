@@ -1,5 +1,5 @@
 module Textus
-  module Infra
+  module Ports
     module Refresh
       module Detached
         module_function
@@ -16,7 +16,7 @@ module Textus
             $stdout.reopen(File::NULL, "w")
             $stderr.reopen(File::NULL, "w")
 
-            lock = Textus::Infra::Refresh::Lock.new(root: store_root, key: key)
+            lock = Textus::Ports::Refresh::Lock.new(root: store_root, key: key)
             exit(0) unless lock.try_acquire
 
             begin

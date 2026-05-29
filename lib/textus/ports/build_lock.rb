@@ -3,7 +3,7 @@ require "socket"
 require "time"
 
 module Textus
-  module Infra
+  module Ports
     class BuildLock
       LOCK_FILENAME = ".build.lock"
       MAX_HOLDER_BYTES = 512

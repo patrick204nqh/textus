@@ -49,7 +49,7 @@ module Textus
               )
             end
 
-            Textus::Infra::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
+            Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
             pctx.emit(:file_published,
                       key: row[:key],
                       envelope: pctx.reader.call(row[:key]),

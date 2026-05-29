@@ -127,7 +127,7 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
         spawner = ->(store_root:, key:) { spawner_calls << [store_root, key] }
 
         # Force the single-flight probe to fail: stub Lock#try_acquire to return false.
-        allow_any_instance_of(Textus::Infra::Refresh::Lock) # rubocop:disable RSpec/AnyInstance
+        allow_any_instance_of(Textus::Ports::Refresh::Lock) # rubocop:disable RSpec/AnyInstance
           .to receive(:try_acquire).and_return(false)
 
         orch = described_class.new(

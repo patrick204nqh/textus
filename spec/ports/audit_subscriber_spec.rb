@@ -4,9 +4,9 @@ require "spec_helper"
 require "json"
 require "tmpdir"
 
-RSpec.describe Textus::Infra::AuditSubscriber do
+RSpec.describe Textus::Ports::AuditSubscriber do
   let(:tmpdir)    { Dir.mktmpdir }
-  let(:audit_log) { Textus::Infra::AuditLog.new(tmpdir) }
+  let(:audit_log) { Textus::Ports::AuditLog.new(tmpdir) }
   let(:bus)       { Textus::Hooks::EventBus.new }
   let(:ctx)       { double("ctx") } # rubocop:disable RSpec/VerifiedDoubles
 

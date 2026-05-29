@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Textus
-  module Infra
+  module Ports
     # Writes an "event_error" audit row when a user hook raises during
     # Hooks::EventBus publish. Attached at Store boot.
     #

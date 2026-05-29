@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  module Infra
+  module Ports
     module Refresh
       class Lock
         def initialize(root:, key:)

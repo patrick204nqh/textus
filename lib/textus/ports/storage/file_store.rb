@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  module Infra
+  module Ports
     module Storage
       # Pure filesystem I/O port. Wraps File/FileUtils/Etag with no knowledge
       # of envelopes, entries, schemas, or audit.

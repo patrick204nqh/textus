@@ -18,7 +18,7 @@ RSpec.describe Textus::Write::RefreshOrchestrator, "cooperative fallback" do # r
 
   before do
     require "ostruct"
-    allow(Textus::Infra::Refresh::Detached).to receive(:supported?).and_return(false)
+    allow(Textus::Ports::Refresh::Detached).to receive(:supported?).and_return(false)
   end
 
   it "uses cooperative-cancel fallback when fork is unavailable and budget is met" do

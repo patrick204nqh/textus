@@ -20,9 +20,9 @@ RSpec.describe Textus::Envelope::IO::Writer do
 
   def build_writer(textus_dir, ctx)
     manifest   = Textus::Manifest.load(textus_dir)
-    file_store = Textus::Infra::Storage::FileStore.new
+    file_store = Textus::Ports::Storage::FileStore.new
     schemas    = Textus::Schemas.new(File.join(textus_dir, "schemas"))
-    audit      = Textus::Infra::AuditLog.new(textus_dir)
+    audit      = Textus::Ports::AuditLog.new(textus_dir)
     reader     = Textus::Envelope::IO::Reader.new(
       file_store: file_store, manifest: manifest,
     )

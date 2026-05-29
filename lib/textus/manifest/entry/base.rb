@@ -79,7 +79,7 @@ module Textus
 
           publish_to.each do |rel|
             target_abs = File.join(pctx.repo_root, rel)
-            Textus::Infra::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
+            Textus::Ports::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
             pctx.emit(:file_published,
                       key: @key,
                       envelope: envelope,

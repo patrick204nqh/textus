@@ -3,7 +3,7 @@ require "json"
 require "time"
 
 module Textus
-  module Infra
+  module Ports
     class AuditLog
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 5

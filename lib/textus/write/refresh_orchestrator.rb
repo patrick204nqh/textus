@@ -29,7 +29,7 @@ module Textus
       end
 
       def run_timed(budget_ms, key)
-        return run_timed_with_fork(budget_ms, key) if Textus::Infra::Refresh::Detached.supported?
+        return run_timed_with_fork(budget_ms, key) if Textus::Ports::Refresh::Detached.supported?
 
         run_timed_cooperative(budget_ms, key)
       end
@@ -75,7 +75,7 @@ module Textus
           # Single-flight: if a sibling process / earlier fork holds the
           # per-leaf lock, don't fork another worker — they're already
           # doing this work.
-          probe = Textus::Infra::Refresh::Lock.new(root: @store_root, key: key)
+          probe = Textus::Ports::Refresh::Lock.new(root: @store_root, key: key)
           return Textus::Domain::Outcome::Detached.new unless probe.try_acquire
 
           probe.release
@@ -93,7 +93,7 @@ module Textus
       end
 
       def default_spawner
-        Textus::Infra::Refresh::Detached.method(:spawn)
+        Textus::Ports::Refresh::Detached.method(:spawn)
       end
     end
   end

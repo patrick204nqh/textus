@@ -32,15 +32,15 @@ module Textus
       @root       = File.expand_path(root)
       @manifest   = Manifest.load(@root)
       @schemas    = Schemas.new(File.join(@root, "schemas"))
-      @file_store = Infra::Storage::FileStore.new
-      @audit_log  = Infra::AuditLog.new(
+      @file_store = Ports::Storage::FileStore.new
+      @audit_log  = Ports::AuditLog.new(
         @root,
         max_size: @manifest.data.audit_config[:max_size],
         keep: @manifest.data.audit_config[:keep],
       )
       @events = Hooks::EventBus.new
       @rpc = Hooks::RpcRegistry.new
-      Infra::AuditSubscriber.new(@audit_log).attach(@events)
+      Ports::AuditSubscriber.new(@audit_log).attach(@events)
       Hooks::Builtin.register_all(events: @events, rpc: @rpc)
       Hooks::Loader.new(events: @events, rpc: @rpc).load_dir(File.join(@root, "hooks"))
       @events.publish(:store_loaded, ctx: Hooks::Context.new(scope: as(Role::DEFAULT)))

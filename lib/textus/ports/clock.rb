@@ -1,5 +1,5 @@
 module Textus
-  module Infra
+  module Ports
     module Clock
       module_function
 

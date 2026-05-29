@@ -126,17 +126,17 @@ RSpec.describe "Textus::RoleScope#refresh" do
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 
-  describe "Infra::Refresh::Detached" do
+  describe "Ports::Refresh::Detached" do
     it "runs a refresh through Session when spawned" do
       skip "Process.fork not available on this platform" unless Process.respond_to?(:fork)
 
       fake_store = instance_double(Textus::Store)
       sess       = instance_spy(Textus::RoleScope)
-      fake_lock  = instance_double(Textus::Infra::Refresh::Lock, try_acquire: true, release: nil)
+      fake_lock  = instance_double(Textus::Ports::Refresh::Lock, try_acquire: true, release: nil)
 
       allow(Textus::Store).to receive(:new).and_return(fake_store)
       allow(fake_store).to receive(:as).with("runner").and_return(sess)
-      allow(Textus::Infra::Refresh::Lock).to receive(:new).and_return(fake_lock)
+      allow(Textus::Ports::Refresh::Lock).to receive(:new).and_return(fake_lock)
       allow(Process).to receive(:fork) do |&blk|
         blk.call
         12_345
@@ -145,9 +145,9 @@ RSpec.describe "Textus::RoleScope#refresh" do
       allow($stdin).to receive(:close)
       allow($stdout).to receive(:reopen)
       allow($stderr).to receive(:reopen)
-      allow(Textus::Infra::Refresh::Detached).to receive(:exit)
+      allow(Textus::Ports::Refresh::Detached).to receive(:exit)
 
-      Textus::Infra::Refresh::Detached.spawn(store_root: root, key: "intake.x")
+      Textus::Ports::Refresh::Detached.spawn(store_root: root, key: "intake.x")
 
       expect(sess).to have_received(:refresh).with("intake.x")
     end

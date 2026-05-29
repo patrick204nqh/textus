@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "json"
 
-RSpec.describe Textus::Infra::AuditLog do
+RSpec.describe Textus::Ports::AuditLog do
   let(:root) { Dir.mktmpdir("textus-audit-seq-") }
   let(:log) { described_class.new(root) }
 

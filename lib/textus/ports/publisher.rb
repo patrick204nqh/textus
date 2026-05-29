@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  module Infra
+  module Ports
     # Publishes built artifacts from the store to repo-relative consumer paths.
     # Publish = copy + sentinel. The in-store file is already the consumer-shaped
     # artifact; no parsing or stripping.

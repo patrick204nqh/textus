@@ -84,7 +84,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     expect(env.meta).to have_key("title")
     expect(env.meta).not_to have_key("headline")
 
-    audit = Textus::Infra::AuditLog.new(root)
+    audit = Textus::Ports::AuditLog.new(root)
     expect(audit.last_writer_for("working.note")).to eq("owner")
   end
 

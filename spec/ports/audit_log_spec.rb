@@ -4,10 +4,10 @@ require "tmpdir"
 require "time"
 require "json"
 
-RSpec.describe Textus::Infra::AuditLog do
+RSpec.describe Textus::Ports::AuditLog do
   let(:tmp)  { Dir.mktmpdir("textus-audit") }
   let(:root) { File.join(tmp, ".textus") }
-  let(:log)  { Textus::Infra::AuditLog.new(root) }
+  let(:log)  { Textus::Ports::AuditLog.new(root) }
 
   before { FileUtils.mkdir_p(root) }
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }

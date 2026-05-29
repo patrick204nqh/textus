@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "json"
 
-RSpec.describe Textus::Infra::AuditLog do
+RSpec.describe Textus::Ports::AuditLog do
   context "rotation" do
     # Small max_size to force rotation. Each row is ~150 bytes so ~5 rows fits per file.
     let(:root) { Dir.mktmpdir("textus-audit-rotation-") }
