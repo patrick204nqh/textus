@@ -34,7 +34,7 @@ module Textus
         end
 
         reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
-        reg.on(:validate,       :my_check)  { |store:, **| [] }
+        reg.on(:validate,       :my_check)  { |caps:, **| [] }
         reg.on(:entry_put,      :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
 
         # Run a side-effect every time textus writes a file to your repo:

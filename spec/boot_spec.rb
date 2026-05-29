@@ -59,13 +59,13 @@ RSpec.describe Textus::Boot do
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :"demo-action") { |store:, config:, args:| { _meta: {}, body: "" } }
-        reg.on(:resolve_intake, :zebra)         { |store:, config:, args:| { _meta: {}, body: "" } }
-        reg.on(:resolve_intake, :apple)         { |store:, config:, args:| { _meta: {}, body: "" } }
-        reg.on(:transform_rows, :rank_by_recency) { |store:, rows:, config:| rows }
-        reg.on(:transform_rows, :alpha)           { |store:, rows:, config:| rows }
+        reg.on(:resolve_intake, :"demo-action") { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:resolve_intake, :zebra)         { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:resolve_intake, :apple)         { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:transform_rows, :rank_by_recency) { |caps:, rows:, config:| rows }
+        reg.on(:transform_rows, :alpha)           { |caps:, rows:, config:| rows }
         reg.on(:build_completed, :stamp_log)        { |**| }
-        reg.on(:validate, :smoke)            { |store:| [] }
+        reg.on(:validate, :smoke)            { |caps:| [] }
       end
     RUBY
   end

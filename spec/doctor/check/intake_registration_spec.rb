@@ -42,7 +42,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :orphan_handler) { |store:, config:, args:| { _meta: {}, body: "" } }
+          reg.on(:resolve_intake, :orphan_handler) { |caps:, config:, args:| { _meta: {}, body: "" } }
         end
       RUBY
 

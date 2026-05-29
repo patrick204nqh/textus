@@ -28,7 +28,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
 
     File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :test_intake) { |store:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
+        reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
       end
     RUBY
 

@@ -199,7 +199,7 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:validate, :bad_check) { |store:| raise "boom in check" }
+        reg.on(:validate, :bad_check) { |caps:| raise "boom in check" }
       end
     RUBY
     store = Textus::Store.new(root)
