@@ -61,9 +61,13 @@ module Textus
     end
 
     def refresh_worker
-      @refresh_worker ||= Application::Write::RefreshWorker::Impl.new(
-        ctx: @ctx, caps: @write_caps,
-        rpc: rpc, writer: envelope_writer, hook_context: hook_context
+      @refresh_worker ||= Application::Write::RefreshWorker.new(
+        container: Textus::Container.from_store_caps(@read_caps, @write_caps, @hook_caps),
+        call: Textus::Call.new(
+          role: @ctx.role, correlation_id: @ctx.correlation_id,
+          now: @ctx.now, dry_run: @ctx.dry_run
+        ),
+        hook_context: hook_context,
       )
     end
 
