@@ -50,5 +50,19 @@ module Textus
     def session(role: Role::DEFAULT, correlation_id: nil, dry_run: false)
       Session.for(self, role: role, correlation_id: correlation_id, dry_run: dry_run)
     end
+
+    def container
+      @container ||= Textus::Container.from_store(self)
+    end
+
+    def as(role, dry_run: false)
+      RoleScope.new(container: container, role: role, dry_run: dry_run)
+    end
+
+    Textus::Dispatcher::VERBS.each_key do |verb|
+      define_method(verb) do |*args, role: Role::DEFAULT, **kwargs|
+        as(role).public_send(verb, *args, **kwargs)
+      end
+    end
   end
 end
