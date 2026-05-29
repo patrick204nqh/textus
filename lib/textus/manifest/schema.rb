@@ -6,7 +6,12 @@ module Textus
       ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
       ZONE_KEYS    = %w[name kind write_policy read_policy].freeze
       ZONE_KINDS   = %w[origin quarantine queue derived].freeze
-      ENTRY_KEYS   = %w[
+      KIND_REQUIRES_ROLE_KIND = {
+        "derived" => "generator",
+        "queue" => "proposer",
+        "quarantine" => "runner",
+      }.freeze
+      ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each
         intake events inject_boot index_filename
@@ -29,6 +34,8 @@ module Textus
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_zone_writers_declared!(raw)
+        validate_single_queue!(raw)
+        validate_zone_kind_consistency!(raw)
       end
 
       def self.validate_zones!(zones)
@@ -120,6 +127,38 @@ module Textus
           next if allowed.include?(k)
 
           raise BadManifest.new("unknown key '#{k}' at '#{path}'")
+        end
+      end
+
+      def self.validate_single_queue!(raw)
+        queues = Array(raw["zones"]).select { |z| z["kind"] == "queue" }.map { |z| z["name"] }
+        return if queues.size <= 1
+
+        raise BadManifest.new(
+          "at most one zone may declare kind: queue (found: #{queues.join(", ")})",
+        )
+      end
+
+      def self.validate_zone_kind_consistency!(raw)
+        mapping = role_kind_mapping(raw)
+        Array(raw["zones"]).each do |z|
+          required = KIND_REQUIRES_ROLE_KIND[z["kind"]] or next
+          writers  = Array(z["write_policy"])
+          next if writers.any? { |w| mapping[w] == required }
+
+          raise BadManifest.new(
+            "zone '#{z["name"]}' declares kind: #{z["kind"]} but no writer is a #{required} " \
+            "(writers: #{writers.join(", ")})",
+          )
+        end
+      end
+
+      # name => kind string, honouring an explicit roles: block or the default mapping.
+      def self.role_kind_mapping(raw)
+        if raw["roles"].nil?
+          RoleKinds::DEFAULT_MAPPING.transform_values(&:to_s)
+        else
+          Array(raw["roles"]).to_h { |r| [r["name"], r["kind"]] }
         end
       end
     end
