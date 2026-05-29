@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "json"
 
-RSpec.describe Textus::Application::Write::Mv do
+RSpec.describe Textus::Write::Mv do
   it "moves an entry and publishes :entry_renamed via the bus" do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)

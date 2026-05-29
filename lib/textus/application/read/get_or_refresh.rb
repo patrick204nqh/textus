@@ -22,10 +22,10 @@ module Textus
         private
 
         def build_orchestrator
-          worker = Textus::Application::Write::RefreshWorker.new(
+          worker = Textus::Write::RefreshWorker.new(
             container: @container, call: @call, hook_context: @hook_context,
           )
-          Textus::Application::Write::RefreshOrchestrator.new(
+          Textus::Write::RefreshOrchestrator.new(
             worker: worker, store_root: @container.root, events: @container.events,
             ctx: @call, hook_context: @hook_context
           )

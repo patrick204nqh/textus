@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::Accept do
+RSpec.describe Textus::Write::Accept do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))

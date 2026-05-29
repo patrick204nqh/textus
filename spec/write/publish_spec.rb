@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::Publish do
+RSpec.describe Textus::Write::Publish do
   include_context "textus_store_fixture"
 
   let(:store) { Textus::Store.new(root) }

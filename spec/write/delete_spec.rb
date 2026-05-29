@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::Delete do
+RSpec.describe Textus::Write::Delete do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
     FileUtils.mkdir_p(File.join(textus_dir, "zones", "identity"))

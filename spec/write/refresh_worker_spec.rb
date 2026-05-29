@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::RefreshWorker do
+RSpec.describe Textus::Write::RefreshWorker do
   # A simple test events object that records published events, delegating nothing.
   def make_test_events
     Class.new do

@@ -193,7 +193,7 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       orchestrator_calls = []
-      allow_any_instance_of(Textus::Application::Write::RefreshOrchestrator) # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(Textus::Write::RefreshOrchestrator) # rubocop:disable RSpec/AnyInstance
         .to receive(:execute) do |_, *args, **kwargs|
         orchestrator_calls << [args, kwargs]
         raise "orchestrator must not be called during build (issue #59)"

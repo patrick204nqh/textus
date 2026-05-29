@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::RefreshOrchestrator do
+RSpec.describe Textus::Write::RefreshOrchestrator do
   let(:fake_events) do
     Class.new do
       attr_reader :published

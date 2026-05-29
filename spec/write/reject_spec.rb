@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::Reject do
+RSpec.describe Textus::Write::Reject do
   def build_store(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "zones"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)

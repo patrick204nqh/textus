@@ -5,14 +5,14 @@ module Textus
   module Dispatcher
     VERBS = {
       # Write
-      put: Textus::Application::Write::Put,
-      delete: Textus::Application::Write::Delete,
-      mv: Textus::Application::Write::Mv,
-      accept: Textus::Application::Write::Accept,
-      reject: Textus::Application::Write::Reject,
-      publish: Textus::Application::Write::Publish,
-      refresh: Textus::Application::Write::RefreshWorker,
-      refresh_all: Textus::Application::Write::RefreshAll,
+      put: Textus::Write::Put,
+      delete: Textus::Write::Delete,
+      mv: Textus::Write::Mv,
+      accept: Textus::Write::Accept,
+      reject: Textus::Write::Reject,
+      publish: Textus::Write::Publish,
+      refresh: Textus::Write::RefreshWorker,
+      refresh_all: Textus::Write::RefreshAll,
 
       # Read
       get: Textus::Application::Read::Get,

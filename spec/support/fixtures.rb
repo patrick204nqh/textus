@@ -52,48 +52,48 @@ module TextusSpecHelpers
 
   def build_put(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::Put.new(
+    Textus::Write::Put.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_delete(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::Delete.new(
+    Textus::Write::Delete.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_mv(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::Mv.new(
+    Textus::Write::Mv.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_accept(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::Accept.new(
+    Textus::Write::Accept.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_reject(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::Reject.new(
+    Textus::Write::Reject.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_worker(store, ctx)
     container = fresh_container(store)
-    Textus::Application::Write::RefreshWorker.new(
+    Textus::Write::RefreshWorker.new(
       container: container, call: ctx, hook_context: build_hook_context(store, ctx, container: container),
     )
   end
 
   def build_publish(store, ctx)
-    Textus::Application::Write::Publish.new(container: fresh_container(store), call: ctx)
+    Textus::Write::Publish.new(container: fresh_container(store), call: ctx)
   end
 end
 

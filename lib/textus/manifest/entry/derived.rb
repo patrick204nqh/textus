@@ -22,7 +22,7 @@ module Textus
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
           return nil unless in_generator_zone?(pctx.manifest.policy)
 
-          target_path = Textus::Application::Write::Materializer.new(
+          target_path = Textus::Write::Materializer.new(
             container: pctx.container, call: pctx.call,
           ).run(self)
 

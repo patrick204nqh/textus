@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Application::Write::RefreshOrchestrator, "cooperative fallback" do # rubocop:disable RSpec/DescribeMethod
+RSpec.describe Textus::Write::RefreshOrchestrator, "cooperative fallback" do # rubocop:disable RSpec/DescribeMethod
   let(:fake_worker) do
     Class.new do
       attr_reader :calls

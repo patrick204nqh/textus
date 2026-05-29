@@ -2,10 +2,10 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Application::Write::Materializer do
+RSpec.describe Textus::Write::Materializer do
   subject(:materializer) do
     container = store.container
-    Textus::Application::Write::Materializer.new(
+    Textus::Write::Materializer.new(
       container: container,
       call: ctx,
     )
