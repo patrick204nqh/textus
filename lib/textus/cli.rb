@@ -14,13 +14,6 @@ module Textus
           .to_h { |k| [k.command_name, k] }
     end
 
-    # Backward-compat constant; callers should prefer `CLI.verbs`.
-    def self.const_missing(name)
-      return verbs.freeze if name == :VERBS
-
-      super
-    end
-
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr, cwd: Dir.pwd)
       new(stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd).run(argv)
     end
