@@ -3,7 +3,7 @@ module Textus
     class Staleness
       def initialize(manifest:, file_stat:, clock:)
         @manifest = manifest
-        @generator_check = GeneratorCheck.new(manifest: manifest, file_stat: file_stat, clock: clock)
+        @generator_check = GeneratorCheck.new(manifest: manifest, file_stat: file_stat)
         @intake_check    = IntakeCheck.new(manifest: manifest, file_stat: file_stat, clock: clock)
       end
 

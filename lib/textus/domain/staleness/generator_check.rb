@@ -8,10 +8,9 @@ module Textus
       # entry's `_meta.generated.at` timestamp. Returns an Array of row hashes
       # (possibly empty) per entry.
       class GeneratorCheck
-        def initialize(manifest:, file_stat:, clock:)
+        def initialize(manifest:, file_stat:)
           @manifest  = manifest
           @file_stat = file_stat
-          @clock     = clock
         end
 
         def rows_for(mentry)
