@@ -20,6 +20,7 @@ module Textus
               refresh: !b.refresh.nil?,
               handler_allowlist: !b.handler_allowlist.nil?,
               promote: !b.promote.nil?,
+              retention: !b.retention.nil?,
             }
           end,
           effective: {
@@ -29,6 +30,10 @@ module Textus
             },
             handler_allowlist: winners.handler_allowlist&.handlers,
             promotion: winners.promote && { requires: winners.promote.requires },
+            retention: winners.retention && {
+              expire_after: winners.retention.expire_after,
+              archive_after: winners.retention.archive_after,
+            },
           },
         }
       end

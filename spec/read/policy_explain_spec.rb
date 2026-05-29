@@ -22,6 +22,8 @@ RSpec.describe Textus::Read::PolicyExplain do
         - match: "**"
           promotion:
             requires: [schema_valid]
+        - match: working.doc
+          retention: { expire_after: 30d }
     YAML
     Textus::Store.new(textus)
   end
@@ -33,9 +35,9 @@ RSpec.describe Textus::Read::PolicyExplain do
       result = ops.policy_explain(key: "working.doc")
 
       expect(result[:key]).to eq("working.doc")
-      expect(result[:matched_blocks].length).to eq(3)
+      expect(result[:matched_blocks].length).to eq(4)
       matches = result[:matched_blocks].map { |b| b[:match] }
-      expect(matches).to contain_exactly("working.*", "working.doc", "**")
+      expect(matches).to contain_exactly("working.*", "working.doc", "**", "working.doc")
     end
   end
 
@@ -49,6 +51,15 @@ RSpec.describe Textus::Read::PolicyExplain do
       expect(result[:effective][:refresh][:on_stale]).to eq(:sync)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
       expect(result[:effective][:promotion]).to eq({ requires: [:schema_valid] })
+    end
+  end
+
+  it "reports retention windows in the matched blocks and effective output" do
+    Dir.mktmpdir do |root|
+      store = build_store(root)
+      result = store.as("human").policy_explain(key: "working.doc")
+      expect(result[:effective][:retention]).to eq(expire_after: 2_592_000, archive_after: nil)
+      expect(result[:matched_blocks].any? { |b| b[:retention] }).to be(true)
     end
   end
 
