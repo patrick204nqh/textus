@@ -13,6 +13,7 @@ module Textus
       publish: Textus::Write::Publish,
       refresh: Textus::Write::RefreshWorker,
       refresh_all: Textus::Write::RefreshAll,
+      retention_sweep: Textus::Write::RetentionSweep,
 
       # Read
       get: Textus::Read::Get,
@@ -33,6 +34,7 @@ module Textus
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
+      retainable: Textus::Read::Retainable,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,

@@ -67,6 +67,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "migrate" => Textus::CLI::Verb::Migrate,
       "refresh" => Textus::CLI::Group::Refresh,
       "reject" => Textus::CLI::Verb::Reject,
+      "retain" => Textus::CLI::Verb::Retain,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
       "where" => Textus::CLI::Verb::Where,
