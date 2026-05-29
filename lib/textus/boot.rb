@@ -150,13 +150,6 @@ module Textus
       )
     end
 
-    def self.run(session)
-      run_via(
-        container: Textus::Container.from_store_caps(session.read_caps, session.write_caps, session.hook_caps),
-        role: session.ctx.role,
-      )
-    end
-
     def self.run_via(container:, role: Textus::Role::DEFAULT) # rubocop:disable Lint/UnusedMethodArgument
       manifest = container.manifest
       {

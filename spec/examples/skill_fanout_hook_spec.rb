@@ -5,8 +5,8 @@ require "tmpdir"
 require_relative "../../examples/claude-plugin/recipes/skill_fanout"
 
 # Exercises the skill_fanout recipe against a real Textus::Store so the
-# spec depends only on the public Application::Context + Operations
-# contract that hooks actually receive at runtime.
+# spec depends only on the public Hooks::Context + RoleScope contract
+# that hooks actually receive at runtime.
 RSpec.describe "skill_fanout :entry_refreshed listener" do
   include_context "textus_store_fixture"
 

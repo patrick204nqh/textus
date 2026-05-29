@@ -30,13 +30,6 @@ module Textus
 
     module_function
 
-    def run(session, checks: nil)
-      container = Textus::Container.from_store_caps(
-        session.read_caps, session.write_caps, session.hook_caps
-      )
-      run_via(container: container, role: session.ctx.role, checks: checks)
-    end
-
     def run_via(container:, role: Textus::Role::DEFAULT, checks: nil) # rubocop:disable Lint/UnusedMethodArgument
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
@@ -63,18 +56,9 @@ module Textus
       container.rpc.names(:validate).flat_map { |name| invoke_registered_check(container, name) }
     end
 
-    # Build a write-caps-shaped struct so registered :validate hooks keep
-    # the same caps: kwarg interface they had under the Session API.
-    def caps_for(container)
-      Struct.new(:manifest, :file_store, :schemas, :root, :audit_log, :events, :authorizer).new(
-        container.manifest, container.file_store, container.schemas, container.root,
-        container.audit_log, container.events, container.authorizer
-      )
-    end
-
     def invoke_registered_check(container, name)
       result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
-        container.rpc.invoke(:validate, name, caps: caps_for(container))
+        container.rpc.invoke(:validate, name, caps: container)
       end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 
@@ -101,6 +85,6 @@ module Textus
       }
     end
 
-    private_class_method :run_registered_checks, :invoke_registered_check, :fail_issue, :caps_for
+    private_class_method :run_registered_checks, :invoke_registered_check, :fail_issue
   end
 end
