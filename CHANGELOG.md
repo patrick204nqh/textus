@@ -9,6 +9,12 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.32.1 — 2026-05-30
+
+### Internal
+
+- Test-suite cleanup for the unified-Guard specs (no `lib/` change): the new Guard/predicate/write specs now use the shared `textus_store_fixture` context plus a single `store_from_manifest` helper (replacing 9 per-file `build_*_store` methods and hand-rolled `Dir.mktmpdir` nesting), a `fail_guard_with` matcher for `GuardFailed` assertions, and uniformly mockist predicate unit specs (`zone_writable_by_spec` joins `accept_signed_spec`/`schema_valid_spec`).
+
 ## 0.32.0 — 2026-05-30
 
 Unified Guard engine ([ADR 0031](docs/architecture/decisions/0031-unified-guard.md), moves 2 & 3 of [ADR 0028](docs/architecture/decisions/0028-coordination-planes.md)), plus dropping the never-enforced read gate ([ADR 0032](docs/architecture/decisions/0032-drop-read-policy.md)). Every write transition now authorizes through **one Guard** — an ordered list of pure predicates over a single `Evaluation` context. No wire format (`textus/3`) change; the manifest schema and error envelopes change (breaking).
