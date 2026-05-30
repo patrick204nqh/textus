@@ -25,8 +25,8 @@ RSpec.describe Textus::Domain::Policy::Promotion do
   end
 
   it "resolves predicate names from a registry" do
-    policy = described_class.from_names(%w[schema_valid accept_authority_signed])
-    expect(policy.predicate_names).to contain_exactly("schema_valid", "accept_authority_signed")
+    policy = described_class.from_names(%w[schema_valid accept_signed])
+    expect(policy.predicate_names).to contain_exactly("schema_valid", "accept_signed")
   end
 
   it "rejects unknown predicate names" do
@@ -49,22 +49,22 @@ RSpec.describe Textus::Domain::Policy::Promotion do
     end
   end
 
-  describe "accept_authority predicate routing" do
-    it "evaluate(role:) fails for non-authority role and reports the kind seen" do
+  describe "accept_signed predicate routing" do
+    it "evaluate(role:) fails for a role lacking the accept capability" do
       mpolicy = instance_double(Textus::Manifest::Policy)
-      allow(mpolicy).to receive(:role_kind).with("agent").and_return(:proposer)
+      allow(mpolicy).to receive(:roles_with_capability).with("accept").and_return(["owner"])
       manifest = instance_double(Textus::Manifest, policy: mpolicy)
-      policy = described_class.from_names(%w[accept_authority_signed])
+      policy = described_class.from_names(%w[accept_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "agent")
       expect(result.ok?).to be false
-      expect(result.reasons.first).to match(/accept_authority_signed.*role 'agent' has kind ':proposer'/)
+      expect(result.reasons.first).to match(/accept_signed.*does not hold the 'accept' capability/)
     end
 
-    it "evaluate(role:) passes for the manifest's accept_authority role regardless of name" do
+    it "evaluate(role:) passes for the manifest's accept holder regardless of name" do
       mpolicy = instance_double(Textus::Manifest::Policy)
-      allow(mpolicy).to receive(:role_kind).with("owner").and_return(:accept_authority)
+      allow(mpolicy).to receive(:roles_with_capability).with("accept").and_return(["owner"])
       manifest = instance_double(Textus::Manifest, policy: mpolicy)
-      policy = described_class.from_names(%w[accept_authority_signed])
+      policy = described_class.from_names(%w[accept_signed])
       result = policy.evaluate(entry: nil, schemas: nil, manifest: manifest, role: "owner")
       expect(result.ok?).to be true
     end

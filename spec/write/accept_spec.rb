@@ -238,12 +238,12 @@ RSpec.describe Textus::Write::Accept do
         rules:
           - match: "working.network.org.**"
             promotion:
-              requires: [accept_authority_signed]
+              requires: [accept_signed]
       YAML
       Textus::Store.new(textus_dir)
     end
 
-    it "accept_authority_signed predicate passes when role has accept_authority kind" do
+    it "accept_signed predicate passes when role holds the accept capability" do
       Dir.mktmpdir do |root|
         store = build_promotion_gate_store(File.join(root, ".textus"))
         store.as("agent").put(

@@ -1,5 +1,5 @@
 require_relative "predicates/schema_valid"
-require_relative "predicates/accept_authority_signed"
+require_relative "predicates/accept_signed"
 
 module Textus
   module Domain
@@ -9,7 +9,7 @@ module Textus
 
         REGISTRY = {
           "schema_valid" => -> { Predicates::SchemaValid.new },
-          "accept_authority_signed" => -> { Predicates::AcceptAuthoritySigned.new },
+          "accept_signed" => -> { Predicates::AcceptSigned.new },
         }.freeze
 
         def self.from_names(names)
@@ -45,7 +45,7 @@ module Textus
 
         def invoke(pred, entry:, schemas:, manifest:, role:)
           case pred.name
-          when "accept_authority_signed"
+          when "accept_signed"
             pred.call(role: role, manifest: manifest, entry: entry)
           else
             pred.call(entry: entry, schemas: schemas, manifest: manifest)

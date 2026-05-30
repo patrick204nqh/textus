@@ -2,7 +2,7 @@ module Textus
   module Domain
     module Policy
       class Promote
-        KNOWN = %i[schema_valid accept_authority_signed].freeze
+        KNOWN = %i[schema_valid accept_signed].freeze
         attr_reader :requires
 
         def initialize(requires:)
