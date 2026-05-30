@@ -340,35 +340,7 @@ A derived entry says **"compute me from these sources, render me with this templ
 
 ### Registering hooks
 
-Every hook file wraps a single `Textus.hook { |reg| ... }` block. Inside the block, `reg.on(event, name, **opts, &blk)` is the only registration primitive — the event name is always the first positional argument.
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_file) do |store:, config:, args:|
-    { _meta: {}, body: File.read(config["path"]) }
-  end
-
-  reg.on(:transform_rows, :rank_by_recency) { |store:, rows:, **|          ... }
-  reg.on(:entry_put,      :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
-  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, target:, **| `git add #{target.shellescape}` }
-end
-```
-
-To register multiple events under the same name (e.g. a `:resolve_intake` + `:transform_rows` connector), call `reg.on` separately within the same block:
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :notion) { |store:, config:, args:| ... }
-  reg.on(:transform_rows, :notion) { |store:, rows:, **|       ... }
-end
-```
-
-Both reference the same name from the manifest:
-
-```yaml
-intake:     { handler: notion, config: { ... } }
-projection: { reduce: notion }
-```
+Hooks live in Ruby files under `.textus/hooks/`. See [`events.md`](events.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [§6](#6-wiring-data-in--intake-and-resolve_intake-hooks) and [§7](#7-wiring-data-out--derived-entries-and-publishing) above.
 
 ### What `textus build` does
 
