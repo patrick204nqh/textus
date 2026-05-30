@@ -17,8 +17,8 @@ RSpec.describe "store.reject with declared-kind proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: review,   kind: queue,  write_policy: [agent, human] }
+        - { name: identity, kind: origin }
+        - { name: review,   kind: queue }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
@@ -47,8 +47,8 @@ RSpec.describe "store.reject with declared-kind proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: pending,  kind: origin, write_policy: [human] }
+        - { name: identity, kind: origin }
+        - { name: pending,  kind: origin }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 

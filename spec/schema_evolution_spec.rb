@@ -47,10 +47,10 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: owner,  kind: accept_authority }
-        - { name: agent,  kind: proposer }
+        - { name: owner,  can: [accept, propose] }
+        - { name: agent,  can: [propose] }
       zones:
-        - { name: working, kind: origin, write_policy: [owner, agent] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
     YAML
@@ -95,9 +95,9 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: agent, kind: proposer }
+        - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: origin, write_policy: [agent] }
+        - { name: working, kind: queue }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
     YAML
