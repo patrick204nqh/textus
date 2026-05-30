@@ -5,6 +5,34 @@ RSpec.shared_context "textus_store_fixture" do
 end
 
 module TextusSpecHelpers
+  # Writes a manifest (+ optional zone dirs, schema files, and seed files)
+  # into `textus_dir` and returns the Store. Pair with the
+  # "textus_store_fixture" shared context, which provides `root` (the .textus
+  # dir) and tmp cleanup, to drop the per-spec build_store/mktmpdir boilerplate:
+  #
+  #   include_context "textus_store_fixture"
+  #   let(:store) { store_from_manifest(root, zones: %w[working], manifest: <<~YAML) }
+  #     version: textus/3
+  #     ...
+  #   YAML
+  #
+  # `schemas` maps name => YAML body (written to schemas/<name>.yaml);
+  # `files` maps a path relative to the .textus dir => contents.
+  def store_from_manifest(textus_dir, manifest:, zones: [], schemas: {}, files: {})
+    zones.each { |z| FileUtils.mkdir_p(File.join(textus_dir, "zones", z)) }
+    schemas.each do |name, body|
+      FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
+      File.write(File.join(textus_dir, "schemas", "#{name}.yaml"), body)
+    end
+    files.each do |rel, body|
+      path = File.join(textus_dir, rel)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, body)
+    end
+    File.write(File.join(textus_dir, "manifest.yaml"), manifest)
+    Textus::Store.new(textus_dir)
+  end
+
   # Builds a Textus::Call value for tests. Callers pass the role (and
   # optionally correlation_id, dry_run) — collaborators come from the
   # Store/Container, not from Call.
