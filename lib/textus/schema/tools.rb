@@ -88,12 +88,12 @@ module Textus
       end
 
       def self.accept_role_for(store)
-        authority = store.manifest.policy.roles_with_capability("accept").first
+        authority = store.manifest.policy.roles_with_capability("author").first
         return authority if authority
 
         raise UsageError.new(
-          "schema migrate requires a role holding the 'accept' capability; " \
-          "none declared (add e.g. `- { name: owner, can: [accept] }` to roles:)",
+          "schema migrate requires a role holding the 'author' capability; " \
+          "none declared (add e.g. `- { name: owner, can: [author] }` to roles:)",
         )
       end
     end

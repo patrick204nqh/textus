@@ -7,7 +7,7 @@ RSpec.describe Textus::Manifest::Policy do
     <<~YAML
       version: textus/3
       roles:
-        - { name: human,      can: [accept, propose] }
+        - { name: human,      can: [author, propose] }
         - { name: automation, can: [fetch, build] }
       zones:
         - { name: working, kind: canon }
@@ -29,14 +29,14 @@ RSpec.describe Textus::Manifest::Policy do
 
   describe "#verb_for_zone" do
     it "maps each zone to the capability its kind requires" do
-      expect(policy.verb_for_zone("working")).to eq("accept")
+      expect(policy.verb_for_zone("working")).to eq("author")
       expect(policy.verb_for_zone("review")).to eq("build")
     end
   end
 
   describe "#roles_with_capability" do
     it "lists roles holding a given verb" do
-      expect(policy.roles_with_capability("accept")).to eq(["human"])
+      expect(policy.roles_with_capability("author")).to eq(["human"])
       expect(policy.roles_with_capability("propose")).to eq(["human"])
       expect(policy.roles_with_capability("build")).to eq(["automation"])
     end
@@ -44,19 +44,19 @@ RSpec.describe Textus::Manifest::Policy do
 
   describe "#zone_writers" do
     it "returns roles holding the verb the zone-kind requires" do
-      # origin requires accept → human; derived requires build → automation
+      # canon requires author → human; derived requires build → automation
       expect(policy.zone_writers("working")).to eq(["human"])
       expect(policy.zone_writers("review")).to eq(["automation"])
     end
   end
 
   describe "#proposer_role" do
-    it "prefers a non-accept proposer over an accept+propose role" do
-      # default-style: human=[accept,propose], agent=[propose] → agent wins
+    it "prefers a non-author proposer over an author+propose role" do
+      # default-style: human=[author,propose], agent=[propose] → agent wins
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: human, can: [accept, propose] }
+          - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
         zones:
           - { name: working, kind: canon }
@@ -67,11 +67,11 @@ RSpec.describe Textus::Manifest::Policy do
       expect(p2.proposer_role).to eq("agent")
     end
 
-    it "falls back to the first proposer when the only proposer also holds accept" do
+    it "falls back to the first proposer when the only proposer also holds author" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: owner, can: [accept, propose] }
+          - { name: owner, can: [author, propose] }
         zones:
           - { name: working, kind: canon }
           - { name: review,  kind: queue }
@@ -102,7 +102,7 @@ RSpec.describe Textus::Manifest::Policy do
         <<~YAML
           version: textus/3
           roles:
-            - { name: human,      can: [accept, propose] }
+            - { name: human,      can: [author, propose] }
             - { name: automation, can: [fetch, build] }
           zones:
             - { name: review, kind: queue }
@@ -121,7 +121,7 @@ RSpec.describe Textus::Manifest::Policy do
       it "returns nil (no substring fallback)" do
         raw2 = YAML.safe_load(<<~YAML, aliases: false)
           version: textus/3
-          roles: [{ name: human, can: [accept, propose] }]
+          roles: [{ name: human, can: [author, propose] }]
           zones: [{ name: review, kind: canon }]
           entries: []
         YAML
@@ -154,7 +154,7 @@ RSpec.describe Textus::Manifest::Policy do
         <<~YAML
           version: textus/3
           roles:
-            - { name: human, can: [accept, propose] }
+            - { name: human, can: [author, propose] }
           zones:
             - { name: working, kind: canon }
             - { name: review,  kind: queue }
@@ -175,7 +175,7 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human,      can: [accept, propose] }
+          - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
           - { name: automation, can: [fetch, build] }
         zones:
@@ -203,7 +203,7 @@ RSpec.describe Textus::Manifest::Policy do
     it "does NOT treat a non-derived zone as derived" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
-        roles: [{ name: human, can: [accept, propose] }]
+        roles: [{ name: human, can: [author, propose] }]
         zones: [{ name: out, kind: canon }]
         entries: []
       YAML
@@ -211,8 +211,8 @@ RSpec.describe Textus::Manifest::Policy do
       expect(p2.derived_zone?("out")).to be(false)
     end
 
-    it "lists accept-holders via roles_with_capability" do
-      expect(policy.roles_with_capability("accept")).to eq(["human"])
+    it "lists author-holders via roles_with_capability" do
+      expect(policy.roles_with_capability("author")).to eq(["human"])
     end
   end
 
@@ -221,7 +221,7 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human, can: [accept, propose] }
+          - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
         zones:
           - { name: working, kind: canon }
@@ -259,7 +259,7 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human,      can: [accept, propose] }
+          - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
           - { name: automation, can: [fetch, build] }
         zones:

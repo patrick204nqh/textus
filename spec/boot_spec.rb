@@ -20,7 +20,7 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human,      can: [accept, propose] }
+        - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:
@@ -159,8 +159,8 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]).to include("human", "agent", "automation")
     expect(env["write_flows"]["agent"]).to include("proposal:")
 
-    # human holds [accept, propose] → its write_flow joins both guidance
-    # strings (accept's 'textus put' + propose's 'proposal:') with ' / '.
+    # human holds [author, propose] → its write_flow joins both guidance
+    # strings (author's 'textus put' + propose's 'proposal:') with ' / '.
     expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
@@ -216,7 +216,7 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: owner,    can: [accept] }
+          - { name: owner,    can: [author] }
           - { name: proposer, can: [propose] }
           - { name: fetcher,  can: [fetch] }
           - { name: compiler, can: [build] }

@@ -13,7 +13,7 @@ RSpec.describe Textus::Read::Pulse do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human, can: [accept, propose] }
+        - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
         - { name: working, kind: canon }

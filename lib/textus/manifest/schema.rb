@@ -7,10 +7,10 @@ module Textus
       ZONE_KINDS   = %w[canon quarantine queue derived].freeze
       # The closed capability set (ADR 0030): each verb grants authority to
       # originate in exactly one zone-kind.
-      CAPABILITIES = %w[propose accept fetch build].freeze
+      CAPABILITIES = %w[propose author fetch build].freeze
       KIND_REQUIRES_VERB = {
         "queue" => "propose",
-        "canon" => "accept",
+        "canon" => "author",
         "quarantine" => "fetch",
         "derived" => "build",
       }.freeze
@@ -93,11 +93,11 @@ module Textus
           end
         end
 
-        accept_holders = roles.count { |r| Array(r["can"]).include?("accept") }
-        return if accept_holders <= 1
+        author_holders = roles.count { |r| Array(r["can"]).include?("author") }
+        return if author_holders <= 1
 
         raise BadManifest.new(
-          "manifest declares #{accept_holders} roles with the accept capability; at most one is allowed",
+          "manifest declares #{author_holders} roles with the author capability; at most one is allowed",
         )
       end
 

@@ -10,7 +10,7 @@ RSpec.describe Textus::Write::RetentionSweep do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human, can: [accept, propose] }
+        - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
         - { name: review, kind: queue }

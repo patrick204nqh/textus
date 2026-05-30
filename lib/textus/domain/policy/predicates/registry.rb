@@ -10,7 +10,7 @@ module Textus
         module Registry
           ENTRIES = {
             "zone_writable_by" => ->(**) { ZoneWritableBy.new },
-            "accept_signed" => ->(**) { AcceptSigned.new },
+            "author_signed" => ->(**) { AuthorSigned.new },
             "schema_valid" => ->(schemas:, **) { SchemaValid.new(schemas: schemas) },
             "etag_match" => ->(params:, **) { EtagMatch.new(if_etag: params) },
             "fresh_within" => ->(params:, **) { FreshWithin.new(duration: params) },

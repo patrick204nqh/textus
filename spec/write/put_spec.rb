@@ -25,12 +25,12 @@ RSpec.describe Textus::Write::Put do
   end
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
-    # identity is a canon zone (needs the 'accept' capability); automation
+    # identity is a canon zone (needs the 'author' capability); automation
     # holds only [fetch, build], so the write is genuinely refused.
     expect { build_put(store, test_ctx(role: "automation")).call("identity.bar", meta: {}, body: "x") }
       .to raise_error(
         Textus::WriteForbidden,
-        /writing 'identity.bar' \(zone 'identity'\) needs capability 'accept'/,
+        /writing 'identity.bar' \(zone 'identity'\) needs capability 'author'/,
       )
   end
 

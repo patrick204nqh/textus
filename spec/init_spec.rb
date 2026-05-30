@@ -20,7 +20,7 @@ RSpec.describe Textus::Init do
     root = File.join(tmp, ".textus")
     Textus::Init.run(root)
     contents = File.read(File.join(root, "manifest.yaml"))
-    expect(contents).to include("can: [accept, propose]").and include("kind: quarantine")
+    expect(contents).to include("can: [author, propose]").and include("kind: quarantine")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end

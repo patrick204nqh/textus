@@ -47,7 +47,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: owner,  can: [accept, propose] }
+        - { name: owner,  can: [author, propose] }
         - { name: agent,  can: [propose] }
       zones:
         - { name: working, kind: canon }
@@ -88,7 +88,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     expect(audit.last_writer_for("working.note")).to eq("owner")
   end
 
-  it "migrate raises UsageError when roles: is declared but no accept_authority kind exists" do
+  it "migrate raises UsageError when roles: is declared but no author kind exists" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
 
@@ -115,7 +115,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
 
     expect do
       Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
-    end.to raise_error(Textus::UsageError, /requires a role holding the 'accept' capability/)
+    end.to raise_error(Textus::UsageError, /requires a role holding the 'author' capability/)
   end
 end
 # rubocop:enable RSpec/MultipleDescribes

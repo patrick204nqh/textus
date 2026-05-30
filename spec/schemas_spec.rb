@@ -90,7 +90,7 @@ RSpec.describe Textus::Schemas do
   describe "canon zone-kind (ADR 0033)" do
     it "accepts kind: canon and rejects the retired kind: origin" do
       canon = { "version" => "textus/3",
-                "roles" => [{ "name" => "human", "can" => ["accept"] }],
+                "roles" => [{ "name" => "human", "can" => ["author"] }],
                 "zones" => [{ "name" => "knowledge", "kind" => "canon" }] }
       expect { Textus::Manifest::Schema.validate!(canon) }.not_to raise_error
 

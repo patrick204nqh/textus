@@ -5,7 +5,7 @@ module Textus
     # closed capability set (Schema::CAPABILITIES). See ADR 0030.
     module Capabilities
       DEFAULT_MAPPING = {
-        "human" => %w[accept propose].freeze,
+        "human" => %w[author propose].freeze,
         "agent" => %w[propose].freeze,
         "automation" => %w[fetch build].freeze,
       }.freeze

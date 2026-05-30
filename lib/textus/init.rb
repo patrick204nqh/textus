@@ -7,7 +7,7 @@ module Textus
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
       roles:
-        - { name: human,      can: [accept, propose] }
+        - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:

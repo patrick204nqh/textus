@@ -24,15 +24,15 @@ RSpec.describe Textus::Domain::Policy::Predicates::ZoneWritableBy do
 
   it "fails for a role lacking the zone-kind's verb and raises WriteForbidden via #error" do
     allow(permission).to receive(:allows_write?).with("agent").and_return(false)
-    allow(policy).to receive(:verb_for_zone).with("working").and_return("accept")
-    allow(policy).to receive(:roles_with_capability).with("accept").and_return(["human"])
+    allow(policy).to receive(:verb_for_zone).with("working").and_return("author")
+    allow(policy).to receive(:roles_with_capability).with("author").and_return(["human"])
 
     pred = described_class.new
-    e = eval_for("agent") # working is canon → needs 'accept'; agent lacks it
+    e = eval_for("agent") # working is canon → needs 'author'; agent lacks it
     expect(pred.call(e)).to be(false)
     expect { raise pred.error(e) }.to raise_error(Textus::WriteForbidden) do |err|
       expect(err.code).to eq("write_forbidden")
-      expect(err.message).to match(/capability 'accept'/)
+      expect(err.message).to match(/capability 'author'/)
     end
   end
 end

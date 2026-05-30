@@ -12,7 +12,7 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human, can: [accept, propose] }
+        - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
         - { name: working, kind: canon }
@@ -44,7 +44,7 @@ RSpec.describe Textus::Boot do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: human, can: [accept] }
+          - { name: human, can: [author] }
         zones:
           - { name: working, kind: canon }
         entries: []

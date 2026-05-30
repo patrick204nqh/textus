@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::Delete do
       store = build_store(textus)
       File.write(File.join(textus, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
-      # identity is a canon zone (needs the 'accept' capability); automation
+      # identity is a canon zone (needs the 'author' capability); automation
       # holds only [fetch, build], so the delete is genuinely refused.
       ctx = test_ctx(role: "automation")
 
@@ -53,7 +53,7 @@ RSpec.describe Textus::Write::Delete do
         build_delete(store, ctx).call("identity.bar")
       end.to raise_error(
         Textus::WriteForbidden,
-        /writing 'identity.bar' \(zone 'identity'\) needs capability 'accept'/,
+        /writing 'identity.bar' \(zone 'identity'\) needs capability 'author'/,
       )
     end
   end

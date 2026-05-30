@@ -23,11 +23,11 @@ module Textus
     # multiple verbs gets one joined string; roles whose verbs have no template
     # are omitted from write_flows.
     WRITE_FLOW_TEMPLATES = {
-      accept: lambda do |name, _manifest|
+      author: lambda do |name, _manifest|
         "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
       end,
       propose: lambda do |name, manifest|
-        authority = manifest.policy.roles_with_capability("accept").first || "the accept-holder"
+        authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
         "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
           "the #{authority} role runs 'textus accept' to apply"
       end,
