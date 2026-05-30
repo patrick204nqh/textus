@@ -164,7 +164,7 @@ module Textus
         "invalid_role",
         message || "role '#{r}' is not declared in any zone",
         details: { "role" => r },
-        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].write_policy",
+        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under roles: (each with a can: list)",
       )
     end
   end
