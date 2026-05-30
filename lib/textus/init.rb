@@ -41,7 +41,7 @@ module Textus
 
         reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
         reg.on(:validate,       :my_check)  { |caps:, **| [] }
-        reg.on(:entry_put,      :my_listener, keys: ["working.*"]) { |key:, envelope:, **| }
+        reg.on(:entry_put,      :my_listener, keys: ["knowledge.*"]) { |key:, envelope:, **| }
 
         # Run a side-effect every time textus writes a file to your repo:
         reg.on(:file_published, :notify) do |key:, target:, **|
@@ -56,15 +56,15 @@ module Textus
 
       ```yaml
       entries:
-        - key: intake.foo
+        - key: feeds.foo
           kind: intake
-          path: intake/foo.md
-          zone: intake
+          path: feeds/foo.md
+          zone: feeds
           intake:
             handler: my_source
 
       rules:
-        - match: intake.foo
+        - match: feeds.foo
           fetch:
             ttl: 10m
             on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
