@@ -1003,14 +1003,7 @@ A `textus/3` implementation MAY:
 
 ## 16. Migrating from textus/2
 
-textus 0.12.0 does not ship a built-in migrator. Upgrade path:
-
-1. Install textus **0.11.x** first.
-2. Run `textus migrate --to=textus/3` (available in 0.11.x only). This rewrites `manifest.yaml`, renames the `inbox/` zone directory to `intake/`, sweeps frontmatter `owner:` fields, writes an audit-log marker, and reports legacy hook-DSL call sites for manual review.
-3. Upgrade to textus **0.12.0**.
-4. If `.textus/audit.log` contains pre-0.11.0 rows with `role: ai|script|build`, run `textus audit-rewrite-legacy-roles` once (one-shot verb; removed in 0.13.0).
-
-**textus doctor refuses textus/2 stores.** The doctor check `protocol_version` emits an `error`-level issue when `manifest.yaml` carries `version: textus/2`. Install 0.11.x and migrate before upgrading to 0.12.0.
+textus does not ship a built-in textus/2 → textus/3 migrator. The historical upgrade path (via the one-shot `textus migrate` in the 0.11.x line) is recorded in `CHANGELOG.md` §0.11.0. `textus doctor` refuses a store still declaring `version: textus/2`. The textus/2 → textus/3 rename table is kept below for reference.
 
 **Vocabulary summary** (textus/2 → textus/3 rename table, for reference):
 
@@ -1048,7 +1041,7 @@ textus 0.12.0 does not ship a built-in migrator. Upgrade path:
 | CLI verb | `refresh-stale` | `refresh stale` |
 | CLI verb | `policy list/explain` | `rule list/explain` |
 
-**Notes on hook migration.** The 0.11.x migrator scanner reports each file and call site that uses a legacy event name or DSL method. No automatic rewrite is performed. Update each hook to use `Textus.on(:new_event_name, ...)` before re-enabling the hook. See CHANGELOG §0.11.0 for the full event rename table.
+**Hook migration.** Legacy event names / DSL methods must be renamed to the textus/3 forms above before a hook will load; see `CHANGELOG.md` §0.11.0 for the full event-rename detail.
 
 ---
 
