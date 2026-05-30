@@ -950,26 +950,7 @@ Given a review entry `review.identity.self.patch` proposing a change to `identit
 
 ## 13.1 Layered architecture (internal)
 
-Textus internals are organized into four layers. The dependency rule is one-way — each layer may only import from the layer beneath it.
-
-- **Interface** (`lib/textus/cli/`, `lib/textus/mcp/`) — CLI verbs and the MCP gate. Parses flags / RPC, calls a use case, formats JSON.
-- **Application** (`lib/textus/application/`) — Use cases: `Read::Get`, `Write::Put`, `Write::RefreshWorker`, `Write::RefreshOrchestrator`, `Write::RefreshAll`, `Maintenance::Migrate`, etc. Orchestrate domain + infra; no business rules.
-- **Domain** (`lib/textus/domain/`) — Pure values: `Authorizer`, `Permission`, `Freshness::{Policy,Verdict,Evaluator}`, `Action`, `Outcome`, `Sentinel`, `Staleness`. No I/O, no globals, testable without disk.
-- **Infrastructure** (`lib/textus/infra/`) — Adapters: `Storage::FileStore`, `AuditLog`, `AuditSubscriber`, `Publisher`, `Clock`, `Refresh::Lock`, `Refresh::Detached`, `BuildLock`. Wrap OS / library primitives.
-
-The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
-
-Plugin authors interact only with the Hook DSL (`Textus.hook { |reg| reg.on(:resolve_intake, ...) }`, `reg.on(:entry_refreshed, ...)`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
-
-Both read and write paths flow through the application layer:
-
-- **Reads** flow through `Textus::Read::Get` (pure read + freshness annotation) or `Read::GetOrRefresh` (composes Get with `Write::RefreshOrchestrator`). Each takes a `container:` and a `call:`.
-- **Writes** flow through `Textus::Write::{Put,Delete,Mv,Accept,Reject,Publish,RefreshWorker}`. Permission checks happen at the use-case layer (via `Domain::Authorizer#authorize_write!`); the audit-append invariant lives in `Textus::Envelope::IO::Writer`.
-- `Textus::Call` is the slim per-invocation record: `role`, `correlation_id`, `now`, `dry_run`. Ports come from `Textus::Container`, not from the Call.
-- `Textus::Store` is the composition root and verb dispatcher. CLI verbs and the
-  MCP gate call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`).
-  Verbs are looked up in the static `Textus::Dispatcher::VERBS` table; adding a
-  use case is a single entry in `VERBS` plus the class.
+Textus internals are organized into four one-way layers — **Interface** (`cli/`, `mcp/`) → **Application** (`application/` use cases) → **Domain** (`domain/` pure values) → **Infrastructure** (`infra/` adapters). Each layer imports only from the one beneath it. Plugin authors touch only the Hook DSL and the manifest YAML; the layering is internal and may evolve.
 
 See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
 
@@ -1003,14 +984,7 @@ A `textus/3` implementation MAY:
 
 ## 16. Migrating from textus/2
 
-textus 0.12.0 does not ship a built-in migrator. Upgrade path:
-
-1. Install textus **0.11.x** first.
-2. Run `textus migrate --to=textus/3` (available in 0.11.x only). This rewrites `manifest.yaml`, renames the `inbox/` zone directory to `intake/`, sweeps frontmatter `owner:` fields, writes an audit-log marker, and reports legacy hook-DSL call sites for manual review.
-3. Upgrade to textus **0.12.0**.
-4. If `.textus/audit.log` contains pre-0.11.0 rows with `role: ai|script|build`, run `textus audit-rewrite-legacy-roles` once (one-shot verb; removed in 0.13.0).
-
-**textus doctor refuses textus/2 stores.** The doctor check `protocol_version` emits an `error`-level issue when `manifest.yaml` carries `version: textus/2`. Install 0.11.x and migrate before upgrading to 0.12.0.
+textus does not ship a built-in textus/2 → textus/3 migrator. The historical upgrade path (via the one-shot `textus migrate` in the 0.11.x line) is recorded in `CHANGELOG.md` §0.11.0. `textus doctor` refuses a store still declaring `version: textus/2`. The textus/2 → textus/3 rename table is kept below for reference.
 
 **Vocabulary summary** (textus/2 → textus/3 rename table, for reference):
 
@@ -1048,7 +1022,7 @@ textus 0.12.0 does not ship a built-in migrator. Upgrade path:
 | CLI verb | `refresh-stale` | `refresh stale` |
 | CLI verb | `policy list/explain` | `rule list/explain` |
 
-**Notes on hook migration.** The 0.11.x migrator scanner reports each file and call site that uses a legacy event name or DSL method. No automatic rewrite is performed. Update each hook to use `Textus.on(:new_event_name, ...)` before re-enabling the hook. See CHANGELOG §0.11.0 for the full event rename table.
+**Hook migration.** Legacy event names / DSL methods must be renamed to the textus/3 forms above before a hook will load; see `CHANGELOG.md` §0.11.0 for the full event-rename detail.
 
 ---
 

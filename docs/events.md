@@ -7,6 +7,8 @@ How to extend textus with Ruby hooks: when each event fires, what arguments it r
 
 This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](./zones.md).
 
+**New to hooks?** Read §1 — the RPC-vs-pub-sub model is the whole mental model in ~20 lines. The rest is reference you can skim on demand.
+
 ## Table of contents
 
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
@@ -58,7 +60,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh-stale`. |
+| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh stale`. |
 | `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). Payload: `{ ctx:, key:, envelope: }`. |
@@ -170,7 +172,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ```
   ┃ for each entry in a build-writable zone:
   ┃   ┃ load source rows
-  ┃   ┃ if projection.reduce: ───────────► :transform_rows  (RPC)
+  ┃   ┃ if compute.transform: ───────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
   ┃   ┃ sort/limit (skipped if reduce returned Hash)
   ┃   ┃ merge `boot` if inject_boot:
@@ -410,7 +412,7 @@ Manifest references the same name on both sides:
 
 - key: output.linear.dashboard
   zone: output
-  projection: { select: [intake.linear.issues], reduce: linear }
+  compute: { kind: projection, select: [intake.linear.issues], transform: linear }
 
 rules:
   - match: intake.linear.**

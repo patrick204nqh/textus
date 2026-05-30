@@ -199,7 +199,7 @@ entries:
 | `nested` | no | If `true`, the key prefix-matches subdirectories. `working.notes.daily.2026-05-21` resolves under `working/notes/`. |
 | `format` | no | `markdown` \| `json` \| `yaml` \| `text`. Inferred from extension if omitted. |
 | `intake:` | no | Declares this is an intake entry. See [§6](#6-wiring-data-in--intake-and-intake-hooks). |
-| `projection:` | no | Declares this is a derived entry. See [§7](#7-wiring-data-out--derived-entries-and-publishing). |
+| `compute:` | no | Declares this is a derived entry (`kind: projection` computes from store entries; `kind: external` tracks an outside build tool). See [§7](#7-wiring-data-out--derived-entries-and-publishing). |
 | `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
 | `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
 | `publish_to:` | no | List of external paths to byte-copy the built file to. |
@@ -267,7 +267,7 @@ Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
 ```ruby
 # .textus/hooks/notion.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :notion) do |store:, config:, args:|
+  reg.on(:resolve_intake, :notion) do |caps:, config:, args:|
     page_id = config.fetch("page_id")
     body = NotionClient.new.fetch_markdown(page_id)
     { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }
@@ -329,45 +329,18 @@ A derived entry says **"compute me from these sources, render me with this templ
   zone: output
   format: markdown
   owner: build:auto
-  projection:
+  compute:
+    kind: projection                           # projection | external
     select: [identity.self, working.notes]     # source keys
     pluck: "*"                                 # which fields
-    reduce: identity                           # optional reducer
+    transform: identity                        # optional :transform_rows hook
   template: claude-root.mustache               # in .textus/templates/
   publish_to: [CLAUDE.md]                      # external target(s)
 ```
 
 ### Registering hooks
 
-Every hook file wraps a single `Textus.hook { |reg| ... }` block. Inside the block, `reg.on(event, name, **opts, &blk)` is the only registration primitive — the event name is always the first positional argument.
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_file) do |store:, config:, args:|
-    { _meta: {}, body: File.read(config["path"]) }
-  end
-
-  reg.on(:transform_rows, :rank_by_recency) { |store:, rows:, **|          ... }
-  reg.on(:entry_put,      :audit, keys: ["working.*"]) { |store:, key:, envelope:, **| ... }
-  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |store:, target:, **| `git add #{target.shellescape}` }
-end
-```
-
-To register multiple events under the same name (e.g. a `:resolve_intake` + `:transform_rows` connector), call `reg.on` separately within the same block:
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :notion) { |store:, config:, args:| ... }
-  reg.on(:transform_rows, :notion) { |store:, rows:, **|       ... }
-end
-```
-
-Both reference the same name from the manifest:
-
-```yaml
-intake:     { handler: notion, config: { ... } }
-projection: { reduce: notion }
-```
+Hooks live in Ruby files under `.textus/hooks/`. See [`events.md`](events.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [§6](#6-wiring-data-in--intake-and-resolve_intake-hooks) and [§7](#7-wiring-data-out--derived-entries-and-publishing) above.
 
 ### What `textus build` does
 
@@ -437,7 +410,7 @@ $ git diff CLAUDE.md                                         # review and commit
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: review`) and let agents write into it with `--as=agent`, then `textus accept review.suggestion.<id> --as=human` promotes the proposal into `identity` or `working`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add an `intake` zone with `write_policy: [runner]` and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus refresh KEY --as=runner` (one-shot) or `textus refresh-stale` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add an `intake` zone with `write_policy: [runner]` and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus refresh KEY --as=runner` (one-shot) or `textus refresh stale` (sweep TTL-expired entries) keeps it current.
 
 ---
 

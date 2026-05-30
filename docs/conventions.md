@@ -49,9 +49,9 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 ## Derived entries
 
-textus supports two shapes for derived entries:
+A derived entry declares a `compute:` block with a `kind:` discriminator. Two kinds:
 
-**`projection:`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
+**`compute: { kind: projection }`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
 
 ```yaml
 - key: output.catalogs.people
@@ -59,7 +59,8 @@ textus supports two shapes for derived entries:
   zone: output
   schema: null
   owner: build:catalog-people
-  projection:
+  compute:
+    kind: projection
     select: working.network.org   # prefix or list of prefixes
     pluck:  [name, relationship, org]
     sort_by: name
@@ -67,21 +68,22 @@ textus supports two shapes for derived entries:
   publish_to: [docs/people.md]    # optional repo-relative byte-copy targets
 ```
 
-**`generator:`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `textus freshness` can compare source mtimes against the file's `_meta.generated.at`.
+**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `textus freshness` can compare source mtimes against the file's `_meta.generated.at`.
 
 ```yaml
 - key: output.catalogs.skills
   path: output/catalogs/skills.md
   zone: output
   owner: build:catalog-skills
-  generator:
+  compute:
+    kind: external
     command: "rake catalog:skills"   # informational; the runner invokes it
     sources: [working.projects, working.network]
 ```
 
-The build runner is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `generator.sources` — same list, recorded twice so a diff proves what was consumed.
+The build runner is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `compute.sources` — same list, recorded twice so a diff proves what was consumed.
 
-Full contract for both shapes is in [`../SPEC.md` §5.2 and §5.2.1](../SPEC.md). Reducers (`projection.reduce:`) and per-leaf publishing (`publish_each:`) are also covered there.
+Full contract for both shapes is in [`../SPEC.md` §5.2.1 and §5.2.2](../SPEC.md). Transforms (`compute.transform:`) and per-leaf publishing (`publish_each:`) are also covered there.
 
 ## Intake and freshness
 
@@ -89,7 +91,7 @@ External inputs land via `:resolve_intake` hooks, not shell commands. Each intak
 
 ```sh
 textus refresh intake.notion.roadmap --as=runner
-textus refresh-stale --zone=intake --as=runner   # everything past its TTL
+textus refresh stale --zone=intake --as=runner   # everything past its TTL
 ```
 
 Freshness budgets live in the top-level `rules:` block, matched by glob:
@@ -100,10 +102,10 @@ rules:
     refresh: { ttl: 6h, on_stale: warn }   # warn | sync | timed_sync
 ```
 
-A typical scheduled-refresh integration shells the `refresh-stale` sweep itself:
+A typical scheduled-refresh integration shells the `refresh stale` sweep itself:
 
 ```sh
-textus refresh-stale --zone=intake --as=runner   # in cron / CI
+textus refresh stale --zone=intake --as=runner   # in cron / CI
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`./events.md`](events.md) for writing custom handlers.
