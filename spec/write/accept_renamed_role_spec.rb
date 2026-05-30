@@ -60,7 +60,10 @@ RSpec.describe Textus::Write::Accept do
 
         ctx = test_ctx(role: "proposer")
         expect { build_accept(store, ctx).call("review.foo") }
-          .to raise_error(Textus::ProposalError, /only owner role can accept/)
+          .to raise_error(Textus::GuardFailed) do |e|
+            expect(e.details["failed"].map { |f| f["predicate"] }).to include("accept_signed")
+            expect(e.message).to match(/held by: owner/)
+          end
       end
     end
   end

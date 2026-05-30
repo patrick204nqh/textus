@@ -1,19 +1,21 @@
-require_relative "authority_gate"
-
 module Textus
   module Write
     class Reject
-      include AuthorityGate
-
       def initialize(container:, call:)
         @container    = container
         @call         = call
         @manifest     = container.manifest
+        @schemas      = container.schemas
         @events       = container.events
       end
 
       def call(pending_key)
-        assert_accept_capability!("reject")
+        guard.for(:reject, pending_key).check!(
+          Textus::Domain::Policy::Evaluation.new(
+            actor: @call.role, transition: :reject, origin: pending_key,
+            target: pending_key, envelope: nil, snapshot: @manifest
+          ),
+        )
 
         mentry = @manifest.resolver.resolve(pending_key).entry
         unless mentry.in_proposal_zone?(@manifest.policy)
@@ -39,6 +41,10 @@ module Textus
       end
 
       private
+
+      def guard
+        @guard ||= Textus::Domain::Policy::GuardFactory.new(manifest: @manifest, schemas: @schemas)
+      end
 
       def hook_context
         @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)

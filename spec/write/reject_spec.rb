@@ -40,12 +40,15 @@ RSpec.describe Textus::Write::Reject do
     end
   end
 
-  it "rejects non-human callers" do
+  it "rejects non-authority callers with guard_failed naming the predicate" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       ctx = test_ctx(role: "agent")
       expect { build_reject(store, ctx).call("review.draft") }
-        .to raise_error(Textus::ProposalError, /only human role can reject/)
+        .to raise_error(Textus::GuardFailed) do |e|
+          expect(e.code).to eq("guard_failed")
+          expect(e.details["failed"].map { |f| f["predicate"] }).to include("accept_signed")
+        end
     end
   end
 

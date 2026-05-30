@@ -44,7 +44,7 @@ RSpec.describe Textus::Write::Accept do
     end
   end
 
-  it "raises ProposalError when role is not human" do
+  it "refuses a non-authority actor with guard_failed naming the predicate" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
       store.as("agent").put(
@@ -59,7 +59,10 @@ RSpec.describe Textus::Write::Accept do
 
       ctx = test_ctx(role: "agent")
       expect { build_accept(store, ctx).call("review.foo") }
-        .to raise_error(Textus::ProposalError, /human/)
+        .to raise_error(Textus::GuardFailed) do |e|
+          expect(e.code).to eq("guard_failed")
+          expect(e.details["failed"].map { |f| f["predicate"] }).to include("accept_signed")
+        end
     end
   end
 
@@ -140,8 +143,8 @@ RSpec.describe Textus::Write::Accept do
         store = build_zero_authority_store(File.join(root, ".textus"))
         ctx = test_ctx(role: "agent")
         expect { build_accept(store, ctx).call("review.p") }.to raise_error(
-          Textus::ProposalError,
-          /no role holds the accept capability.*accept is disabled/i,
+          Textus::GuardFailed,
+          /no role holds the 'accept' capability.*accept is disabled/i,
         )
       end
     end
@@ -151,8 +154,8 @@ RSpec.describe Textus::Write::Accept do
         store = build_zero_authority_store(File.join(root, ".textus"))
         ctx = test_ctx(role: "agent")
         expect { build_reject(store, ctx).call("review.p") }.to raise_error(
-          Textus::ProposalError,
-          /no role holds the accept capability.*reject is disabled/i,
+          Textus::GuardFailed,
+          /no role holds the 'accept' capability.*reject is disabled/i,
         )
       end
     end
@@ -206,7 +209,7 @@ RSpec.describe Textus::Write::Accept do
       end
     end
 
-    it "raises ProposalError when schema_valid predicate fails (missing required field)" do
+    it "raises guard_failed when schema_valid predicate fails (missing required field)" do
       Dir.mktmpdir do |root|
         store = build_store_with_promotion(File.join(root, ".textus"))
         store.as("agent").put(
@@ -221,7 +224,9 @@ RSpec.describe Textus::Write::Accept do
 
         ctx = test_ctx(role: "human")
         expect { build_accept(store, ctx).call("review.bad-proposal") }
-          .to raise_error(Textus::ProposalError, /promotion gate failed/i)
+          .to raise_error(Textus::GuardFailed) do |e|
+            expect(e.details["failed"].map { |f| f["predicate"] }).to include("schema_valid")
+          end
       end
     end
 
