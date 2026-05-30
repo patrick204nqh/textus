@@ -45,7 +45,9 @@ module Textus
           [z["name"], z["kind"]&.to_sym]
         end
         @zone_descs  = Array(raw["zones"]).to_h { |z| [z["name"], z["desc"]] }
-        @zone_owners = Array(raw["zones"]).to_h { |z| [z["name"], z["owner"]] }
+        # Only zones that actually declare an owner — keep nil-tombstones out so a
+        # future `zone_owners.key?(name)` means "owner declared", not "zone exists".
+        @zone_owners = Array(raw["zones"]).to_h { |z| [z["name"], z["owner"]] }.compact
         @audit_config = build_audit_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])
         # Policy is constructed before entries because Entry validators
