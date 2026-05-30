@@ -1,18 +1,18 @@
 require_relative "schema"
-require_relative "role_kinds"
+require_relative "capabilities"
 
 module Textus
   class Manifest
     # Immutable, parsed view of a manifest YAML document.
     #
-    # Holds raw structural data (zones, entries, audit_config, role_mapping)
+    # Holds raw structural data (zones, entries, audit_config, role_caps)
     # but no behaviour beyond accessors. Behaviour (zone authority, key
     # resolution, rules) lives on Manifest::Policy / Resolver / Rules.
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
 
       attr_reader :raw, :root, :entries, :zones, :zone_readers, :declared_zone_kinds,
-                  :audit_config, :role_mapping, :policy
+                  :audit_config, :role_caps, :policy
 
       def self.validate_key!(key)
         raise UsageError.new("empty key") if key.nil? || key.empty?
@@ -34,7 +34,11 @@ module Textus
       def initialize(raw:, root:)
         @raw = raw
         @root = root
-        @zones = Array(raw["zones"]).to_h { |z| [z["name"], Array(z["write_policy"])] }
+        # TODO(Task 3): write authority is now derived from capabilities, not a
+        # per-zone write_policy. `zones` is a temporary empty-writers shim so
+        # Policy#zone_writers / #permission_for keep constructing until Policy
+        # is rewritten in Task 3.
+        @zones = Array(raw["zones"]).to_h { |z| [z["name"], []] }
         @zone_readers = Array(raw["zones"]).to_h do |z|
           rp = z["read_policy"]
           [z["name"], rp.nil? ? :all : Array(rp)]
@@ -43,7 +47,7 @@ module Textus
           [z["name"], z["kind"]&.to_sym]
         end
         @audit_config = build_audit_config(raw)
-        @role_mapping = RoleKinds.resolve(raw["roles"])
+        @role_caps = Capabilities.resolve(raw["roles"])
         # Policy is constructed before entries because Entry validators
         # call `entry.in_generator_zone?(policy)` and similar helpers
         # that take Policy as an argument.

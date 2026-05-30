@@ -2,14 +2,17 @@ module Textus
   class Manifest
     module Schema
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
-      ROLE_KEYS    = %w[name kind].freeze
-      ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
-      ZONE_KEYS    = %w[name kind write_policy read_policy].freeze
+      ROLE_KEYS    = %w[name can].freeze
+      ZONE_KEYS    = %w[name kind read_policy].freeze
       ZONE_KINDS   = %w[origin quarantine queue derived].freeze
-      KIND_REQUIRES_ROLE_KIND = {
-        "derived" => "generator",
-        "queue" => "proposer",
-        "quarantine" => "runner",
+      # The closed capability set (ADR 0030): each verb grants authority to
+      # originate in exactly one zone-kind.
+      CAPABILITIES = %w[propose accept fetch build].freeze
+      KIND_REQUIRES_VERB = {
+        "queue" => "propose",
+        "origin" => "accept",
+        "quarantine" => "fetch",
+        "derived" => "build",
       }.freeze
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
@@ -75,44 +78,32 @@ module Textus
         end
       end
 
-      def self.validate_zone_writers_declared!(raw)
-        return if raw["roles"].nil? # default mapping is permissive
-
-        declared = Array(raw["roles"]).map { |r| r["name"] }.compact.to_set
-        Array(raw["zones"]).each do |z|
-          Array(z["write_policy"]).each_with_index do |w, j|
-            next if declared.include?(w)
-
-            raise BadManifest.new(
-              "zone '#{z["name"]}' write_policy[#{j}] references undeclared role '#{w}' " \
-              "(declared roles: #{declared.to_a.join(", ")})",
-            )
-          end
-        end
+      # TODO(Task 2): rewrite validation. Write authority is now derived from
+      # capabilities (no write_policy list), so there is nothing to cross-check
+      # here. Kept as a no-op so Schema.validate! still dispatches it.
+      def self.validate_zone_writers_declared!(_raw)
+        nil
       end
 
       def self.validate_roles!(roles)
         return if roles.nil?
         raise BadManifest.new("roles: must be a list") unless roles.is_a?(Array)
 
-        accept_authority_count = 0
         roles.each_with_index do |r, i|
           path = "$.roles[#{i}]"
           walk(r, ROLE_KEYS, path)
           name = r["name"] or raise BadManifest.new("role at '#{path}' missing name")
-          kind = r["kind"] or raise BadManifest.new("role '#{name}' at '#{path}' missing kind")
-          unless ROLE_KINDS.include?(kind)
-            raise BadManifest.new("unknown role kind '#{kind}' at '#{path}' (known: #{ROLE_KINDS.join(", ")})")
+          Array(r["can"]).each do |verb|
+            next if CAPABILITIES.include?(verb)
+
+            raise BadManifest.new(
+              "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
+              "(known: #{CAPABILITIES.join(", ")})",
+            )
           end
-
-          accept_authority_count += 1 if kind == "accept_authority"
         end
-        return unless accept_authority_count > 1
-
-        raise BadManifest.new(
-          "manifest declares #{accept_authority_count} accept_authority roles; " \
-          "at most one accept_authority role is allowed",
-        )
+        # TODO(Task 2): enforce the single-accept invariant (at most one role
+        # may hold the `accept` capability).
       end
 
       def self.validate_fetch_timeout!(value, path)
@@ -143,27 +134,12 @@ module Textus
         )
       end
 
-      def self.validate_zone_kind_consistency!(raw)
-        mapping = role_kind_mapping(raw)
-        Array(raw["zones"]).each do |z|
-          required = KIND_REQUIRES_ROLE_KIND[z["kind"]] or next
-          writers  = Array(z["write_policy"])
-          next if writers.any? { |w| mapping[w] == required }
-
-          raise BadManifest.new(
-            "zone '#{z["name"]}' declares kind: #{z["kind"]} but no writer is a #{required} " \
-            "(writers: #{writers.join(", ")})",
-          )
-        end
-      end
-
-      # name => kind string, honouring an explicit roles: block or the default mapping.
-      def self.role_kind_mapping(raw)
-        if raw["roles"].nil?
-          RoleKinds::DEFAULT_MAPPING.transform_values(&:to_s)
-        else
-          Array(raw["roles"]).to_h { |r| [r["name"], r["kind"]] }
-        end
+      # TODO(Task 2): rewrite validation. Write authority is now derived from
+      # capabilities (role.can ⊇ KIND_REQUIRES_VERB[zone.kind]); the old
+      # writer/role-kind cross-check no longer applies. Kept as a no-op so
+      # Schema.validate! still dispatches it.
+      def self.validate_zone_kind_consistency!(_raw)
+        nil
       end
     end
   end
