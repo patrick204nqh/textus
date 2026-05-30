@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - key: working.doc
           kind: intake
@@ -61,7 +61,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
       write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
@@ -77,7 +77,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
@@ -93,7 +93,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
       write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
@@ -107,7 +107,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
   it "returns nil when the key has no envelope" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,

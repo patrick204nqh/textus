@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -28,7 +28,7 @@ RSpec.describe Textus::Read::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - key: working.doc
           kind: intake
@@ -65,7 +65,7 @@ RSpec.describe Textus::Read::Get do
 
   def build_use_case(store)
     container = Textus::Container.from_store(store)
-    call = Textus::Call.build(role: "runner")
+    call = Textus::Call.build(role: "automation")
     described_class.new(container: container, call: call)
   end
 
@@ -110,7 +110,7 @@ RSpec.describe Textus::Read::Get do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
       container = Textus::Container.from_store(store)
-      call = Textus::Call.build(role: "runner")
+      call = Textus::Call.build(role: "automation")
       expect do
         described_class.new(container: container, call: call, orchestrator: Object.new)
       end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)

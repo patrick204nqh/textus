@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.feed
           path: intake/feed.md
@@ -30,7 +30,7 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:ctx)   { test_ctx(role: "runner") }
+  let(:ctx)   { test_ctx(role: "automation") }
 
   it "memoizes evaluator output for unchanged (key, last_refreshed_at)" do
     counter = Class.new do
