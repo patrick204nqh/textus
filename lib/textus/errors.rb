@@ -205,6 +205,21 @@ module Textus
     def initialize(m) = super("proposal_error", m)
   end
 
+  class GuardFailed < Error
+    def initialize(failed)
+      # failed: [[predicate_name, reason], ...]
+      rows = failed.map { |name, reason| { "predicate" => name, "reason" => reason } }
+      names = failed.map(&:first)
+      super(
+        "guard_failed",
+        "guard refused crossing: #{failed.map { |n, r| "#{n} (#{r})" }.join("; ")}",
+        details: { "failed" => rows },
+        hint: "run 'textus policy explain <key> --output=json' to see the full guard; " \
+              "unmet: #{names.join(", ")}",
+      )
+    end
+  end
+
   class FlagRenamed < Error
     def initialize(old_flag, new_flag)
       super(
