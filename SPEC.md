@@ -50,6 +50,7 @@
 - [15. Implementation checklist](#15-implementation-checklist)
 - [16. Migrating from textus/2](#16-migrating-from-textus2)
   - [16.1 Breaking changes in 0.31.0 (capability-based roles)](#161-breaking-changes-in-0310-capability-based-roles)
+  - [16.2 Breaking changes in 0.33.0 (workspace/keep + Setup-1 scaffold)](#162-breaking-changes-in-0330-workspacekeep--setup-1-scaffold)
 
 ---
 
@@ -82,8 +83,8 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 
 textus/3 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
 
-- **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `fetch`, `build`).
-- **Place** — where data lives: zones such as `identity`, `working`, `intake`, `review`, `output`.
+- **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `fetch`, `build`).
+- **Place** — where data lives: zones such as `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `fetch`, `build`, …).
 - **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_put`, `:build_completed`, …).
@@ -96,7 +97,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (the `intake` zone in the default scaffold; any `quarantine` zone, writable by a role with `fetch`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
+| L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `fetch`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
 | L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish_to:`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/sentinels/<target-rel-path>.textus-managed.json` records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -135,11 +136,11 @@ The root is `.textus/` at the project working directory. A typical tree:
   hooks/                 # internal: one Ruby file per hook
   sentinels/             # internal: bookkeeping for byte-copied publish targets (see §5.3)
   zones/                 # ALL user content lives here
-    identity/            # zone: identity (kind: canon — author-holders write)
-    working/             # zone: working (kind: canon — author-holders write)
-    intake/              # zone: intake (kind: quarantine — fetch-holders write)
-    review/              # zone: review (kind: queue — propose-holders write)
-    output/              # zone: output (kind: derived — build-holders write)
+    knowledge/           # zone: knowledge (kind: canon — author-holders write; knowledge.identity.* is the identity convention)
+    notebook/            # zone: notebook (kind: workspace — keep-holders write; agent's own durable lane)
+    feeds/               # zone: feeds (kind: quarantine — fetch-holders write)
+    proposals/           # zone: proposals (kind: queue — propose-holders write)
+    artifacts/           # zone: artifacts (kind: derived — build-holders write)
 ```
 
 Textus internals (`manifest.yaml`, `audit.log`, `schemas/`, `templates/`, `hooks/`, `sentinels/`) live directly under `.textus/`. **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
@@ -172,38 +173,40 @@ roles:
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - name: identity
+  - name: knowledge
     kind: canon
-  - name: working
-    kind: canon
-  - name: intake
+  - name: notebook
+    kind: workspace
+    owner: agent              # optional, informational — agent's own lane
+    desc: "agent's durable working memory; bytes climb to knowledge only via propose→accept"
+  - name: feeds
     kind: quarantine
-  - name: review
+  - name: proposals
     kind: queue
-  - name: output
+  - name: artifacts
     kind: derived
 
 entries:
-  - key: identity.self
-    path: identity/self.md
-    zone: identity
+  - key: knowledge.identity.self
+    path: knowledge/identity/self.md
+    zone: knowledge
     schema: identity
 
-  - key: working.network.org
-    path: working/network/org
-    zone: working
+  - key: knowledge.network.org
+    path: knowledge/network/org
+    zone: knowledge
     schema: person
     owner: textus:network
     nested: true
 
-  - key: output.catalogs.people
-    path: output/catalogs/people.md
-    zone: output
+  - key: artifacts.catalogs.people
+    path: artifacts/catalogs/people.md
+    zone: artifacts
     schema: null
     owner: textus:build
 
 rules:
-  - match: intake.**
+  - match: feeds.**
     fetch: { ttl: 6h, on_stale: warn }
 
 audit:
@@ -273,33 +276,36 @@ The kind→verb mapping is closed:
 | Zone `kind` | Required capability | Meaning |
 |---|---|---|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
+| `workspace` | `keep` | Agent's own durable lane — bytes never auto-promote; climb to `canon` only via propose→accept. |
 | `quarantine` | `fetch` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `build` | Computed from other zones. |
 
-Default scaffold (roles `human=[author, propose]`, `agent=[propose]`, `automation=[fetch, build]`):
+`owner:` on a zone is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a zone is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
+
+Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[fetch, build]`):
 
 | Zone | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
-| `identity` | `canon` | `author` | `human` | Identity, voice, immutable principles — things only the trust anchor edits. |
-| `working` | `canon` | `author` | `human` | Active project state: notes, decisions, network. |
-| `intake` | `quarantine` | `fetch` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Fetched by external automation; never by humans or agents directly. |
-| `review` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
-| `output` | `derived` | `build` | `automation` | Computed outputs (catalogs, indexes, published context). Written via `textus build`. |
+| `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. `knowledge.identity.*` is the identity key convention. |
+| `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
+| `feeds` | `quarantine` | `fetch` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Fetched by external automation; never by humans or agents directly. |
+| `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `knowledge`. |
+| `artifacts` | `derived` | `build` | `automation` | Computed outputs (catalogs, indexes, published context). Written via `textus build`. |
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role does not hold the capability the target zone-kind requires, the write returns `write_forbidden` with the message `writing '<key>' (zone '<zone>') needs capability '<verb>'` and a hint naming the roles that hold it (`held by: <roles>`, or `held by: no declared role` when none do).
 
 Every zone MUST declare a `kind:` describing its role in the data-flow graph.
-The vocabulary is closed: `canon` (authored truth), `quarantine` (external
-bytes pending validation), `queue` (proposals awaiting promotion), `derived`
-(computed from other zones). A manifest MUST declare at most one `queue` zone.
-Because authority is derived, a manifest is rejected at load if it declares a
-zone whose required verb is held by **no** declared role (`derived` ⇒ a role
-with `build`, `queue` ⇒ `propose`, `quarantine` ⇒ `fetch`, `canon` ⇒
-`author`). Coordination is keyed off the declared kind: a zone is derived only
-if it declares `kind: derived`, and proposals route to the declared `queue`
-zone — there is no name-based fallback. A manifest with a kind-less zone is
-rejected at load.
+The vocabulary is closed: `canon` (authored truth), `workspace` (agent's own
+durable lane), `quarantine` (external bytes pending validation), `queue`
+(proposals awaiting promotion), `derived` (computed from other zones). A
+manifest MUST declare at most one `queue` zone. Because authority is derived, a
+manifest is rejected at load if it declares a zone whose required verb is held
+by **no** declared role (`derived` ⇒ a role with `build`, `queue` ⇒ `propose`,
+`quarantine` ⇒ `fetch`, `workspace` ⇒ `keep`, `canon` ⇒ `author`). Coordination
+is keyed off the declared kind: a zone is derived only if it declares
+`kind: derived`, and proposals route to the declared `queue` zone — there is no
+name-based fallback. A manifest with a kind-less zone is rejected at load.
 
 ### 5.1 Role resolution
 
@@ -324,7 +330,7 @@ Every successful write records the resolved role and a wall-clock timestamp in `
 
 #### 5.1.1 Capabilities
 
-Roles declare **capabilities** — verbs from a closed four-element set. A
+Roles declare **capabilities** — verbs from a closed five-element set. A
 manifest declares a `roles:` block mapping each role name to the capabilities
 it holds via `can:`:
 
@@ -334,30 +340,33 @@ roles:
   - { name: proposer, can: [propose] }
   - { name: fetcher,  can: [fetch] }
   - { name: compiler, can: [build] }
+  - { name: keeper,   can: [keep] }
 ```
 
-Capability allow-list: `propose`, `author`, `fetch`, `build`. Each verb is the
+Capability allow-list: `propose`, `author`, `keep`, `fetch`, `build`. Each verb is the
 required capability for exactly one zone-kind:
 
 | Capability | Authorizes writes to zone-kind |
 |---|---|
 | `author` | `canon` |
+| `keep` | `workspace` |
 | `propose` | `queue` |
 | `fetch` | `quarantine` |
 | `build` | `derived` |
 
 `author` is the single **trust anchor**: **at most one role may hold `author`**
-(a manifest declaring two or more is rejected at load). Because write authority
-is derived, there is no `write_policy:` — instead, every declared zone-kind's
-required verb MUST be held by at least one role, or the manifest is rejected at
-load.
+(a manifest declaring two or more is rejected at load). The `accept` and
+`reject` transitions also require the `author` capability — `accept` is a
+transition verb, not a capability. Because write authority is derived, there is
+no `write_policy:` — instead, every declared zone-kind's required verb MUST be
+held by at least one role, or the manifest is rejected at load.
 
 When the `roles:` block is omitted, the default mapping applies:
 
 | Default name | Capabilities (`can`) |
 |---|---|
 | `human`      | `[author, propose]` |
-| `agent`      | `[propose]` |
+| `agent`      | `[propose, keep]` |
 | `automation` | `[fetch, build]` |
 
 Wire protocol `textus/3` is unchanged — capabilities are a manifest/semantics
@@ -465,15 +474,15 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus fetch KEY --as=automation` (or by `textus fetch stale`). The declaration is data only:
 
 ```yaml
-- key: intake.calendar.events
-  zone: intake
+- key: feeds.calendar.events
+  zone: feeds
   intake:
     handler: ical-events
     config:
       url: "https://calendar.google.com/.../basic.ics"
 
 rules:
-  - match: intake.calendar.**
+  - match: feeds.calendar.**
     fetch:
       ttl: 6h
       on_stale: warn            # warn | sync | timed_sync (default: warn)
@@ -511,7 +520,7 @@ Both paths share the same write gate, audit-log entry, and `:entry_fetched` even
 
 ### 5.5 Pending / accept workflow
 
-Proposal entries are full patches authored into the `review` queue zone (writable by `propose`-holders: `agent` and `human` by default) — `review` in the default scaffold — typically by agents. The entry's frontmatter describes the patch it proposes against another zone:
+Proposal entries are full patches authored into the `proposals` queue zone (writable by `propose`-holders: `agent` and `human` by default) — `proposals` in the default scaffold (Setup-1) — typically by agents. The entry's frontmatter describes the patch it proposes against another zone:
 
 ```yaml
 ---
@@ -528,7 +537,7 @@ Proposed body content.
 
 `proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content.
 
-`textus accept <proposal-key>` requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept.
+`textus accept <proposal-key>` is a **transition** (not a capability) that requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. The `reject` transition likewise requires `author`. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept or reject.
 
 ### 5.6 Audit log
 
@@ -692,14 +701,14 @@ A manifest MAY declare a top-level `rules:` block — a list of rule blocks matc
 
 ```yaml
 rules:
-  - match: intake.**
+  - match: feeds.**
     fetch: { ttl: 6h, on_stale: warn }
 
-  - match: intake.calendar.**
+  - match: feeds.calendar.**
     fetch: { ttl: 30m, on_stale: timed_sync, sync_budget_ms: 800 }
     intake_handler_allowlist: [ical-events]
 
-  - match: review.**
+  - match: proposals.**
     guard:
       accept: [schema_valid, author_signed]
 ```
@@ -804,10 +813,10 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 ```json
 {
   "protocol": "textus/3",
-  "key": "working.network.org.jane",
-  "zone": "working",
+  "key": "knowledge.network.org.jane",
+  "zone": "knowledge",
   "owner": "textus:network",
-  "path": "/absolute/path/to/.textus/zones/working/network/org/jane.md",
+  "path": "/absolute/path/to/.textus/zones/knowledge/network/org/jane.md",
   "format": "markdown",
   "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
@@ -823,7 +832,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/3`.
 - `key` MUST be the canonical resolved key.
-- `zone` MUST be one of the zones declared in the manifest (`identity`, `working`, `intake`, `review`, `output` in the default scaffold).
+- `zone` MUST be one of the zones declared in the manifest (`knowledge`, `notebook`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
@@ -831,7 +840,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been fetched; `false` otherwise. Only populated for entries matched by a `fetch:` rule slot (typically `intake` zone); always `false` elsewhere.
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been fetched; `false` otherwise. Only populated for entries matched by a `fetch:` rule slot (typically `feeds` / quarantine zone); always `false` elsewhere.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a `timed_sync` background fetch is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
 
@@ -844,9 +853,9 @@ Errors use a distinct envelope:
   "protocol": "textus/3",
   "ok": false,
   "code": "write_forbidden",
-  "message": "writing 'identity.self' (zone 'identity') needs capability 'author'",
+  "message": "writing 'knowledge.identity.self' (zone 'knowledge') needs capability 'author'",
   "hint": "held by: human; pass --as=<role>",
-  "details": { "key": "identity.self", "zone": "identity", "verb": "author", "holders": ["human"] }
+  "details": { "key": "knowledge.identity.self", "zone": "knowledge", "verb": "author", "holders": ["human"] }
 }
 ```
 
@@ -903,8 +912,8 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
   "agent_quickstart": {
     "read_verbs":     ["boot", "get", "list", "audit", "pulse", "freshness", "doctor"],
     "write_verbs":    ["put KEY --as=agent --stdin"],
-    "writable_zones": ["review"],
-    "propose_zone":   "review",
+    "writable_zones": ["proposals"],
+    "propose_zone":   "proposals",
     "latest_seq":     1842
   }
 }
@@ -917,14 +926,14 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 ```json
 {
   "cursor":         1845,
-  "changed":        [ { "seq": 1843, "key": "working.x", "verb": "put", "role": "human", "ts": "..." } ],
-  "stale":          [ "output.marketplace" ],
-  "pending_review": [ "review.proposal.123" ],
+  "changed":        [ { "seq": 1843, "key": "knowledge.notes.x", "verb": "put", "role": "human", "ts": "..." } ],
+  "stale":          [ "artifacts.marketplace" ],
+  "pending_review": [ "proposals.proposal.123" ],
   "doctor":         { "ok": true, "warn": 0, "fail": 0 }
 }
 ```
 
-`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the review zone. `doctor` is an `{ok, warn, fail}` count summary. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -942,8 +951,8 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 {
   "verb": "freshness",
   "rows": [
-    { "key": "intake.upstream.notes",
-      "zone": "intake",
+    { "key": "feeds.upstream.notes",
+      "zone": "feeds",
       "last_fetched_at": "2026-05-21T13:21:17Z",
       "age_seconds": 65000,
       "ttl_seconds": 43200,
@@ -1018,7 +1027,7 @@ Given a manifest entry with `publish_to: <path>`, a successful `textus build` fo
 Every successful write verb (`put`, `delete`, `build`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
 
 **Fixture I — Pending → accept:**
-Given a review entry `review.identity.self.patch` proposing a change to `identity.self`, `textus accept identity.self --as=human` copies the patch body into `identity.self`, deletes the review entry, and appends two audit lines (one for the identity write, one for the review delete) in that order.
+Given a proposal entry `proposals.knowledge.self.patch` proposing a change to `knowledge.identity.self`, `textus accept proposals.knowledge.self.patch --as=human` copies the patch body into the target key, deletes the proposal entry, and appends two audit lines (one for the target write, one for the proposals delete) in that order.
 
 ## 13. Why not X?
 
@@ -1128,6 +1137,37 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | Envelope `refreshing` | `fetching` |
 
 A manifest still declaring `write_policy:` or a role `kind:` is rejected at load. There is no compatibility alias — the breaking change requires a new wire-compatible manifest. (Wire string `textus/3` is unchanged: capabilities are a manifest concept and never appear on the wire.)
+
+### 16.2 Breaking changes in 0.33.0 (workspace/keep + Setup-1 scaffold)
+
+0.33.0 adds the fifth coordination primitive (`workspace` zone-kind + `keep` capability), renames the capability `accept` → `author` (and predicate `accept_signed` → `author_signed`), renames zone-kind `origin` → `canon`, and renames the default scaffold zones to the Setup-1 names. These changes affect **manifest files and tooling** only — the `textus/3` wire format is **UNCHANGED** (envelope shape, audit-log schema, key grammar, and the `version: textus/3` field are all identical to 0.32.x).
+
+**Renames (manifest and predicate vocabulary):**
+
+| Removed / renamed (≤ 0.32) | 0.33.0 form |
+|---|---|
+| Zone-kind `origin` | `canon` |
+| Capability `accept` | `author` |
+| Promotion predicate `accept_signed` | `author_signed` |
+| Default scaffold zone `identity` | `knowledge` (identity keys live under `knowledge.identity.*`) |
+| Default scaffold zone `working` | `knowledge` (merged into the same `canon` zone) |
+| Default scaffold zone `intake` | `feeds` |
+| Default scaffold zone `review` | `proposals` |
+| Default scaffold zone `output` | `artifacts` |
+
+**New in 0.33.0:**
+
+| Addition | Detail |
+|---|---|
+| Zone-kind `workspace` | Agent's own durable lane. Required capability: `keep`. Bytes never auto-promote; climb to `canon` only via propose→accept. |
+| Capability `keep` | Authorizes writes to `workspace` zones. Default scaffold: `agent` holds `[propose, keep]`. |
+| Default scaffold zone `notebook` | `kind: workspace`, default owner `agent`. |
+| `owner:` on a zone | OPTIONAL, INFORMATIONAL — not enforced in 0.33.0 (owner-scoped enforcement is deferred). |
+| `desc:` on a zone | OPTIONAL — surfaces as the `purpose` field in `textus boot` zone rows. |
+
+**Clarification (not a breaking change):** `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. This has always been true; 0.33.0 makes it explicit by removing `accept` from the capability vocabulary.
+
+A manifest declaring `kind: origin` or capability `accept` (in a `can:` list) is rejected at load.
 
 ---
 
