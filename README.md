@@ -57,7 +57,7 @@ Try the gate the other way (`textus put working.notes.X --as=agent`) and you get
 This Ruby gem is the reference implementation of **`textus/3`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/zone gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/3`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
 
 - Specification: [`SPEC.md`](SPEC.md)
-- Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Architecture: [`docs/architecture/README.md`](docs/architecture/README.md)
 - Per-release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
 A second implementation in another language would share the same `.textus/` directory and the same audit log. That's deliberate.

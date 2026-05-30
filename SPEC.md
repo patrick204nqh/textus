@@ -969,7 +969,7 @@ Both read and write paths flow through the application layer:
   Verbs are looked up in the static `Textus::Dispatcher::VERBS` table; adding a
   use case is a single entry in `VERBS` plus the class.
 
-See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
+See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
 
 ## 14. Open questions (v3.x scope)
 
