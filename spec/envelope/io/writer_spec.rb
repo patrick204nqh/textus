@@ -10,7 +10,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
         - { key: working.bar, path: working/bar.md, zone: working, kind: leaf}
@@ -32,7 +32,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
     )
   end
 
-  def ctx_double(role: :runner, correlation_id: nil)
+  def ctx_double(role: :automation, correlation_id: nil)
     Struct.new(:role, :correlation_id).new(role, correlation_id)
   end
 
@@ -44,7 +44,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "writes bytes, returns an envelope, and appends a 'put' audit row" do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
-        ctx = ctx_double(role: :runner, correlation_id: "corr-put")
+        ctx = ctx_double(role: :automation, correlation_id: "corr-put")
         writer = build_writer(textus_dir, ctx)
         mentry = Textus::Manifest.load(textus_dir).resolver.resolve("working.foo").entry
 
@@ -109,7 +109,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "renames file, returns envelope with new key/uid, and appends a 'mv' audit row with from_key/to_key/uid" do
       Dir.mktmpdir do |root|
         textus_dir = build_textus(root)
-        ctx = ctx_double(role: :runner, correlation_id: "corr-mv")
+        ctx = ctx_double(role: :automation, correlation_id: "corr-mv")
         writer = build_writer(textus_dir, ctx)
         manifest = Textus::Manifest.load(textus_dir)
         old_mentry = manifest.resolver.resolve("working.foo").entry

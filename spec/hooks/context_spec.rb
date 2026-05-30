@@ -14,7 +14,7 @@ RSpec.describe Textus::Hooks::Context do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, agent] }
+        - { name: working, kind: queue }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: agent, kind: leaf}
 

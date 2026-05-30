@@ -17,7 +17,7 @@ RSpec.describe "Textus::Domain::Staleness IntakeCheck with fake clock" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.feed
           kind: intake

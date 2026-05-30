@@ -10,9 +10,9 @@ RSpec.describe Textus::MCP::Tools do
     <<~YAML
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: working,  kind: origin, write_policy: [human, agent] }
-        - { name: review,   kind: origin, write_policy: [agent] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: review,   kind: queue }
       entries:
         - { key: identity.self,   path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
         - { key: working.note,    path: working/note.md,  zone: working,  schema: null, owner: human:self, kind: leaf }

@@ -9,7 +9,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "write_policy" => ["runner"], "read_policy" => ["all"] }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine", "read_policy" => ["all"] }],
         "entries" => [],
         "rules" => [],
       )
@@ -26,7 +26,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "write_policy" => ["runner"], "ohno" => 1 }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine", "ohno" => 1 }],
         "entries" => [],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'ohno' at '\$\.zones\[0\]'/)
@@ -36,7 +36,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "writable_by" => ["runner"] }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine", "writable_by" => ["automation"] }],
         "entries" => [],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'writable_by'/)
@@ -46,7 +46,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "derived", "write_policy" => ["builder"] }],
+        "zones" => [{ "name" => "output", "kind" => "derived" }],
         "entries" => [{ "key" => "x", "zone" => "output", "path" => "x.json", "projection" => {} }],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'projection' at '\$\.entries\[0\]'/)
@@ -56,7 +56,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "derived", "write_policy" => ["builder"] }],
+        "zones" => [{ "name" => "output", "kind" => "derived" }],
         "entries" => [{
           "key" => "x", "zone" => "output", "path" => "x.json",
           "compute" => { "kind" => "projection", "select" => ["w.x"], "reduce" => "f" }
@@ -69,7 +69,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "write_policy" => ["runner"] }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
         "entries" => [],
         "rules" => [{ "match" => "intake.x.*", "handler_allowlist" => ["h"] }],
       )
@@ -86,7 +86,7 @@ RSpec.describe Textus::Manifest::Schema do
     def manifest_with_timeout(value)
       {
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "write_policy" => ["runner"] }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
         "entries" => [],
         "rules" => [{ "match" => "intake.**", "refresh" => { "ttl" => "1h", "on_stale" => "warn", "fetch_timeout_seconds" => value } }],
       }
@@ -120,7 +120,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "inbox", "kind" => "quarantine", "write_policy" => ["runner"] }],
+        "zones" => [{ "name" => "inbox", "kind" => "quarantine" }],
         "entries" => [],
       )
     end.not_to raise_error

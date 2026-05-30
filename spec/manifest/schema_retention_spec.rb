@@ -4,7 +4,7 @@ RSpec.describe "Textus::Manifest::Schema retention block" do
   def parse(retention_yaml)
     raw = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
-      zones: [{ name: review, kind: queue, write_policy: [agent] }]
+      zones: [{ name: review, kind: queue }]
       entries: []
       rules:
         - match: review.**

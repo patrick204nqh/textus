@@ -7,23 +7,33 @@ RSpec.describe Textus::Manifest::Data do
     <<~YAML
       version: textus/3
       roles:
-        - { name: human, kind: proposer }
-        - { name: builder, kind: generator }
+        - { name: human, can: [accept, propose] }
+        - { name: automation, can: [build] }
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
-        - { name: review,  kind: derived, write_policy: [builder] }
+        - { name: working, kind: origin }
+        - { name: review,  kind: derived }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
 
-  it "exposes zones, zone_readers, entries, audit_config, role_mapping" do
+  it "exposes zones, zone_readers, entries, audit_config, role_caps" do
     expect(data.zones).to be_a(Hash)
     expect(data.zone_readers).to be_a(Hash)
     expect(data.entries).to all(be_a(Textus::Manifest::Entry::Base))
     expect(data.audit_config).to include(:max_size, :keep)
-    expect(data.role_mapping).to be_a(Hash)
+    expect(data.role_caps).to eq("human" => %w[accept propose], "automation" => %w[build])
+  end
+
+  it "derives zone writers from capability × zone-kind" do
+    expect(data.policy.zone_writers("working")).to eq(["human"])
+    expect(data.policy.zone_writers("review")).to eq(["automation"])
+  end
+
+  it "exposes roles holding a capability" do
+    expect(data.policy.roles_with_capability("accept")).to eq(["human"])
+    expect(data.policy.roles_with_capability("build")).to eq(["automation"])
   end
 
   it "exposes raw and root" do
