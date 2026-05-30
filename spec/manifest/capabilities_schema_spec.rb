@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Textus::Manifest::Schema role declarations" do
+RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
   def parse(yaml)
     Textus::Manifest.parse(yaml)
   end

@@ -139,12 +139,13 @@ module Textus
       def self.validate_zone_kind_consistency!(raw)
         held = Capabilities.resolve(raw["roles"]).values.flatten.uniq
 
-        Array(raw["zones"]).each do |z|
+        Array(raw["zones"]).each_with_index do |z, i|
           verb = KIND_REQUIRES_VERB[z["kind"]]
           next if verb.nil? || held.include?(verb)
 
           raise BadManifest.new(
-            "zone '#{z["name"]}' (#{z["kind"]}) needs a role with capability '#{verb}'; none declared",
+            "zone '#{z["name"]}' (#{z["kind"]}) at '$.zones[#{i}]' " \
+            "needs a role with capability '#{verb}'; none declared",
           )
         end
       end
