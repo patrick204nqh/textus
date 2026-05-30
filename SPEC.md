@@ -950,26 +950,7 @@ Given a review entry `review.identity.self.patch` proposing a change to `identit
 
 ## 13.1 Layered architecture (internal)
 
-Textus internals are organized into four layers. The dependency rule is one-way — each layer may only import from the layer beneath it.
-
-- **Interface** (`lib/textus/cli/`, `lib/textus/mcp/`) — CLI verbs and the MCP gate. Parses flags / RPC, calls a use case, formats JSON.
-- **Application** (`lib/textus/application/`) — Use cases: `Read::Get`, `Write::Put`, `Write::RefreshWorker`, `Write::RefreshOrchestrator`, `Write::RefreshAll`, `Maintenance::Migrate`, etc. Orchestrate domain + infra; no business rules.
-- **Domain** (`lib/textus/domain/`) — Pure values: `Authorizer`, `Permission`, `Freshness::{Policy,Verdict,Evaluator}`, `Action`, `Outcome`, `Sentinel`, `Staleness`. No I/O, no globals, testable without disk.
-- **Infrastructure** (`lib/textus/infra/`) — Adapters: `Storage::FileStore`, `AuditLog`, `AuditSubscriber`, `Publisher`, `Clock`, `Refresh::Lock`, `Refresh::Detached`, `BuildLock`. Wrap OS / library primitives.
-
-The `lib/textus/store/`, `lib/textus/manifest/`, `lib/textus/hooks/` namespaces are infrastructure adapters that predate this split and remain at their existing paths for backward-compat with the plugin DSL.
-
-Plugin authors interact only with the Hook DSL (`Textus.hook { |reg| reg.on(:resolve_intake, ...) }`, `reg.on(:entry_refreshed, ...)`, etc.) and the manifest YAML schema. The layering is internal and may evolve.
-
-Both read and write paths flow through the application layer:
-
-- **Reads** flow through `Textus::Read::Get` (pure read + freshness annotation) or `Read::GetOrRefresh` (composes Get with `Write::RefreshOrchestrator`). Each takes a `container:` and a `call:`.
-- **Writes** flow through `Textus::Write::{Put,Delete,Mv,Accept,Reject,Publish,RefreshWorker}`. Permission checks happen at the use-case layer (via `Domain::Authorizer#authorize_write!`); the audit-append invariant lives in `Textus::Envelope::IO::Writer`.
-- `Textus::Call` is the slim per-invocation record: `role`, `correlation_id`, `now`, `dry_run`. Ports come from `Textus::Container`, not from the Call.
-- `Textus::Store` is the composition root and verb dispatcher. CLI verbs and the
-  MCP gate call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`).
-  Verbs are looked up in the static `Textus::Dispatcher::VERBS` table; adding a
-  use case is a single entry in `VERBS` plus the class.
+Textus internals are organized into four one-way layers — **Interface** (`cli/`, `mcp/`) → **Application** (`application/` use cases) → **Domain** (`domain/` pure values) → **Infrastructure** (`infra/` adapters). Each layer imports only from the one beneath it. Plugin authors touch only the Hook DSL and the manifest YAML; the layering is internal and may evolve.
 
 See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
 
