@@ -36,8 +36,8 @@ RSpec.describe "CLI hook verbs" do
     [rc, out.string.lines.last]
   end
 
-  it "textus refresh KEY invokes the fetch hook" do
-    rc, line = run_cli(["refresh", "intake.x", "--as=automation", "--output=json"])
+  it "textus fetch KEY invokes the fetch hook" do
+    rc, line = run_cli(["fetch", "intake.x", "--as=automation", "--output=json"])
     expect(rc).to eq(0)
     expect(JSON.parse(line)["body"]).to eq("ok")
   end

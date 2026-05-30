@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Doctor::Check::RefreshLocks do
+RSpec.describe Textus::Doctor::Check::FetchLocks do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
@@ -44,7 +44,7 @@ RSpec.describe Textus::Doctor::Check::RefreshLocks do
       issues = described_class.new(store.container).call
       expect(issues.length).to eq(1)
       expect(issues.first).to include(
-        "code" => "refresh_lock.stale",
+        "code" => "fetch_lock.stale",
         "level" => "info",
         "subject" => lock_path,
       )

@@ -24,9 +24,9 @@ RSpec.describe Textus::Read::Freshness do
 
       rules:
         - match: working.doc
-          refresh: { ttl: 1h, on_stale: warn }
+          fetch: { ttl: 1h, on_stale: warn }
         - match: working.stale
-          refresh: { ttl: 1s, on_stale: warn }
+          fetch: { ttl: 1s, on_stale: warn }
     YAML
 
     File.write(File.join(textus, "hooks", "noop.rb"), "")
@@ -34,12 +34,12 @@ RSpec.describe Textus::Read::Freshness do
     Textus::Store.new(textus)
   end
 
-  def write_envelope(root, rel, last_refreshed_at:)
+  def write_envelope(root, rel, last_fetched_at:)
     path = File.join(root, ".textus", "zones", rel)
     File.write(path, <<~MD)
       ---
       name: doc
-      last_refreshed_at: "#{last_refreshed_at}"
+      last_fetched_at: "#{last_fetched_at}"
       ---
       body
     MD
@@ -48,8 +48,8 @@ RSpec.describe Textus::Read::Freshness do
   it "returns one row per manifest entry with :status, :key, :zone" do
     Dir.mktmpdir do |root|
       store = build_store(root)
-      write_envelope(root, "working/doc.md",   last_refreshed_at: Time.now.utc.iso8601)
-      write_envelope(root, "working/stale.md", last_refreshed_at: (Time.now.utc - 3600).iso8601)
+      write_envelope(root, "working/doc.md",   last_fetched_at: Time.now.utc.iso8601)
+      write_envelope(root, "working/stale.md", last_fetched_at: (Time.now.utc - 3600).iso8601)
 
       ops = store.as("human")
       rows = ops.freshness
@@ -86,21 +86,21 @@ RSpec.describe Textus::Read::Freshness do
     end
   end
 
-  it "reports :never_refreshed when policy exists but envelope is absent" do
+  it "reports :never_fetched when policy exists but envelope is absent" do
     Dir.mktmpdir do |root|
       store = build_store(root)
       ops = store.as("human")
       rows = ops.freshness(prefix: "working.doc")
-      expect(rows.first[:status]).to eq(:never_refreshed)
+      expect(rows.first[:status]).to eq(:never_fetched)
       expect(rows.first[:next_due_at]).to be_nil
     end
   end
 
-  it "computes :next_due_at as last_refreshed_at + ttl when both are present" do
+  it "computes :next_due_at as last_fetched_at + ttl when both are present" do
     Dir.mktmpdir do |root|
       store = build_store(root)
       t = Time.utc(2026, 1, 1, 12, 0, 0)
-      write_envelope(root, "working/doc.md", last_refreshed_at: t.iso8601)
+      write_envelope(root, "working/doc.md", last_fetched_at: t.iso8601)
       ops = store.as("human")
       rows = ops.freshness(prefix: "working.doc")
       expect(Time.parse(rows.first[:next_due_at])).to eq(t + 3600)

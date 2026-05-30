@@ -15,7 +15,7 @@ module Textus
         def rows_for(mentry)
           return [] unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
-          ttl = @manifest.rules.for(mentry.key).refresh&.ttl_seconds
+          ttl = @manifest.rules.for(mentry.key).fetch&.ttl_seconds
           return [] unless ttl
 
           path = Textus::Key::Path.resolve(@manifest.data, mentry)
@@ -26,17 +26,17 @@ module Textus
         private
 
         def ttl_reason(mentry, path, ttl)
-          return "never refreshed" unless @file_stat.exists?(path)
+          return "never fetched" unless @file_stat.exists?(path)
 
-          last_str = last_refreshed_of(mentry, path)
-          return "never refreshed (no last_refreshed_at)" if last_str.nil?
+          last_str = last_fetched_of(mentry, path)
+          return "never fetched (no last_fetched_at)" if last_str.nil?
 
           last = parse_time(last_str)
           "ttl exceeded (#{ttl}s)" if last.nil? || (@clock.now - last) > ttl
         end
 
-        def last_refreshed_of(mentry, path)
-          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]["last_refreshed_at"]
+        def last_fetched_of(mentry, path)
+          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]["last_fetched_at"]
         end
 
         def parse_time(str)

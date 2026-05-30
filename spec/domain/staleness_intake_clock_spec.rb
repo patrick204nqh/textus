@@ -9,10 +9,10 @@ RSpec.describe "Textus::Domain::Staleness IntakeCheck with fake clock" do
   include_context "textus_store_fixture"
 
   # Builds a manifest + file on disk with an intake entry whose
-  # last_refreshed_at is fixed in the past. The fake clock is then advanced to
+  # last_fetched_at is fixed in the past. The fake clock is then advanced to
   # a position where the TTL is definitely exceeded, proving the IntakeCheck
   # comparison uses the injected clock rather than wall-clock Time.now.
-  def build_intake_fixture!(last_refreshed_at_str)
+  def build_intake_fixture!(last_fetched_at_str)
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -26,26 +26,26 @@ RSpec.describe "Textus::Domain::Staleness IntakeCheck with fake clock" do
           intake: { handler: stub }
       rules:
         - match: intake.feed
-          refresh:
+          fetch:
             ttl: 1h
             on_stale: warn
     YAML
     File.write(File.join(root, "zones/intake/feed.md"), <<~MD)
       ---
-      last_refreshed_at: "#{last_refreshed_at_str}"
+      last_fetched_at: "#{last_fetched_at_str}"
       ---
       body
     MD
   end
 
   it "reports ttl exceeded when fake clock is advanced past the TTL window" do
-    refreshed_at = Time.utc(2020, 6, 1, 12, 0, 0)
-    build_intake_fixture!(refreshed_at.iso8601)
+    fetched_at = Time.utc(2020, 6, 1, 12, 0, 0)
+    build_intake_fixture!(fetched_at.iso8601)
 
     store    = Textus::Store.new(root)
     manifest = store.manifest
 
-    # Fake clock whose #now returns a time 2 hours after last_refreshed_at.
+    # Fake clock whose #now returns a time 2 hours after last_fetched_at.
     # TTL is 1h (3600s), so (now - last) = 7200 > 3600 → stale.
     fake_clock = Object.new
     fake_clock.define_singleton_method(:now) { Time.utc(2020, 6, 1, 14, 0, 0) }
@@ -62,13 +62,13 @@ RSpec.describe "Textus::Domain::Staleness IntakeCheck with fake clock" do
   end
 
   it "reports NOT stale when fake clock is within the TTL window" do
-    refreshed_at = Time.utc(2020, 6, 1, 12, 0, 0)
-    build_intake_fixture!(refreshed_at.iso8601)
+    fetched_at = Time.utc(2020, 6, 1, 12, 0, 0)
+    build_intake_fixture!(fetched_at.iso8601)
 
     store    = Textus::Store.new(root)
     manifest = store.manifest
 
-    # Fake clock returns a time only 30 minutes after last_refreshed_at.
+    # Fake clock returns a time only 30 minutes after last_fetched_at.
     # TTL is 1h (3600s), so (now - last) = 1800 < 3600 → not stale.
     fake_clock = Object.new
     fake_clock.define_singleton_method(:now) { Time.utc(2020, 6, 1, 12, 30, 0) }

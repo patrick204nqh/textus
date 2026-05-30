@@ -35,7 +35,7 @@ module Textus
       ```ruby
       Textus.hook do |reg|
         reg.on(:resolve_intake, :my_source) do |config:, args:, **|
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
+          { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "…" }
         end
 
         reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
@@ -64,16 +64,16 @@ module Textus
 
       rules:
         - match: intake.foo
-          refresh:
+          fetch:
             ttl: 10m
             on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
       ```
 
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
-              :entry_put, :entry_deleted, :entry_refreshed, :entry_renamed,
+              :entry_put, :entry_deleted, :entry_fetched, :entry_renamed,
               :build_completed, :proposal_accepted, :proposal_rejected,
               :file_published, :store_loaded,
-              :refresh_started, :refresh_failed, :refresh_backgrounded (pub-sub — return discarded)
+              :fetch_started, :fetch_failed, :fetch_backgrounded (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

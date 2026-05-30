@@ -1,8 +1,8 @@
 module Textus
   module Domain
     module Outcome
-      Skipped   = Data.define
-      Refreshed = Data.define(:envelope)
+      Skipped = Data.define
+      Fetched = Data.define(:envelope)
       Detached  = Data.define
       Failed    = Data.define(:error)
     end

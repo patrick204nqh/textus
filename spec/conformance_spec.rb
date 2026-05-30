@@ -44,7 +44,7 @@ RSpec.describe "textus/3 conformance" do
             config: { url: "https://example.com/calendar.ics" }
       rules:
         - match: intake.calendar.events
-          refresh:
+          fetch:
             ttl: 300s
             on_stale: warn
     YAML
@@ -160,7 +160,7 @@ RSpec.describe "textus/3 conformance" do
   end
 
   describe "put --fetch=NAME" do
-    it "parses stdin and writes entry with last_refreshed_at" do
+    it "parses stdin and writes entry with last_fetched_at" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
@@ -171,28 +171,28 @@ RSpec.describe "textus/3 conformance" do
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
-      expect(env["_meta"]["last_refreshed_at"]).not_to be_nil
+      expect(env["_meta"]["last_fetched_at"]).not_to be_nil
       expect(env["_meta"]["fetched_with"]).to eq("ical-events")
     end
   end
 
   describe "intake staleness via TTL" do
-    it "flags intake entries that were never refreshed" do
+    it "flags intake entries that were never fetched" do
       rows = store.as(Textus::Role::DEFAULT).stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["key"]).to eq("intake.calendar.events")
-      expect(rows.first["reason"]).to match(/never refreshed/)
+      expect(rows.first["reason"]).to match(/never fetched/)
     end
 
     it "flags intake entries past their TTL" do
       intake_path = File.join(root, "zones/intake/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
-      # iso8601 second-truncation in last_refreshed_at.
+      # iso8601 second-truncation in last_fetched_at.
       stale_time = (Time.now - 3600).utc.iso8601
       File.write(intake_path, <<~MD)
         ---
         name: events
-        last_refreshed_at: "#{stale_time}"
+        last_fetched_at: "#{stale_time}"
         ---
         body
       MD
@@ -207,7 +207,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(intake_path, <<~MD)
         ---
         name: events
-        last_refreshed_at: "#{fresh_time}"
+        last_fetched_at: "#{fresh_time}"
         ---
         body
       MD

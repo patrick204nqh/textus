@@ -22,7 +22,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: working.foo
-          refresh: { ttl: 10m }
+          fetch: { ttl: 10m }
     YAML
 
     with_store(manifest) do |store|
@@ -41,9 +41,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: working.*
-          refresh: { ttl: 10m }
+          fetch: { ttl: 10m }
         - match: "*.foo"
-          refresh: { ttl: 1h }
+          fetch: { ttl: 1h }
     YAML
 
     with_store(manifest) do |store|
@@ -52,7 +52,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       expect(ambig).not_to be_nil
       expect(ambig["subject"]).to eq("working.foo")
       expect(ambig["level"]).to eq("warning")
-      expect(ambig["message"]).to include("refresh")
+      expect(ambig["message"]).to include("fetch")
     end
   end
 
@@ -66,9 +66,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: working.*
-          refresh: { ttl: 10m }
+          fetch: { ttl: 10m }
         - match: working.foo
-          refresh: { ttl: 1h }
+          fetch: { ttl: 1h }
     YAML
 
     with_store(manifest) do |store|

@@ -1,10 +1,10 @@
 module Textus
   module Read
     # Pure read: returns the on-disk envelope annotated with a freshness
-    # verdict. Never triggers refresh; never invokes the orchestrator.
+    # verdict. Never triggers fetch; never invokes the orchestrator.
     #
-    # For interactive reads that want refresh-on-stale, use
-    # `Read::GetOrRefresh`, which composes this with the orchestrator.
+    # For interactive reads that want fetch-on-stale, use
+    # `Read::GetOrFetch`, which composes this with the orchestrator.
     class Get
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
@@ -19,16 +19,16 @@ module Textus
         return nil if envelope.nil?
 
         policy_set = @manifest.rules.for(key)
-        refresh_policy = policy_set.refresh
-        return annotate_fresh(envelope) if refresh_policy.nil?
+        fetch_policy = policy_set.fetch
+        return annotate_fresh(envelope) if fetch_policy.nil?
 
-        policy = refresh_policy.to_freshness_policy
+        policy = fetch_policy.to_freshness_policy
         verdict = @evaluator.call(policy, envelope, now: @call.now)
 
         envelope.with(freshness: Textus::Domain::Freshness.build(
           stale: verdict.stale?,
           reason: verdict.reason,
-          refreshing: false,
+          fetching: false,
         ))
       end
 
@@ -58,7 +58,7 @@ module Textus
 
       def annotate_fresh(envelope)
         envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: false, reason: nil, refreshing: false,
+          stale: false, reason: nil, fetching: false,
         ))
       end
     end

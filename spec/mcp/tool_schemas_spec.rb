@@ -6,7 +6,7 @@ RSpec.describe Textus::MCP::ToolSchemas do
       tools = described_class.all
       names = tools.map { |t| t[:name] }
       expect(names).to include("boot", "tick", "find", "read", "write",
-                               "propose", "refresh", "refresh_stale",
+                               "propose", "fetch", "fetch_stale",
                                "schema", "rules")
       tools.each do |t|
         expect(t).to include(:name, :description, :inputSchema)

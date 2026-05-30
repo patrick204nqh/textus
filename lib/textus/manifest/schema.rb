@@ -21,8 +21,8 @@ module Textus
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      RULE_KEYS    = %w[match refresh intake_handler_allowlist promotion retention].freeze
-      REFRESH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
+      RULE_KEYS    = %w[match fetch intake_handler_allowlist promotion retention].freeze
+      FETCH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
       FETCH_TIMEOUT_SECONDS_CEILING = 3600
       PROMOTION_KEYS  = %w[requires].freeze
       RETENTION_KEYS  = %w[expire_after archive_after].freeze
@@ -68,9 +68,9 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
-          if r["refresh"].is_a?(Hash)
-            walk(r["refresh"], REFRESH_KEYS, "#{path}.refresh")
-            validate_fetch_timeout!(r["refresh"]["fetch_timeout_seconds"], "#{path}.refresh.fetch_timeout_seconds")
+          if r["fetch"].is_a?(Hash)
+            walk(r["fetch"], FETCH_KEYS, "#{path}.fetch")
+            validate_fetch_timeout!(r["fetch"]["fetch_timeout_seconds"], "#{path}.fetch.fetch_timeout_seconds")
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
           walk(r["retention"], RETENTION_KEYS, "#{path}.retention") if r["retention"].is_a?(Hash)

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Write::RefreshWorker do
+RSpec.describe Textus::Write::FetchWorker do
   # A simple test events object that records published events, delegating nothing.
   def make_test_events
     Class.new do
@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     Textus::Store.new(textus)
   end
 
-  it "persists the envelope and fires :refresh_started and :entry_refreshed events on success" do
+  it "persists the envelope and fires :fetch_started and :entry_fetched events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
@@ -65,16 +65,16 @@ RSpec.describe Textus::Write::RefreshWorker do
       expect(envelope.body).to eq("hello")
 
       event_names = test_events.events.map(&:first)
-      expect(event_names).to include(:refresh_started)
-      expect(event_names).to include(:entry_refreshed)
+      expect(event_names).to include(:fetch_started)
+      expect(event_names).to include(:entry_fetched)
 
-      refreshed_payload = test_events.events.find { |name, _| name == :entry_refreshed }.last
-      expect(refreshed_payload[:change]).to eq(:created)
-      expect(refreshed_payload[:key]).to eq("intake.item")
+      fetched_payload = test_events.events.find { |name, _| name == :entry_fetched }.last
+      expect(fetched_payload[:change]).to eq(:created)
+      expect(fetched_payload[:key]).to eq("intake.item")
     end
   end
 
-  it "fires :refresh_failed and raises UsageError when the intake handler raises StandardError" do
+  it "fires :fetch_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
@@ -92,7 +92,7 @@ RSpec.describe Textus::Write::RefreshWorker do
         worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
-      failed_events = test_events.events.filter { |ev| ev.first == :refresh_failed }
+      failed_events = test_events.events.filter { |ev| ev.first == :fetch_failed }
       expect(failed_events).not_to be_empty
       expect(failed_events.first.last[:key]).to eq("intake.item")
     end
@@ -111,7 +111,7 @@ RSpec.describe Textus::Write::RefreshWorker do
 
       rules:
         - match: intake.slow
-          refresh: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
+          fetch: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
     YAML
     File.write(File.join(textus, "hooks", "slow_intake.rb"), intake_body)
     Textus::Store.new(textus)

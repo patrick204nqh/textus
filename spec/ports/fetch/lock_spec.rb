@@ -2,10 +2,10 @@ require "spec_helper"
 require "tmpdir"
 require "timeout"
 
-RSpec.describe Textus::Ports::Refresh::Lock do
+RSpec.describe Textus::Ports::Fetch::Lock do
   it "acquires and releases a per-key file lock" do
     Dir.mktmpdir do |root|
-      lock = Textus::Ports::Refresh::Lock.new(root: root, key: "working.foo")
+      lock = Textus::Ports::Fetch::Lock.new(root: root, key: "working.foo")
       expect(lock.try_acquire).to be(true)
       lock.release
       expect(lock.try_acquire).to be(true)
@@ -25,7 +25,7 @@ RSpec.describe Textus::Ports::Refresh::Lock do
       ready = File.join(root, "child-ready")
 
       child = Process.fork do
-        lock = Textus::Ports::Refresh::Lock.new(root: root, key: key)
+        lock = Textus::Ports::Fetch::Lock.new(root: root, key: key)
         exit(1) unless lock.try_acquire
         File.write(ready, "ok")
         sleep 30
@@ -42,7 +42,7 @@ RSpec.describe Textus::Ports::Refresh::Lock do
       expect(pid_in_file).to eq(child)
       expect { Process.kill(0, pid_in_file) }.to raise_error(Errno::ESRCH)
 
-      fresh = Textus::Ports::Refresh::Lock.new(root: root, key: key)
+      fresh = Textus::Ports::Fetch::Lock.new(root: root, key: key)
       expect(fresh.try_acquire).to be(true)
       fresh.release
     end
@@ -50,7 +50,7 @@ RSpec.describe Textus::Ports::Refresh::Lock do
 
   it "escapes unsafe key characters in the lock file path" do
     Dir.mktmpdir do |root|
-      lock = Textus::Ports::Refresh::Lock.new(root: root, key: "working/../escape")
+      lock = Textus::Ports::Fetch::Lock.new(root: root, key: "working/../escape")
       lock.try_acquire
       lock_file = lock.instance_variable_get(:@path)
       expect(File.expand_path(lock_file)).to start_with(File.expand_path(root))

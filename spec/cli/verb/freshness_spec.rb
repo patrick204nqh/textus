@@ -27,12 +27,12 @@ RSpec.describe Textus::CLI::Verb::Freshness do
 
       rules:
         - match: working.doc
-          refresh: { ttl: 1h, on_stale: warn }
+          fetch: { ttl: 1h, on_stale: warn }
     YAML
     File.write(File.join(root, "zones/working/doc.md"), <<~MD)
       ---
       name: doc
-      last_refreshed_at: "#{Time.now.utc.iso8601}"
+      last_fetched_at: "#{Time.now.utc.iso8601}"
       ---
       body
     MD

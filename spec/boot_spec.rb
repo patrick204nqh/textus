@@ -174,7 +174,7 @@ RSpec.describe Textus::Boot do
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
       expect(block).to have_key("role_resolution")
-      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "refresh")
+      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "fetch")
     end
 
     it "does not change the wire protocol field" do

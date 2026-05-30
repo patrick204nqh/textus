@@ -20,11 +20,11 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
           intake:
             handler: noop
       rules:
-        - { match: "intake.*", refresh: { ttl: 3600s, on_stale: warn } }
+        - { match: "intake.*", fetch: { ttl: 3600s, on_stale: warn } }
     YAML
     File.write(
       File.join(root, "zones/intake/feed.md"),
-      "---\nkey: intake.feed\nlast_refreshed_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
+      "---\nkey: intake.feed\nlast_fetched_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
     )
     File.write(File.join(root, "audit.log"), "")
   end
@@ -32,7 +32,7 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
   let(:store) { Textus::Store.new(root) }
   let(:ctx)   { test_ctx(role: "automation") }
 
-  it "memoizes evaluator output for unchanged (key, last_refreshed_at)" do
+  it "memoizes evaluator output for unchanged (key, last_fetched_at)" do
     counter = Class.new do
       attr_reader :calls
 

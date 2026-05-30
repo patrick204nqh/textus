@@ -7,8 +7,8 @@ module Textus
 
           case on_stale
           when :warn       then Action::Return.new
-          when :sync       then Action::RefreshSync.new
-          when :timed_sync then Action::RefreshTimed.new(budget_ms: sync_budget_ms)
+          when :sync       then Action::FetchSync.new
+          when :timed_sync then Action::FetchTimed.new(budget_ms: sync_budget_ms)
           else                  Action::Return.new
           end
         end

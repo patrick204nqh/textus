@@ -1,15 +1,15 @@
 module Textus
   class CLI
     class Group
-      class Refresh < Group
-        command_name "refresh"
+      class Fetch < Group
+        command_name "fetch"
 
         def parse(argv)
           if argv.first == "stale"
             argv.shift
-            @sub_klass = Verb::RefreshStale
+            @sub_klass = Verb::FetchStale
           else
-            @sub_klass = Verb::Refresh
+            @sub_klass = Verb::Fetch
           end
           @sub = @sub_klass.new(stdin: @stdin, stdout: @stdout, stderr: @stderr, cwd: @cwd)
           @sub.parse(argv)

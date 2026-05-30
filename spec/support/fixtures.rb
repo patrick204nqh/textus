@@ -60,7 +60,7 @@ module TextusSpecHelpers
   end
 
   def build_worker(store, ctx)
-    Textus::Write::RefreshWorker.new(container: fresh_container(store), call: ctx)
+    Textus::Write::FetchWorker.new(container: fresh_container(store), call: ctx)
   end
 
   def build_publish(store, ctx)

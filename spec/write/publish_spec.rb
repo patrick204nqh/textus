@@ -156,7 +156,7 @@ RSpec.describe Textus::Write::Publish do
             intake:
               handler: catalog_handler
       YAML
-      # Seed a refreshed body directly — Publish reads it, doesn't generate it.
+      # Seed a fetched body directly — Publish reads it, doesn't generate it.
       File.write(File.join(root, "zones/output/catalog.txt"), "one\ntwo\nthree\n")
     end
 

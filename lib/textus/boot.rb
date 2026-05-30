@@ -13,7 +13,7 @@ module Textus
     ZONE_PURPOSES = {
       "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
-      "intake" => "declared external inputs; script-refreshed via actions",
+      "intake" => "declared external inputs; script-fetched via actions",
       "review" => "AI proposals awaiting human accept",
       "output" => "build-computed outputs; never hand-edited",
     }.freeze
@@ -32,7 +32,7 @@ module Textus
           "the #{authority} role runs 'textus accept' to apply"
       end,
       fetch: lambda do |name, _manifest|
-        "refresh intake entries with 'textus refresh KEY --as=#{name}' (uses the entry's declared action)"
+        "fetch intake entries with 'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
       end,
       build: lambda do |_name, _manifest|
         "'textus build' computes output entries from projections; output files are never hand-edited"
@@ -88,11 +88,11 @@ module Textus
             "textus accept review.KEY --as=human       # promotes the proposal to its target zone",
           ],
         },
-        "refresh" => {
+        "fetch" => {
           "purpose" => "rebuild stale intake-zone caches from their declared actions",
           "steps" => [
             "textus freshness --zone=intake            # report fresh/stale per entry",
-            "textus refresh stale --zone=intake --as=automation",
+            "textus fetch stale --zone=intake --as=automation",
           ],
         },
       },
@@ -112,7 +112,7 @@ module Textus
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
+      { "name" => "fetch", "summary" => "run an action for an intake entry" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },

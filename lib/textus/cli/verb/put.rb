@@ -25,7 +25,7 @@ module Textus
               {
                 "_meta" => {
                   "name" => basename,
-                  "last_refreshed_at" => Time.now.utc.iso8601,
+                  "last_fetched_at" => Time.now.utc.iso8601,
                   "fetched_with" => fetch_name,
                 }.merge(result[:_meta] || result["_meta"] || {}),
                 "body" => result[:body] || result["body"] || "",

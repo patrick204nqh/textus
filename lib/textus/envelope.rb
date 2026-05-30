@@ -55,10 +55,10 @@ module Textus
       freshness.stale == true
     end
 
-    def refreshing?
+    def fetching?
       return false if freshness.nil?
 
-      freshness.refreshing == true
+      freshness.fetching == true
     end
   end
 end

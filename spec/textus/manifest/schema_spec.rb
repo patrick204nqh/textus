@@ -88,7 +88,7 @@ RSpec.describe Textus::Manifest::Schema do
         "version" => "textus/3",
         "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
         "entries" => [],
-        "rules" => [{ "match" => "intake.**", "refresh" => { "ttl" => "1h", "on_stale" => "warn", "fetch_timeout_seconds" => value } }],
+        "rules" => [{ "match" => "intake.**", "fetch" => { "ttl" => "1h", "on_stale" => "warn", "fetch_timeout_seconds" => value } }],
       }
     end
 

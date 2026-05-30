@@ -58,7 +58,7 @@ RSpec.describe "Lifecycle events" do
     end
   end
 
-  describe "refresh event" do
+  describe "fetch event" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/intake"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
@@ -76,7 +76,7 @@ RSpec.describe "Lifecycle events" do
         $log = []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
+          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       $log = []
@@ -84,62 +84,62 @@ RSpec.describe "Lifecycle events" do
 
     after { $log = nil }
 
-    it "fires :entry_refreshed with change=:created on first refresh" do
+    it "fires :entry_fetched with change=:created on first fetch" do
       store = Textus::Store.new(root)
-      store.as("automation").refresh("intake.x")
+      store.as("automation").fetch("intake.x")
       expect($log).to eq([["intake.x", :created]])
     end
 
-    it "fires :entry_refreshed with change=:updated when body differs from previous" do
+    it "fires :entry_fetched with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
-      store.as("automation").refresh("intake.x")
+      store.as("automation").fetch("intake.x")
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
+          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      store2.as("automation").refresh("intake.x")
+      store2.as("automation").fetch("intake.x")
       expect($log.last).to eq(["intake.x", :updated])
     end
 
-    it "does NOT fire :entry_refreshed when the intake bytes are identical to the previous bytes" do
+    it "does NOT fire :entry_fetched when the intake bytes are identical to the previous bytes" do
       store = Textus::Store.new(root)
-      store.as("automation").refresh("intake.x")
+      store.as("automation").fetch("intake.x")
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_refreshed, :tap) { |key:, change:, **| $log << [key, change] }
+          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      store2.as("automation").refresh("intake.x")
-      # Two refreshes with identical action body (both "v1") — only the first
-      # should fire :entry_refreshed (with :created). The second matches, so no fire.
+      store2.as("automation").fetch("intake.x")
+      # Two fetches with identical action body (both "v1") — only the first
+      # should fire :entry_fetched (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])
     end
 
-    it "does NOT double-fire :entry_put when refresh writes (suppress_events:)" do
+    it "does NOT double-fire :entry_put when fetch writes (suppress_events:)" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
           reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
           reg.on(:entry_put, :p) { |key:, **| $log << [:entry_put, key] }
-          reg.on(:entry_refreshed, :r) { |key:, change:, **| $log << [:entry_refreshed, key, change] }
+          reg.on(:entry_fetched, :r) { |key:, change:, **| $log << [:entry_fetched, key, change] }
         end
       RUBY
       $log = []
       store = Textus::Store.new(root)
-      store.as("automation").refresh("intake.x")
+      store.as("automation").fetch("intake.x")
       expect($log.count { |e| e[0] == :entry_put }).to eq(0)
-      expect($log.count { |e| e[0] == :entry_refreshed }).to eq(1)
+      expect($log.count { |e| e[0] == :entry_fetched }).to eq(1)
     end
   end
 
