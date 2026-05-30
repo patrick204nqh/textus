@@ -4,7 +4,7 @@ module Textus
   # Manifest is the composition record for a parsed manifest. It bundles
   # four collaborators:
   #
-  #   * data     — frozen value: raw, root, zones, entries, audit_config, role_mapping
+  #   * data     — frozen value: raw, root, zones, entries, audit_config, role_caps
   #   * resolver — resolves keys → entry + path
   #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
   #     queue_zone?, permission_for, …)
