@@ -1,7 +1,7 @@
 # Agents & MCP — talking to a textus store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.30)
+> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.31)
 
 How an AI agent reads from and writes to a textus store — the mental model, the MCP transport, and a 5-minute Claude Code setup.
 
@@ -47,8 +47,8 @@ Create `.mcp.json` at your project root:
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `tick`, `find`, `read`, `write`, `propose`, `refresh`,
-`refresh_stale`, `schema`, `rules` (plus maintenance tools). The agent
+`boot`, `tick`, `find`, `read`, `write`, `propose`, `fetch`,
+`fetch_stale`, `schema`, `rules` (plus maintenance tools). The agent
 calls them as MCP tools — no shell strings, no parsing. The MCP tool
 names differ from the CLI verbs (`tick` is the MCP name for `pulse`,
 `find` for `list`, `read` for `get`, `write` for `put`); the full
@@ -78,7 +78,7 @@ the boot/tick protocol.
 ### What you get
 
 - **`boot` once per session:** the agent knows your zone topology,
-  schemas, write policies, and verb catalog without you explaining
+  schemas, write authority, and verb catalog without you explaining
   them in `CLAUDE.md`.
 - **`tick` per turn:** the agent sees what files changed since its
   last turn — no full re-read of the project.
@@ -142,7 +142,7 @@ For agent code, prefer the MCP transport: schema-self-describing, session state 
 textus boot --output=json
 ```
 
-Returns the working model of the store: zones with write policies, entry families with their schemas, registered hooks, write flows by role, and the full verb catalog. Run this once per session and cache it.
+Returns the working model of the store: zones with their kinds and derived write authority, entry families with their schemas, registered hooks, write flows by role, and the full verb catalog. Run this once per session and cache it.
 
 Key field for agents: **`agent_quickstart`**.
 
@@ -159,11 +159,11 @@ Key field for agents: **`agent_quickstart`**.
 ```
 
 After boot, the agent knows:
-- Which zones it's allowed to write (gated by manifest `write_policy`).
+- Which zones it's allowed to write (gated by the role's capabilities × the zone's kind).
 - Where to put proposals (`propose_zone`, usually `review`).
 - The starting cursor for `pulse` (`latest_seq`).
 
-The boot envelope's top-level key for the verb catalog is `cli_verbs` (not `verbs`). The `agent_quickstart` block is derived from the manifest's role kinds: `writable_zones` and `propose_zone` reflect whichever role has kind `proposer` (default: `agent`).
+The boot envelope's top-level key for the verb catalog is `cli_verbs` (not `verbs`). The `agent_quickstart` block is derived from capabilities: `writable_zones` and `propose_zone` reflect whichever role holds `propose` and is not the accept-anchor (default: `agent`).
 
 ### Pulse — recurring delta
 
@@ -191,7 +191,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
 #### Drift, scheduling, and hook-error signals
 
 - **`manifest_etag`** — sha256 of `manifest.yaml`. If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
-- **`next_due_at`** — earliest `next_due_at` across all entries with a refresh policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
+- **`next_due_at`** — earliest `next_due_at` across all entries with a fetch policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
 - **`hook_errors`** — list of recent hook failures since cursor: `{seq, event, hook, key, error_class, error_message, at}`. Bounded in-memory ring (256 most recent); older entries are evicted.
 
 Every audit row carries a `seq` integer — a monotonic counter stamped on each write. The `cursor` in pulse is always the `latest_seq` from the audit log; passing it back to the next `pulse --since=<cursor>` produces only rows written after that point.
@@ -226,12 +226,12 @@ while session_active:
 
     cursor = pulse["cursor"]
     for change in pulse["changed"]:
-        # refresh agent's view of this key
+        # reload the agent's view of this key
         envelope = run(f"textus get {change['key']}")
         ...
 
     if pulse["stale"]:
-        # decide whether to ask a runner to refresh, or proceed with stale data
+        # decide whether to ask automation to fetch, or proceed with stale data
         ...
 
     # do work; propose changes by writing to the review zone
@@ -272,8 +272,8 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 | `read` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
 | `write` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
 | `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?` |
-| `refresh` | `{outcome}` | `key: string` |
-| `refresh_stale` | `{refreshed, failed, skipped}` | `zone?, prefix?` |
+| `fetch` | `{outcome}` | `key: string` |
+| `fetch_stale` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema` | Field shape | `family: string` |
 | `rules` | Effective rules for a key | `key: string` |
 

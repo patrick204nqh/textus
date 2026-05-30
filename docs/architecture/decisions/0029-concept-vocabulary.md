@@ -3,6 +3,7 @@
 **Date:** 2026-05-30
 **Status:** Accepted
 **Refines:** [ADR 0028](./0028-coordination-planes.md) (which coined "coordination space" and the "three planes")
+**Updated by:** [ADR 0030](./0030-capability-based-roles.md) — the role model is now **capability-based**: roles declare a `can:` set drawn from a closed four-verb vocabulary (`propose`, `accept`, `fetch`, `build`), and `automation` is the single umbrella role replacing the former `runner` and `builder`. "role-kind" in the table below is superseded by per-role capabilities; the spec/code/CLI term is now **role** + **capability** rather than **role-kind**.
 
 ## Context
 
