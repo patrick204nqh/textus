@@ -9,8 +9,8 @@ RSpec.describe Textus::Write::Accept do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, agent, runner] }
-        - { name: review, kind: origin, write_policy: [agent, human] }
+        - { name: working, kind: origin }
+        - { name: review,  kind: queue }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 
@@ -106,18 +106,21 @@ RSpec.describe Textus::Write::Accept do
     end
   end
 
-  describe "manifest with zero accept_authority roles" do
+  describe "manifest with no role holding the accept capability" do
     def build_zero_authority_store(textus_dir)
       FileUtils.mkdir_p(File.join(textus_dir, "zones/working"))
       FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
+      # No role holds `accept`: agent only proposes, automation only fetches.
+      # review is a queue (propose), working is quarantine (fetch) so the
+      # manifest still validates — yet accept/reject have no authority to gate.
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: agent, kind: proposer }
-          - { name: runner, kind: runner }
+          - { name: agent, can: [propose] }
+          - { name: automation, can: [fetch] }
         zones:
-          - { name: working, kind: origin, write_policy: [agent, runner] }
-          - { name: review, kind: origin, write_policy: [agent] }
+          - { name: working, kind: quarantine }
+          - { name: review, kind: queue }
         entries:
           - { key: working.n, path: working/n.md, zone: working, schema: null, owner: o, kind: leaf }
           - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
@@ -132,24 +135,24 @@ RSpec.describe Textus::Write::Accept do
       store
     end
 
-    it "accept raises an honest error naming no fallback role" do
+    it "accept raises an honest error that the accept capability is unheld" do
       Dir.mktmpdir do |root|
         store = build_zero_authority_store(File.join(root, ".textus"))
         ctx = test_ctx(role: "agent")
         expect { build_accept(store, ctx).call("review.p") }.to raise_error(
           Textus::ProposalError,
-          /no role with accept_authority kind is declared/i,
+          /no role holds the accept capability.*accept is disabled/i,
         )
       end
     end
 
-    it "reject raises an honest error naming no fallback role" do
+    it "reject raises an honest error that the accept capability is unheld" do
       Dir.mktmpdir do |root|
         store = build_zero_authority_store(File.join(root, ".textus"))
         ctx = test_ctx(role: "agent")
         expect { build_reject(store, ctx).call("review.p") }.to raise_error(
           Textus::ProposalError,
-          /no role with accept_authority kind is declared/i,
+          /no role holds the accept capability.*reject is disabled/i,
         )
       end
     end
@@ -169,8 +172,8 @@ RSpec.describe Textus::Write::Accept do
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, agent, runner] }
-          - { name: review, kind: origin, write_policy: [agent, human] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
         entries:
           - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested}
 
@@ -228,8 +231,8 @@ RSpec.describe Textus::Write::Accept do
       File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, agent, runner] }
-          - { name: review, kind: origin, write_policy: [agent, human] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
         entries:
           - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 

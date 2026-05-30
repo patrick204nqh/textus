@@ -9,8 +9,8 @@ RSpec.describe Textus::Write::Put do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
-        - { name: identity,   kind: origin, write_policy: [human] }
+        - { name: working, kind: quarantine }
+        - { name: identity,   kind: origin }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
 
@@ -23,7 +23,7 @@ RSpec.describe Textus::Write::Put do
   it "writes the envelope when role has permission" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
 
       envelope = build_put(store, ctx).call(
         "working.foo",
@@ -36,21 +36,26 @@ RSpec.describe Textus::Write::Put do
     end
   end
 
-  it "raises WriteForbidden when role lacks permission" do
+  it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = test_ctx(role: "runner")
+      # identity is an origin zone (needs the 'accept' capability); automation
+      # holds only [fetch, build], so the write is genuinely refused.
+      ctx = test_ctx(role: "automation")
 
       expect do
         build_put(store, ctx).call("identity.bar", meta: {}, body: "x")
-      end.to raise_error(Textus::WriteForbidden)
+      end.to raise_error(
+        Textus::WriteForbidden,
+        /writing 'identity.bar' \(zone 'identity'\) needs capability 'accept'/,
+      )
     end
   end
 
   it "fires :entry_put event with key, envelope, and correlation_id (via ctx)" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      ctx = test_ctx(role: "runner", correlation_id: "corr-1")
+      ctx = test_ctx(role: "automation", correlation_id: "corr-1")
       events = []
       store.events.register(:entry_put, :capture) do |ctx:, key:, **|
         events << [:entry_put, key, ctx.correlation_id]

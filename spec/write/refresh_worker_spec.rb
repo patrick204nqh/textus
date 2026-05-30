@@ -31,7 +31,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.item
           kind: intake
@@ -56,7 +56,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
       store.instance_variable_set(:@events, test_events)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       envelope = worker.run("intake.item")
@@ -85,7 +85,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
       store.instance_variable_set(:@events, test_events)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       expect do
@@ -105,7 +105,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake }, kind: intake}
 
@@ -121,7 +121,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     Dir.mktmpdir do |root|
       hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |caps:, config:, args:| sleep 5 } }"
       store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       expect { worker.run("intake.slow") }
@@ -138,7 +138,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: plain, kind: origin, write_policy: [human] }
+          - { name: plain, kind: origin }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
 
@@ -175,7 +175,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: intake, kind: origin, write_policy: [runner] }
+          - { name: intake, kind: quarantine }
         entries:
           - key: intake.vendor
             kind: intake
@@ -196,7 +196,7 @@ RSpec.describe Textus::Write::RefreshWorker do
 
       Thread.current[:captured_args] = nil
       store = Textus::Store.new(textus)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       worker.run("intake.vendor.affaan-m.agent-eval")

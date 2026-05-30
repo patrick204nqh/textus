@@ -11,9 +11,9 @@ RSpec.describe Textus::Maintenance::RuleLint do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, zone: intake, schema: null, owner: runner:self, kind: intake, intake: { handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, zone: intake, schema: null, owner: automation:self, kind: intake, intake: { handler: noop } }
       rules:
         - { match: "intake.*", refresh: { ttl: 600, on_stale: warn } }
     YAML
