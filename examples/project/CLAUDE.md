@@ -2,8 +2,8 @@
 generated:
   at: '2026-05-26T07:26:00Z'
   from:
-  - identity.project
-  - working.runbooks
+  - knowledge.project
+  - knowledge.runbooks
 ---
 <!--
 This file is the orientation any agent (Claude Code, Cursor, etc.) reads on
@@ -14,10 +14,9 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 → Context store: `.textus/` (textus, protocol textus/3).
 → Run `textus boot` for the full catalog shape and write flows.
 → Write authority by zone:
-    - **identity** (human ) — slow-changing identity; human-only writes
-    - **working** (human agent ) — active project state; humans, AI, and scripts share this surface
-    - **review** (agent human ) — AI proposals awaiting human accept
-    - **output** (automation ) — build-computed outputs; never hand-edited
+    - **knowledge** (human ) — project facts and operational runbooks
+    - **proposals** (agent human ) — AI proposals awaiting your accept
+    - **artifacts** (automation ) — build-computed outputs; never hand-edited
 
 → Agent protocol (from `textus boot`):
    • **read** — find and read an entry
@@ -28,8 +27,8 @@ not edit by hand — edit the source under `.textus/zones/...` and run
      `build an envelope JSON: {_meta: {...}, body: "..."}`
      `echo ENVELOPE | textus put KEY --as=ROLE --stdin`
    • **propose** — agent suggests a change for human review
-     agent: `echo ENVELOPE | textus put review.KEY --as=agent --stdin`
-     human: `textus accept review.KEY --as=human       # promotes the proposal to its target zone`
+     agent: `echo ENVELOPE | textus put proposals.KEY --as=agent --stdin`
+     human: `textus accept proposals.KEY --as=human       # promotes the proposal to its target zone`
 -->
 
 
@@ -44,4 +43,3 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 - **deploy** — Ship a ledger release to production.
 
 - **oncall** — First response when ledger pages out of hours.
-

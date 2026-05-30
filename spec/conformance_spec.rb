@@ -14,17 +14,17 @@ RSpec.describe "textus/3 conformance" do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
     FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
-    FileUtils.mkdir_p(File.join(root, "zones/output/catalogs"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/intake/calendar"))
+    FileUtils.mkdir_p(File.join(root, "zones/feeds/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
-        - { name: output,   kind: derived }
-        - { name: intake,   kind: quarantine }
+        - { name: identity,  kind: canon }
+        - { name: working,   kind: canon }
+        - { name: artifacts, kind: derived }
+        - { name: feeds,     kind: quarantine }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick, kind: leaf}
 
@@ -32,18 +32,18 @@ RSpec.describe "textus/3 conformance" do
 
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true, kind: nested}
 
-        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
-        - key: intake.calendar.events
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, schema: null, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
+        - key: feeds.calendar.events
           kind: intake
-          path: intake/calendar/events
-          zone: intake
+          path: feeds/calendar/events
+          zone: feeds
           schema: null
           owner: automation:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
       rules:
-        - match: intake.calendar.events
+        - match: feeds.calendar.events
           fetch:
             ttl: 300s
             on_stale: warn
@@ -133,9 +133,9 @@ RSpec.describe "textus/3 conformance" do
   end
 
   describe "Fixture D — staleness detection" do
-    it "flags output entries with sources newer than generated.at without executing" do
-      output_path = File.join(root, "zones/output/catalogs/skills.md")
-      File.write(output_path, <<~MD)
+    it "flags artifacts entries with sources newer than generated.at without executing" do
+      artifacts_path = File.join(root, "zones/artifacts/catalogs/skills.md")
+      File.write(artifacts_path, <<~MD)
         ---
         generated:
           by: "rake catalog:skills"
@@ -150,10 +150,10 @@ RSpec.describe "textus/3 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "output")
+      rows = store.as(Textus::Role::DEFAULT).stale(zone: "artifacts")
       expect(rows.length).to eq(1)
       row = rows.first
-      expect(row["key"]).to eq("output.catalogs.skills")
+      expect(row["key"]).to eq("artifacts.catalogs.skills")
       expect(row["generator"]["command"]).to eq("rake catalog:skills")
       expect(row["reason"]).to match(/working\.projects/)
     end
@@ -164,7 +164,7 @@ RSpec.describe "textus/3 conformance" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
-        ["put", "intake.calendar.events", "--fetch=ical-events",
+        ["put", "feeds.calendar.events", "--fetch=ical-events",
          "--stdin", "--as=automation", "--output=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
@@ -176,42 +176,42 @@ RSpec.describe "textus/3 conformance" do
     end
   end
 
-  describe "intake staleness via TTL" do
-    it "flags intake entries that were never fetched" do
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "intake")
+  describe "feeds staleness via TTL" do
+    it "flags feeds entries that were never fetched" do
+      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
       expect(rows.length).to eq(1)
-      expect(rows.first["key"]).to eq("intake.calendar.events")
+      expect(rows.first["key"]).to eq("feeds.calendar.events")
       expect(rows.first["reason"]).to match(/never fetched/)
     end
 
-    it "flags intake entries past their TTL" do
-      intake_path = File.join(root, "zones/intake/calendar/events.md")
+    it "flags feeds entries past their TTL" do
+      feeds_path = File.join(root, "zones/feeds/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
       # iso8601 second-truncation in last_fetched_at.
       stale_time = (Time.now - 3600).utc.iso8601
-      File.write(intake_path, <<~MD)
+      File.write(feeds_path, <<~MD)
         ---
         name: events
         last_fetched_at: "#{stale_time}"
         ---
         body
       MD
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "intake")
+      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
       expect(rows.length).to eq(1)
       expect(rows.first["reason"]).to match(/ttl exceeded/i)
     end
 
-    it "does not flag intake entries within their TTL" do
-      intake_path = File.join(root, "zones/intake/calendar/events.md")
+    it "does not flag feeds entries within their TTL" do
+      feeds_path = File.join(root, "zones/feeds/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
-      File.write(intake_path, <<~MD)
+      File.write(feeds_path, <<~MD)
         ---
         name: events
         last_fetched_at: "#{fresh_time}"
         ---
         body
       MD
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "intake")
+      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
       expect(rows).to be_empty
     end
   end
@@ -230,7 +230,7 @@ RSpec.describe "textus/3 conformance" do
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
-      # origin requires accept; only human holds it under the default mapping.
+      # canon requires author; only human holds it under the default mapping.
       expect(m.policy.zone_writers("identity")).to eq(["human"])
       # queue requires propose; both human and agent hold it.
       expect(m.policy.zone_writers("working")).to contain_exactly("human", "agent")

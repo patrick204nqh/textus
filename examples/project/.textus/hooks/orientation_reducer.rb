@@ -3,8 +3,8 @@
 # would only have access to the flat rows list.
 Textus.hook do |reg|
   reg.on(:transform_rows, :orientation_reducer) do |rows:, **|
-    project_row = rows.find { |r| r["_key"] == "identity.project" } || {}
-    runbook_rows = rows.select { |r| r["_key"]&.start_with?("working.runbooks.") }
+    project_row = rows.find { |r| r["_key"] == "knowledge.project" } || {}
+    runbook_rows = rows.select { |r| r["_key"]&.start_with?("knowledge.runbooks.") }
 
     {
       "project" => {
