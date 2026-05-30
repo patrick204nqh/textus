@@ -1,7 +1,7 @@
 # Zones — shaping your context
 
 > **Reference** · for integrators · **read when** you're designing your zone layout
-> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.31)
+> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.33)
 
 How to define the **shape of your context** in textus: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
 
@@ -11,7 +11,7 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 
 1. [The mental model](#1-the-mental-model)
 2. [Roles and capabilities — who is allowed to write](#2-roles-and-capabilities--who-is-allowed-to-write)
-3. [The five default zones](#3-the-five-default-zones) — `identity`, `working`, `intake`, `review`, `output`
+3. [The five default zones](#3-the-five-default-zones) — `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
 6. [Wiring data in — intake and `:resolve_intake` hooks](#6-wiring-data-in--intake-and-resolve_intake-hooks)
@@ -27,25 +27,24 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 
 ```mermaid
 flowchart LR
-    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| intake["intake<br/>(quarantine)"]
-    automation(["automation"]) -->|fetch| intake
-    human(["human"]) -->|accept| identity["identity<br/>(canon)"]
-    human -->|accept| working["working<br/>(canon)"]
-    agent(["agent"]) -->|propose| review["review<br/>(queue)"]
-    review -->|human accept| identity
-    review -->|human accept| working
-    automation -->|build| output["output<br/>(derived)"]
-    intake -.->|projection source| output
-    working -.->|projection source| output
-    output -->|publish| files["shipped files"]
+    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| feeds["feeds<br/>(quarantine)"]
+    automation(["automation"]) -->|fetch| feeds
+    human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
+    agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
+    agent -->|propose| proposals["proposals<br/>(queue)"]
+    proposals -->|human accept| knowledge
+    automation -->|build| artifacts["artifacts<br/>(derived)"]
+    feeds -.->|projection source| artifacts
+    knowledge -.->|projection source| artifacts
+    artifacts -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation pulls external bytes into `intake` (the `fetch` capability); humans write `identity`/`working` directly (the `accept` capability); agents `propose` into `review` and a human `accept` promotes to `working`/`identity`; automation `build`s `output` from `working`/`intake` and publishes shipped files.
+*Flow at a glance:* automation pulls external bytes into `feeds` (the `fetch` capability); humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation `build`s `artifacts` from `knowledge`/`feeds` and publishes shipped files.
 
 Two ideas do all the work:
 
 - **A zone is a write-authority partition.** Each zone declares its `kind:`; the kind decides which capability a writer must hold. Directory names are convention; the manifest is the source of truth.
-- **A role is a bundle of capabilities.** A role holds verbs from a closed four-element set — `propose`, `accept`, `fetch`, `build` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability.
+- **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `fetch`, `build` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability.
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
 
@@ -53,64 +52,70 @@ Everything else — projections, publishing, hooks, schemas — is layered on to
 
 ## 2. Roles and capabilities — who is allowed to write
 
-A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed four-element set. Write authority is *derived*: a role may write a zone iff it holds the capability the zone's kind requires (see [§3](#3-the-five-default-zones)). The default mapping, applied when the manifest omits a `roles:` block:
+A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed five-element set. Write authority is *derived*: a role may write a zone iff it holds the capability the zone's kind requires (see [§3](#3-the-five-default-zones)). The default mapping, applied when the manifest omits a `roles:` block:
 
 | Role | Capabilities (`can`) | What it represents |
 |------|----------------------|--------------------|
-| `human` | `[accept, propose]` | A person at a terminal; the single trust anchor. |
-| `agent` | `[propose]` | An autonomous agent staging changes into the queue. |
+| `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
+| `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
 | `automation` | `[fetch, build]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
 
-The four capabilities:
+The five capabilities:
 
 | Capability | Authorizes writes to zone-kind | What it represents |
 |------------|--------------------------------|--------------------|
-| `accept` | `canon` | Authoring authored truth — the **single trust anchor** (at most one role holds it). |
+| `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
+| `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
 | `fetch` | `quarantine` | Pulling external bytes in. |
 | `build` | `derived` | Computing outputs from other zones. |
+
+Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability.
 
 Declare roles in the manifest with a `roles:` block; each names the capabilities it holds via `can:`:
 
 ```yaml
 roles:
-  - { name: human,      can: [accept, propose] }
-  - { name: agent,      can: [propose] }
+  - { name: human,      can: [author, propose] }
+  - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [fetch, build] }
 ```
 
 Two analogies that usually click for `automation`:
 
-- **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `intake`).
-- **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `output`).
+- **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`).
+- **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`).
 
-You can also invent your own role names (`reviewer`, `import-bot`, `compiler`) and hand them whichever capabilities fit — see [§4](#4-defining-your-own-zones). Only one constraint is absolute: **at most one role may hold `accept`** (the trust anchor).
+You can also invent your own role names (`reviewer`, `import-bot`, `compiler`) and hand them whichever capabilities fit — see [§4](#4-defining-your-own-zones). Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
 
 ---
 
 ## 3. The five default zones
 
-`textus init` scaffolds this manifest:
+`textus init` scaffolds this manifest (Setup-1):
 
 ```yaml
 roles:
-  - { name: human,      can: [accept, propose] }
-  - { name: agent,      can: [propose] }
+  - { name: human,      can: [author, propose] }
+  - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: canon }
-  - { name: working,  kind: canon }
-  - { name: intake,   kind: quarantine }
-  - { name: review,   kind: queue }
-  - { name: output,   kind: derived }
+  - { name: knowledge,  kind: canon }
+  - { name: notebook,   kind: workspace, owner: agent, desc: "agent's durable working memory" }
+  - { name: feeds,      kind: quarantine }
+  - { name: proposals,  kind: queue }
+  - { name: artifacts,  kind: derived }
 ```
+
+`owner:` on a zone is **optional, informational** metadata — not enforced in 0.33.0 (owner-scoped enforcement is deferred). `desc:` is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
 
 Write authority is **derived** — there is no `write_policy:`. Each zone declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→verb mapping is closed:
 
 | Zone `kind` | Required capability | Meaning |
 |-------------|---------------------|---------|
-| `canon` | `accept` | Authored truth — only the trust anchor writes directly. |
+| `canon` | `author` | Authored truth — only the trust anchor writes directly. |
+| `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
 | `quarantine` | `fetch` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `build` | Computed from other zones. |
@@ -119,11 +124,11 @@ Crossing that table with the default role mapping gives the default writers:
 
 | Zone | `kind` | Required capability | Writable by (default) | Purpose / lifetime |
 |------|--------|---------------------|-----------------------|--------------------|
-| `identity` | `canon` | `accept` | `human` | Slow-changing identity. Voice, mission, brand, project facts. (Years.) |
-| `working` | `canon` | `accept` | `human` | Active project state: notes, decisions, network. (Days to weeks.) |
-| `intake` | `quarantine` | `fetch` | `automation` | Declared external inputs, fetched via `textus fetch KEY --as=automation`; never edited by hand. (Fetched on demand.) |
-| `review` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
-| `output` | `derived` | `build` | `automation` | Build-computed outputs. Materialized from projections; never hand-edited. (Recomputed every build.) |
+| `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
+| `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
+| `feeds` | `quarantine` | `fetch` | `automation` | Declared external inputs, fetched via `textus fetch KEY --as=automation`; never edited by hand. (Fetched on demand.) |
+| `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
+| `artifacts` | `derived` | `build` | `automation` | Build-computed outputs. Materialized from projections; never hand-edited. (Recomputed every build.) |
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need.
 
@@ -135,40 +140,41 @@ Edit `.textus/manifest.yaml` and add entries under `zones:`. A zone declares onl
 
 ```yaml
 zones:
-  - { name: <zone-name>, kind: <canon|quarantine|queue|derived> }
+  - { name: <zone-name>, kind: <canon|workspace|quarantine|queue|derived> }
 ```
 
 ### Declaring a zone's kind
 
 Every zone declares its data-flow role with `kind:` — one of `canon`,
-`quarantine`, `queue`, `derived`:
+`workspace`, `quarantine`, `queue`, `derived`:
 
 ```yaml
 zones:
-  - { name: working, kind: canon }
-  - { name: intake,  kind: quarantine }
-  - { name: review,  kind: queue }
-  - { name: output,  kind: derived }
+  - { name: knowledge,  kind: canon }
+  - { name: notebook,   kind: workspace }
+  - { name: feeds,      kind: quarantine }
+  - { name: proposals,  kind: queue }
+  - { name: artifacts,  kind: derived }
 ```
 
 `kind:` is required — a manifest with a kind-less zone is rejected at load. The
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
 name-based guessing). The kind also fixes the capability a writer must hold —
-`canon`⇒`accept`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
-Rules: at most one `queue` zone, and (since `accept` is the single trust
+`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
+Rules: at most one `queue` zone, and (since `author` is the single trust
 anchor) at most one role may hold it.
 
 ### Renaming defaults
 
-`identity`, `working`, etc. have no privileged status in the code. Rename freely — a zone carries only its `kind:`, and an optional `read_policy:` (default `[all]`):
+`knowledge`, `notebook`, etc. have no privileged status in the code. Rename freely — a zone carries only its `kind:`, and an optional `read_policy:` (default `[all]`):
 
 ```yaml
 zones:
-  - { name: self,    kind: canon }                       # was identity
-  - { name: notes,   kind: canon }                       # was working
-  - { name: feeds,   kind: quarantine, read_policy: [all] } # was intake
-  - { name: outputs, kind: derived }                     # was output
+  - { name: self,     kind: canon }                       # was knowledge
+  - { name: scratch,  kind: workspace }                   # was notebook
+  - { name: extern,   kind: quarantine, read_policy: [all] } # was feeds
+  - { name: compiled, kind: derived }                     # was artifacts
 ```
 
 ### Adding new zones
@@ -177,8 +183,8 @@ A consulting-engagement layout might want a sharper split than the defaults. Eac
 
 ```yaml
 zones:
-  - { name: identity,    kind: canon }      # accept-holders (human) author
-  - { name: research,    kind: canon }      # AI-assisted research notes — still accept-gated
+  - { name: knowledge,   kind: canon }      # author-holders (human) write
+  - { name: research,    kind: canon }      # AI-assisted research notes — still author-gated
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
   - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
@@ -191,7 +197,7 @@ Role names are arbitrary strings; what matters is the capabilities they hold. In
 
 ```yaml
 roles:
-  - { name: owner,    can: [accept, propose] }   # trust anchor
+  - { name: owner,    can: [author, propose] }   # trust anchor
   - { name: reviewer, can: [propose] }
   - { name: importer, can: [fetch] }
   - { name: compiler, can: [build] }
@@ -205,7 +211,7 @@ Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, d
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
 - **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `build` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
 - **There is no implicit role hierarchy.** `human` is not a superuser; if no role but `compiler` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
-- **At most one role may hold `accept`.** The trust anchor is singular; a manifest declaring two `accept`-holders is rejected at load.
+- **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
 ---
 
@@ -226,12 +232,12 @@ entries:
 
 | Field | Required | Meaning |
 |-------|----------|---------|
-| `key` | yes | Dotted identifier (`identity.self`, `working.notes.daily`). |
+| `key` | yes | Dotted identifier (`knowledge.identity.self`, `knowledge.notes.daily`). |
 | `path` | yes | Relative path under `.textus/zones/`. |
 | `zone` | yes | Must match a declared zone. |
 | `schema` | no | YAML schema name. `null` means free-form. |
 | `owner` | yes | `<role>:<actor>` — for audit and convention; not enforced. |
-| `nested` | no | If `true`, the key prefix-matches subdirectories. `working.notes.daily.2026-05-21` resolves under `working/notes/`. |
+| `nested` | no | If `true`, the key prefix-matches subdirectories. `knowledge.notes.daily.2026-05-21` resolves under `knowledge/notes/`. |
 | `format` | no | `markdown` \| `json` \| `yaml` \| `text`. Inferred from extension if omitted. |
 | `intake:` | no | Declares this is an intake entry. See [§6](#6-wiring-data-in--intake-and-intake-hooks). |
 | `compute:` | no | Declares this is a derived entry (`kind: projection` computes from store entries; `kind: external` tracks an outside build tool). See [§7](#7-wiring-data-out--derived-entries-and-publishing). |
@@ -248,13 +254,13 @@ The full schema lives in [`SPEC.md §4`](../SPEC.md).
 A single entry can host an unbounded subtree:
 
 ```yaml
-- key: working.notes
-  path: working/notes
-  zone: working
+- key: knowledge.notes
+  path: knowledge/notes
+  zone: knowledge
   nested: true
 ```
 
-That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meetings.kickoff`, etc. — textus resolves the suffix as `/`-joined subdirectories under `working/notes/`.
+That declaration covers `knowledge.notes.daily.2026-05-21`, `knowledge.notes.meetings.kickoff`, etc. — textus resolves the suffix as `/`-joined subdirectories under `knowledge/notes/`.
 
 ---
 
@@ -264,15 +270,15 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ```yaml
 entries:
-  - key: intake.upstream.notes
-    path: intake/upstream/notes.md
-    zone: intake
+  - key: feeds.upstream.notes
+    path: feeds/upstream/notes.md
+    zone: feeds
     intake:
       handler: pull_notes
       config: { url: "https://example.com/notes" }
 
 rules:
-  - match: intake.upstream.**
+  - match: feeds.upstream.**
     fetch:
       ttl: 1h
 ```
@@ -314,19 +320,19 @@ Then point an entry at it:
 
 ```yaml
 entries:
-  - key: intake.notion.roadmap
-    path: intake/notion/roadmap.md
-    zone: intake
+  - key: feeds.notion.roadmap
+    path: feeds/notion/roadmap.md
+    zone: feeds
     intake:
       handler: notion            # matches the hook name
       config: { page_id: "abc123" }
 
 rules:
-  - match: intake.notion.**
+  - match: feeds.notion.**
     fetch: { ttl: 6h, on_stale: warn }
 ```
 
-`textus fetch intake.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
+`textus fetch feeds.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](events.md#7a-resolve_intake-args).
 
@@ -337,9 +343,9 @@ it in a `rules:` block, matched by glob:
 
 ```yaml
 rules:
-  - match: review.**
+  - match: proposals.**
     retention: { expire_after: 30d }   # delete accepted/abandoned proposals
-  - match: intake.**
+  - match: feeds.**
     retention: { archive_after: 90d }  # move stale external bytes aside
 ```
 
@@ -359,18 +365,18 @@ appears in the effective output.
 A derived entry says **"compute me from these sources, render me with this template, copy me to these external paths."**
 
 ```yaml
-- key: output.claude-root
-  path: output/CLAUDE.md
-  zone: output
+- key: artifacts.claude-root
+  path: artifacts/CLAUDE.md
+  zone: artifacts
   format: markdown
   owner: build:auto
   compute:
-    kind: projection                           # projection | external
-    select: [identity.self, working.notes]     # source keys
-    pluck: "*"                                 # which fields
-    transform: identity                        # optional :transform_rows hook
-  template: claude-root.mustache               # in .textus/templates/
-  publish_to: [CLAUDE.md]                      # external target(s)
+    kind: projection                                    # projection | external
+    select: [knowledge.identity.self, knowledge.notes]  # source keys
+    pluck: "*"                                          # which fields
+    transform: identity                                 # optional :transform_rows hook
+  template: claude-root.mustache                        # in .textus/templates/
+  publish_to: [CLAUDE.md]                               # external target(s)
 ```
 
 ### Registering hooks
@@ -403,54 +409,56 @@ A Claude plugin repo that publishes `CLAUDE.md` from a slow-changing identity fi
 version: textus/3
 
 roles:
-  - { name: human,      can: [accept, propose] }
-  - { name: agent,      can: [propose] }
+  - { name: human,      can: [author, propose] }
+  - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: canon }
-  - { name: working,  kind: canon }
-  - { name: output,   kind: derived }
+  - { name: knowledge,  kind: canon }
+  - { name: notebook,   kind: workspace, owner: agent }
+  - { name: artifacts,  kind: derived }
 
 entries:
-  - key: identity.self
-    path: identity/self.md
-    zone: identity
+  - key: knowledge.identity.self
+    path: knowledge/identity/self.md
+    zone: knowledge
     schema: identity
     owner: human:self
 
-  - key: working.notes
-    path: working/notes
-    zone: working
+  - key: knowledge.notes
+    path: knowledge/notes
+    zone: knowledge
     nested: true
     owner: human:self
 
-  - key: output.claude-root
-    path: output/claude-root.md
-    zone: output
+  - key: artifacts.claude-root
+    path: artifacts/claude-root.md
+    zone: artifacts
     owner: automation:build
     compute:
       kind: projection
-      select: [identity.self, working.notes]
+      select: [knowledge.identity.self, knowledge.notes]
       pluck: "*"
       transform: claude_root         # name of a :transform_rows hook in .textus/hooks/
     template: claude-root.mustache   # under .textus/templates/
-    inject_boot: true                 # merge `textus boot` payload into template data
+    inject_boot: true                # merge `textus boot` payload into template data
     publish_to: [CLAUDE.md]
 ```
 
 Day-to-day flow:
 
 ```
-$ textus put identity.self --as=human    < new-identity.md   # edit identity
-$ textus put working.notes.kickoff --as=human < kickoff.md   # add a note
-$ textus build                                               # rebuild CLAUDE.md
-$ git diff CLAUDE.md                                         # review and commit
+$ textus put knowledge.identity.self --as=human  < new-identity.md   # edit identity
+$ textus put knowledge.notes.kickoff --as=human  < kickoff.md         # add a note
+$ textus build                                                         # rebuild CLAUDE.md
+$ git diff CLAUDE.md                                                   # review and commit
 ```
 
-To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: review`) and let agents write into it with `--as=agent`, then `textus accept review.suggestion.<id> --as=human` promotes the proposal into `identity` or `working`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
+To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
 To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus fetch KEY --as=automation` (one-shot) or `textus fetch stale` (sweep TTL-expired entries) keeps it current.
+
+For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 
 ---
 

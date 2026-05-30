@@ -176,17 +176,17 @@ Returns a delta envelope. The agent advances the cursor each turn.
 ```json
 {
   "cursor":          1845,
-  "changed":         [ { "seq": 1843, "key": "working.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
-  "stale":           [ "output.marketplace" ],
-  "pending_review":  [ "review.proposal.123" ],
+  "changed":         [ { "seq": 1843, "key": "knowledge.notes.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
+  "stale":           [ "artifacts.marketplace" ],
+  "pending_review":  [ "proposals.proposal.123" ],
   "doctor":          { "ok": true, "warn": 0, "fail": 0 },
   "manifest_etag":   "sha256:abc123...",
   "next_due_at":     "2026-05-28T12:34:56Z",
-  "hook_errors":     [ { "seq": 1844, "event": "entry_put", "hook": "audit_extra", "key": "working.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
+  "hook_errors":     [ { "seq": 1844, "event": "entry_put", "hook": "audit_extra", "key": "knowledge.notes.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
 }
 ```
 
-`changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from `freshness`. `pending_review` lists keys in the review zone. `doctor` is a count summary.
+`changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from `freshness`. `pending_review` lists keys in the queue zone. `doctor` is a count summary.
 
 #### Drift, scheduling, and hook-error signals
 
@@ -234,8 +234,8 @@ while session_active:
         # decide whether to ask automation to fetch, or proceed with stale data
         ...
 
-    # do work; propose changes by writing to the review zone
-    run(f"textus put review.proposal.x --as=agent --stdin", input=envelope_json)
+    # do work; propose changes by writing to the proposals zone
+    run(f"textus put proposals.proposal.x --as=agent --stdin", input=envelope_json)
 ```
 
 ### Audit log retention

@@ -16,6 +16,7 @@ roles:
   can:
   - fetch
   - build
+# Zone names below (identity/working/review/output) are kept pre-Setup-1 intentionally (P2 deferred); they remain valid.
 zones:
 - name: identity
   kind: canon
