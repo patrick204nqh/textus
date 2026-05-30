@@ -1,122 +1,94 @@
 require "spec_helper"
 require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Write::Accept do
-  def build_store(textus_dir)
-    FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
-    FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
-    File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
+  include_context "textus_store_fixture"
+
+  let(:store) do
+    store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
       version: textus/3
       zones:
         - { name: working, kind: origin }
         - { name: review,  kind: queue }
       entries:
-        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
-
-        - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
-
+        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
+        - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
     YAML
-    Textus::Store.new(textus_dir)
   end
 
   it "applies the proposal target action and deletes the review entry" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      store.as("agent").put(
-        "review.2026-05-19-add-bob",
-        meta: {
-          "name" => "2026-05-19-add-bob",
-          "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
-          "frontmatter" => { "name" => "bob", "org" => "acme" },
-        },
-        body: "Proposed",
-      )
+    store.as("agent").put(
+      "review.2026-05-19-add-bob",
+      meta: {
+        "name" => "2026-05-19-add-bob",
+        "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
+        "frontmatter" => { "name" => "bob", "org" => "acme" },
+      },
+      body: "Proposed",
+    )
 
-      ctx = test_ctx(role: "human")
-      result = build_accept(store, ctx).call("review.2026-05-19-add-bob")
+    result = build_accept(store, test_ctx(role: "human")).call("review.2026-05-19-add-bob")
 
-      expect(result["target_key"]).to eq("working.network.org.bob")
-      expect(result["action"]).to eq("put")
-      expect(result["accepted"]).to eq("review.2026-05-19-add-bob")
-      expect(File.exist?(File.join(root, ".textus/zones/working/network/org/bob.md"))).to be true
-      expect(File.exist?(File.join(root, ".textus/zones/review/2026-05-19-add-bob.md"))).to be false
-    end
+    expect(result["target_key"]).to eq("working.network.org.bob")
+    expect(result["action"]).to eq("put")
+    expect(result["accepted"]).to eq("review.2026-05-19-add-bob")
+    expect(File.exist?(File.join(root, "zones/working/network/org/bob.md"))).to be(true)
+    expect(File.exist?(File.join(root, "zones/review/2026-05-19-add-bob.md"))).to be(false)
   end
 
   it "refuses a non-authority actor with guard_failed naming the predicate" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      store.as("agent").put(
-        "review.foo",
-        meta: {
-          "name" => "foo",
-          "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
-          "frontmatter" => { "name" => "x" },
-        },
-        body: "",
-      )
+    store.as("agent").put(
+      "review.foo",
+      meta: {
+        "name" => "foo",
+        "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
+        "frontmatter" => { "name" => "x" },
+      },
+      body: "",
+    )
 
-      ctx = test_ctx(role: "agent")
-      expect { build_accept(store, ctx).call("review.foo") }
-        .to raise_error(Textus::GuardFailed) do |e|
-          expect(e.code).to eq("guard_failed")
-          expect(e.details["failed"].map { |f| f["predicate"] }).to include("accept_signed")
-        end
-    end
+    expect { build_accept(store, test_ctx(role: "agent")).call("review.foo") }
+      .to fail_guard_with("accept_signed")
   end
 
   it "fires :accepted event with correlation_id" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      store.as("agent").put(
-        "review.p1",
-        meta: {
-          "name" => "p1",
-          "proposal" => { "target_key" => "working.network.org.alice", "action" => "put" },
-          "frontmatter" => { "name" => "alice" },
-        },
-        body: "Alice content",
-      )
+    store.as("agent").put(
+      "review.p1",
+      meta: {
+        "name" => "p1",
+        "proposal" => { "target_key" => "working.network.org.alice", "action" => "put" },
+        "frontmatter" => { "name" => "alice" },
+      },
+      body: "Alice content",
+    )
 
-      ctx = test_ctx(role: "human", correlation_id: "corr-accept-1")
-      events = []
-      store.events.register(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
-        events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
-      end
-
-      build_accept(store, ctx).call("review.p1")
-
-      expect(events.length).to eq(1)
-      expect(events.first[:key]).to eq("review.p1")
-      expect(events.first[:target_key]).to eq("working.network.org.alice")
-      expect(events.first[:correlation_id]).to eq("corr-accept-1")
+    ctx = test_ctx(role: "human", correlation_id: "corr-accept-1")
+    events = []
+    store.events.register(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
+      events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
     end
+
+    build_accept(store, ctx).call("review.p1")
+
+    expect(events.length).to eq(1)
+    expect(events.first[:key]).to eq("review.p1")
+    expect(events.first[:target_key]).to eq("working.network.org.alice")
+    expect(events.first[:correlation_id]).to eq("corr-accept-1")
   end
 
   it "raises ProposalError when entry has no proposal block" do
-    Dir.mktmpdir do |root|
-      store = build_store(File.join(root, ".textus"))
-      store.as("agent").put(
-        "review.noproposal",
-        meta: { "name" => "noproposal" },
-        body: "no proposal here",
-      )
+    store.as("agent").put("review.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
 
-      ctx = test_ctx(role: "human")
-      expect { build_accept(store, ctx).call("review.noproposal") }
-        .to raise_error(Textus::ProposalError, /no proposal block/)
-    end
+    expect { build_accept(store, test_ctx(role: "human")).call("review.noproposal") }
+      .to raise_error(Textus::ProposalError, /no proposal block/)
   end
 
   describe "manifest with no role holding the accept capability" do
-    def build_zero_authority_store(textus_dir)
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/working"))
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
-      # No role holds `accept`: agent only proposes, automation only fetches.
-      # review is a queue (propose), working is quarantine (fetch) so the
-      # manifest still validates — yet accept/reject have no authority to gate.
-      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
+    # No role holds `accept`: agent only proposes, automation only fetches.
+    # review is a queue (propose), working is quarantine (fetch) so the
+    # manifest still validates — yet accept/reject have no authority to gate.
+    let(:store) do
+      s = store_from_manifest(root, zones: %w[working review], manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
@@ -129,70 +101,58 @@ RSpec.describe Textus::Write::Accept do
           - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
         rules: []
       YAML
-      store = Textus::Store.new(textus_dir)
-      store.as("agent").put(
+      s.as("agent").put(
         "review.p",
         meta: { "name" => "p", "proposal" => { "target_key" => "working.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
         body: "b",
       )
-      store
+      s
     end
 
     it "accept raises an honest error that the accept capability is unheld" do
-      Dir.mktmpdir do |root|
-        store = build_zero_authority_store(File.join(root, ".textus"))
-        ctx = test_ctx(role: "agent")
-        expect { build_accept(store, ctx).call("review.p") }.to raise_error(
-          Textus::GuardFailed,
-          /no role holds the 'accept' capability.*accept is disabled/i,
-        )
-      end
+      expect { build_accept(store, test_ctx(role: "agent")).call("review.p") }
+        .to raise_error(Textus::GuardFailed, /no role holds the 'accept' capability.*accept is disabled/i)
     end
 
     it "reject raises an honest error that the accept capability is unheld" do
-      Dir.mktmpdir do |root|
-        store = build_zero_authority_store(File.join(root, ".textus"))
-        ctx = test_ctx(role: "agent")
-        expect { build_reject(store, ctx).call("review.p") }.to raise_error(
-          Textus::GuardFailed,
-          /no role holds the 'accept' capability.*reject is disabled/i,
-        )
-      end
+      expect { build_reject(store, test_ctx(role: "agent")).call("review.p") }
+        .to raise_error(Textus::GuardFailed, /no role holds the 'accept' capability.*reject is disabled/i)
     end
   end
 
   describe "promotion gate" do
-    def build_store_with_promotion(textus_dir)
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
-      FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
-      File.write(File.join(textus_dir, "schemas", "org-member.yaml"), <<~YAML)
-        name: org-member
-        required: [name, org]
-        optional: []
-        fields: {}
-      YAML
-      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: working, kind: origin }
-          - { name: review,  kind: queue }
-        entries:
-          - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested}
+    context "with a schema_valid guard" do
+      let(:org_member_schema) do
+        <<~SCHEMA
+          name: org-member
+          required: [name, org]
+          optional: []
+          fields: {}
+        SCHEMA
+      end
 
-          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
+      let(:store) do
+        store_from_manifest(
+          root,
+          zones: ["working/network/org", "review"],
+          schemas: { "org-member" => org_member_schema },
+          manifest: <<~YAML,
+            version: textus/3
+            zones:
+              - { name: working, kind: origin }
+              - { name: review,  kind: queue }
+            entries:
+              - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested }
+              - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+            rules:
+              - match: "working.network.org.**"
+                guard:
+                  accept: [schema_valid]
+          YAML
+        )
+      end
 
-        rules:
-          - match: "working.network.org.**"
-            guard:
-              accept: [schema_valid]
-      YAML
-      Textus::Store.new(textus_dir)
-    end
-
-    it "passes the gate when schema_valid predicate succeeds (all required fields present)" do
-      Dir.mktmpdir do |root|
-        store = build_store_with_promotion(File.join(root, ".textus"))
+      it "passes the gate when schema_valid succeeds (all required fields present)" do
         store.as("agent").put(
           "review.valid-proposal",
           meta: {
@@ -203,15 +163,11 @@ RSpec.describe Textus::Write::Accept do
           body: "Proposed",
         )
 
-        ctx = test_ctx(role: "human")
-        result = build_accept(store, ctx).call("review.valid-proposal")
+        result = build_accept(store, test_ctx(role: "human")).call("review.valid-proposal")
         expect(result["accepted"]).to eq("review.valid-proposal")
       end
-    end
 
-    it "raises guard_failed when schema_valid predicate fails (missing required field)" do
-      Dir.mktmpdir do |root|
-        store = build_store_with_promotion(File.join(root, ".textus"))
+      it "raises guard_failed when schema_valid fails (missing required field)" do
         store.as("agent").put(
           "review.bad-proposal",
           meta: {
@@ -222,38 +178,29 @@ RSpec.describe Textus::Write::Accept do
           body: "Proposed",
         )
 
-        ctx = test_ctx(role: "human")
-        expect { build_accept(store, ctx).call("review.bad-proposal") }
-          .to raise_error(Textus::GuardFailed) do |e|
-            expect(e.details["failed"].map { |f| f["predicate"] }).to include("schema_valid")
-          end
+        expect { build_accept(store, test_ctx(role: "human")).call("review.bad-proposal") }
+          .to fail_guard_with("schema_valid")
       end
     end
 
-    def build_promotion_gate_store(textus_dir)
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/working/network/org"))
-      FileUtils.mkdir_p(File.join(textus_dir, "zones/review"))
-      File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: working, kind: origin }
-          - { name: review,  kind: queue }
-        entries:
-          - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
+    context "with an accept_signed guard" do
+      let(:store) do
+        store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
+          version: textus/3
+          zones:
+            - { name: working, kind: origin }
+            - { name: review,  kind: queue }
+          entries:
+            - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
+            - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+          rules:
+            - match: "working.network.org.**"
+              guard:
+                accept: [accept_signed]
+        YAML
+      end
 
-          - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
-
-        rules:
-          - match: "working.network.org.**"
-            guard:
-              accept: [accept_signed]
-      YAML
-      Textus::Store.new(textus_dir)
-    end
-
-    it "accept_signed predicate passes when role holds the accept capability" do
-      Dir.mktmpdir do |root|
-        store = build_promotion_gate_store(File.join(root, ".textus"))
+      it "passes when the role holds the accept capability" do
         store.as("agent").put(
           "review.ha-proposal",
           meta: {
@@ -263,8 +210,8 @@ RSpec.describe Textus::Write::Accept do
           },
           body: "Proposed",
         )
-        ctx = test_ctx(role: "human")
-        result = build_accept(store, ctx).call("review.ha-proposal")
+
+        result = build_accept(store, test_ctx(role: "human")).call("review.ha-proposal")
         expect(result["accepted"]).to eq("review.ha-proposal")
       end
     end
