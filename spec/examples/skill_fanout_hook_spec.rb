@@ -17,8 +17,8 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [human, runner, agent] }
-        - { name: vendor, kind: origin, write_policy: [human, runner, agent] }
+        - { name: intake, kind: quarantine }
+        - { name: vendor, kind: derived }
       entries:
         - { key: intake.skills, path: intake/skills, zone: intake, schema: null, owner: o, nested: true, kind: nested}
 
@@ -29,7 +29,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ops) { store.as("runner") }
+  let(:ops) { store.as("automation") }
 
   before do
     # The recipe queues its registration via Textus.hook. Drain and apply

@@ -34,7 +34,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     RUBY
   end
 
-  it "invokes the action, writes the entry under role=runner, returns the envelope" do
+  it "invokes the action, writes the entry under role=automation, returns the envelope" do
     store = Textus::Store.new(root)
     env = store.as("automation").refresh("intake.repos")
     expect(env.body).to eq("hello")
