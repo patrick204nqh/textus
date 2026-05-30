@@ -1,13 +1,20 @@
 require "spec_helper"
 
-RSpec.describe "textus init scaffolds zone kinds" do
-  it "produces a manifest whose zones declare a known kind and that Schema accepts" do
+RSpec.describe "textus init scaffolds Setup-1 zone kinds (ADR 0033)" do
+  it "declares the five Setup-1 zones with the right kinds and validates" do
     raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
     kinds = raw["zones"].to_h { |z| [z["name"], z["kind"]] }
     expect(kinds).to eq(
-      "identity" => "canon", "working" => "canon", "intake" => "quarantine",
-      "review" => "queue", "output" => "derived"
+      "knowledge" => "canon", "notebook" => "workspace", "feeds" => "quarantine",
+      "proposals" => "queue", "artifacts" => "derived"
     )
     expect { Textus::Manifest::Schema.validate!(raw) }.not_to raise_error
+  end
+
+  it "gives agent a keep capability and human author" do
+    raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
+    caps = raw["roles"].to_h { |r| [r["name"], r["can"]] }
+    expect(caps["agent"]).to include("keep")
+    expect(caps["human"]).to include("author")
   end
 end

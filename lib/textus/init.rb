@@ -2,24 +2,25 @@ require "fileutils"
 
 module Textus
   module Init
-    ZONES = %w[identity working intake review output].freeze
+    ZONES = %w[knowledge notebook feeds proposals artifacts].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: agent,      can: [propose] }
+        - { name: agent,      can: [propose, keep] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
-        - { name: intake,   kind: quarantine }
-        - { name: review,   kind: queue }
-        - { name: output,   kind: derived }
+        - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
+        - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
+        - { name: feeds,     kind: quarantine, desc: "external inputs pulled in" }
+        - { name: proposals, kind: queue,     desc: "changes awaiting your accept" }
+        - { name: artifacts, kind: derived,   desc: "computed, shippable outputs" }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
-        - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: review.notes,  path: review/notes,     zone: review,   schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: knowledge.identity, path: knowledge/identity.md, zone: knowledge, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
+        - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
     YAML
 
     HOOKS_README = <<~MD
