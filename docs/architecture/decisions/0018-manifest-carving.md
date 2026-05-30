@@ -1,7 +1,7 @@
 # ADR 0018 — Carve Manifest into Data, Resolver, Policy, Rules
 
 **Date:** 2026-05-28
-**Status:** Proposed
+**Status:** Accepted — shipped; `Manifest::Data` / `Resolver` / `Policy` / `Rules` are the live decomposition.
 **Depends on:** [ADR 0013](./0013-port-extraction-store-as-root.md), [ADR 0016](./0016-application-ports-value.md)
 
 ## Context

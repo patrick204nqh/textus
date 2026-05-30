@@ -1,8 +1,8 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:fetch, :handler_allowlist, :promote, :retention)
-      EMPTY_SET = RuleSet.new(fetch: nil, handler_allowlist: nil, promote: nil, retention: nil)
+      RuleSet = ::Data.define(:fetch, :handler_allowlist, :guard, :retention)
+      EMPTY_SET = RuleSet.new(fetch: nil, handler_allowlist: nil, guard: nil, retention: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -15,7 +15,7 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { fetch: [], handler_allowlist: [], promote: [], retention: [] }
+        slots = { fetch: [], handler_allowlist: [], guard: [], retention: [] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
@@ -24,7 +24,7 @@ module Textus
         RuleSet.new(
           fetch: pick(slots[:fetch], :fetch, key),
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
-          promote: pick(slots[:promote], :promote, key),
+          guard: pick(slots[:guard], :guard, key),
           retention: pick(slots[:retention], :retention, key),
         )
       end
@@ -44,13 +44,13 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :fetch, :handler_allowlist, :promote, :retention
+        attr_reader :match, :fetch, :handler_allowlist, :guard, :retention
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
           @fetch = parse_fetch(raw["fetch"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
-          @promote = parse_promotion(raw["promotion"])
+          @guard = parse_guard(raw["guard"])
           @retention = parse_retention(raw["retention"])
         end
 
@@ -73,12 +73,14 @@ module Textus
           Textus::Domain::Policy::HandlerAllowlist.new(handlers: arr)
         end
 
-        def parse_promotion(h)
+        # A guard: block is a map of transition => [predicate specs]. Predicate
+        # names are validated at GuardFactory build time via Predicates::Registry
+        # (ADR 0031); here we only assert the structural shape.
+        def parse_guard(h)
           return nil if h.nil?
+          raise Textus::BadManifest.new("guard: must be a map of transition => [predicates]") unless h.is_a?(Hash)
 
-          raise Textus::BadManifest.new("promotion: must be a hash with a 'requires:' array") unless h.is_a?(Hash) && h.key?("requires")
-
-          Textus::Domain::Policy::Promote.new(requires: Array(h["requires"]))
+          h
         end
 
         def parse_retention(h)

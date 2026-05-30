@@ -1,7 +1,7 @@
 # ADR 0017 — Split EnvelopeIO into Reader and Writer
 
 **Date:** 2026-05-28
-**Status:** Proposed
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) — the Reader/Writer split shipped, but lives at `Envelope::IO::Reader` / `Envelope::IO::Writer` rather than the `Application::Writes::Envelope*` names proposed here.
 **Depends on:** [ADR 0013](./0013-port-extraction-store-as-root.md), [ADR 0016](./0016-application-ports-value.md)
 
 ## Context

@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Rules do
     [
       { "match" => "intake.**",       "intake_handler_allowlist" => ["http_get"] },
       { "match" => "intake.news.*",   "fetch" => { "ttl" => "6h", "on_stale" => "sync" } },
-      { "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } },
+      { "match" => "review.**", "guard" => { "accept" => ["schema_valid"] } },
     ]
   end
 
@@ -18,14 +18,14 @@ RSpec.describe Textus::Manifest::Rules do
       expect(set.fetch.ttl_seconds).to eq(6 * 3600)
       expect(set.handler_allowlist).to be_a(Textus::Domain::Policy::HandlerAllowlist)
       expect(set.handler_allowlist.allows?("http_get")).to be(true)
-      expect(set.promote).to be_nil
+      expect(set.guard).to be_nil
     end
 
     it "returns an empty set for keys not matched by any rule" do
       set = rules.for("identity.something")
       expect(set.fetch).to be_nil
       expect(set.handler_allowlist).to be_nil
-      expect(set.promote).to be_nil
+      expect(set.guard).to be_nil
     end
 
     it "respects specificity: a more-specific block overrides a less-specific one per slot" do
@@ -60,11 +60,11 @@ RSpec.describe Textus::Manifest::Rules do
       end
     end
 
-    describe "promotion" do
-      it "parses promotion: { requires: [...] }" do
-        raw = [{ "match" => "review.**", "promotion" => { "requires" => ["schema_valid"] } }]
+    describe "guard" do
+      it "parses guard: { accept: [...] }" do
+        raw = [{ "match" => "review.**", "guard" => { "accept" => ["schema_valid"] } }]
         set = described_class.parse(raw).for("review.x")
-        expect(set.promote.requires).to include(:schema_valid)
+        expect(set.guard).to eq({ "accept" => ["schema_valid"] })
       end
     end
   end

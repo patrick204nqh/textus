@@ -1,7 +1,7 @@
 # ADR 0010 — Flat Operations API
 
 **Date:** 2026-05-27
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) — the flat one-method-per-use-case ergonomics stand, but the `Operations` class described here is replaced by `Container` + `RoleScope` under the 0.27.0 architecture.
 **Depends on:** [ADR 0004](./0004-operations-rename-and-store-facade-removal.md)
 
 ## Context

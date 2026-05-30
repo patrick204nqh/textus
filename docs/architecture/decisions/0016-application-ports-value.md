@@ -1,7 +1,7 @@
 # ADR 0016 — Application Ports value object
 
 **Date:** 2026-05-28
-**Status:** Proposed
+**Status:** Superseded by [ADR 0020](./0020-capability-records.md) — the single `Application::Ports` value object proposed here is replaced by the `ReadCaps` / `WriteCaps` / `HookCaps` capability records.
 **Depends on:** [ADR 0010](./0010-flat-operations-api.md), [ADR 0013](./0013-port-extraction-store-as-root.md), [ADR 0014](./0014-explicit-dependencies.md)
 
 ## Context
