@@ -99,7 +99,7 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
 
 ```yaml
 roles:
-  - { name: human,      can: [accept, propose] }
+  - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose] }
   - { name: automation, can: [fetch, build] }
 
