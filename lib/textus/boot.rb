@@ -8,16 +8,6 @@ module Textus
   module Boot
     PROTOCOL_ID = PROTOCOL
 
-    # Conventional zone purposes. Unknown zones (declared in the manifest
-    # but not listed here) get no `purpose` field.
-    ZONE_PURPOSES = {
-      "identity" => "slow-changing identity; human-only writes",
-      "working" => "active project state; humans, AI, and scripts share this surface",
-      "intake" => "declared external inputs; script-fetched via actions",
-      "review" => "AI proposals awaiting human accept",
-      "output" => "build-computed outputs; never hand-edited",
-    }.freeze
-
     # Per-capability write-flow templates. Each lambda receives the user-facing
     # role name and returns a guidance string for that verb. A role holding
     # multiple verbs gets one joined string; roles whose verbs have no template
@@ -174,8 +164,8 @@ module Textus
         row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind
-        purpose = ZONE_PURPOSES[name]
-        row["purpose"] = purpose if purpose
+        purpose = manifest.data.zone_descs[name]
+        row["purpose"] = purpose if purpose && !purpose.empty?
         row
       end
     end

@@ -24,8 +24,8 @@ RSpec.describe Textus::Boot do
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
+        - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
+        - { name: working,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: queue }
         - { name: output,   kind: derived }
@@ -88,7 +88,7 @@ RSpec.describe Textus::Boot do
     expect(env["store_root"]).to eq(root)
   end
 
-  it "lists zones with writers and purposes for known zones" do
+  it "lists zones with writers and purposes derived from manifest desc:" do
     env = described_class.build(container: store.container)
     names = env["zones"].map { |z| z["name"] }
     expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
