@@ -1,28 +1,28 @@
 module Textus
   module Write
-    class RefreshAll
+    class FetchAll
       def initialize(container:, call:)
         @container    = container
         @call         = call
       end
 
       def call(prefix: nil, zone: nil)
-        worker = Textus::Write::RefreshWorker.new(
+        worker = Textus::Write::FetchWorker.new(
           container: @container, call: @call,
         )
 
         stale_rows = Textus::Read::Stale.new(container: @container, call: @call).call(prefix: prefix, zone: zone)
-        refreshed = []
+        fetched = []
         failed = []
         skipped = []
 
         stale_rows.each do |row|
           key = row["key"] || row[:key]
           reason = row["reason"] || row[:reason]
-          if reason.to_s.match?(/ttl exceeded|never refreshed/)
+          if reason.to_s.match?(/ttl exceeded|never fetched/)
             begin
               worker.run(key)
-              refreshed << key
+              fetched << key
             rescue Textus::Error => e
               failed << { "key" => key, "error" => e.message }
             end
@@ -34,7 +34,7 @@ module Textus
         {
           "protocol" => Textus::PROTOCOL,
           "ok" => failed.empty?,
-          "refreshed" => refreshed,
+          "fetched" => fetched,
           "failed" => failed,
           "skipped" => skipped,
         }

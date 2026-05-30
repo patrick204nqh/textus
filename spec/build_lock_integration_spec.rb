@@ -15,8 +15,8 @@ RSpec.describe "textus build concurrency" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, agent, runner] }
-        - { name: output, kind: derived, write_policy: [builder] }
+        - { name: working, kind: origin }
+        - { name: output, kind: derived }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: null, kind: leaf}
 
@@ -25,7 +25,7 @@ RSpec.describe "textus build concurrency" do
           path: output/note.md
           zone: output
           schema: null
-          owner: builder:auto
+          owner: automation:auto
           compute: { kind: projection, select: working.note }
           template: echo.mustache
     YAML

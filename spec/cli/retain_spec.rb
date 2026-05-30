@@ -26,7 +26,7 @@ RSpec.describe "textus retain" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: review, kind: origin, write_policy: [human] }
+          - { name: review, kind: origin }
         entries:
           - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
 

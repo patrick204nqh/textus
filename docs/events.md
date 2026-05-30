@@ -38,16 +38,16 @@ Every event is one of two kinds.
 
    :resolve_intake → input to the store     :entry_put          → after any write
    :transform_rows → projection shaping     :entry_deleted      → after delete
-   :validate       → doctor checks          :entry_refreshed    → after refresh
+   :validate       → doctor checks          :entry_fetched      → after fetch
                                             :build_completed    → after derived materialization
                                             :proposal_accepted  → after pending → target promotion
                                             :file_published     → after each file written to a repo path
                                             :entry_renamed      → after rename
                                             :proposal_rejected  → after proposal discard
                                             :store_loaded       → once per Store.new
-                                            :refresh_started    → before intake handler runs
-                                            :refresh_failed     → intake handler raised
-                                            :refresh_backgrounded → timed_sync budget exceeded
+                                            :fetch_started      → before intake handler runs
+                                            :fetch_failed       → intake handler raised
+                                            :fetch_backgrounded → timed_sync budget exceeded
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
@@ -56,16 +56,16 @@ Every event is one of two kinds.
 
 ## 2. The events in plain English
 
-textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events are listed separately in §2.1.
+textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in §2.1.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus refresh` or `textus refresh stale`. |
+| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus fetch` or `textus fetch stale`. |
 | `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
-| `:entry_put` | pubsub | Something just got written. Fires for every successful write (including refresh-driven). Payload: `{ ctx:, key:, envelope: }`. |
+| `:entry_put` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
 | `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ ctx:, key: }`. |
-| `:entry_refreshed` | pubsub | Like `:entry_put` but specific to refresh-driven writes. Both fire — `:entry_put` first, then `:entry_refreshed`. Payload: `{ ctx:, key:, envelope:, change: }`. |
+| `:entry_fetched` | pubsub | Like `:entry_put` but specific to fetch-driven writes. Both fire — `:entry_put` first, then `:entry_fetched`. Payload: `{ ctx:, key:, envelope:, change: }`. |
 | `:build_completed` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. Payload: `{ ctx:, key:, envelope:, sources: }`. |
 | `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ ctx:, key:, target_key: }`. |
 | `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_each:`. Payload: `{ ctx:, key:, envelope:, source:, target: }`. |
@@ -73,15 +73,15 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:refresh_*` lifecycle events 
 | `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ ctx:, key:, target_key: }`. |
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
 
-### 2.1 Refresh lifecycle events
+### 2.1 Fetch lifecycle events
 
-Three additional pub-sub events observe the progress of in-process and background intake refreshes.
+Three additional pub-sub events observe the progress of in-process and background intake fetches.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:refresh_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ ctx:, key:, mode: }`. |
-| `:refresh_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
-| `:refresh_backgrounded` | pubsub | Fires when a `timed_sync` refresh exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
+| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing fetch is already aborted; this is observational only. |
+| `:fetch_backgrounded` | pubsub | Fires when a `timed_sync` fetch exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -111,22 +111,22 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ done
 ```
 
-### `textus refresh KEY --as=script`
+### `textus fetch KEY --as=script`
 
 ```
   ┃ require entry.intake.handler           ── ABORT if missing
-  ┃ ─────────────────────────────────────► :refresh_started  (pubsub, mode: "sync"|"timed_sync")
+  ┃ ─────────────────────────────────────► :fetch_started  (pubsub, mode: "sync"|"timed_sync")
   ┃ ─────────────────────────────────────► :resolve_intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
   ┃   if handler raises:
-  ┃ ─────────────────────────────────────► :refresh_failed  (pubsub)
+  ┃ ─────────────────────────────────────► :fetch_failed  (pubsub)
   ┃   if timed_sync and budget exceeded:
-  ┃ ─────────────────────────────────────► :refresh_backgrounded  (pubsub) — then continues in bg
+  ┃ ─────────────────────────────────────► :fetch_backgrounded  (pubsub) — then continues in bg
   ┃ normalize result by entry.format
   ┃ role gate, etag check, write           (same path as put)
-  ┃ append audit row {verb:"refresh"}
+  ┃ append audit row {verb:"fetch"}
   ┃ ─────────────────────────────────────► :entry_put         (pubsub) — every write fires :entry_put
-  ┃ ─────────────────────────────────────► :entry_refreshed   (pubsub) — plus the refresh-specific event
+  ┃ ─────────────────────────────────────► :entry_fetched     (pubsub) — plus the fetch-specific event
   ✔ done
 ```
 
@@ -259,21 +259,21 @@ end
 
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
-| `:resolve_intake` raises | refresh aborts | nothing |
+| `:resolve_intake` raises | fetch aborts | nothing |
 | `:transform_rows` raises | build aborts (this entry only) | nothing |
 | `:validate` raises | doctor aborts | nothing |
 | `:entry_put` raises | verb still succeeds | `event_error` row in `audit.log` |
 | `:entry_deleted` raises | verb still succeeds | `event_error` row |
-| `:entry_refreshed` raises | verb still succeeds | `event_error` row |
+| `:entry_fetched` raises | verb still succeeds | `event_error` row |
 | `:build_completed` raises | verb still succeeds | `event_error` row |
 | `:proposal_accepted` raises | verb still succeeds | `event_error` row |
 | `:file_published` raises | verb still succeeds | `event_error` row |
 | `:entry_renamed` raises | verb still succeeds | `event_error` row |
 | `:proposal_rejected` raises | verb still succeeds | `event_error` row |
 | `:store_loaded` raises | store still ready | `event_error` row |
-| `:refresh_started` raises | verb still succeeds | `event_error` row |
-| `:refresh_failed` raises | verb still succeeds | `event_error` row |
-| `:refresh_backgrounded` raises | verb still succeeds | `event_error` row |
+| `:fetch_started` raises | verb still succeeds | `event_error` row |
+| `:fetch_failed` raises | verb still succeeds | `event_error` row |
+| `:fetch_backgrounded` raises | verb still succeeds | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 
@@ -300,14 +300,14 @@ One `:entry_put` fans out to **every matching handler**, sequentially, each unde
 
 ## 7a. `:resolve_intake` args
 
-The third kwarg `args:` carries leaf-key context populated by `Refresh::Worker`:
+The third kwarg `args:` carries leaf-key context populated by `FetchWorker`:
 
 | Key | Type | Meaning |
 |-----|------|---------|
-| `trigger_key` | String | The full key being refreshed (e.g. `"intake.vendor.affaan-m.agent-eval"`). |
+| `trigger_key` | String | The full key being fetched (e.g. `"intake.vendor.affaan-m.agent-eval"`). |
 | `leaf_segments` | Array&lt;String&gt; | The segments **past** the parent `intake` entry (`["affaan-m", "agent-eval"]` in the example above). Empty array when the key matches the entry exactly. |
 
-Handlers that ignore `args:` keep working unchanged. Handlers over a `nested: true` intake should scope to the requested leaf using `args[:leaf_segments]` — re-processing the full parent `intake_config` for every leaf refresh is the path of pain (and the reason Bug 2 existed pre-0.15.0).
+Handlers that ignore `args:` keep working unchanged. Handlers over a `nested: true` intake should scope to the requested leaf using `args[:leaf_segments]` — re-processing the full parent `intake_config` for every leaf fetch is the path of pain (and the reason Bug 2 existed pre-0.15.0).
 
 ---
 
@@ -416,7 +416,7 @@ Manifest references the same name on both sides:
 
 rules:
   - match: intake.linear.**
-    refresh: { ttl: 1h, on_stale: warn }
+    fetch: { ttl: 1h, on_stale: warn }
 ```
 
 ### Audit listener — every write to a sensitive zone

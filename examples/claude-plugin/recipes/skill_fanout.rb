@@ -5,7 +5,7 @@
 #
 # To use: copy this file into your store's hooks/ directory (e.g.
 # .textus/hooks/skill_fanout.rb) and ensure the destination zone (`vendor`)
-# is writable by the role that triggers the refresh. See
+# is writable by the role that triggers the fetch. See
 # docs/recipes/github-skill-bundle.md.
 
 module TextusRecipes
@@ -15,7 +15,7 @@ module TextusRecipes
 
     def self.register
       Textus.hook do |reg|
-        reg.on(:entry_refreshed, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |ctx:, key:, envelope:, **|
+        reg.on(:entry_fetched, :skill_fanout, keys: "#{SOURCE_PREFIX}*") do |ctx:, key:, envelope:, **|
           next unless key.start_with?(SOURCE_PREFIX)
 
           slug = key.delete_prefix(SOURCE_PREFIX)
@@ -25,7 +25,7 @@ module TextusRecipes
 
           # `ctx:` routes all reads and writes through Operations so the
           # standard pipeline (authz, audit, schema validation, events) applies.
-          # This listener is on :entry_refreshed; inner ctx.put fires :entry_put
+          # This listener is on :entry_fetched; inner ctx.put fires :entry_put
           # (a different event), so no recursion guard is needed.
           existing_rows = ctx.list(prefix: "#{DERIVED_PREFIX}#{slug}")
           existing_keys = existing_rows.map { |row| row["key"] }

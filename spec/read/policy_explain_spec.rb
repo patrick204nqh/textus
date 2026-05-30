@@ -9,15 +9,15 @@ RSpec.describe Textus::Read::PolicyExplain do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
       rules:
         - match: "working.*"
-          refresh: { ttl: 1h, on_stale: warn }
+          fetch: { ttl: 1h, on_stale: warn }
         - match: working.doc
-          refresh: { ttl: 5m, on_stale: sync }
+          fetch: { ttl: 5m, on_stale: sync }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
           promotion:
@@ -47,8 +47,8 @@ RSpec.describe Textus::Read::PolicyExplain do
       ops = store.as("human")
       result = ops.policy_explain(key: "working.doc")
 
-      expect(result[:effective][:refresh][:ttl_seconds]).to eq(300)
-      expect(result[:effective][:refresh][:on_stale]).to eq(:sync)
+      expect(result[:effective][:fetch][:ttl_seconds]).to eq(300)
+      expect(result[:effective][:fetch][:on_stale]).to eq(:sync)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
       expect(result[:effective][:promotion]).to eq({ requires: [:schema_valid] })
     end
@@ -70,7 +70,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: origin }
         entries:
           - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -79,7 +79,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       ops = store.as("human")
       result = ops.policy_explain(key: "working.doc")
       expect(result[:matched_blocks]).to eq([])
-      expect(result[:effective][:refresh]).to be_nil
+      expect(result[:effective][:fetch]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
       expect(result[:effective][:promotion]).to be_nil
     end

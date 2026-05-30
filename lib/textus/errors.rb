@@ -90,20 +90,21 @@ module Textus
   end
 
   class WriteForbidden < Error
-    def initialize(k, z, writers: nil)
-      writers_str =
-        if writers && !writers.empty?
-          writers.join(", ")
+    def initialize(k, z, verb: nil, holders: nil)
+      holders_str =
+        if holders && !holders.empty?
+          holders.join(", ")
         else
-          "the role(s) listed in the manifest 'write_policy:'"
+          "no declared role"
         end
       details = { "key" => k, "zone" => z }
-      details["writers"] = writers if writers
+      details["verb"] = verb if verb
+      details["holders"] = holders if holders
       super(
         "write_forbidden",
-        "zone '#{z}' is not agent-writable for key '#{k}'",
+        "writing '#{k}' (zone '#{z}') needs capability '#{verb}'",
         details: details,
-        hint: "this zone is writable by #{writers_str}; pass --as=<role>",
+        hint: "held by: #{holders_str}; pass --as=<role>",
       )
     end
   end
@@ -163,7 +164,7 @@ module Textus
         "invalid_role",
         message || "role '#{r}' is not declared in any zone",
         details: { "role" => r },
-        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under zones[].write_policy",
+        hint: message ? nil : "valid roles are declared in .textus/manifest.yaml under roles: (each with a can: list)",
       )
     end
   end

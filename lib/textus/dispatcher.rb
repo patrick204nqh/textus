@@ -11,13 +11,13 @@ module Textus
       accept: Textus::Write::Accept,
       reject: Textus::Write::Reject,
       publish: Textus::Write::Publish,
-      refresh: Textus::Write::RefreshWorker,
-      refresh_all: Textus::Write::RefreshAll,
+      fetch: Textus::Write::FetchWorker,
+      fetch_all: Textus::Write::FetchAll,
       retention_sweep: Textus::Write::RetentionSweep,
 
       # Read
       get: Textus::Read::Get,
-      get_or_refresh: Textus::Read::GetOrRefresh,
+      get_or_fetch: Textus::Read::GetOrFetch,
       list: Textus::Read::List,
       where: Textus::Read::Where,
       uid: Textus::Read::Uid,

@@ -16,11 +16,11 @@ RSpec.describe "textus/3 canonical hook events" do
     events.on(:proposal_rejected, :rejected_listener) { |**| }
     events.on(:file_published,    :published_listener) { |**| }
     events.on(:entry_renamed,     :renamed_listener) { |**| }
-    events.on(:entry_refreshed,   :refreshed_listener) { |**| }
-    events.on(:entry_deleted,     :deleted_listener)  { |**| }
-    events.on(:refresh_started,   :started_listener)  { |**| }
-    events.on(:refresh_backgrounded, :backgrounded_listener) { |**| }
-    events.on(:refresh_failed, :failed_listener) { |**| }
+    events.on(:entry_fetched, :fetched_listener) { |**| }
+    events.on(:entry_deleted, :deleted_listener) { |**| }
+    events.on(:fetch_started, :started_listener) { |**| }
+    events.on(:fetch_backgrounded, :backgrounded_listener) { |**| }
+    events.on(:fetch_failed, :failed_listener) { |**| }
 
     # RPC events should not be accessible on EventBus
     rpc_events = %i[resolve_intake transform_rows validate]
@@ -29,9 +29,9 @@ RSpec.describe "textus/3 canonical hook events" do
     end
 
     # Pubsub events should not be accessible on RpcRegistry
-    pubsub_events = %i[entry_put entry_deleted entry_refreshed entry_renamed build_completed
+    pubsub_events = %i[entry_put entry_deleted entry_fetched entry_renamed build_completed
                        proposal_accepted proposal_rejected file_published store_loaded
-                       refresh_started refresh_failed refresh_backgrounded]
+                       fetch_started fetch_failed fetch_backgrounded]
     pubsub_events.each do |ev|
       expect { rpc.register(ev, :_) { |**| } }.to raise_error(Textus::UsageError)
     end

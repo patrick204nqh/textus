@@ -20,15 +20,15 @@ RSpec.describe "textus rule group" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
       rules:
         - match: "working.*"
-          refresh: { ttl: 1h, on_stale: warn }
+          fetch: { ttl: 1h, on_stale: warn }
         - match: working.doc
-          refresh: { ttl: 5m, on_stale: sync }
+          fetch: { ttl: 5m, on_stale: sync }
           intake_handler_allowlist: [src_a]
     YAML
   end
@@ -41,7 +41,7 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("policy_list")
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["working.*", "working.doc"])
-      expect(payload["policies"].first["refresh"]["ttl_seconds"]).to eq(3600)
+      expect(payload["policies"].first["fetch"]["ttl_seconds"]).to eq(3600)
     end
 
     it "serializes retention as a plain hash with integer seconds" do
@@ -49,7 +49,7 @@ RSpec.describe "textus rule group" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: origin }
         entries:
           - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -73,7 +73,7 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("policy_explain")
       expect(payload["key"]).to eq("working.doc")
       expect(payload["matched_blocks"].length).to eq(2)
-      expect(payload["effective"]["refresh"]["ttl_seconds"]).to eq(300)
+      expect(payload["effective"]["fetch"]["ttl_seconds"]).to eq(300)
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])
     end
 

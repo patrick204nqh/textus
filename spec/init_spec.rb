@@ -15,6 +15,16 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
+  it "declares a roles: block with capabilities and zone kinds" do
+    tmp = Dir.mktmpdir
+    root = File.join(tmp, ".textus")
+    Textus::Init.run(root)
+    contents = File.read(File.join(root, "manifest.yaml"))
+    expect(contents).to include("can: [accept, propose]").and include("kind: quarantine")
+  ensure
+    FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
+  end
+
   it "raises if .textus/ already exists" do
     tmp = Dir.mktmpdir
     root = File.join(tmp, ".textus")

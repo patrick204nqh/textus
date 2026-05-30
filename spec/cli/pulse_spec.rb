@@ -12,8 +12,8 @@ RSpec.describe "textus pulse CLI" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
-          - { name: review,  kind: origin, write_policy: [agent] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: origin }
         entries: []
       YAML
       yield root, textus

@@ -1,7 +1,7 @@
 # Zones — shaping your context
 
 > **Reference** · for integrators · **read when** you're designing your zone layout
-> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.30)
+> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.31)
 
 How to define the **shape of your context** in textus: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
 
@@ -10,7 +10,7 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 ## Table of contents
 
 1. [The mental model](#1-the-mental-model)
-2. [Roles — who is allowed to write](#2-roles--who-is-allowed-to-write)
+2. [Roles and capabilities — who is allowed to write](#2-roles-and-capabilities--who-is-allowed-to-write)
 3. [The five default zones](#3-the-five-default-zones) — `identity`, `working`, `intake`, `review`, `output`
 4. [Defining your own zones](#4-defining-your-own-zones)
 5. [Defining entries](#5-defining-entries)
@@ -25,51 +25,66 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 
 A textus store is a small **data-flow graph**. Information enters from outside, gets curated by humans and AI, and gets compiled into files you ship.
 
+```mermaid
+flowchart LR
+    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| intake["intake<br/>(quarantine)"]
+    automation(["automation"]) -->|fetch| intake
+    human(["human"]) -->|accept| identity["identity<br/>(origin)"]
+    human -->|accept| working["working<br/>(origin)"]
+    agent(["agent"]) -->|propose| review["review<br/>(queue)"]
+    review -->|human accept| identity
+    review -->|human accept| working
+    automation -->|build| output["output<br/>(derived)"]
+    intake -.->|projection source| output
+    working -.->|projection source| output
+    output -->|publish| files["shipped files"]
 ```
-            EXTERNAL WORLD                          INSIDE .textus/zones/
-         (network, files, APIs)                  (already-captured context)
-                  │                                       │
-                  │  :intake hook                         │  projection sources
-                  ▼                                       ▼
-            ┌──────────┐                            ┌──────────┐
-   runner ─►│  intake  │                  builder ─►│  output  │─► publish
-            └──────────┘                            └──────────┘
-            "pull bytes IN"                         "compute bytes OUT"
 
-                          ┌──────────┐    ┌─────────┐
-                  human ─►│ identity │ agent►│ review  │─► accept ─► identity/working
-                          └──────────┘    └─────────┘
-                          ┌─────────┐
-          human, agent ──►│ working │◄─── script
-                          └─────────┘
-```
+*Flow at a glance:* automation pulls external bytes into `intake` (the `fetch` capability); humans write `identity`/`working` directly (the `accept` capability); agents `propose` into `review` and a human `accept` promotes to `working`/`identity`; automation `build`s `output` from `working`/`intake` and publishes shipped files.
 
 Two ideas do all the work:
 
-- **A zone is a write-authority partition.** Each zone declares which roles may write to it. Directory names are convention; the manifest is the source of truth.
-- **A role is a write intent.** `human`, `agent`, `runner`, `builder` are the four conventional roles. Every `textus put` carries `--as=<role>`, and the writer is refused if that role isn't listed for the target zone.
+- **A zone is a write-authority partition.** Each zone declares its `kind:`; the kind decides which capability a writer must hold. Directory names are convention; the manifest is the source of truth.
+- **A role is a bundle of capabilities.** A role holds verbs from a closed four-element set — `propose`, `accept`, `fetch`, `build` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability.
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
 
 ---
 
-## 2. Roles — who is allowed to write
+## 2. Roles and capabilities — who is allowed to write
 
-Roles are just strings declared in the manifest. The four conventional ones:
+A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed four-element set. Write authority is *derived*: a role may write a zone iff it holds the capability the zone's kind requires (see [§3](#3-the-five-default-zones)). The default mapping, applied when the manifest omits a `roles:` block:
 
-| Role | What it represents | Typical verb |
-|------|--------------------|--------------|
-| `human` | A person editing files directly | `put`, `accept`, `mv` |
-| `agent` | An autonomous agent proposing changes | `put` (usually into `review`) |
-| `runner` | Automation pulling external data in | `refresh` |
-| `builder` | The compiler that materializes derived entries | `build` |
+| Role | Capabilities (`can`) | What it represents |
+|------|----------------------|--------------------|
+| `human` | `[accept, propose]` | A person at a terminal; the single trust anchor. |
+| `agent` | `[propose]` | An autonomous agent staging changes into the queue. |
+| `automation` | `[fetch, build]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
 
-Two analogies that usually click:
+The four capabilities:
 
-- **`runner` is the grocery shopper** — goes outside, brings raw ingredients home.
-- **`builder` is the chef** — takes ingredients already in the kitchen and cooks the meal.
+| Capability | Authorizes writes to zone-kind | What it represents |
+|------------|--------------------------------|--------------------|
+| `accept` | `origin` | Authoring authored truth — the **single trust anchor** (at most one role holds it). |
+| `propose` | `queue` | Staging a proposal awaiting promotion. |
+| `fetch` | `quarantine` | Pulling external bytes in. |
+| `build` | `derived` | Computing outputs from other zones. |
 
-You can also invent your own roles (`reviewer`, `import-bot`, `scheduler`) — see [§4](#4-defining-your-own-zones).
+Declare roles in the manifest with a `roles:` block; each names the capabilities it holds via `can:`:
+
+```yaml
+roles:
+  - { name: human,      can: [accept, propose] }
+  - { name: agent,      can: [propose] }
+  - { name: automation, can: [fetch, build] }
+```
+
+Two analogies that usually click for `automation`:
+
+- **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `intake`).
+- **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `output`).
+
+You can also invent your own role names (`reviewer`, `import-bot`, `compiler`) and hand them whichever capabilities fit — see [§4](#4-defining-your-own-zones). Only one constraint is absolute: **at most one role may hold `accept`** (the trust anchor).
 
 ---
 
@@ -78,21 +93,37 @@ You can also invent your own roles (`reviewer`, `import-bot`, `scheduler`) — s
 `textus init` scaffolds this manifest:
 
 ```yaml
+roles:
+  - { name: human,      can: [accept, propose] }
+  - { name: agent,      can: [propose] }
+  - { name: automation, can: [fetch, build] }
+
 zones:
-  - { name: identity, kind: origin,     write_policy: [human] }
-  - { name: working,  kind: origin,     write_policy: [human, agent, runner] }
-  - { name: intake,   kind: quarantine, write_policy: [runner] }
-  - { name: review,   kind: queue,      write_policy: [agent, human] }
-  - { name: output,   kind: derived,    write_policy: [builder] }
+  - { name: identity, kind: origin }
+  - { name: working,  kind: origin }
+  - { name: intake,   kind: quarantine }
+  - { name: review,   kind: queue }
+  - { name: output,   kind: derived }
 ```
 
-| Zone | Purpose | Lifetime | Writers |
-|------|---------|----------|---------|
-| `identity` | Slow-changing identity. Voice, mission, brand, project facts. | Years | `human` only |
-| `working` | Active project state. Day-to-day notes that humans and agents both touch. | Days to weeks | `human`, `agent`, `runner` |
-| `intake` | Declared external inputs. Refreshed via `ops.refresh(key)` (CLI: `textus refresh KEY --as=runner`), never edited by hand. Refreshed on demand. Default writer: `runner`. | Refreshed on demand | `runner` |
-| `review` | AI proposals awaiting human review. | Until `accept` or rejection | `agent`, `human` |
-| `output` | Build-computed outputs. Materialized from projections. Never hand-edited. | Recomputed every build | `builder` |
+Write authority is **derived** — there is no `write_policy:`. Each zone declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→verb mapping is closed:
+
+| Zone `kind` | Required capability | Meaning |
+|-------------|---------------------|---------|
+| `origin` | `accept` | Authored truth — only the trust anchor writes directly. |
+| `quarantine` | `fetch` | External bytes pending validation. |
+| `queue` | `propose` | Proposals awaiting promotion. |
+| `derived` | `build` | Computed from other zones. |
+
+Crossing that table with the default role mapping gives the default writers:
+
+| Zone | `kind` | Required capability | Writable by (default) | Purpose / lifetime |
+|------|--------|---------------------|-----------------------|--------------------|
+| `identity` | `origin` | `accept` | `human` | Slow-changing identity. Voice, mission, brand, project facts. (Years.) |
+| `working` | `origin` | `accept` | `human` | Active project state: notes, decisions, network. (Days to weeks.) |
+| `intake` | `quarantine` | `fetch` | `automation` | Declared external inputs, fetched via `textus fetch KEY --as=automation`; never edited by hand. (Fetched on demand.) |
+| `review` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
+| `output` | `derived` | `build` | `automation` | Build-computed outputs. Materialized from projections; never hand-edited. (Recomputed every build.) |
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need.
 
@@ -100,11 +131,11 @@ These five are a **starter template**, not a closed set. Rename them, add to the
 
 ## 4. Defining your own zones
 
-Edit `.textus/manifest.yaml` and add entries under `zones:`. The schema is:
+Edit `.textus/manifest.yaml` and add entries under `zones:`. A zone declares only its `kind:` — write authority is derived from the kind, never listed per-zone:
 
 ```yaml
 zones:
-  - { name: <zone-name>, kind: <origin|quarantine|queue|derived>, write_policy: [<role>, <role>, ...] }
+  - { name: <zone-name>, kind: <origin|quarantine|queue|derived> }
 ```
 
 ### Declaring a zone's kind
@@ -114,63 +145,67 @@ Every zone declares its data-flow role with `kind:` — one of `origin`,
 
 ```yaml
 zones:
-  - { name: working, kind: origin,     write_policy: [human] }
-  - { name: intake,  kind: quarantine, write_policy: [runner] }
-  - { name: review,  kind: queue,      write_policy: [agent, human] }
-  - { name: output,  kind: derived,    write_policy: [builder] }
+  - { name: working, kind: origin }
+  - { name: intake,  kind: quarantine }
+  - { name: review,  kind: queue }
+  - { name: output,  kind: derived }
 ```
 
 `kind:` is required — a manifest with a kind-less zone is rejected at load. The
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
-name-based guessing). Rules: at most one `queue` zone, and the declared kind
-must match the writers (a `derived` zone needs a `generator` writer, `queue` a
-`proposer`, `quarantine` a `runner`).
+name-based guessing). The kind also fixes the capability a writer must hold —
+`origin`⇒`accept`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
+Rules: at most one `queue` zone, and (since `accept` is the single trust
+anchor) at most one role may hold it.
 
 ### Renaming defaults
 
-`identity`, `working`, etc. have no privileged status in the code. Rename freely:
+`identity`, `working`, etc. have no privileged status in the code. Rename freely — a zone carries only its `kind:`, and an optional `read_policy:` (default `[all]`):
 
 ```yaml
 zones:
-  - { name: self,    kind: origin,     write_policy: [human] }                      # was identity
-  - { name: notes,   kind: origin,     write_policy: [human, agent] }               # was working
-  - { name: feeds,   kind: quarantine, write_policy: [runner], read_policy: [all] } # was intake
-  - { name: outputs, kind: derived,    write_policy: [builder] }                    # was output
+  - { name: self,    kind: origin }                      # was identity
+  - { name: notes,   kind: origin }                      # was working
+  - { name: feeds,   kind: quarantine, read_policy: [all] } # was intake
+  - { name: outputs, kind: derived }                     # was output
 ```
 
 ### Adding new zones
 
-A consulting-engagement layout might want a sharper split than the defaults:
+A consulting-engagement layout might want a sharper split than the defaults. Each new zone needs only a `kind:`; which roles can write it follows from the kind crossed with the role mapping:
 
 ```yaml
 zones:
-  - { name: identity,    kind: origin,     write_policy: [human] }
-  - { name: research,    kind: origin,     write_policy: [human, agent] }  # AI-assisted research notes
-  - { name: deliverable, kind: origin,     write_policy: [human] }         # human-only client-facing copy
-  - { name: archive,     kind: origin,     write_policy: [human] }         # read-mostly historical record
-  - { name: feeds,       kind: quarantine, write_policy: [runner] }        # external signals
-  - { name: built,       kind: derived,    write_policy: [builder] }       # rendered outputs
+  - { name: identity,    kind: origin }     # accept-holders (human) author
+  - { name: research,    kind: origin }     # AI-assisted research notes — still accept-gated
+  - { name: deliverable, kind: origin }     # human-only client-facing copy
+  - { name: archive,     kind: origin }     # read-mostly historical record
+  - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
+  - { name: built,       kind: derived }    # rendered outputs — build-holders write
 ```
 
 ### Custom roles
 
-Roles are just strings — invent them as you need:
+Role names are arbitrary strings; what matters is the capabilities they hold. Invent roles and hand them whichever verbs fit:
 
 ```yaml
-zones:
-  - { name: reviews, kind: origin, write_policy: [reviewer] }
-  - { name: imports, kind: origin, write_policy: [shopify-importer, stripe-importer] }
+roles:
+  - { name: owner,    can: [accept, propose] }   # trust anchor
+  - { name: reviewer, can: [propose] }
+  - { name: importer, can: [fetch] }
+  - { name: compiler, can: [build] }
 ```
 
-Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, doctor checks). Roles are pure strings — what makes a zone derived, a queue, or a quarantine is its declared `kind:`, not the role names in its `write_policy`.
+Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, doctor checks). What makes a zone derived, a queue, or a quarantine is its declared `kind:`, not any role name — and a role can write a given zone only if it holds the verb that zone's kind requires.
 
 ### Rules to keep in mind
 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
-- **An empty `write_policy:` list makes a zone read-only at runtime** — you can still publish into it via `build`, but `put --as=anything` will be refused.
-- **There is no implicit role hierarchy.** `human` is not a superuser; if a zone's writers are `[ai]`, even a human running `put --as=human` is refused.
+- **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `build` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
+- **There is no implicit role hierarchy.** `human` is not a superuser; if no role but `compiler` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
+- **At most one role may hold `accept`.** The trust anchor is singular; a manifest declaring two `accept`-holders is rejected at load.
 
 ---
 
@@ -225,7 +260,7 @@ That declaration covers `working.notes.daily.2026-05-21`, `working.notes.meeting
 
 ## 6. Wiring data in — intake and `:resolve_intake` hooks
 
-`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus refresh KEY --as=runner` (or `ops.refresh(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
+`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus fetch KEY --as=automation` (or `ops.fetch(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
 
 ```yaml
 entries:
@@ -238,7 +273,7 @@ entries:
 
 rules:
   - match: intake.upstream.**
-    refresh:
+    fetch:
       ttl: 1h
 ```
 
@@ -247,8 +282,8 @@ rules:
 | Value | Behaviour |
 |---|---|
 | `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
-| `sync` | Block the `get` call and refresh in-process before returning. |
-| `timed_sync` | Try to refresh within `sync_budget_ms` (default 500 ms). Return stale data with `refreshing: true` if the budget is exceeded; the refresh continues in the background. |
+| `sync` | Block the `get` call and fetch in-process before returning. |
+| `timed_sync` | Try to fetch within `sync_budget_ms` (default 500 ms). Return stale data with `fetching: true` if the budget is exceeded; the fetch continues in the background. |
 
 ### Built-in `:resolve_intake` handlers
 
@@ -288,12 +323,12 @@ entries:
 
 rules:
   - match: intake.notion.**
-    refresh: { ttl: 6h, on_stale: warn }
+    fetch: { ttl: 6h, on_stale: warn }
 ```
 
-`textus refresh intake.notion.roadmap --as=runner` invokes the handler, normalizes the result by the entry's declared format, and writes it through the role gate just like any other write.
+`textus fetch intake.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
-The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being refreshed and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](events.md#7a-resolve_intake-args).
+The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](events.md#7a-resolve_intake-args).
 
 ### Aging entries out — `retention`
 
@@ -367,10 +402,15 @@ A Claude plugin repo that publishes `CLAUDE.md` from a slow-changing identity fi
 ```yaml
 version: textus/3
 
+roles:
+  - { name: human,      can: [accept, propose] }
+  - { name: agent,      can: [propose] }
+  - { name: automation, can: [fetch, build] }
+
 zones:
-  - { name: identity, kind: origin,  write_policy: [human] }
-  - { name: working,  kind: origin,  write_policy: [human, agent] }
-  - { name: output,   kind: derived, write_policy: [builder] }
+  - { name: identity, kind: origin }
+  - { name: working,  kind: origin }
+  - { name: output,   kind: derived }
 
 entries:
   - key: identity.self
@@ -388,7 +428,7 @@ entries:
   - key: output.claude-root
     path: output/claude-root.md
     zone: output
-    owner: builder:auto
+    owner: automation:build
     compute:
       kind: projection
       select: [identity.self, working.notes]
@@ -410,7 +450,7 @@ $ git diff CLAUDE.md                                         # review and commit
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: review`) and let agents write into it with `--as=agent`, then `textus accept review.suggestion.<id> --as=human` promotes the proposal into `identity` or `working`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add an `intake` zone with `write_policy: [runner]` and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus refresh KEY --as=runner` (one-shot) or `textus refresh stale` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus fetch KEY --as=automation` (one-shot) or `textus fetch stale` (sweep TTL-expired entries) keeps it current.
 
 ---
 

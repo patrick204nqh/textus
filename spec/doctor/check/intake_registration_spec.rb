@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: quarantine }
         entries:
           - key: working.foo
             kind: intake
@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: origin }
         entries: []
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)

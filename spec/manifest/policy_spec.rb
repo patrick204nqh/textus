@@ -7,11 +7,11 @@ RSpec.describe Textus::Manifest::Policy do
     <<~YAML
       version: textus/3
       roles:
-        - { name: human, kind: proposer }
-        - { name: builder, kind: generator }
+        - { name: human,      can: [accept, propose] }
+        - { name: automation, can: [fetch, build] }
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
-        - { name: review,  kind: derived, write_policy: [builder] }
+        - { name: working, kind: origin }
+        - { name: review,  kind: derived }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
@@ -27,10 +27,73 @@ RSpec.describe Textus::Manifest::Policy do
     expect { policy.zone_writers("nope") }.to raise_error(Textus::UsageError)
   end
 
-  it "exposes role_mapping, role_kind, roles_with_kind" do
-    expect(policy.role_mapping).to eq("human" => :proposer, "builder" => :generator)
-    expect(policy.role_kind("human")).to eq(:proposer)
-    expect(policy.roles_with_kind(:generator)).to eq(["builder"])
+  describe "#verb_for_zone" do
+    it "maps each zone to the capability its kind requires" do
+      expect(policy.verb_for_zone("working")).to eq("accept")
+      expect(policy.verb_for_zone("review")).to eq("build")
+    end
+  end
+
+  describe "#roles_with_capability" do
+    it "lists roles holding a given verb" do
+      expect(policy.roles_with_capability("accept")).to eq(["human"])
+      expect(policy.roles_with_capability("propose")).to eq(["human"])
+      expect(policy.roles_with_capability("build")).to eq(["automation"])
+    end
+  end
+
+  describe "#zone_writers" do
+    it "returns roles holding the verb the zone-kind requires" do
+      # origin requires accept → human; derived requires build → automation
+      expect(policy.zone_writers("working")).to eq(["human"])
+      expect(policy.zone_writers("review")).to eq(["automation"])
+    end
+  end
+
+  describe "#proposer_role" do
+    it "prefers a non-accept proposer over an accept+propose role" do
+      # default-style: human=[accept,propose], agent=[propose] → agent wins
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: human, can: [accept, propose] }
+          - { name: agent, can: [propose] }
+        zones:
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to eq("agent")
+    end
+
+    it "falls back to the first proposer when the only proposer also holds accept" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: owner, can: [accept, propose] }
+        zones:
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to eq("owner")
+    end
+
+    it "returns nil when no role holds propose" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: automation, can: [fetch, build] }
+        zones:
+          - { name: intake, kind: quarantine }
+          - { name: output, kind: derived }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to be_nil
+    end
   end
 
   describe "#propose_zone_for" do
@@ -39,11 +102,11 @@ RSpec.describe Textus::Manifest::Policy do
         <<~YAML
           version: textus/3
           roles:
-            - { name: human, kind: proposer }
-            - { name: builder, kind: generator }
+            - { name: human,      can: [accept, propose] }
+            - { name: automation, can: [fetch, build] }
           zones:
-            - { name: review, kind: queue, write_policy: [human] }
-            - { name: draft,  kind: derived, write_policy: [builder] }
+            - { name: review, kind: queue }
+            - { name: draft,  kind: derived }
           entries:
             - { key: review.notes, path: review/notes.md, zone: review, schema: null, owner: human:self, kind: leaf }
         YAML
@@ -58,18 +121,18 @@ RSpec.describe Textus::Manifest::Policy do
       it "returns nil (no substring fallback)" do
         raw2 = YAML.safe_load(<<~YAML, aliases: false)
           version: textus/3
-          roles: [{ name: agent, kind: proposer }]
-          zones: [{ name: review, kind: origin, write_policy: [agent] }]
+          roles: [{ name: human, can: [accept, propose] }]
+          zones: [{ name: review, kind: origin }]
           entries: []
         YAML
         p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-        expect(p2.propose_zone_for("agent")).to be_nil
+        expect(p2.propose_zone_for("human")).to be_nil
       end
     end
 
     context "when the role writes only non-queue zones" do
       it "returns nil" do
-        # default fixture: human writes 'working' (kind: origin)
+        # default fixture: human writes 'working' (kind: origin), not a queue
         expect(policy.propose_zone_for("human")).to be_nil
       end
     end
@@ -91,11 +154,10 @@ RSpec.describe Textus::Manifest::Policy do
         <<~YAML
           version: textus/3
           roles:
-            - { name: human, kind: proposer }
-            - { name: builder, kind: generator }
+            - { name: human, can: [accept, propose] }
           zones:
-            - { name: working, kind: origin, write_policy: [human] }
-            - { name: review,  kind: queue,  write_policy: [human] }
+            - { name: working, kind: origin }
+            - { name: review,  kind: queue }
           entries:
             - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
             - { key: review.notes,  path: review/notes.md,  zone: review,  schema: null, owner: human:self, kind: leaf }
@@ -113,13 +175,13 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human,   kind: accept_authority }
-          - { name: agent,   kind: proposer }
-          - { name: builder, kind: generator }
+          - { name: human,      can: [accept, propose] }
+          - { name: agent,      can: [propose] }
+          - { name: automation, can: [fetch, build] }
         zones:
-          - { name: working, kind: origin,  write_policy: [human] }
-          - { name: review,  kind: queue,   write_policy: [agent, human] }
-          - { name: output,  kind: derived, write_policy: [builder] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+          - { name: output,  kind: derived }
         entries: []
       YAML
     end
@@ -138,15 +200,19 @@ RSpec.describe Textus::Manifest::Policy do
       expect(policy.derived_zone?("working")).to be(false)
     end
 
-    it "does NOT treat a generator-written zone as derived unless it declares kind: derived" do
+    it "does NOT treat a non-derived zone as derived" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
-        roles: [{ name: builder, kind: generator }]
-        zones: [{ name: out, kind: origin, write_policy: [builder] }]
+        roles: [{ name: human, can: [accept, propose] }]
+        zones: [{ name: out, kind: origin }]
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
       expect(p2.derived_zone?("out")).to be(false)
+    end
+
+    it "lists accept-holders via roles_with_capability" do
+      expect(policy.roles_with_capability("accept")).to eq(["human"])
     end
   end
 
@@ -155,11 +221,11 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human, kind: accept_authority }
-          - { name: agent, kind: proposer }
+          - { name: human, can: [accept, propose] }
+          - { name: agent, can: [propose] }
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
-          - { name: inbox,   kind: queue,  write_policy: [agent, human] }
+          - { name: working, kind: origin }
+          - { name: inbox,   kind: queue }
         entries: []
       YAML
     end
@@ -177,10 +243,10 @@ RSpec.describe Textus::Manifest::Policy do
   it "Entry#in_generator_zone? delegates to derived_zone?" do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
-      roles: [{ name: builder, kind: generator }]
-      zones: [{ name: output, kind: derived, write_policy: [builder] }]
+      roles: [{ name: automation, can: [fetch, build] }]
+      zones: [{ name: output, kind: derived }]
       entries:
-        - { key: output.x, path: output/x.md, zone: output, schema: null, owner: builder:auto, kind: derived,
+        - { key: output.x, path: output/x.md, zone: output, schema: null, owner: automation:auto, kind: derived,
             compute: { kind: projection, select: [working.notes], pluck: "*" }, template: x.mustache }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
@@ -193,13 +259,13 @@ RSpec.describe Textus::Manifest::Policy do
       <<~YAML
         version: textus/3
         roles:
-          - { name: human,   kind: accept_authority }
-          - { name: agent,   kind: proposer }
-          - { name: builder, kind: generator }
+          - { name: human,      can: [accept, propose] }
+          - { name: agent,      can: [propose] }
+          - { name: automation, can: [fetch, build] }
         zones:
-          - { name: working, kind: origin,  write_policy: [human] }
-          - { name: review,  kind: queue,   write_policy: [agent, human] }
-          - { name: output,  kind: derived, write_policy: [builder] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+          - { name: output,  kind: derived }
         entries: []
       YAML
     end
@@ -211,7 +277,7 @@ RSpec.describe Textus::Manifest::Policy do
     end
 
     it "rejects a manifest whose zone declares no kind" do
-      raw2 = YAML.safe_load("version: textus/3\nzones:\n  - { name: w, write_policy: [human] }\nentries: []\n", aliases: false)
+      raw2 = YAML.safe_load("version: textus/3\nzones:\n  - { name: w }\nentries: []\n", aliases: false)
       expect { Textus::Manifest::Data.parse(raw2, root: ".") }
         .to raise_error(Textus::BadManifest, /must declare a kind/)
     end

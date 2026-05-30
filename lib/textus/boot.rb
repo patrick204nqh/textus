@@ -13,35 +13,39 @@ module Textus
     ZONE_PURPOSES = {
       "identity" => "slow-changing identity; human-only writes",
       "working" => "active project state; humans, AI, and scripts share this surface",
-      "intake" => "declared external inputs; script-refreshed via actions",
+      "intake" => "declared external inputs; script-fetched via actions",
       "review" => "AI proposals awaiting human accept",
       "output" => "build-computed outputs; never hand-edited",
     }.freeze
 
-    # Per-kind write-flow templates. Each lambda receives the user-facing role
-    # name and returns a guidance string for that role. Roles whose kind has
-    # no template (e.g. unknown future kinds) are omitted from write_flows.
+    # Per-capability write-flow templates. Each lambda receives the user-facing
+    # role name and returns a guidance string for that verb. A role holding
+    # multiple verbs gets one joined string; roles whose verbs have no template
+    # are omitted from write_flows.
     WRITE_FLOW_TEMPLATES = {
-      accept_authority: lambda do |name, _manifest|
+      accept: lambda do |name, _manifest|
         "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
       end,
-      proposer: lambda do |name, manifest|
-        authority = manifest.policy.roles_with_kind(:accept_authority).first || "accept_authority"
+      propose: lambda do |name, manifest|
+        authority = manifest.policy.roles_with_capability("accept").first || "the accept-holder"
         "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
           "the #{authority} role runs 'textus accept' to apply"
       end,
-      runner: lambda do |name, _manifest|
-        "refresh intake entries with 'textus refresh KEY --as=#{name}' (uses the entry's declared action)"
+      fetch: lambda do |name, _manifest|
+        "fetch intake entries with 'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
       end,
-      generator: lambda do |_name, _manifest|
+      build: lambda do |_name, _manifest|
         "'textus build' computes output entries from projections; output files are never hand-edited"
       end,
     }.freeze
 
     def self.write_flows_for(manifest)
-      manifest.policy.role_mapping.each_with_object({}) do |(name, kind), acc|
-        tmpl = WRITE_FLOW_TEMPLATES[kind]
-        acc[name] = tmpl.call(name, manifest) if tmpl
+      manifest.data.role_caps.each_with_object({}) do |(name, caps), acc|
+        flows = caps.filter_map do |verb|
+          tmpl = WRITE_FLOW_TEMPLATES[verb.to_sym]
+          tmpl&.call(name, manifest)
+        end
+        acc[name] = flows.join(" / ") unless flows.empty?
       end
     end
 
@@ -84,11 +88,11 @@ module Textus
             "textus accept review.KEY --as=human       # promotes the proposal to its target zone",
           ],
         },
-        "refresh" => {
+        "fetch" => {
           "purpose" => "rebuild stale intake-zone caches from their declared actions",
           "steps" => [
             "textus freshness --zone=intake            # report fresh/stale per entry",
-            "textus refresh stale --zone=intake --as=runner",
+            "textus fetch stale --zone=intake --as=automation",
           ],
         },
       },
@@ -108,7 +112,7 @@ module Textus
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "refresh",  "summary" => "run an action for an intake entry" },
+      { "name" => "fetch", "summary" => "run an action for an intake entry" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
@@ -121,11 +125,10 @@ module Textus
     ].freeze
 
     def self.agent_quickstart(manifest, audit_log)
-      proposer_roles = manifest.policy.roles_with_kind(:proposer)
-      agent_role = proposer_roles.first
+      agent_role = manifest.policy.proposer_role
 
-      writable_zones = manifest.data.zones.each_with_object([]) do |(zname, writers), acc|
-        acc << zname if agent_role && writers.include?(agent_role)
+      writable_zones = manifest.data.zones.keys.each_with_object([]) do |zname, acc|
+        acc << zname if agent_role && manifest.policy.zone_writers(zname).include?(agent_role)
       end
 
       propose_zone = manifest.policy.propose_zone_for(agent_role)
@@ -144,7 +147,7 @@ module Textus
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "default 'human'",
-          "roles" => manifest.policy.role_mapping.keys,
+          "roles" => manifest.data.role_caps.keys,
           "ref" => "SPEC.md §5",
         },
       )
@@ -167,8 +170,8 @@ module Textus
     end
 
     def self.zones_for(manifest)
-      manifest.data.zones.map do |name, writers|
-        row = { "name" => name, "writers" => Array(writers) }
+      manifest.data.zones.keys.map do |name|
+        row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind
         purpose = ZONE_PURPOSES[name]

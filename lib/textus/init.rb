@@ -6,12 +6,16 @@ module Textus
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
+      roles:
+        - { name: human,      can: [accept, propose] }
+        - { name: agent,      can: [propose] }
+        - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin,     write_policy: [human],          read_policy: [all] }
-        - { name: working,  kind: origin,     write_policy: [human],          read_policy: [all] }
-        - { name: intake,   kind: quarantine, write_policy: [runner],         read_policy: [all] }
-        - { name: review,   kind: queue,      write_policy: [agent, human],   read_policy: [all] }
-        - { name: output,   kind: derived,    write_policy: [builder],        read_policy: [all] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: intake,   kind: quarantine }
+        - { name: review,   kind: queue }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
         - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true, kind: nested }
@@ -31,7 +35,7 @@ module Textus
       ```ruby
       Textus.hook do |reg|
         reg.on(:resolve_intake, :my_source) do |config:, args:, **|
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "…" }
+          { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "…" }
         end
 
         reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
@@ -60,16 +64,16 @@ module Textus
 
       rules:
         - match: intake.foo
-          refresh:
+          fetch:
             ttl: 10m
             on_stale: timed_sync   # warn | sync | timed_sync (default: warn)
       ```
 
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
-              :entry_put, :entry_deleted, :entry_refreshed, :entry_renamed,
+              :entry_put, :entry_deleted, :entry_fetched, :entry_renamed,
               :build_completed, :proposal_accepted, :proposal_rejected,
               :file_published, :store_loaded,
-              :refresh_started, :refresh_failed, :refresh_backgrounded (pub-sub — return discarded)
+              :fetch_started, :fetch_failed, :fetch_backgrounded (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

@@ -21,18 +21,18 @@ RSpec.describe Textus::CLI::Verb::Freshness do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
       rules:
         - match: working.doc
-          refresh: { ttl: 1h, on_stale: warn }
+          fetch: { ttl: 1h, on_stale: warn }
     YAML
     File.write(File.join(root, "zones/working/doc.md"), <<~MD)
       ---
       name: doc
-      last_refreshed_at: "#{Time.now.utc.iso8601}"
+      last_fetched_at: "#{Time.now.utc.iso8601}"
       ---
       body
     MD

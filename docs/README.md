@@ -1,7 +1,7 @@
 # textus documentation
 
 > **Explanation** · for everyone · **read when** you're not sure which doc you need
-> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.30)
+> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.31)
 
 The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides live here.
 
@@ -29,7 +29,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 |---|---|
 | [`../SPEC.md`](../SPEC.md) | The `textus/3` wire protocol — the normative contract |
 | [`zones.md`](zones.md) | Zones, roles, entries, and data flow — the configuration model |
-| [`conventions.md`](conventions.md) | Idiomatic key naming, schema, and runner integration |
+| [`conventions.md`](conventions.md) | Idiomatic key naming, schema, and automation integration |
 
 ## Internals (explanation)
 
@@ -51,3 +51,5 @@ These rules keep the docs consistent and cheap to maintain. Follow them when add
    The `reviewed` stamp is the staleness signal — bump it when you revise the doc.
 3. **Single Source of Truth.** Each fact has exactly one home (named in that doc's `SSoT for`). Everywhere else links to it instead of restating it.
 4. **No deep code dumps.** Prefer tables, short snippets, and links. The normative wire details live in `SPEC.md`; guides link to it.
+5. **Vocabulary canon.** The concept vocabulary is fixed by [ADR 0029](architecture/decisions/0029-concept-vocabulary.md): headline term is **coordination space**; the write-tracks are **lanes** in prose and **zones** in spec/code (the mapping is stated once, in the README); **three planes** is architecture-internal; *fabric* is etymology only. Don't reintroduce retired metaphors ("durable fabric", "shared workspace") as headline terms. The role model is **capability-based** per [ADR 0030](architecture/decisions/0030-capability-based-roles.md): roles declare a `can:` set (`propose`, `accept`, `fetch`, `build`) and write authority is derived from capabilities × zone-kind; `automation` is the umbrella role (it replaced `runner`/`builder`).
+6. **Diagrams.** Use Mermaid for diagrams in docs (GitHub renders ```` ```mermaid ````); keep them small (≤ ~8 nodes) and put a one-line plain-text summary directly beneath each block as the no-render fallback. Reserve ASCII diagrams for output that must render in a terminal (CLI help, `textus boot`). Directory **trees** stay as plain text — they are listings, not diagrams.

@@ -10,7 +10,7 @@ no patches to textus core required.
 
 It uses one example hook file from `examples/claude-plugin/recipes/`:
 
-- `skill_fanout.rb` — a `:entry_refreshed` listener that fans the bundle
+- `skill_fanout.rb` — a `:entry_fetched` listener that fans the bundle
   out into `vendor.skills.<slug>.*` entries, with reconciliation
   (orphaned children are deleted).
 
@@ -44,33 +44,39 @@ pointing at whatever intake handler you've supplied:
       path: skills/agent-eval
 ```
 
-Trigger the refresh:
+Trigger the fetch:
 
 ```bash
-textus refresh intake.skills.agent-eval
+textus fetch intake.skills.agent-eval
 ```
 
 The intake entry lands at `intake.skills.agent-eval`. The
-`:entry_refreshed` listener then writes
+`:entry_fetched` listener then writes
 `vendor.skills.agent-eval.skill.md`,
 `vendor.skills.agent-eval.scripts.run.rb`, etc.
 
 ## Required manifest plumbing
 
 - The destination zone (`vendor` in the example) must exist and be
-  writable by the role triggering the refresh. If you don't already have
-  a `vendor` zone, add one to the top of your manifest:
+  writable by the role triggering the fetch. Write authority is derived
+  from capabilities (ADR 0030): the fan-out writes derived children, so
+  declare `vendor` as a `derived` zone and give the role that runs the
+  fetch the `build` capability. If you don't already have a `vendor`
+  zone, add one — plus an `automation` role that can both `fetch` the
+  intake and `build` the fan-out:
 
   ```yaml
+  roles:
+    - { name: automation, can: [fetch, build] }
   zones:
-    - { name: vendor, write_policy: [runner, system] }
+    - { name: vendor, kind: derived, read_policy: [all] }
   ```
 
 - Declare a nested entry for the derived tree so reads can resolve the
   fan-out keys:
 
   ```yaml
-  - { key: vendor.skills, path: vendor/skills, zone: vendor, schema: null, owner: runner, nested: true }
+  - { key: vendor.skills, path: vendor/skills, zone: vendor, schema: null, owner: automation, nested: true }
   ```
 
 - Bundle file names must be lowercase and match textus's key grammar
@@ -79,7 +85,7 @@ The intake entry lands at `intake.skills.agent-eval`. The
 
 ## Caveats and known limitations
 
-1. **30-second intake timeout.** `lib/textus/application/refresh/worker.rb:7`
+1. **30-second intake timeout.** `lib/textus/write/fetch_worker.rb:6`
    caps intake at 30s. Large folders with many files may exceed this.
    Workarounds: narrow the bundle source, or stream via a CDN-backed
    mirror.
@@ -87,11 +93,11 @@ The intake entry lands at `intake.skills.agent-eval`. The
 2. **No re-entry guard beyond `suppress_events: true`.** The listener
    uses the Operations facade for inner writes
    (`ops.put(..., suppress_events: true)`, `ops.delete(..., suppress_events: true)`)
-   to prevent its own refresh from triggering itself. If you fork the
+   to prevent its own fetch from triggering itself. If you fork the
    recipe and forget this, you get an event loop.
 
 3. **Reconciliation is per-source.** Only derived keys under
-   `vendor.skills.<slug>.` for the refreshed source are reconciled.
+   `vendor.skills.<slug>.` for the fetched source are reconciled.
    Deleting the intake source entry does **not** garbage-collect its
    children — you would need a separate `:entry_deleted` listener for
    that.

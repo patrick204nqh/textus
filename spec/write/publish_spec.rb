@@ -17,7 +17,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: derived, write_policy: [human, agent, runner, builder] }
+          - { name: working, kind: derived }
         entries:
           - key: working.agents
             kind: nested
@@ -38,7 +38,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       res = build_publish(store, ctx).call
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
@@ -49,7 +49,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "filters by prefix" do
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       res = build_publish(store, ctx).call(prefix: "working.agents.alice")
       expect(res["published_leaves"].map { |r| r["key"] }).to eq(["working.agents.alice"])
     end
@@ -64,8 +64,8 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, agent, runner] }
-          - { name: output, kind: derived, write_policy: [builder] }
+          - { name: working, kind: origin }
+          - { name: output, kind: derived }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested }
 
@@ -74,7 +74,7 @@ RSpec.describe Textus::Write::Publish do
             path: output/catalogs/people.md
             zone: output
             schema: null
-            owner: builder:auto
+            owner: automation:auto
             compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
             template: people.mustache
             publish_to: [PEOPLE.md]
@@ -98,7 +98,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "returns the combined {protocol, built, published_leaves} shape" do
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       res = build_publish(store, ctx).call
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
@@ -113,7 +113,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       build_publish(store, ctx).call
 
       repo_root = File.dirname(root)
@@ -129,7 +129,7 @@ RSpec.describe Textus::Write::Publish do
       store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
       store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
 
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       build_publish(store, ctx).call
 
       expect(build_completed).to include("output.catalogs.people")
@@ -144,19 +144,19 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: output, kind: derived, write_policy: [runner, builder] }
+          - { name: output, kind: derived }
         entries:
           - key: output.catalog
             kind: intake
             path: output/catalog.txt
             zone: output
             format: text
-            owner: builder:auto
+            owner: automation:auto
             publish_to: [CATALOG.txt, docs/catalog.txt]
             intake:
               handler: catalog_handler
       YAML
-      # Seed a refreshed body directly — Publish reads it, doesn't generate it.
+      # Seed a fetched body directly — Publish reads it, doesn't generate it.
       File.write(File.join(root, "zones/output/catalog.txt"), "one\ntwo\nthree\n")
     end
 
@@ -164,7 +164,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       res = build_publish(store, ctx).call
 
       built = res["built"]
@@ -183,19 +183,19 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: output, kind: derived, write_policy: [runner, builder] }
+          - { name: output, kind: derived }
         entries:
           - key: output.catalog
             kind: intake
             path: output/catalog.txt
             zone: output
             format: text
-            owner: builder:auto
+            owner: automation:auto
             intake:
               handler: catalog_handler
       YAML
       store_no_publish = Textus::Store.new(root)
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       res = build_publish(store_no_publish, ctx).call
       expect(res["built"]).to be_empty
     end
@@ -207,7 +207,7 @@ RSpec.describe Textus::Write::Publish do
       write_manifest(<<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: derived, write_policy: [human, agent, runner, builder] }
+          - { name: working, kind: derived }
         entries:
           - key: working.bad
             kind: nested
@@ -223,7 +223,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "rejects publish_each targets that escape repo root" do
-      ctx = test_ctx(role: "builder")
+      ctx = test_ctx(role: "automation")
       expect do
         build_publish(store, ctx).call
       end.to raise_error(Textus::PublishError, /escapes repo root/)

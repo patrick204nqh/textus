@@ -21,8 +21,9 @@ module Textus
       def authorize_write!(mentry, role:)
         return if can_write?(mentry.zone, role: role)
 
-        writers = @manifest.policy.zone_writers(mentry.zone)
-        raise WriteForbidden.new(mentry.key, mentry.zone, writers: writers)
+        verb = @manifest.policy.verb_for_zone(mentry.zone)
+        holders = @manifest.policy.zone_writers(mentry.zone)
+        raise WriteForbidden.new(mentry.key, mentry.zone, verb: verb, holders: holders)
       end
 
       def authorize_read!(mentry, role:)

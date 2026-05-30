@@ -9,11 +9,11 @@ RSpec.describe Textus::Write::Accept do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: owner,    kind: accept_authority }
-        - { name: proposer, kind: proposer }
+        - { name: owner,    can: [accept, propose] }
+        - { name: proposer, can: [propose] }
       zones:
-        - { name: working, kind: origin, write_policy: [owner, proposer] }
-        - { name: review,  kind: origin, write_policy: [proposer, owner] }
+        - { name: working, kind: origin }
+        - { name: review,  kind: queue }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
 
@@ -23,8 +23,8 @@ RSpec.describe Textus::Write::Accept do
     Textus::Store.new(textus_dir)
   end
 
-  context "with a renamed accept_authority role" do
-    it "lets the renamed accept_authority role accept proposals" do
+  context "with a renamed accept-capability role" do
+    it "lets the renamed accept-capability role accept proposals" do
       Dir.mktmpdir do |root|
         store = build_store(File.join(root, ".textus"))
         store.as("proposer").put(
@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::Accept do
       end
     end
 
-    it "rejects callers whose role does not have accept_authority kind, using the configured name" do
+    it "rejects callers whose role does not hold the accept capability, using the configured name" do
       Dir.mktmpdir do |root|
         store = build_store(File.join(root, ".textus"))
         store.as("proposer").put(

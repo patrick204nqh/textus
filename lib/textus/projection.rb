@@ -8,7 +8,7 @@ module Textus
 
     # `reader` — a callable `->(key) { envelope_or_nil }`. Caller picks
     #   semantics: pure read (`ops.get`) for materialization paths;
-    #   `ops.get_or_refresh` if you want refresh-on-stale.
+    #   `ops.get_or_fetch` if you want fetch-on-stale.
     # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
     # `rpc` — a `Hooks::RpcRegistry` used to dispatch `transform_rows` callables.
     # `transform_context` — capability object handed to transform reducers as `caps:`.

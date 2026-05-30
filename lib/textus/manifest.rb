@@ -4,11 +4,11 @@ module Textus
   # Manifest is the composition record for a parsed manifest. It bundles
   # four collaborators:
   #
-  #   * data     — frozen value: raw, root, zones, entries, audit_config, role_mapping
+  #   * data     — frozen value: raw, root, zones, entries, audit_config, role_caps
   #   * resolver — resolves keys → entry + path
   #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
   #     queue_zone?, permission_for, …)
-  #   * rules    — match-block rule engine (refresh, handler allowlist, promotion, …)
+  #   * rules    — match-block rule engine (fetch, handler allowlist, promotion, …)
   #
   # Use `manifest.data.entries`, `manifest.policy.declared_kind(z)`, etc.
   Manifest = Data.define(:data, :resolver, :policy, :rules)
@@ -18,7 +18,7 @@ require_relative "manifest/schema"
 require_relative "manifest/data"
 require_relative "manifest/policy"
 require_relative "manifest/resolver"
-require_relative "manifest/role_kinds"
+require_relative "manifest/capabilities"
 
 # Reopen Textus::Manifest (defined above as a Data.define) to attach
 # class-level loaders and helpers.

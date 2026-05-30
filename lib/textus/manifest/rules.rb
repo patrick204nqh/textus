@@ -1,8 +1,8 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:refresh, :handler_allowlist, :promote, :retention)
-      EMPTY_SET = RuleSet.new(refresh: nil, handler_allowlist: nil, promote: nil, retention: nil)
+      RuleSet = ::Data.define(:fetch, :handler_allowlist, :promote, :retention)
+      EMPTY_SET = RuleSet.new(fetch: nil, handler_allowlist: nil, promote: nil, retention: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -15,14 +15,14 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { refresh: [], handler_allowlist: [], promote: [], retention: [] }
+        slots = { fetch: [], handler_allowlist: [], promote: [], retention: [] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
         RuleSet.new(
-          refresh: pick(slots[:refresh], :refresh, key),
+          fetch: pick(slots[:fetch], :fetch, key),
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           promote: pick(slots[:promote], :promote, key),
           retention: pick(slots[:retention], :retention, key),
@@ -44,11 +44,11 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :refresh, :handler_allowlist, :promote, :retention
+        attr_reader :match, :fetch, :handler_allowlist, :promote, :retention
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
-          @refresh = parse_refresh(raw["refresh"])
+          @fetch = parse_fetch(raw["fetch"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @promote = parse_promotion(raw["promotion"])
           @retention = parse_retention(raw["retention"])
@@ -56,10 +56,10 @@ module Textus
 
         private
 
-        def parse_refresh(h)
+        def parse_fetch(h)
           return nil if h.nil?
 
-          Textus::Domain::Policy::Refresh.new(
+          Textus::Domain::Policy::Fetch.new(
             ttl: h["ttl"],
             on_stale: h["on_stale"] || "warn",
             sync_budget_ms: h["sync_budget_ms"],

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
+RSpec.describe "Textus::RoleScope#fetch_all (fetch_stale)" do
   let(:tmp) { Dir.mktmpdir }
   let(:textus) { File.join(tmp, ".textus") }
 
@@ -13,7 +13,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: quarantine }
       entries:
         - key: working.fresh
           kind: intake
@@ -29,11 +29,11 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
             handler: counter
       rules:
         - match: working.fresh
-          refresh:
+          fetch:
             ttl: 1h
             on_stale: warn
         - match: working.stale
-          refresh:
+          fetch:
             ttl: 1s
             on_stale: warn
     YAML
@@ -41,7 +41,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "zones", "working", "fresh.md"), <<~MD)
       ---
       key: working.fresh
-      last_refreshed_at: "#{(Time.now - 60).utc.iso8601}"
+      last_fetched_at: "#{(Time.now - 60).utc.iso8601}"
       ---
       fresh
     MD
@@ -49,7 +49,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "zones", "working", "stale.md"), <<~MD)
       ---
       key: working.stale
-      last_refreshed_at: "2020-01-01T00:00:00Z"
+      last_fetched_at: "2020-01-01T00:00:00Z"
       ---
       old
     MD
@@ -57,7 +57,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "hooks", "counter.rb"), <<~RUBY)
       Textus.hook do |reg|
         reg.on(:resolve_intake, :counter) do |caps:, config:, args:|
-          { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "refreshed" }
+          { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fetched" }
         end
       end
     RUBY
@@ -65,12 +65,12 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
 
   after { FileUtils.remove_entry(tmp) }
 
-  it "refreshes every entry whose ttl has expired" do
+  it "fetches every entry whose ttl has expired" do
     store = Textus::Store.new(textus)
-    result = store.as("runner").refresh_all
+    result = store.as("automation").fetch_all
 
     expect(result["ok"]).to be(true)
-    expect(result["refreshed"]).to eq(["working.stale"])
+    expect(result["fetched"]).to eq(["working.stale"])
     expect(result["failed"]).to eq([])
   end
 end

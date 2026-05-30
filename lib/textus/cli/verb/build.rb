@@ -8,7 +8,7 @@ module Textus
 
         def call(store)
           Textus::Ports::BuildLock.with(root: store.root) do
-            role = store.manifest.policy.roles_with_kind(:generator).first || "builder"
+            role = store.manifest.policy.roles_with_capability("build").first || "automation"
             ops = store.as(role)
             result = ops.publish(prefix: prefix)
             emit(result)

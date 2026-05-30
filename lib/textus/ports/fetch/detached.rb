@@ -1,6 +1,6 @@
 module Textus
   module Ports
-    module Refresh
+    module Fetch
       module Detached
         module_function
 
@@ -16,14 +16,14 @@ module Textus
             $stdout.reopen(File::NULL, "w")
             $stderr.reopen(File::NULL, "w")
 
-            lock = Textus::Ports::Refresh::Lock.new(root: store_root, key: key)
+            lock = Textus::Ports::Fetch::Lock.new(root: store_root, key: key)
             exit(0) unless lock.try_acquire
 
             begin
               store = Textus::Store.new(store_root)
-              store.as("runner").refresh(key)
+              store.as("automation").fetch(key)
             rescue StandardError
-              # Already logged via :refresh_failed; exit cleanly.
+              # Already logged via :fetch_failed; exit cleanly.
             ensure
               lock.release
               exit(0)

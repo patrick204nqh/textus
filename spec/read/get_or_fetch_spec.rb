@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Read::GetOrRefresh do
+RSpec.describe Textus::Read::GetOrFetch do
   def build_store_with_intake(root, ttl:, on_stale:)
     textus = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus, "zones", "working"))
@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - key: working.doc
           kind: intake
@@ -21,7 +21,7 @@ RSpec.describe Textus::Read::GetOrRefresh do
             handler: test_intake
       rules:
         - match: working.doc
-          refresh:
+          fetch:
             ttl: "#{ttl}"
             on_stale: #{on_stale}
     YAML
@@ -35,12 +35,12 @@ RSpec.describe Textus::Read::GetOrRefresh do
     Textus::Store.new(textus)
   end
 
-  def write_doc(root, last_refreshed_at:)
+  def write_doc(root, last_fetched_at:)
     textus = File.join(root, ".textus")
     File.write(File.join(textus, "zones", "working", "doc.md"), <<~MD)
       ---
       name: doc
-      last_refreshed_at: "#{last_refreshed_at}"
+      last_fetched_at: "#{last_fetched_at}"
       ---
       stored body
     MD
@@ -60,8 +60,8 @@ RSpec.describe Textus::Read::GetOrRefresh do
   it "delegates to Get and skips orchestrator when verdict is fresh" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
-      ctx = test_ctx(role: "runner")
+      write_doc(root, last_fetched_at: Time.now.utc.iso8601)
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
@@ -76,8 +76,8 @@ RSpec.describe Textus::Read::GetOrRefresh do
   it "runs the orchestrator when the verdict is stale (Skipped outcome)" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "warn")
-      write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = test_ctx(role: "runner")
+      write_doc(root, last_fetched_at: "2020-01-01T00:00:00Z")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
@@ -85,29 +85,29 @@ RSpec.describe Textus::Read::GetOrRefresh do
 
       env = use_case.call("working.doc")
       expect(env.freshness.stale).to be(true)
-      expect(env.freshness.refreshing).to be(false)
+      expect(env.freshness.fetching).to be(false)
     end
   end
 
-  it "annotates refreshing=true when orchestrator returns Detached" do
+  it "annotates fetching=true when orchestrator returns Detached" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
-      write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
-      ctx = test_ctx(role: "runner")
+      write_doc(root, last_fetched_at: "2020-01-01T00:00:00Z")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                      orchestrator: orch)
 
       env = use_case.call("working.doc")
-      expect(env.freshness.refreshing).to be(true)
+      expect(env.freshness.fetching).to be(true)
     end
   end
 
   it "returns nil when the key has no envelope" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       pure_get = Textus::Read::Get.new(container: store.container, call: ctx)
       orch = Class.new { def execute(*) = raise("must not call") }.new
       use_case = described_class.new(container: store.container, call: ctx, get: pure_get,

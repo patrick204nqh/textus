@@ -24,7 +24,7 @@ trigger a rebuild via the textus MCP server.
    • read({key})                     — read envelope
    • write({key, meta, body})        — create/update (gated by role)
    • propose({key, meta, body})      — write a proposal to the review zone
-   • refresh({key}) / refresh_stale  — rebuild intake caches
+   • fetch({key}) / fetch_stale  — rebuild intake caches
    • schema({family})                — field shape
    • rules({key})                    — effective rules
 

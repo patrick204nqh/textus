@@ -10,16 +10,16 @@ module Textus
       EVENTS = {
         entry_put: %i[ctx key envelope],
         entry_deleted: %i[ctx key],
-        entry_refreshed: %i[ctx key envelope change],
+        entry_fetched: %i[ctx key envelope change],
         entry_renamed: %i[ctx key from_key to_key envelope],
         build_completed: %i[ctx key envelope sources],
         proposal_accepted: %i[ctx key target_key],
         proposal_rejected: %i[ctx key target_key],
         file_published: %i[ctx key envelope source target],
         store_loaded: %i[ctx],
-        refresh_started: %i[ctx key mode],
-        refresh_failed: %i[ctx key error_class error_message],
-        refresh_backgrounded: %i[ctx key started_at budget_ms],
+        fetch_started: %i[ctx key mode],
+        fetch_failed: %i[ctx key error_class error_message],
+        fetch_backgrounded: %i[ctx key started_at budget_ms],
       }.freeze
 
       RPC_EVENTS = %i[resolve_intake transform_rows validate].freeze

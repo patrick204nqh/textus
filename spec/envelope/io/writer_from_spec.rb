@@ -9,7 +9,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
     YAML
@@ -21,7 +21,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
       textus_dir = File.join(root, ".textus")
       store = build_store(textus_dir)
       container = fresh_container(store)
-      call = test_ctx(role: "runner", correlation_id: "corr-from")
+      call = test_ctx(role: "automation", correlation_id: "corr-from")
 
       writer = Textus::Envelope::IO::Writer.from(container: container, call: call)
       expect(writer).to be_a(Textus::Envelope::IO::Writer)
@@ -53,7 +53,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
       textus_dir = File.join(root, ".textus")
       store = build_store(textus_dir)
       container = fresh_container(store)
-      call = test_ctx(role: "runner")
+      call = test_ctx(role: "automation")
       mentry = store.manifest.resolver.resolve("working.foo").entry
       payload = Textus::Envelope::IO::Writer::Payload.new(meta: {}, body: "x", content: nil)
 

@@ -14,7 +14,7 @@ RSpec.describe Textus::Role do
   end
 
   it "falls back to TEXTUS_ROLE env" do
-    expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "runner" }, root: root)).to eq("runner")
+    expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "automation" }, root: root)).to eq("automation")
   end
 
   it "falls back to .textus/role file" do

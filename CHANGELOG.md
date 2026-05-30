@@ -9,6 +9,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.31.0 — 2026-05-30
+
+Capability-based roles and the `refresh`→`fetch` transition rename ([ADR 0030](docs/architecture/decisions/0030-capability-based-roles.md)). No wire format (`textus/3`) change; the manifest schema changes (breaking) and the data-in transition is renamed.
+
+### Changed (BREAKING)
+
+- **Roles are now capability-based.** A role declares `can: [verbs]` over a closed 4-verb set — `propose`, `accept`, `fetch`, `build` — replacing the 1:1 `role → kind` model. The role-kinds `accept_authority`/`proposer`/`generator`/`runner` are gone, as are the role names `runner` and `builder` (the umbrella automated role is now `automation`). Default mapping (when no `roles:` block is declared): `human=[accept, propose]`, `agent=[propose]`, `automation=[fetch, build]`.
+- **Per-zone `write_policy:` is removed.** Write authority is **derived** from the role's capabilities × the zone's kind: a role may write a zone iff it holds the verb that kind requires — `queue→propose`, `origin→accept`, `quarantine→fetch`, `derived→build`. Zones now declare only `kind:` (and optional `read_policy:`). A manifest carrying `write_policy:` is rejected at load (unknown key).
+- **`accept` is the single trust anchor:** at most one role may hold the `accept` capability. The `accept`/`reject` gate and the `maintained_by` override key on the `accept` capability rather than a hard-coded role kind. The promotion predicate `:accept_authority_signed` (and the older `:human_accept`) is renamed `:accept_signed`.
+- **The `refresh` transition is renamed `fetch`.** CLI `textus fetch` / `textus fetch stale` (was `refresh` / `refresh stale`); the rule block `refresh:` is now `fetch:`; events `:refresh_started`/`:refresh_failed`/`:refresh_backgrounded`/`:entry_refreshed` are `:fetch_started`/`:fetch_failed`/`:fetch_backgrounded`/`:entry_fetched`; the freshness meta field `last_refreshed_at` is `last_fetched_at`, the freshness verdict `never_refreshed` is `never_fetched`, and the envelope's `refreshing?`/`fetching` field is `fetching`. The MCP tools `refresh`/`refresh_stale` are `fetch`/`fetch_stale`.
+- `WriteForbidden` now reports the missing capability: `writing '<key>' (zone '<zone>') needs capability '<verb>'`, with a hint naming the roles that hold it (or `no declared role`).
+
+### Internal
+
+- `Manifest::Capabilities` (was `RoleKinds`) resolves `roles:` to `{ name => [verbs] }`; `Manifest::Data#role_caps` replaces `#role_mapping`. `Manifest::Policy` gains `verb_for_zone`, `roles_with_capability`, `proposer_role`, and derives `zone_writers` from capabilities × zone-kind; `role_kind`/`roles_with_kind`/`role_mapping` are removed. Schema validates the capability vocabulary, the ≤1-`accept` invariant, and that every declared zone-kind's required verb is held by some role.
+- The `refresh`→`fetch` rename is mechanical across the engine: `Write::{FetchWorker,FetchAll,FetchOrchestrator}`, `Read::GetOrFetch`, `Domain::Policy::Fetch`, `Ports::Fetch::{Lock,Detached}`, `Domain::Policy::Predicates::AcceptSigned`, `Outcome::Fetched`, and the dispatcher verb keys.
+
 ## 0.30.0 — 2026-05-29
 
 Explicit zone kind (strict) and entry retention (ADR 0028, moves 1 & 4). No wire format (`textus/3`) change.

@@ -22,30 +22,30 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
     expect(verdict.fresh?).to be(true)
   end
 
-  it "returns fresh when last_refreshed_at + ttl > now" do
+  it "returns fresh when last_fetched_at + ttl > now" do
     last = (now - 60).utc.iso8601
-    expect(described_class.call(policy, env_with({ "last_refreshed_at" => last }), now: now).fresh?).to be(true)
+    expect(described_class.call(policy, env_with({ "last_fetched_at" => last }), now: now).fresh?).to be(true)
   end
 
-  it "returns stale when last_refreshed_at + ttl < now" do
+  it "returns stale when last_fetched_at + ttl < now" do
     last = (now - 1200).utc.iso8601
-    verdict = described_class.call(policy, env_with({ "last_refreshed_at" => last }), now: now)
+    verdict = described_class.call(policy, env_with({ "last_fetched_at" => last }), now: now)
     aggregate_failures do
       expect(verdict.stale?).to be(true)
       expect(verdict.reason).to match(/ttl exceeded/)
     end
   end
 
-  it "returns stale when last_refreshed_at missing" do
+  it "returns stale when last_fetched_at missing" do
     verdict = described_class.call(policy, env_with({}), now: now)
     aggregate_failures do
       expect(verdict.stale?).to be(true)
-      expect(verdict.reason).to eq("never refreshed")
+      expect(verdict.reason).to eq("never fetched")
     end
   end
 
-  it "returns stale when last_refreshed_at unparseable" do
-    verdict = described_class.call(policy, env_with({ "last_refreshed_at" => "garbage" }), now: now)
+  it "returns stale when last_fetched_at unparseable" do
+    verdict = described_class.call(policy, env_with({ "last_fetched_at" => "garbage" }), now: now)
     aggregate_failures do
       expect(verdict.stale?).to be(true)
       expect(verdict.reason).to match(/unparseable/)

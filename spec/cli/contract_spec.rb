@@ -11,7 +11,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
+          - { name: working, kind: origin }
         entries: []
       YAML
       yield root
@@ -25,9 +25,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     [code, out.string, err.string]
   end
 
-  it "refresh stale on an empty store returns 0 (was nil → TypeError, #61)" do
+  it "fetch stale on an empty store returns 0 (was nil → TypeError, #61)" do
     with_store do |root|
-      code, _stdout, _stderr = run_cli(%w[refresh stale --prefix=working --as=runner], cwd: root)
+      code, _stdout, _stderr = run_cli(%w[fetch stale --prefix=working --as=automation], cwd: root)
       expect(code).to be_an(Integer)
       expect(code).to eq(0)
     end
@@ -65,7 +65,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::Rdeps,
       "migrate" => Textus::CLI::Verb::Migrate,
-      "refresh" => Textus::CLI::Group::Refresh,
+      "fetch" => Textus::CLI::Group::Fetch,
       "reject" => Textus::CLI::Verb::Reject,
       "retain" => Textus::CLI::Verb::Retain,
       "rule" => Textus::CLI::Group::Rule,

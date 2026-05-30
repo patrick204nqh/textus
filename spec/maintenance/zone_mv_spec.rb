@@ -12,7 +12,7 @@ RSpec.describe Textus::Maintenance::ZoneMv do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: scratch, kind: origin, write_policy: [human] }
+        - { name: scratch, kind: origin }
       entries:
         - { key: scratch.note, path: scratch/note.md, zone: scratch, schema: null, owner: human:self, kind: leaf }
     YAML

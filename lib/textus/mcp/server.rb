@@ -49,7 +49,7 @@ module Textus
       end
 
       def handle_initialize(rid, _params)
-        proposer = @store.manifest.policy.roles_with_kind(:proposer).first
+        proposer = @store.manifest.policy.proposer_role
         propose_zone = @store.manifest.policy.propose_zone_for(proposer)
 
         @session = Session.new(

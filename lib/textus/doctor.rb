@@ -23,7 +23,7 @@ module Textus
       Check::SchemaViolations,
       Check::RuleAmbiguity,
       Check::HandlerAllowlist,
-      Check::RefreshLocks,
+      Check::FetchLocks,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

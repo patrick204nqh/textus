@@ -14,7 +14,7 @@ module Textus
       end
 
       def call(pending_key)
-        assert_accept_authority!("accept")
+        assert_accept_capability!("accept")
 
         env = Textus::Read::Get.new(
           container: @container, call: @call,

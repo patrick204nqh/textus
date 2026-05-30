@@ -15,15 +15,15 @@ RSpec.describe Textus::Domain::Freshness::Policy do
       expect(policy.decide(stale_verdict)).to be_a(Textus::Domain::Action::Return)
     end
 
-    it "returns Action::RefreshSync when on_stale is :sync" do
+    it "returns Action::FetchSync when on_stale is :sync" do
       policy = described_class.new(ttl_seconds: 600, on_stale: :sync, sync_budget_ms: 500)
-      expect(policy.decide(stale_verdict)).to be_a(Textus::Domain::Action::RefreshSync)
+      expect(policy.decide(stale_verdict)).to be_a(Textus::Domain::Action::FetchSync)
     end
 
-    it "returns Action::RefreshTimed with budget_ms when on_stale is :timed_sync" do
+    it "returns Action::FetchTimed with budget_ms when on_stale is :timed_sync" do
       policy = described_class.new(ttl_seconds: 600, on_stale: :timed_sync, sync_budget_ms: 500)
       action = policy.decide(stale_verdict)
-      expect(action).to be_a(Textus::Domain::Action::RefreshTimed)
+      expect(action).to be_a(Textus::Domain::Action::FetchTimed)
       expect(action.budget_ms).to eq(500)
     end
   end

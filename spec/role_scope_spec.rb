@@ -9,7 +9,7 @@ RSpec.describe Textus::RoleScope do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
 
@@ -61,9 +61,9 @@ RSpec.describe Textus::RoleScope do
   it "#with_role returns a new RoleScope with the given role" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))
-      scope = store.as("human").with_role("runner")
+      scope = store.as("human").with_role("automation")
       expect(scope).to be_a(Textus::RoleScope)
-      expect(scope.role).to eq("runner")
+      expect(scope.role).to eq("automation")
     end
   end
 

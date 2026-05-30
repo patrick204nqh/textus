@@ -21,10 +21,10 @@ RSpec.describe "textus/3 conformance" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: working,  kind: origin, write_policy: [human, agent, runner] }
-        - { name: output,   kind: derived, write_policy: [builder] }
-        - { name: intake,   kind: origin, write_policy: [runner] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: output,   kind: derived }
+        - { name: intake,   kind: quarantine }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick, kind: leaf}
 
@@ -32,19 +32,19 @@ RSpec.describe "textus/3 conformance" do
 
         - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true, kind: nested}
 
-        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: builder:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
+        - { key: output.catalogs.skills, path: output/catalogs/skills, zone: output, schema: null, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
         - key: intake.calendar.events
           kind: intake
           path: intake/calendar/events
           zone: intake
           schema: null
-          owner: runner:cron
+          owner: automation:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
       rules:
         - match: intake.calendar.events
-          refresh:
+          fetch:
             ttl: 300s
             on_stale: warn
     YAML
@@ -160,39 +160,39 @@ RSpec.describe "textus/3 conformance" do
   end
 
   describe "put --fetch=NAME" do
-    it "parses stdin and writes entry with last_refreshed_at" do
+    it "parses stdin and writes entry with last_fetched_at" do
       out = StringIO.new
       ics = "BEGIN:VEVENT\nSUMMARY:demo\nUID:1\nEND:VEVENT\n"
       rc = Textus::CLI.run(
         ["put", "intake.calendar.events", "--fetch=ical-events",
-         "--stdin", "--as=runner", "--output=json"],
+         "--stdin", "--as=automation", "--output=json"],
         stdin: StringIO.new(ics),
         stdout: out, stderr: StringIO.new, cwd: tmp
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
-      expect(env["_meta"]["last_refreshed_at"]).not_to be_nil
+      expect(env["_meta"]["last_fetched_at"]).not_to be_nil
       expect(env["_meta"]["fetched_with"]).to eq("ical-events")
     end
   end
 
   describe "intake staleness via TTL" do
-    it "flags intake entries that were never refreshed" do
+    it "flags intake entries that were never fetched" do
       rows = store.as(Textus::Role::DEFAULT).stale(zone: "intake")
       expect(rows.length).to eq(1)
       expect(rows.first["key"]).to eq("intake.calendar.events")
-      expect(rows.first["reason"]).to match(/never refreshed/)
+      expect(rows.first["reason"]).to match(/never fetched/)
     end
 
     it "flags intake entries past their TTL" do
       intake_path = File.join(root, "zones/intake/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
-      # iso8601 second-truncation in last_refreshed_at.
+      # iso8601 second-truncation in last_fetched_at.
       stale_time = (Time.now - 3600).utc.iso8601
       File.write(intake_path, <<~MD)
         ---
         name: events
-        last_refreshed_at: "#{stale_time}"
+        last_fetched_at: "#{stale_time}"
         ---
         body
       MD
@@ -207,7 +207,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(intake_path, <<~MD)
         ---
         name: events
-        last_refreshed_at: "#{fresh_time}"
+        last_fetched_at: "#{fresh_time}"
         ---
         body
       MD
@@ -217,12 +217,12 @@ RSpec.describe "textus/3 conformance" do
   end
 
   describe "zones block" do
-    it "parses declared zones with writable_by" do
+    it "derives zone writers from capability × zone-kind" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: identity, kind: origin, write_policy: [human] }
-          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
+          - { name: identity, kind: origin }
+          - { name: working,  kind: queue }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick, kind: leaf}
 
@@ -230,8 +230,10 @@ RSpec.describe "textus/3 conformance" do
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
       File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
+      # origin requires accept; only human holds it under the default mapping.
       expect(m.policy.zone_writers("identity")).to eq(["human"])
-      expect(m.policy.zone_writers("working")).to contain_exactly("human", "agent", "runner")
+      # queue requires propose; both human and agent hold it.
+      expect(m.policy.zone_writers("working")).to contain_exactly("human", "agent")
     end
 
     it "raises BadFrontmatter if zones block is absent" do

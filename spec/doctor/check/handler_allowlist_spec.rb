@@ -16,7 +16,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.notes
           kind: intake
@@ -39,7 +39,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.notes
           kind: intake
@@ -67,7 +67,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.notes
           kind: intake

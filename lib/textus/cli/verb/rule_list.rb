@@ -8,12 +8,12 @@ module Textus
         def call(store)
           policies = store.manifest.rules.blocks.map do |b|
             row = { "match" => b.match }
-            if b.refresh
-              row["refresh"] = {
-                "ttl_seconds" => b.refresh.ttl_seconds,
-                "on_stale" => b.refresh.on_stale,
-                "sync_budget_ms" => b.refresh.sync_budget_ms,
-                "fetch_timeout_seconds" => b.refresh.fetch_timeout_seconds,
+            if b.fetch
+              row["fetch"] = {
+                "ttl_seconds" => b.fetch.ttl_seconds,
+                "on_stale" => b.fetch.on_stale,
+                "sync_budget_ms" => b.fetch.sync_budget_ms,
+                "fetch_timeout_seconds" => b.fetch.fetch_timeout_seconds,
               }
             end
             row["handler_allowlist"] = b.handler_allowlist.handlers if b.handler_allowlist

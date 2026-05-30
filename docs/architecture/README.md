@@ -1,68 +1,80 @@
 # Textus architecture
 
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
-> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/refresh paths) · **reviewed** 2026-05 (v0.30)
+> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-05 (v0.31)
+
+```mermaid
+flowchart TD
+    interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
+    application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ use cases · envelope IO"]
+    domain["Domain — Authorizer · Permission · Freshness · Staleness<br/>Policy (Promote · Fetch · Matcher · Predicates)"]
+    infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
+    interface --> application
+    application --> domain
+    application --> infra
+    domain -.->|implemented by| infra
+```
+
+*Dependency rule: arrows point down.* Domain performs no direct `File`/`Dir`/`Time.now` I/O — all disk and clock access is routed through injected ports; pure path math is allowed. Application imports Domain + Ports. Use cases are plain classes on `(container:, call:)`. Verbs are looked up in the static `Dispatcher::VERBS` table.
+
+### What lives in each layer
+
+**Interface**
 
 ```
-┌─ Interface ────────────────────────────────────────────────┐
-│  CLI verbs:  store.<verb>(..., role:)                      │
-│              store.as(role).<verb>(...)                    │
-│                                # (put/get/refresh/…)       │
-│                                                            │
-│  MCP gate:   textus mcp serve — same use cases, JSON-RPC.  │
-└──────────────────────┬─────────────────────────────────────┘
-                       │
-┌─ Application ────────▼─────────────────────────────────────┐
-│  Call             (slim Data: role, correlation_id, now,   │
-│                    dry_run — request state only)           │
-│  Container        (single record — wired ports + manifest) │
-│  Dispatcher       (static VERBS table: verb → use-case)    │
-│  RoleScope        (Store#as(role) — forwards verb calls)   │
-│                                                            │
-│  read/{get,get_or_refresh,list,where,uid,schema_envelope,  │
-│        deps,rdeps,published,stale,validate_all,boot,doctor,│
-│        freshness,audit,blame,policy_explain,pulse}.rb      │
-│  write/{put,delete,mv,accept,reject,publish,               │
-│         materializer,authority_gate,                       │
-│         refresh_worker,refresh_orchestrator,refresh_all}   │
-│  maintenance/{migrate,key_mv_prefix,key_delete_prefix,     │
-│               zone_mv,rule_lint}.rb                        │
-│  envelope/io/{reader,writer}.rb  (split: parse vs persist) │
-│  projection.rb                                             │
-└──────────┬───────────────────────────────┬─────────────────┘
-           │ uses domain                   │ uses ports
-┌─ Domain ─▼─────────────────────────────────────────────────┐
-│  Authorizer         (manifest + role → allow / deny)       │
-│  Permission         (write/read predicate per zone)        │
-│  Freshness::{Policy,Verdict,Evaluator}                     │
-│  Staleness          (Generator/Intake checks)              │
-│  Action  Outcome  Sentinel                                 │
-│  Policy::{Promote,Refresh,Matcher,HandlerAllowlist,        │
-│           Predicates::{SchemaValid,AcceptAuthoritySigned}} │
-└──────────────────────────────────────────┬─────────────────┘
-                                           │ implements
-┌─ Infrastructure ─────────────────────────▼─────────────────┐
-│  Store              (composition root — wires ports,       │
-│                      vends a Container + dispatches verbs) │
-│  Storage::FileStore (bytes-only port: read/write/delete/   │
-│                      exists?/etag)                         │
-│  Manifest           (Data, Resolver, Policy, Rules)        │
-│  Schemas            (eager-load cache)                     │
-│  Ports::{AuditLog,AuditSubscriber,Publisher,Clock,         │
-│          Refresh::Lock,Refresh::Detached,BuildLock}        │
-│  Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,   │
-│          Signature,Builtin,ErrorLog}                       │
-│  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
-└────────────────────────────────────────────────────────────┘
+CLI verbs:  store.<verb>(..., role:)
+            store.as(role).<verb>(...)    # (put/get/fetch/…)
 
-   Dependency rule: arrows point DOWN. Domain performs no direct
-   File/Dir/Time.now I/O — all disk and clock access is routed through
-   injected ports (FileStat, Clock). Pure path math (File.join/dirname/
-   absolute_path?/expand_path/basename), Digest hashing of injected
-   bytes, and Time.parse of stored strings are NOT I/O and are allowed.
-   Application imports Domain + Ports.
-   Use cases are plain classes on (container:, call:).
-   Verbs are looked up in the static Dispatcher::VERBS table.
+MCP gate:   textus mcp serve — same use cases, JSON-RPC.
+```
+
+**Application**
+
+```
+Call             (slim Data: role, correlation_id, now,
+                  dry_run — request state only)
+Container        (single record — wired ports + manifest)
+Dispatcher       (static VERBS table: verb → use-case)
+RoleScope        (Store#as(role) — forwards verb calls)
+
+read/{get,get_or_fetch,list,where,uid,schema_envelope,
+      deps,rdeps,published,stale,validate_all,boot,doctor,
+      freshness,audit,blame,policy_explain,pulse}.rb
+write/{put,delete,mv,accept,reject,publish,
+       materializer,authority_gate,
+       fetch_worker,fetch_orchestrator,fetch_all}
+maintenance/{migrate,key_mv_prefix,key_delete_prefix,
+             zone_mv,rule_lint}.rb
+envelope/io/{reader,writer}.rb  (split: parse vs persist)
+projection.rb
+```
+
+**Domain**
+
+```
+Authorizer         (manifest + role → allow / deny)
+Permission         (write/read predicate per zone)
+Freshness::{Policy,Verdict,Evaluator}
+Staleness          (Generator/Intake checks)
+Action  Outcome  Sentinel
+Policy::{Promote,Fetch,Matcher,HandlerAllowlist,
+         Predicates::{SchemaValid,AcceptSigned}}
+```
+
+**Infrastructure**
+
+```
+Store              (composition root — wires ports,
+                    vends a Container + dispatches verbs)
+Storage::FileStore (bytes-only port: read/write/delete/
+                    exists?/etag)
+Manifest           (Data, Resolver, Policy, Rules)
+Schemas            (eager-load cache)
+Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
+        Fetch::Lock,Fetch::Detached,BuildLock}
+Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
+        Signature,Builtin,ErrorLog}
+Entry::{Markdown,Json,Yaml,Text}  (format strategies)
 ```
 
 ## How a verb becomes a method
@@ -92,12 +104,12 @@ The instantiate-and-call step itself has one home: `Dispatcher.invoke(verb, cont
 
 `boot` and `doctor` are read verbs like any other: `Read::Boot` / `Read::Doctor`
 are thin `(container:, call:)` use cases that delegate to the `Textus::Boot` /
-`Textus::Doctor` report-builder libraries (`build(container:, ...)`). They are
+`Textus::Doctor` report-building libraries (`build(container:, ...)`). They are
 reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
 
 Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 
-- `Write::RefreshOrchestrator` — composes `RefreshWorker` with the freshness `Action` returned by `Domain::Freshness`.
+- `Write::FetchOrchestrator` — composes `FetchWorker` with the freshness `Action` returned by `Domain::Freshness`.
 - `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
 ## Container
@@ -123,8 +135,8 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 | `Ports::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, and rotation. |
 | `Ports::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
 | `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
-| `Ports::Refresh::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent refresh workers from racing on the same entry. |
-| `Ports::Refresh::Detached` | Spawns a background thread for async refresh; the caller receives a `refresh_backgrounded` event instead of blocking. |
+| `Ports::Fetch::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent fetch workers from racing on the same entry. |
+| `Ports::Fetch::Detached` | Spawns a background thread for async fetch; the caller receives a `fetch_backgrounded` event instead of blocking. |
 | `Ports::BuildLock` | Process-exclusive `flock` guard over the materializer build pipeline. Raises `BuildInProgress` if a build is already running. |
 
 Application use cases access ports only through `Container` fields — never through the raw `Store`.
@@ -149,10 +161,10 @@ Manifest carving means slicing the parsed manifest YAML into four purpose-specif
 
 | Member | Class | Responsibility |
 |---|---|---|
-| `data` | `Manifest::Data` | Frozen value: `raw`, `root`, `zones`, `entries`, `audit_config`, `role_mapping`. Structural data only — no behaviour beyond accessors and key validation. |
+| `data` | `Manifest::Data` | Frozen value: `raw`, `root`, `zones`, `entries`, `audit_config`, `role_caps` (role name → capability set). Structural data only — no behaviour beyond accessors and key validation. |
 | `resolver` | `Manifest::Resolver` | Key → `Resolution(entry, path, remaining)`. Handles nested entry enumeration and fuzzy-match suggestions. |
-| `policy` | `Manifest::Policy` | Zone/role authority — `zone_writers`, `zone_kinds`, `permission_for`, `role_kind`, `roles_with_kind`, `propose_zone_for(role)`. Derived from a `Data` snapshot; no filesystem I/O. `propose_zone_for` owns the "first writable zone whose name contains `review`" convention used by `MCP::Server` (ADR 0027). |
-| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(refresh, handler_allowlist, promote, retention)` by evaluating all `match:` blocks against the key. |
+| `policy` | `Manifest::Policy` | Zone/capability authority — `verb_for_zone` (zone-kind → required verb), `roles_with_capability(verb)`, `zone_writers` (derived: roles holding the verb the zone's kind requires), `permission_for`, `declared_kind`, `proposer_role`, `propose_zone_for(role)`. Write authority is derived from capabilities × zone-kind (ADR 0030); no filesystem I/O. `propose_zone_for` returns the single `kind: queue` zone when the role can write it (ADR 0027). |
+| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(fetch, handler_allowlist, promote, retention)` by evaluating all `match:` blocks against the key. |
 
 Rationale: cleaner test seams — a use case that only needs key resolution constructs a `Manifest::Resolver` from a stub `Data`; one that only needs rule lookup constructs a `Manifest::Rules` directly. No consumer is forced to build the full manifest to exercise one sub-view.
 
@@ -163,10 +175,10 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
 2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`.
 3. `Read::Get#call` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope.
-4. Looks up the refresh policy via `container.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
-5. Otherwise `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`; the envelope is annotated with `stale`, `reason`, `refreshing: false`.
+4. Looks up the fetch policy via `container.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
+5. Otherwise `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`; the envelope is annotated with `stale`, `reason`, `fetching: false`.
 
-`store.get_or_refresh(key)` composes `Read::Get` with `Write::RefreshOrchestrator` to optionally refresh on stale.
+`store.get_or_fetch(key)` composes `Read::Get` with `Write::FetchOrchestrator` to optionally fetch on stale.
 
 ## Write path (`store.put(key, ...)`)
 
@@ -179,20 +191,20 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 `Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
-## Refresh path (`store.refresh(key)`)
+## Fetch path (`store.fetch(key)`)
 
-1. CLI `Verb::Refresh` calls `store.refresh(key, role: "runner")`.
-2. `Write::RefreshWorker#run(key)`:
+1. CLI `Verb::Fetch` calls `store.fetch(key, role: "automation")`.
+2. `Write::FetchWorker#run(key)`:
    - Resolves the manifest entry, looks up the intake handler via `container.rpc.callable(:resolve_intake, mentry.handler)`.
-   - Publishes `:refresh_started` with the hook context.
+   - Publishes `:fetch_started` with the hook context.
    - Invokes the handler under a 30s thread-join deadline.
-   - On any error: publishes `:refresh_failed`, then re-raises.
-   - On success: applies `container.authorizer.authorize_write!` and persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_refreshed` unless etag is unchanged.
-3. `store.refresh_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `Worker#run` per entry; returns `{ refreshed:, failed:, skipped: }`.
+   - On any error: publishes `:fetch_failed`, then re-raises.
+   - On success: applies `container.authorizer.authorize_write!` and persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_fetched` unless etag is unchanged.
+3. `store.fetch_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `FetchWorker#run` per entry; returns `{ fetched:, failed:, skipped: }`.
 
 ## Hook payload contract
 
-Pub-sub hooks (`:entry_put`, `:entry_refreshed`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
+Pub-sub hooks (`:entry_put`, `:entry_fetched`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
 
 RPC hooks (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps:` — a `Textus::Container`. They are gem-internal: the framework calls them, not user pub-sub.
 
@@ -215,7 +227,7 @@ The agent loop (cadence guide in [`agents-mcp.md`](../agents-mcp.md)):
 
 1. **Session start:** `boot()` → contract envelope (zones, entries, schemas, write_flows, agent_quickstart with `latest_seq`).
 2. **Per turn:** `pulse(since=cursor)` → `{cursor, changed, stale, pending_review, doctor}`.
-3. **On demand:** `get`, `put`, `propose`, `refresh`, `schema`, `rules`.
+3. **On demand:** `get`, `put`, `propose`, `fetch`, `schema`, `rules`.
 
 Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
 
@@ -231,15 +243,15 @@ RPC (single handler, declares `caps:`):
 Pub-sub (0..N handlers, declare `ctx:`):
 - `entry_put(ctx:, key:, envelope:)`
 - `entry_deleted(ctx:, key:)`
-- `entry_refreshed(ctx:, key:, envelope:, change:)`
+- `entry_fetched(ctx:, key:, envelope:, change:)`
 - `entry_renamed(ctx:, key:, from_key:, to_key:, envelope:)`
 - `build_completed(ctx:, key:, envelope:, sources:)`
 - `proposal_accepted(ctx:, key:, target_key:)`
 - `proposal_rejected(ctx:, key:, target_key:)`
 - `file_published(ctx:, key:, envelope:, source:, target:)`
 - `store_loaded(ctx:)`
-- `refresh_started(ctx:, key:, mode:)`
-- `refresh_failed(ctx:, key:, error_class:, error_message:)`
-- `refresh_backgrounded(ctx:, key:, started_at:, budget_ms:)`
+- `fetch_started(ctx:, key:, mode:)`
+- `fetch_failed(ctx:, key:, error_class:, error_message:)`
+- `fetch_backgrounded(ctx:, key:, started_at:, budget_ms:)`
 
 Authoritative source: `lib/textus/hooks/event_bus.rb` `EVENTS`.

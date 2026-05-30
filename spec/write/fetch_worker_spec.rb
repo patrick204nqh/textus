@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Write::RefreshWorker do
+RSpec.describe Textus::Write::FetchWorker do
   # A simple test events object that records published events, delegating nothing.
   def make_test_events
     Class.new do
@@ -31,7 +31,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.item
           kind: intake
@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     Textus::Store.new(textus)
   end
 
-  it "persists the envelope and fires :refresh_started and :entry_refreshed events on success" do
+  it "persists the envelope and fires :fetch_started and :entry_fetched events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
@@ -56,7 +56,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
       store.instance_variable_set(:@events, test_events)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       envelope = worker.run("intake.item")
@@ -65,16 +65,16 @@ RSpec.describe Textus::Write::RefreshWorker do
       expect(envelope.body).to eq("hello")
 
       event_names = test_events.events.map(&:first)
-      expect(event_names).to include(:refresh_started)
-      expect(event_names).to include(:entry_refreshed)
+      expect(event_names).to include(:fetch_started)
+      expect(event_names).to include(:entry_fetched)
 
-      refreshed_payload = test_events.events.find { |name, _| name == :entry_refreshed }.last
-      expect(refreshed_payload[:change]).to eq(:created)
-      expect(refreshed_payload[:key]).to eq("intake.item")
+      fetched_payload = test_events.events.find { |name, _| name == :entry_fetched }.last
+      expect(fetched_payload[:change]).to eq(:created)
+      expect(fetched_payload[:key]).to eq("intake.item")
     end
   end
 
-  it "fires :refresh_failed and raises UsageError when the intake handler raises StandardError" do
+  it "fires :fetch_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
@@ -85,14 +85,14 @@ RSpec.describe Textus::Write::RefreshWorker do
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
       store.instance_variable_set(:@events, test_events)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       expect do
         worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
-      failed_events = test_events.events.filter { |ev| ev.first == :refresh_failed }
+      failed_events = test_events.events.filter { |ev| ev.first == :fetch_failed }
       expect(failed_events).not_to be_empty
       expect(failed_events.first.last[:key]).to eq("intake.item")
     end
@@ -105,13 +105,13 @@ RSpec.describe Textus::Write::RefreshWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - { key: intake.slow, path: intake/slow.md, zone: intake, intake: { handler: slow_intake }, kind: intake}
 
       rules:
         - match: intake.slow
-          refresh: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
+          fetch: { ttl: 1h, on_stale: sync, fetch_timeout_seconds: #{timeout} }
     YAML
     File.write(File.join(textus, "hooks", "slow_intake.rb"), intake_body)
     Textus::Store.new(textus)
@@ -121,7 +121,7 @@ RSpec.describe Textus::Write::RefreshWorker do
     Dir.mktmpdir do |root|
       hook_body = "Textus.hook { |reg| reg.on(:resolve_intake, :slow_intake) { |caps:, config:, args:| sleep 5 } }"
       store = build_store_with_timeout(root, intake_body: hook_body, timeout: 1)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       expect { worker.run("intake.slow") }
@@ -138,7 +138,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: plain, kind: origin, write_policy: [human] }
+          - { name: plain, kind: origin }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
 
@@ -175,7 +175,7 @@ RSpec.describe Textus::Write::RefreshWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: intake, kind: origin, write_policy: [runner] }
+          - { name: intake, kind: quarantine }
         entries:
           - key: intake.vendor
             kind: intake
@@ -196,7 +196,7 @@ RSpec.describe Textus::Write::RefreshWorker do
 
       Thread.current[:captured_args] = nil
       store = Textus::Store.new(textus)
-      ctx = test_ctx(role: "runner")
+      ctx = test_ctx(role: "automation")
       worker = build_worker(store, ctx)
 
       worker.run("intake.vendor.affaan-m.agent-eval")

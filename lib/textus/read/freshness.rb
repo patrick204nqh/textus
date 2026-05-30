@@ -3,8 +3,8 @@ require "time"
 module Textus
   module Read
     # Per-entry freshness report. Walks every entry declared in the manifest,
-    # consults `rules_for(key)` for a refresh rule, and reports the
-    # current status. Status is one of :fresh, :stale, :never_refreshed, or
+    # consults `rules_for(key)` for a fetch rule, and reports the
+    # current status. Status is one of :fresh, :stale, :never_fetched, or
     # :no_policy.
     class Freshness
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
@@ -16,7 +16,7 @@ module Textus
         @cache      = {}
       end
 
-      # Returns the soonest `next_due_at` across all entries with a refresh
+      # Returns the soonest `next_due_at` across all entries with a fetch
       # policy, as an ISO-8601 string, or nil if none.
       def soonest_due(prefix: nil, zone: nil)
         times = call(prefix: prefix, zone: zone)
@@ -43,17 +43,17 @@ module Textus
 
       def row_for(mentry)
         set = @manifest.rules.for(mentry.key)
-        refresh = set.refresh
+        fetch = set.fetch
         envelope = safe_get(mentry.key)
-        last = envelope&.meta&.dig("last_refreshed_at")
+        last = envelope&.meta&.dig("last_fetched_at")
 
-        return base_row(mentry, last).merge(status: :no_policy) if refresh.nil?
+        return base_row(mentry, last).merge(status: :no_policy) if fetch.nil?
 
-        fp = refresh.to_freshness_policy
+        fp = fetch.to_freshness_policy
         cache_key = [mentry.key, last]
         verdict = (@cache[cache_key] ||= @evaluator.call(fp, envelope, now: @call.now))
         status = if verdict.fresh? then :fresh
-                 elsif last.nil?   then :never_refreshed
+                 elsif last.nil?   then :never_fetched
                  else                   :stale
                  end
 
@@ -69,7 +69,7 @@ module Textus
         {
           key: mentry.key,
           zone: mentry.zone,
-          last_refreshed_at: last,
+          last_fetched_at: last,
           age_seconds: last ? (@call.now - Time.parse(last)).to_i : nil,
         }
       end

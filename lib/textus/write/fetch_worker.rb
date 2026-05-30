@@ -2,7 +2,7 @@ require "timeout"
 
 module Textus
   module Write
-    class RefreshWorker
+    class FetchWorker
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)
@@ -15,7 +15,7 @@ module Textus
       end
 
       # call(key) is the primary entry; run is kept as an alias for
-      # Orchestrator and RefreshAll which call worker.run(key).
+      # Orchestrator and FetchAll which call worker.run(key).
       def call(key)
         run(key)
       end
@@ -63,11 +63,11 @@ module Textus
 
       def fetch_timeout_for(key)
         rule = @manifest.rules.for(key)
-        rule&.refresh&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
+        rule&.fetch&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
       end
 
       def fetch_with_events(key, mentry, remaining)
-        @events.publish(:refresh_started, ctx: hook_context, key: key, mode: :sync)
+        @events.publish(:fetch_started, ctx: hook_context, key: key, mode: :sync)
         call_intake(key, mentry, remaining)
       end
 
@@ -80,17 +80,17 @@ module Textus
                       args: { trigger_key: key, leaf_segments: remaining || [] })
         end
       rescue Timeout::Error
-        @events.publish(:refresh_failed, ctx: hook_context, key: key,
-                                         error_class: "Timeout::Error",
-                                         error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
+        @events.publish(:fetch_failed, ctx: hook_context, key: key,
+                                       error_class: "Timeout::Error",
+                                       error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
         raise UsageError.new("intake '#{mentry.handler}' exceeded #{timeout}s timeout")
       rescue Textus::Error => e
-        @events.publish(:refresh_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                         error_message: e.message)
+        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
+                                       error_message: e.message)
         raise
       rescue StandardError => e
-        @events.publish(:refresh_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                         error_message: e.message)
+        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
+                                       error_message: e.message)
         raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
       end
 
@@ -105,7 +105,7 @@ module Textus
           ),
         )
         change = detect_change(before_etag, envelope)
-        @events.publish(:entry_refreshed, ctx: hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
+        @events.publish(:entry_fetched, ctx: hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
         envelope
       end
 

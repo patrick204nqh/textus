@@ -2,14 +2,17 @@ module Textus
   class Manifest
     module Schema
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
-      ROLE_KEYS    = %w[name kind].freeze
-      ROLE_KINDS   = %w[accept_authority generator proposer runner].freeze
-      ZONE_KEYS    = %w[name kind write_policy read_policy].freeze
+      ROLE_KEYS    = %w[name can].freeze
+      ZONE_KEYS    = %w[name kind read_policy].freeze
       ZONE_KINDS   = %w[origin quarantine queue derived].freeze
-      KIND_REQUIRES_ROLE_KIND = {
-        "derived" => "generator",
-        "queue" => "proposer",
-        "quarantine" => "runner",
+      # The closed capability set (ADR 0030): each verb grants authority to
+      # originate in exactly one zone-kind.
+      CAPABILITIES = %w[propose accept fetch build].freeze
+      KIND_REQUIRES_VERB = {
+        "queue" => "propose",
+        "origin" => "accept",
+        "quarantine" => "fetch",
+        "derived" => "build",
       }.freeze
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
@@ -18,8 +21,8 @@ module Textus
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      RULE_KEYS    = %w[match refresh intake_handler_allowlist promotion retention].freeze
-      REFRESH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
+      RULE_KEYS    = %w[match fetch intake_handler_allowlist promotion retention].freeze
+      FETCH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
       FETCH_TIMEOUT_SECONDS_CEILING = 3600
       PROMOTION_KEYS  = %w[requires].freeze
       RETENTION_KEYS  = %w[expire_after archive_after].freeze
@@ -34,7 +37,6 @@ module Textus
         validate_entries!(raw["entries"])
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
-        validate_zone_writers_declared!(raw)
         validate_single_queue!(raw)
         validate_zone_kind_consistency!(raw)
       end
@@ -66,28 +68,12 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
-          if r["refresh"].is_a?(Hash)
-            walk(r["refresh"], REFRESH_KEYS, "#{path}.refresh")
-            validate_fetch_timeout!(r["refresh"]["fetch_timeout_seconds"], "#{path}.refresh.fetch_timeout_seconds")
+          if r["fetch"].is_a?(Hash)
+            walk(r["fetch"], FETCH_KEYS, "#{path}.fetch")
+            validate_fetch_timeout!(r["fetch"]["fetch_timeout_seconds"], "#{path}.fetch.fetch_timeout_seconds")
           end
           walk(r["promotion"], PROMOTION_KEYS, "#{path}.promotion") if r["promotion"].is_a?(Hash)
           walk(r["retention"], RETENTION_KEYS, "#{path}.retention") if r["retention"].is_a?(Hash)
-        end
-      end
-
-      def self.validate_zone_writers_declared!(raw)
-        return if raw["roles"].nil? # default mapping is permissive
-
-        declared = Array(raw["roles"]).map { |r| r["name"] }.compact.to_set
-        Array(raw["zones"]).each do |z|
-          Array(z["write_policy"]).each_with_index do |w, j|
-            next if declared.include?(w)
-
-            raise BadManifest.new(
-              "zone '#{z["name"]}' write_policy[#{j}] references undeclared role '#{w}' " \
-              "(declared roles: #{declared.to_a.join(", ")})",
-            )
-          end
         end
       end
 
@@ -95,23 +81,25 @@ module Textus
         return if roles.nil?
         raise BadManifest.new("roles: must be a list") unless roles.is_a?(Array)
 
-        accept_authority_count = 0
         roles.each_with_index do |r, i|
           path = "$.roles[#{i}]"
           walk(r, ROLE_KEYS, path)
           name = r["name"] or raise BadManifest.new("role at '#{path}' missing name")
-          kind = r["kind"] or raise BadManifest.new("role '#{name}' at '#{path}' missing kind")
-          unless ROLE_KINDS.include?(kind)
-            raise BadManifest.new("unknown role kind '#{kind}' at '#{path}' (known: #{ROLE_KINDS.join(", ")})")
-          end
+          Array(r["can"]).each do |verb|
+            next if CAPABILITIES.include?(verb)
 
-          accept_authority_count += 1 if kind == "accept_authority"
+            raise BadManifest.new(
+              "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
+              "(known: #{CAPABILITIES.join(", ")})",
+            )
+          end
         end
-        return unless accept_authority_count > 1
+
+        accept_holders = roles.count { |r| Array(r["can"]).include?("accept") }
+        return if accept_holders <= 1
 
         raise BadManifest.new(
-          "manifest declares #{accept_authority_count} accept_authority roles; " \
-          "at most one accept_authority role is allowed",
+          "manifest declares #{accept_holders} roles with the accept capability; at most one is allowed",
         )
       end
 
@@ -143,26 +131,22 @@ module Textus
         )
       end
 
+      # Write authority is derived from capabilities (ADR 0030): a zone of a
+      # given kind can only be written by a role that holds the kind's required
+      # verb. Reject a manifest declaring a zone whose required verb is held by
+      # no role. Capabilities.resolve returns the defaults when `roles:` is nil,
+      # so the capability union is all four verbs and every kind is satisfied.
       def self.validate_zone_kind_consistency!(raw)
-        mapping = role_kind_mapping(raw)
-        Array(raw["zones"]).each do |z|
-          required = KIND_REQUIRES_ROLE_KIND[z["kind"]] or next
-          writers  = Array(z["write_policy"])
-          next if writers.any? { |w| mapping[w] == required }
+        held = Capabilities.resolve(raw["roles"]).values.flatten.uniq
+
+        Array(raw["zones"]).each_with_index do |z, i|
+          verb = KIND_REQUIRES_VERB[z["kind"]]
+          next if verb.nil? || held.include?(verb)
 
           raise BadManifest.new(
-            "zone '#{z["name"]}' declares kind: #{z["kind"]} but no writer is a #{required} " \
-            "(writers: #{writers.join(", ")})",
+            "zone '#{z["name"]}' (#{z["kind"]}) at '$.zones[#{i}]' " \
+            "needs a role with capability '#{verb}'; none declared",
           )
-        end
-      end
-
-      # name => kind string, honouring an explicit roles: block or the default mapping.
-      def self.role_kind_mapping(raw)
-        if raw["roles"].nil?
-          RoleKinds::DEFAULT_MAPPING.transform_values(&:to_s)
-        else
-          Array(raw["roles"]).to_h { |r| [r["name"], r["kind"]] }
         end
       end
     end

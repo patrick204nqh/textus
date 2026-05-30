@@ -2,7 +2,7 @@ require "fileutils"
 
 module Textus
   module Ports
-    module Refresh
+    module Fetch
       class Lock
         def initialize(root:, key:)
           @root = root

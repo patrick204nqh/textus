@@ -16,9 +16,9 @@ RSpec.describe Textus::MCP::Server do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: working,  kind: origin, write_policy: [human, agent] }
-        - { name: review,   kind: origin, write_policy: [agent] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: review,   kind: queue }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
@@ -53,7 +53,7 @@ RSpec.describe Textus::MCP::Server do
     )
     list = responses.find { |r| r["id"] == 2 }
     names = list["result"]["tools"].map { |t| t["name"] }
-    expect(names).to include("boot", "tick", "find", "read", "write", "propose", "refresh", "refresh_stale", "schema", "rules")
+    expect(names).to include("boot", "tick", "find", "read", "write", "propose", "fetch", "fetch_stale", "schema", "rules")
   end
 
   it "executes tools/call('boot') and returns content" do

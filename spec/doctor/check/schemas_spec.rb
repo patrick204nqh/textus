@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::Schemas do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf}
 

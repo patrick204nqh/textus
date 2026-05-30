@@ -89,7 +89,7 @@ git commit -m "Adopt textus context store"
 | Slow-changing project facts | `identity` | human only | `identity.project` — the `ledger` service description |
 | Operational knowledge (runbooks, prompts, conventions) | `working` | human + agent | `working.runbooks.{deploy,oncall}` |
 | Agent suggests a change for human approval | `review` | agent → human accept | `review.decisions.0001-…` |
-| Build-computed projection of all of the above | `output` | builder only | `output.orientation` → `CLAUDE.md` + `AGENTS.md` |
+| Build-computed projection of all of the above | `output` | automation only | `output.orientation` → `CLAUDE.md` + `AGENTS.md` |
 
 The `review` flow is the load-bearing piece for AI-assisted edits: agents
 never write directly to identity or operational zones — they write a

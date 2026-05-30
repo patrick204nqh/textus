@@ -12,7 +12,7 @@ RSpec.describe "Pulse next_due_at" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.feed
           path: intake/feed.md
@@ -21,11 +21,11 @@ RSpec.describe "Pulse next_due_at" do
           intake:
             handler: noop
       rules:
-        - { match: "intake.*", refresh: { ttl: 3600s, on_stale: warn } }
+        - { match: "intake.*", fetch: { ttl: 3600s, on_stale: warn } }
     YAML
     File.write(
       File.join(root, "zones/intake/feed.md"),
-      "---\nkey: intake.feed\nlast_refreshed_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
+      "---\nkey: intake.feed\nlast_fetched_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
     )
     File.write(File.join(root, "audit.log"), "")
   end
@@ -38,11 +38,11 @@ RSpec.describe "Pulse next_due_at" do
     expect { Time.parse(result["next_due_at"]) }.not_to raise_error
   end
 
-  it "next_due_at is nil when no entries have a refresh policy with last_refreshed_at" do
+  it "next_due_at is nil when no entries have a fetch policy with last_fetched_at" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [runner] }
+        - { name: intake, kind: quarantine }
       entries:
         - key: intake.feed
           path: intake/feed.md

@@ -2,7 +2,7 @@ require "spec_helper"
 require "tmpdir"
 require "fileutils"
 
-RSpec.describe Textus::Write::RefreshOrchestrator do
+RSpec.describe Textus::Write::FetchOrchestrator do
   let(:fake_events) do
     Class.new do
       attr_reader :published
@@ -60,15 +60,15 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
     end
   end
 
-  describe "Action::RefreshSync" do
-    it "returns Outcome::Refreshed when worker succeeds" do
+  describe "Action::FetchSync" do
+    it "returns Outcome::Fetched when worker succeeds" do
       envelope = { "key" => "some.key", "body" => "fresh" }
       worker = fake_worker.new(envelope)
       orch = make_orchestrator(worker)
 
-      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "some.key")
+      outcome = orch.execute(Textus::Domain::Action::FetchSync.new, key: "some.key")
 
-      expect(outcome).to be_a(Textus::Domain::Outcome::Refreshed)
+      expect(outcome).to be_a(Textus::Domain::Outcome::Fetched)
       expect(outcome.envelope).to eq(envelope)
     end
 
@@ -76,14 +76,14 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
       worker = fake_worker.new(Textus::UsageError.new("intake blew up"))
       orch = make_orchestrator(worker)
 
-      outcome = orch.execute(Textus::Domain::Action::RefreshSync.new, key: "k")
+      outcome = orch.execute(Textus::Domain::Action::FetchSync.new, key: "k")
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Failed)
       expect(outcome.error.message).to match(/intake blew up/)
     end
   end
 
-  describe "Action::RefreshTimed" do
+  describe "Action::FetchTimed" do
     it "returns Outcome::Detached and calls spawner when worker exceeds budget",
        skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
       slow_worker = Class.new do
@@ -104,13 +104,13 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
       )
 
       outcome = orch.execute(
-        Textus::Domain::Action::RefreshTimed.new(budget_ms: 50),
+        Textus::Domain::Action::FetchTimed.new(budget_ms: 50),
         key: "slow.key",
       )
 
       expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
       expect(spawner_calls).to include("slow.key")
-      expect(fake_events.published.map(&:first)).to include(:refresh_backgrounded)
+      expect(fake_events.published.map(&:first)).to include(:fetch_backgrounded)
     end
 
     it "returns Detached without forking when the per-leaf lock is already held (Bug 1)",
@@ -127,7 +127,7 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
         spawner = ->(store_root:, key:) { spawner_calls << [store_root, key] }
 
         # Force the single-flight probe to fail: stub Lock#try_acquire to return false.
-        allow_any_instance_of(Textus::Ports::Refresh::Lock) # rubocop:disable RSpec/AnyInstance
+        allow_any_instance_of(Textus::Ports::Fetch::Lock) # rubocop:disable RSpec/AnyInstance
           .to receive(:try_acquire).and_return(false)
 
         orch = described_class.new(
@@ -138,27 +138,27 @@ RSpec.describe Textus::Write::RefreshOrchestrator do
         )
 
         outcome = orch.execute(
-          Textus::Domain::Action::RefreshTimed.new(budget_ms: 50),
+          Textus::Domain::Action::FetchTimed.new(budget_ms: 50),
           key: "slow.key",
         )
 
         expect(outcome).to be_a(Textus::Domain::Outcome::Detached)
         expect(spawner_calls).to be_empty
-        expect(fake_events.published.map(&:first)).not_to include(:refresh_backgrounded)
+        expect(fake_events.published.map(&:first)).not_to include(:fetch_backgrounded)
       end
     end
 
-    it "returns Outcome::Refreshed when worker finishes within budget" do
+    it "returns Outcome::Fetched when worker finishes within budget" do
       envelope = { "key" => "fast.key" }
       worker = fake_worker.new(envelope)
       orch = make_orchestrator(worker)
 
       outcome = orch.execute(
-        Textus::Domain::Action::RefreshTimed.new(budget_ms: 5000),
+        Textus::Domain::Action::FetchTimed.new(budget_ms: 5000),
         key: "fast.key",
       )
 
-      expect(outcome).to be_a(Textus::Domain::Outcome::Refreshed)
+      expect(outcome).to be_a(Textus::Domain::Outcome::Fetched)
       expect(outcome.envelope).to eq(envelope)
     end
   end

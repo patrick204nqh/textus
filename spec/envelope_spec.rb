@@ -98,12 +98,12 @@ RSpec.describe Textus::Envelope do
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
       ).with(freshness: Textus::Domain::Freshness.build(
-        stale: true, refreshing: false, reason: "ttl exceeded",
+        stale: true, fetching: false, reason: "ttl exceeded",
       ))
       h = env.to_h_for_wire
       aggregate_failures do
         expect(h["stale"]).to be true
-        expect(h["refreshing"]).to be false
+        expect(h["fetching"]).to be false
         expect(h["stale_reason"]).to eq("ttl exceeded")
         expect(h).not_to have_key("freshness")
       end
@@ -114,7 +114,7 @@ RSpec.describe Textus::Envelope do
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
       ).with(freshness: Textus::Domain::Freshness.build(
-        stale: false, refreshing: false,
+        stale: false, fetching: false,
         checked_at: Time.utc(2026, 1, 1), ttl_remaining_ms: 1234
       ))
       h = env.to_h_for_wire
@@ -154,13 +154,13 @@ RSpec.describe Textus::Envelope do
       expect(env.stale?).to be true
     end
 
-    it "refreshing? returns false when freshness is nil" do
-      expect(base_env.refreshing?).to be false
+    it "fetching? returns false when freshness is nil" do
+      expect(base_env.fetching?).to be false
     end
 
-    it "refreshing? returns the boolean refreshing flag" do
-      env = base_env.with(freshness: Textus::Domain::Freshness.build(stale: true, refreshing: true))
-      expect(env.refreshing?).to be true
+    it "fetching? returns the boolean fetching flag" do
+      env = base_env.with(freshness: Textus::Domain::Freshness.build(stale: true, fetching: true))
+      expect(env.fetching?).to be true
     end
   end
 end

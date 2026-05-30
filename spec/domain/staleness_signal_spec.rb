@@ -3,9 +3,9 @@ require "fileutils"
 require "tmpdir"
 
 # Regression test for Staleness: it must detect generator-kind zones via the
-# write_policy: [builder] signal, not via the literal zone name "derived". Prior
-# to signal-based detection, post-0.9.2 default `output` zones were skipped
-# entirely.
+# kind: derived signal (the zone-kind that requires the `build` capability),
+# not via the literal zone name "derived". Prior to signal-based detection,
+# post-0.9.2 default `output` zones were skipped entirely.
 RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection" do
   include_context "textus_store_fixture"
 
@@ -15,8 +15,8 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
-        - { name: output,  kind: derived, write_policy: [builder] }
+        - { name: working, kind: origin }
+        - { name: output,  kind: derived }
       entries:
         - key: working.src
           kind: leaf
@@ -69,7 +69,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: output, kind: derived, write_policy: [builder] }
+        - { name: output, kind: derived }
       entries:
         - key: output.report
           kind: derived
@@ -101,14 +101,14 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     expect(rows.first["reason"]).to match(/modified after generated\.at/)
   end
 
-  it "negative-signal: a zone literally named 'derived' but without [build] writers is NOT generator-kind" do
+  it "negative-signal: a zone literally named 'derived' but with kind: origin is NOT generator-kind" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
-        - { name: derived, kind: origin, write_policy: [human] }
+        - { name: working, kind: origin }
+        - { name: derived, kind: origin }
       entries:
         - key: working.src
           kind: leaf
@@ -126,8 +126,9 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
 
     File.write(File.join(root, "zones/working/src.md"), "---\nname: src\n---\nbody\n")
     # No file at derived/note.md → if treated as generator zone, would be flagged
-    # with "derived entry has never been generated". Because writable_by lacks
-    # 'build', it must NOT be inspected by Staleness's generator pass.
+    # with "derived entry has never been generated". Because the zone declares
+    # kind: origin (not derived), it must NOT be inspected by Staleness's
+    # generator pass.
 
     store = Textus::Store.new(root)
     rows = store.as(Textus::Role::DEFAULT).stale

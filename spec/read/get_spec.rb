@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -28,7 +28,7 @@ RSpec.describe Textus::Read::Get do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - key: working.doc
           kind: intake
@@ -38,7 +38,7 @@ RSpec.describe Textus::Read::Get do
             handler: test_intake
       rules:
         - match: working.doc
-          refresh:
+          fetch:
             ttl: "#{ttl}"
             on_stale: #{on_stale}
     YAML
@@ -52,12 +52,12 @@ RSpec.describe Textus::Read::Get do
     Textus::Store.new(textus)
   end
 
-  def write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
+  def write_doc(root, last_fetched_at: Time.now.utc.iso8601)
     textus = File.join(root, ".textus")
     File.write(File.join(textus, "zones", "working", "doc.md"), <<~MD)
       ---
       name: doc
-      last_refreshed_at: "#{last_refreshed_at}"
+      last_fetched_at: "#{last_fetched_at}"
       ---
       stored body
     MD
@@ -65,7 +65,7 @@ RSpec.describe Textus::Read::Get do
 
   def build_use_case(store)
     container = Textus::Container.from_store(store)
-    call = Textus::Call.build(role: "runner")
+    call = Textus::Call.build(role: "automation")
     described_class.new(container: container, call: call)
   end
 
@@ -77,32 +77,32 @@ RSpec.describe Textus::Read::Get do
     end
   end
 
-  it "annotates as fresh when no refresh policy applies" do
+  it "annotates as fresh when no fetch policy applies" do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
       write_doc(root)
       env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(false)
-      expect(env.freshness.refreshing).to be(false)
+      expect(env.freshness.fetching).to be(false)
     end
   end
 
   it "annotates as fresh when the envelope is within TTL" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      write_doc(root, last_refreshed_at: Time.now.utc.iso8601)
+      write_doc(root, last_fetched_at: Time.now.utc.iso8601)
       env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(false)
     end
   end
 
-  it "annotates as stale when the envelope is past TTL — but does NOT refresh" do
+  it "annotates as stale when the envelope is past TTL — but does NOT fetch" do
     Dir.mktmpdir do |root|
       store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
-      write_doc(root, last_refreshed_at: "2020-01-01T00:00:00Z")
+      write_doc(root, last_fetched_at: "2020-01-01T00:00:00Z")
       env = build_use_case(store).call("working.doc")
       expect(env.freshness.stale).to be(true)
-      expect(env.freshness.refreshing).to be(false)
+      expect(env.freshness.fetching).to be(false)
     end
   end
 
@@ -110,7 +110,7 @@ RSpec.describe Textus::Read::Get do
     Dir.mktmpdir do |root|
       store = build_store_no_intake(root)
       container = Textus::Container.from_store(store)
-      call = Textus::Call.build(role: "runner")
+      call = Textus::Call.build(role: "automation")
       expect do
         described_class.new(container: container, call: call, orchestrator: Object.new)
       end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)

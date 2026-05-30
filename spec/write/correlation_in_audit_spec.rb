@@ -9,7 +9,7 @@ RSpec.describe "correlation_id in audit rows" do
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
 

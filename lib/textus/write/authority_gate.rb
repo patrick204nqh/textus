@@ -1,17 +1,18 @@
 module Textus
   module Write
     # Shared gate for write verbs that require the caller to hold the
-    # manifest's accept_authority role. Provides one method, expressed
-    # as two early-returns rather than a ternary, so each failure mode
-    # reads on its own line.
+    # manifest's accept capability. Provides one method, expressed as two
+    # early-returns rather than a ternary, so each failure mode reads on its
+    # own line.
     module AuthorityGate
-      def assert_accept_authority!(verb)
-        return if @manifest.policy.role_kind(@call.role) == :accept_authority
+      def assert_accept_capability!(verb)
+        accept_holders = @manifest.policy.roles_with_capability("accept")
+        return if accept_holders.include?(@call.role.to_s)
 
-        authority = @manifest.policy.roles_with_kind(:accept_authority).first
+        authority = accept_holders.first
         if authority.nil?
           raise ProposalError.new(
-            "no role with accept_authority kind is declared in this manifest; #{verb} is disabled",
+            "no role holds the accept capability in this manifest; #{verb} is disabled",
           )
         end
 

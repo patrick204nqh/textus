@@ -6,9 +6,9 @@ RSpec.describe Textus::Domain::Freshness do
       f = described_class.build(stale: false)
       aggregate_failures do
         expect(f.stale).to be(false)
-        expect(f.refreshing).to be(false)
+        expect(f.fetching).to be(false)
         expect(f.reason).to be_nil
-        expect(f.refresh_error).to be_nil
+        expect(f.fetch_error).to be_nil
         expect(f.checked_at).to be_nil
         expect(f.ttl_remaining_ms).to be_nil
       end
@@ -17,14 +17,14 @@ RSpec.describe Textus::Domain::Freshness do
     it "constructs with all fields" do
       ts = Time.utc(2026, 5, 26)
       f = described_class.build(
-        stale: true, refreshing: true, reason: "ttl exceeded",
-        refresh_error: "boom", checked_at: ts, ttl_remaining_ms: 42
+        stale: true, fetching: true, reason: "ttl exceeded",
+        fetch_error: "boom", checked_at: ts, ttl_remaining_ms: 42
       )
       aggregate_failures do
         expect(f.stale).to be(true)
-        expect(f.refreshing).to be(true)
+        expect(f.fetching).to be(true)
         expect(f.reason).to eq("ttl exceeded")
-        expect(f.refresh_error).to eq("boom")
+        expect(f.fetch_error).to eq("boom")
         expect(f.checked_at).to eq(ts)
         expect(f.ttl_remaining_ms).to eq(42)
       end
@@ -47,23 +47,23 @@ RSpec.describe Textus::Domain::Freshness do
   end
 
   describe "#to_h_for_wire" do
-    it "emits legacy keys 'stale', 'stale_reason', 'refreshing'" do
-      f = described_class.build(stale: true, reason: "ttl exceeded", refreshing: false)
+    it "emits legacy keys 'stale', 'stale_reason', 'fetching'" do
+      f = described_class.build(stale: true, reason: "ttl exceeded", fetching: false)
       expect(f.to_h_for_wire).to eq(
         "stale" => true,
         "stale_reason" => "ttl exceeded",
-        "refreshing" => false,
+        "fetching" => false,
       )
     end
 
-    it "includes 'refresh_error' only when non-nil" do
-      f = described_class.build(stale: true, refresh_error: "boom")
-      expect(f.to_h_for_wire).to include("refresh_error" => "boom")
+    it "includes 'fetch_error' only when non-nil" do
+      f = described_class.build(stale: true, fetch_error: "boom")
+      expect(f.to_h_for_wire).to include("fetch_error" => "boom")
     end
 
-    it "omits 'refresh_error' when nil (byte-compat with prior wire shape)" do
+    it "omits 'fetch_error' when nil (byte-compat with prior wire shape)" do
       f = described_class.build(stale: false)
-      expect(f.to_h_for_wire).not_to have_key("refresh_error")
+      expect(f.to_h_for_wire).not_to have_key("fetch_error")
     end
 
     it "does NOT emit gem-side-only fields (checked_at, ttl_remaining_ms)" do
@@ -78,24 +78,24 @@ RSpec.describe Textus::Domain::Freshness do
     end
 
     it "round-trips the legacy keys exactly (string keys, nil reason ok)" do
-      f = described_class.build(stale: false, reason: nil, refreshing: false)
+      f = described_class.build(stale: false, reason: nil, fetching: false)
       h = f.to_h_for_wire
       aggregate_failures do
         expect(h.keys).to all(be_a(String))
         expect(h["stale"]).to be(false)
         expect(h["stale_reason"]).to be_nil
-        expect(h["refreshing"]).to be(false)
+        expect(h["fetching"]).to be(false)
       end
     end
   end
 
   describe "immutable update" do
     it "supports #with for non-destructive update" do
-      f = described_class.build(stale: true, refreshing: false)
-      f2 = f.with(refreshing: true)
+      f = described_class.build(stale: true, fetching: false)
+      f2 = f.with(fetching: true)
       aggregate_failures do
-        expect(f.refreshing).to be(false)
-        expect(f2.refreshing).to be(true)
+        expect(f.fetching).to be(false)
+        expect(f2.fetching).to be(true)
         expect(f2.stale).to be(true)
       end
     end

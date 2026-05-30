@@ -7,7 +7,7 @@ require_relative "../../examples/claude-plugin/recipes/skill_fanout"
 # Exercises the skill_fanout recipe against a real Textus::Store so the
 # spec depends only on the public Hooks::Context + RoleScope contract
 # that hooks actually receive at runtime.
-RSpec.describe "skill_fanout :entry_refreshed listener" do
+RSpec.describe "skill_fanout :entry_fetched listener" do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -17,8 +17,8 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: origin, write_policy: [human, runner, agent] }
-        - { name: vendor, kind: origin, write_policy: [human, runner, agent] }
+        - { name: intake, kind: quarantine }
+        - { name: vendor, kind: derived }
       entries:
         - { key: intake.skills, path: intake/skills, zone: intake, schema: null, owner: o, nested: true, kind: nested}
 
@@ -29,7 +29,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     Textus::Store.new(root)
   end
 
-  let(:ops) { store.as("runner") }
+  let(:ops) { store.as("automation") }
 
   before do
     # The recipe queues its registration via Textus.hook. Drain and apply
@@ -40,7 +40,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
   end
 
   def trigger(key:, files:)
-    handler = store.events.pubsub_handlers(:entry_refreshed).find { |h| h[:name] == :skill_fanout }
+    handler = store.events.pubsub_handlers(:entry_fetched).find { |h| h[:name] == :skill_fanout }
     envelope = { "content" => { "files" => files } }
     ctx = Textus::Hooks::Context.new(scope: ops)
     handler[:callable].call(ctx: ctx, key: key, envelope: envelope, change: :updated)
@@ -104,7 +104,7 @@ RSpec.describe "skill_fanout :entry_refreshed listener" do
     )
   end
 
-  it "is a no-op for refreshed keys outside the intake.skills.* prefix" do
+  it "is a no-op for fetched keys outside the intake.skills.* prefix" do
     trigger(key: "intake.feeds.news", files: { "a" => "b" })
     expect(ops.list(prefix: "vendor")).to be_empty
   end

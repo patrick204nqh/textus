@@ -8,19 +8,19 @@ module Textus
     #
     # Note on wire format: `#to_h_for_wire` is intentionally narrower than the
     # full field set. It emits the legacy keys ("stale", "stale_reason",
-    # "refreshing", and "refresh_error" when present) so the CLI JSON wire
+    # "fetching", and "fetch_error" when present) so the CLI JSON wire
     # stays byte-identical with textus/3. The gem-side fields `checked_at`
     # and `ttl_remaining_ms` are NOT emitted on the wire in this phase.
     Freshness = Data.define(
-      :stale, :refreshing, :reason, :refresh_error, :checked_at, :ttl_remaining_ms
+      :stale, :fetching, :reason, :fetch_error, :checked_at, :ttl_remaining_ms
     ) do
-      def self.build(stale:, refreshing: false, reason: nil, refresh_error: nil,
+      def self.build(stale:, fetching: false, reason: nil, fetch_error: nil,
                      checked_at: nil, ttl_remaining_ms: nil)
         new(
           stale: stale,
-          refreshing: refreshing,
+          fetching: fetching,
           reason: reason,
-          refresh_error: refresh_error,
+          fetch_error: fetch_error,
           checked_at: checked_at,
           ttl_remaining_ms: ttl_remaining_ms,
         )
@@ -30,9 +30,9 @@ module Textus
         h = {
           "stale" => stale,
           "stale_reason" => reason,
-          "refreshing" => refreshing,
+          "fetching" => fetching,
         }
-        h["refresh_error"] = refresh_error unless refresh_error.nil?
+        h["fetch_error"] = fetch_error unless fetch_error.nil?
         h
       end
     end

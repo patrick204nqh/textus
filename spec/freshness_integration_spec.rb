@@ -11,7 +11,7 @@ RSpec.describe "Reader honors on_stale policy" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: quarantine }
       entries:
         - key: working.foo
           kind: intake
@@ -21,7 +21,7 @@ RSpec.describe "Reader honors on_stale policy" do
             handler: test_intake
       rules:
         - match: working.foo
-          refresh:
+          fetch:
             ttl: 1s
             on_stale: #{on_stale}
     YAML
@@ -29,7 +29,7 @@ RSpec.describe "Reader honors on_stale policy" do
     File.write(File.join(textus, "zones", "working", "foo.md"), <<~MD)
       ---
       key: working.foo
-      last_refreshed_at: "2020-01-01T00:00:00Z"
+      last_fetched_at: "2020-01-01T00:00:00Z"
       ---
       old body
     MD
@@ -39,48 +39,48 @@ RSpec.describe "Reader honors on_stale policy" do
     Textus::Store.new(textus)
   end
 
-  it "warn: returns stale envelope with flag, does NOT refresh" do
+  it "warn: returns stale envelope with flag, does NOT fetch" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
           reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
-            Thread.current[:refresh_count] ||= 0
-            Thread.current[:refresh_count] += 1
-            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+            Thread.current[:fetch_count] ||= 0
+            Thread.current[:fetch_count] += 1
+            { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh" }
           end
         end
       RUBY
 
-      Thread.current[:refresh_count] = 0
+      Thread.current[:fetch_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = store.as("runner").get_or_refresh("working.foo")
+      envelope = store.as("automation").get_or_fetch("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness.reason).to match(/ttl exceeded/)
-      expect(envelope.refreshing?).to be(false)
-      expect(Thread.current[:refresh_count]).to eq(0)
+      expect(envelope.fetching?).to be(false)
+      expect(Thread.current[:fetch_count]).to eq(0)
     end
   end
 
-  it "sync: blocks for refresh, returns fresh envelope" do
+  it "sync: blocks for fetch, returns fresh envelope" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
           reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
-            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh body" }
+            { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh body" }
           end
         end
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = store.as("runner").get_or_refresh("working.foo")
+      envelope = store.as("automation").get_or_fetch("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
     end
   end
 
-  it "timed_sync: returns stale + refreshing when handler exceeds budget", # rubocop:disable RSpec/ExampleLength
+  it "timed_sync: returns stale + fetching when handler exceeds budget", # rubocop:disable RSpec/ExampleLength
      skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
@@ -90,7 +90,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: quarantine }
         entries:
           - key: working.slow
             kind: intake
@@ -100,7 +100,7 @@ RSpec.describe "Reader honors on_stale policy" do
               handler: slow_intake
         rules:
           - match: working.slow
-            refresh:
+            fetch:
               ttl: 1s
               on_stale: timed_sync
               sync_budget_ms: 50
@@ -109,7 +109,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "zones", "working", "slow.md"), <<~MD)
         ---
         key: working.slow
-        last_refreshed_at: "2020-01-01T00:00:00Z"
+        last_fetched_at: "2020-01-01T00:00:00Z"
         ---
         old
       MD
@@ -118,19 +118,19 @@ RSpec.describe "Reader honors on_stale policy" do
         Textus.hook do |reg|
           reg.on(:resolve_intake, :slow_intake) do |caps:, config:, args:|
             sleep 0.5
-            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
+            { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh-from-child" }
           end
         end
       RUBY
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = store.as("runner").get_or_refresh("working.slow")
+      envelope = store.as("automation").get_or_fetch("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
       expect(envelope.stale?).to be(true)
-      expect(envelope.refreshing?).to be(true)
+      expect(envelope.fetching?).to be(true)
 
       sleep 1.5
       raw = File.read(File.join(textus, "zones", "working", "slow.md"))
@@ -149,8 +149,8 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
-          - { name: output, kind: derived, write_policy: [builder] }
+          - { name: working, kind: quarantine }
+          - { name: output, kind: derived }
         entries:
           - key: working.foo
             kind: intake
@@ -163,12 +163,12 @@ RSpec.describe "Reader honors on_stale policy" do
             path: output/summary.md
             zone: output
             schema: null
-            owner: builder:auto
+            owner: automation:auto
             compute: { kind: projection, select: working.foo }
             template: echo.mustache
         rules:
           - match: working.foo
-            refresh:
+            fetch:
               ttl: 1s
               on_stale: timed_sync
               sync_budget_ms: 1
@@ -179,7 +179,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "zones", "working", "foo.md"), <<~MD)
         ---
         key: working.foo
-        last_refreshed_at: "2020-01-01T00:00:00Z"
+        last_fetched_at: "2020-01-01T00:00:00Z"
         ---
         old body
       MD
@@ -187,20 +187,20 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
         Textus.hook do |reg|
           reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
-            { _meta: { "last_refreshed_at" => Time.now.utc.iso8601 }, body: "fresh" }
+            { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh" }
           end
         end
       RUBY
 
       orchestrator_calls = []
-      allow_any_instance_of(Textus::Write::RefreshOrchestrator) # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(Textus::Write::FetchOrchestrator) # rubocop:disable RSpec/AnyInstance
         .to receive(:execute) do |_, *args, **kwargs|
         orchestrator_calls << [args, kwargs]
         raise "orchestrator must not be called during build (issue #59)"
       end
 
       store = Textus::Store.new(textus)
-      ctx = Textus::Call.build(role: "builder")
+      ctx = Textus::Call.build(role: "automation")
       build_publish(store, ctx).call
 
       expect(orchestrator_calls).to be_empty

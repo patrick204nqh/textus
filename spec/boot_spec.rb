@@ -19,12 +19,16 @@ RSpec.describe Textus::Boot do
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
+      roles:
+        - { name: human,      can: [accept, propose] }
+        - { name: agent,      can: [propose] }
+        - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: working,  kind: origin, write_policy: [human, agent, runner] }
-        - { name: intake,   kind: origin, write_policy: [runner] }
-        - { name: review,   kind: origin, write_policy: [agent] }
-        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: intake,   kind: quarantine }
+        - { name: review,   kind: queue }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf}
 
@@ -38,7 +42,7 @@ RSpec.describe Textus::Boot do
           kind: intake
           path: intake/feed.md
           zone: intake
-          owner: runner:local
+          owner: automation:local
           intake:
             handler: demo-action
             config: { foo: 1 }
@@ -46,7 +50,7 @@ RSpec.describe Textus::Boot do
           kind: derived
           path: output/report.md
           zone: output
-          owner: builder:auto
+          owner: automation:auto
           compute:
             kind: projection
             select: [working.notes]
@@ -93,16 +97,25 @@ RSpec.describe Textus::Boot do
     expect(identity["purpose"]).to include("human-only")
 
     working = env["zones"].find { |z| z["name"] == "working" }
-    expect(working["writers"]).to include("human", "agent", "runner")
+    expect(working["writers"]).to eq(["human"])
     expect(working).to have_key("purpose")
+
+    intake = env["zones"].find { |z| z["name"] == "intake" }
+    expect(intake["writers"]).to eq(["automation"])
+
+    review = env["zones"].find { |z| z["name"] == "review" }
+    expect(review["writers"]).to contain_exactly("human", "agent")
+
+    output = env["zones"].find { |z| z["name"] == "output" }
+    expect(output["writers"]).to eq(["automation"])
   end
 
   it "omits purpose for unknown zone names" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: weird,    kind: origin, write_policy: [human] }
+        - { name: identity, kind: origin }
+        - { name: weird,    kind: origin }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
 
@@ -143,8 +156,12 @@ RSpec.describe Textus::Boot do
 
   it "includes verbatim write_flows and cli_verbs" do
     env = described_class.build(container: store.container)
-    expect(env["write_flows"]).to include("human", "agent", "runner", "builder")
+    expect(env["write_flows"]).to include("human", "agent", "automation")
     expect(env["write_flows"]["agent"]).to include("proposal:")
+
+    # human holds [accept, propose] → its write_flow joins both guidance
+    # strings (accept's 'textus put' + propose's 'proposal:') with ' / '.
+    expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
     expect(names).to include("boot", "list", "get", "put", "accept", "build", "doctor", "hook")
@@ -157,7 +174,7 @@ RSpec.describe Textus::Boot do
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
       expect(block).to have_key("role_resolution")
-      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "refresh")
+      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "fetch")
     end
 
     it "does not change the wire protocol field" do
@@ -199,16 +216,15 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: owner,    kind: accept_authority }
-          - { name: proposer, kind: proposer }
-          - { name: fetcher,  kind: runner }
-          - { name: compiler, kind: generator }
+          - { name: owner,    can: [accept] }
+          - { name: proposer, can: [propose] }
+          - { name: fetcher,  can: [fetch] }
+          - { name: compiler, can: [build] }
         zones:
-          - { name: self,    kind: origin, write_policy: [owner] }
-          - { name: working, kind: origin, write_policy: [owner, proposer, fetcher] }
-          - { name: review,  kind: origin, write_policy: [proposer, owner] }
-          - { name: world,   kind: origin, write_policy: [fetcher] }
-          - { name: build,   kind: derived, write_policy: [compiler] }
+          - { name: self,    kind: origin }
+          - { name: review,  kind: queue }
+          - { name: world,   kind: quarantine }
+          - { name: build,   kind: derived }
         entries: []
       YAML
       s = build_store(yaml)
@@ -228,19 +244,18 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         zones:
-          - { name: identity, kind: origin, write_policy: [human] }
-          - { name: working,  kind: origin, write_policy: [human, agent, runner] }
-          - { name: review,   kind: origin, write_policy: [agent] }
-          - { name: output,   kind: derived, write_policy: [builder] }
+          - { name: identity, kind: origin }
+          - { name: review,   kind: queue }
+          - { name: output,   kind: derived }
         entries: []
       YAML
       s = build_store(yaml)
       env = described_class.build(container: s.container)
       flows = env["write_flows"]
-      expect(flows.keys).to contain_exactly("human", "agent", "runner", "builder")
+      expect(flows.keys).to contain_exactly("human", "agent", "automation")
 
       roles = env["agent_protocol"]["role_resolution"]["roles"]
-      expect(roles).to contain_exactly("human", "agent", "runner", "builder")
+      expect(roles).to contain_exactly("human", "agent", "automation")
     end
   end
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::Refresh do
+RSpec.describe Textus::Domain::Policy::Fetch do
   it "exposes ttl_seconds parsed from 6h shorthand" do
     p = described_class.new(ttl: "6h", on_stale: :sync, sync_budget_ms: nil)
     expect(p.ttl_seconds).to eq(6 * 3600)
