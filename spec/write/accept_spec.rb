@@ -181,8 +181,8 @@ RSpec.describe Textus::Write::Accept do
 
         rules:
           - match: "working.network.org.**"
-            promotion:
-              requires: [schema_valid]
+            guard:
+              accept: [schema_valid]
       YAML
       Textus::Store.new(textus_dir)
     end
@@ -240,8 +240,8 @@ RSpec.describe Textus::Write::Accept do
 
         rules:
           - match: "working.network.org.**"
-            promotion:
-              requires: [accept_signed]
+            guard:
+              accept: [accept_signed]
       YAML
       Textus::Store.new(textus_dir)
     end

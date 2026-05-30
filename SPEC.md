@@ -8,6 +8,68 @@
 
 ---
 
+## Table of contents
+
+- [Conventions](#conventions)
+- [1. What textus is](#1-what-textus-is)
+  - [1.1 Vocabulary axes](#11-vocabulary-axes)
+  - [1.2 The five layers](#12-the-five-layers)
+- [2. Goals and non-goals](#2-goals-and-non-goals)
+- [3. Storage layout](#3-storage-layout)
+  - [3.1 Store location precedence](#31-store-location-precedence)
+- [4. Manifest](#4-manifest)
+- [5. Zones and capability-based write gates](#5-zones-and-capability-based-write-gates)
+  - [5.1 Role resolution](#51-role-resolution)
+    - [5.1.1 Capabilities](#511-capabilities)
+  - [5.2 Compute layer (derived entries)](#52-compute-layer-derived-entries)
+    - [5.2.1 Projection compute](#521-projection-compute-kind-projection)
+    - [5.2.2 External compute](#522-external-compute-kind-external)
+  - [5.3 Publish layer](#53-publish-layer-publish_to)
+  - [5.4 Intake](#54-intake-declared-fetched-via-registered-intake-handler)
+  - [5.5 Pending / accept workflow](#55-pending--accept-workflow)
+  - [5.6 Audit log](#56-audit-log)
+  - [5.7 Security bounds](#57-security-bounds)
+  - [5.8 Schema evolution](#58-schema-evolution)
+  - [5.9 Row transforms](#59-row-transforms)
+  - [5.10 Hooks](#510-hooks)
+  - [5.11 Rules](#511-rules)
+  - [5.12 Storage formats](#512-storage-formats)
+- [6. Schemas](#6-schemas)
+- [7. Entry file format](#7-entry-file-format)
+- [8. Envelope (the wire format)](#8-envelope-the-wire-format)
+- [9. CLI surface](#9-cli-surface)
+- [10. ETag semantics](#10-etag-semantics)
+  - [10.1 Errors carry hints](#101-errors-carry-hints)
+  - [10.2 `textus doctor`](#102-textus-doctor)
+- [11. Versioning](#11-versioning)
+  - [11.1 Agent integration](#111-agent-integration)
+- [12. Conformance fixtures](#12-conformance-fixtures)
+- [13. Why not X?](#13-why-not-x)
+  - [13.1 Layered architecture (internal)](#131-layered-architecture-internal)
+- [14. Open questions (v3.x scope)](#14-open-questions-v3x-scope)
+- [15. Implementation checklist](#15-implementation-checklist)
+- [16. Migrating from textus/2](#16-migrating-from-textus2)
+  - [16.1 Breaking changes in 0.31.0 (capability-based roles)](#161-breaking-changes-in-0310-capability-based-roles)
+
+---
+
+## Conventions
+
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**,
+**SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this
+document are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
+and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174): with their normative
+meaning **only** when they appear in uppercase. The same words in lowercase
+carry their ordinary English sense and impose no requirement.
+
+Requirements are stated against any **conforming implementation** of the
+`textus/3` protocol. The Ruby gem `textus` is the reference implementation, but
+the contract is the protocol defined here — not the gem. Where this document and
+the implementation disagree, this document is the source of truth and the
+implementation is the bug.
+
+---
+
 ## 1. What textus is
 
 A storage convention and JSON wire protocol for humans, agents, and automation to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, capability-based write gates, declarative compute, and copy-based publish targets.

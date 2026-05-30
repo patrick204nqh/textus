@@ -20,8 +20,8 @@ RSpec.describe Textus::Read::PolicyExplain do
           fetch: { ttl: 5m, on_stale: sync }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
-          promotion:
-            requires: [schema_valid]
+          guard:
+            accept: [schema_valid]
         - match: working.doc
           retention: { expire_after: 30d }
     YAML
