@@ -15,7 +15,7 @@ RSpec.describe Textus::Read::SchemaEnvelope do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.person, path: working/person.md, zone: working, schema: person, kind: leaf}
 

@@ -9,7 +9,7 @@ RSpec.describe Textus::Read::Uid do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: origin }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
