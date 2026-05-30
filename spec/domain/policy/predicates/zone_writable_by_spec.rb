@@ -1,46 +1,38 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Domain::Policy::Predicates::ZoneWritableBy do
-  # Default roles (no roles: block): human=[accept,propose], agent=[propose].
-  # working is an origin zone, which requires the 'accept' capability.
-  def build_manifest(dir)
-    FileUtils.mkdir_p(File.join(dir, "zones", "working"))
-    File.write(File.join(dir, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: origin }
-      entries:
-        - { key: working.notes, path: working/notes.md, zone: working, kind: leaf }
-    YAML
-    Textus::Store.new(dir).manifest
-  end
+  let(:mentry)     { instance_double(Textus::Manifest::Entry::Base, zone: "working", key: "working.notes") }
+  let(:resolution) { instance_double(Textus::Manifest::Resolver::Resolution, entry: mentry) }
+  let(:resolver)   { instance_double(Textus::Manifest::Resolver, resolve: resolution) }
+  let(:permission) { instance_double(Textus::Domain::Permission) }
+  let(:policy)     { instance_double(Textus::Manifest::Policy) }
+  let(:manifest)   { instance_double(Textus::Manifest, resolver: resolver, policy: policy) }
 
-  def eval_for(role, target, manifest)
+  def eval_for(role)
     Textus::Domain::Policy::Evaluation.new(
       actor: role, transition: :put, origin: nil,
-      target: target, envelope: nil, snapshot: manifest
+      target: "working.notes", envelope: nil, snapshot: manifest
     )
   end
 
+  before { allow(policy).to receive(:permission_for).with("working").and_return(permission) }
+
   it "passes when the role may write the target's zone" do
-    Dir.mktmpdir do |root|
-      manifest = build_manifest(File.join(root, ".textus"))
-      expect(described_class.new.call(eval_for("human", "working.notes", manifest))).to be(true)
-    end
+    allow(permission).to receive(:allows_write?).with("human").and_return(true)
+    expect(described_class.new.call(eval_for("human"))).to be(true)
   end
 
   it "fails for a role lacking the zone-kind's verb and raises WriteForbidden via #error" do
-    Dir.mktmpdir do |root|
-      manifest = build_manifest(File.join(root, ".textus"))
-      pred = described_class.new
-      e = eval_for("agent", "working.notes", manifest) # working is origin → needs 'accept'; agent has [propose]
-      expect(pred.call(e)).to be(false)
-      expect { raise pred.error(e) }.to raise_error(Textus::WriteForbidden) do |err|
-        expect(err.code).to eq("write_forbidden")
-        expect(err.message).to match(/capability 'accept'/) # post-0.31.0 capability-shaped message
-      end
+    allow(permission).to receive(:allows_write?).with("agent").and_return(false)
+    allow(policy).to receive(:verb_for_zone).with("working").and_return("accept")
+    allow(policy).to receive(:roles_with_capability).with("accept").and_return(["human"])
+
+    pred = described_class.new
+    e = eval_for("agent") # working is origin → needs 'accept'; agent lacks it
+    expect(pred.call(e)).to be(false)
+    expect { raise pred.error(e) }.to raise_error(Textus::WriteForbidden) do |err|
+      expect(err.code).to eq("write_forbidden")
+      expect(err.message).to match(/capability 'accept'/)
     end
   end
 end
