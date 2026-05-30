@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::SchemaParseError do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries: []
     YAML
   end

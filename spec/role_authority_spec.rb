@@ -71,7 +71,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
           - { name: owner,    can: [accept, propose] }
           - { name: proposer, can: [propose] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
         entries:
           - { key: working.people, path: working/people, zone: working, schema: person, owner: owner:patrick, nested: true, kind: nested}
 

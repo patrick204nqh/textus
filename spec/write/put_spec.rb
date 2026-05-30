@@ -9,7 +9,7 @@ RSpec.describe Textus::Write::Put do
       version: textus/3
       zones:
         - { name: working, kind: quarantine }
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries:
         - { key: working.foo, path: working/foo.md, zone: working, kind: leaf }
         - { key: identity.bar, path: identity/bar.md, zone: identity, kind: leaf }
@@ -25,7 +25,7 @@ RSpec.describe Textus::Write::Put do
   end
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
-    # identity is an origin zone (needs the 'accept' capability); automation
+    # identity is a canon zone (needs the 'accept' capability); automation
     # holds only [fetch, build], so the write is genuinely refused.
     expect { build_put(store, test_ctx(role: "automation")).call("identity.bar", meta: {}, body: "x") }
       .to raise_error(

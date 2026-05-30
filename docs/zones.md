@@ -29,8 +29,8 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 flowchart LR
     ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| intake["intake<br/>(quarantine)"]
     automation(["automation"]) -->|fetch| intake
-    human(["human"]) -->|accept| identity["identity<br/>(origin)"]
-    human -->|accept| working["working<br/>(origin)"]
+    human(["human"]) -->|accept| identity["identity<br/>(canon)"]
+    human -->|accept| working["working<br/>(canon)"]
     agent(["agent"]) -->|propose| review["review<br/>(queue)"]
     review -->|human accept| identity
     review -->|human accept| working
@@ -65,7 +65,7 @@ The four capabilities:
 
 | Capability | Authorizes writes to zone-kind | What it represents |
 |------------|--------------------------------|--------------------|
-| `accept` | `origin` | Authoring authored truth — the **single trust anchor** (at most one role holds it). |
+| `accept` | `canon` | Authoring authored truth — the **single trust anchor** (at most one role holds it). |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
 | `fetch` | `quarantine` | Pulling external bytes in. |
 | `build` | `derived` | Computing outputs from other zones. |
@@ -99,8 +99,8 @@ roles:
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: origin }
-  - { name: working,  kind: origin }
+  - { name: identity, kind: canon }
+  - { name: working,  kind: canon }
   - { name: intake,   kind: quarantine }
   - { name: review,   kind: queue }
   - { name: output,   kind: derived }
@@ -110,7 +110,7 @@ Write authority is **derived** — there is no `write_policy:`. Each zone declar
 
 | Zone `kind` | Required capability | Meaning |
 |-------------|---------------------|---------|
-| `origin` | `accept` | Authored truth — only the trust anchor writes directly. |
+| `canon` | `accept` | Authored truth — only the trust anchor writes directly. |
 | `quarantine` | `fetch` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `build` | Computed from other zones. |
@@ -119,8 +119,8 @@ Crossing that table with the default role mapping gives the default writers:
 
 | Zone | `kind` | Required capability | Writable by (default) | Purpose / lifetime |
 |------|--------|---------------------|-----------------------|--------------------|
-| `identity` | `origin` | `accept` | `human` | Slow-changing identity. Voice, mission, brand, project facts. (Years.) |
-| `working` | `origin` | `accept` | `human` | Active project state: notes, decisions, network. (Days to weeks.) |
+| `identity` | `canon` | `accept` | `human` | Slow-changing identity. Voice, mission, brand, project facts. (Years.) |
+| `working` | `canon` | `accept` | `human` | Active project state: notes, decisions, network. (Days to weeks.) |
 | `intake` | `quarantine` | `fetch` | `automation` | Declared external inputs, fetched via `textus fetch KEY --as=automation`; never edited by hand. (Fetched on demand.) |
 | `review` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 | `output` | `derived` | `build` | `automation` | Build-computed outputs. Materialized from projections; never hand-edited. (Recomputed every build.) |
@@ -135,17 +135,17 @@ Edit `.textus/manifest.yaml` and add entries under `zones:`. A zone declares onl
 
 ```yaml
 zones:
-  - { name: <zone-name>, kind: <origin|quarantine|queue|derived> }
+  - { name: <zone-name>, kind: <canon|quarantine|queue|derived> }
 ```
 
 ### Declaring a zone's kind
 
-Every zone declares its data-flow role with `kind:` — one of `origin`,
+Every zone declares its data-flow role with `kind:` — one of `canon`,
 `quarantine`, `queue`, `derived`:
 
 ```yaml
 zones:
-  - { name: working, kind: origin }
+  - { name: working, kind: canon }
   - { name: intake,  kind: quarantine }
   - { name: review,  kind: queue }
   - { name: output,  kind: derived }
@@ -155,7 +155,7 @@ zones:
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
 name-based guessing). The kind also fixes the capability a writer must hold —
-`origin`⇒`accept`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
+`canon`⇒`accept`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
 Rules: at most one `queue` zone, and (since `accept` is the single trust
 anchor) at most one role may hold it.
 
@@ -165,8 +165,8 @@ anchor) at most one role may hold it.
 
 ```yaml
 zones:
-  - { name: self,    kind: origin }                      # was identity
-  - { name: notes,   kind: origin }                      # was working
+  - { name: self,    kind: canon }                       # was identity
+  - { name: notes,   kind: canon }                       # was working
   - { name: feeds,   kind: quarantine, read_policy: [all] } # was intake
   - { name: outputs, kind: derived }                     # was output
 ```
@@ -177,10 +177,10 @@ A consulting-engagement layout might want a sharper split than the defaults. Eac
 
 ```yaml
 zones:
-  - { name: identity,    kind: origin }     # accept-holders (human) author
-  - { name: research,    kind: origin }     # AI-assisted research notes — still accept-gated
-  - { name: deliverable, kind: origin }     # human-only client-facing copy
-  - { name: archive,     kind: origin }     # read-mostly historical record
+  - { name: identity,    kind: canon }      # accept-holders (human) author
+  - { name: research,    kind: canon }      # AI-assisted research notes — still accept-gated
+  - { name: deliverable, kind: canon }      # human-only client-facing copy
+  - { name: archive,     kind: canon }      # read-mostly historical record
   - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
   - { name: built,       kind: derived }    # rendered outputs — build-holders write
 ```
@@ -408,8 +408,8 @@ roles:
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: origin }
-  - { name: working,  kind: origin }
+  - { name: identity, kind: canon }
+  - { name: working,  kind: canon }
   - { name: output,   kind: derived }
 
 entries:

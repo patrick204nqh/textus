@@ -8,8 +8,8 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
     store = store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML + rules_yaml)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
-        - { name: identity, kind: origin }
+        - { name: working, kind: canon }
+        - { name: identity, kind: canon }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, kind: leaf }
         - { key: identity.x, path: identity/x.md, zone: identity, kind: leaf }

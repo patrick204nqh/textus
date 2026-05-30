@@ -11,7 +11,7 @@ RSpec.describe Textus::Store, ".discover" do
     FileUtils.mkdir_p(File.join(dir, "schemas"))
     FileUtils.mkdir_p(File.join(dir, "zones"))
     File.write(File.join(dir, "manifest.yaml"),
-               "version: textus/3\nzones:\n  - { name: working, kind: origin }\nentries: []\n")
+               "version: textus/3\nzones:\n  - { name: working, kind: canon }\nentries: []\n")
   end
 
   it "honors an explicit root: kwarg" do

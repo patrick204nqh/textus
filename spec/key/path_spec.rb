@@ -9,7 +9,7 @@ RSpec.describe Textus::Key::Path do
     FileUtils.mkdir_p(File.join(root, "zones"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: origin }]
+      zones: [{ name: working, kind: canon }]
       entries:
         - { key: working.x,   path: working/x.md,   zone: working, kind: leaf}
 

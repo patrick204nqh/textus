@@ -12,7 +12,7 @@ to "I just want to see it work."
 - An **agent** proposes a note to the `review` zone.
 - A **human** accepts the proposal — it lands in `working`.
 - An attempt by the agent to write directly to `working` is **rejected**:
-  the agent holds only `propose`, and the `working` origin zone needs the
+  the agent holds only `propose`, and the `working` canon zone needs the
   `accept` capability to write. (This is the value textus adds over
   just writing files in a folder.)
 - Every write is **audited**: `textus audit` shows who-did-what.
@@ -50,7 +50,7 @@ bundle exec ../../exe/textus audit --limit=5
 
 ```sh
 # Try to skip the review queue — agent writes directly to working.
-# Rejected: the agent lacks the `accept` capability the origin zone needs.
+# Rejected: the agent lacks the `accept` capability the canon zone needs.
 # This is the load-bearing safety.
 printf '%s' '{"_meta":{"name":"shortcut"},"body":"skip review\n"}' \
   | bundle exec ../../exe/textus put working.notes.shortcut --as=agent --stdin

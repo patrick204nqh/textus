@@ -50,7 +50,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
         - { name: owner,  can: [accept, propose] }
         - { name: agent,  can: [propose] }
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
     YAML

@@ -11,8 +11,8 @@ module Textus
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: queue }
         - { name: output,   kind: derived }

@@ -10,8 +10,8 @@ RSpec.describe Textus::Read::List do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
-        - { name: notes,   kind: origin }
+        - { name: working, kind: canon }
+        - { name: notes,   kind: canon }
       entries:
         - { key: working.alpha, path: working/alpha.md, zone: working, kind: leaf}
 

@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::FetchLocks do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
         entries: []
       YAML
       yield Textus::Store.new(textus), textus

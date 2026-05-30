@@ -8,7 +8,7 @@ RSpec.describe Textus::Write::Accept do
     store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
@@ -139,7 +139,7 @@ RSpec.describe Textus::Write::Accept do
           manifest: <<~YAML,
             version: textus/3
             zones:
-              - { name: working, kind: origin }
+              - { name: working, kind: canon }
               - { name: review,  kind: queue }
             entries:
               - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested }
@@ -188,7 +188,7 @@ RSpec.describe Textus::Write::Accept do
         store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
           version: textus/3
           zones:
-            - { name: working, kind: origin }
+            - { name: working, kind: canon }
             - { name: review,  kind: queue }
           entries:
             - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }

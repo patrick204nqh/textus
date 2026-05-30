@@ -21,8 +21,8 @@ RSpec.describe "textus/3 conformance" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: output,   kind: derived }
         - { name: intake,   kind: quarantine }
       entries:
@@ -221,7 +221,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: working,  kind: queue }
         entries:
           - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick, kind: leaf}

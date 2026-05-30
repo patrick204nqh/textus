@@ -138,7 +138,7 @@ RSpec.describe Textus::Write::FetchWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: plain, kind: origin }
+          - { name: plain, kind: canon }
         entries:
           - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
 

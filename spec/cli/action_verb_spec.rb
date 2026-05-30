@@ -9,10 +9,10 @@ RSpec.describe "textus action verb" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: intake,   kind: quarantine }
-        - { name: review,   kind: origin }
+        - { name: review,   kind: canon }
         - { name: output,   kind: derived }
       entries:
         - { key: working.demo, path: working/demo.md, zone: working, kind: leaf}

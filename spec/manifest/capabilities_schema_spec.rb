@@ -14,7 +14,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
         - { name: proposer, can: [propose] }
         - { name: fetcher,  can: [fetch] }
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.not_to raise_error
@@ -26,7 +26,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: weirdo, can: [teleport] }
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown capability 'teleport'/)
@@ -39,7 +39,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
         - { name: owner,    can: [accept] }
         - { name: co_owner, can: [accept] }
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /at most one is allowed/)
@@ -51,7 +51,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: owner, can: [accept], color: blue }
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown key 'color'/)
@@ -61,7 +61,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.not_to raise_error

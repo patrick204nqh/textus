@@ -10,7 +10,7 @@ RSpec.describe Textus::Manifest::Policy do
         - { name: human,      can: [accept, propose] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: derived }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
@@ -59,7 +59,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: human, can: [accept, propose] }
           - { name: agent, can: [propose] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: review,  kind: queue }
         entries: []
       YAML
@@ -73,7 +73,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: owner, can: [accept, propose] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: review,  kind: queue }
         entries: []
       YAML
@@ -122,7 +122,7 @@ RSpec.describe Textus::Manifest::Policy do
         raw2 = YAML.safe_load(<<~YAML, aliases: false)
           version: textus/3
           roles: [{ name: human, can: [accept, propose] }]
-          zones: [{ name: review, kind: origin }]
+          zones: [{ name: review, kind: canon }]
           entries: []
         YAML
         p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -132,7 +132,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     context "when the role writes only non-queue zones" do
       it "returns nil" do
-        # default fixture: human writes 'working' (kind: origin), not a queue
+        # default fixture: human writes 'working' (kind: canon), not a queue
         expect(policy.propose_zone_for("human")).to be_nil
       end
     end
@@ -156,7 +156,7 @@ RSpec.describe Textus::Manifest::Policy do
           roles:
             - { name: human, can: [accept, propose] }
           zones:
-            - { name: working, kind: origin }
+            - { name: working, kind: canon }
             - { name: review,  kind: queue }
           entries:
             - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
@@ -179,7 +179,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: agent,      can: [propose] }
           - { name: automation, can: [fetch, build] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: review,  kind: queue }
           - { name: output,  kind: derived }
         entries: []
@@ -188,7 +188,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "returns the declared kind for a zone" do
       expect(policy.declared_kind("review")).to eq(:queue)
-      expect(policy.declared_kind("working")).to eq(:origin)
+      expect(policy.declared_kind("working")).to eq(:canon)
     end
 
     it "finds the queue zone by declared kind" do
@@ -204,7 +204,7 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles: [{ name: human, can: [accept, propose] }]
-        zones: [{ name: out, kind: origin }]
+        zones: [{ name: out, kind: canon }]
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -224,7 +224,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: human, can: [accept, propose] }
           - { name: agent, can: [propose] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: inbox,   kind: queue }
         entries: []
       YAML
@@ -263,7 +263,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: agent,      can: [propose] }
           - { name: automation, can: [fetch, build] }
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: review,  kind: queue }
           - { name: output,  kind: derived }
         entries: []
@@ -272,7 +272,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "exposes declared_zone_kinds keyed by zone name with symbol values" do
       expect(data.declared_zone_kinds).to eq(
-        "working" => :origin, "review" => :queue, "output" => :derived,
+        "working" => :canon, "review" => :queue, "output" => :derived,
       )
     end
 

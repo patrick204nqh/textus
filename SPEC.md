@@ -135,8 +135,8 @@ The root is `.textus/` at the project working directory. A typical tree:
   hooks/                 # internal: one Ruby file per hook
   sentinels/             # internal: bookkeeping for byte-copied publish targets (see §5.3)
   zones/                 # ALL user content lives here
-    identity/            # zone: identity (kind: origin — accept-holders write)
-    working/             # zone: working (kind: origin — accept-holders write)
+    identity/            # zone: identity (kind: canon — accept-holders write)
+    working/             # zone: working (kind: canon — accept-holders write)
     intake/              # zone: intake (kind: quarantine — fetch-holders write)
     review/              # zone: review (kind: queue — propose-holders write)
     output/              # zone: output (kind: derived — build-holders write)
@@ -173,9 +173,9 @@ roles:
 
 zones:
   - name: identity
-    kind: origin
+    kind: canon
   - name: working
-    kind: origin
+    kind: canon
   - name: intake
     kind: quarantine
   - name: review
@@ -272,7 +272,7 @@ The kind→verb mapping is closed:
 
 | Zone `kind` | Required capability | Meaning |
 |---|---|---|
-| `origin` | `accept` | Authored truth — only the trust anchor writes directly. |
+| `canon` | `accept` | Authored truth — only the trust anchor writes directly. |
 | `quarantine` | `fetch` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `build` | Computed from other zones. |
@@ -281,8 +281,8 @@ Default scaffold (roles `human=[accept, propose]`, `agent=[propose]`, `automatio
 
 | Zone | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
-| `identity` | `origin` | `accept` | `human` | Identity, voice, immutable principles — things only the trust anchor edits. |
-| `working` | `origin` | `accept` | `human` | Active project state: notes, decisions, network. |
+| `identity` | `canon` | `accept` | `human` | Identity, voice, immutable principles — things only the trust anchor edits. |
+| `working` | `canon` | `accept` | `human` | Active project state: notes, decisions, network. |
 | `intake` | `quarantine` | `fetch` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Fetched by external automation; never by humans or agents directly. |
 | `review` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `working`. |
 | `output` | `derived` | `build` | `automation` | Computed outputs (catalogs, indexes, published context). Written via `textus build`. |
@@ -290,12 +290,12 @@ Default scaffold (roles `human=[accept, propose]`, `agent=[propose]`, `automatio
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role does not hold the capability the target zone-kind requires, the write returns `write_forbidden` with the message `writing '<key>' (zone '<zone>') needs capability '<verb>'` and a hint naming the roles that hold it (`held by: <roles>`, or `held by: no declared role` when none do).
 
 Every zone MUST declare a `kind:` describing its role in the data-flow graph.
-The vocabulary is closed: `origin` (authored truth), `quarantine` (external
+The vocabulary is closed: `canon` (authored truth), `quarantine` (external
 bytes pending validation), `queue` (proposals awaiting promotion), `derived`
 (computed from other zones). A manifest MUST declare at most one `queue` zone.
 Because authority is derived, a manifest is rejected at load if it declares a
 zone whose required verb is held by **no** declared role (`derived` ⇒ a role
-with `build`, `queue` ⇒ `propose`, `quarantine` ⇒ `fetch`, `origin` ⇒
+with `build`, `queue` ⇒ `propose`, `quarantine` ⇒ `fetch`, `canon` ⇒
 `accept`). Coordination is keyed off the declared kind: a zone is derived only
 if it declares `kind: derived`, and proposals route to the declared `queue`
 zone — there is no name-based fallback. A manifest with a kind-less zone is
@@ -341,7 +341,7 @@ required capability for exactly one zone-kind:
 
 | Capability | Authorizes writes to zone-kind |
 |---|---|
-| `accept` | `origin` |
+| `accept` | `canon` |
 | `propose` | `queue` |
 | `fetch` | `quarantine` |
 | `build` | `derived` |
@@ -997,7 +997,7 @@ A conformant implementation MUST pass these fixtures (the reference test suite s
 Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --output=json` returns the canonical envelope with `etag` matching the file's sha256.
 
 **Fixture B — Role gate on write:**
-Given a manifest entry where `key: identity.self` lives in the `identity` zone (`kind: origin`, requiring the `accept` capability), `textus put identity.self --stdin --as=agent` (where `agent` holds only `propose`) returns the error envelope with `code: "write_forbidden"` and exit code 1.
+Given a manifest entry where `key: identity.self` lives in the `identity` zone (`kind: canon`, requiring the `accept` capability), `textus put identity.self --stdin --as=agent` (where `agent` holds only `propose`) returns the error envelope with `code: "write_forbidden"` and exit code 1.
 
 **Fixture C — Schema violation:**
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.

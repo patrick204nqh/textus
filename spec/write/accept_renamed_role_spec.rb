@@ -12,7 +12,7 @@ RSpec.describe Textus::Write::Accept do
         - { name: owner,    can: [accept, propose] }
         - { name: proposer, can: [propose] }
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}

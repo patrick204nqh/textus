@@ -1,6 +1,6 @@
 ---
 version: textus/3
-# Write authority is derived from capabilities (ADR 0030): origin→accept,
+# Write authority is derived from capabilities (ADR 0030): canon→accept,
 # queue→propose, derived→build. The human holds accept+propose, the agent
 # only propose (review queue), and automation builds the derived output.
 roles:
@@ -16,9 +16,9 @@ roles:
   - build
 zones:
 - name: identity
-  kind: origin
+  kind: canon
 - name: working
-  kind: origin
+  kind: canon
 - name: review
   kind: queue
 - name: output

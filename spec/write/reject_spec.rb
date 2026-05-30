@@ -14,7 +14,7 @@ RSpec.describe Textus::Write::Reject do
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: review, kind: queue }
         entries:
           - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o, kind: leaf }

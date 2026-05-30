@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
         entries: []
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)

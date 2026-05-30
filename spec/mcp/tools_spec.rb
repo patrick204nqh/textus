@@ -10,8 +10,8 @@ RSpec.describe Textus::MCP::Tools do
     <<~YAML
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: review,   kind: queue }
       entries:
         - { key: identity.self,   path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }

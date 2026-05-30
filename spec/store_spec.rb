@@ -14,7 +14,7 @@ RSpec.describe Textus::Store do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.demo, path: working/demo, zone: working, schema: null, owner: human:patrick, kind: leaf}
 

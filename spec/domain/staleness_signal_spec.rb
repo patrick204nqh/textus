@@ -15,7 +15,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: output,  kind: derived }
       entries:
         - key: working.src
@@ -101,14 +101,14 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     expect(rows.first["reason"]).to match(/modified after generated\.at/)
   end
 
-  it "negative-signal: a zone literally named 'derived' but with kind: origin is NOT generator-kind" do
+  it "negative-signal: a zone literally named 'derived' but with kind: canon is NOT generator-kind" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
-        - { name: derived, kind: origin }
+        - { name: working, kind: canon }
+        - { name: derived, kind: canon }
       entries:
         - key: working.src
           kind: leaf
@@ -127,7 +127,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.write(File.join(root, "zones/working/src.md"), "---\nname: src\n---\nbody\n")
     # No file at derived/note.md → if treated as generator zone, would be flagged
     # with "derived entry has never been generated". Because the zone declares
-    # kind: origin (not derived), it must NOT be inspected by Staleness's
+    # kind: canon (not derived), it must NOT be inspected by Staleness's
     # generator pass.
 
     store = Textus::Store.new(root)

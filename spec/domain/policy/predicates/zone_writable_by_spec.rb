@@ -28,7 +28,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::ZoneWritableBy do
     allow(policy).to receive(:roles_with_capability).with("accept").and_return(["human"])
 
     pred = described_class.new
-    e = eval_for("agent") # working is origin → needs 'accept'; agent lacks it
+    e = eval_for("agent") # working is canon → needs 'accept'; agent lacks it
     expect(pred.call(e)).to be(false)
     expect { raise pred.error(e) }.to raise_error(Textus::WriteForbidden) do |err|
       expect(err.code).to eq("write_forbidden")

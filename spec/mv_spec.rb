@@ -14,8 +14,8 @@ RSpec.describe "textus mv" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
-        - { name: identity,   kind: origin }
+        - { name: working, kind: canon }
+        - { name: identity,   kind: canon }
       entries:
         - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
 

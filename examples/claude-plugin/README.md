@@ -83,7 +83,7 @@ voice-tools/
 ## How textus manages the catalog
 
 - **Identity** holds the slow-changing plugin identity (`identity.plugin`).
-  The `identity` zone is an `origin` zone, so writing it needs the `accept`
+  The `identity` zone is a `canon` zone, so writing it needs the `accept`
   capability — only the human holds it; agents and automation cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,

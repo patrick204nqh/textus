@@ -13,7 +13,7 @@ RSpec.describe "Key grammar enforcement" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
       #{entries_yaml}
     YAML

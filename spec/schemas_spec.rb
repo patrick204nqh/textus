@@ -86,4 +86,17 @@ RSpec.describe Textus::Schemas do
       expect(names).to eq(%w[agent skill])
     end
   end
+
+  describe "canon zone-kind (ADR 0033)" do
+    it "accepts kind: canon and rejects the retired kind: origin" do
+      canon = { "version" => "textus/3",
+                "roles" => [{ "name" => "human", "can" => ["accept"] }],
+                "zones" => [{ "name" => "knowledge", "kind" => "canon" }] }
+      expect { Textus::Manifest::Schema.validate!(canon) }.not_to raise_error
+
+      origin = canon.merge("zones" => [{ "name" => "knowledge", "kind" => "origin" }])
+      expect { Textus::Manifest::Schema.validate!(origin) }
+        .to raise_error(Textus::BadManifest, /unknown zone kind 'origin'/)
+    end
+  end
 end

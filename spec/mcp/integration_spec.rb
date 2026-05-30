@@ -14,8 +14,8 @@ RSpec.describe "MCP end-to-end" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: review,   kind: queue }
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }

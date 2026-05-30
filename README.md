@@ -104,8 +104,8 @@ roles:
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: origin }      # accept
-  - { name: working,  kind: origin }      # accept
+  - { name: identity, kind: canon }       # accept
+  - { name: working,  kind: canon }       # accept
   - { name: intake,   kind: quarantine }  # fetch
   - { name: review,   kind: queue }       # propose
   - { name: output,   kind: derived }     # build
@@ -149,7 +149,7 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`origin`→`accept`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
+- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`accept`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
 - **`textus doctor`.** 15 health checks across schemas, hooks, keys, sentinels, and the audit log.
 

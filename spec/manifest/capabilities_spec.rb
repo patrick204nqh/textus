@@ -61,7 +61,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       m = parse(<<~YAML)
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: intake,   kind: quarantine }
           - { name: review,   kind: queue }
           - { name: output,   kind: derived }
@@ -81,7 +81,7 @@ RSpec.describe Textus::Manifest::Capabilities do
           - { name: owner, can: [accept, propose] }
           - { name: bot,   can: [fetch, build] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: output,   kind: derived }
         entries: []
       YAML
@@ -97,7 +97,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         roles:
           - { name: owner, can: [accept, teleport] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
         entries: []
       YAML
       expect { parse(yaml) }.to raise_error(Textus::BadManifest, /teleport/)
@@ -109,7 +109,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         roles:
           - { name: everything, can: [propose, accept, fetch, build] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
         entries: []
       YAML
       expect { parse(yaml) }.not_to raise_error

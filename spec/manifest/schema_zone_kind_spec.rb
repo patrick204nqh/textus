@@ -23,7 +23,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
 
   it "rejects an unknown kind" do
     expect { parse("  - { name: review, kind: mailbox }") }
-      .to raise_error(Textus::BadManifest, /unknown zone kind 'mailbox'.*origin, quarantine, queue, derived/m)
+      .to raise_error(Textus::BadManifest, /unknown zone kind 'mailbox'.*canon, quarantine, queue, derived/m)
   end
 
   it "rejects two queue zones" do

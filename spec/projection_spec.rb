@@ -23,7 +23,7 @@ RSpec.describe Textus::Projection do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
 

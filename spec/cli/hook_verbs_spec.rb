@@ -62,7 +62,7 @@ RSpec.describe "CLI hook verbs" do
     FileUtils.mkdir_p(File.join(root, "zones/working"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: origin }]
+      zones: [{ name: working, kind: canon }]
       entries: [{ key: working.j, path: working/j.md, zone: working, kind: leaf }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)

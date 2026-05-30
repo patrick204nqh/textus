@@ -16,7 +16,7 @@ RSpec.describe Textus::Read::Pulse do
         - { name: human, can: [accept, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries: []
     YAML

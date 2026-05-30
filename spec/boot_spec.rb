@@ -24,8 +24,8 @@ RSpec.describe Textus::Boot do
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: working,  kind: canon }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: queue }
         - { name: output,   kind: derived }
@@ -114,8 +114,8 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: weird,    kind: origin }
+        - { name: identity, kind: canon }
+        - { name: weird,    kind: canon }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
 
@@ -221,7 +221,7 @@ RSpec.describe Textus::Boot do
           - { name: fetcher,  can: [fetch] }
           - { name: compiler, can: [build] }
         zones:
-          - { name: self,    kind: origin }
+          - { name: self,    kind: canon }
           - { name: review,  kind: queue }
           - { name: world,   kind: quarantine }
           - { name: build,   kind: derived }
@@ -244,7 +244,7 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: review,   kind: queue }
           - { name: output,   kind: derived }
         entries: []

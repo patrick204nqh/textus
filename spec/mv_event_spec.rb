@@ -12,7 +12,7 @@ RSpec.describe ":entry_renamed event" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: origin }]
+      zones: [{ name: working, kind: canon }]
       entries:
         - { key: working.a, path: working/a.md, zone: working, kind: leaf}
 

@@ -10,7 +10,7 @@ RSpec.describe Textus::Manifest::Data do
         - { name: human, can: [accept, propose] }
         - { name: automation, can: [build] }
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: derived }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
