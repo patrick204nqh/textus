@@ -1,5 +1,8 @@
 # Zones — shaping your context
 
+> **Reference** · for integrators · **read when** you're designing your zone layout
+> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.30)
+
 How to define the **shape of your context** in textus: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
 
 This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](../SPEC.md). For implementation internals, see [`../ARCHITECTURE.md`](../ARCHITECTURE.md).

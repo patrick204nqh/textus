@@ -1,5 +1,8 @@
 # Conventions
 
+> **Reference** · for integrators · **read when** you're shaping a `.textus/` tree and want the idiomatic choices
+> **SSoT for** idiomatic key naming, schema design, and runner integration · **reviewed** 2026-05 (v0.30)
+
 Guidelines for shaping a `.textus/` tree, naming keys, organising schemas, and integrating with build runners. The spec ([`../SPEC.md`](../SPEC.md)) defines what's enforceable; this document captures what's *idiomatic*.
 
 ## Key naming
