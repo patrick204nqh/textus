@@ -50,6 +50,52 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
+  describe "#proposer_role" do
+    it "prefers a non-accept proposer over an accept+propose role" do
+      # default-style: human=[accept,propose], agent=[propose] → agent wins
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: human, can: [accept, propose] }
+          - { name: agent, can: [propose] }
+        zones:
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to eq("agent")
+    end
+
+    it "falls back to the first proposer when the only proposer also holds accept" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: owner, can: [accept, propose] }
+        zones:
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to eq("owner")
+    end
+
+    it "returns nil when no role holds propose" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: automation, can: [fetch, build] }
+        zones:
+          - { name: intake, kind: quarantine }
+          - { name: output, kind: derived }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.proposer_role).to be_nil
+    end
+  end
+
   describe "#propose_zone_for" do
     context "when the role writes the declared kind: queue zone" do
       let(:yaml) do

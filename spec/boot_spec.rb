@@ -159,6 +159,10 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]).to include("human", "agent", "automation")
     expect(env["write_flows"]["agent"]).to include("proposal:")
 
+    # human holds [accept, propose] → its write_flow joins both guidance
+    # strings (accept's 'textus put' + propose's 'proposal:') with ' / '.
+    expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
+
     names = env["cli_verbs"].map { |v| v["name"] }
     expect(names).to include("boot", "list", "get", "put", "accept", "build", "doctor", "hook")
   end
