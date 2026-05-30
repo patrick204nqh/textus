@@ -48,7 +48,7 @@ Try the gate the other way (`textus put working.notes.X --as=agent`) and you get
 ## Try it
 
 - **5-command worked demo** — single terminal scroll, no MCP, no schemas: [`examples/hello/`](examples/hello/)
-- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`INTEGRATE_WITH_CLAUDE.md`](INTEGRATE_WITH_CLAUDE.md)
+- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/agents-mcp.md`](docs/agents-mcp.md)
 - **Use textus as your own project's context store**: [`examples/project/`](examples/project/)
 - **Use textus to author a Claude plugin** (textus is the source-of-truth, build publishes to `agents/`, `skills/`, `commands/`): [`examples/claude-plugin/`](examples/claude-plugin/)
 
@@ -57,7 +57,7 @@ Try the gate the other way (`textus put working.notes.X --as=agent`) and you get
 This Ruby gem is the reference implementation of **`textus/3`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/zone gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/3`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
 
 - Specification: [`SPEC.md`](SPEC.md)
-- Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Architecture: [`docs/architecture/README.md`](docs/architecture/README.md)
 - Per-release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
 A second implementation in another language would share the same `.textus/` directory and the same audit log. That's deliberate.
@@ -193,7 +193,7 @@ See SPEC.md §5.10 for the full hook contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/agent-integration.md`](docs/agent-integration.md) for the agent boot → pulse loop.
+See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop.
 
 ## Examples
 

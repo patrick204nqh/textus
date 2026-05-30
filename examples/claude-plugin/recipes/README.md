@@ -12,5 +12,5 @@ bundle out into per-file `vendor.skills.<slug>.<rel>` derived entries.
 Reconciles: orphaned children whose source path disappeared upstream are
 deleted. Inner writes use `suppress_events: true` to prevent recursion.
 
-See [docs/recipe-github-skill-bundle.md](../../../docs/recipe-github-skill-bundle.md)
+See [docs/recipes/github-skill-bundle.md](../../../docs/recipes/github-skill-bundle.md)
 for the end-to-end recipe (manifest snippet, copy command, caveats).

@@ -1,5 +1,8 @@
 # Recipe: fan an intake bundle out into per-file derived entries
 
+> **How-to** · for integrators · **read when** you want one intake bundle fanned into many derived entries
+> **SSoT for** the GitHub skill-bundle fan-out recipe · **reviewed** 2026-05 (v0.30)
+
 This recipe shows how to take a single intake entry whose payload is a
 bundle of files (`content.files == { relative_path => bytes }`) and fan
 it out into per-file derived entries using existing textus primitives —

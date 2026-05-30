@@ -1,5 +1,8 @@
 # Migrations
 
+> **How-to** · for operators · **read when** you need to restructure a store safely
+> **SSoT for** store-restructuring procedures (key rename, zone rename, bulk delete) · **reviewed** 2026-05 (v0.30)
+
 How to restructure a textus store safely.
 
 ## Bulk key rename

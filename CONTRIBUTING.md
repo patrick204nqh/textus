@@ -48,4 +48,4 @@ See [`SECURITY.md`](SECURITY.md).
 
 ## Sources of truth
 
-`ARCHITECTURE.md` — read this first for orientation. `SPEC.md` is the wire contract you reach for once you know the layout. Treat `SPEC.md`, `ARCHITECTURE.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version. Per-release implementation plans live under `docs/plans/` as scratch artifacts — not gating documents. Contributors are not expected to write or follow them.
+`docs/architecture/README.md` — read this first for orientation. `SPEC.md` is the wire contract you reach for once you know the layout. Treat `SPEC.md`, `docs/architecture/README.md`, and `docs/` as current. `CHANGELOG.md` is the canonical record of what shipped per version. Per-release implementation plans live under `docs/plans/` as scratch artifacts — not gating documents. Contributors are not expected to write or follow them.

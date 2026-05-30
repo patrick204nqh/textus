@@ -1,5 +1,8 @@
 # Events — writing hooks
 
+> **How-to** · for hook authors · **read when** you want to extend textus with Ruby hooks
+> **SSoT for** the hook-authoring guide (normative event table lives in SPEC §5.10) · **reviewed** 2026-05 (v0.30)
+
 How to extend textus with Ruby hooks: when each event fires, what arguments it receives, how to define one, and how to test it.
 
 This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](./zones.md).
@@ -457,5 +460,5 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 
 - [`./zones.md`](./zones.md) — the manifest side: declaring which entries trigger which hooks
 - [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:resolve_intake` and event contracts
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
+- [`architecture/README.md`](architecture/README.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
 - [`../examples/claude-plugin/.textus/hooks/`](../examples/claude-plugin/.textus/hooks/) — six worked hooks across four event types

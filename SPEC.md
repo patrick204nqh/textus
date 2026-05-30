@@ -535,6 +535,8 @@ Row transforms are RPC hooks on the `:transform_rows` event. See §5.10.
 
 ### 5.10 Hooks
 
+This section is the normative event table. For the hook-author's guide (how to define and test hooks), see [`docs/events.md`](docs/events.md).
+
 textus has a single hook registration verb: `Textus.hook { |reg| reg.on(event, name, **opts) { ... } }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path; the store-scoped loader drains the queued blocks and invokes each with its own registry.
 
 The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path.
@@ -897,7 +899,7 @@ The reference Ruby gem follows semver independently and speaks `textus/3`.
 
 Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable zones, and its propose zone. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
 
-For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/agent-integration.md`](docs/agent-integration.md).
+For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/agents-mcp.md`](docs/agents-mcp.md).
 
 ## 12. Conformance fixtures
 
@@ -969,7 +971,7 @@ Both read and write paths flow through the application layer:
   Verbs are looked up in the static `Textus::Dispatcher::VERBS` table; adding a
   use case is a single entry in `VERBS` plus the class.
 
-See `ARCHITECTURE.md` for an ASCII diagram and the full read-path walkthrough.
+See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
 
 ## 14. Open questions (v3.x scope)
 

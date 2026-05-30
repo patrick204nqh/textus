@@ -6,7 +6,7 @@
 # To use: copy this file into your store's hooks/ directory (e.g.
 # .textus/hooks/skill_fanout.rb) and ensure the destination zone (`vendor`)
 # is writable by the role that triggers the refresh. See
-# docs/recipe-github-skill-bundle.md.
+# docs/recipes/github-skill-bundle.md.
 
 module TextusRecipes
   module SkillFanout
