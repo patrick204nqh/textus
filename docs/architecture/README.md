@@ -3,66 +3,78 @@
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
 > **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/refresh paths) · **reviewed** 2026-05 (v0.30)
 
+```mermaid
+flowchart TD
+    interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
+    application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ use cases · envelope IO"]
+    domain["Domain — Authorizer · Permission · Freshness · Staleness<br/>Policy (Promote · Refresh · Matcher · Predicates)"]
+    infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
+    interface --> application
+    application --> domain
+    application --> infra
+    domain -.->|implemented by| infra
 ```
-┌─ Interface ────────────────────────────────────────────────┐
-│  CLI verbs:  store.<verb>(..., role:)                      │
-│              store.as(role).<verb>(...)                    │
-│                                # (put/get/refresh/…)       │
-│                                                            │
-│  MCP gate:   textus mcp serve — same use cases, JSON-RPC.  │
-└──────────────────────┬─────────────────────────────────────┘
-                       │
-┌─ Application ────────▼─────────────────────────────────────┐
-│  Call             (slim Data: role, correlation_id, now,   │
-│                    dry_run — request state only)           │
-│  Container        (single record — wired ports + manifest) │
-│  Dispatcher       (static VERBS table: verb → use-case)    │
-│  RoleScope        (Store#as(role) — forwards verb calls)   │
-│                                                            │
-│  read/{get,get_or_refresh,list,where,uid,schema_envelope,  │
-│        deps,rdeps,published,stale,validate_all,boot,doctor,│
-│        freshness,audit,blame,policy_explain,pulse}.rb      │
-│  write/{put,delete,mv,accept,reject,publish,               │
-│         materializer,authority_gate,                       │
-│         refresh_worker,refresh_orchestrator,refresh_all}   │
-│  maintenance/{migrate,key_mv_prefix,key_delete_prefix,     │
-│               zone_mv,rule_lint}.rb                        │
-│  envelope/io/{reader,writer}.rb  (split: parse vs persist) │
-│  projection.rb                                             │
-└──────────┬───────────────────────────────┬─────────────────┘
-           │ uses domain                   │ uses ports
-┌─ Domain ─▼─────────────────────────────────────────────────┐
-│  Authorizer         (manifest + role → allow / deny)       │
-│  Permission         (write/read predicate per zone)        │
-│  Freshness::{Policy,Verdict,Evaluator}                     │
-│  Staleness          (Generator/Intake checks)              │
-│  Action  Outcome  Sentinel                                 │
-│  Policy::{Promote,Refresh,Matcher,HandlerAllowlist,        │
-│           Predicates::{SchemaValid,AcceptAuthoritySigned}} │
-└──────────────────────────────────────────┬─────────────────┘
-                                           │ implements
-┌─ Infrastructure ─────────────────────────▼─────────────────┐
-│  Store              (composition root — wires ports,       │
-│                      vends a Container + dispatches verbs) │
-│  Storage::FileStore (bytes-only port: read/write/delete/   │
-│                      exists?/etag)                         │
-│  Manifest           (Data, Resolver, Policy, Rules)        │
-│  Schemas            (eager-load cache)                     │
-│  Ports::{AuditLog,AuditSubscriber,Publisher,Clock,         │
-│          Refresh::Lock,Refresh::Detached,BuildLock}        │
-│  Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,   │
-│          Signature,Builtin,ErrorLog}                       │
-│  Entry::{Markdown,Json,Yaml,Text}  (format strategies)     │
-└────────────────────────────────────────────────────────────┘
 
-   Dependency rule: arrows point DOWN. Domain performs no direct
-   File/Dir/Time.now I/O — all disk and clock access is routed through
-   injected ports (FileStat, Clock). Pure path math (File.join/dirname/
-   absolute_path?/expand_path/basename), Digest hashing of injected
-   bytes, and Time.parse of stored strings are NOT I/O and are allowed.
-   Application imports Domain + Ports.
-   Use cases are plain classes on (container:, call:).
-   Verbs are looked up in the static Dispatcher::VERBS table.
+*Dependency rule: arrows point down.* Domain performs no direct `File`/`Dir`/`Time.now` I/O — all disk and clock access is routed through injected ports; pure path math is allowed. Application imports Domain + Ports. Use cases are plain classes on `(container:, call:)`. Verbs are looked up in the static `Dispatcher::VERBS` table.
+
+### What lives in each layer
+
+**Interface**
+
+```
+CLI verbs:  store.<verb>(..., role:)
+            store.as(role).<verb>(...)    # (put/get/refresh/…)
+
+MCP gate:   textus mcp serve — same use cases, JSON-RPC.
+```
+
+**Application**
+
+```
+Call             (slim Data: role, correlation_id, now,
+                  dry_run — request state only)
+Container        (single record — wired ports + manifest)
+Dispatcher       (static VERBS table: verb → use-case)
+RoleScope        (Store#as(role) — forwards verb calls)
+
+read/{get,get_or_refresh,list,where,uid,schema_envelope,
+      deps,rdeps,published,stale,validate_all,boot,doctor,
+      freshness,audit,blame,policy_explain,pulse}.rb
+write/{put,delete,mv,accept,reject,publish,
+       materializer,authority_gate,
+       refresh_worker,refresh_orchestrator,refresh_all}
+maintenance/{migrate,key_mv_prefix,key_delete_prefix,
+             zone_mv,rule_lint}.rb
+envelope/io/{reader,writer}.rb  (split: parse vs persist)
+projection.rb
+```
+
+**Domain**
+
+```
+Authorizer         (manifest + role → allow / deny)
+Permission         (write/read predicate per zone)
+Freshness::{Policy,Verdict,Evaluator}
+Staleness          (Generator/Intake checks)
+Action  Outcome  Sentinel
+Policy::{Promote,Refresh,Matcher,HandlerAllowlist,
+         Predicates::{SchemaValid,AcceptAuthoritySigned}}
+```
+
+**Infrastructure**
+
+```
+Store              (composition root — wires ports,
+                    vends a Container + dispatches verbs)
+Storage::FileStore (bytes-only port: read/write/delete/
+                    exists?/etag)
+Manifest           (Data, Resolver, Policy, Rules)
+Schemas            (eager-load cache)
+Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
+        Refresh::Lock,Refresh::Detached,BuildLock}
+Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
+        Signature,Builtin,ErrorLog}
+Entry::{Markdown,Json,Yaml,Text}  (format strategies)
 ```
 
 ## How a verb becomes a method
