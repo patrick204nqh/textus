@@ -14,11 +14,11 @@ module Textus
     # are omitted from write_flows.
     WRITE_FLOW_TEMPLATES = {
       author: lambda do |name, _manifest|
-        "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
+        "edit files in knowledge/notebook zones, then 'textus put KEY --as=#{name}'"
       end,
       propose: lambda do |name, manifest|
         authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
-        "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
+        "propose changes by writing proposals.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
           "the #{authority} role runs 'textus accept' to apply"
       end,
       fetch: lambda do |name, _manifest|
@@ -72,10 +72,10 @@ module Textus
         "propose" => {
           "purpose" => "agent suggests a change for human review",
           "agent_steps" => [
-            "echo ENVELOPE | textus put review.KEY --as=agent --stdin",
+            "echo ENVELOPE | textus put proposals.KEY --as=agent --stdin",
           ],
           "human_steps" => [
-            "textus accept review.KEY --as=human       # promotes the proposal to its target zone",
+            "textus accept proposals.KEY --as=human     # promotes the proposal to its target zone",
           ],
         },
         "fetch" => {
@@ -98,7 +98,7 @@ module Textus
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "accept",   "summary" => "apply a review.* proposal; --as=human only" },
+      { "name" => "accept",   "summary" => "apply a proposals.* proposal; --as=human only" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
