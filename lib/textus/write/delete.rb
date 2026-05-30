@@ -5,7 +5,6 @@ module Textus
         @container    = container
         @call         = call
         @manifest     = container.manifest
-        @authorizer   = container.authorizer
         @events       = container.events
       end
 
@@ -13,7 +12,7 @@ module Textus
         Textus::Manifest::Data.validate_key!(key)
         mentry = @manifest.resolver.resolve(key).entry
 
-        @authorizer.authorize_write!(mentry, role: @call.role)
+        guard_for(:delete, key, if_etag: if_etag).check!(eval_for(:delete, target_key: key))
 
         writer.delete(key, mentry: mentry, if_etag: if_etag)
 
@@ -27,6 +26,19 @@ module Textus
       end
 
       private
+
+      def guard_for(transition, key, if_etag: nil)
+        Textus::Domain::Policy::GuardFactory.new(
+          manifest: @manifest, schemas: @container.schemas, extra: { if_etag: if_etag },
+        ).for(transition, key)
+      end
+
+      def eval_for(transition, target_key:, envelope: nil)
+        Textus::Domain::Policy::Evaluation.new(
+          actor: @call.role, transition: transition, origin: nil,
+          target: target_key, envelope: envelope, snapshot: @manifest
+        )
+      end
 
       def hook_context
         @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
