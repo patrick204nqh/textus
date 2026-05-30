@@ -1,47 +1,58 @@
+# frozen_string_literal: true
+
 module Textus
   module Domain
     module Policy
       module Predicates
+        # Predicate: the entry's effective frontmatter satisfies the schema
+        # bound to the target key. For accept, the frontmatter lives under
+        # envelope.meta["frontmatter"]; for a direct put it is envelope.meta.
         class SchemaValid
           attr_reader :reason
 
-          def name
-            "schema_valid"
+          def initialize(schemas:)
+            @schemas = schemas
           end
 
-          def call(entry:, schemas:, manifest:) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
-            return true if entry.nil? || manifest.nil? || schemas.nil?
+          def name = "schema_valid"
 
-            target_key = entry.meta&.dig("proposal", "target_key")
+          def call(eval)
+            manifest = eval.manifest
+            return true if eval.envelope.nil? || manifest.nil? || @schemas.nil?
+
+            target_key = eval.target
             return true unless target_key
 
             mentry = manifest.resolver.resolve(target_key).entry
             schema_ref = mentry&.schema
             return true unless schema_ref
 
-            schema = schemas.fetch_or_nil(schema_ref)
+            schema = @schemas.fetch_or_nil(schema_ref)
             return true unless schema
 
-            frontmatter = entry.meta&.dig("frontmatter") || {}
+            frontmatter =
+              eval.envelope.meta&.dig("frontmatter") || eval.envelope.meta || {}
             begin
               schema.validate!(frontmatter)
+              true
             rescue Textus::SchemaViolation => e
-              @reason = e.message.dup
-              d = e.details
-              if d.is_a?(Hash)
-                if d["missing"]
-                  @reason = "missing required fields: #{Array(d["missing"]).join(", ")}"
-                elsif d["field"]
-                  @reason = "field '#{d["field"]}': #{d["reason"]}"
-                end
-              end
-              return false
+              @reason = humanize(e)
+              false
             end
-
-            true
           rescue StandardError => e
             @reason = "schema validation error: #{e.message}"
             false
+          end
+
+          private
+
+          def humanize(err)
+            d = err.details
+            return err.message.dup unless d.is_a?(Hash)
+            return "missing required fields: #{Array(d["missing"]).join(", ")}" if d["missing"]
+            return "field '#{d["field"]}': #{d["reason"]}" if d["field"]
+
+            err.message.dup
           end
         end
       end

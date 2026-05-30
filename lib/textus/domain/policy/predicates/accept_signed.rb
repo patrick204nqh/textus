@@ -1,28 +1,29 @@
+# frozen_string_literal: true
+
 module Textus
   module Domain
     module Policy
       module Predicates
-        # Promotion predicate: the role driving the promotion must hold the
-        # 'accept' capability in the active manifest.
-        #
-        # Accept/Reject already gate on the accept capability before reaching
-        # the promotion policy, so in the default control-flow this predicate
-        # trivially passes. It is kept so manifests can express the
-        # requirement explicitly in `rules[].promotion.requires`.
+        # Predicate: the acting role must hold the 'accept' capability in the
+        # active manifest (ADR 0030 capability roles). Folds in the old
+        # Write::AuthorityGate so accept/reject and rules[].guard share one
+        # implementation. No bespoke #error — failures accumulate into
+        # GuardFailed (ADR 0031).
         class AcceptSigned
           attr_reader :reason
 
-          def name
-            "accept_signed"
-          end
+          def name = "accept_signed"
 
-          def call(role:, manifest:, entry: nil) # rubocop:disable Lint/UnusedMethodArgument
-            role_str = role&.to_s
-            return true if role_str.nil? || role_str.empty?
+          def call(eval)
+            holders = eval.manifest.policy.roles_with_capability("accept")
+            return true if holders.include?(eval.actor.to_s)
 
-            return true if manifest.policy.roles_with_capability("accept").include?(role_str)
-
-            @reason = "role '#{role_str}' does not hold the 'accept' capability"
+            @reason =
+              if holders.empty?
+                "no role holds the 'accept' capability; #{eval.transition} is disabled"
+              else
+                "role '#{eval.actor}' lacks the 'accept' capability (held by: #{holders.join(", ")})"
+              end
             false
           end
         end
