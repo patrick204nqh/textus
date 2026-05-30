@@ -12,7 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
-**A coordination space for codebases that humans and AI agents both touch.** Your agent forgets between sessions; your runbooks and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is durable, multi-writer memory that survives the model, the session, and the vendor — humans, agents, and runners each write into their own lane, propose changes through a review queue, and leave an audit trail behind every byte.
+**A coordination space for humans, AI, and runners.** Your agent forgets between sessions; your notes and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is durable, multi-writer memory that stays current and survives the model, the session, and the vendor — you keep your space, agents keep theirs, runners keep external data fresh, and every change crosses a review queue and an audit log.
 
 *textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together."
 

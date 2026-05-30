@@ -39,6 +39,12 @@ planes" (ADR 0028) is an architecture-internal model and does not appear in the 
 - The "Lanes" brand and the "zones" implementation stop competing — they are the same
   thing named for two audiences, and the README says so once.
 - "coordination space" becomes the product's one-line answer to *what is textus*.
+- **The space is domain-agnostic.** "coordination space" names a *living, multi-writer
+  context store* — not a code tool. A codebase (with its `CLAUDE.md` and runbooks) is the
+  lead example, not the definition; a knowledge base or any project's operating context
+  fits the same shape. The load-bearing promises are *stays current* (the `intake` lane +
+  `refresh` + freshness) and *coordinated* (`pulse` + the audit cursor); positioning leads
+  with those, never with "for codebases".
 - No wire/protocol change. `textus/3` is untouched.
 
 ## Alternatives considered
@@ -49,3 +55,9 @@ brand/logo and the friendly on-ramp "coordination space" gives newcomers. Reject
 **Make "lanes" the headline.** Leans into the logo, but "lanes" describes the parts, not
 the whole; "coordination space" names what the parts add up to and why textus exists.
 Rejected as the headline, kept as the part-term.
+
+**"Native storage" / "context store" as the headline.** Captures the always-current,
+"you decide what to keep" feel, but "storage" undersells the part that is the actual
+product — the role/zone gate, the review hand-off, and the audit trail. Multiple actors
+*coordinating* over one store is the point; storage is the substrate. Rejected as the
+headline; the storage qualities live in the body.
