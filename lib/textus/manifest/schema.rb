@@ -37,7 +37,6 @@ module Textus
         validate_entries!(raw["entries"])
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
-        validate_zone_writers_declared!(raw)
         validate_single_queue!(raw)
         validate_zone_kind_consistency!(raw)
       end
@@ -78,13 +77,6 @@ module Textus
         end
       end
 
-      # TODO(Task 2): rewrite validation. Write authority is now derived from
-      # capabilities (no write_policy list), so there is nothing to cross-check
-      # here. Kept as a no-op so Schema.validate! still dispatches it.
-      def self.validate_zone_writers_declared!(_raw)
-        nil
-      end
-
       def self.validate_roles!(roles)
         return if roles.nil?
         raise BadManifest.new("roles: must be a list") unless roles.is_a?(Array)
@@ -102,8 +94,13 @@ module Textus
             )
           end
         end
-        # TODO(Task 2): enforce the single-accept invariant (at most one role
-        # may hold the `accept` capability).
+
+        accept_holders = roles.count { |r| Array(r["can"]).include?("accept") }
+        return if accept_holders <= 1
+
+        raise BadManifest.new(
+          "manifest declares #{accept_holders} roles with the accept capability; at most one is allowed",
+        )
       end
 
       def self.validate_fetch_timeout!(value, path)
@@ -134,12 +131,22 @@ module Textus
         )
       end
 
-      # TODO(Task 2): rewrite validation. Write authority is now derived from
-      # capabilities (role.can ⊇ KIND_REQUIRES_VERB[zone.kind]); the old
-      # writer/role-kind cross-check no longer applies. Kept as a no-op so
-      # Schema.validate! still dispatches it.
-      def self.validate_zone_kind_consistency!(_raw)
-        nil
+      # Write authority is derived from capabilities (ADR 0030): a zone of a
+      # given kind can only be written by a role that holds the kind's required
+      # verb. Reject a manifest declaring a zone whose required verb is held by
+      # no role. Capabilities.resolve returns the defaults when `roles:` is nil,
+      # so the capability union is all four verbs and every kind is satisfied.
+      def self.validate_zone_kind_consistency!(raw)
+        held = Capabilities.resolve(raw["roles"]).values.flatten.uniq
+
+        Array(raw["zones"]).each do |z|
+          verb = KIND_REQUIRES_VERB[z["kind"]]
+          next if verb.nil? || held.include?(verb)
+
+          raise BadManifest.new(
+            "zone '#{z["name"]}' (#{z["kind"]}) needs a role with capability '#{verb}'; none declared",
+          )
+        end
       end
     end
   end
