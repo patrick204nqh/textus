@@ -3,14 +3,15 @@ module Textus
     module Schema
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
-      ZONE_KEYS    = %w[name kind].freeze
-      ZONE_KINDS   = %w[canon quarantine queue derived].freeze
+      ZONE_KEYS    = %w[name kind owner desc].freeze
+      ZONE_KINDS   = %w[canon workspace quarantine queue derived].freeze
       # The closed capability set (ADR 0030): each verb grants authority to
       # originate in exactly one zone-kind.
-      CAPABILITIES = %w[propose author fetch build].freeze
+      CAPABILITIES = %w[propose author keep fetch build].freeze
       KIND_REQUIRES_VERB = {
         "queue" => "propose",
         "canon" => "author",
+        "workspace" => "keep",
         "quarantine" => "fetch",
         "derived" => "build",
       }.freeze
