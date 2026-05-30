@@ -35,7 +35,7 @@ module Textus
         @raw = raw
         @root = root
         # Write authority is derived from capabilities × zone-kind (ADR 0030),
-        # not a per-zone write_policy — Policy no longer reads `zones`. It is
+        # not a per-zone writer list — Policy no longer reads `zones`. It is
         # retained as a name→[] map purely for membership checks by read-side
         # callers (boot, read/pulse, maintenance/zone_mv) that ask whether a
         # zone is declared via `zones.key?`.

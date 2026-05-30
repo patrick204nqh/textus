@@ -3,14 +3,14 @@ require "spec_helper"
 RSpec.describe Textus::Domain::Permission do
   describe "#allows_write?" do
     it "returns true when the role is in writers" do
-      perm = described_class.new(zone: "working", writers: %w[human runner], read_policy: :all)
+      perm = described_class.new(zone: "working", writers: %w[human automation], read_policy: :all)
       expect(perm.allows_write?("human")).to be(true)
-      expect(perm.allows_write?("runner")).to be(true)
+      expect(perm.allows_write?("automation")).to be(true)
     end
 
     it "returns false when the role is not in writers" do
       perm = described_class.new(zone: "working", writers: ["human"], read_policy: :all)
-      expect(perm.allows_write?("runner")).to be(false)
+      expect(perm.allows_write?("automation")).to be(false)
     end
 
     it "treats symbol roles equivalently to string roles" do
@@ -28,7 +28,7 @@ RSpec.describe Textus::Domain::Permission do
     it "returns true when role is listed" do
       perm = described_class.new(zone: "secret", writers: [], read_policy: ["human"])
       expect(perm.allows_read?("human")).to be(true)
-      expect(perm.allows_read?("runner")).to be(false)
+      expect(perm.allows_read?("automation")).to be(false)
     end
   end
 end
