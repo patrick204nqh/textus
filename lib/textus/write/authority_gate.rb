@@ -6,9 +6,10 @@ module Textus
     # own line.
     module AuthorityGate
       def assert_accept_authority!(verb)
-        return if @manifest.policy.roles_with_capability("accept").include?(@call.role.to_s)
+        accept_holders = @manifest.policy.roles_with_capability("accept")
+        return if accept_holders.include?(@call.role.to_s)
 
-        authority = @manifest.policy.roles_with_capability("accept").first
+        authority = accept_holders.first
         if authority.nil?
           raise ProposalError.new(
             "no role holds the accept capability in this manifest; #{verb} is disabled",
