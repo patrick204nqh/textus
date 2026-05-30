@@ -83,15 +83,16 @@ voice-tools/
 ## How textus manages the catalog
 
 - **Identity** holds the slow-changing plugin identity (`identity.plugin`).
-  The `identity` zone is `write_policy: [human]` — agents and runners
-  cannot touch it.
+  The `identity` zone is an `origin` zone, so writing it needs the `accept`
+  capability — only the human holds it; agents and automation cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
 - **Review** is the AI proposal surface. The manifest's `review.**` rule
-  declares `promotion: { requires: [schema_valid, human_accept] }` — the
-  contract a proposal must satisfy before it can be accepted.
-- **Output** is owned by `builder:auto`. Two output entries assemble the
+  declares `promotion: { requires: [schema_valid, accept_signed] }` — the
+  contract a proposal must satisfy before it can be accepted (`accept_signed`
+  is satisfied only by a role holding the `accept` capability).
+- **Output** is owned by `automation:auto`. Two output entries assemble the
   shipped surface:
   - `output.plugin` → `plugin_envelope` transform → `.claude-plugin/plugin.json`
   - `output.claude-root` → `claude_root` transform + `claude-root.mustache`
@@ -119,7 +120,7 @@ This example ships one block:
 rules:
   # Contract for AI proposals.
   - match: review.**
-    promotion: { requires: [schema_valid, human_accept] }
+    promotion: { requires: [schema_valid, accept_signed] }
 ```
 
 The `rules({key})` MCP tool returns the effective rules for any key.
@@ -140,7 +141,7 @@ proposal under it:
   path: review/suggestion
   zone: review
   schema: null
-  owner: ai:catalog
+  owner: agent:catalog
   nested: true
 ```
 

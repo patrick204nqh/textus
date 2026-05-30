@@ -1,31 +1,36 @@
 ---
 version: textus/3
+# Write authority is derived from capabilities (ADR 0030): origin→accept,
+# queue→propose, derived→build. The human holds accept+propose, the agent
+# only propose (review queue), and automation fetches/builds — it owns the
+# derived output envelopes.
+roles:
+- name: human
+  can:
+  - accept
+  - propose
+- name: agent
+  can:
+  - propose
+- name: automation
+  can:
+  - fetch
+  - build
 zones:
 - name: identity
   kind: origin
-  write_policy:
-  - human
   read_policy:
   - all
 - name: working
   kind: origin
-  write_policy:
-  - human
-  - agent
-  - runner
   read_policy:
   - all
 - name: review
   kind: queue
-  write_policy:
-  - agent
-  - human
   read_policy:
   - all
 - name: output
   kind: derived
-  write_policy:
-  - builder
   read_policy:
   - all
 entries:
@@ -70,7 +75,7 @@ entries:
   path: output/plugin.json
   zone: output
   format: json
-  owner: builder:auto
+  owner: automation:auto
   publish_to:
   - ".claude-plugin/plugin.json"
   compute:
@@ -83,7 +88,7 @@ entries:
 - key: output.claude-root
   path: output/claude-root.md
   zone: output
-  owner: builder:auto
+  owner: automation:auto
   template: claude-root.mustache
   inject_boot: true
   publish_to:
@@ -103,4 +108,4 @@ rules:
   promotion:
     requires:
     - schema_valid
-    - accept_authority_signed
+    - accept_signed

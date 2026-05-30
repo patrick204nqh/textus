@@ -11,8 +11,9 @@ to "I just want to see it work."
 
 - An **agent** proposes a note to the `review` zone.
 - A **human** accepts the proposal — it lands in `working`.
-- An attempt by the agent to write directly to `working` is **rejected**
-  by the zone's `write_policy`. (This is the value textus adds over
+- An attempt by the agent to write directly to `working` is **rejected**:
+  the agent holds only `propose`, and the `working` origin zone needs the
+  `accept` capability to write. (This is the value textus adds over
   just writing files in a folder.)
 - Every write is **audited**: `textus audit` shows who-did-what.
 
@@ -49,10 +50,11 @@ bundle exec ../../exe/textus audit --limit=5
 
 ```sh
 # Try to skip the review queue — agent writes directly to working.
-# Rejected by the zone's write_policy. This is the load-bearing safety.
+# Rejected: the agent lacks the `accept` capability the origin zone needs.
+# This is the load-bearing safety.
 printf '%s' '{"_meta":{"name":"shortcut"},"body":"skip review\n"}' \
   | bundle exec ../../exe/textus put working.notes.shortcut --as=agent --stdin
-# → write_forbidden: zone 'working' is not agent-writable for key 'working.notes'
+# → write_forbidden: writing 'working.notes.shortcut' (zone 'working') needs capability 'accept'
 ```
 
 ## Layout
