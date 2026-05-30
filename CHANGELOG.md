@@ -9,7 +9,7 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## 0.33.0 — Complete primitives + vocabulary (ADR 0033)
+## 0.33.0 — Complete primitives + vocabulary (ADR 0033) — 2026-05-31
 
 **BREAKING (manifest schema + default scaffold + predicate/error names; `textus/3` wire format UNCHANGED):**
 - New coordination primitive: `workspace` zone-kind + `keep` capability — agents get a durable self-owned lane (`notebook` in the default scaffold). Closes the agent-memory gap.
