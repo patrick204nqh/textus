@@ -535,6 +535,8 @@ Row transforms are RPC hooks on the `:transform_rows` event. See §5.10.
 
 ### 5.10 Hooks
 
+This section is the normative event table. For the hook-author's guide (how to define and test hooks), see [`docs/events.md`](docs/events.md).
+
 textus has a single hook registration verb: `Textus.hook { |reg| reg.on(event, name, **opts) { ... } }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path; the store-scoped loader drains the queued blocks and invokes each with its own registry.
 
 The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path.
