@@ -13,7 +13,7 @@ module Textus
       end
 
       def call(pending_key)
-        assert_accept_authority!("reject")
+        assert_accept_capability!("reject")
 
         mentry = @manifest.resolver.resolve(pending_key).entry
         unless mentry.in_proposal_zone?(@manifest.policy)

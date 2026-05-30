@@ -115,7 +115,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
 
     expect do
       Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
-    end.to raise_error(Textus::UsageError, /no role with accept_authority kind|requires a role with kind :accept_authority/)
+    end.to raise_error(Textus::UsageError, /requires a role holding the 'accept' capability/)
   end
 end
 # rubocop:enable RSpec/MultipleDescribes

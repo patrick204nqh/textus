@@ -31,7 +31,7 @@ RSpec.describe Textus::Ports::AuditSubscriber do
     expect(rows.size).to eq(1)
     row = rows.first
     expect(row).to include(
-      "role" => "runner",
+      "role" => "automation",
       "verb" => "event_error",
       "key" => "k",
       "etag_before" => nil,
@@ -53,7 +53,7 @@ RSpec.describe Textus::Ports::AuditSubscriber do
 
     row = read_rows.first
     expect(row).to include(
-      "role" => "runner",
+      "role" => "automation",
       "verb" => "event_error",
       "key" => "k",
     )

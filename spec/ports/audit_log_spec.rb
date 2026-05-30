@@ -34,7 +34,7 @@ RSpec.describe Textus::Ports::AuditLog do
   end
 
   it "appends an event_error row with extras sub-object" do
-    log.append(role: "runner", verb: "event_error", key: "working.x",
+    log.append(role: "automation", verb: "event_error", key: "working.x",
                etag_before: nil, etag_after: nil,
                extras: { "event" => "put", "hook" => "boom", "error" => "boom!" })
     parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)

@@ -5,7 +5,7 @@ module Textus
     # early-returns rather than a ternary, so each failure mode reads on its
     # own line.
     module AuthorityGate
-      def assert_accept_authority!(verb)
+      def assert_accept_capability!(verb)
         accept_holders = @manifest.policy.roles_with_capability("accept")
         return if accept_holders.include?(@call.role.to_s)
 

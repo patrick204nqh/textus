@@ -24,7 +24,7 @@ RSpec.describe Textus::Ports::AuditLog do
 
   it "carries extras as a sub-object when present" do
     log.append(
-      role: "runner", verb: "event_error", key: "-",
+      role: "automation", verb: "event_error", key: "-",
       etag_before: nil, etag_after: nil,
       extras: { "event" => "put", "hook" => "h", "error" => "boom" }
     )
