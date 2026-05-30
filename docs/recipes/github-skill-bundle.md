@@ -85,7 +85,7 @@ The intake entry lands at `intake.skills.agent-eval`. The
 
 ## Caveats and known limitations
 
-1. **30-second intake timeout.** `lib/textus/application/refresh/worker.rb:7`
+1. **30-second intake timeout.** `lib/textus/write/fetch_worker.rb:6`
    caps intake at 30s. Large folders with many files may exceed this.
    Workarounds: narrow the bundle source, or stream via a CDN-backed
    mirror.
@@ -93,11 +93,11 @@ The intake entry lands at `intake.skills.agent-eval`. The
 2. **No re-entry guard beyond `suppress_events: true`.** The listener
    uses the Operations facade for inner writes
    (`ops.put(..., suppress_events: true)`, `ops.delete(..., suppress_events: true)`)
-   to prevent its own refresh from triggering itself. If you fork the
+   to prevent its own fetch from triggering itself. If you fork the
    recipe and forget this, you get an event loop.
 
 3. **Reconciliation is per-source.** Only derived keys under
-   `vendor.skills.<slug>.` for the refreshed source are reconciled.
+   `vendor.skills.<slug>.` for the fetched source are reconciled.
    Deleting the intake source entry does **not** garbage-collect its
    children — you would need a separate `:entry_deleted` listener for
    that.
