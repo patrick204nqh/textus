@@ -12,9 +12,9 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
-**Durable, multi-writer context for codebases that humans and AI agents both touch.** Your agent forgets everything between sessions; your runbooks and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is the memory that survives the model, the session, and the vendor — a shared workspace where humans, agents, and runners write into separate lanes, propose changes through a review queue, and leave an audit trail behind every byte.
+**A coordination space for codebases that humans and AI agents both touch.** Your agent forgets between sessions; your runbooks and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is durable, multi-writer memory that survives the model, the session, and the vendor — humans, agents, and runners each write into their own lane, propose changes through a review queue, and leave an audit trail behind every byte.
 
-*textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together." The protocol weaves human edits, agent proposals, and runner intake into one durable fabric. The shape of that fabric is yours; the rules for writing into it are textus's.
+*textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together."
 
 ## The idea
 
@@ -24,7 +24,18 @@ Three actors write to your repo today:
 - **Agents** — Claude, Cursor, custom assistants. Smart, fast, forgetful, and not always right.
 - **Runners** — cron jobs, fetchers, CI. Bring outside data in.
 
-Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** (a zone), routes everything they can't write directly through a **review queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
+```mermaid
+flowchart LR
+    human(["human"]) --> auth["identity · working<br/>(authoritative lanes)"]
+    agent(["agent"]) -->|propose| review["review<br/>(queue)"]
+    review -->|human accepts| auth
+    runner(["runner"]) -->|external data| intake["intake<br/>(quarantine)"]
+    builder(["builder"]) --> output["output<br/>(published)"]
+```
+
+*Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
+
+Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **review queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
 
 ```
 identity/   human only          — who you are, what you decide, how you sound
