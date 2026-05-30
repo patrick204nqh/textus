@@ -7,7 +7,7 @@ copy them in.
 
 ## `skill_fanout.rb`
 
-Listens for `:entry_refreshed` events on `intake.skills.*` and fans the
+Listens for `:entry_fetched` events on `intake.skills.*` and fans the
 bundle out into per-file `vendor.skills.<slug>.<rel>` derived entries.
 Reconciles: orphaned children whose source path disappeared upstream are
 deleted. Inner writes use `suppress_events: true` to prevent recursion.

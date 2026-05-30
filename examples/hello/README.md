@@ -74,7 +74,7 @@ hello/
 ## What's not here
 
 This example deliberately skips: hooks, publish (no `publish_to` / `publish_each`),
-intake/refresh, derived entries, MCP. Each of those is its own chapter — see
+intake/fetch, derived entries, MCP. Each of those is its own chapter — see
 `examples/claude-plugin/` for a worked agent integration that uses them all.
 
 ## Resetting between runs

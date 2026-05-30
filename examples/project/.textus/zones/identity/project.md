@@ -14,6 +14,6 @@ Stack: Ruby 3.3 / Rails 7.2 / Postgres 15 / Sidekiq. Deployed to AWS
 ECS via Buildkite. Logs in Datadog, traces in Honeycomb.
 
 This file is the slow-changing root identity entry. Only humans can
-write to the `identity` zone; agents and runners cannot. Edit this
-file then run `textus build` to refresh the projected `CLAUDE.md` and
+write to the `identity` zone; agents and automation cannot. Edit this
+file then run `textus build` to rebuild the projected `CLAUDE.md` and
 `AGENTS.md` at the repo root.

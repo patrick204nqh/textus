@@ -17,7 +17,7 @@ not edit by hand — edit the source under `.textus/zones/...` and run
     - **identity** (human ) — slow-changing identity; human-only writes
     - **working** (human agent ) — active project state; humans, AI, and scripts share this surface
     - **review** (agent human ) — AI proposals awaiting human accept
-    - **output** (builder ) — build-computed outputs; never hand-edited
+    - **output** (automation ) — build-computed outputs; never hand-edited
 
 → Agent protocol (from `textus boot`):
    • **read** — find and read an entry
