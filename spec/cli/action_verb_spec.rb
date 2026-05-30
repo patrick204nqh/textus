@@ -9,11 +9,11 @@ RSpec.describe "textus action verb" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: working,  kind: origin, write_policy: [human, agent, runner] }
-        - { name: intake,   kind: origin, write_policy: [runner] }
-        - { name: review,   kind: origin, write_policy: [agent, human] }
-        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: intake,   kind: quarantine }
+        - { name: review,   kind: origin }
+        - { name: output,   kind: derived }
       entries:
         - { key: working.demo, path: working/demo.md, zone: working, kind: leaf}
 
@@ -77,7 +77,7 @@ RSpec.describe "textus action verb" do
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["--root=#{root}", "hook", "run", "slow", "--as=runner"],
+        ["--root=#{root}", "hook", "run", "slow", "--as=automation"],
         stdin: StringIO.new(""), stdout: out, stderr: StringIO.new, cwd: dir,
       )
       expect(rc).not_to eq(0)

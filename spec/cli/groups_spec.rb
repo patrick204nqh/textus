@@ -19,8 +19,8 @@ RSpec.describe "CLI subcommand groups" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, agent, runner] }
-        - { name: archive, kind: origin, write_policy: [human] }
+        - { name: working, kind: origin }
+        - { name: archive, kind: origin }
       entries:
         - { key: working.note, path: working/note.md, zone: working, kind: leaf}
 
@@ -44,7 +44,7 @@ RSpec.describe "CLI subcommand groups" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, agent, runner] }
+          - { name: working, kind: origin }
         entries:
           - { key: working.note, path: working/note.md, zone: working, kind: leaf}
 
