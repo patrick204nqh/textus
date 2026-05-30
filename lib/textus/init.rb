@@ -6,12 +6,16 @@ module Textus
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
+      roles:
+        - { name: human,      can: [accept, propose] }
+        - { name: agent,      can: [propose] }
+        - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin,     write_policy: [human],          read_policy: [all] }
-        - { name: working,  kind: origin,     write_policy: [human],          read_policy: [all] }
-        - { name: intake,   kind: quarantine, write_policy: [runner],         read_policy: [all] }
-        - { name: review,   kind: queue,      write_policy: [agent, human],   read_policy: [all] }
-        - { name: output,   kind: derived,    write_policy: [builder],        read_policy: [all] }
+        - { name: identity, kind: origin }
+        - { name: working,  kind: origin }
+        - { name: intake,   kind: quarantine }
+        - { name: review,   kind: queue }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
         - { key: working.notes, path: working/notes,    zone: working,  schema: null, owner: human:self, nested: true, kind: nested }

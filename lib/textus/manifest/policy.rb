@@ -26,6 +26,14 @@ module Textus
         @data.role_caps.select { |_name, caps| caps.include?(verb) }.keys
       end
 
+      # The conventional automated proposer: a role that can propose but is not
+      # the accept-anchor (so it resolves to `agent`, not `human`, under the
+      # default mapping). Falls back to the first proposer, then nil.
+      def proposer_role
+        proposers = roles_with_capability("propose")
+        (proposers - roles_with_capability("accept")).first || proposers.first
+      end
+
       # The roles authorized to write `zone_name`: those holding the verb its
       # kind requires. Raises on an undeclared zone.
       def zone_writers(zone_name)
