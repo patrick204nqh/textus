@@ -9,9 +9,9 @@ module Textus
         @container    = container
         @call         = call
         @manifest     = container.manifest
+        @schemas      = container.schemas
         @events       = container.events
         @rpc          = container.rpc
-        @authorizer   = container.authorizer
       end
 
       # call(key) is the primary entry; run is kept as an alias for
@@ -96,7 +96,14 @@ module Textus
 
       def persist_and_notify(key, mentry, result, before_etag)
         normalized = self.class.normalize_action_result(result, format: mentry.format)
-        @authorizer.authorize_write!(mentry, role: @call.role)
+        Textus::Domain::Policy::GuardFactory.new(
+          manifest: @manifest, schemas: @schemas,
+        ).for(:fetch, key).check!(
+          Textus::Domain::Policy::Evaluation.new(
+            actor: @call.role, transition: :fetch, origin: nil,
+            target: key, envelope: nil, snapshot: @manifest
+          ),
+        )
         envelope = writer.put(
           key,
           mentry: mentry,

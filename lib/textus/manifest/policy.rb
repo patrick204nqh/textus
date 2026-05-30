@@ -42,15 +42,10 @@ module Textus
         roles_with_capability(verb_for_zone(zone_name))
       end
 
-      def zone_readers
-        @data.zone_readers
-      end
-
       def permission_for(zone_name)
         Textus::Domain::Permission.new(
           zone: zone_name,
           writers: zone_writers(zone_name),
-          read_policy: @data.zone_readers[zone_name] || :all,
         )
       end
 

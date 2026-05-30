@@ -1,7 +1,7 @@
 # ADR 0028 — Coordination space: closed topology, closed transitions, open policy
 
 **Date:** 2026-05-29
-**Status:** Accepted — moves 1 & 4 shipped in 0.30.0 (zone kind + retention); moves 2 & 3 remain open
+**Status:** Accepted — moves 1 & 4 shipped in 0.30.0 (zone kind + retention); moves 2 & 3 shipped in 0.32.0 ([ADR 0031](./0031-unified-guard.md))
 **Refines:** [ADR 0002](./0002-textus-3-vocabulary-redesign.md), [ADR 0018](./0018-manifest-carving.md), [ADR 0027](./0027-hook-signature-and-mcp-policy.md)
 
 ## Context
@@ -114,11 +114,12 @@ recorded here as direction; each lands under its own change with its own review:
    fallbacks were never released — the cleanup was folded into 0.30.0 (no
    external users to migrate). A manifest with a kind-less zone is rejected at
    load; proposals route only to the zone declaring `kind: queue`.
-2. **Generalize `promotion.requires:`** from role-kind names to predicate references, so
-   a guard can read `requires: [accept_authority_signed, schema_valid, fresh_within: 1h]`.
-3. **Unify the guard** so every transition — not only `accept` — evaluates one `Guard`
-   abstraction sourced from `rules:`. One thing to learn, one thing `policy explain`
-   reports.
+2. **[Shipped in 0.32.0]** **Generalize `promotion.requires:`** from role-kind names to
+   predicate references — now `rules[].guard: { accept: [accept_signed, schema_valid,
+   { fresh_within: "1h" }] }` ([ADR 0031](./0031-unified-guard.md)).
+3. **[Shipped in 0.32.0]** **Unify the guard** so every transition — not only `accept` —
+   evaluates one `Guard` abstraction sourced from `rules:`. One thing to learn, one thing
+   `policy explain` reports ([ADR 0031](./0031-unified-guard.md)).
 4. **[Shipped in 0.30.0]** **Activate `retention`** (already reserved in
    `Manifest::Rules::Block`) as the lifetime axis: TTL/archive for `intake`, expiry for
    ephemeral `review`.

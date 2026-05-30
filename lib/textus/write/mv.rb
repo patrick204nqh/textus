@@ -6,7 +6,6 @@ module Textus
         @call         = call
         @manifest     = container.manifest
         @events       = container.events
-        @authorizer   = container.authorizer
       end
 
       def call(old_key, new_key, dry_run: false)
@@ -38,8 +37,8 @@ module Textus
         raise UnknownKey.new(old_key) unless reader.exists?(old_key)
 
         validate_zone_and_format!(old_res.entry, new_res.entry)
-        @authorizer.authorize_write!(old_res.entry, role: @call.role)
-        @authorizer.authorize_write!(new_res.entry, role: @call.role)
+        guard_for(:mv, old_key).check!(eval_for(:mv, target_key: old_key))
+        guard_for(:mv, new_key).check!(eval_for(:mv, target_key: new_key))
         raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if reader.exists?(new_key)
 
         [old_res, new_res]
@@ -99,6 +98,19 @@ module Textus
           "uid" => envelope.uid,
           "envelope" => envelope.to_h_for_wire
         }
+      end
+
+      def guard_for(transition, key, if_etag: nil)
+        Textus::Domain::Policy::GuardFactory.new(
+          manifest: @manifest, schemas: @container.schemas, extra: { if_etag: if_etag },
+        ).for(transition, key)
+      end
+
+      def eval_for(transition, target_key:, envelope: nil)
+        Textus::Domain::Policy::Evaluation.new(
+          actor: @call.role, transition: transition, origin: nil,
+          target: target_key, envelope: envelope, snapshot: @manifest
+        )
       end
 
       def writer

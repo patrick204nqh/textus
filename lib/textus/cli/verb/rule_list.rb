@@ -17,7 +17,7 @@ module Textus
               }
             end
             row["handler_allowlist"] = b.handler_allowlist.handlers if b.handler_allowlist
-            row["promotion"] = { "requires" => b.promote.requires } if b.promote
+            row["guard"] = b.guard if b.guard
             row["retention"] = { "expire_after" => b.retention.expire_after, "archive_after" => b.retention.archive_after } if b.retention
             row
           end

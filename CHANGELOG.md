@@ -9,6 +9,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.32.0 — 2026-05-30
+
+Unified Guard engine ([ADR 0031](docs/architecture/decisions/0031-unified-guard.md), moves 2 & 3 of [ADR 0028](docs/architecture/decisions/0028-coordination-planes.md)), plus dropping the never-enforced read gate ([ADR 0032](docs/architecture/decisions/0032-drop-read-policy.md)). Every write transition now authorizes through **one Guard** — an ordered list of pure predicates over a single `Evaluation` context. No wire format (`textus/3`) change; the manifest schema and error envelopes change (breaking).
+
+### Changed (BREAKING)
+
+- **Manifest `rules[].promotion: { requires: [...] }` is removed; use `rules[].guard: { accept: [...] }`.** A `guard:` block is a map of transition (`put`/`delete`/`mv`/`accept`/`reject`/`fetch`) → predicate list, composed (AND) onto each transition's built-in base guard. A stale `promotion:` key is now rejected at load (unknown key).
+- **Authorization is unified into one Guard** (ADR 0031). Promotion / accept-authority / schema failures now surface as `guard_failed` naming the unmet predicate(s); the topology refusal keeps the `write_forbidden` code and `--as=<role>` hint. Custom/vendored predicates must use the `#call(Evaluation)` signature.
+- **`read_policy` is removed from the manifest** (ADR 0032): textus gates writes, not reads. `Domain::Authorizer` and `ReadForbidden` are gone. Reads are unrestricted at the protocol layer (the `.textus/` files are on disk); per-role read-scoping, if needed, is an agent-surface projection, not a manifest field.
+
+### Internal
+
+- New `Domain::Policy::{Evaluation, Guard, GuardFactory, BaseGuards}` and `Predicates::{Registry, ZoneWritableBy, EtagMatch, FreshWithin}`; `Predicates::{AcceptSigned, SchemaValid}` reshaped to `#call(Evaluation)`. `Domain::Policy::{Promotion, Promote}` and `Write::AuthorityGate` are deleted (folded into the Guard + single `Predicates::REGISTRY`). `Manifest::Rules` `RuleSet` gains `guard`, loses `promote`. `Permission` collapses to `(zone, writers)`.
+
 ## 0.31.0 — 2026-05-30
 
 Capability-based roles and the `refresh`→`fetch` transition rename ([ADR 0030](docs/architecture/decisions/0030-capability-based-roles.md)). No wire format (`textus/3`) change; the manifest schema changes (breaking) and the data-in transition is renamed.

@@ -52,6 +52,14 @@ RSpec.describe Textus::Write::Put do
     end
   end
 
+  it "refuses a forbidden role with write_forbidden via the unified guard (zone_writable_by)" do
+    Dir.mktmpdir do |root|
+      store = build_store(File.join(root, ".textus"))
+      expect { build_put(store, test_ctx(role: "automation")).call("identity.bar", meta: {}, body: "x") }
+        .to raise_error(Textus::WriteForbidden) { |e| expect(e.code).to eq("write_forbidden") }
+    end
+  end
+
   it "fires :entry_put event with key, envelope, and correlation_id (via ctx)" do
     Dir.mktmpdir do |root|
       store = build_store(File.join(root, ".textus"))

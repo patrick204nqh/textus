@@ -3,7 +3,7 @@ module Textus
   # ReadCaps/WriteCaps/HookCaps trio from 0.26.x. Built once per Store.
   Container = Data.define(
     :manifest, :file_store, :schemas, :root,
-    :audit_log, :events, :rpc, :authorizer
+    :audit_log, :events, :rpc
   )
 
   class Container
@@ -16,7 +16,6 @@ module Textus
         audit_log: store.audit_log,
         events: store.events,
         rpc: store.rpc,
-        authorizer: Textus::Domain::Authorizer.new(manifest: store.manifest),
       )
     end
   end

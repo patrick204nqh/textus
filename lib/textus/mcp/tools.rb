@@ -84,7 +84,7 @@ module Textus
           set = store.manifest.rules.for(key)
           {
             "fetch" => set.fetch&.to_h,
-            "promote" => set.respond_to?(:promote) ? set.promote&.to_h : nil,
+            "guard" => set.guard,
           }.compact
         end,
 

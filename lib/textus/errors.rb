@@ -109,25 +109,6 @@ module Textus
     end
   end
 
-  class ReadForbidden < Error
-    def initialize(k, z, readers: nil)
-      readers_str =
-        if readers && !readers.empty?
-          readers.join(", ")
-        else
-          "the role(s) listed in the manifest 'read_policy:'"
-        end
-      details = { "key" => k, "zone" => z }
-      details["readers"] = readers if readers
-      super(
-        "read_forbidden",
-        "zone '#{z}' is not readable by role for key '#{k}'",
-        details: details,
-        hint: "this zone is readable by #{readers_str}; pass --as=<role>",
-      )
-    end
-  end
-
   class EtagMismatch < Error
     def initialize(k, w, g)
       super(
@@ -203,6 +184,21 @@ module Textus
 
   class ProposalError < Error
     def initialize(m) = super("proposal_error", m)
+  end
+
+  class GuardFailed < Error
+    def initialize(failed)
+      # failed: [[predicate_name, reason], ...]
+      rows = failed.map { |name, reason| { "predicate" => name, "reason" => reason } }
+      names = failed.map(&:first)
+      super(
+        "guard_failed",
+        "guard refused crossing: #{failed.map { |n, r| "#{n} (#{r})" }.join("; ")}",
+        details: { "failed" => rows },
+        hint: "run 'textus policy explain <key> --output=json' to see the full guard; " \
+              "unmet: #{names.join(", ")}",
+      )
+    end
   end
 
   class FlagRenamed < Error

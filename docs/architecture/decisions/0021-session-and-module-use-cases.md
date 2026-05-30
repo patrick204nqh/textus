@@ -1,7 +1,7 @@
 # ADR 0021 — Session + module-function use-cases
 
 **Date:** 2026-05-28
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0022](./0022-container-call-dispatcher.md) — the per-call `Session` is replaced by `RoleScope` under the 0.27.0 architecture; the use-case shape was refined by [ADR 0023](./0023-uniform-use-case-shape.md).
 **Depends on:** [ADR 0013](./0013-port-extraction-store-as-root.md), [ADR 0016](./0016-application-ports-value.md), [ADR 0020](./0020-capability-records.md)
 
 ## Context

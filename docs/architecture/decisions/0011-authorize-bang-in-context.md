@@ -1,7 +1,7 @@
 # ADR 0011 — Authorize-bang in Context
 
 **Date:** 2026-05-27
-**Status:** Accepted
+**Status:** Superseded by [ADR 0031](./0031-unified-guard.md) — write authorization moves from `Context#authorize_write!` to the unified `Guard`, and the read side (`authorize_read!`) is dropped by [ADR 0032](./0032-drop-read-policy.md). Ships 0.32.0.
 **Depends on:** [ADR 0010](./0010-flat-operations-api.md)
 
 ## Context
