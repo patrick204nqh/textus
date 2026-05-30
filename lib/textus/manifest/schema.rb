@@ -3,7 +3,7 @@ module Textus
     module Schema
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
-      ZONE_KEYS    = %w[name kind read_policy].freeze
+      ZONE_KEYS    = %w[name kind].freeze
       ZONE_KINDS   = %w[origin quarantine queue derived].freeze
       # The closed capability set (ADR 0030): each verb grants authority to
       # originate in exactly one zone-kind.

@@ -9,7 +9,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "read_policy" => ["all"] }],
+        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
         "entries" => [],
         "rules" => [],
       )

@@ -17,20 +17,12 @@ roles:
 zones:
 - name: identity
   kind: origin
-  read_policy:
-  - all
 - name: working
   kind: origin
-  read_policy:
-  - all
 - name: review
   kind: queue
-  read_policy:
-  - all
 - name: output
   kind: derived
-  read_policy:
-  - all
 entries:
 - key: identity.project
   path: identity/project.md

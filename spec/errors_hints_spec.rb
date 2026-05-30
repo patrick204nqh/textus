@@ -29,17 +29,6 @@ RSpec.describe "Textus error hints" do
     expect(err.hint).to include("jq").or include("yq")
   end
 
-  it "ReadForbidden to_envelope carries code and readers details" do
-    err = Textus::ReadForbidden.new("identity.self", "identity", readers: ["human"])
-    env = err.to_envelope
-    expect(env["code"]).to eq("read_forbidden")
-    expect(env["details"]["readers"]).to eq(["human"])
-    expect(env["details"]["key"]).to eq("identity.self")
-    expect(env["details"]["zone"]).to eq("identity")
-    expect(err.hint).to include("human")
-    expect(err.hint).to include("--as")
-  end
-
   it "WriteForbidden names the required verb and the roles that hold it" do
     err = Textus::WriteForbidden.new("identity.self", "identity", verb: "accept", holders: ["human"])
     expect(err.message).to include("needs capability 'accept'")

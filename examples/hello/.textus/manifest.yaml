@@ -14,8 +14,8 @@ roles:
   - { name: agent, can: [propose] }
 
 zones:
-  - { name: working, kind: origin, read_policy: [all] }
-  - { name: review,  kind: queue,  read_policy: [all] }
+  - { name: working, kind: origin }
+  - { name: review,  kind: queue }
 
 # Two entry families, both nested (any leaf under the prefix is valid).
 # `note` is the human's source of truth; `proposal` is where the agent

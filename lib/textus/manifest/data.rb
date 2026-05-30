@@ -11,7 +11,7 @@ module Textus
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
 
-      attr_reader :raw, :root, :entries, :zones, :zone_readers, :declared_zone_kinds,
+      attr_reader :raw, :root, :entries, :zones, :declared_zone_kinds,
                   :audit_config, :role_caps, :policy
 
       def self.validate_key!(key)
@@ -40,10 +40,6 @@ module Textus
         # callers (boot, read/pulse, maintenance/zone_mv) that ask whether a
         # zone is declared via `zones.key?`.
         @zones = Array(raw["zones"]).to_h { |z| [z["name"], []] }
-        @zone_readers = Array(raw["zones"]).to_h do |z|
-          rp = z["read_policy"]
-          [z["name"], rp.nil? ? :all : Array(rp)]
-        end
         @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
           [z["name"], z["kind"]&.to_sym]
         end
