@@ -1,9 +1,16 @@
-# textus
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/branding/wordmark-dark.png">
+    <img src="docs/assets/branding/wordmark.png" alt="textus" width="360">
+  </picture>
+</p>
 
-[![CI](https://github.com/patrick204nqh/textus/actions/workflows/ci.yml/badge.svg)](https://github.com/patrick204nqh/textus/actions/workflows/ci.yml)
-[![Gem Version](https://img.shields.io/gem/v/textus.svg)](https://rubygems.org/gems/textus)
-[![Ruby](https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg)](https://www.ruby-lang.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml"><img src="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://rubygems.org/gems/textus"><img src="https://img.shields.io/gem/v/textus.svg" alt="Gem Version"></a>
+  <a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg" alt="Ruby"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+</p>
 
 **Durable, multi-writer context for codebases that humans and AI agents both touch.** Your agent forgets everything between sessions; your runbooks and `CLAUDE.md` get edited by whoever ran last; nobody can reconstruct who wrote what. textus is the memory that survives the model, the session, and the vendor — a shared workspace where humans, agents, and runners write into separate lanes, propose changes through a review queue, and leave an audit trail behind every byte.
 
