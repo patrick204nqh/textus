@@ -172,7 +172,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ```
   ┃ for each entry in a build-writable zone:
   ┃   ┃ load source rows
-  ┃   ┃ if projection.reduce: ───────────► :transform_rows  (RPC)
+  ┃   ┃ if compute.transform: ───────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
   ┃   ┃ sort/limit (skipped if reduce returned Hash)
   ┃   ┃ merge `boot` if inject_boot:
