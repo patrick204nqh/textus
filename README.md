@@ -48,7 +48,7 @@ Try the gate the other way (`textus put working.notes.X --as=agent`) and you get
 ## Try it
 
 - **5-command worked demo** — single terminal scroll, no MCP, no schemas: [`examples/hello/`](examples/hello/)
-- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`INTEGRATE_WITH_CLAUDE.md`](INTEGRATE_WITH_CLAUDE.md)
+- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/agents-mcp.md`](docs/agents-mcp.md)
 - **Use textus as your own project's context store**: [`examples/project/`](examples/project/)
 - **Use textus to author a Claude plugin** (textus is the source-of-truth, build publishes to `agents/`, `skills/`, `commands/`): [`examples/claude-plugin/`](examples/claude-plugin/)
 
@@ -193,7 +193,7 @@ See SPEC.md §5.10 for the full hook contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/agent-integration.md`](docs/agent-integration.md) for the agent boot → pulse loop.
+See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop.
 
 ## Examples
 
