@@ -25,24 +25,22 @@ This is the user-configuration guide. For the wire protocol, see [`../SPEC.md`](
 
 A textus store is a small **data-flow graph**. Information enters from outside, gets curated by humans and AI, and gets compiled into files you ship.
 
+```mermaid
+flowchart LR
+    ext["external world<br/>APIs · files · feeds"] -->|:intake hook| intake["intake<br/>(quarantine)"]
+    runner(["runner"]) --> intake
+    human(["human"]) --> identity["identity<br/>(origin)"]
+    human --> working["working<br/>(origin)"]
+    agent(["agent"]) -->|propose| review["review<br/>(queue)"]
+    review -->|accept| identity
+    review -->|accept| working
+    builder(["builder"]) --> output["output<br/>(derived)"]
+    intake -.->|projection source| output
+    working -.->|projection source| output
+    output -->|publish| files["shipped files"]
 ```
-            EXTERNAL WORLD                          INSIDE .textus/zones/
-         (network, files, APIs)                  (already-captured context)
-                  │                                       │
-                  │  :intake hook                         │  projection sources
-                  ▼                                       ▼
-            ┌──────────┐                            ┌──────────┐
-   runner ─►│  intake  │                  builder ─►│  output  │─► publish
-            └──────────┘                            └──────────┘
-            "pull bytes IN"                         "compute bytes OUT"
 
-                          ┌──────────┐    ┌─────────┐
-                  human ─►│ identity │ agent►│ review  │─► accept ─► identity/working
-                          └──────────┘    └─────────┘
-                          ┌─────────┐
-          human, agent ──►│ working │◄─── script
-                          └─────────┘
-```
+*Flow at a glance:* runners pull external bytes into `intake`; humans write `identity`/`working` directly; agents propose into `review` and a human `accept` promotes to `working`/`identity`; the builder computes `output` from `working`/`intake` and publishes shipped files.
 
 Two ideas do all the work:
 
