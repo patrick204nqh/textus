@@ -204,7 +204,7 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Hook payload contract
 
-Pub-sub hooks (`:entry_put`, `:entry_refreshed`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
+Pub-sub hooks (`:entry_put`, `:entry_fetched`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
 
 RPC hooks (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps:` — a `Textus::Container`. They are gem-internal: the framework calls them, not user pub-sub.
 
