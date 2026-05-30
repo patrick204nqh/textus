@@ -1,7 +1,7 @@
 # ADR 0032 — Drop `read_policy`: textus gates writes, not reads
 
 **Date:** 2026-05-30
-**Status:** Accepted — folded into the unified-guard work ([ADR 0031](./0031-unified-guard.md), 0.32.0)
+**Status:** Accepted — shipped in 0.32.0, folded into the unified-guard work ([ADR 0031](./0031-unified-guard.md))
 **Refines:** [ADR 0030](./0030-capability-based-roles.md) (capability roles — derive, don't list), [ADR 0028](./0028-coordination-planes.md)
 
 ## Context

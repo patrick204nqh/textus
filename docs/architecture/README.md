@@ -7,7 +7,7 @@
 flowchart TD
     interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
     application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ use cases · envelope IO"]
-    domain["Domain — Authorizer · Permission · Freshness · Staleness<br/>Policy (Promote · Fetch · Matcher · Predicates)"]
+    domain["Domain — Permission · Freshness · Staleness<br/>Policy (Guard · GuardFactory · BaseGuards · Evaluation · Fetch · Matcher · Predicates)"]
     infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
     interface --> application
     application --> domain
@@ -52,13 +52,12 @@ projection.rb
 **Domain**
 
 ```
-Authorizer         (manifest + role → allow / deny)
-Permission         (write/read predicate per zone)
+Permission         (write predicate per zone)
 Freshness::{Policy,Verdict,Evaluator}
 Staleness          (Generator/Intake checks)
 Action  Outcome  Sentinel
-Policy::{Promote,Fetch,Matcher,HandlerAllowlist,
-         Predicates::{SchemaValid,AcceptSigned}}
+Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist,
+         Predicates::{ZoneWritableBy,SchemaValid,AcceptSigned,EtagMatch,FreshWithin}}
 ```
 
 **Infrastructure**
@@ -183,11 +182,11 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 ## Write path (`store.put(key, ...)`)
 
 1. CLI verb calls `store.put(key, meta:, body:, content:, if_etag:, role:)`.
-2. `Write::Put#call` validates the key, resolves the manifest entry, and calls `container.authorizer.authorize_write!(mentry, role: call.role)` — raises `WriteForbidden` if denied.
+2. `Write::Put#call` validates the key, resolves the manifest entry, builds `GuardFactory.for(:put, key)` and calls `Guard#check!(eval)` (topology is predicate #0, `zone_writable_by`) — raises `WriteForbidden` if the topology gate denies, `GuardFailed` if any other predicate fails.
 3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
 4. Publishes `:entry_put` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
-`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit container, `Authorizer` for authz, `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
 `Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
@@ -199,7 +198,7 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
    - Publishes `:fetch_started` with the hook context.
    - Invokes the handler under a 30s thread-join deadline.
    - On any error: publishes `:fetch_failed`, then re-raises.
-   - On success: applies `container.authorizer.authorize_write!` and persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_fetched` unless etag is unchanged.
+   - On success: builds `GuardFactory.for(:fetch, key)` and calls `Guard#check!`, then persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_fetched` unless etag is unchanged.
 3. `store.fetch_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `FetchWorker#run` per entry; returns `{ fetched:, failed:, skipped: }`.
 
 ## Hook payload contract

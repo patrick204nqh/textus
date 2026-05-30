@@ -266,7 +266,7 @@ A leaf at `working.skills.writing.voice-writer` (authored at `.textus/zones/work
 
 ## 5. Zones and capability-based write gates
 
-Write authority is **derived**, never declared per-zone. Each zone declares a `kind:`; each zone-kind requires one capability to write to it. A role may write a zone iff its capability set (`role.can`) contains the verb that zone-kind requires. An optional `read_policy:` (default `[all]`) gates reads. Writes are gated; reads are unrestricted by default.
+Write authority is **derived**, never declared per-zone. Each zone declares a `kind:`; each zone-kind requires one capability to write to it. A role may write a zone iff its capability set (`role.can`) contains the verb that zone-kind requires. textus gates **writes, not reads**: reads are unrestricted at the protocol layer (the `.textus/` files are on disk). Per-role read-scoping, if needed, is an agent-surface projection, not a manifest field.
 
 The kind→verb mapping is closed:
 
@@ -363,8 +363,12 @@ When the `roles:` block is omitted, the default mapping applies:
 Wire protocol `textus/3` is unchanged — capabilities are a manifest/semantics
 concept and never appear on the wire.
 
-The promotion DSL predicate keys on the `accept` capability and is named
-`:accept_signed` (it passes when the accepting role holds `accept`).
+Every write transition is authorized by **one Guard** (ADR 0031): an ordered
+list of predicates over a single evaluation context. Predicate #0 of every write
+guard is `zone_writable_by` (the capability gate above); the `accept_signed`
+predicate keys on the `accept` capability and is named `accept_signed` (it passes
+when the acting role holds `accept`). See §5.11 for composing extra predicates via
+`rules[].guard:`.
 
 ### 5.2 Compute layer (derived entries)
 
@@ -696,8 +700,8 @@ rules:
     intake_handler_allowlist: [ical-events]
 
   - match: review.**
-    promotion:
-      requires: [schema_valid, accept_signed]
+    guard:
+      accept: [schema_valid, accept_signed]
 ```
 
 **Slots (all optional within a block):**
@@ -706,7 +710,7 @@ rules:
 |---|---|---|
 | `fetch` | `{ ttl, on_stale, sync_budget_ms, fetch_timeout_seconds }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
-| `promotion` | `{ requires: [...] }` | Predicates a `review` entry must satisfy before `textus accept` will promote it. Built-in predicates: `schema_valid` (entry passes schema validation) and `accept_signed` (the accepting role must hold the `accept` capability). Additional predicates may be registered via `:validate` hooks. Enforced — `textus accept` refuses if any predicate fails. |
+| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `delete`, `mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `accept_signed`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
 | `retention` | `{ expire_after:, archive_after: }` | Pruning policy for matched leaves. Duration strings: `30s`, `90m`, `12h`, `30d`, or bare integer seconds. `textus retain --as=ROLE` sweeps matched leaves: `expire_after` is checked first, so a leaf older than `expire_after` is deleted (and audited); otherwise a leaf older than `archive_after` is copied to `<store>/archive/<relative-path>` and then deleted. Age is measured from the leaf file's modification time. The `--as` role must be allowed to write the matched zone. |
 
 Both retention windows are optional, and `expire_after` is evaluated before
@@ -719,9 +723,9 @@ than aborting the run.
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 
-**Resolution.** For each key textus computes a `RuleSet { fetch, intake_handler_allowlist, promotion, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
+**Resolution.** For each key textus computes a `RuleSet { fetch, intake_handler_allowlist, guard, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key plus which block won each slot.
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key plus the effective guard predicate names for every write transition.
 
 ### 5.12 Storage formats
 
@@ -1081,7 +1085,7 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | Manifest | `writable_by:` | (removed — authority is derived from `kind:` × `can:`) |
 | Manifest | `policies:` | `rules:` |
 | Manifest | `handler_allowlist:` | `intake_handler_allowlist:` |
-| Manifest | `promote_requires:` | `promotion: { requires: [...] }` |
+| Manifest | `promote_requires:` | `guard: { accept: [...] }` |
 | Manifest | `projection:` | `compute: { kind: projection, ... }` |
 | Manifest | `generator:` | `compute: { kind: external, ... }` |
 | Hook event | `:intake` | `:resolve_intake` |

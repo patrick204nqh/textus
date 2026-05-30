@@ -1,7 +1,7 @@
 # ADR 0031 — The unified Guard: one explainable authorization path for every transition
 
 **Date:** 2026-05-30
-**Status:** Accepted — builds ADR 0028 moves 2 & 3; **sequenced after [ADR 0030](./0030-capability-based-roles.md)** (capability roles, 0.31.0). Ships as 0.32.0.
+**Status:** Accepted — shipped in 0.32.0 (ADR 0028 moves 2 & 3); **sequenced after [ADR 0030](./0030-capability-based-roles.md)** (capability roles, 0.31.0).
 **Refines:** [ADR 0028](./0028-coordination-planes.md), [ADR 0030](./0030-capability-based-roles.md), [ADR 0011](./0011-authorize-bang-in-context.md), [ADR 0027](./0027-hook-signature-and-mcp-policy.md)
 
 ## Relationship to ADR 0030 (capability roles)
