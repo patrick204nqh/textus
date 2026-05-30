@@ -2,17 +2,36 @@ module Textus
   class Manifest
     # Authority over zones and roles derived from a Manifest::Data snapshot.
     # Encapsulates the lookups previously living on Manifest itself
-    # (zone_writers, permission_for, role_kind, roles_with_kind). Derived /
+    # (zone_writers, permission_for). Write authority is derived from
+    # capabilities × zone-kind (ADR 0030): each zone-kind requires one verb
+    # (Schema::KIND_REQUIRES_VERB) and a role may write a zone iff its caps
+    # include that verb (verb_for_zone, roles_with_capability). Derived /
     # proposal-queue status is authoritative via the declared-kind family
-    # (declared_kind, derived_zone?, queue_zone?, queue_zone), not inferred
-    # from writers.
+    # (declared_kind, derived_zone?, queue_zone?, queue_zone).
     class Policy
       def initialize(data)
         @data = data
       end
 
+      # The capability a zone's kind requires to be written, or nil if the
+      # zone declares no kind. declared_kind returns a Symbol; the table is
+      # keyed by String.
+      def verb_for_zone(zone_name)
+        kind = declared_kind(zone_name)
+        kind && Schema::KIND_REQUIRES_VERB[kind.to_s]
+      end
+
+      # Names of roles whose declared caps include `verb`.
+      def roles_with_capability(verb)
+        @data.role_caps.select { |_name, caps| caps.include?(verb) }.keys
+      end
+
+      # The roles authorized to write `zone_name`: those holding the verb its
+      # kind requires. Raises on an undeclared zone.
       def zone_writers(zone_name)
-        @data.zones[zone_name] or raise UsageError.new("undeclared zone '#{zone_name}'")
+        raise UsageError.new("undeclared zone '#{zone_name}'") unless @data.declared_zone_kinds.key?(zone_name)
+
+        roles_with_capability(verb_for_zone(zone_name))
       end
 
       def zone_readers
@@ -22,7 +41,7 @@ module Textus
       def permission_for(zone_name)
         Textus::Domain::Permission.new(
           zone: zone_name,
-          write_policy: zone_writers(zone_name),
+          writers: zone_writers(zone_name),
           read_policy: @data.zone_readers[zone_name] || :all,
         )
       end
@@ -45,18 +64,6 @@ module Textus
       # A zone is a proposal queue iff it declares kind: queue.
       def queue_zone?(zone_name)
         declared_kind(zone_name) == :queue
-      end
-
-      def role_mapping
-        @data.role_mapping
-      end
-
-      def role_kind(name)
-        @data.role_mapping[name]
-      end
-
-      def roles_with_kind(kind)
-        @data.role_mapping.each_with_object([]) { |(name, k), acc| acc << name if k == kind }
       end
 
       # The zone a proposer role writes proposals into: the single zone that

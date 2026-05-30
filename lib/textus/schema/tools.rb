@@ -88,7 +88,7 @@ module Textus
       end
 
       def self.accept_authority_for(store)
-        authority = store.manifest.policy.roles_with_kind(:accept_authority).first
+        authority = store.manifest.policy.roles_with_capability("accept").first
         return authority if authority
 
         raise UsageError.new(

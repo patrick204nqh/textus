@@ -40,11 +40,18 @@ RSpec.describe "Textus error hints" do
     expect(err.hint).to include("--as")
   end
 
-  it "WriteForbidden hint mentions the writers role list when supplied" do
-    err = Textus::WriteForbidden.new("identity.self", "identity", writers: ["human"])
+  it "WriteForbidden names the required verb and the roles that hold it" do
+    err = Textus::WriteForbidden.new("identity.self", "identity", verb: "accept", holders: ["human"])
+    expect(err.message).to include("needs capability 'accept'")
     expect(err.hint).to be_a(String)
-    expect(err.hint).to include("human")
+    expect(err.hint).to include("held by: human")
     expect(err.hint).to include("--as")
+  end
+
+  it "WriteForbidden falls back to 'no declared role' when no holders hold the verb" do
+    err = Textus::WriteForbidden.new("identity.self", "identity", verb: "accept", holders: [])
+    expect(err.message).to include("needs capability 'accept'")
+    expect(err.hint).to include("held by: no declared role")
   end
 
   it "EtagMismatch hint suggests fetching the latest etag and mentions the key" do

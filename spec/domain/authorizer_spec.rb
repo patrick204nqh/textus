@@ -7,12 +7,13 @@ RSpec.describe Textus::Domain::Authorizer do
     instance_double(
       Textus::Manifest::Policy,
       zone_writers: %w[human],
+      verb_for_zone: "accept",
       zone_readers: { "working" => :all, "identity" => %w[human] },
     ).tap do |p|
       allow(p).to receive(:permission_for) do |zone|
         Textus::Domain::Permission.new(
           zone: zone,
-          write_policy: %w[human],
+          writers: %w[human],
           read_policy: zone == "identity" ? %w[human] : :all,
         )
       end

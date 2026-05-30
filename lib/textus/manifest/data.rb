@@ -34,10 +34,11 @@ module Textus
       def initialize(raw:, root:)
         @raw = raw
         @root = root
-        # TODO(Task 3): write authority is now derived from capabilities, not a
-        # per-zone write_policy. `zones` is a temporary empty-writers shim so
-        # Policy#zone_writers / #permission_for keep constructing until Policy
-        # is rewritten in Task 3.
+        # Write authority is derived from capabilities × zone-kind (ADR 0030),
+        # not a per-zone write_policy — Policy no longer reads `zones`. It is
+        # retained as a name→[] map purely for membership checks by read-side
+        # callers (boot, read/pulse, maintenance/zone_mv) that ask whether a
+        # zone is declared via `zones.key?`.
         @zones = Array(raw["zones"]).to_h { |z| [z["name"], []] }
         @zone_readers = Array(raw["zones"]).to_h do |z|
           rp = z["read_policy"]
