@@ -50,7 +50,15 @@ RSpec.describe Textus::Read::PolicyExplain do
       expect(result[:effective][:fetch][:ttl_seconds]).to eq(300)
       expect(result[:effective][:fetch][:on_stale]).to eq(:sync)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
-      expect(result[:effective][:promotion]).to eq({ requires: [:schema_valid] })
+    end
+  end
+
+  it "reports the effective guard predicate names per transition" do
+    Dir.mktmpdir do |root|
+      store = build_store(root)
+      result = store.as("human").policy_explain(key: "working.doc")
+      expect(result[:guards][:put]).to eq(["zone_writable_by"])
+      expect(result[:guards][:accept]).to include("accept_signed", "schema_valid")
     end
   end
 
@@ -81,7 +89,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:fetch]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
-      expect(result[:effective][:promotion]).to be_nil
+      expect(result[:guards][:put]).to eq(["zone_writable_by"])
     end
   end
 end
