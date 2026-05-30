@@ -211,7 +211,7 @@ Two transports, one façade:
 
 Both transports call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`). No duplicate logic.
 
-The agent loop (cadence guide in [`agents-mcp.md`](agents-mcp.md)):
+The agent loop (cadence guide in [`agents-mcp.md`](../agents-mcp.md)):
 
 1. **Session start:** `boot()` → contract envelope (zones, entries, schemas, write_flows, agent_quickstart with `latest_seq`).
 2. **Per turn:** `pulse(since=cursor)` → `{cursor, changed, stale, pending_review, doctor}`.
