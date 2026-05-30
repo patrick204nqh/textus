@@ -7,6 +7,8 @@ How to extend textus with Ruby hooks: when each event fires, what arguments it r
 
 This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](./zones.md).
 
+**New to hooks?** Read §1 — the RPC-vs-pub-sub model is the whole mental model in ~20 lines. The rest is reference you can skim on demand.
+
 ## Table of contents
 
 1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
