@@ -12,8 +12,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: identity, kind: origin }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 
@@ -35,7 +35,7 @@ RSpec.describe "inject_boot:" do
 
   it "injects boot: into template data when the flag is true" do
     store = Textus::Store.new(root)
-    store.as("builder").publish
+    store.as("automation").publish
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
@@ -46,7 +46,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
+        - { name: identity, kind: origin }
       entries:
         - key: identity.bad
           kind: derived
@@ -66,8 +66,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: identity, kind: origin }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 
@@ -86,8 +86,8 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin, write_policy: [human] }
-        - { name: output,   kind: derived, write_policy: [builder] }
+        - { name: identity, kind: origin }
+        - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
 
@@ -99,7 +99,7 @@ RSpec.describe "inject_boot:" do
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
-    store.as("builder").publish
+    store.as("automation").publish
     body = File.read(File.join(root, "zones/output/root.md"))
     expect(body).not_to include("protocol=textus/3")
   end

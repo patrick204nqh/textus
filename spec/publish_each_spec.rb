@@ -18,8 +18,8 @@ RSpec.describe "publish_each:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, agent, runner] }
-        - { name: output, kind: derived, write_policy: [builder] }
+        - { name: working, kind: origin }
+        - { name: output, kind: derived }
       entries:
       #{entries_yaml}
     YAML
@@ -156,7 +156,7 @@ RSpec.describe "publish_each:" do
 
     it "publishes one file per leaf with sentinels under .textus/sentinels/" do
       store = Textus::Store.new(root)
-      envelope = store.as("builder").publish
+      envelope = store.as("automation").publish
 
       expect(envelope["published_leaves"].size).to eq(5)
 
@@ -180,7 +180,7 @@ RSpec.describe "publish_each:" do
 
     it "prefix: filter limits which leaves get published" do
       store = Textus::Store.new(root)
-      envelope = store.as("builder").publish(prefix: "working.agents")
+      envelope = store.as("automation").publish(prefix: "working.agents")
       keys = envelope["published_leaves"].map { |r| r["key"] }
       expect(keys).to contain_exactly("working.agents.voice-writer", "working.agents.fact-checker")
     end
@@ -200,7 +200,7 @@ RSpec.describe "publish_each:" do
       File.write(File.join(root, "zones/working/agents/x.md"), "---\nname: x\n---\n")
 
       store = Textus::Store.new(root)
-      expect { store.as("builder").publish }
+      expect { store.as("automation").publish }
         .to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end

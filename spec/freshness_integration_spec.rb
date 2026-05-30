@@ -11,7 +11,7 @@ RSpec.describe "Reader honors on_stale policy" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: quarantine }
       entries:
         - key: working.foo
           kind: intake
@@ -53,7 +53,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       Thread.current[:refresh_count] = 0
       store = build_store(root, on_stale: "warn", intake_hook_body: hook_body)
-      envelope = store.as("runner").get_or_refresh("working.foo")
+      envelope = store.as("automation").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(true)
       expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -73,7 +73,7 @@ RSpec.describe "Reader honors on_stale policy" do
       RUBY
 
       store = build_store(root, on_stale: "sync", intake_hook_body: hook_body)
-      envelope = store.as("runner").get_or_refresh("working.foo")
+      envelope = store.as("automation").get_or_refresh("working.foo")
 
       expect(envelope.stale?).to be(false)
       expect(envelope.body || envelope.content).to include("fresh body")
@@ -90,7 +90,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
+          - { name: working, kind: quarantine }
         entries:
           - key: working.slow
             kind: intake
@@ -125,7 +125,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
       store = Textus::Store.new(textus)
       t0 = Time.now
-      envelope = store.as("runner").get_or_refresh("working.slow")
+      envelope = store.as("automation").get_or_refresh("working.slow")
       elapsed = Time.now - t0
 
       expect(elapsed).to be < 0.4
@@ -149,8 +149,8 @@ RSpec.describe "Reader honors on_stale policy" do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human, runner] }
-          - { name: output, kind: derived, write_policy: [builder] }
+          - { name: working, kind: quarantine }
+          - { name: output, kind: derived }
         entries:
           - key: working.foo
             kind: intake
@@ -163,7 +163,7 @@ RSpec.describe "Reader honors on_stale policy" do
             path: output/summary.md
             zone: output
             schema: null
-            owner: builder:auto
+            owner: automation:auto
             compute: { kind: projection, select: working.foo }
             template: echo.mustache
         rules:
@@ -200,7 +200,7 @@ RSpec.describe "Reader honors on_stale policy" do
       end
 
       store = Textus::Store.new(textus)
-      ctx = Textus::Call.build(role: "builder")
+      ctx = Textus::Call.build(role: "automation")
       build_publish(store, ctx).call
 
       expect(orchestrator_calls).to be_empty

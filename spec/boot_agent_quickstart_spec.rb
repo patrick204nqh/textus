@@ -12,11 +12,11 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human, kind: accept_authority }
-        - { name: agent, kind: proposer }
+        - { name: human, can: [accept, propose] }
+        - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: origin, write_policy: [human] }
-        - { name: review,  kind: queue, write_policy: [agent] }
+        - { name: working, kind: origin }
+        - { name: review,  kind: queue }
       entries: []
     YAML
   end
@@ -44,9 +44,9 @@ RSpec.describe Textus::Boot do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: human, kind: accept_authority }
+          - { name: human, can: [accept] }
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
+          - { name: working, kind: origin }
         entries: []
       YAML
       out = described_class.build(container: Textus::Store.new(root).container)

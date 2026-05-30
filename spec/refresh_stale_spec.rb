@@ -13,7 +13,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin, write_policy: [human, runner] }
+        - { name: working, kind: quarantine }
       entries:
         - key: working.fresh
           kind: intake
@@ -67,7 +67,7 @@ RSpec.describe "Textus::RoleScope#refresh_all (refresh_stale)" do
 
   it "refreshes every entry whose ttl has expired" do
     store = Textus::Store.new(textus)
-    result = store.as("runner").refresh_all
+    result = store.as("automation").refresh_all
 
     expect(result["ok"]).to be(true)
     expect(result["refreshed"]).to eq(["working.stale"])

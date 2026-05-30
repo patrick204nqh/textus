@@ -12,7 +12,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, kind: origin, write_policy: [human] }]
+        zones: [{ name: working, kind: origin }]
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -64,7 +64,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
+        zones: [{ name: intake, kind: quarantine }]
         entries:
           - key: intake.x
             kind: intake
@@ -86,13 +86,13 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_refreshed with change=:created on first refresh" do
       store = Textus::Store.new(root)
-      store.as("runner").refresh("intake.x")
+      store.as("automation").refresh("intake.x")
       expect($log).to eq([["intake.x", :created]])
     end
 
     it "fires :entry_refreshed with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
-      store.as("runner").refresh("intake.x")
+      store.as("automation").refresh("intake.x")
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
@@ -102,13 +102,13 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      store2.as("runner").refresh("intake.x")
+      store2.as("automation").refresh("intake.x")
       expect($log.last).to eq(["intake.x", :updated])
     end
 
     it "does NOT fire :entry_refreshed when the intake bytes are identical to the previous bytes" do
       store = Textus::Store.new(root)
-      store.as("runner").refresh("intake.x")
+      store.as("automation").refresh("intake.x")
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -120,7 +120,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      store2.as("runner").refresh("intake.x")
+      store2.as("automation").refresh("intake.x")
       # Two refreshes with identical action body (both "v1") — only the first
       # should fire :entry_refreshed (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])
@@ -137,7 +137,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       $log = []
       store = Textus::Store.new(root)
-      store.as("runner").refresh("intake.x")
+      store.as("automation").refresh("intake.x")
       expect($log.count { |e| e[0] == :entry_put }).to eq(0)
       expect($log.count { |e| e[0] == :entry_refreshed }).to eq(1)
     end
@@ -151,8 +151,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
-          - { name: output,  kind: derived, write_policy: [builder] }
+          - { name: working, kind: origin }
+          - { name: output,  kind: derived }
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -184,7 +184,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
-      store.as("builder").publish
+      store.as("automation").publish
       expect($log).to include([:build_completed, "output.summary", ["working"]])
     end
   end
@@ -197,8 +197,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin, write_policy: [human] }
-          - { name: review,  kind: origin, write_policy: [agent, human] }
+          - { name: working, kind: origin }
+          - { name: review,  kind: queue }
         entries:
           - { key: working.bob, path: working/bob.md, zone: working, kind: leaf}
 

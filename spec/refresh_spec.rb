@@ -10,7 +10,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, kind: origin, write_policy: [runner] }]
+      zones: [{ name: intake, kind: quarantine }]
       entries:
         - key: intake.repos
           kind: intake
@@ -36,7 +36,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
 
   it "invokes the action, writes the entry under role=runner, returns the envelope" do
     store = Textus::Store.new(root)
-    env = store.as("runner").refresh("intake.repos")
+    env = store.as("automation").refresh("intake.repos")
     expect(env.body).to eq("hello")
     expect(env.zone).to eq("intake")
     expect(File.exist?(File.join(root, "zones/intake/repos.md"))).to be true
@@ -44,7 +44,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
 
   it "raises if entry has no intake.handler" do
     store = Textus::Store.new(root)
-    expect { store.as("runner").refresh("intake.manual") }
+    expect { store.as("automation").refresh("intake.manual") }
       .to raise_error(Textus::UsageError, /no intake declared/)
   end
 
@@ -57,7 +57,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     store = Textus::Store.new(root)
     # Worker enforces FETCH_TIMEOUT_SECONDS; we stub Timeout.timeout to fire immediately.
     allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
-    expect { store.as("runner").refresh("intake.repos") }
+    expect { store.as("automation").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /timeout/i)
   end
 
@@ -65,7 +65,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     it "accepts {content:} for a format: json entry and writes valid JSON" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
+        zones: [{ name: intake, kind: quarantine }]
         entries:
           - key: intake.repos
             kind: intake
@@ -82,7 +82,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = store.as("runner").refresh("intake.repos")
+      env = store.as("automation").refresh("intake.repos")
       expect(env.format).to eq("json")
       path = File.join(root, "zones/intake/repos.json")
       parsed = JSON.parse(File.read(path))
@@ -93,7 +93,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
     it "accepts {body:} for a format: text entry and writes bytes verbatim" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, kind: origin, write_policy: [runner] }]
+        zones: [{ name: intake, kind: quarantine }]
         entries:
           - key: intake.notes
             kind: intake
@@ -110,7 +110,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
         end
       RUBY
       store = Textus::Store.new(root)
-      store.as("runner").refresh("intake.notes")
+      store.as("automation").refresh("intake.notes")
       expect(File.read(File.join(root, "zones/intake/notes.txt"))).to eq("raw bytes\nline 2\n")
     end
   end
@@ -122,7 +122,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
       end
     RUBY
     store = Textus::Store.new(root)
-    expect { store.as("runner").refresh("intake.repos") }
+    expect { store.as("automation").refresh("intake.repos") }
       .to raise_error(Textus::UsageError, /intake 'stub_fetch' raised.*network down/)
   end
 
@@ -135,7 +135,7 @@ RSpec.describe "Textus::RoleScope#refresh" do
       fake_lock  = instance_double(Textus::Ports::Refresh::Lock, try_acquire: true, release: nil)
 
       allow(Textus::Store).to receive(:new).and_return(fake_store)
-      allow(fake_store).to receive(:as).with("runner").and_return(sess)
+      allow(fake_store).to receive(:as).with("automation").and_return(sess)
       allow(Textus::Ports::Refresh::Lock).to receive(:new).and_return(fake_lock)
       allow(Process).to receive(:fork) do |&blk|
         blk.call
