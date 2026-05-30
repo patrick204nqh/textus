@@ -93,11 +93,7 @@ bundle install
 bundle exec exe/textus --help
 ```
 
-## Quick start
-
-```sh
-textus init
-```
+## What `textus init` gives you
 
 You get `.textus/` with all five zone directories, baseline schemas, an empty audit log, and a starter manifest:
 
@@ -137,19 +133,11 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 ## What's shipped
 
-- **Per-entry formats.** `format: markdown | json | yaml | text` on a manifest entry. `cat .textus/zones/output/marketplace.json | jq .` works without going through textus — the in-store file *is* the consumer-shaped artifact. Structured outputs carry `_meta` at the top level (`generated_at`, `from`, `template`, `transform`).
-- **Per-leaf publishing.** Nested entries declare `publish_each: "skills/{basename}/SKILL.md"`. Every leaf byte-copies to its consumer location on `textus build`. No more hand-mirrored `agents/` / `skills/` / `commands/` directories.
-- **Build and publish in one pass.** `Textus::Write::Publish` materializes generator-zone entries and copies nested leaves to their `publish_each` targets. The `textus build` CLI verb dispatches to it; the wire envelope is unchanged.
-- **Typed envelopes.** `Textus::Envelope` is a `Data.define` value object with typed accessors (`.meta`, `.body`, `.etag`, `.uid`, `.freshness`, …). Ruby API callers get IDE help and `NoMethodError` on typos. The CLI JSON wire format is preserved byte-for-byte via `envelope.to_h_for_wire`.
-- **Stable identity (`uid:`).** 16-char hex, auto-minted on first `put`, preserved across writes and moves. `textus key mv old.key new.key` renames in place — uid survives, audit row records `from_key`, `to_key`, `uid`. Reorganising a tree no longer breaks references.
-- **Strict key grammar.** `/^[a-z0-9][a-z0-9-]*$/`, max 8 segments × 64 chars. `textus doctor` flags any illegal segments with a rename hint; `textus key mv old.key new.key` renames in place (uid survives).
-- **`textus boot`.** One-shot store orientation: zones with writers + purposes, entry families with schemas and publish targets, loaded hooks, write flows per role, the full CLI verb table, and an `agent_quickstart` block (read/write verbs, writable zones, propose zone, latest audit seq).
-- **`textus pulse [--since=N]`.** Per-turn heartbeat for agents: changed entries since cursor N, stale keys, pending review proposals, and a doctor summary. Cursor is a monotonic seq stamped on every audit row; rotation keeps the last 5 files (configurable via `audit:` in the manifest) and raises `CursorExpired` when the requested cursor has fallen off disk.
-- **`textus doctor`.** Health check across 15 checks — among them: missing schemas/templates, broken hooks, illegal nested keys, sentinel drift, audit log readability, unowned schema fields, schema violations, and missing manifest files. Returns `ok: true` only when nothing is wrong; warnings and info don't flip the bit.
-- **Actionable hints on every error.** `UnknownKey` carries ranked "did you mean" suggestions. `WriteForbidden` names the role that *would* be allowed. `BadFrontmatter` tells you exactly what to rename. Printed to stderr alongside the JSON envelope on stdout.
-- **Compute.** Derived entries declare `compute: { kind: projection, ... }` (declarative rows + template) or `compute: { kind: external, ... }` (build runner produces the file; textus tracks sources for staleness). Inside projection computes, `transform:` names the row-shaping hook.
-
-Symlink-mode publish was removed; publish is `FileUtils.cp` + sentinel. Sentinels for published files live under `.textus/sentinels/<target_rel>.textus-managed.json` so consumer directories stay clean. Legacy sibling sentinels auto-migrate on next publish.
+- **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
+- **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
+- **Strict role/zone gate.** Writes carry `--as=<role>`; the wrong role gets `write_forbidden` naming the role that *would* be allowed. ([SPEC §5](SPEC.md))
+- **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
+- **`textus doctor`.** 15 health checks across schemas, hooks, keys, sentinels, and the audit log.
 
 ## CLI and zones
 
