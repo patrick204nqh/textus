@@ -35,7 +35,7 @@ project/
           deploy.md                  # how to ship a release
           oncall.md                  # first response when the service pages
       proposals/decisions/
-        0001-example.md              # pre-staged ADR proposal (agent → human)
+        0001-switch-to-sidekiq-pro.md  # pre-staged ADR proposal (agent → human)
       artifacts/orientation.md       # ← published to CLAUDE.md and AGENTS.md
 ```
 
