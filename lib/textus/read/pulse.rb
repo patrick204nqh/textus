@@ -49,11 +49,12 @@ module Textus
       end
 
       def review_keys
-        # List constructor takes only manifest:; returns hashes with string keys.
-        # Guard: zones is a Hash keyed by name string.
-        return [] unless @manifest.data.zones.key?("review")
+        # The single queue zone (kind: queue; schema guarantees ≤1), derived
+        # from the manifest rather than a hardcoded zone name (ADR 0034 / D1).
+        queue = @manifest.policy.queue_zone
+        return [] unless queue
 
-        rows = Read::List.new(container: @container).call(zone: "review")
+        rows = Read::List.new(container: @container).call(zone: queue)
         rows.map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
       end
 

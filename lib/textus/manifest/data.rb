@@ -11,7 +11,7 @@ module Textus
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
 
-      attr_reader :raw, :root, :entries, :zones, :declared_zone_kinds,
+      attr_reader :raw, :root, :entries, :declared_zone_kinds,
                   :zone_descs, :zone_owners,
                   :audit_config, :role_caps, :policy
 
@@ -36,11 +36,9 @@ module Textus
         @raw = raw
         @root = root
         # Write authority is derived from capabilities × zone-kind (ADR 0030),
-        # not a per-zone writer list — Policy no longer reads `zones`. It is
-        # retained as a name→[] map purely for membership checks by read-side
-        # callers (boot, read/pulse, maintenance/zone_mv) that ask whether a
-        # zone is declared via `zones.key?`.
-        @zones = Array(raw["zones"]).to_h { |z| [z["name"], []] }
+        # not a per-zone writer list. "Which zones are declared" lives in the
+        # one kind-keyed map below (declared_zone_kinds); membership checks by
+        # read-side callers (boot, maintenance/zone_mv) use its keyset (ADR 0034).
         @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
           [z["name"], z["kind"]&.to_sym]
         end

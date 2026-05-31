@@ -9,23 +9,31 @@ module Textus
     PROTOCOL_ID = PROTOCOL
 
     # Per-capability write-flow templates. Each lambda receives the user-facing
-    # role name and returns a guidance string for that verb. A role holding
-    # multiple verbs gets one joined string; roles whose verbs have no template
-    # are omitted from write_flows.
+    # role name and the manifest, and returns guidance for that verb with the
+    # live zone named by kind (ADR 0034). A role holding multiple verbs gets one
+    # joined string; roles whose verbs have no template are omitted.
     WRITE_FLOW_TEMPLATES = {
-      author: lambda do |name, _manifest|
-        "edit files in knowledge/notebook zones, then 'textus put KEY --as=#{name}'"
+      author: lambda do |name, manifest|
+        "edit files in #{zone_label(manifest, :canon, "your canon zone")}, " \
+          "then 'textus put KEY --as=#{name}'"
+      end,
+      keep: lambda do |name, manifest|
+        "keep durable notes in #{zone_label(manifest, :workspace, "your workspace")}: " \
+          "'textus put KEY --as=#{name}' (no accept needed)"
       end,
       propose: lambda do |name, manifest|
         authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
-        "propose changes by writing proposals.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
-          "the #{authority} role runs 'textus accept' to apply"
+        "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
+          "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      fetch: lambda do |name, _manifest|
-        "fetch intake entries with 'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
+      fetch: lambda do |name, manifest|
+        "fetch #{zone_label(manifest, :quarantine, "quarantine")} entries with " \
+          "'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
       end,
-      build: lambda do |_name, _manifest|
-        "'textus build' computes output entries from projections; output files are never hand-edited"
+      build: lambda do |_name, manifest|
+        derived = zone_label(manifest, :derived, "derived")
+        "'textus build' computes #{derived} entries from projections; " \
+          "#{derived} files are never hand-edited"
       end,
     }.freeze
 
@@ -39,9 +47,17 @@ module Textus
       end
     end
 
+    # Human-readable name(s) for the live zone(s) of a given kind, or `fallback`
+    # when the manifest declares none. Lets write-flow guidance name the live
+    # zone by kind instead of a hardcoded instance name (ADR 0034).
+    def self.zone_label(manifest, kind, fallback)
+      zones = manifest.policy.zones_of_kind(kind)
+      zones.empty? ? fallback : zones.join(", ")
+    end
+
     # Static, store-independent parts of the agent-facing protocol. The
-    # `role_resolution` block is derived per-manifest in agent_protocol(...)
-    # because role names are user-configurable.
+    # `recipes` and `role_resolution` blocks are derived per-manifest in
+    # agent_protocol(...) because zone and role names are user-configurable.
     AGENT_PROTOCOL_TEMPLATE = {
       "envelope_shape" => {
         "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
@@ -53,7 +69,56 @@ module Textus
         },
         "ref" => "SPEC.md §8",
       },
-      "recipes" => {
+    }.freeze
+
+    # The CLI verb catalog. Truth lives here; do not derive dynamically.
+    # Agents that read boot should see a stable shape regardless of how
+    # verb implementations evolve.
+    CLI_VERBS = [
+      { "name" => "boot",     "summary" => "this output — orientation for agents and tools" },
+      { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
+      { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
+      { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
+      { "name" => "schema",   "summary" => "field shape for a key family" },
+      { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
+      { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
+      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
+      { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
+      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
+      { "name" => "fetch", "summary" => "run an action for a quarantine entry" },
+      { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
+      { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
+      { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
+      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
+      { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
+      { "name" => "hook",
+        "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "pulse",
+        "summary" => "delta since cursor — changed entries, stale, pending proposals, doctor summary" },
+    ].freeze
+
+    def self.agent_quickstart(manifest, audit_log)
+      agent_role = manifest.policy.proposer_role
+
+      writable_zones = manifest.data.declared_zone_kinds.keys.each_with_object([]) do |zname, acc|
+        acc << zname if agent_role && manifest.policy.zone_writers(zname).include?(agent_role)
+      end
+
+      propose_zone = manifest.policy.propose_zone_for(agent_role)
+
+      {
+        "read_verbs" => %w[boot get list audit pulse freshness doctor],
+        "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
+        "writable_zones" => writable_zones,
+        "propose_zone" => propose_zone,
+        "latest_seq" => audit_log.latest_seq,
+      }
+    end
+
+    def self.recipes(manifest)
+      queue = manifest.policy.queue_zone
+      feeds = zone_label(manifest, :quarantine, "the quarantine zone")
+      {
         "read" => {
           "purpose" => "find and read an entry",
           "steps" => [
@@ -72,68 +137,25 @@ module Textus
         "propose" => {
           "purpose" => "agent suggests a change for human review",
           "agent_steps" => [
-            "echo ENVELOPE | textus put proposals.KEY --as=agent --stdin",
+            "echo ENVELOPE | textus put #{queue}.KEY --as=agent --stdin",
           ],
           "human_steps" => [
-            "textus accept proposals.KEY --as=human     # promotes the proposal to its target zone",
+            "textus accept #{queue}.KEY --as=human       # promotes the proposal to its target zone",
           ],
         },
         "fetch" => {
-          "purpose" => "rebuild stale intake-zone caches from their declared actions",
+          "purpose" => "rebuild stale quarantine-zone caches from their declared actions",
           "steps" => [
-            "textus freshness --zone=intake            # report fresh/stale per entry",
-            "textus fetch stale --zone=intake --as=automation",
+            "textus freshness --zone=#{feeds}            # report fresh/stale per entry",
+            "textus fetch stale --zone=#{feeds} --as=automation",
           ],
         },
-      },
-    }.freeze
-
-    # The CLI verb catalog. Truth lives here; do not derive dynamically.
-    # Agents that read boot should see a stable shape regardless of how
-    # verb implementations evolve.
-    CLI_VERBS = [
-      { "name" => "boot",     "summary" => "this output — orientation for agents and tools" },
-      { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
-      { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
-      { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
-      { "name" => "schema",   "summary" => "field shape for a key family" },
-      { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "accept",   "summary" => "apply a proposals.* proposal; --as=human only" },
-      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
-      { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
-      { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "fetch", "summary" => "run an action for an intake entry" },
-      { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
-      { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
-      { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
-      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
-      { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
-      { "name" => "hook",
-        "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
-      { "name" => "pulse",
-        "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
-    ].freeze
-
-    def self.agent_quickstart(manifest, audit_log)
-      agent_role = manifest.policy.proposer_role
-
-      writable_zones = manifest.data.zones.keys.each_with_object([]) do |zname, acc|
-        acc << zname if agent_role && manifest.policy.zone_writers(zname).include?(agent_role)
-      end
-
-      propose_zone = manifest.policy.propose_zone_for(agent_role)
-
-      {
-        "read_verbs" => %w[boot get list audit pulse freshness doctor],
-        "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
-        "writable_zones" => writable_zones,
-        "propose_zone" => propose_zone,
-        "latest_seq" => audit_log.latest_seq,
       }
     end
 
     def self.agent_protocol(manifest)
       AGENT_PROTOCOL_TEMPLATE.merge(
+        "recipes" => recipes(manifest),
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "default 'human'",
@@ -160,7 +182,7 @@ module Textus
     end
 
     def self.zones_for(manifest)
-      manifest.data.zones.keys.map do |name|
+      manifest.data.declared_zone_kinds.keys.map do |name|
         row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind

@@ -4,17 +4,24 @@ module Textus
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
-      ZONE_KINDS   = %w[canon workspace quarantine queue derived].freeze
-      # The closed capability set (ADR 0030): each verb grants authority to
-      # originate in exactly one zone-kind.
-      CAPABILITIES = %w[propose author keep fetch build].freeze
-      KIND_REQUIRES_VERB = {
-        "queue" => "propose",
+      # The closed coordination vocabulary (ADR 0028; completed at five in ADR
+      # 0033; unified here in ADR 0034). Each lane pairs a zone-kind with the
+      # single capability that authorizes originating bytes in it — a total
+      # bijection. This table is the ONE source of truth; the three legacy
+      # constants below are derived from it so a zone-kind and its required
+      # capability cannot drift. Key order is canon-first so the unknown-kind
+      # error message reads canon, workspace, quarantine, queue, derived.
+      LANES = {
         "canon" => "author",
         "workspace" => "keep",
         "quarantine" => "fetch",
+        "queue" => "propose",
         "derived" => "build",
       }.freeze
+
+      ZONE_KINDS         = LANES.keys.freeze
+      CAPABILITIES       = LANES.values.freeze
+      KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each

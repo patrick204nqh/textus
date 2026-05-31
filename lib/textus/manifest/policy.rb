@@ -54,6 +54,12 @@ module Textus
         @data.declared_zone_kinds[zone_name]
       end
 
+      # Zone names declaring `kind` (a Symbol), in manifest order. Lets callers
+      # (boot) name a kind's live zone instance(s) instead of hardcoding names.
+      def zones_of_kind(kind)
+        @data.declared_zone_kinds.select { |_name, k| k == kind }.keys
+      end
+
       # The single zone declaring `kind: queue`, or nil. Schema guarantees <=1.
       def queue_zone
         @data.declared_zone_kinds.key(:queue)
