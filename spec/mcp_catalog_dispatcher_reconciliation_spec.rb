@@ -6,7 +6,7 @@ require "spec_helper"
 # decision — surface it or omit it — instead of silently leaving MCP stale.
 
 # Phase C shrinks this to empty; any entry here needs a stated reason.
-MCP_CATALOG_COMPOSED = %w[propose schema rules].freeze
+MCP_CATALOG_COMPOSED = %w[propose schema].freeze
 
 # Dispatcher verbs deliberately NOT exposed over MCP: internal/maintenance/
 # CLI-only operations an agent should not be steered toward. Reviewer must

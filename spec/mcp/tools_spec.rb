@@ -109,12 +109,12 @@ RSpec.describe Textus::MCP::Tools do
   end
 
   describe ".call('rules', ...)" do
-    # rules is a composed tool promoted to a first-class verb in Phase C (ADR 0039);
-    # until then it is not in the derived catalog and raises ToolError.
-    it "raises ToolError (not yet a catalog verb; promoted in Phase C)" do
-      expect do
-        described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
-      end.to raise_error(Textus::MCP::ToolError)
+    # rules was promoted to a first-class verb in Phase C (ADR 0039); it is now
+    # in the derived catalog and returns a {fetch,guard} hash (compact).
+    it "returns a Hash with at most fetch/guard keys" do
+      result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
+      expect(result).to be_a(Hash)
+      expect(result.keys - %w[fetch guard]).to be_empty
     end
   end
 
