@@ -60,6 +60,47 @@ RSpec.describe "MCP end-to-end" do
     expect(tool_names.sort).to eq(Textus::MCP::Catalog.names.sort)
   end
 
+  it "pulse cursor advances: no-since pulse after put returns only the new entry; second no-since pulse returns empty changed" do
+    # Shape of the proof:
+    #   1. initialize  → session cursor = audit_log.latest_seq at that instant (call it C0)
+    #   2. put         → writes an audit row; audit_log.latest_seq becomes C1 > C0
+    #   3. pulse (no since) → session_default :cursor injects C0; changed must contain the
+    #                          put row (seq > C0); server then advances session cursor to C1
+    #   4. pulse (no since) → session_default :cursor now injects C1; changed must be []
+    #
+    # If the server were accidentally using since=0 for both calls, step 4 would still
+    # return the put entry in changed (re-emitting from the beginning). The empty changed
+    # in step 4 is only correct when the session cursor was genuinely advanced after step 3.
+    responses = run_session([
+                              { id: 1, method: "initialize",
+                                params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
+                              { id: 2, method: "tools/call",
+                                params: { name: "put",
+                                          arguments: { key: "working.note",
+                                                       meta: { "name" => "note" }, body: "cursor-advance-probe\n" } } },
+                              { id: 3, method: "tools/call",
+                                params: { name: "pulse", arguments: {} } },
+                              { id: 4, method: "tools/call",
+                                params: { name: "pulse", arguments: {} } },
+                            ])
+    expect(responses.map { |r| r["id"] }).to eq([1, 2, 3, 4])
+    expect(responses.all? { |r| r["error"].nil? }).to be(true)
+
+    pulse1 = JSON.parse(responses.find { |r| r["id"] == 3 }.dig("result", "content", 0, "text"))
+    pulse2 = JSON.parse(responses.find { |r| r["id"] == 4 }.dig("result", "content", 0, "text"))
+
+    # First pulse (using session cursor C0): must see the put entry
+    expect(pulse1["changed"].length).to eq(1)
+    expect(pulse1["changed"].first["key"]).to eq("working.note")
+    cursor_after_first_pulse = pulse1["cursor"]
+    expect(cursor_after_first_pulse).to be > 0
+
+    # Second pulse (using advanced session cursor C1): must see nothing new
+    expect(pulse2["changed"]).to be_empty
+    # Cursor is stable — no new writes since the first pulse advanced it
+    expect(pulse2["cursor"]).to eq(cursor_after_first_pulse)
+  end
+
   it "put → get round-trip succeeds via JSON-RPC tools/call" do
     responses = run_session([
                               { id: 1, method: "initialize",

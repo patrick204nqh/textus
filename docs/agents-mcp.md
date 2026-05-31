@@ -318,7 +318,7 @@ MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one voca
 | `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
 | `put` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
-| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?` |
+| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?, content?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema` | Field shape (schema for an entry's family) | `key: string` |
