@@ -19,7 +19,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 |---|---|
 | [`agents-mcp.md`](agents-mcp.md) | Talk to a store as an agent: boot → pulse loop, MCP tools, Claude Code wiring |
 | [`events.md`](events.md) | Write and test Ruby hooks |
-| [`migrations.md`](migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
+| [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
 
 ## Reference
 
@@ -27,7 +27,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 |---|---|
 | [`../SPEC.md`](../SPEC.md) | The `textus/3` wire protocol — the normative contract |
 | [`zones.md`](zones.md) | Zones, roles, entries, and data flow — the configuration model |
-| [`conventions.md`](conventions.md) | Idiomatic key naming, schema, and automation integration |
+| [`reference/conventions.md`](reference/conventions.md) | Idiomatic key naming, schema, and automation integration |
 
 ## Internals (explanation)
 
