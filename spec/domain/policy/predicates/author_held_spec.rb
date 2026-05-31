@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::Predicates::AuthorSigned do
+RSpec.describe Textus::Domain::Policy::Predicates::AuthorHeld do
   let(:policy) { instance_double(Textus::Manifest::Policy) }
   let(:manifest) { instance_double(Textus::Manifest, policy: policy) }
 
@@ -12,7 +12,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::AuthorSigned do
   end
 
   it "exposes the canonical predicate name" do
-    expect(described_class.new.name).to eq("author_signed")
+    expect(described_class.new.name).to eq("author_held")
   end
 
   it "passes when the actor holds the 'author' capability" do

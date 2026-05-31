@@ -47,7 +47,7 @@ RSpec.describe Textus::Read::PolicyExplain do
   it "reports the effective guard predicate names per transition" do
     result = store.as("human").policy_explain(key: "working.doc")
     expect(result[:guards][:put]).to eq(["zone_writable_by"])
-    expect(result[:guards][:accept]).to include("author_signed", "schema_valid")
+    expect(result[:guards][:accept]).to include("author_held", "schema_valid")
   end
 
   it "reports retention windows in the matched blocks and effective output" do
