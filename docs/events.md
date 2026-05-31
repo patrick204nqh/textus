@@ -1,7 +1,7 @@
 # Events — writing hooks
 
 > **How-to** · for hook authors · **read when** you want to extend textus with Ruby hooks
-> **SSoT for** the hook-authoring guide (normative event table lives in SPEC §5.10) · **reviewed** 2026-05 (v0.30)
+> **SSoT for** the hook-authoring guide (normative event table lives in SPEC §5.10) · **reviewed** 2026-05 (v0.35)
 
 How to extend textus with Ruby hooks: when each event fires, what arguments it receives, how to define one, and how to test it.
 
