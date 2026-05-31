@@ -167,7 +167,7 @@ rules:
 
 `textus fetch feeds.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
-The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [events.md §7a](../events.md#7a-resolve_intake-args).
+The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_intake` args)](../reference/events.md#resolve_intake-args).
 
 ### Aging entries out — `retention`
 
@@ -214,7 +214,7 @@ A derived entry says **"compute me from these sources, render me with this templ
 
 ### Registering hooks
 
-Hooks live in Ruby files under `.textus/hooks/`. See [`events.md`](../events.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [intake wiring](#wiring-data-in--intake-and-resolve_intake-hooks) and [derived entries](#wiring-data-out--derived-entries-and-publishing) above.
+Hooks live in Ruby files under `.textus/hooks/`. See [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [intake wiring](#wiring-data-in--intake-and-resolve_intake-hooks) and [derived entries](#wiring-data-out--derived-entries-and-publishing) above.
 
 ### What `textus build` does
 
@@ -299,5 +299,5 @@ For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: noteb
 
 - [`../reference/zones.md`](../reference/zones.md) — the exact zone, role, and entry semantics
 - [`../../SPEC.md`](../../SPEC.md) — the normative wire-protocol spec
-- [`../events.md`](../events.md) — the hook-author's guide
+- [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide
 - [`../../examples/project/`](../../examples/project/) — a complete worked example

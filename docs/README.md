@@ -18,7 +18,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 | Doc | What it does |
 |---|---|
 | [`agents-mcp.md`](agents-mcp.md) | Talk to a store as an agent: boot → pulse loop, MCP tools, Claude Code wiring |
-| [`events.md`](events.md) | Write and test Ruby hooks |
+| [`how-to/writing-hooks.md`](how-to/writing-hooks.md) | Write and test Ruby hooks |
 | [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
 
 ## Reference

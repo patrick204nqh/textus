@@ -108,7 +108,7 @@ A typical scheduled-fetch integration shells the `fetch stale` sweep itself:
 textus fetch stale --zone=intake --as=automation   # in cron / CI
 ```
 
-See [`./zones.md` §6](zones.md) for the full intake contract and [`./events.md`](../events.md) for writing custom handlers.
+See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
 
 ### Read vs. fetch
 

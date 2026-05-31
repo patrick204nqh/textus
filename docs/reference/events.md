@@ -1,62 +1,26 @@
-# Events — writing hooks
+# Events — reference
 
-> **How-to** · for hook authors · **read when** you want to extend textus with Ruby hooks
-> **SSoT for** the hook-authoring guide (normative event table lives in SPEC §5.10) · **reviewed** 2026-05 (v0.35)
+> **Reference** · for hook authors · **read when** you need the event catalog, lifecycle timelines, or `ctx:` fields
+> **SSoT for** the friendly event catalog and per-verb lifecycle timelines (the *normative* event table is SPEC §5.10) · **reviewed** 2026-05 (v0.37)
 
-How to extend textus with Ruby hooks: when each event fires, what arguments it receives, how to define one, and how to test it.
+The event catalog in plain English, the per-verb lifecycle timelines, and the facts hook authors look up: failure modes, intake `args:`, and built-in parsers.
 
-This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](reference/zones.md).
-
-**New to hooks?** Read §1 — the RPC-vs-pub-sub model is the whole mental model in ~20 lines. The rest is reference you can skim on demand.
+This is the catalog and timeline reference. The *normative* event table lives in [`../../SPEC.md` §5.10](../../SPEC.md#510-hooks) — this doc does not restate it. For how to define, wire, and test hooks, see [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md).
 
 ## Table of contents
 
-1. [The one mental model — RPC vs pub-sub](#1-the-one-mental-model--rpc-vs-pub-sub)
-2. [The events in plain English](#2-the-events-in-plain-english)
-3. [Lifecycle timelines per verb](#3-lifecycle-timelines-per-verb)
-4. [The definition surface](#4-the-definition-surface)
-5. [The `ctx:` handle — what you can and can't do](#5-the-ctx-handle)
-6. [Failure modes and timeouts](#6-failure-modes-and-timeouts)
-7. [Fan-out and `keys:` globs](#7-fan-out-and-keys-globs)
-8. [Built-in fetch parsers](#8-built-in-fetch-parsers)
-9. [Testing hooks](#9-testing-hooks)
-10. [Common patterns](#10-common-patterns)
+1. [The events in plain English](#the-events-in-plain-english)
+2. [Fetch lifecycle events](#fetch-lifecycle-events)
+3. [Lifecycle timelines per verb](#lifecycle-timelines-per-verb)
+4. [Failure modes and timeouts](#failure-modes-and-timeouts)
+5. [`:resolve_intake` args](#resolve_intake-args)
+6. [Built-in fetch parsers](#built-in-fetch-parsers)
 
 ---
 
-## 1. The one mental model — RPC vs pub-sub
+## The events in plain English
 
-Every event is one of two kinds.
-
-```
-   RPC                              PUB-SUB
-   ───                              ───────
-   • exactly 1 handler              • 0..N handlers
-   • return value is USED           • return value is DISCARDED
-   • raised error ABORTS the verb   • raised error LOGGED, verb continues
-   • named explicitly by manifest   • triggered by lifecycle, filtered by keys:
-
-   :resolve_intake → input to the store     :entry_put          → after any write
-   :transform_rows → projection shaping     :entry_deleted      → after delete
-   :validate       → doctor checks          :entry_fetched      → after fetch
-                                            :build_completed    → after derived materialization
-                                            :proposal_accepted  → after pending → target promotion
-                                            :file_published     → after each file written to a repo path
-                                            :entry_renamed      → after rename
-                                            :proposal_rejected  → after proposal discard
-                                            :store_loaded       → once per Store.new
-                                            :fetch_started      → before intake handler runs
-                                            :fetch_failed       → intake handler raised
-                                            :fetch_backgrounded → timed_sync budget exceeded
-```
-
-**RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model.
-
----
-
-## 2. The events in plain English
-
-textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in §2.1.
+textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events).
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
@@ -73,7 +37,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 | `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ ctx:, key:, target_key: }`. |
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
 
-### 2.1 Fetch lifecycle events
+### Fetch lifecycle events
 
 Three additional pub-sub events observe the progress of in-process and background intake fetches.
 
@@ -85,7 +49,7 @@ Three additional pub-sub events observe the progress of in-process and backgroun
 
 ---
 
-## 3. Lifecycle timelines per verb
+## Lifecycle timelines per verb
 
 Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is a hook callout.
 
@@ -215,49 +179,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 
 ---
 
-## 4. The definition surface
-
-Hook files wrap a single `Textus.hook { |reg| ... }` block. The block receives the store's registry and registers handlers on it.
-
-```ruby
-# RPC and pub-sub register the same way — through reg.on.
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_file) do |caps:, config:, args:|
-    { _meta: {}, body: File.read(config["path"]) }
-  end
-
-  reg.on(:entry_put, :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| ... }
-  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |ctx:, key:, target:, **| `git add #{target.shellescape}` }
-end
-```
-
-Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them across blocks — the store-scoped loader drains every queued block and invokes each with its own registry. There is no thread-local and no global state.
-
-**Signature rule** — every hook accepts kwargs. Either list the ones you need explicitly, or accept `**` to absorb the rest. Missing a required kwarg with no `**` raises `UsageError` at registration time.
-
----
-
-## 5. The `ctx:` handle
-
-Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_put, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
-
-All writes via `ctx` route through the use-case dispatch (`store.as(role)` → `RoleScope` → `Dispatcher`) so authorization, schema validation, and audit logging always fire — there are no bypass paths.
-
-RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). Legacy `store:` is rejected by the registry.
-
-If you don't need `ctx:`, absorb it with `**`:
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:transform_rows, :claude_root) do |rows:, **|   # ctx: absorbed by **
-    ...
-  end
-end
-```
-
----
-
-## 6. Failure modes and timeouts
+## Failure modes and timeouts
 
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
@@ -283,24 +205,7 @@ The pub-sub guarantee — "your write will not fail because of a flaky listener"
 
 ---
 
-## 7. Fan-out and `keys:` globs
-
-Pub-sub handlers can scope themselves with a `keys:` filter. Globs use `File.fnmatch?` with `FNM_PATHNAME`, meaning `*` does **not** cross `.` separators:
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:entry_put, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
-  reg.on(:entry_put, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
-  reg.on(:entry_put, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
-  reg.on(:entry_put, :audit_all) { ... }                                # no filter → every key
-end
-```
-
-One `:entry_put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
-
----
-
-## 7a. `:resolve_intake` args
+## `:resolve_intake` args
 
 The third kwarg `args:` carries leaf-key context populated by `FetchWorker`:
 
@@ -313,7 +218,7 @@ Handlers that ignore `args:` keep working unchanged. Handlers over a `nested: tr
 
 ---
 
-## 8. Built-in fetch parsers
+## Built-in fetch parsers
 
 Five `:resolve_intake` hooks ship pre-registered:
 
@@ -342,127 +247,4 @@ Textus.hook do |reg|
 end
 ```
 
----
-
-## 9. Testing hooks
-
-Hooks register against a per-store `Hooks::Registry`. In tests, instantiate a registry and call `reg.on` directly — no thread-local, no global state:
-
-```ruby
-RSpec.describe "my notion hook" do
-  let(:reg) { Textus::Hooks::Registry.new }
-
-  it "registers under :notion" do
-    reg.on(:resolve_intake, :notion) { |caps:, config:, args:| { _meta: {}, body: "stub" } }
-    expect(reg.rpc_names(:resolve_intake)).to include(:notion)
-  end
-
-  it "returns the expected shape" do
-    reg.on(:resolve_intake, :notion) do |caps:, config:, args:|
-      { _meta: { "fetched_at" => "now" }, body: "hello" }
-    end
-    handler = reg.rpc_callable(:resolve_intake, :notion)
-    result  = handler.call(caps: nil, config: {}, args: {})
-    expect(result[:body]).to eq("hello")
-  end
-end
-```
-
-For pub-sub handlers, drive the dispatcher directly:
-
-```ruby
-captured = []
-reg.on(:entry_put, :listener, keys: ["working.*"]) { |ctx:, key:, envelope:, **| captured << key }
-
-reg.listeners(:entry_put, key: "working.x").first[:callable].call(
-  ctx: nil, key: "working.x", envelope: {}
-)
-expect(captured).to eq(["working.x"])
-```
-
-To exercise the loader end-to-end (drains `Textus.hook` blocks against your registry), point `Hooks::Loader.new(registry: reg).load_dir(path)` at a fixture directory whose files declare `Textus.hook { |reg| reg.on(...) { ... } }`.
-
-See `spec/hooks/registry_spec.rb` for the canonical patterns.
-
----
-
-## 10. Common patterns
-
-### Connector — paired `:resolve_intake` + `:transform_rows`
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:resolve_intake, :linear) do |caps:, config:, args:|
-    bytes = LinearClient.fetch(config["team_id"])
-    { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
-  end
-
-  reg.on(:transform_rows, :linear) do |rows:, **|
-    rows.map { |r| r.slice("id", "title", "state", "updated_at") }
-        .sort_by { |r| r["updated_at"] }
-        .reverse
-  end
-end
-```
-
-Manifest references the same name on both sides:
-
-```yaml
-- key: intake.linear.issues
-  zone: intake
-  intake: { handler: linear, config: { team_id: "ENG" } }
-
-- key: output.linear.dashboard
-  zone: output
-  compute: { kind: projection, select: [intake.linear.issues], transform: linear }
-
-rules:
-  - match: intake.linear.**
-    fetch: { ttl: 1h, on_stale: warn }
-```
-
-### Audit listener — every write to a sensitive zone
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |ctx:, key:, envelope:, **|
-    Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']} role=#{ctx.role}")
-  end
-end
-```
-
-### Build notifier — desktop ping when derived files rebuild
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:build_completed, :notify) do |ctx:, key:, sources:, **|
-    system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
-  end
-end
-```
-
-### Custom doctor check — enforce a project rule
-
-```ruby
-Textus.hook do |reg|
-  reg.on(:validate, :no_drafts_in_identity) do |caps:|
-    call = Textus::Call.new(role: "doctor")
-    Textus::Read::List.new(container: caps, call: call).call(zone: "identity")
-      .select { |e| e["frontmatter"]["status"] == "draft" }
-      .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
-  end
-end
-```
-
-A non-empty return array surfaces as a doctor failure with each issue listed.
-
-`caps:` is a `Textus::Container` bundling `manifest`, `file_store`, `schemas`, `audit_log`, `events`, `rpc`, `authorizer`, and the store `root`. Pull the slice you need into a local; never reach for the raw Store.
-
----
-
-## Where to go from here
-
-- [`./zones.md`](reference/zones.md) — the manifest side: declaring which entries trigger which hooks
-- [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:resolve_intake` and event contracts
-- [`architecture/README.md`](architecture/README.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
-- [`../examples/project/.textus/hooks/`](../examples/project/.textus/hooks/) — a worked `:transform_rows` hook that reshapes projection rows for a template
+For how to define, wire, and test these handlers, see [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md).
