@@ -3,7 +3,7 @@ require "time"
 
 module Textus
   module Read
-    # Queries .textus/audit.log. Filters: key, zone, role, verb, since,
+    # Queries .textus/.run/audit/audit.log. Filters: key, zone, role, verb, since,
     # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
     # rows produce nil and are skipped).
     class Audit
@@ -33,7 +33,7 @@ module Textus
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest  = container.manifest
         @root      = container.root
-        @log_path  = File.join(container.root, "audit.log")
+        @log_path  = Textus::Layout.audit_log(container.root)
         @audit_log = container.audit_log
       end
 
@@ -84,7 +84,7 @@ module Textus
       end
 
       def all_log_files
-        rotated = Dir.glob(File.join(@root, "audit.log.*"))
+        rotated = Dir.glob(File.join(Textus::Layout.audit_dir(@root), "audit.log.*"))
                      .reject { |p| p.end_with?(".meta.json") }
                      .sort_by { |p| -p.scan(/\d+$/).first.to_i } # .5 .4 .3 .2 .1 → oldest first
         active = File.exist?(@log_path) ? [@log_path] : []

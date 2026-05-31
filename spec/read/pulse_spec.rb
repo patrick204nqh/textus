@@ -57,9 +57,10 @@ RSpec.describe Textus::Read::Pulse do
   end
 
   it "raises CursorExpired when since is below min_available_seq" do
-    File.write(File.join(root, "audit.log.1.meta.json"),
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(File.join(audit_dir_path(root), "audit.log.1.meta.json"),
                JSON.generate({ "min_seq" => 50, "max_seq" => 100, "rotated_at" => Time.now.utc.iso8601 }))
-    File.write(File.join(root, "audit.log.1"), "")
+    File.write(File.join(audit_dir_path(root), "audit.log.1"), "")
     store.audit_log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
 
     expect { ops.pulse(since: 10) }.to raise_error(Textus::CursorExpired)

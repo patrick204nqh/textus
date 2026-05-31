@@ -19,7 +19,8 @@ RSpec.describe Textus::Doctor::Check::AuditLog do
   end
 
   it "emits audit.parse_error for an invalid-JSON line" do
-    File.write(File.join(root, "audit.log"), "{not json\n")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "{not json\n")
     store = Textus::Store.new(root)
     issues = described_class.new(store.container).call
     expect(issues).to include(hash_including(

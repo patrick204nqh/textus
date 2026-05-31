@@ -11,7 +11,7 @@ RSpec.describe Textus::Ports::AuditLog do
       log.append(role: "human", verb: "put", key: "a.b", etag_before: nil, etag_after: "e1")
       log.append(role: "human", verb: "put", key: "a.c", etag_before: nil, etag_after: "e2")
 
-      rows = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l) }
+      rows = File.readlines(audit_log_path(root)).map { |l| JSON.parse(l) }
       expect(rows.map { |r| r["seq"] }).to eq([1, 2])
     end
 
@@ -20,7 +20,7 @@ RSpec.describe Textus::Ports::AuditLog do
       log2 = described_class.new(root) # fresh instance, same dir
       log2.append(role: "human", verb: "put", key: "a.c", etag_before: nil, etag_after: "e2")
 
-      rows = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l) }
+      rows = File.readlines(audit_log_path(root)).map { |l| JSON.parse(l) }
       expect(rows.map { |r| r["seq"] }).to eq([1, 2])
     end
   end

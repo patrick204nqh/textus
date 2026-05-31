@@ -13,7 +13,8 @@ RSpec.describe Textus::Maintenance::ZoneMv do
         - { key: scratch.note, path: scratch/note.md, zone: scratch, schema: null, owner: human:self, kind: leaf }
     YAML
     File.write(File.join(root, "zones/scratch/note.md"), "---\n_meta: {name: note, uid: nnnnnnnnnnnnnnnn}\n---\nN\n")
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

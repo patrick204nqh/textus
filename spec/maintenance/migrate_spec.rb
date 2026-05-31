@@ -14,7 +14,8 @@ RSpec.describe Textus::Maintenance::Migrate do
         - { key: working.new, path: working/new, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
     YAML
     File.write(File.join(root, "zones/working/old/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

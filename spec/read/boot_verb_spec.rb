@@ -13,7 +13,8 @@ RSpec.describe "boot verb dispatch" do
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

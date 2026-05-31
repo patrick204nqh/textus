@@ -21,7 +21,8 @@ RSpec.describe Textus::Read::Audit do
   end
 
   def write_log(rows)
-    File.open(File.join(root, "audit.log"), "w") do |f|
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.open(audit_log_path(root), "w") do |f|
       rows.each { |r| f.puts(JSON.generate(r)) }
     end
   end

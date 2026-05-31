@@ -11,7 +11,7 @@ RSpec.describe Textus::Ports::AuditSubscriber do
   after { FileUtils.remove_entry(tmpdir) }
 
   def audit_path
-    File.join(tmpdir, "audit.log")
+    Textus::Layout.audit_log(tmpdir)
   end
 
   def read_rows

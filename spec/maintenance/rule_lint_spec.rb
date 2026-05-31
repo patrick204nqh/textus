@@ -14,7 +14,8 @@ RSpec.describe Textus::Maintenance::RuleLint do
       rules:
         - { match: "intake.*", fetch: { ttl: 600, on_stale: warn } }
     YAML
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

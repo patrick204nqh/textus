@@ -168,7 +168,8 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports audit.parse_error on malformed audit log lines" do
-    File.write(File.join(root, "audit.log"), "this is not a tsv row\n")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "this is not a tsv row\n")
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "audit.parse_error" }
     expect(issue).not_to be_nil
@@ -185,7 +186,8 @@ RSpec.describe Textus::Doctor do
   end
 
   it "summary tallies issues by level and ok stays true unless an error exists" do
-    File.write(File.join(root, "audit.log"), "garbage\n")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "garbage\n")
     res = doctor
     expect(res["summary"]).to include("error", "warning", "info")
     expect(res["summary"]["warning"]).to be >= 1

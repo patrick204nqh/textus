@@ -12,7 +12,7 @@ RSpec.describe Textus::Ports::AuditLog do
   it "appends one NDJSON object per write" do
     log.append(role: "human", verb: "put", key: "working.x",
                etag_before: nil, etag_after: "sha256:abc")
-    line = File.read(File.join(root, "audit.log")).lines.first
+    line = File.read(audit_log_path(root)).lines.first
     parsed = JSON.parse(line)
     expect { Time.iso8601(parsed["ts"]) }.not_to raise_error
     expect(parsed).to include(
@@ -34,14 +34,14 @@ RSpec.describe Textus::Ports::AuditLog do
     log.append(role: "automation", verb: "event_error", key: "working.x",
                etag_before: nil, etag_after: nil,
                extras: { "event" => "put", "hook" => "boom", "error" => "boom!" })
-    parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)
+    parsed = JSON.parse(File.read(audit_log_path(root)).lines.first)
     expect(parsed["extras"]).to include("event" => "put", "hook" => "boom")
   end
 
   it "omits extras key for regular writes" do
     log.append(role: "human", verb: "put", key: "working.x",
                etag_before: nil, etag_after: "abc")
-    parsed = JSON.parse(File.read(File.join(root, "audit.log")).lines.first)
+    parsed = JSON.parse(File.read(audit_log_path(root)).lines.first)
     expect(parsed).not_to have_key("extras")
   end
 
@@ -53,7 +53,7 @@ RSpec.describe Textus::Ports::AuditLog do
       end
     end
     threads.each(&:join)
-    lines = File.read(File.join(root, "audit.log")).lines
+    lines = File.read(audit_log_path(root)).lines
     expect(lines.length).to eq(20)
     expect(lines.all? { |l| l.start_with?("{") }).to be true
     expect(lines.all? { |l| JSON.parse(l)["verb"] == "put" }).to be true
@@ -75,18 +75,20 @@ RSpec.describe Textus::Ports::AuditLog do
     it "flags a malformed JSON line with reason=invalid_json" do
       log.append(role: "human", verb: "put", key: "working.x",
                  etag_before: nil, etag_after: "sha256:abc")
-      File.open(File.join(root, "audit.log"), "a") { |f| f.puts "{not json" }
+      File.open(audit_log_path(root), "a") { |f| f.puts "{not json" }
       issues = log.verify_integrity
       expect(issues).to contain_exactly(hash_including("lineno" => 2, "reason" => "invalid_json"))
     end
 
     it "skips empty lines silently" do
-      File.write(File.join(root, "audit.log"), "\n\n")
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
+      File.write(audit_log_path(root), "\n\n")
       expect(log.verify_integrity).to eq([])
     end
 
     it "flags non-JSON lines as invalid_json" do
-      File.write(File.join(root, "audit.log"), "not json\n")
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
+      File.write(audit_log_path(root), "not json\n")
       issues = log.verify_integrity
       expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "invalid_json"))
     end
@@ -96,7 +98,7 @@ RSpec.describe Textus::Ports::AuditLog do
     it "writes canonical role names verbatim for new rows" do
       log.append(role: "agent", verb: "put", key: "working.x",
                  etag_before: nil, etag_after: "sha256:0")
-      row = JSON.parse(File.read(File.join(root, "audit.log")).lines.last)
+      row = JSON.parse(File.read(audit_log_path(root)).lines.last)
       expect(row["role"]).to eq("agent")
     end
 
@@ -105,13 +107,14 @@ RSpec.describe Textus::Ports::AuditLog do
       # vocabulary rename. The reader returns them verbatim — anyone reading
       # historical rows is responsible for normalization. New writes always use
       # canonical roles.
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
       File.write(
-        File.join(tmp, "audit.log"),
+        Textus::Layout.audit_log(root),
         JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
                       "verb" => "put", "key" => "working.x",
                       "etag_before" => nil, "etag_after" => "sha256:0") + "\n",
       )
-      log = described_class.new(tmp)
+      log = described_class.new(root)
       expect(log.last_writer_for("working.x")).to eq("ai")
     end
   end
