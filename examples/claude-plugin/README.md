@@ -89,8 +89,8 @@ voice-tools/
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
 - **Review** is the AI proposal surface. The manifest's `review.**` rule
-  declares `guard: { accept: [schema_valid, author_signed] }` — the
-  contract a proposal must satisfy before it can be accepted (`author_signed`
+  declares `guard: { accept: [schema_valid, author_held] }` — the
+  contract a proposal must satisfy before it can be accepted (`author_held`
   is satisfied only by a role holding the `author` capability).
 - **Output** is owned by `automation:auto`. Two output entries assemble the
   shipped surface:
@@ -120,7 +120,7 @@ This example ships one block:
 rules:
   # Contract for AI proposals.
   - match: review.**
-    guard: { accept: [schema_valid, author_signed] }
+    guard: { accept: [schema_valid, author_held] }
 ```
 
 The `rules({key})` MCP tool returns the effective rules for any key.

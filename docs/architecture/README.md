@@ -57,7 +57,7 @@ Freshness::{Policy,Verdict,Evaluator}
 Staleness          (Generator/Intake checks)
 Action  Outcome  Sentinel
 Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist,
-         Predicates::{ZoneWritableBy,SchemaValid,AuthorSigned,EtagMatch,FreshWithin}}
+         Predicates::{ZoneWritableBy,SchemaValid,AuthorHeld,TargetIsCanon,EtagMatch,FreshWithin}}
 ```
 
 **Infrastructure**
@@ -163,7 +163,7 @@ Manifest carving means slicing the parsed manifest YAML into four purpose-specif
 | `data` | `Manifest::Data` | Frozen value: `raw`, `root`, `zones`, `entries`, `audit_config`, `role_caps` (role name → capability set). Structural data only — no behaviour beyond accessors and key validation. |
 | `resolver` | `Manifest::Resolver` | Key → `Resolution(entry, path, remaining)`. Handles nested entry enumeration and fuzzy-match suggestions. |
 | `policy` | `Manifest::Policy` | Zone/capability authority — `verb_for_zone` (zone-kind → required verb), `roles_with_capability(verb)`, `zone_writers` (derived: roles holding the verb the zone's kind requires), `permission_for`, `declared_kind`, `proposer_role`, `propose_zone_for(role)`. Write authority is derived from capabilities × zone-kind (ADR 0030); no filesystem I/O. `propose_zone_for` returns the single `kind: queue` zone when the role can write it (ADR 0027). |
-| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(fetch, handler_allowlist, promote, retention)` by evaluating all `match:` blocks against the key. |
+| `rules` | `Manifest::Rules` | Pattern-matched rule engine. `rules.for(key)` returns a `RuleSet(fetch, handler_allowlist, guard, retention)` by evaluating all `match:` blocks against the key. |
 
 Rationale: cleaner test seams — a use case that only needs key resolution constructs a `Manifest::Resolver` from a stub `Data`; one that only needs rule lookup constructs a `Manifest::Rules` directly. No consumer is forced to build the full manifest to exercise one sub-view.
 

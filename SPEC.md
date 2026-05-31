@@ -982,7 +982,7 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `intake_handler_allowlist`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_allowlist`, `fetch_locks`, `proposal_targets`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 

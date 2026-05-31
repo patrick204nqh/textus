@@ -101,4 +101,4 @@ rules:
   guard:
     accept:
     - schema_valid
-    - author_signed
+    - author_held
