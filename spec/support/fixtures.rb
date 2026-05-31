@@ -123,6 +123,20 @@ module TextusSpecHelpers
     Textus::Container.from_store(store)
   end
 
+  # ── Use-case invocation idiom ───────────────────────────────────────────
+  # Prefer the public façade for anything reachable through it:
+  #
+  #   store.as(role, correlation_id:, dry_run:).put("working.foo", meta:, body:)
+  #
+  # `store.as` reuses the Store's memoized container, whose EventBus is the
+  # *same* object as `store.events` — so in-place `store.events.register(...)`
+  # probes are visible through it.
+  #
+  # The `build_*` helpers below build a FRESH container each call. Use them ONLY
+  # when a spec swaps the bus wholesale (`store.instance_variable_set(:@events,
+  # probe)`) or drives an internal use-case class that the façade does not
+  # expose (e.g. Write::FetchWorker). For those, the memoized container would be
+  # stale, so a fresh one is required.
   def build_put(store, ctx)
     Textus::Write::Put.new(container: fresh_container(store), call: ctx)
   end
