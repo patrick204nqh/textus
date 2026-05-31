@@ -44,4 +44,10 @@ RSpec.describe Textus::Contract do
   it "reports a class without a contract" do
     expect(Class.new.respond_to?(:contract?)).to be(false)
   end
+
+  it "raises if arg or verb is called after .contract has been read" do
+    klass.contract # trigger memoization
+    expect { klass.arg(:extra, String) }.to raise_error(RuntimeError, /contract already built/)
+    expect { klass.verb(:other) }.to raise_error(RuntimeError, /contract already built/)
+  end
 end
