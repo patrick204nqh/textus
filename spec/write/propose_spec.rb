@@ -1,7 +1,16 @@
 require "spec_helper"
 
 RSpec.describe Textus::Write::Propose do
-  let(:store) { Textus::Store.discover(File.expand_path("../../examples/project", __dir__)) }
+  # Use a tmpdir copy of examples/project so propose writes do not mutate the
+  # committed example store (same pattern as spec/mcp/catalog_spec.rb).
+  let(:tmp) { Dir.mktmpdir }
+  let(:store) do
+    src = File.expand_path("../../examples/project/.textus", __dir__)
+    FileUtils.cp_r(src, File.join(tmp, ".textus"))
+    Textus::Store.new(File.join(tmp, ".textus"))
+  end
+
+  after { FileUtils.remove_entry(tmp) }
 
   it "prefixes the key with the role's propose_zone and writes there" do
     env = store.as("agent").propose("decisions.adopt-x", meta: { "name" => "adopt-x" }, body: "yes\n")
