@@ -9,6 +9,25 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.35.0 — 2026-05-31 — Proposal target-zone constraint + `author_held` ([ADR 0035](docs/architecture/decisions/0035-proposal-target-zone-constraint.md))
+
+No `textus/3` wire-format change; no manifest-schema change.
+
+### Changed (BREAKING)
+
+- **`accept` now refuses a proposal whose `target_key` is not a `canon` zone** (new floor
+  predicate `target_is_canon`). Previously such a proposal failed confusingly downstream
+  (accept-into-derived) or incoherently "succeeded" (accept-into-workspace). Refusals surface
+  as `guard_failed` naming `target_is_canon`.
+- **Predicate `author_signed` renamed to `author_held`** — it checks possession of the `author`
+  capability, not a signing gesture. `guard_failed` output and any `rules[].guard` referencing
+  the old name change accordingly.
+
+### Added
+
+- **`doctor` check `proposal_targets`** — warns on queued proposals whose `target_key` is
+  non-canon (`proposal.target_not_canon`) or unresolvable (`proposal.target_unresolved`).
+
 ## 0.34.0 — 2026-05-31 — Unify the Lane vocabulary + finish boot's kind-derived zone naming ([ADR 0034](docs/architecture/decisions/0034-unify-lane-vocabulary.md))
 
 No `textus/3` wire-format change; no manifest-schema change. The five zone-kinds and five
