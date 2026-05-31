@@ -1,6 +1,13 @@
 module Textus
   module Read
     class SchemaEnvelope
+      extend Textus::Contract::DSL
+
+      verb     :schema
+      summary  "Return the schema (field shape) for an entry's family, by key."
+      surfaces :ruby, :mcp
+      arg :key, String, required: true, positional: true
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
         @schemas  = container.schemas

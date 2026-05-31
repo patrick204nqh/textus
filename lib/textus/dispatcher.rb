@@ -31,7 +31,7 @@ module Textus
       pulse: Textus::Read::Pulse,
       policy_explain: Textus::Read::PolicyExplain,
       published: Textus::Read::Published,
-      schema_envelope: Textus::Read::SchemaEnvelope,
+      schema: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,

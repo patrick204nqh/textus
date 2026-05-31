@@ -6,7 +6,7 @@ require "spec_helper"
 # decision — surface it or omit it — instead of silently leaving MCP stale.
 
 # Phase C shrinks this to empty; any entry here needs a stated reason.
-MCP_CATALOG_COMPOSED = %w[schema].freeze
+MCP_CATALOG_COMPOSED = [].freeze
 
 # Dispatcher verbs deliberately NOT exposed over MCP: internal/maintenance/
 # CLI-only operations an agent should not be steered toward. Reviewer must
@@ -15,7 +15,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   accept reject publish delete mv
   audit blame deps rdeps where uid freshness stale
   doctor policy_explain published retainable
-  get_or_fetch schema_envelope validate_all retention_sweep
+  get_or_fetch validate_all retention_sweep
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
