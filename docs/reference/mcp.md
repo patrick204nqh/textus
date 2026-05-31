@@ -1,7 +1,7 @@
 # MCP transport — reference
 
 > **Reference** · for agent authors · **read when** you need the MCP tool catalog, error codes, transports, or plugin wiring
-> **SSoT for** the MCP tool catalog, error mapping, transports, and Claude-plugin wiring · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the MCP tool catalog, error mapping, transports, and Claude-plugin wiring · **reviewed** 2026-05 (v0.38)
 
 The exact facts of how an agent talks to a textus store over MCP: the three transports, the stdio JSON-RPC server, its tool catalog, error codes, plugin wiring, and audit-log retention.
 
@@ -41,7 +41,7 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 
 ### Tools
 
-MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports).
+MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports). The catalog is **derived from per-verb contracts** (ADR 0039) — there is no hand-maintained tool list; each verb's `arg` shapes and description are generated from its declared contract.
 
 | Tool | Returns | Args |
 |---|---|---|
@@ -50,10 +50,10 @@ MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one voca
 | `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
 | `put` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
-| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?` |
+| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?, content?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
-| `schema` | Field shape | `family: string` |
+| `schema` | Field shape (schema for an entry's family) | `key: string` |
 | `rules` | Effective rules for a key | `key: string` |
 
 Maintenance tools (admin / bulk operations):
@@ -91,7 +91,7 @@ Add an `.mcp.json` next to the plugin's `CLAUDE.md`:
 }
 ```
 
-The agent now sees the full textus tool catalog in its registry (fifteen tools). No `textus get` strings in the plugin's markdown.
+The agent now sees the full textus tool catalog in its registry. No `textus get` strings in the plugin's markdown.
 
 ## Audit log retention
 

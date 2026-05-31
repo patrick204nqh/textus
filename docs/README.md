@@ -1,7 +1,7 @@
 # textus documentation
 
 > **Explanation** · for everyone · **read when** you're not sure which doc you need
-> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.38)
 
 The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides live here.
 

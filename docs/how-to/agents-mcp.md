@@ -1,7 +1,7 @@
 # Agents & MCP — wiring an agent to a store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the Claude Code quickstart, context-store setup, and the agent boot → pulse loop · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the Claude Code quickstart, context-store setup, and the agent boot → pulse loop · **reviewed** 2026-05 (v0.38)
 
 How an AI agent reads from and writes to a textus store — a 5-minute Claude Code setup, what you get, and the operational loop you run each turn.
 
@@ -57,6 +57,32 @@ Create `.mcp.json` at your project root:
 }
 ```
 
+**Pin the store root for subprocess launches.** The bare config above
+relies on textus discovering `.textus/` by walking up from the
+server's working directory. When Claude Code launches `textus mcp
+serve` as a subprocess, that cwd is not guaranteed to be your project
+root — so pin the store explicitly. Either pass `--root`, or set
+`TEXTUS_ROOT`:
+
+```json
+{
+  "mcpServers": {
+    "textus": {
+      "command": "textus",
+      "args": ["--root", "${workspaceFolder}/.textus", "mcp", "serve"]
+    }
+  }
+}
+```
+
+Root resolution is `--root` flag → `TEXTUS_ROOT` env → upward
+`.textus` discovery — the same flag/env/discovery shape the role chain
+uses (see [ADR 0040](../architecture/decisions/0040-mcp-connection-role-and-two-channels.md)).
+The CLI (a human in the project directory) is fine relying on
+discovery; the agent channel should pin the root. Registering several
+server entries, each `--root`-ed at a different store, is how one agent
+talks to multiple textus stores.
+
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
 `boot`, `pulse`, `list`, `get`, `put`, `propose`, `fetch`,
@@ -97,7 +123,10 @@ the boot/pulse protocol.
   last turn — no full re-read of the project.
 - **Role-gated writes:** the agent cannot write to `working/` or
   `identity/` directly; it can only propose to `review/`. You
-  retain control over what becomes load-bearing.
+  retain control over what becomes load-bearing. The connection acts
+  as the `agent` role by default (ADR 0040); to run it with your own
+  authority instead, launch with `--as=human` (the gate then becomes
+  advisory).
 - **Audit log:** every write the agent makes is in
   `.textus/audit.log`. You can replay or revert.
 - **Schema validation:** if you declare `_meta` field shapes per
@@ -116,6 +145,12 @@ the boot/pulse protocol.
   run it manually from your project root (`textus mcp serve` and type
   `^C`); should print a JSON banner. If it errors, your `.textus/`
   manifest has a problem — `textus doctor` will tell you which.
+- **`no .textus directory found` / wrong store when Claude launches
+  it:** the subprocess cwd isn't your project root, so upward
+  discovery missed (or found the wrong) `.textus/`. Pin it: add
+  `--root` to `args` or `TEXTUS_ROOT` to `env` in `.mcp.json` (see
+  step 3). It runs fine by hand because your shell's cwd *is* the
+  project root.
 - **Claude doesn't see the tools:** verify `.mcp.json` is at the
   project root (not in a subdirectory) and Claude Code was launched
   with the project open as the workspace.

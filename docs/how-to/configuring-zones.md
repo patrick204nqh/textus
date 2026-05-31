@@ -1,7 +1,7 @@
 # Configuring zones
 
 > **How-to** · for integrators · **read when** you're defining zones, wiring intake, or setting up derived entries
-> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-05 (v0.38)
 
 How to shape your context: define your own zones, wire external data in through intake hooks, wire derived data out through projections and publishing, and a full worked example.
 

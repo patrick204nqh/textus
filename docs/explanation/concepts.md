@@ -1,7 +1,7 @@
 # Concepts — how textus thinks
 
 > **Explanation** · for everyone · **read when** you want the mental model before the reference
-> **SSoT for** the textus mental model: zones/coordination space, RPC vs pub-sub, and the boot/pulse two-channel model · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the textus mental model: zones/coordination space, RPC vs pub-sub, and the boot/pulse two-channel model · **reviewed** 2026-05 (v0.38)
 
 The shape of your context in textus is a small set of ideas that everything else layers on top of: zones and the roles that write to them, the entries that live in them, how data flows from input adapters out to published files, how hooks extend each verb, and how an agent orients to a store and tracks change. This doc is the mental model — read it once, then reach for the reference docs for exact fields and tables.
 

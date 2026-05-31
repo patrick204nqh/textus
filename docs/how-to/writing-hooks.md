@@ -1,7 +1,7 @@
 # Writing hooks
 
 > **How-to** · for hook authors · **read when** you want to define, wire, and test Ruby hooks
-> **SSoT for** the hook-authoring procedure (definition surface, fan-out, testing, common patterns) · **reviewed** 2026-05 (v0.37)
+> **SSoT for** the hook-authoring procedure (definition surface, fan-out, testing, common patterns) · **reviewed** 2026-05 (v0.38)
 
 How to extend textus with Ruby hooks: the definition surface, the `ctx:` handle, fan-out with `keys:` globs, testing, and common patterns.
 
