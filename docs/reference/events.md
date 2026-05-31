@@ -7,6 +7,8 @@ The event catalog in plain English, the per-verb lifecycle timelines, and the fa
 
 This is the catalog and timeline reference. The *normative* event table lives in [`../../SPEC.md` §5.10](../../SPEC.md#510-hooks) — this doc does not restate it. For how to define, wire, and test hooks, see [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md).
 
+> New here? Start with [Concepts](../explanation/concepts.md).
+
 ## Table of contents
 
 1. [The events in plain English](#the-events-in-plain-english)

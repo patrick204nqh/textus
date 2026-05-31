@@ -7,6 +7,8 @@ The exact semantics of textus zones: the roles and capabilities that govern who 
 
 This is the configuration reference. For the wire protocol, see [`../../SPEC.md`](../../SPEC.md). For the setup procedures (declaring zones, wiring intake, derived entries), see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). For implementation internals, see [`../architecture/README.md`](../architecture/README.md).
 
+> New here? Start with [Concepts](../explanation/concepts.md).
+
 ## Table of contents
 
 1. [Roles and capabilities — who is allowed to write](#roles-and-capabilities--who-is-allowed-to-write)

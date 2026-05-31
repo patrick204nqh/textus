@@ -7,6 +7,8 @@ How an AI agent reads from and writes to a textus store — a 5-minute Claude Co
 
 For the MCP tool catalog, error codes, transports, and plugin wiring, see [`../reference/mcp.md`](../reference/mcp.md). For the wire protocol, see [`../../SPEC.md`](../../SPEC.md).
 
+> New here? Start with [Concepts](../explanation/concepts.md).
+
 ## Table of contents
 
 1. [Quickstart: Claude Code (~5 minutes)](#quickstart-claude-code-5-minutes)
@@ -169,7 +171,7 @@ while session_active:
     run(f"textus put proposals.proposal.x --as=agent --stdin", input=envelope_json)
 ```
 
-For the conceptual framing of the two channels (boot vs pulse — what each is and why), see Concepts. <!-- TASK 6: repoint to ../explanation/concepts.md once it exists --> For the exact transports, pulse fields, error codes, and retention facts, see [`../reference/mcp.md`](../reference/mcp.md).
+For the conceptual framing of the two channels (boot vs pulse — what each is and why), see [Concepts](../explanation/concepts.md). For the exact transports, pulse fields, error codes, and retention facts, see [`../reference/mcp.md`](../reference/mcp.md).
 
 ## See also
 
