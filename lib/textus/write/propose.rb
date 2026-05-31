@@ -27,8 +27,12 @@ module Textus
       def call(key, meta: nil, body: nil, content: nil)
         zone = @manifest.policy.propose_zone_for(@call.role)
         unless zone
-          raise Textus::Error.new("propose_forbidden",
-                                  "role '#{@call.role}' has no writable propose_zone")
+          raise Textus::Error.new(
+            "propose_forbidden",
+            "role '#{@call.role}' has no writable propose_zone",
+            details: { "role" => @call.role },
+            hint: "the manifest must define a queue zone and '#{@call.role}' must hold the 'propose' capability",
+          )
         end
 
         Textus::Dispatcher.invoke(
