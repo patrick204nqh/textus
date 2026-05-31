@@ -55,7 +55,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
       path = File.join(root, "zones", "working", "foo.md")
       expect(File.exist?(path)).to be(false)
 
-      last = File.read(File.join(root, "audit.log")).lines.last
+      last = File.read(audit_log_path(root)).lines.last
       expect(last).to include("\"verb\":\"delete\"")
       expect(last).to include("\"etag_after\":null")
     end

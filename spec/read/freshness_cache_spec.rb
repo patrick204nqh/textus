@@ -23,7 +23,8 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
       File.join(root, "zones/intake/feed.md"),
       "---\nkey: intake.feed\nlast_fetched_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
     )
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

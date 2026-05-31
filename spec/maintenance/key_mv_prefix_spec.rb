@@ -16,7 +16,8 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
     FileUtils.mkdir_p(File.join(root, "zones/working/old"))
     File.write(File.join(root, "zones/working/old/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nbody-a\n")
     File.write(File.join(root, "zones/working/old/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nbody-b\n")
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

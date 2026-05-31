@@ -3,7 +3,7 @@ module Textus
     class Check
       class AuditLog < Check
         def call
-          path = File.join(root, "audit.log")
+          path = Textus::Layout.audit_log(root)
           Textus::Ports::AuditLog.new(root).verify_integrity.map do |v|
             {
               "code" => "audit.parse_error",

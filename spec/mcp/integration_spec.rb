@@ -17,7 +17,8 @@ RSpec.describe "MCP end-to-end" do
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
     YAML
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   it "handshake → tools/list → tools/call boot/list/put/pulse all succeed" do

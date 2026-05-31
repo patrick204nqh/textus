@@ -15,15 +15,15 @@ RSpec.describe Textus::Ports::AuditLog do
     it "rotates active log to audit.log.1 when size exceeds max_size" do
       append(20)
 
-      expect(File).to exist(File.join(root, "audit.log.1"))
+      expect(File).to exist(File.join(audit_dir_path(root), "audit.log.1"))
       # The active log must be small post-rotation (it might have a few fresh appends after the rotation point).
-      expect(File.size(File.join(root, "audit.log"))).to be <= 600 * 2
+      expect(File.size(audit_log_path(root))).to be <= 600 * 2
     end
 
     it "writes a sidecar meta json with min_seq and max_seq" do
       append(20)
 
-      meta_path = File.join(root, "audit.log.1.meta.json")
+      meta_path = File.join(audit_dir_path(root), "audit.log.1.meta.json")
       expect(File).to exist(meta_path)
       meta = JSON.parse(File.read(meta_path))
       expect(meta["min_seq"]).to be >= 1
@@ -34,8 +34,8 @@ RSpec.describe Textus::Ports::AuditLog do
     it "preserves seq continuity across rotation" do
       append(20)
 
-      files = ["audit.log.3", "audit.log.2", "audit.log.1", "audit.log"]
-              .map { |n| File.join(root, n) }.select { |f| File.exist?(f) }
+      files = (["audit.log.3", "audit.log.2", "audit.log.1"].map { |n| File.join(audit_dir_path(root), n) } +
+               [audit_log_path(root)]).select { |f| File.exist?(f) }
       all_seqs = files.flat_map { |f| File.readlines(f).map { |l| JSON.parse(l)["seq"] } }
       expect(all_seqs).to eq((1..all_seqs.size).to_a)
     end
@@ -43,10 +43,10 @@ RSpec.describe Textus::Ports::AuditLog do
     it "drops the oldest file when keep is exceeded" do
       append(100)
 
-      expect(File).not_to exist(File.join(root, "audit.log.4"))
+      expect(File).not_to exist(File.join(audit_dir_path(root), "audit.log.4"))
       # audit.log.3 may or may not exist depending on how many rotations happened; the key invariant
       # is "never more than keep rotated files".
-      rotated = Dir.glob(File.join(root, "audit.log.*")).reject { |p| p.end_with?(".meta.json") }
+      rotated = Dir.glob(File.join(audit_dir_path(root), "audit.log.*")).reject { |p| p.end_with?(".meta.json") }
       expect(rotated.size).to be <= 3
     end
 

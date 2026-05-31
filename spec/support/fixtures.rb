@@ -5,6 +5,10 @@ RSpec.shared_context "textus_store_fixture" do
 end
 
 module TextusSpecHelpers
+  # Layout-aware paths for specs that assert on runtime artifacts. ADR 0038.
+  def audit_log_path(root) = Textus::Layout.audit_log(root)
+  def audit_dir_path(root) = Textus::Layout.audit_dir(root)
+
   # Writes a manifest (+ optional zone dirs, schema files, and seed files)
   # into `textus_dir` and returns the Store. Pair with the
   # "textus_store_fixture" shared context, which provides `root` (the .textus

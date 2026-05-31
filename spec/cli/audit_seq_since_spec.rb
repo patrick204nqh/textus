@@ -40,9 +40,10 @@ RSpec.describe "textus audit --seq-since" do
   it "raises CursorExpired when seq is below min_available_seq" do
     with_store do |root, textus|
       # Simulate rotation having dropped seqs 1..10
-      File.write(File.join(textus, "audit.log.1.meta.json"),
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(textus))
+      File.write(File.join(Textus::Layout.audit_dir(textus), "audit.log.1.meta.json"),
                  JSON.generate({ "min_seq" => 11, "max_seq" => 20, "rotated_at" => Time.now.utc.iso8601 }))
-      File.write(File.join(textus, "audit.log.1"), "") # rotated file exists (content not needed for this test)
+      File.write(File.join(Textus::Layout.audit_dir(textus), "audit.log.1"), "") # rotated file exists (content not needed for this test)
       log = Textus::Ports::AuditLog.new(textus)
       # Append one fresh row so latest_seq > 20
       log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
@@ -65,9 +66,10 @@ RSpec.describe "textus audit --seq-since" do
                              "seq" => 2, "ts" => ts, "role" => "human", "verb" => "put",
                              "key" => "old2", "etag_before" => nil, "etag_after" => "e"
                            })
-      File.write(File.join(textus, "audit.log.1"),
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(textus))
+      File.write(File.join(Textus::Layout.audit_dir(textus), "audit.log.1"),
                  [row1, row2].join("\n") + "\n")
-      File.write(File.join(textus, "audit.log.1.meta.json"),
+      File.write(File.join(Textus::Layout.audit_dir(textus), "audit.log.1.meta.json"),
                  JSON.generate({ "min_seq" => 1, "max_seq" => 2, "rotated_at" => Time.now.utc.iso8601 }))
       log = Textus::Ports::AuditLog.new(textus)
       log.append(role: "human", verb: "put", key: "new1", etag_before: nil, etag_after: "e")

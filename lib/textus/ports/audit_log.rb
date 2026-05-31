@@ -10,7 +10,7 @@ module Textus
 
       def initialize(root, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
         @root     = root
-        @path     = File.join(root, "audit.log")
+        @path     = Textus::Layout.audit_log(root)
         @max_size = max_size
         @keep     = keep
       end
@@ -54,6 +54,7 @@ module Textus
       end
 
       def append(role:, verb:, key:, etag_before:, etag_after:, extras: nil)
+        FileUtils.mkdir_p(File.dirname(@path))
         File.open(@path, File::WRONLY | File::APPEND | File::CREAT, 0o644) do |f|
           f.flock(File::LOCK_EX)
           next_seq = current_max_seq_unlocked + 1
@@ -80,6 +81,14 @@ module Textus
       end
 
       private
+
+      def rotated(n)
+        File.join(Textus::Layout.audit_dir(@root), "audit.log.#{n}")
+      end
+
+      def rotated_meta(n)
+        File.join(Textus::Layout.audit_dir(@root), "audit.log.#{n}.meta.json")
+      end
 
       # Caller holds the flock. Returns the highest seq across the active log,
       # OR the most-recent rotated file's max_seq if the active log is empty.
@@ -113,7 +122,7 @@ module Textus
       end
 
       def read_meta(n)
-        path = File.join(@root, "audit.log.#{n}.meta.json")
+        path = rotated_meta(n)
         return nil unless File.exist?(path)
 
         JSON.parse(File.read(path))
@@ -151,25 +160,18 @@ module Textus
         meta = { "min_seq" => min_seq, "max_seq" => max_seq, "rotated_at" => Time.now.utc.iso8601 }
 
         # Drop the file that would be shifted past @keep.
-        oldest      = File.join(@root, "audit.log.#{@keep}")
-        oldest_meta = File.join(@root, "audit.log.#{@keep}.meta.json")
-        FileUtils.rm_f(oldest)
-        FileUtils.rm_f(oldest_meta)
+        FileUtils.rm_f(rotated(@keep))
+        FileUtils.rm_f(rotated_meta(@keep))
 
         # Shift .N → .(N+1) for N = keep-1 down to 1.
         (@keep - 1).downto(1) do |n|
-          src      = File.join(@root, "audit.log.#{n}")
-          dst      = File.join(@root, "audit.log.#{n + 1}")
-          File.rename(src, dst) if File.exist?(src)
-
-          src_meta = File.join(@root, "audit.log.#{n}.meta.json")
-          dst_meta = File.join(@root, "audit.log.#{n + 1}.meta.json")
-          File.rename(src_meta, dst_meta) if File.exist?(src_meta)
+          File.rename(rotated(n), rotated(n + 1)) if File.exist?(rotated(n))
+          File.rename(rotated_meta(n), rotated_meta(n + 1)) if File.exist?(rotated_meta(n))
         end
 
         # Active log → .1
-        File.rename(@path, File.join(@root, "audit.log.1"))
-        File.write(File.join(@root, "audit.log.1.meta.json"), JSON.generate(meta) + "\n")
+        File.rename(@path, rotated(1))
+        File.write(rotated_meta(1), JSON.generate(meta) + "\n")
         # Next append will create a fresh audit.log via File::CREAT.
       end
 

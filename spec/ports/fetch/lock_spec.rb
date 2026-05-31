@@ -35,7 +35,7 @@ RSpec.describe Textus::Ports::Fetch::Lock do
       Process.kill("KILL", child)
       Process.wait(child)
 
-      lock_path = File.join(root, ".locks", "intake.vendor.example.lock")
+      lock_path = File.join(Textus::Layout.locks(root), "intake.vendor.example.lock")
       expect(File).to exist(lock_path)
       pid_in_file = File.read(lock_path).to_i
       expect(pid_in_file).to eq(child)

@@ -92,6 +92,10 @@ module Textus
       end
       File.write(File.join(target_root, "hooks", "README.md"), HOOKS_README)
       File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
+      FileUtils.mkdir_p(Textus::Layout.state(target_root))
+      FileUtils.mkdir_p(Textus::Layout.locks(target_root))
+      File.write(File.join(target_root, ".gitignore"), Textus::Layout::GITIGNORE)
       { "protocol" => PROTOCOL, "initialized" => target_root }
     end
   end

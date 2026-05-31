@@ -241,7 +241,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       store = Textus::Store.new(root)
       store.as("human").accept("review.bob")
-      audit_lines = File.readlines(File.join(root, "audit.log")).map { |l| JSON.parse(l.chomp) }
+      audit_lines = File.readlines(audit_log_path(root)).map { |l| JSON.parse(l.chomp) }
       err = audit_lines.find { |h| h["verb"] == "event_error" }
       expect(err).not_to be_nil
       expect(err["extras"]["event"]).to eq("proposal_accepted")

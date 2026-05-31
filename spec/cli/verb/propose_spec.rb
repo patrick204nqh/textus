@@ -46,7 +46,8 @@ RSpec.describe Textus::CLI::Verb::Propose do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
     FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   it "lands the entry under the propose_zone (key becomes <propose_zone>.notes.oncall) and exits 0" do

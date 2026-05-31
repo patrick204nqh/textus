@@ -22,7 +22,8 @@ RSpec.describe Textus::CLI::Verb::Audit do
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
     YAML
-    File.open(File.join(root, "audit.log"), "w") do |f|
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.open(audit_log_path(root), "w") do |f|
       f.puts JSON.generate({ "ts" => "2026-05-01T00:00:00Z", "role" => "human",
                              "verb" => "put", "key" => "working.doc",
                              "extras" => { "correlation_id" => "abc" } })

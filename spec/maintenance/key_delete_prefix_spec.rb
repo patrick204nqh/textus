@@ -14,7 +14,8 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
     YAML
     File.write(File.join(root, "zones/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
     File.write(File.join(root, "zones/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")
-    File.write(File.join(root, "audit.log"), "")
+    FileUtils.mkdir_p(audit_dir_path(root))
+    File.write(audit_log_path(root), "")
   end
 
   let(:store) { Textus::Store.new(root) }

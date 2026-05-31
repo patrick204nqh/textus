@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::Mv do
 
       store.as("human", correlation_id: "cid-test").mv("knowledge.notes.alpha", "knowledge.notes.beta")
 
-      log_path = File.join(tmp, ".textus/audit.log")
+      log_path = Textus::Layout.audit_log(File.join(tmp, ".textus"))
       rows = File.readlines(log_path, chomp: true).map { |l| JSON.parse(l) }
       mv_row = rows.find { |r| r["verb"] == "mv" }
       expect(mv_row.dig("extras", "correlation_id")).to eq("cid-test")

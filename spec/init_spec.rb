@@ -65,6 +65,18 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
+  it "emits a .gitignore that ignores the .run runtime subtree" do
+    Dir.mktmpdir do |dir|
+      target = File.join(dir, ".textus")
+      Textus::Init.run(target)
+
+      gitignore = File.join(target, ".gitignore")
+      expect(File.exist?(gitignore)).to be(true)
+      expect(File.read(gitignore)).to include(".run/")
+      expect(File.directory?(File.join(target, ".run"))).to be(true)
+    end
+  end
+
   it "does not scaffold legacy inbox/ directory or zone" do
     Dir.mktmpdir do |root|
       target = File.join(root, ".textus")
