@@ -10,18 +10,18 @@ trigger a rebuild via the textus MCP server.
 
 → Tools (auto-discovered from the manifest):
    • boot()                          — orientation; zones, entries, schemas, agent_quickstart
-   • tick({since})                   — delta since cursor; advances server-side
-   • find({zone?, prefix?})          — list keys
-   • read({key})                     — read envelope
-   • write({key, meta, body})        — create/update (gated by role)
+   • pulse({since})                  — delta since cursor; advances server-side
+   • list({zone?, prefix?})          — list keys
+   • get({key})                      — read envelope
+   • put({key, meta, body})          — create/update (gated by role)
    • propose({key, meta, body})      — write a proposal to the review zone
-   • fetch({key}) / fetch_stale  — rebuild intake caches
+   • fetch({key}) / fetch_all    — rebuild intake caches
    • schema({family})                — field shape
    • rules({key})                    — effective rules
 
 → Session loop:
    1. boot() once per session; cache zones + agent_quickstart.
-   2. tick() per turn; act on changed / stale / pending_review.
+   2. pulse() per turn; act on changed / stale / pending_review.
    3. On ContractDrift (-32001) or CursorExpired (-32002): boot() again.
 -->
 

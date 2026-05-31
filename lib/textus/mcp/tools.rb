@@ -23,23 +23,23 @@ module Textus
       REGISTRY = {
         "boot" => ->(_s, store, _a) { store.boot },
 
-        "find" => lambda do |s, store, args|
+        "list" => lambda do |s, store, args|
           ops_for(s, store).list(zone: args["zone"], prefix: args["prefix"])
         end,
 
-        "read" => lambda do |s, store, args|
-          key = args.fetch("key") { raise ToolError.new("read: missing key") }
+        "get" => lambda do |s, store, args|
+          key = args.fetch("key") { raise ToolError.new("get: missing key") }
           env = ops_for(s, store).get(key)
           env.to_h_for_wire
         end,
 
-        "tick" => lambda do |s, store, args|
+        "pulse" => lambda do |s, store, args|
           since = (args["since"] || s.cursor).to_i
           ops_for(s, store).pulse(since: since)
         end,
 
-        "write" => lambda do |s, store, args|
-          key = args.fetch("key") { raise ToolError.new("write: missing key") }
+        "put" => lambda do |s, store, args|
+          key = args.fetch("key") { raise ToolError.new("put: missing key") }
           env = ops_for(s, store).put(
             key,
             meta: args["meta"] || {},
@@ -70,7 +70,7 @@ module Textus
           { "outcome" => outcome.class.name.split("::").last.downcase }
         end,
 
-        "fetch_stale" => lambda do |s, store, args|
+        "fetch_all" => lambda do |s, store, args|
           ops_for(s, store).fetch_all(zone: args["zone"], prefix: args["prefix"])
         end,
 

@@ -30,8 +30,8 @@ and `inject_boot` orientation projection.
 
 This plugin declares the textus MCP server in `.mcp.json`. Claude Code
 launches it automatically when the plugin is loaded. The plugin's
-agents and skills reference textus *tools* (boot, tick, find, read,
-write, propose, ...), not CLI verbs.
+agents and skills reference textus *tools* (boot, pulse, list, get,
+put, propose, ...), not CLI verbs.
 
 If you want to drive textus from a terminal, the human CLI surface
 (`textus boot` / `textus get` / `textus put`) still works — but skills
@@ -102,7 +102,7 @@ The `inject_boot: true` flag on `output.claude-root` makes the `store.boot`
 envelope available inside the template as `{{boot.*}}` — the rendered `CLAUDE.md`
 auto-projects zone authority and the tool surface straight from textus's
 own boot envelope. The template instructs agents to call `boot()` once
-per session and `tick()` per turn via the textus MCP server, teaching
+per session and `pulse()` per turn via the textus MCP server, teaching
 the boot+pulse pattern for keeping context fresh in long-running
 interactions. Agents reading `CLAUDE.md` get full orientation without
 an extra round trip.
@@ -152,7 +152,7 @@ End-to-end via MCP, the loop is:
 
 1. Agent calls `propose({key: "suggestion.001", meta: {...}, body: "..."})` —
    the session's `propose_zone` (`review`) auto-prefixes the key.
-2. Human reviews: `find({prefix: "review"})` → `read({key: "review.suggestion.001"})`.
+2. Human reviews: `list({prefix: "review"})` → `get({key: "review.suggestion.001"})`.
 3. Human accepts. The MCP server writes `target_key` as the human role,
    then deletes the review entry. The next build picks it up via `publish_each`.
 

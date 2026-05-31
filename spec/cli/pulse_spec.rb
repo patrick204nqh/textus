@@ -60,4 +60,36 @@ RSpec.describe "textus pulse CLI" do
       expect(JSON.parse(stdout)).to have_key("cursor")
     end
   end
+
+  it "advances its own cursor across calls when --since is omitted" do
+    with_store do |root, textus|
+      _code, out1 = run_cli(%w[pulse --as=agent], cwd: root)
+      first_cursor = JSON.parse(out1)["cursor"]
+
+      Textus::Ports::AuditLog.new(textus).append(
+        role: "human",
+        verb: "put",
+        key: "working.note",
+        etag_before: nil,
+        etag_after: "e2",
+      )
+
+      _code, out2 = run_cli(%w[pulse --as=agent], cwd: root)
+      out2_parsed = JSON.parse(out2)
+      expect(out2_parsed["cursor"]).to be > first_cursor
+      expect(out2_parsed["changed"].map { |c| c["key"] }).to include("working.note")
+
+      _code, out3 = run_cli(%w[pulse --as=agent], cwd: root)
+      out3_parsed = JSON.parse(out3)
+      expect(out3_parsed["changed"]).to eq([])
+      expect(out3_parsed["cursor"]).to eq(out2_parsed["cursor"])
+    end
+  end
+
+  it "stays stateless when --since is given explicitly" do
+    with_store do |root, _|
+      _code, out = run_cli(%w[pulse --as=agent --since=0], cwd: root)
+      expect(JSON.parse(out)["cursor"]).to be_a(Integer)
+    end
+  end
 end

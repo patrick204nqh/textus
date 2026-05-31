@@ -20,14 +20,14 @@ RSpec.describe "MCP end-to-end" do
     File.write(File.join(root, "audit.log"), "")
   end
 
-  it "handshake → tools/list → tools/call boot/find/write/tick all succeed" do
+  it "handshake → tools/list → tools/call boot/list/put/pulse all succeed" do
     store = Textus::Store.new(root)
     requests = [
       { id: 1, method: "initialize",
         params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
       { id: 2, method: "tools/list", params: {} },
       { id: 3, method: "tools/call", params: { name: "boot",  arguments: {} } },
-      { id: 4, method: "tools/call", params: { name: "tick",  arguments: { since: 0 } } },
+      { id: 4, method: "tools/call", params: { name: "pulse", arguments: { since: 0 } } },
     ].map { |r| JSON.dump(r.merge(jsonrpc: "2.0")) }.join("\n") + "\n"
 
     out = StringIO.new

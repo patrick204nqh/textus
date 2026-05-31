@@ -41,17 +41,17 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('find', ...)" do
+  describe ".call('list', ...)" do
     it "lists keys filtered by zone" do
-      result = described_class.call("find", session: session, store: store, args: { "zone" => "working" })
+      result = described_class.call("list", session: session, store: store, args: { "zone" => "working" })
       expect(result).to be_an(Array)
     end
   end
 
-  describe ".call('read', ...)" do
+  describe ".call('get', ...)" do
     it "raises ToolError for an unknown key" do
       expect do
-        described_class.call("read", session: session, store: store, args: { "key" => "no.such.key" })
+        described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::MCP::ToolError)
     end
   end
@@ -64,20 +64,20 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('tick', ...)" do
+  describe ".call('pulse', ...)" do
     it "returns pulse delta with cursor, changed, stale, pending_review, doctor" do
-      result = described_class.call("tick", session: session, store: store, args: { "since" => 0 })
+      result = described_class.call("pulse", session: session, store: store, args: { "since" => 0 })
       expect(result.keys).to include("cursor", "changed", "stale", "pending_review", "doctor")
     end
   end
 
-  describe ".call('write', ...)" do
+  describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
       human_session = Textus::MCP::Session.new(
         role: "human", cursor: 0, propose_zone: "review", manifest_etag: etag,
       )
       result = described_class.call(
-        "write",
+        "put",
         session: human_session, store: store,
         args: { "key" => "working.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
       )

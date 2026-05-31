@@ -50,7 +50,7 @@ RSpec.describe Textus::MCP::Server do
     )
     list = responses.find { |r| r["id"] == 2 }
     names = list["result"]["tools"].map { |t| t["name"] }
-    expect(names).to include("boot", "tick", "find", "read", "write", "propose", "fetch", "fetch_stale", "schema", "rules")
+    expect(names).to include("boot", "pulse", "list", "get", "put", "propose", "fetch", "fetch_all", "schema", "rules")
   end
 
   it "executes tools/call('boot') and returns content" do
