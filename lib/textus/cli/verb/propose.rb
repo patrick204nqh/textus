@@ -15,10 +15,11 @@ module Textus
           raise UsageError.new("propose requires --stdin") unless use_stdin
 
           role = resolved_role(store)
-          zone = store.manifest.policy.propose_zone_for(store.manifest.policy.proposer_role)
+          zone = store.manifest.policy.propose_zone_for(role)
           raise UsageError.new("no propose_zone is defined in this manifest") unless zone
 
           payload = JSON.parse(@stdin.read)
+          # if_etag is intentionally omitted: a proposal is always a fresh write into the queue.
           result = store.as(role).put(
             "#{zone}.#{rel}",
             meta: payload["_meta"] || {},

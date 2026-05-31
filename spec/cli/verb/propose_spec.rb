@@ -68,4 +68,15 @@ RSpec.describe Textus::CLI::Verb::Propose do
     output = JSON.parse(stdout.string)
     expect(output["message"]).to match(/stdin/)
   end
+
+  it "raises UsageError mentioning propose_zone when the acting role cannot write the queue" do
+    # `automation` has only `fetch`/`build` caps — propose_zone_for("automation") => nil
+    rc = run(
+      ["--root=#{root}", "propose", "notes.x", "--as=automation", "--stdin"],
+      stdin_body: payload,
+    )
+    expect(rc).not_to eq(0)
+    output = JSON.parse(stdout.string)
+    expect(output["message"]).to match(/propose_zone/)
+  end
 end
