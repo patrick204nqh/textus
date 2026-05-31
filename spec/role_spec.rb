@@ -30,19 +30,16 @@ RSpec.describe Textus::Role do
   end
 
   it "falls back to the supplied default when no flag/env/file resolves" do
-    Dir.mktmpdir do |dir|
-      expect(Textus::Role.resolve(flag: nil, env: {}, root: dir, default: "agent")).to eq("agent")
-    end
+    expect(Textus::Role.resolve(flag: nil, env: {}, root: root, default: "agent")).to eq("agent")
   end
 
   it "prefers env over the supplied default" do
-    Dir.mktmpdir do |dir|
-      expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "human" }, root: dir, default: "agent"))
-        .to eq("human")
-    end
+    expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "human" }, root: root, default: "agent"))
+      .to eq("human")
   end
 
   it "exposes the MCP transport default constant" do
     expect(Textus::Role::AGENT).to eq("agent")
+    expect(Textus::Role::AGENT).to match(Textus::Role::PATTERN)
   end
 end
