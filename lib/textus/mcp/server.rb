@@ -49,15 +49,11 @@ module Textus
       end
 
       def handle_initialize(rid, _params)
-        # Derive propose_zone from the conventional proposer_role, NOT @role.
-        # The server launches with no role override, so @role defaults to
-        # `human`, which usually can't write the queue — propose_zone_for(@role)
-        # would be nil and the `propose` tool would break. Resolving via
-        # proposer_role lets a human-roled connection still file proposals.
-        # This is why the server cannot just call Store#session (ADR 0036);
-        # that path uses propose_zone_for(role) for the acting role.
-        proposer = @store.manifest.policy.proposer_role
-        propose_zone = @store.manifest.policy.propose_zone_for(proposer)
+        # The acting role IS the resolved connection role (ADR 0040): the MCP
+        # transport defaults to `agent`, which can write the queue, so its
+        # propose_zone resolves directly. If a connection's role cannot propose,
+        # propose_zone is nil and the `propose` tool reports that honestly.
+        propose_zone = @store.manifest.policy.propose_zone_for(@role)
 
         @session = Session.new(
           role: @role,

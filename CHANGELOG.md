@@ -11,6 +11,27 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+## 0.38.0 — 2026-05-31 — MCP serve acts as agent by default ([ADR 0040](docs/architecture/decisions/0040-mcp-connection-role-and-two-channels.md))
+
+No `textus/3` wire-format change; no manifest-schema change.
+
+### Changed
+
+- **The MCP connection acts as the `agent` role by default (ADR 0040).**
+  `textus mcp serve` now resolves its acting role through the standard chain
+  (`--as` → `TEXTUS_ROLE` → `.textus/role`) with an `agent` transport default,
+  instead of silently inheriting the global `human` default. The agent channel
+  proposes; human authority (accept/reject, direct writes) is exercised through
+  the human's own CLI.
+
+### Breaking
+
+- **MCP writes that relied on human authority now require `propose` + `accept`,
+  or an explicit `--as=human`.** A connection that previously `put` straight into
+  `working/`/`identity/` over MCP will get `write_forbidden`. Launch
+  `textus mcp serve --as=human` (or set `TEXTUS_ROLE`/`.textus/role`) to restore
+  the old behavior knowingly; the gate is then advisory.
+
 ## 0.37.0 — 2026-05-31 — MCP catalog derive-or-guard ([ADR 0039](docs/architecture/decisions/0039-mcp-catalog-derive-or-guard.md))
 
 No `textus/3` wire-format change; no manifest-schema change.

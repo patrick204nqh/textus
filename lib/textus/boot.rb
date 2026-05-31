@@ -178,7 +178,7 @@ module Textus
         "recipes" => recipes(manifest),
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
-                       "default 'human'",
+                       "then a transport default ('human' for CLI, 'agent' for MCP)",
           "roles" => manifest.data.role_caps.keys,
           "ref" => "SPEC.md §5",
         },
