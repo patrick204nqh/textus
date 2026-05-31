@@ -1,8 +1,14 @@
 # rubocop:disable RSpec/MultipleDescribes
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
+
+NOTE_SCHEMA_BODY = YAML.dump({
+                               "name" => "note",
+                               "required" => [],
+                               "optional" => %w[headline title],
+                               "fields" => { "headline" => { "type" => "string" },
+                                             "title" => { "type" => "string" } },
+                               "evolution" => { "migrate_from" => { "headline" => "title" } },
+                             })
 
 RSpec.describe "Schema evolution metadata" do
   include_context "textus_store_fixture"
@@ -40,11 +46,8 @@ end
 RSpec.describe "Schema::Tools.migrate with renamed authority role" do
   include_context "textus_store_fixture"
 
-  def build_store_with_roles
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "schemas"))
-
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+  let(:store_with_roles) do
+    store_from_manifest(root, zones: %w[working], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: owner,  can: [author, propose] }
@@ -54,21 +57,10 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
     YAML
-
-    File.write(File.join(root, "schemas/note.yaml"), YAML.dump({
-                                                                 "name" => "note",
-                                                                 "required" => [],
-                                                                 "optional" => %w[headline title],
-                                                                 "fields" => { "headline" => { "type" => "string" },
-                                                                               "title" => { "type" => "string" } },
-                                                                 "evolution" => { "migrate_from" => { "headline" => "title" } },
-                                                               }))
-
-    Textus::Store.new(root)
   end
 
   it "migrate uses the declared accept_authority role (owner), not the literal human fallback" do
-    store = build_store_with_roles
+    store = store_with_roles
 
     store.as("owner").put(
       "working.note",
@@ -89,10 +81,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
   end
 
   it "migrate raises UsageError when roles: is declared but no author kind exists" do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "schemas"))
-
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+    store = store_from_manifest(root, zones: %w[working], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: agent, can: [propose] }
@@ -101,17 +90,6 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
       entries:
         - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
     YAML
-
-    File.write(File.join(root, "schemas/note.yaml"), YAML.dump({
-                                                                 "name" => "note",
-                                                                 "required" => [],
-                                                                 "optional" => %w[headline title],
-                                                                 "fields" => { "headline" => { "type" => "string" },
-                                                                               "title" => { "type" => "string" } },
-                                                                 "evolution" => { "migrate_from" => { "headline" => "title" } },
-                                                               }))
-
-    store = Textus::Store.new(root)
 
     expect do
       Textus::Schema::Tools.migrate(store, name: "note", rename: nil)

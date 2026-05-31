@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "json"
-require "tmpdir"
 
 RSpec.describe "publish_each:" do
   include_context "textus_store_fixture"

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "json"
 require "stringio"
 
@@ -74,13 +72,7 @@ RSpec.describe Textus::Boot do
     RUBY
   end
 
-  def store
-    @store ||= Textus::Store.new(root)
-  end
-
-  def session_for(s)
-    s.as(Textus::Role::DEFAULT)
-  end
+  let(:store) { Textus::Store.new(root) }
 
   it "returns an envelope with protocol + store_root" do
     env = described_class.build(container: store.container)
@@ -205,13 +197,6 @@ RSpec.describe Textus::Boot do
   end
 
   describe "with user-renamed roles" do
-    def build_store(yaml)
-      dir = Dir.mktmpdir("textus-boot-renamed-")
-      FileUtils.mkdir_p(File.join(dir, "schemas"))
-      File.write(File.join(dir, "manifest.yaml"), yaml)
-      Textus::Store.new(dir)
-    end
-
     it "renders write_flows keyed by the configured role names" do
       yaml = <<~YAML
         version: textus/3
@@ -227,7 +212,7 @@ RSpec.describe Textus::Boot do
           - { name: build,   kind: derived }
         entries: []
       YAML
-      s = build_store(yaml)
+      s = store_from_manifest(root, manifest: yaml)
       env = described_class.build(container: s.container)
       flows = env["write_flows"]
       expect(flows.keys).to contain_exactly("owner", "proposer", "fetcher", "compiler")
@@ -249,7 +234,7 @@ RSpec.describe Textus::Boot do
           - { name: output,   kind: derived }
         entries: []
       YAML
-      s = build_store(yaml)
+      s = store_from_manifest(root, manifest: yaml)
       env = described_class.build(container: s.container)
       flows = env["write_flows"]
       expect(flows.keys).to contain_exactly("human", "agent", "automation")
