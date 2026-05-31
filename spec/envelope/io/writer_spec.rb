@@ -29,9 +29,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
       path = File.join(root, "zones", "working", "foo.md")
       expect(File.binread(path)).to include("hi")
 
-      last = File.read(File.join(root, "audit.log")).lines.last
-      expect(last).to include("\"verb\":\"put\"")
-      expect(last).to include("\"correlation_id\":\"corr-put\"")
+      expect(store).to have_audit_verb("put").with_correlation("corr-put")
     end
 
     it "raises EtagMismatch when if_etag does not match" do
@@ -94,12 +92,12 @@ RSpec.describe Textus::Envelope::IO::Writer do
       expect(env.key).to eq("working.bar")
       expect(env.uid).to eq(before.uid)
 
-      mv_row = File.read(File.join(root, "audit.log")).lines
-                   .find { |l| l.include?("\"verb\":\"mv\"") }
-      expect(mv_row).to include("\"from_key\":\"working.foo\"")
-      expect(mv_row).to include("\"to_key\":\"working.bar\"")
-      expect(mv_row).to include("\"uid\":\"#{env.uid}\"")
-      expect(mv_row).to include("\"correlation_id\":\"corr-mv\"")
+      row = last_audit_row(store)
+      expect(row["verb"]).to eq("mv")
+      expect(row["from_key"]).to eq("working.foo")
+      expect(row["to_key"]).to eq("working.bar")
+      expect(row["uid"]).to eq(env.uid)
+      expect(row.dig("extras", "correlation_id")).to eq("corr-mv")
     end
 
     it "raises EtagMismatch when if_etag does not match the source" do

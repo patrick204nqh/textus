@@ -36,9 +36,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
     reader = Textus::Envelope::IO::Reader.from(container: container)
     expect(reader.existing_uid("working.foo")).to eq(env.uid)
 
-    last = File.read(File.join(root, "audit.log")).lines.last
-    expect(last).to include("\"verb\":\"put\"")
-    expect(last).to include("\"correlation_id\":\"corr-from\"")
+    expect(store).to have_audit_verb("put").with_correlation("corr-from")
   end
 
   it "behaves identically to a hand-wired .new" do
