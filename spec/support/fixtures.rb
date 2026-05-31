@@ -132,37 +132,13 @@ module TextusSpecHelpers
   # *same* object as `store.events` — so in-place `store.events.register(...)`
   # probes are visible through it.
   #
-  # The `build_*` helpers below build a FRESH container each call. Use them ONLY
-  # when a spec swaps the bus wholesale (`store.instance_variable_set(:@events,
-  # probe)`) or drives an internal use-case class that the façade does not
-  # expose (e.g. Write::FetchWorker). For those, the memoized container would be
-  # stale, so a fresh one is required.
-  def build_put(store, ctx)
-    Textus::Write::Put.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_delete(store, ctx)
-    Textus::Write::Delete.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_mv(store, ctx)
-    Textus::Write::Mv.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_accept(store, ctx)
-    Textus::Write::Accept.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_reject(store, ctx)
-    Textus::Write::Reject.new(container: fresh_container(store), call: ctx)
-  end
-
+  # `build_worker` (below) builds a FRESH container each call. It exists for
+  # specs that swap the bus wholesale (`store.instance_variable_set(:@events,
+  # probe)`) or drive an internal use-case class the façade does not expose
+  # (Write::FetchWorker). For those the memoized container would be stale, so a
+  # fresh one is required.
   def build_worker(store, ctx)
     Textus::Write::FetchWorker.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_publish(store, ctx)
-    Textus::Write::Publish.new(container: fresh_container(store), call: ctx)
   end
 end
 
