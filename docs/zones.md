@@ -1,7 +1,7 @@
 # Zones — shaping your context
 
 > **Reference** · for integrators · **read when** you're designing your zone layout
-> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.33)
+> **SSoT for** zone semantics, roles, entries, and data flow · **reviewed** 2026-05 (v0.35)
 
 How to define the **shape of your context** in textus: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
 
@@ -70,7 +70,7 @@ The five capabilities:
 | `fetch` | `quarantine` | Pulling external bytes in. |
 | `build` | `derived` | Computing outputs from other zones. |
 
-Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability.
+Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
 Declare roles in the manifest with a `roles:` block; each names the capabilities it holds via `can:`:
 
