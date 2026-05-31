@@ -71,32 +71,51 @@ module Textus
       },
     }.freeze
 
-    # The CLI verb catalog. Truth lives here; do not derive dynamically.
-    # Agents that read boot should see a stable shape regardless of how
-    # verb implementations evolve.
-    CLI_VERBS = [
-      { "name" => "boot",     "summary" => "this output — orientation for agents and tools" },
-      { "name" => "list",     "summary" => "enumerate keys (optional --prefix)" },
-      { "name" => "get",      "summary" => "read an entry; envelope with _meta, body, uid, etag" },
-      { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
-      { "name" => "schema",   "summary" => "field shape for a key family" },
-      { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "propose",  "summary" => "queue a proposal to the propose_zone; mirrors the MCP propose tool" },
+    # Curated agent-facing verb catalog. For verbs that have a Dispatcher contract,
+    # the summary is derived from `contract.summary` at load time (ADR 0039). The
+    # editorial strings below are the fallback for CLI-only verbs without contracts.
+    # CLI_VERBS itself is assigned in textus.rb after Zeitwerk eager_load so that
+    # all contract-declaring files are loaded before derivation runs.
+    CURATED_CLI_VERBS = [
+      { "name" => "boot" },
+      { "name" => "list" },
+      { "name" => "get" },
+      { "name" => "where", "summary" => "resolve a key to its zone and path without reading" },
+      { "name" => "schema" },
+      { "name" => "put" },
+      { "name" => "propose" },
       { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
-      { "name" => "fetch", "summary" => "run an action for a quarantine entry" },
+      { "name" => "fetch" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
-      { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
-      { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
-      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
-      { "name" => "doctor", "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
-      { "name" => "hook",
-        "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
-      { "name" => "pulse",
-        "summary" => "delta since cursor — changed entries, stale, pending proposals, doctor summary" },
+      { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
+      { "name" => "blame",    "summary" => "audit rows for one key joined with git commit metadata" },
+      { "name" => "rule",     "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
+      { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
+      { "name" => "hook",     "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "pulse" },
     ].freeze
+
+    # Build the CLI verb catalog by deriving each summary from the corresponding
+    # Dispatcher contract when one exists, falling back to the editorial string for
+    # CLI-only verbs without a contract (e.g. accept, build, where). Called once
+    # from textus.rb after eager_load so all contract files are present.
+    def self.build_cli_verbs
+      by_contract = Dispatcher::VERBS.values
+                                     .select { |k| k.respond_to?(:contract?) && k.contract? }
+                                     .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+
+      CURATED_CLI_VERBS.map do |entry|
+        derived = by_contract[entry["name"]]
+        if derived
+          entry.merge("summary" => derived)
+        else
+          entry
+        end
+      end
+    end
 
     def self.agent_quickstart(manifest, audit_log)
       agent_role = manifest.policy.proposer_role
