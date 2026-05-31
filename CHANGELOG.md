@@ -9,6 +9,35 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.34.0 — 2026-05-31 — Unify the Lane vocabulary + finish boot's kind-derived zone naming ([ADR 0034](docs/architecture/decisions/0034-unify-lane-vocabulary.md))
+
+No `textus/3` wire-format change; no manifest-schema change. The five zone-kinds and five
+capabilities, their names, and their mapping are identical to 0.33.0.
+
+### Changed
+
+- **One `Schema::LANES` table is now the source of truth** for the closed coordination
+  vocabulary; `ZONE_KINDS`, `CAPABILITIES`, and `KIND_REQUIRES_VERB` are derived from it, so a
+  zone-kind and its required capability can no longer drift. (`CAPABILITIES` array ordering
+  now follows `LANES.values`; no behaviour depends on it.)
+- **`boot` names zones by kind, not by hardcoded instance.** `write_flows`, the
+  `agent_protocol` recipes, and the CLI verb catalog now reflect the live store
+  (`knowledge`/`notebook`/`feeds`/`proposals`/`artifacts`) and survive zone renames —
+  completing the rename-fragility fix [ADR 0033](docs/architecture/decisions/0033-complete-primitives-and-vocabulary.md) §6 began for `ZONE_PURPOSES`.
+- **`keep`-holders now get a `notebook` write-flow in `boot`.** 0.33 added the `keep`
+  capability but no boot guidance for it; the agent's durable-lane flow was silently omitted.
+
+### Fixed
+
+- **`pulse` `pending_review` was silently empty on default stores since 0.33.** It hardcoded
+  the pre-0.33 zone name `review`; it now derives the queue zone from the manifest, so it
+  surfaces pending proposals from the (default-named) `proposals` zone again.
+
+### Removed (BREAKING, internal)
+
+- **`Manifest::Data#zones`** (the unused `name => []` map) is removed; the four internal
+  readers now use `Manifest::Data#declared_zone_kinds`. No manifest-schema or wire change.
+
 ## 0.33.0 — Complete primitives + vocabulary (ADR 0033) — 2026-05-31
 
 **BREAKING (manifest schema + default scaffold + predicate/error names; `textus/3` wire format UNCHANGED):**
