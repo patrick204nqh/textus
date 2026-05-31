@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "zone desc: surfaces in boot and survives rename (ADR 0033)" do
   include_context "textus_store_fixture"

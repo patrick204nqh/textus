@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Ports::Storage::FileStore do
   subject(:store) { described_class.new }

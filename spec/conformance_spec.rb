@@ -1,6 +1,3 @@
-require "fileutils"
-require "tmpdir"
-require "json"
 require "stringio"
 require "digest"
 

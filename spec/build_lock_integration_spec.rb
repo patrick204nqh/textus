@@ -1,8 +1,5 @@
 require "spec_helper"
-require "fileutils"
-require "json"
 require "stringio"
-require "tmpdir"
 
 RSpec.describe "textus build concurrency" do
   include_context "textus_store_fixture"

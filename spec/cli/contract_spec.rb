@@ -1,7 +1,5 @@
 require "spec_helper"
 require "stringio"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "Textus::CLI verb return-value contract" do
   def with_store

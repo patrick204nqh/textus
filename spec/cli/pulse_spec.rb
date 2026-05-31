@@ -1,7 +1,5 @@
 require "spec_helper"
 require "stringio"
-require "tmpdir"
-require "json"
 
 RSpec.describe "textus pulse CLI" do
   def with_store

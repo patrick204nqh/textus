@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "time"
 
 RSpec.describe "Pulse next_due_at" do

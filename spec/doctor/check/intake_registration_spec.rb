@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Doctor::Check::IntakeRegistration do
   it "reports an error when manifest references an unregistered handler" do

@@ -1,8 +1,5 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "stringio"
-require "json"
 
 RSpec.describe "textus rule group" do
   include_context "textus_store_fixture"

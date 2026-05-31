@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "json"
-require "tmpdir"
 
 RSpec.describe Textus::Ports::Publisher do
   let(:tmp) { Dir.mktmpdir }

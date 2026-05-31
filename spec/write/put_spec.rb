@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe Textus::Write::Put do
   include_context "textus_store_fixture"

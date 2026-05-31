@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Hooks::Loader do
   let(:events)   { Textus::Hooks::EventBus.new }

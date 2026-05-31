@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe Textus::Container do
   it "is a Data class bundling collaborators" do

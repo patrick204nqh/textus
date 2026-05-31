@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Write::FetchWorker do
   # A simple test events object that records published events, delegating nothing.

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "digest"
 
 RSpec.describe Textus::MCP::Tools do

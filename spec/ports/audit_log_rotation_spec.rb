@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "json"
 
 RSpec.describe Textus::Ports::AuditLog do
   context "rotation" do

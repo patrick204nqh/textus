@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "Entry strategy: rewrite_name" do
   describe "Markdown" do

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "json"
 
 RSpec.describe Textus::Write::Mv do
   it "moves an entry and publishes :entry_renamed via the bus" do

@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
 
 RSpec.describe "textus mv" do
   include_context "textus_store_fixture"

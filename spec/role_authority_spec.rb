@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe "Role authority via schema.maintained_by" do
   let(:tmp)   { Dir.mktmpdir("textus-role-authority") }

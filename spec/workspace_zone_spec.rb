@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "workspace zone-kind + keep capability (ADR 0033)" do
   include_context "textus_store_fixture"

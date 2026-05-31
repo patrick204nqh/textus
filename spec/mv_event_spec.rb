@@ -1,7 +1,5 @@
 # rubocop:disable Style/GlobalVars
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe ":entry_renamed event" do
   let(:tmp)  { Dir.mktmpdir }

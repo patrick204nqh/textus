@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "yaml"
 
 RSpec.describe Textus::Init do
   it "scaffolds a .textus/ with the default manifest" do

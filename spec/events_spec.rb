@@ -1,7 +1,5 @@
 # rubocop:disable Style/GlobalVars
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe "Lifecycle events" do
   include_context "textus_store_fixture"

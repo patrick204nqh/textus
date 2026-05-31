@@ -1,7 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
-require "yaml"
 
 RSpec.describe Textus::Maintenance::ZoneMv do
   include_context "textus_store_fixture"

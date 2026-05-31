@@ -1,7 +1,5 @@
 require "spec_helper"
 require "stringio"
-require "tmpdir"
-require "json"
 
 RSpec.describe "textus audit --seq-since" do
   def with_store

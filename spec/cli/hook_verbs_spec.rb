@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
 require "stringio"
 
 RSpec.describe "CLI hook verbs" do

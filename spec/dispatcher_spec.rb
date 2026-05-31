@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe Textus::Dispatcher do
   it "exposes a frozen VERBS hash" do
