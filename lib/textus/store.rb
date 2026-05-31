@@ -33,7 +33,8 @@ module Textus
       @manifest   = Manifest.load(@root)
       @schemas    = Schemas.new(File.join(@root, "schemas"))
       @file_store = Ports::Storage::FileStore.new
-      @audit_log  = Ports::AuditLog.new(
+      Textus::Layout.migrate_legacy!(@root)
+      @audit_log = Ports::AuditLog.new(
         @root,
         max_size: @manifest.data.audit_config[:max_size],
         keep: @manifest.data.audit_config[:keep],
