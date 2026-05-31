@@ -3,8 +3,10 @@ require_relative "lib/textus/version"
 Gem::Specification.new do |s|
   s.name        = "textus"
   s.version     = Textus::VERSION
-  s.summary     = "Reference implementation of the textus/1 protocol."
-  s.description = "Storage convention and JSON wire protocol for agent-readable project memory."
+  s.summary     = "Reference implementation of the textus/3 protocol."
+  s.description = "A coordination space for humans, AI, and automation. " \
+                  "Durable, multi-writer project memory where each actor writes into its own lane, " \
+                  "proposals cross a review queue, and every change is audited."
   s.authors     = ["Patrick"]
   s.email       = ["patrick204nqh@gmail.com"]
   s.license     = "MIT"
