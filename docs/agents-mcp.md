@@ -1,7 +1,7 @@
 # Agents & MCP — talking to a textus store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.36)
+> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.37)
 
 How an AI agent reads from and writes to a textus store — the mental model, the MCP transport, and a 5-minute Claude Code setup.
 
@@ -44,6 +44,32 @@ Create `.mcp.json` at your project root:
   }
 }
 ```
+
+**Pin the store root for subprocess launches.** The bare config above
+relies on textus discovering `.textus/` by walking up from the
+server's working directory. When Claude Code launches `textus mcp
+serve` as a subprocess, that cwd is not guaranteed to be your project
+root — so pin the store explicitly. Either pass `--root`, or set
+`TEXTUS_ROOT`:
+
+```json
+{
+  "mcpServers": {
+    "textus": {
+      "command": "textus",
+      "args": ["--root", "${workspaceFolder}/.textus", "mcp", "serve"]
+    }
+  }
+}
+```
+
+Root resolution is `--root` flag → `TEXTUS_ROOT` env → upward
+`.textus` discovery — the same flag/env/discovery shape the role chain
+uses (see [ADR 0040](architecture/decisions/0040-mcp-connection-role-and-two-channels.md)).
+The CLI (a human in the project directory) is fine relying on
+discovery; the agent channel should pin the root. Registering several
+server entries, each `--root`-ed at a different store, is how one agent
+talks to multiple textus stores.
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
@@ -102,6 +128,12 @@ the boot/pulse protocol.
   run it manually from your project root (`textus mcp serve` and type
   `^C`); should print a JSON banner. If it errors, your `.textus/`
   manifest has a problem — `textus doctor` will tell you which.
+- **`no .textus directory found` / wrong store when Claude launches
+  it:** the subprocess cwd isn't your project root, so upward
+  discovery missed (or found the wrong) `.textus/`. Pin it: add
+  `--root` to `args` or `TEXTUS_ROOT` to `env` in `.mcp.json` (see
+  step 3). It runs fine by hand because your shell's cwd *is* the
+  project root.
 - **Claude doesn't see the tools:** verify `.mcp.json` is at the
   project root (not in a subdirectory) and Claude Code was launched
   with the project open as the workspace.
@@ -277,7 +309,7 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 
 ### Tools
 
-MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports).
+MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports). The catalog is **derived from per-verb contracts** (ADR 0039) — there is no hand-maintained tool list; each verb's `arg` shapes and description are generated from its declared contract.
 
 | Tool | Returns | Args |
 |---|---|---|
@@ -289,7 +321,7 @@ MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one voca
 | `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
-| `schema` | Field shape | `family: string` |
+| `schema` | Field shape (schema for an entry's family) | `key: string` |
 | `rules` | Effective rules for a key | `key: string` |
 
 Maintenance tools (admin / bulk operations):
@@ -327,7 +359,7 @@ Add an `.mcp.json` next to the plugin's `CLAUDE.md`:
 }
 ```
 
-The agent now sees the full textus tool catalog in its registry (fifteen tools). No `textus get` strings in the plugin's markdown.
+The agent now sees the full textus tool catalog in its registry. No `textus get` strings in the plugin's markdown.
 
 ## See also
 

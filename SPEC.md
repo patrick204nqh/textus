@@ -896,6 +896,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `boot [--output=json]` | read | any |
 | `pulse [--since=N]` | read | any |
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
+| `propose K --stdin --as=R` | write | `propose`-holder (auto-prefixes propose_zone) |
 | `delete K --if-etag=E --as=R` | write | per zone |
 | `fetch KEY --as=automation` | write | `fetch`-holder (typically `automation`) |
 | `fetch stale [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |

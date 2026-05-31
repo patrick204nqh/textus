@@ -11,6 +11,25 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+## 0.37.0 — 2026-05-31 — MCP catalog derive-or-guard ([ADR 0039](docs/architecture/decisions/0039-mcp-catalog-derive-or-guard.md))
+
+No `textus/3` wire-format change; no manifest-schema change.
+
+### Changed
+
+- **MCP catalog is now derived from one per-verb contract (ADR 0039).** Each
+  use-case declares its interface once (`verb`/`summary`/`surfaces`/`arg`/`response`);
+  the MCP `tools/list` schemas and `tools/call` dispatch are generated from it.
+  The hand-written `Tools::REGISTRY` and `ToolSchemas` array are gone — a core
+  interface change can no longer leave MCP silently stale (it is derived, or a
+  guard spec fails the build).
+
+### Added
+
+- **`propose` and `rules` are first-class verbs** (Ruby/MCP; `propose` also CLI),
+  no longer MCP-only composed tools. MCP is now a pure projection of the core
+  verb set filtered by `surfaces(:mcp)`.
+
 ### Removed
 
 - **Examples consolidated to a single reference.** Removed `examples/hello/` and
@@ -20,6 +39,14 @@ tracks both additive improvements and breaking protocol bumps independently.
   sidecar, its spec, and the `docs/recipes/` page that existed only to document it are
   removed alongside. All living docs and `boot`'s `docs.example` now point at
   `examples/project/`.
+
+### Breaking
+
+- **MCP `schema` tool is keyed by entry `key`, not `family`.** It routes through
+  the `schema` (SchemaEnvelope) verb. Callers passing `{ "family": "..." }` must
+  pass `{ "key": "..." }` instead.
+- **The dispatcher verb `schema_envelope` is renamed `schema`.** Ruby callers
+  using `store.as(role).schema_envelope(key)` must use `store.as(role).schema(key)`.
 
 ## 0.36.0 — 2026-05-31 — Transports as pure framings: one verb vocabulary, one session, lifted to core ([ADR 0036](docs/architecture/decisions/0036-transports-as-pure-framings.md))
 
