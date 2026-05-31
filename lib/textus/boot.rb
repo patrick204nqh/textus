@@ -85,11 +85,11 @@ module Textus
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "accept",   "summary" => "apply a proposals.* proposal; --as=human only" },
+      { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
-      { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
-      { "name" => "fetch", "summary" => "run an action for an intake entry" },
+      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
+      { "name" => "fetch", "summary" => "run an action for a quarantine entry" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit", "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame", "summary" => "audit rows for one key joined with git commit metadata" },
@@ -98,7 +98,7 @@ module Textus
       { "name" => "hook",
         "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
       { "name" => "pulse",
-        "summary" => "delta since cursor — changed entries, stale, pending review, doctor summary" },
+        "summary" => "delta since cursor — changed entries, stale, pending proposals, doctor summary" },
     ].freeze
 
     def self.agent_quickstart(manifest, audit_log)
