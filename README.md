@@ -26,26 +26,27 @@ Three actors write to your repo today:
 
 ```mermaid
 flowchart LR
-    human(["human"]) -->|accept| auth["identity · working<br/>(authoritative lanes)"]
-    agent(["agent"]) -->|propose| review["review<br/>(queue)"]
-    review -->|human accepts| auth
-    automation(["automation"]) -->|fetch| intake["intake<br/>(quarantine)"]
-    automation -->|build| output["output<br/>(published)"]
+    human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
+    agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
+    agent -->|propose| proposals["proposals<br/>(queue)"]
+    proposals -->|human accepts| knowledge
+    automation(["automation"]) -->|fetch| feeds["feeds<br/>(quarantine)"]
+    automation -->|build| artifacts["artifacts<br/>(published)"]
 ```
 
 *Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
 
-Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **review queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
+Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
 
 ```
-identity/   accept only         — who you are, what you decide, how you sound
-working/    accept only         — day-to-day catalog (agents propose via review/, automation feeds via intake/)
-intake/     fetch only          — declared external inputs
-review/     propose (agent + human) — proposals waiting on a human accept
-output/     build only          — computed, published artifacts
+knowledge/   author only        — who you are, what you decide, how you sound (knowledge.identity.* for identity facts)
+notebook/    keep only          — agent's own durable lane (agents keep theirs; bytes climb to knowledge only via propose→accept)
+feeds/       fetch only         — declared external inputs
+proposals/   propose (agent + human) — proposals waiting on a human accept
+artifacts/   build only         — computed, published artifacts
 ```
 
-An agent that tries to write directly into `working/` or `identity/` gets `write_forbidden`. It writes to `review/` instead. You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
+An agent that tries to write directly into `knowledge/` gets `write_forbidden`. It writes to `proposals/` (to change authoritative content) or its own `notebook/` (for working memory). You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
 
 That's the load-bearing claim: **coordination is a protocol invariant, not a library convenience.**
 
@@ -54,14 +55,14 @@ That's the load-bearing claim: **coordination is a protocol invariant, not a lib
 ```sh
 gem install textus
 textus init                          # creates .textus/ with zones + schemas
-# agent proposes a change to review/
-printf '%s' '{"_meta":{"name":"oncall","proposal":{"target_key":"working.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
-  | textus put review.notes.oncall --as=agent --stdin
-# you accept it — textus promotes to working/ and audits the move
-textus accept review.notes.oncall --as=human
+# agent proposes a change to proposals/
+printf '%s' '{"_meta":{"name":"oncall","proposal":{"target_key":"knowledge.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
+  | textus put proposals.notes.oncall --as=agent --stdin
+# you accept it — textus promotes to knowledge/ and audits the move
+textus accept proposals.notes.oncall --as=human
 ```
 
-Try the gate the other way (`textus put working.notes.X --as=agent`) and you get `write_forbidden`, with the role that *would* be allowed named in the error. That refusal is the whole point.
+Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you get `write_forbidden`, with the role that *would* be allowed named in the error. That refusal is the whole point.
 
 ## Try it
 
@@ -99,16 +100,16 @@ You get `.textus/` with all five zone directories, baseline schemas, an empty au
 
 ```yaml
 roles:
-  - { name: human,      can: [accept, propose] }
-  - { name: agent,      can: [propose] }
+  - { name: human,      can: [author, propose] }
+  - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [fetch, build] }
 
 zones:
-  - { name: identity, kind: origin }      # accept
-  - { name: working,  kind: origin }      # accept
-  - { name: intake,   kind: quarantine }  # fetch
-  - { name: review,   kind: queue }       # propose
-  - { name: output,   kind: derived }     # build
+  - { name: knowledge,  kind: canon }      # author — canonical truth
+  - { name: notebook,   kind: workspace }  # keep — agent's own durable lane
+  - { name: feeds,      kind: quarantine } # fetch — declared external inputs
+  - { name: proposals,  kind: queue }      # propose — proposals awaiting accept
+  - { name: artifacts,  kind: derived }    # build — computed outputs
 ```
 
 ```
@@ -120,23 +121,23 @@ zones:
   hooks/              # one .rb per hook
   sentinels/          # publish bookkeeping
   zones/
-    identity/         # accept — identity, voice, decisions
-    working/          # accept — day-to-day catalog
-    intake/           # fetch — declared external inputs (actions)
-    review/           # propose (agent + human) — proposals awaiting accept
-    output/           # build — computed outputs
+    knowledge/        # author — identity (knowledge.identity.*), voice, decisions, notes
+    notebook/         # keep — agent's own durable lane (agents keep theirs)
+    feeds/            # fetch — declared external inputs (actions)
+    proposals/        # propose (agent + human) — proposals awaiting accept
+    artifacts/        # build — computed outputs
 ```
 
-Manifest `path:` fields are relative to `.textus/zones/`. So `working.notes.org.jane` lives at `.textus/zones/working/notes/org/jane.md`.
+Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
 
 Read and write:
 
 ```sh
-textus get working.notes.org.jane
-textus list --zone=working
+textus get knowledge.notes.org.jane
+textus list --zone=knowledge
 printf '%s' '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
-  | textus put working.notes.bob --as=human --stdin
-textus freshness --zone=output       # per-entry fresh/stale/never_fetched/no_policy
+  | textus put knowledge.notes.bob --as=human --stdin
+textus freshness --zone=artifacts    # per-entry fresh/stale/never_fetched/no_policy
 textus rule list                     # show every rule block
 textus audit --limit=20              # query the audit log
 ```
@@ -149,7 +150,7 @@ For the full shape — Claude plugin with agents, skills, commands, pending walk
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`origin`→`accept`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
+- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
 - **`textus doctor`.** 15 health checks across schemas, hooks, keys, sentinels, and the audit log.
 
@@ -204,9 +205,9 @@ end
 To keep a batch of stale intake entries current in one shot:
 
 ```sh
-textus fetch stale --prefix=working --zone=intake --as=automation
-# or just fetch everything stale in the intake zone:
-textus fetch stale --zone=intake --as=automation
+textus fetch stale --prefix=feeds --zone=feeds --as=automation
+# or just fetch everything stale in the feeds zone:
+textus fetch stale --zone=feeds --as=automation
 ```
 
 See SPEC.md §5.10 for the full hook contract.

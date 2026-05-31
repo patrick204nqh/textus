@@ -12,7 +12,7 @@ RSpec.describe "Textus UID" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.md,   path: working/md.md,   zone: working, kind: leaf}
 

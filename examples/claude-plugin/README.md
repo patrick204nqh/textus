@@ -83,15 +83,15 @@ voice-tools/
 ## How textus manages the catalog
 
 - **Identity** holds the slow-changing plugin identity (`identity.plugin`).
-  The `identity` zone is an `origin` zone, so writing it needs the `accept`
+  The `identity` zone is a `canon` zone, so writing it needs the `author`
   capability — only the human holds it; agents and automation cannot touch it.
 - **Working** holds the day-to-day catalog: every agent, skill, and command
   lives here as markdown with frontmatter. The schemas (`agent`, `skill`,
   `command`) validate the frontmatter on every read and write.
 - **Review** is the AI proposal surface. The manifest's `review.**` rule
-  declares `guard: { accept: [schema_valid, accept_signed] }` — the
-  contract a proposal must satisfy before it can be accepted (`accept_signed`
-  is satisfied only by a role holding the `accept` capability).
+  declares `guard: { accept: [schema_valid, author_signed] }` — the
+  contract a proposal must satisfy before it can be accepted (`author_signed`
+  is satisfied only by a role holding the `author` capability).
 - **Output** is owned by `automation:auto`. Two output entries assemble the
   shipped surface:
   - `output.plugin` → `plugin_envelope` transform → `.claude-plugin/plugin.json`
@@ -120,7 +120,7 @@ This example ships one block:
 rules:
   # Contract for AI proposals.
   - match: review.**
-    guard: { accept: [schema_valid, accept_signed] }
+    guard: { accept: [schema_valid, author_signed] }
 ```
 
 The `rules({key})` MCP tool returns the effective rules for any key.

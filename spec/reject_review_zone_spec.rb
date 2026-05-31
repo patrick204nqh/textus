@@ -17,7 +17,7 @@ RSpec.describe "store.reject with declared-kind proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
         - { name: review,   kind: queue }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
@@ -39,7 +39,7 @@ RSpec.describe "store.reject with declared-kind proposal-zone detection" do
     expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
   end
 
-  it "refuses: a zone declaring kind: origin is not a proposal zone (even if named 'pending')" do
+  it "refuses: a zone declaring kind: canon is not a proposal zone (even if named 'pending')" do
     # Declared-kind check: the zone is not kind: queue, so it is not a proposal
     # zone and reject must refuse — regardless of the zone's name.
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
@@ -47,8 +47,8 @@ RSpec.describe "store.reject with declared-kind proposal-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: pending,  kind: origin }
+        - { name: identity, kind: canon }
+        - { name: pending,  kind: canon }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 

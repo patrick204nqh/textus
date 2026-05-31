@@ -4,8 +4,14 @@ module Textus
     # capability map: { role_name => [verbs] }. Verbs are a subset of the
     # closed capability set (Schema::CAPABILITIES). See ADR 0030.
     module Capabilities
+      # Fallback role set for a manifest that omits `roles:` entirely. Agent
+      # is intentionally minimal here (`propose` only) — narrower than the
+      # `textus init` scaffold, which declares `agent: [propose, keep]` so the
+      # default `notebook` workspace is writable. A roles-less manifest that
+      # declares a `kind: workspace` zone is therefore rejected at load (no
+      # `keep`-holder); declare `roles:` to opt into a workspace lane (ADR 0033).
       DEFAULT_MAPPING = {
-        "human" => %w[accept propose].freeze,
+        "human" => %w[author propose].freeze,
         "agent" => %w[propose].freeze,
         "automation" => %w[fetch build].freeze,
       }.freeze

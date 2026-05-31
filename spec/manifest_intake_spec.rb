@@ -66,7 +66,7 @@ RSpec.describe "Manifest intake:" do
   it "returns an empty RuleSet for keys with no matching fetch rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: origin }]
+      zones: [{ name: working, kind: canon }]
       entries:
         - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -77,7 +77,7 @@ RSpec.describe "Manifest intake:" do
   it "defaults to a Leaf entry when no intake block is present" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: origin }]
+      zones: [{ name: working, kind: canon }]
       entries:
         - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 

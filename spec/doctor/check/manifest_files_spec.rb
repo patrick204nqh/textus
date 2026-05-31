@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.note, path: working/note.md, zone: working, kind: leaf}
 
@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
 

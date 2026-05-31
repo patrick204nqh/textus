@@ -12,6 +12,7 @@ module Textus
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
 
       attr_reader :raw, :root, :entries, :zones, :declared_zone_kinds,
+                  :zone_descs, :zone_owners,
                   :audit_config, :role_caps, :policy
 
       def self.validate_key!(key)
@@ -43,6 +44,10 @@ module Textus
         @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
           [z["name"], z["kind"]&.to_sym]
         end
+        @zone_descs  = Array(raw["zones"]).to_h { |z| [z["name"], z["desc"]] }
+        # Only zones that actually declare an owner — keep nil-tombstones out so a
+        # future `zone_owners.key?(name)` means "owner declared", not "zone exists".
+        @zone_owners = Array(raw["zones"]).to_h { |z| [z["name"], z["owner"]] }.compact
         @audit_config = build_audit_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])
         # Policy is constructed before entries because Entry validators

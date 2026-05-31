@@ -13,8 +13,8 @@ module Textus
           put: %w[zone_writable_by],
           delete: %w[zone_writable_by],
           mv: %w[zone_writable_by],
-          accept: %w[accept_signed],
-          reject: %w[accept_signed],
+          accept: %w[author_signed],
+          reject: %w[author_signed],
           fetch: %w[zone_writable_by],
         }.freeze
 

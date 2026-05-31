@@ -20,12 +20,12 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       roles:
-        - { name: human,      can: [accept, propose] }
+        - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
         - { name: automation, can: [fetch, build] }
       zones:
-        - { name: identity, kind: origin }
-        - { name: working,  kind: origin }
+        - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
+        - { name: working,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: queue }
         - { name: output,   kind: derived }
@@ -88,7 +88,7 @@ RSpec.describe Textus::Boot do
     expect(env["store_root"]).to eq(root)
   end
 
-  it "lists zones with writers and purposes for known zones" do
+  it "lists zones with writers and purposes derived from manifest desc:" do
     env = described_class.build(container: store.container)
     names = env["zones"].map { |z| z["name"] }
     expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
@@ -114,8 +114,8 @@ RSpec.describe Textus::Boot do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
-        - { name: weird,    kind: origin }
+        - { name: identity, kind: canon }
+        - { name: weird,    kind: canon }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
 
@@ -159,8 +159,8 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]).to include("human", "agent", "automation")
     expect(env["write_flows"]["agent"]).to include("proposal:")
 
-    # human holds [accept, propose] → its write_flow joins both guidance
-    # strings (accept's 'textus put' + propose's 'proposal:') with ' / '.
+    # human holds [author, propose] → its write_flow joins both guidance
+    # strings (author's 'textus put' + propose's 'proposal:') with ' / '.
     expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
@@ -216,12 +216,12 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: owner,    can: [accept] }
+          - { name: owner,    can: [author] }
           - { name: proposer, can: [propose] }
           - { name: fetcher,  can: [fetch] }
           - { name: compiler, can: [build] }
         zones:
-          - { name: self,    kind: origin }
+          - { name: self,    kind: canon }
           - { name: review,  kind: queue }
           - { name: world,   kind: quarantine }
           - { name: build,   kind: derived }
@@ -244,7 +244,7 @@ RSpec.describe Textus::Boot do
       yaml = <<~YAML
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: review,   kind: queue }
           - { name: output,   kind: derived }
         entries: []

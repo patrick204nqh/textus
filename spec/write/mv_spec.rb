@@ -8,20 +8,20 @@ RSpec.describe Textus::Write::Mv do
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
       ops = store.as("human")
-      ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
+      ops.put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       events = []
       store.events.register(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
 
       ctx = test_ctx(role: "human")
-      result = build_mv(store, ctx).call("working.notes.alpha",
-                                         "working.notes.beta")
+      result = build_mv(store, ctx).call("knowledge.notes.alpha",
+                                         "knowledge.notes.beta")
 
       expect(result["ok"]).to be(true)
-      expect(result["from_key"]).to eq("working.notes.alpha")
-      expect(result["to_key"]).to eq("working.notes.beta")
+      expect(result["from_key"]).to eq("knowledge.notes.alpha")
+      expect(result["to_key"]).to eq("knowledge.notes.beta")
       expect(events.size).to eq(1)
-      expect(events.first[:from_key]).to eq("working.notes.alpha")
+      expect(events.first[:from_key]).to eq("knowledge.notes.alpha")
     end
   end
 
@@ -30,15 +30,15 @@ RSpec.describe Textus::Write::Mv do
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
       ops = store.as("human")
-      ops.put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
+      ops.put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       ctx = test_ctx(role: "human")
       result = build_mv(store, ctx)
-               .call("working.notes.alpha", "working.notes.beta", dry_run: true)
+               .call("knowledge.notes.alpha", "knowledge.notes.beta", dry_run: true)
 
       expect(result["dry_run"]).to be(true)
-      expect(File.exist?(File.join(tmp, ".textus/zones/working/notes/alpha.md"))).to be(true)
-      expect(File.exist?(File.join(tmp, ".textus/zones/working/notes/beta.md"))).to be(false)
+      expect(File.exist?(File.join(tmp, ".textus/zones/knowledge/notes/alpha.md"))).to be(true)
+      expect(File.exist?(File.join(tmp, ".textus/zones/knowledge/notes/beta.md"))).to be(false)
     end
   end
 
@@ -46,10 +46,10 @@ RSpec.describe Textus::Write::Mv do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      store.as("human").put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
+      store.as("human").put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
 
       ctx = test_ctx(role: "human", correlation_id: "cid-test")
-      build_mv(store, ctx).call("working.notes.alpha", "working.notes.beta")
+      build_mv(store, ctx).call("knowledge.notes.alpha", "knowledge.notes.beta")
 
       log_path = File.join(tmp, ".textus/audit.log")
       rows = File.readlines(log_path, chomp: true).map { |l| JSON.parse(l) }

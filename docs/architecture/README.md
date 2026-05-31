@@ -57,7 +57,7 @@ Freshness::{Policy,Verdict,Evaluator}
 Staleness          (Generator/Intake checks)
 Action  Outcome  Sentinel
 Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist,
-         Predicates::{ZoneWritableBy,SchemaValid,AcceptSigned,EtagMatch,FreshWithin}}
+         Predicates::{ZoneWritableBy,SchemaValid,AuthorSigned,EtagMatch,FreshWithin}}
 ```
 
 **Infrastructure**

@@ -18,7 +18,7 @@ RSpec.describe "publish_each:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: output, kind: derived }
       entries:
       #{entries_yaml}

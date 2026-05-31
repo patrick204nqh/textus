@@ -20,7 +20,7 @@ RSpec.describe Textus::CLI::Verb::Audit do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 

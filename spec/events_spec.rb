@@ -12,7 +12,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, kind: origin }]
+        zones: [{ name: working, kind: canon }]
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
 
@@ -151,7 +151,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: output,  kind: derived }
         entries:
           - { key: working.x, path: working/x.md, zone: working, kind: leaf}
@@ -197,7 +197,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
           - { name: review,  kind: queue }
         entries:
           - { key: working.bob, path: working/bob.md, zone: working, kind: leaf}

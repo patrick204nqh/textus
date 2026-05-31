@@ -11,7 +11,7 @@ RSpec.describe Textus::Read::GetOrFetch do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - key: working.doc
           kind: intake

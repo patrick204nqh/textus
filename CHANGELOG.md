@@ -9,6 +9,16 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.33.0 — Complete primitives + vocabulary (ADR 0033) — 2026-05-31
+
+**BREAKING (manifest schema + default scaffold + predicate/error names; `textus/3` wire format UNCHANGED):**
+- New coordination primitive: `workspace` zone-kind + `keep` capability — agents get a durable self-owned lane (`notebook` in the default scaffold). Closes the agent-memory gap.
+- Renamed capability `accept` → `author` (the `accept` *transition* / CLI verb is unchanged); predicate `accept_signed` → `author_signed`; zone-kind `origin` → `canon`.
+- Default scaffold renamed: `identity` + `working` → `knowledge` (identity is now the `knowledge.identity.*` key prefix), `intake` → `feeds`, `review` → `proposals`, `output` → `artifacts`; new `notebook` workspace zone.
+- Zones may declare optional `owner:` (informational) and `desc:` (surfaced as the boot zone purpose).
+- Manifests using `origin` / `accept` (capability) / `accept_signed` get an unknown-value rejection at load — no aliasing.
+- The `textus/3` envelope, audit-log, and key-grammar wire formats are unchanged.
+
 ## 0.32.1 — 2026-05-30
 
 ### Internal

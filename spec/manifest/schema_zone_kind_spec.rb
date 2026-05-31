@@ -23,7 +23,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
 
   it "rejects an unknown kind" do
     expect { parse("  - { name: review, kind: mailbox }") }
-      .to raise_error(Textus::BadManifest, /unknown zone kind 'mailbox'.*origin, quarantine, queue, derived/m)
+      .to raise_error(Textus::BadManifest, /unknown zone kind 'mailbox'.*canon, workspace, quarantine, queue, derived/m)
   end
 
   it "rejects two queue zones" do
@@ -38,7 +38,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   it "rejects a derived zone when no declared role holds build" do
     roles = <<~ROLES
       roles:
-        - { name: owner, can: [accept, propose] }
+        - { name: owner, can: [author, propose] }
     ROLES
     expect { parse("  - { name: output, kind: derived }", roles) }
       .to raise_error(Textus::BadManifest, /needs a role with capability 'build'/)
@@ -47,7 +47,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   it "accepts a derived zone when a declared role holds build" do
     roles = <<~ROLES
       roles:
-        - { name: owner,    can: [accept, propose] }
+        - { name: owner,    can: [author, propose] }
         - { name: compiler, can: [build] }
     ROLES
     expect { parse("  - { name: output, kind: derived }", roles) }.not_to raise_error

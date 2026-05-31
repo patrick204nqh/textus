@@ -27,11 +27,11 @@ module Textus
       end
 
       # The conventional automated proposer: a role that can propose but is not
-      # the accept-anchor (so it resolves to `agent`, not `human`, under the
+      # the author-anchor (so it resolves to `agent`, not `human`, under the
       # default mapping). Falls back to the first proposer, then nil.
       def proposer_role
         proposers = roles_with_capability("propose")
-        (proposers - roles_with_capability("accept")).first || proposers.first
+        (proposers - roles_with_capability("author")).first || proposers.first
       end
 
       # The roles authorized to write `zone_name`: those holding the verb its

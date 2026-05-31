@@ -5,8 +5,8 @@ RSpec.describe Textus::Manifest::Capabilities do
     describe "default mapping (no roles: block)" do
       let(:caps) { described_class.resolve(nil) }
 
-      it "maps human → [accept, propose]" do
-        expect(caps["human"]).to eq(%w[accept propose])
+      it "maps human → [author, propose]" do
+        expect(caps["human"]).to eq(%w[author propose])
       end
 
       it "maps agent → [propose]" do
@@ -25,16 +25,16 @@ RSpec.describe Textus::Manifest::Capabilities do
     describe "user-declared roles: block" do
       it "parses each role to name → [verbs]" do
         raw = [
-          { "name" => "owner", "can" => %w[accept propose] },
+          { "name" => "owner", "can" => %w[author propose] },
           { "name" => "bot",   "can" => %w[fetch build] },
         ]
         caps = described_class.resolve(raw)
-        expect(caps["owner"]).to eq(%w[accept propose])
+        expect(caps["owner"]).to eq(%w[author propose])
         expect(caps["bot"]).to eq(%w[fetch build])
       end
 
       it "does not fall back to defaults when roles: is declared" do
-        caps = described_class.resolve([{ "name" => "owner", "can" => %w[accept] }])
+        caps = described_class.resolve([{ "name" => "owner", "can" => %w[author] }])
         expect(caps["human"]).to be_nil
         expect(caps["automation"]).to be_nil
       end
@@ -61,14 +61,14 @@ RSpec.describe Textus::Manifest::Capabilities do
       m = parse(<<~YAML)
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: intake,   kind: quarantine }
           - { name: review,   kind: queue }
           - { name: output,   kind: derived }
         entries: []
       YAML
       expect(m.data.role_caps).to eq(
-        "human" => %w[accept propose],
+        "human" => %w[author propose],
         "agent" => %w[propose],
         "automation" => %w[fetch build],
       )
@@ -78,15 +78,15 @@ RSpec.describe Textus::Manifest::Capabilities do
       m = parse(<<~YAML)
         version: textus/3
         roles:
-          - { name: owner, can: [accept, propose] }
+          - { name: owner, can: [author, propose] }
           - { name: bot,   can: [fetch, build] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: output,   kind: derived }
         entries: []
       YAML
       expect(m.data.role_caps).to eq(
-        "owner" => %w[accept propose],
+        "owner" => %w[author propose],
         "bot" => %w[fetch build],
       )
     end
@@ -95,9 +95,9 @@ RSpec.describe Textus::Manifest::Capabilities do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: owner, can: [accept, teleport] }
+          - { name: owner, can: [author, teleport] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
         entries: []
       YAML
       expect { parse(yaml) }.to raise_error(Textus::BadManifest, /teleport/)
@@ -107,9 +107,9 @@ RSpec.describe Textus::Manifest::Capabilities do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: everything, can: [propose, accept, fetch, build] }
+          - { name: everything, can: [propose, author, fetch, build] }
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
         entries: []
       YAML
       expect { parse(yaml) }.not_to raise_error

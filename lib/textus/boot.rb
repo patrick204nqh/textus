@@ -8,27 +8,17 @@ module Textus
   module Boot
     PROTOCOL_ID = PROTOCOL
 
-    # Conventional zone purposes. Unknown zones (declared in the manifest
-    # but not listed here) get no `purpose` field.
-    ZONE_PURPOSES = {
-      "identity" => "slow-changing identity; human-only writes",
-      "working" => "active project state; humans, AI, and scripts share this surface",
-      "intake" => "declared external inputs; script-fetched via actions",
-      "review" => "AI proposals awaiting human accept",
-      "output" => "build-computed outputs; never hand-edited",
-    }.freeze
-
     # Per-capability write-flow templates. Each lambda receives the user-facing
     # role name and returns a guidance string for that verb. A role holding
     # multiple verbs gets one joined string; roles whose verbs have no template
     # are omitted from write_flows.
     WRITE_FLOW_TEMPLATES = {
-      accept: lambda do |name, _manifest|
-        "edit files in identity/working zones, then 'textus put KEY --as=#{name}'"
+      author: lambda do |name, _manifest|
+        "edit files in knowledge/notebook zones, then 'textus put KEY --as=#{name}'"
       end,
       propose: lambda do |name, manifest|
-        authority = manifest.policy.roles_with_capability("accept").first || "the accept-holder"
-        "propose changes by writing review.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
+        authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
+        "propose changes by writing proposals.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
           "the #{authority} role runs 'textus accept' to apply"
       end,
       fetch: lambda do |name, _manifest|
@@ -82,10 +72,10 @@ module Textus
         "propose" => {
           "purpose" => "agent suggests a change for human review",
           "agent_steps" => [
-            "echo ENVELOPE | textus put review.KEY --as=agent --stdin",
+            "echo ENVELOPE | textus put proposals.KEY --as=agent --stdin",
           ],
           "human_steps" => [
-            "textus accept review.KEY --as=human       # promotes the proposal to its target zone",
+            "textus accept proposals.KEY --as=human     # promotes the proposal to its target zone",
           ],
         },
         "fetch" => {
@@ -108,7 +98,7 @@ module Textus
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
-      { "name" => "accept",   "summary" => "apply a review.* proposal; --as=human only" },
+      { "name" => "accept",   "summary" => "apply a proposals.* proposal; --as=human only" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
       { "name" => "build",    "summary" => "materialize output entries; publish_to and publish_each fan out copies" },
@@ -174,8 +164,8 @@ module Textus
         row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind
-        purpose = ZONE_PURPOSES[name]
-        row["purpose"] = purpose if purpose
+        purpose = manifest.data.zone_descs[name]
+        row["purpose"] = purpose if purpose && !purpose.empty?
         row
       end
     end

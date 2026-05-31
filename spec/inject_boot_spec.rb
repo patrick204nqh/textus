@@ -12,7 +12,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
@@ -46,7 +46,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
       entries:
         - key: identity.bad
           kind: derived
@@ -66,7 +66,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
@@ -86,7 +86,7 @@ RSpec.describe "inject_boot:" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: identity, kind: origin }
+        - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}

@@ -8,8 +8,8 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
     store = store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML + rules_yaml)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
-        - { name: identity, kind: origin }
+        - { name: working, kind: canon }
+        - { name: identity, kind: canon }
       entries:
         - { key: working.notes, path: working/notes.md, zone: working, kind: leaf }
         - { key: identity.x, path: identity/x.md, zone: identity, kind: leaf }
@@ -24,7 +24,7 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
         guard: { accept: [{ fresh_within: "1h" }] }
     RULES
     names = factory.for(:accept, "working.notes").predicates.map(&:name)
-    expect(names.first).to eq("accept_signed") # base for :accept
+    expect(names.first).to eq("author_signed") # base for :accept
     expect(names).to include("fresh_within")   # composed from rules
   end
 
@@ -37,9 +37,9 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
   it "dedupes by name when base and composed overlap (first wins)" do
     factory = factory_for(<<~RULES)
       - match: "working.**"
-        guard: { accept: [accept_signed, schema_valid] }
+        guard: { accept: [author_signed, schema_valid] }
     RULES
     names = factory.for(:accept, "working.notes").predicates.map(&:name)
-    expect(names).to eq(%w[accept_signed schema_valid])
+    expect(names).to eq(%w[author_signed schema_valid])
   end
 end

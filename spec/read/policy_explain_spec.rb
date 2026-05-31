@@ -9,7 +9,7 @@ RSpec.describe Textus::Read::PolicyExplain do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
       entries:
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
@@ -58,7 +58,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       store = build_store(root)
       result = store.as("human").policy_explain(key: "working.doc")
       expect(result[:guards][:put]).to eq(["zone_writable_by"])
-      expect(result[:guards][:accept]).to include("accept_signed", "schema_valid")
+      expect(result[:guards][:accept]).to include("author_signed", "schema_valid")
     end
   end
 
@@ -78,7 +78,7 @@ RSpec.describe Textus::Read::PolicyExplain do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
+          - { name: working, kind: canon }
         entries:
           - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 

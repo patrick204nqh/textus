@@ -14,7 +14,7 @@ RSpec.describe Textus::Doctor do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: output, kind: derived }
       entries:
         - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
@@ -99,8 +99,8 @@ RSpec.describe Textus::Doctor do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: origin }
-          - { name: skills, kind: origin }
+          - { name: working, kind: canon }
+          - { name: skills, kind: canon }
           - { name: output, kind: derived }
         entries:
           - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}

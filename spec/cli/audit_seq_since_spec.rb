@@ -10,7 +10,7 @@ RSpec.describe "textus audit --seq-since" do
       FileUtils.mkdir_p(File.join(textus, "zones", "working"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, kind: origin }]
+        zones: [{ name: working, kind: canon }]
         entries: []
       YAML
       yield root, textus

@@ -53,8 +53,9 @@ the original reasoning intact. The history is the point.
 | [0025](./0025-boot-doctor-as-verbs-and-etag-via-port.md) | Boot/Doctor as dispatched verbs + manifest etag via port | Accepted |
 | [0026](./0026-use-case-construction-seams.md) | Use-case construction seams | Accepted |
 | [0027](./0027-hook-signature-and-mcp-policy.md) | Hook-registry convergence + MCP transport de-leak | Accepted |
-| [0028](./0028-coordination-planes.md) | Coordination space: closed topology, closed transitions, open policy | Accepted (moves 1 & 4 shipped 0.30.0) |
+| [0028](./0028-coordination-planes.md) | Coordination space: closed topology, closed transitions, open policy | Accepted (membership extended by 0033) |
 | [0029](./0029-concept-vocabulary.md) | Concept vocabulary: coordination space → lanes → zones | Accepted |
-| [0030](./0030-capability-based-roles.md) | Capability-based roles: role = name + composable verbs | Accepted |
-| [0031](./0031-unified-guard.md) | The unified Guard: one authorization path for every transition | Accepted (ships 0.32.0) |
+| [0030](./0030-capability-based-roles.md) | Capability-based roles: role = name + composable verbs | Partially superseded by 0033 (`accept` capability → `author`) |
+| [0031](./0031-unified-guard.md) | The unified Guard: one authorization path for every transition | Accepted (ships 0.32.0) · `accept_signed` renamed by 0033 |
 | [0032](./0032-drop-read-policy.md) | Drop `read_policy`: gate writes, not reads | Accepted (folded into 0031, 0.32.0) |
+| [0033](./0033-complete-primitives-and-vocabulary.md) | Complete the primitive set (workspace + keep) + clarify vocabulary | Accepted (ships 0.33.0) |

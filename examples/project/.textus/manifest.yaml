@@ -1,12 +1,12 @@
 ---
 version: textus/3
-# Write authority is derived from capabilities (ADR 0030): origin→accept,
-# queue→propose, derived→build. The human holds accept+propose, the agent
-# only propose (review queue), and automation builds the derived output.
+# Write authority is derived from capabilities (ADR 0030): canon→author,
+# queue→propose, derived→build. The human holds author+propose, the agent
+# only propose (proposals queue), and automation builds the derived output.
 roles:
 - name: human
   can:
-  - accept
+  - author
   - propose
 - name: agent
   can:
@@ -15,38 +15,39 @@ roles:
   can:
   - build
 zones:
-- name: identity
-  kind: origin
-- name: working
-  kind: origin
-- name: review
+- name: knowledge
+  kind: canon
+  desc: project facts and operational runbooks
+- name: proposals
   kind: queue
-- name: output
+  desc: changes awaiting your accept
+- name: artifacts
   kind: derived
+  desc: build-computed outputs (CLAUDE.md, AGENTS.md)
 entries:
-- key: identity.project
-  path: identity/project.md
-  zone: identity
+- key: knowledge.project
+  path: knowledge/project.md
+  zone: knowledge
   schema: project
   owner: human:self
   kind: leaf
-- key: working.runbooks
-  path: working/runbooks
-  zone: working
+- key: knowledge.runbooks
+  path: knowledge/runbooks
+  zone: knowledge
   schema: runbook
   owner: human:self
   nested: true
   kind: nested
-- key: review.decisions
-  path: review/decisions
-  zone: review
+- key: proposals.decisions
+  path: proposals/decisions
+  zone: proposals
   schema: decision
   owner: agent
   nested: true
   kind: nested
-- key: output.orientation
-  path: output/orientation.md
-  zone: output
+- key: artifacts.orientation
+  path: artifacts/orientation.md
+  zone: artifacts
   template: orientation.mustache
   inject_boot: true
   publish_to:
@@ -55,7 +56,7 @@ entries:
   compute:
     kind: projection
     select:
-    - identity.project
-    - working.runbooks
+    - knowledge.project
+    - knowledge.runbooks
     transform: orientation_reducer
   kind: derived

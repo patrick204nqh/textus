@@ -1,13 +1,13 @@
 ---
-name: "0001-example"
+name: "0001-switch-to-sidekiq-pro"
 status: proposed
 date: "2026-05-26"
 context: |
   Example ADR proposal showing the agent → human accept flow. Run
-  `textus accept review.decisions.0001-example --as=human` to promote
-  this to identity (or wherever the proposal's target_key points).
+  `textus accept proposals.decisions.0001-switch-to-sidekiq-pro --as=human` to promote
+  this to knowledge (or wherever the proposal's target_key points).
 proposal:
-  target_key: identity.decision-0001
+  target_key: knowledge.decision-0001
   action: put
 ---
 

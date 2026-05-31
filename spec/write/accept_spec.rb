@@ -8,7 +8,7 @@ RSpec.describe Textus::Write::Accept do
     store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: origin }
+        - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries:
         - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
@@ -48,7 +48,7 @@ RSpec.describe Textus::Write::Accept do
     )
 
     expect { build_accept(store, test_ctx(role: "agent")).call("review.foo") }
-      .to fail_guard_with("accept_signed")
+      .to fail_guard_with("author_signed")
   end
 
   it "fires :accepted event with correlation_id" do
@@ -83,8 +83,8 @@ RSpec.describe Textus::Write::Accept do
       .to raise_error(Textus::ProposalError, /no proposal block/)
   end
 
-  describe "manifest with no role holding the accept capability" do
-    # No role holds `accept`: agent only proposes, automation only fetches.
+  describe "manifest with no role holding the author capability" do
+    # No role holds `author`: agent only proposes, automation only fetches.
     # review is a queue (propose), working is quarantine (fetch) so the
     # manifest still validates — yet accept/reject have no authority to gate.
     let(:store) do
@@ -109,14 +109,14 @@ RSpec.describe Textus::Write::Accept do
       s
     end
 
-    it "accept raises an honest error that the accept capability is unheld" do
+    it "accept raises an honest error that the author capability is unheld" do
       expect { build_accept(store, test_ctx(role: "agent")).call("review.p") }
-        .to raise_error(Textus::GuardFailed, /no role holds the 'accept' capability.*accept is disabled/i)
+        .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*accept is disabled/i)
     end
 
-    it "reject raises an honest error that the accept capability is unheld" do
+    it "reject raises an honest error that the author capability is unheld" do
       expect { build_reject(store, test_ctx(role: "agent")).call("review.p") }
-        .to raise_error(Textus::GuardFailed, /no role holds the 'accept' capability.*reject is disabled/i)
+        .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*reject is disabled/i)
     end
   end
 
@@ -139,7 +139,7 @@ RSpec.describe Textus::Write::Accept do
           manifest: <<~YAML,
             version: textus/3
             zones:
-              - { name: working, kind: origin }
+              - { name: working, kind: canon }
               - { name: review,  kind: queue }
             entries:
               - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested }
@@ -183,12 +183,12 @@ RSpec.describe Textus::Write::Accept do
       end
     end
 
-    context "with an accept_signed guard" do
+    context "with an author_signed guard" do
       let(:store) do
         store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
           version: textus/3
           zones:
-            - { name: working, kind: origin }
+            - { name: working, kind: canon }
             - { name: review,  kind: queue }
           entries:
             - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
@@ -196,11 +196,11 @@ RSpec.describe Textus::Write::Accept do
           rules:
             - match: "working.network.org.**"
               guard:
-                accept: [accept_signed]
+                accept: [author_signed]
         YAML
       end
 
-      it "passes when the role holds the accept capability" do
+      it "passes when the role holds the author capability" do
         store.as("agent").put(
           "review.ha-proposal",
           meta: {

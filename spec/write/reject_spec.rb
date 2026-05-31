@@ -14,7 +14,7 @@ RSpec.describe Textus::Write::Reject do
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: identity, kind: origin }
+          - { name: identity, kind: canon }
           - { name: review, kind: queue }
         entries:
           - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o, kind: leaf }
@@ -36,7 +36,7 @@ RSpec.describe Textus::Write::Reject do
 
   it "rejects non-authority callers with guard_failed naming the predicate" do
     expect { build_reject(store, test_ctx(role: "agent")).call("review.draft") }
-      .to fail_guard_with("accept_signed")
+      .to fail_guard_with("author_signed")
   end
 
   it "rejects entries that are not in a proposal zone" do

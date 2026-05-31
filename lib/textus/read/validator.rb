@@ -54,7 +54,7 @@ module Textus
         last_writer = @audit_log.last_writer_for(key)
         return if last_writer.nil?
 
-        last_writer_is_authority = @manifest.policy.roles_with_capability("accept").include?(last_writer)
+        last_writer_is_authority = @manifest.policy.roles_with_capability("author").include?(last_writer)
 
         env.meta.each_key do |field|
           owner = schema.maintained_by(field)

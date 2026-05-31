@@ -4,7 +4,7 @@
 # dig. GuardFailed always carries the "guard_failed" code, so callers no
 # longer need a separate code assertion.
 #
-#   expect { store.as("agent").accept(key) }.to fail_guard_with("accept_signed")
+#   expect { store.as("agent").accept(key) }.to fail_guard_with("author_signed")
 RSpec::Matchers.define :fail_guard_with do |*predicates|
   supports_block_expectations
 
