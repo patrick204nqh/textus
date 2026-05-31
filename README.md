@@ -8,6 +8,7 @@
 <p align="center">
   <a href="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml"><img src="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://rubygems.org/gems/textus"><img src="https://img.shields.io/gem/v/textus.svg" alt="Gem Version"></a>
+  <a href="https://rubygems.org/gems/textus"><img src="https://img.shields.io/gem/dt/textus.svg" alt="Gem Downloads"></a>
   <a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg" alt="Ruby"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
@@ -237,4 +238,4 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 
 ## License
 
-MIT.
+[MIT](LICENSE).
