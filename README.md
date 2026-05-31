@@ -8,6 +8,7 @@
 <p align="center">
   <a href="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml"><img src="https://github.com/patrick204nqh/textus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://rubygems.org/gems/textus"><img src="https://img.shields.io/gem/v/textus.svg" alt="Gem Version"></a>
+  <a href="https://rubygems.org/gems/textus"><img src="https://img.shields.io/gem/dt/textus.svg" alt="Gem Downloads"></a>
   <a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/ruby-%E2%89%A53.3-CC342D.svg" alt="Ruby"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
@@ -66,10 +67,8 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Try it
 
-- **5-command worked demo** — single terminal scroll, no MCP, no schemas: [`examples/hello/`](examples/hello/)
+- **Worked end-to-end store** — the role gate (propose → accept), build/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/agents-mcp.md`](docs/agents-mcp.md)
-- **Use textus as your own project's context store**: [`examples/project/`](examples/project/)
-- **Use textus to author a Claude plugin** (textus is the source-of-truth, build publishes to `agents/`, `skills/`, `commands/`): [`examples/claude-plugin/`](examples/claude-plugin/)
 
 ## Protocol, not just a gem
 
@@ -144,7 +143,7 @@ textus audit --limit=20              # query the audit log
 
 (All verbs return JSON envelopes by default; pass `--output=json` explicitly if you prefer.)
 
-For the full shape — Claude plugin with agents, skills, commands, pending walkthrough, intake action — see [`examples/claude-plugin/`](examples/claude-plugin/).
+For a worked store — knowledge entries, a staged proposal, schemas, a template, and a build that publishes `CLAUDE.md` / `AGENTS.md` — see [`examples/project/`](examples/project/).
 
 ## What's shipped
 
@@ -218,7 +217,7 @@ See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop
 
 ## Examples
 
-[`examples/claude-plugin/`](examples/claude-plugin/) — a Claude Code plugin (`voice-tools`) whose entire content surface — agents, skills, commands, `CLAUDE.md`, `plugin.json`, `marketplace.json` — is textus-managed. Demonstrates per-entry formats, `publish_each`, intake actions, in-process transforms and hooks, the agent-propose / human-accept loop, and the `inject_boot:` flag that puts an orientation preamble at the top of `CLAUDE.md`.
+[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `build` that publishes the `artifacts/orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
 
 ## Tests
 
@@ -239,4 +238,4 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 
 ## License
 
-MIT.
+[MIT](LICENSE).

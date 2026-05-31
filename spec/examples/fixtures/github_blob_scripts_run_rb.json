@@ -1,8 +1,0 @@
-{
-  "sha": "sha-run",
-  "node_id": "n2",
-  "size": 16,
-  "url": "https://api.github.com/repos/example/repo/git/blobs/sha-run",
-  "content": "cHV0cyAiaGVsbG8iCg==\n",
-  "encoding": "base64"
-}

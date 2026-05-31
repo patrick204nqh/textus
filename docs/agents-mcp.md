@@ -92,13 +92,9 @@ the boot/pulse protocol.
 
 ### Next steps
 
-- **Try the 5-command demo first:** `examples/hello/` (single
-  terminal scroll, no MCP setup needed) to see the role-gating
-  before you commit to the integration.
-- **For a full Claude plugin example** that ships agents/skills/commands
-  whose source-of-truth lives in textus: `examples/claude-plugin/`.
-- **For using textus as your own project's context** (not shipping a
-  plugin): `examples/project/`.
+- **For a worked end-to-end store** — the role gate (propose → accept),
+  build/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge
+  entries), schemas, templates, and a hook: `examples/project/`.
 
 ### Troubleshooting
 
@@ -337,5 +333,4 @@ The agent now sees the full textus tool catalog in its registry (fifteen tools).
 
 - [`../SPEC.md`](../SPEC.md) §8 envelope shape, §9 verb table, §11.1 agent integration
 - [ADR 0015](architecture/decisions/0015-agent-gate-mcp.md) — the agent-gate decision and roadmap
-- [`../examples/claude-plugin/`](../examples/claude-plugin/) — reference plugin using boot + pulse + `.mcp.json`
-- [`../examples/hello/`](../examples/hello/) — 5-command demo, no MCP needed
+- [`../examples/project/`](../examples/project/) — worked store: role gate, build/publish, schemas, hook
