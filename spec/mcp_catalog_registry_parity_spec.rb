@@ -11,7 +11,7 @@ RSpec.describe "MCP REGISTRY and ToolSchemas name the same tools (ADR 0039)" do
 
   it "advertises exactly the tools it can dispatch" do
     expect(schema_names).to eq(registry_names),
-                            "REGISTRY vs ToolSchemas mismatch: " \
+                            "dispatch table vs advertised schemas mismatch: " \
                             "only-in-registry=#{(registry_names - schema_names).inspect} " \
                             "only-in-schemas=#{(schema_names - registry_names).inspect}"
   end

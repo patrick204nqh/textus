@@ -5,14 +5,13 @@ require "spec_helper"
 # exposed on MCP or explicitly OMITTED. Adding a core verb then forces a
 # decision — surface it or omit it — instead of silently leaving MCP stale.
 
-# Tools that are NOT 1:1 dispatcher verbs today (composed in tools.rb).
-# Phase C promotes these to real verbs and this list shrinks to empty.
-MCP_COMPOSED = %w[propose schema rules].freeze
+# Phase C shrinks this to empty; any entry here needs a stated reason.
+MCP_CATALOG_COMPOSED = %w[propose schema rules].freeze
 
 # Dispatcher verbs deliberately NOT exposed over MCP: internal/maintenance/
 # CLI-only operations an agent should not be steered toward. Reviewer must
 # justify each. Edit this list when you add or expose a verb.
-MCP_OMITTED = %w[
+MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   accept reject publish delete mv
   audit blame deps rdeps where uid freshness stale
   doctor policy_explain published retainable
@@ -24,20 +23,20 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   let(:exposed)    { Textus::MCP::Tools::REGISTRY.keys.sort }
 
   it "every exposed tool is a dispatcher verb or an explicit composed tool" do
-    stray = exposed - dispatcher - MCP_COMPOSED
+    stray = exposed - dispatcher - MCP_CATALOG_COMPOSED
     expect(stray).to be_empty,
-                     "MCP exposes #{stray.inspect} which are neither Dispatcher verbs nor in MCP_COMPOSED"
+                     "MCP exposes #{stray.inspect} which are neither Dispatcher verbs nor in MCP_CATALOG_COMPOSED"
   end
 
   it "every dispatcher verb is exposed or explicitly omitted" do
-    unaccounted = dispatcher - exposed - MCP_OMITTED
+    unaccounted = dispatcher - exposed - MCP_CATALOG_INTENTIONALLY_OMITTED
     expect(unaccounted).to be_empty,
                            "new core verb(s) #{unaccounted.inspect}: expose on MCP (add to the catalog) " \
-                           "or add to MCP_OMITTED with a reason"
+                           "or add to MCP_CATALOG_INTENTIONALLY_OMITTED with a reason"
   end
 
   it "the omit-list has no stale entries (all still dispatcher verbs)" do
-    stale = MCP_OMITTED - dispatcher
-    expect(stale).to be_empty, "MCP_OMITTED names non-verbs: #{stale.inspect}"
+    stale = MCP_CATALOG_INTENTIONALLY_OMITTED - dispatcher
+    expect(stale).to be_empty, "omit-list names no longer registered: #{stale.inspect}"
   end
 end
