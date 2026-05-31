@@ -1,6 +1,10 @@
 require "spec_helper"
 require "digest"
 
+# spec/mcp/tools_spec.rb — asserts the Tools delegator routes through Catalog
+# (ADR 0039). Tools.call is a thin pass-through; actual dispatch, arg-mapping,
+# and response shaping are all in MCP::Catalog. Tests here verify the end-to-end
+# behavior of that delegation path with a writable store fixture.
 RSpec.describe Textus::MCP::Tools do
   include_context "textus_store_fixture"
 
@@ -34,6 +38,18 @@ RSpec.describe Textus::MCP::Tools do
     File.write(audit_log_path(root), "")
   end
 
+  # ── Delegation path ─────────────────────────────────────────────────────────
+
+  describe "delegation to Catalog" do
+    it "Tools.call produces the same result as Catalog.call for a known verb" do
+      via_tools   = described_class.call("boot", session: session, store: store, args: {})
+      via_catalog = Textus::MCP::Catalog.call("boot", session: session, store: store, args: {})
+      expect(via_tools).to eq(via_catalog)
+    end
+  end
+
+  # ── Core read/write verbs ────────────────────────────────────────────────────
+
   describe ".call('boot', ...)" do
     it "returns the Boot.run envelope" do
       result = described_class.call("boot", session: session, store: store, args: {})
@@ -54,14 +70,6 @@ RSpec.describe Textus::MCP::Tools do
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::MCP::ToolError)
-    end
-  end
-
-  describe ".call('nope', ...)" do
-    it "raises ToolError for an unknown tool" do
-      expect do
-        described_class.call("nope", session: session, store: store, args: {})
-      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
     end
   end
 
@@ -86,9 +94,9 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
+  # ── First-class verbs promoted in Phase C (ADR 0039) ────────────────────────
+
   describe ".call('propose', ...)" do
-    # propose is a first-class verb (ADR 0039 Phase C); it writes to the queue
-    # zone and returns {uid, etag, key}.
     it "writes to the queue zone and returns uid, etag, key" do
       result = described_class.call(
         "propose",
@@ -115,14 +123,14 @@ RSpec.describe Textus::MCP::Tools do
   end
 
   describe ".call('rules', ...)" do
-    # rules was promoted to a first-class verb in Phase C (ADR 0039); it is now
-    # in the derived catalog and returns a {fetch,guard} hash (compact).
     it "returns a Hash with at most fetch/guard keys" do
       result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
       expect(result).to be_a(Hash)
       expect(result.keys - %w[fetch guard]).to be_empty
     end
   end
+
+  # ── Maintenance verbs ────────────────────────────────────────────────────────
 
   describe ".call('key_mv_prefix', ..., dry_run: true)" do
     it "returns a plan without mutating files" do
@@ -131,6 +139,16 @@ RSpec.describe Textus::MCP::Tools do
                          args: { "from_prefix" => "working", "to_prefix" => "renamed", "dry_run" => true }
       )
       expect(result).to include("steps", "warnings")
+    end
+  end
+
+  # ── Error handling ───────────────────────────────────────────────────────────
+
+  describe ".call with an unknown tool name" do
+    it "raises ToolError" do
+      expect do
+        described_class.call("nope", session: session, store: store, args: {})
+      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
     end
   end
 end
