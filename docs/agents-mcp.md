@@ -1,7 +1,7 @@
 # Agents & MCP — talking to a textus store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.31)
+> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.36)
 
 How an AI agent reads from and writes to a textus store — the mental model, the MCP transport, and a 5-minute Claude Code setup.
 
@@ -47,11 +47,10 @@ Create `.mcp.json` at your project root:
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `tick`, `find`, `read`, `write`, `propose`, `fetch`,
-`fetch_stale`, `schema`, `rules` (plus maintenance tools). The agent
+`boot`, `pulse`, `list`, `get`, `put`, `propose`, `fetch`,
+`fetch_all`, `schema`, `rules` (plus maintenance tools). The agent
 calls them as MCP tools — no shell strings, no parsing. The MCP tool
-names differ from the CLI verbs (`tick` is the MCP name for `pulse`,
-`find` for `list`, `read` for `get`, `write` for `put`); the full
+names are the same as the CLI verbs (see [ADR 0036](architecture/decisions/0036-transports-as-pure-framings.md)); the full
 catalog with arguments is in [the MCP tool reference below](#mcp-transport-the-agent-gate).
 
 ### 4. Tell Claude how to use it
@@ -63,7 +62,7 @@ Add to your `CLAUDE.md` (or create one if you don't have it):
 
 This project uses textus for durable agent memory. On session start,
 call the `boot` MCP tool — it returns the manifest, your write
-authority, and the tool catalog. Call `tick` once per turn to see
+authority, and the tool catalog. Call `pulse` once per turn to see
 what changed since you last looked.
 
 You can't write to `working/` or `identity/` directly. Use the
@@ -73,14 +72,14 @@ You can't write to `working/` or `identity/` directly. Use the
 
 That's the full integration. Claude Code reads `CLAUDE.md` on session
 start, sees the MCP tools advertised in the `.mcp.json`, and follows
-the boot/tick protocol.
+the boot/pulse protocol.
 
 ### What you get
 
 - **`boot` once per session:** the agent knows your zone topology,
   schemas, write authority, and verb catalog without you explaining
   them in `CLAUDE.md`.
-- **`tick` per turn:** the agent sees what files changed since its
+- **`pulse` per turn:** the agent sees what files changed since its
   last turn — no full re-read of the project.
 - **Role-gated writes:** the agent cannot write to `working/` or
   `identity/` directly; it can only propose to `review/`. You
@@ -264,16 +263,18 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 
 ### Tools
 
+MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports).
+
 | Tool | Returns | Args |
 |---|---|---|
 | `boot` | Contract envelope: zones, entries, schemas, write_flows, agent_quickstart | none |
-| `tick` | `{cursor, changed, stale, pending_review, doctor}` | `since?: int` |
-| `find` | `[{key, ...}]` | `zone?: string, prefix?: string` |
-| `read` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
-| `write` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
+| `pulse` | `{cursor, changed, stale, pending_review, doctor}` | `since?: int` |
+| `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
+| `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
+| `put` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
 | `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?` |
 | `fetch` | `{outcome}` | `key: string` |
-| `fetch_stale` | `{fetched, failed, skipped}` | `zone?, prefix?` |
+| `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema` | Field shape | `family: string` |
 | `rules` | Effective rules for a key | `key: string` |
 
