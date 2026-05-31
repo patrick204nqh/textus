@@ -11,7 +11,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::SchemaValid do
   def eval_with(envelope:, target: "working.person.pat")
     Textus::Domain::Policy::Evaluation.new(
       actor: "human", transition: :accept, origin: "review.x",
-      target: target, envelope: envelope, snapshot: manifest
+      target: target, envelope: envelope, manifest: manifest
     )
   end
 

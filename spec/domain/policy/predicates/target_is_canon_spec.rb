@@ -21,7 +21,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::TargetIsCanon do
   def eval_for(target)
     Textus::Domain::Policy::Evaluation.new(
       actor: "human", transition: :accept, origin: "proposals.notes.p1",
-      target: target, envelope: nil, snapshot: store.container.manifest
+      target: target, envelope: nil, manifest: store.container.manifest
     )
   end
 

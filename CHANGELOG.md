@@ -9,7 +9,27 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## 0.35.1 — 2026-05-31 — RSpec foundation consolidation (test-only)
+## 0.35.2 — 2026-05-31 — Evaluation field rename + Container doc fix (internal)
+
+No `textus/3` wire-format change; no manifest-schema change; no library behavior
+change. Internal refactor and documentation correction only.
+
+### Changed
+
+- `Domain::Policy::Evaluation` now names its manifest member `manifest` directly
+  instead of declaring it `snapshot` and exposing it through a `def manifest =
+  snapshot` alias. Every predicate already read `eval.manifest`; the field now
+  matches its only call name.
+- Dropped the unused `def role = actor` alias on `Evaluation` (zero readers; the
+  real field `actor` is used everywhere).
+
+### Fixed
+
+- Architecture doc (`docs/architecture/README.md`) listed an `:authorizer` member
+  on `Container` that the code does not have. Removed it so the doc matches
+  `lib/textus/container.rb` (7 fields).
+
+
 
 No `textus/3` wire-format change; no manifest-schema change; no library behavior change.
 Test-suite maintenance only.

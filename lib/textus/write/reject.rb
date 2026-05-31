@@ -13,7 +13,7 @@ module Textus
         guard.for(:reject, pending_key).check!(
           Textus::Domain::Policy::Evaluation.new(
             actor: @call.role, transition: :reject, origin: pending_key,
-            target: pending_key, envelope: nil, snapshot: @manifest
+            target: pending_key, envelope: nil, manifest: @manifest
           ),
         )
 

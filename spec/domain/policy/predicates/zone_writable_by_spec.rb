@@ -11,7 +11,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::ZoneWritableBy do
   def eval_for(role)
     Textus::Domain::Policy::Evaluation.new(
       actor: role, transition: :put, origin: nil,
-      target: "working.notes", envelope: nil, snapshot: manifest
+      target: "working.notes", envelope: nil, manifest: manifest
     )
   end
 

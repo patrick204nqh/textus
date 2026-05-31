@@ -101,7 +101,7 @@ module Textus
         ).for(:fetch, key).check!(
           Textus::Domain::Policy::Evaluation.new(
             actor: @call.role, transition: :fetch, origin: nil,
-            target: key, envelope: nil, snapshot: @manifest
+            target: key, envelope: nil, manifest: @manifest
           ),
         )
         envelope = writer.put(
