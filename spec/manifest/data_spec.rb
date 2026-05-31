@@ -19,7 +19,7 @@ RSpec.describe Textus::Manifest::Data do
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
 
   it "exposes zones, entries, audit_config, role_caps" do
-    expect(data.zones).to be_a(Hash)
+    expect(data.declared_zone_kinds).to be_a(Hash)
     expect(data.entries).to all(be_a(Textus::Manifest::Entry::Base))
     expect(data.audit_config).to include(:max_size, :keep)
     expect(data.role_caps).to eq("human" => %w[author propose], "automation" => %w[build])

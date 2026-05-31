@@ -9,10 +9,6 @@ module Textus
     PROTOCOL_ID = PROTOCOL
 
     # Per-capability write-flow templates. Each lambda receives the user-facing
-    # role name and returns a guidance string for that verb. A role holding
-    # multiple verbs gets one joined string; roles whose verbs have no template
-    # are omitted from write_flows.
-    # Per-capability write-flow templates. Each lambda receives the user-facing
     # role name and the manifest, and returns guidance for that verb with the
     # live zone named by kind (ADR 0034). A role holding multiple verbs gets one
     # joined string; roles whose verbs have no template are omitted.
@@ -104,7 +100,7 @@ module Textus
     def self.agent_quickstart(manifest, audit_log)
       agent_role = manifest.policy.proposer_role
 
-      writable_zones = manifest.data.zones.keys.each_with_object([]) do |zname, acc|
+      writable_zones = manifest.data.declared_zone_kinds.keys.each_with_object([]) do |zname, acc|
         acc << zname if agent_role && manifest.policy.zone_writers(zname).include?(agent_role)
       end
 
@@ -186,7 +182,7 @@ module Textus
     end
 
     def self.zones_for(manifest)
-      manifest.data.zones.keys.map do |name|
+      manifest.data.declared_zone_kinds.keys.map do |name|
         row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind

@@ -15,7 +15,7 @@ module Textus
 
       def call(from:, to:, dry_run: false)
         raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
-        raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.zones.key?(from)
+        raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
 
         dest_dir = File.join(@root, "zones", to)
         raise UsageError.new("destination 'zones/#{to}' already exists") if File.exist?(dest_dir)
