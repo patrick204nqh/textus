@@ -12,20 +12,32 @@ module Textus
     # role name and returns a guidance string for that verb. A role holding
     # multiple verbs gets one joined string; roles whose verbs have no template
     # are omitted from write_flows.
+    # Per-capability write-flow templates. Each lambda receives the user-facing
+    # role name and the manifest, and returns guidance for that verb with the
+    # live zone named by kind (ADR 0034). A role holding multiple verbs gets one
+    # joined string; roles whose verbs have no template are omitted.
     WRITE_FLOW_TEMPLATES = {
-      author: lambda do |name, _manifest|
-        "edit files in knowledge/notebook zones, then 'textus put KEY --as=#{name}'"
+      author: lambda do |name, manifest|
+        "edit files in #{zone_label(manifest, :canon, "your canon zone")}, " \
+          "then 'textus put KEY --as=#{name}'"
+      end,
+      keep: lambda do |name, manifest|
+        "keep durable notes in #{zone_label(manifest, :workspace, "your workspace")}: " \
+          "'textus put KEY --as=#{name}' (no accept needed)"
       end,
       propose: lambda do |name, manifest|
         authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
-        "propose changes by writing proposals.* entries with --as=#{name} and a 'proposal:' frontmatter block; " \
-          "the #{authority} role runs 'textus accept' to apply"
+        "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
+          "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      fetch: lambda do |name, _manifest|
-        "fetch intake entries with 'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
+      fetch: lambda do |name, manifest|
+        "fetch #{zone_label(manifest, :quarantine, "quarantine")} entries with " \
+          "'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
       end,
-      build: lambda do |_name, _manifest|
-        "'textus build' computes output entries from projections; output files are never hand-edited"
+      build: lambda do |_name, manifest|
+        derived = zone_label(manifest, :derived, "derived")
+        "'textus build' computes #{derived} entries from projections; " \
+          "#{derived} files are never hand-edited"
       end,
     }.freeze
 
@@ -37,6 +49,14 @@ module Textus
         end
         acc[name] = flows.join(" / ") unless flows.empty?
       end
+    end
+
+    # Human-readable name(s) for the live zone(s) of a given kind, or `fallback`
+    # when the manifest declares none. Lets write-flow guidance name the live
+    # zone by kind instead of a hardcoded instance name (ADR 0034).
+    def self.zone_label(manifest, kind, fallback)
+      zones = manifest.policy.zones_of_kind(kind)
+      zones.empty? ? fallback : zones.join(", ")
     end
 
     # Static, store-independent parts of the agent-facing protocol. The
