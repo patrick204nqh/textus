@@ -39,6 +39,6 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
         guard: { accept: [author_held, schema_valid] }
     RULES
     names = factory.for(:accept, "working.notes").predicates.map(&:name)
-    expect(names).to eq(%w[author_held schema_valid])
+    expect(names).to eq(%w[author_held target_is_canon schema_valid])
   end
 end

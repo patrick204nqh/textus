@@ -11,6 +11,7 @@ module Textus
           ENTRIES = {
             "zone_writable_by" => ->(**) { ZoneWritableBy.new },
             "author_held" => ->(**) { AuthorHeld.new },
+            "target_is_canon" => ->(**) { TargetIsCanon.new },
             "schema_valid" => ->(schemas:, **) { SchemaValid.new(schemas: schemas) },
             "etag_match" => ->(params:, **) { EtagMatch.new(if_etag: params) },
             "fresh_within" => ->(params:, **) { FreshWithin.new(duration: params) },
