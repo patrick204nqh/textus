@@ -60,8 +60,8 @@ module Textus
     end
 
     # Static, store-independent parts of the agent-facing protocol. The
-    # `role_resolution` block is derived per-manifest in agent_protocol(...)
-    # because role names are user-configurable.
+    # `recipes` and `role_resolution` blocks are derived per-manifest in
+    # agent_protocol(...) because zone and role names are user-configurable.
     AGENT_PROTOCOL_TEMPLATE = {
       "envelope_shape" => {
         "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
@@ -72,39 +72,6 @@ module Textus
           "etag" => "content hash; pass back on writes to detect concurrent edits",
         },
         "ref" => "SPEC.md §8",
-      },
-      "recipes" => {
-        "read" => {
-          "purpose" => "find and read an entry",
-          "steps" => [
-            "textus list --zone=ZONE --prefix=PREFIX  # discover keys",
-            "textus get KEY                            # returns envelope JSON",
-          ],
-        },
-        "write" => {
-          "purpose" => "create or update an entry",
-          "steps" => [
-            "textus schema get FAMILY                  # learn the _meta field shape",
-            "build an envelope JSON: {_meta: {...}, body: \"...\"}",
-            "echo ENVELOPE | textus put KEY --as=ROLE --stdin",
-          ],
-        },
-        "propose" => {
-          "purpose" => "agent suggests a change for human review",
-          "agent_steps" => [
-            "echo ENVELOPE | textus put proposals.KEY --as=agent --stdin",
-          ],
-          "human_steps" => [
-            "textus accept proposals.KEY --as=human     # promotes the proposal to its target zone",
-          ],
-        },
-        "fetch" => {
-          "purpose" => "rebuild stale intake-zone caches from their declared actions",
-          "steps" => [
-            "textus freshness --zone=intake            # report fresh/stale per entry",
-            "textus fetch stale --zone=intake --as=automation",
-          ],
-        },
       },
     }.freeze
 
@@ -152,8 +119,47 @@ module Textus
       }
     end
 
+    def self.recipes(manifest)
+      queue = manifest.policy.queue_zone
+      feeds = zone_label(manifest, :quarantine, "the quarantine zone")
+      {
+        "read" => {
+          "purpose" => "find and read an entry",
+          "steps" => [
+            "textus list --zone=ZONE --prefix=PREFIX  # discover keys",
+            "textus get KEY                            # returns envelope JSON",
+          ],
+        },
+        "write" => {
+          "purpose" => "create or update an entry",
+          "steps" => [
+            "textus schema get FAMILY                  # learn the _meta field shape",
+            "build an envelope JSON: {_meta: {...}, body: \"...\"}",
+            "echo ENVELOPE | textus put KEY --as=ROLE --stdin",
+          ],
+        },
+        "propose" => {
+          "purpose" => "agent suggests a change for human review",
+          "agent_steps" => [
+            "echo ENVELOPE | textus put #{queue}.KEY --as=agent --stdin",
+          ],
+          "human_steps" => [
+            "textus accept #{queue}.KEY --as=human       # promotes the proposal to its target zone",
+          ],
+        },
+        "fetch" => {
+          "purpose" => "rebuild stale quarantine-zone caches from their declared actions",
+          "steps" => [
+            "textus freshness --zone=#{feeds}            # report fresh/stale per entry",
+            "textus fetch stale --zone=#{feeds} --as=automation",
+          ],
+        },
+      }
+    end
+
     def self.agent_protocol(manifest)
       AGENT_PROTOCOL_TEMPLATE.merge(
+        "recipes" => recipes(manifest),
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "default 'human'",
