@@ -24,3 +24,6 @@ Two ideas do all the work:
 - **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `fetch`, `build` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability.
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
+
+<!-- TASK 6 NOTE: framing prose salvaged from the original zones.md intro (lines 5–7), preserved here so concepts.md can fold it in. The SPEC/architecture pointers from that intro are navigational and already live in the split docs' headers, so only the conceptual framing is kept: -->
+> The shape of your context in textus is: zones, the roles that write to them, the entries that live in them, and how data flows from input adapters out to published files.
