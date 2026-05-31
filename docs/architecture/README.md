@@ -1,7 +1,7 @@
 # Textus architecture
 
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
-> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-05 (v0.31)
+> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-05 (v0.35)
 
 ```mermaid
 flowchart TD
@@ -41,7 +41,7 @@ read/{get,get_or_fetch,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
       freshness,audit,blame,policy_explain,pulse}.rb
 write/{put,delete,mv,accept,reject,publish,
-       materializer,authority_gate,
+       materializer,intake_fetch,retention_sweep,
        fetch_worker,fetch_orchestrator,fetch_all}
 maintenance/{migrate,key_mv_prefix,key_delete_prefix,
              zone_mv,rule_lint}.rb
