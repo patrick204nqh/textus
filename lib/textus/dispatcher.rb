@@ -6,6 +6,7 @@ module Textus
     VERBS = {
       # Write
       put: Textus::Write::Put,
+      propose: Textus::Write::Propose,
       delete: Textus::Write::Delete,
       mv: Textus::Write::Mv,
       accept: Textus::Write::Accept,

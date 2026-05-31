@@ -87,16 +87,16 @@ RSpec.describe Textus::MCP::Tools do
   end
 
   describe ".call('propose', ...)" do
-    # propose is a composed tool promoted to a first-class verb in Phase C (ADR 0039);
-    # until then it is not in the derived catalog and raises ToolError.
-    it "raises ToolError (not yet a catalog verb; promoted in Phase C)" do
-      expect do
-        described_class.call(
-          "propose",
-          session: session, store: store,
-          args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
-        )
-      end.to raise_error(Textus::MCP::ToolError)
+    # propose is a first-class verb (ADR 0039 Phase C); it writes to the queue
+    # zone and returns {uid, etag, key}.
+    it "writes to the queue zone and returns uid, etag, key" do
+      result = described_class.call(
+        "propose",
+        session: session, store: store,
+        args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
+      )
+      expect(result.keys).to contain_exactly("uid", "etag", "key")
+      expect(result["key"]).to eq("review.proposal.x")
     end
   end
 
