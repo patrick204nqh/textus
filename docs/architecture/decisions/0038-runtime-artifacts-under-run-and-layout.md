@@ -71,10 +71,16 @@ a `.gitignore`, with nothing failing when the mirror is wrong.
    drift from reality because it is generated, not hand-kept. Textus's own repo
    `.gitignore` collapses to the `examples/**` mirror (or nothing).
 
-4. **A one-time migration shim relocates legacy `audit.log`.** On store load, if
-   `.run/audit/` is absent but a legacy `root/audit.log` (and rotated siblings +
-   sidecars) exists, textus moves them into `.run/audit/`. Idempotent; existing
-   consumer stores upgrade transparently on first run.
+4. **No backward-compatibility shim — this is a breaking change.** textus is
+   pre-1.0 and does not maintain old on-disk layouts. A store created before
+   0038 keeps its `audit.log`/`.state`/`.locks` at the root, which the new code
+   simply ignores; the next write starts a fresh `.run/audit/audit.log`. There
+   is deliberately **no auto-migration**: pre-0038 audit history is not carried
+   forward. To upgrade a live store, move the old files under `.run/` by hand
+   (`mkdir -p .textus/.run/audit && mv .textus/audit.log* .textus/.run/audit/`)
+   or just delete them and re-init. We do not add code to silently relocate
+   them, because compatibility code we'd never remove is worse than a one-line
+   manual step taken once.
 
 `archive/` (swept entries from `RetentionSweep`) is **not** runtime — it is
 retained history the user may want to track — and stays at root, classified
@@ -90,8 +96,11 @@ retained history the user may want to track — and stays at root, classified
   fall out for free — both just enumerate `Layout` runtime paths. (Deferred.)
 - **Cost:** `audit.log`'s path moves, touching its readers, rotation logic, and
   doctor checks (`doctor/check/audit_log.rb`, `doctor/check/fetch_locks.rb`,
-  `read/audit.rb`). The migration shim carries existing on-disk data across. This
-  is the price of making the boundary physical rather than implicit.
+  `read/audit.rb`). This is the price of making the boundary physical rather than
+  implicit.
+- **Breaking:** live pre-0038 stores lose visibility of their old root-level
+  `audit.log`/`.state`/`.locks` until moved by hand (see Decision §4). Accepted —
+  textus is pre-1.0 and carries no legacy-layout code.
 
 ## Alternatives considered
 
