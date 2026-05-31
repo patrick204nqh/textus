@@ -483,4 +483,4 @@ If doctor passes, your declared shape and your on-disk reality agree. If it fail
 - [`../SPEC.md`](../SPEC.md) — the normative wire-protocol spec
 - [`architecture/README.md`](architecture/README.md) — how the Ruby implementation is laid out
 - [`./conventions.md`](./conventions.md) — store location, transport wrappers, multi-store patterns
-- [`../examples/claude-plugin/`](../examples/claude-plugin/) — a complete worked example
+- [`../examples/project/`](../examples/project/) — a complete worked example

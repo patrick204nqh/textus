@@ -1,7 +1,0 @@
-name: command
-required: [name, description]
-fields:
-  name:        { type: string, maintained_by: human }
-  description: { type: string, maintained_by: human }
-evolution:
-  added_in: 2026-05-19

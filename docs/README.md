@@ -9,10 +9,9 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 | If you want to… | Read |
 |---|---|
-| See textus work in 5 commands | [`../examples/hello/`](../examples/hello/) |
+| See textus work end-to-end | [`../examples/project/`](../examples/project/) |
 | Wire textus into Claude Code / an MCP agent | [`agents-mcp.md`](agents-mcp.md) |
 | Use textus as your project's context store | [`../examples/project/`](../examples/project/) |
-| Author a Claude plugin backed by textus | [`../examples/claude-plugin/`](../examples/claude-plugin/) |
 
 ## Guides (how-to)
 
@@ -21,7 +20,6 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 | [`agents-mcp.md`](agents-mcp.md) | Talk to a store as an agent: boot → pulse loop, MCP tools, Claude Code wiring |
 | [`events.md`](events.md) | Write and test Ruby hooks |
 | [`migrations.md`](migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
-| [`recipes/`](recipes/) | Task-shaped recipes (e.g. GitHub skill bundles) |
 
 ## Reference
 
@@ -42,7 +40,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 These rules keep the docs consistent and cheap to maintain. Follow them when adding or editing docs.
 
-1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide or `recipes/`; new facts land in a reference doc; new rationale lands in an ADR.
+1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide; new facts land in a reference doc; new rationale lands in an ADR.
 2. **Header contract.** Every doc starts with its H1 followed by two header lines:
    ```markdown
    > **<Genre>** · for <audience> · **read when** <trigger>

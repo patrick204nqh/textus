@@ -9,6 +9,18 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## Unreleased
+
+### Removed
+
+- **Examples consolidated to a single reference.** Removed `examples/hello/` and
+  `examples/claude-plugin/`, keeping `examples/project/` as the one worked example —
+  the role gate (propose → accept), build/publish to `CLAUDE.md`/`AGENTS.md`, schemas,
+  a template, and a `:transform_rows` hook in one place. The `skill_fanout` recipe
+  sidecar, its spec, and the `docs/recipes/` page that existed only to document it are
+  removed alongside. All living docs and `boot`'s `docs.example` now point at
+  `examples/project/`.
+
 ## 0.36.0 — 2026-05-31 — Transports as pure framings: one verb vocabulary, one session, lifted to core ([ADR 0036](docs/architecture/decisions/0036-transports-as-pure-framings.md))
 
 No `textus/3` wire-format change; no manifest-schema change.

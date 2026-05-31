@@ -177,7 +177,7 @@ module Textus
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-        "docs" => { "spec" => "SPEC.md", "example" => "examples/claude-plugin/" },
+        "docs" => { "spec" => "SPEC.md", "example" => "examples/project/" },
       }
     end
 

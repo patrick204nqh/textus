@@ -1,3 +1,0 @@
-fields:
-  name: { type: string, required: true }
-  tags: { type: array }

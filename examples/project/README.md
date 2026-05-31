@@ -9,9 +9,6 @@ internal use.
 The example is staged as a fictional Rails service called **ledger** so
 the content reads like a real codebase. Replace it with your own.
 
-For the **distribution** use case (shipping a plugin to end users where
-textus is the authoring source-of-truth), see `examples/claude-plugin/`.
-
 ## Layout
 
 ```
