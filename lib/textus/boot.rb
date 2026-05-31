@@ -81,6 +81,7 @@ module Textus
       { "name" => "where",    "summary" => "resolve a key to its zone and path without reading" },
       { "name" => "schema",   "summary" => "field shape for a key family" },
       { "name" => "put",      "summary" => "write an entry; --as=<role>, --stdin payload" },
+      { "name" => "propose",  "summary" => "queue a proposal to the propose_zone; mirrors the MCP propose tool" },
       { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },

@@ -205,7 +205,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ### `textus doctor`
 
 ```
-  ┃ run 9 builtin Doctor::Check::* classes
+  ┃ run builtin Doctor::Check::* classes
   ┃ for each registered :validate hook:
   ┃   ───────────────────────────────────► :validate  (RPC per hook)
   ┃                                          returns Array<issue>
