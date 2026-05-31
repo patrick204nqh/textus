@@ -68,7 +68,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 ## Try it
 
 - **Worked end-to-end store** — the role gate (propose → accept), build/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
-- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/agents-mcp.md`](docs/agents-mcp.md)
+- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
 
@@ -150,7 +150,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
 - **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
-- **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
+- **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **`textus doctor`.** Health checks across schemas, hooks, keys, sentinels, and the audit log.
 
 ## CLI and zones
@@ -213,7 +213,7 @@ See SPEC.md §5.10 for the full hook contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop.
+See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot → pulse loop.
 
 ## Examples
 

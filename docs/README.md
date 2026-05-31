@@ -10,14 +10,14 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 | If you want to… | Read |
 |---|---|
 | See textus work end-to-end | [`../examples/project/`](../examples/project/) |
-| Wire textus into Claude Code / an MCP agent | [`agents-mcp.md`](agents-mcp.md) |
+| Wire textus into Claude Code / an MCP agent | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) |
 | Use textus as your project's context store | [`../examples/project/`](../examples/project/) |
 
 ## Guides (how-to)
 
 | Doc | What it does |
 |---|---|
-| [`agents-mcp.md`](agents-mcp.md) | Talk to a store as an agent: boot → pulse loop, MCP tools, Claude Code wiring |
+| [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | Talk to a store as an agent: quickstart, context store, boot → pulse loop |
 | [`how-to/writing-hooks.md`](how-to/writing-hooks.md) | Write and test Ruby hooks |
 | [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
 
