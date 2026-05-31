@@ -109,7 +109,10 @@ the boot/pulse protocol.
   last turn — no full re-read of the project.
 - **Role-gated writes:** the agent cannot write to `working/` or
   `identity/` directly; it can only propose to `review/`. You
-  retain control over what becomes load-bearing.
+  retain control over what becomes load-bearing. The connection acts
+  as the `agent` role by default (ADR 0040); to run it with your own
+  authority instead, launch with `--as=human` (the gate then becomes
+  advisory).
 - **Audit log:** every write the agent makes is in
   `.textus/audit.log`. You can replay or revert.
 - **Schema validation:** if you declare `_meta` field shapes per
