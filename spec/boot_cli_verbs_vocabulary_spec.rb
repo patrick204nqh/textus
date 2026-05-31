@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe "boot CLI verb catalog avoids retired zone names (ADR 0034)" do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   let(:store) do
     store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)

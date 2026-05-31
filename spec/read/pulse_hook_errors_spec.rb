@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe "Pulse hook_errors" do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   before do
     %w[zones/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }

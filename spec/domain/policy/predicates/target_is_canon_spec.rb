@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe Textus::Domain::Policy::Predicates::TargetIsCanon do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   let(:store) do
     store_from_manifest(root, zones: %w[knowledge notebook], manifest: <<~YAML)

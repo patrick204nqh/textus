@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSpec/DescribeMethod
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   before do
     %w[zones/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }

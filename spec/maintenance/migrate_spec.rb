@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe Textus::Maintenance::Migrate do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   before do
     %w[zones/working/old zones/working/new schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }

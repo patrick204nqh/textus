@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe "Manifest::Data drops the vestigial #zones map (ADR 0034 / D2)" do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   let(:store) do
     store_from_manifest(root, zones: %w[knowledge proposals], manifest: <<~YAML)
