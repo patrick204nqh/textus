@@ -901,6 +901,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `fetch stale [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |
 | `build [--prefix=K] [--dry-run]` | write | `build`-holder (typically `automation`) |
 | `retain [--prefix=K] [--zone=Z] --as=ROLE` | write | per zone (role must write the matched zone) |
+| `propose K --stdin --as=R` | write | `propose`-holder (typically `agent`) |
 | `accept K --as=human` | write | `author`-holder (typically `human`) |
 | `reject K --as=human` | write | `author`-holder (typically `human`) |
 | `init` | write | `human` |
