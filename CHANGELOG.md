@@ -9,6 +9,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.35.1 — 2026-05-31 — RSpec foundation consolidation (test-only)
+
+No `textus/3` wire-format change; no manifest-schema change; no library behavior change.
+Test-suite maintenance only.
+
+### Changed
+
+- Removed redundant per-file `include TextusSpecHelpers` lines (the module is
+  globally included via `spec/support/fixtures.rb`).
+- Envelope-writer specs now assert audit side-effects through the shared
+  `have_audit_verb` / `last_audit_row` helpers instead of raw `audit.log`
+  JSON substring matching.
+
+### Fixed
+
+- `pulse_queue_zone` spec no longer leaks a temp directory per run (its second
+  store now builds under the `textus_store_fixture` tmp tree, which is cleaned up).
+
 ## 0.35.0 — 2026-05-31 — Proposal target-zone constraint + `author_held` ([ADR 0035](docs/architecture/decisions/0035-proposal-target-zone-constraint.md))
 
 No `textus/3` wire-format change; no manifest-schema change.
