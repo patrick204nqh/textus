@@ -8,3 +8,4 @@
 /.textus/notify.log
 /.textus/last-build.log
 /.textus/.last-build.json
+/.textus/.state/
