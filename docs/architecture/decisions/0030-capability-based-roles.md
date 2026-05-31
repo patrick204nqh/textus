@@ -4,6 +4,7 @@
 **Status:** Accepted
 **Supersedes:** the parked `runner → fetcher` rename (the role `fetcher` dissolves into the `fetch` verb); retires the `role-kind` 1:1 mapping and per-zone `write_policy`
 **Refines:** [ADR 0028](./0028-coordination-planes.md) (coordination planes), [ADR 0029](./0029-concept-vocabulary.md) (concept vocabulary)
+**Updated by:** [ADR 0033](./0033-complete-primitives-and-vocabulary.md) — renames the `accept` capability to `author` and adds a fifth capability `keep`; the closed set is now `propose`, `author`, `keep`, `fetch`, `build`. The capability-based model and its invariants stand unchanged.
 
 ## Context
 

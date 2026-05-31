@@ -900,7 +900,9 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `fetch KEY --as=automation` | write | `fetch`-holder (typically `automation`) |
 | `fetch stale [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |
 | `build [--prefix=K] [--dry-run]` | write | `build`-holder (typically `automation`) |
+| `retain [--prefix=K] [--zone=Z] --as=ROLE` | write | per zone (role must write the matched zone) |
 | `accept K --as=human` | write | `author`-holder (typically `human`) |
+| `reject K --as=human` | write | `author`-holder (typically `human`) |
 | `init` | write | `human` |
 | `schema {show,init,diff,migrate}` | read/write | `human` for writes |
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |

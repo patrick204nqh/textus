@@ -1,7 +1,7 @@
 # Agents & MCP — talking to a textus store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.31)
+> **SSoT for** the agent boot → pulse loop, the MCP tool catalog, and Claude Code wiring · **reviewed** 2026-05 (v0.35)
 
 How an AI agent reads from and writes to a textus store — the mental model, the MCP transport, and a 5-minute Claude Code setup.
 
