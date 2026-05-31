@@ -50,6 +50,17 @@ module Textus
       @container ||= Textus::Container.from_store(self)
     end
 
+    # Build an agent Session oriented at the current cursor/manifest — the
+    # Ruby equivalent of an MCP `initialize`. ADR 0036.
+    def session(role:)
+      Textus::Session.new(
+        role: role,
+        cursor: audit_log.latest_seq,
+        propose_zone: manifest.policy.propose_zone_for(role),
+        manifest_etag: file_store.etag(File.join(root, "manifest.yaml")),
+      )
+    end
+
     def as(role, dry_run: false, correlation_id: nil)
       RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end

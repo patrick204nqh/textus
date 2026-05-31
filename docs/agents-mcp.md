@@ -210,6 +210,24 @@ Handle by calling `boot` again and resuming from the new `latest_seq`. Skip the 
 
 ### Recommended agent loop
 
+For Ruby embedders, `store.session(role:)` boots and returns a `Textus::Session` that
+tracks the cursor and propose_zone for you — no hand-rolled `since` variable needed
+(ADR 0036). The `advance_cursor` call returns a new immutable session value each turn.
+
+```ruby
+# Ruby embedder loop
+session = store.session(role: :agent)
+loop do
+  delta = store.as(session.role).pulse(since: session.cursor)
+  session = session.advance_cursor(delta["cursor"])
+  delta["changed"].each { |c| reload(c["key"]) }
+  # propose a change:
+  # store.as(:agent).put("#{session.propose_zone}.my-key", meta: {...}, body: "...")
+end
+```
+
+The equivalent CLI / pseudocode loop:
+
 ```python
 # Pseudocode
 boot = run("textus boot --output=json")
