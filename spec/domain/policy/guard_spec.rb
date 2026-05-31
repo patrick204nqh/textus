@@ -14,7 +14,7 @@ RSpec.describe Textus::Domain::Policy::Guard do
   let(:eval) do
     Textus::Domain::Policy::Evaluation.new(
       actor: "agent", transition: :put, origin: nil,
-      target: "working.x", envelope: nil, snapshot: nil
+      target: "working.x", envelope: nil, manifest: nil
     )
   end
 

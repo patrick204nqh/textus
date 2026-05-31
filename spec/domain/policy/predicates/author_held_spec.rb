@@ -7,7 +7,7 @@ RSpec.describe Textus::Domain::Policy::Predicates::AuthorHeld do
   def eval_for(role)
     Textus::Domain::Policy::Evaluation.new(
       actor: role, transition: :accept, origin: nil,
-      target: "working.notes.x", envelope: nil, snapshot: manifest
+      target: "working.notes.x", envelope: nil, manifest: manifest
     )
   end
 

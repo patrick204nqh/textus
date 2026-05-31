@@ -109,7 +109,7 @@ module Textus
       def eval_for(transition, target_key:, envelope: nil)
         Textus::Domain::Policy::Evaluation.new(
           actor: @call.role, transition: transition, origin: nil,
-          target: target_key, envelope: envelope, snapshot: @manifest
+          target: target_key, envelope: envelope, manifest: @manifest
         )
       end
 

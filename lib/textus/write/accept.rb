@@ -18,7 +18,7 @@ module Textus
         guard.for(:accept, target).check!(
           Textus::Domain::Policy::Evaluation.new(
             actor: @call.role, transition: :accept, origin: pending_key,
-            target: target, envelope: env, snapshot: @manifest
+            target: target, envelope: env, manifest: @manifest
           ),
         )
 

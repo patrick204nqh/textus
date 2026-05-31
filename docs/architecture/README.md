@@ -118,7 +118,7 @@ Use cases never see the raw `Store`. `Textus::Container` is a single record hold
 ```ruby
 Container = Data.define(
   :manifest, :file_store, :schemas, :root,
-  :audit_log, :events, :rpc, :authorizer
+  :audit_log, :events, :rpc
 )
 ```
 
