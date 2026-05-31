@@ -6,7 +6,9 @@ module Textus
   module Contract
     # One argument of a verb. `positional: true` means it is passed to the
     # use-case as a positional (e.g. `get(key)`); otherwise as a keyword.
-    Arg = Data.define(:name, :type, :required, :positional, :description)
+    # `session_default` names a zero-arg method on `Textus::Session` (Symbol)
+    # that supplies the value when the wire arg is absent; `nil` means no default.
+    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description)
 
     JSON_TYPES = {
       String => "string", Integer => "integer", Hash => "object",
@@ -68,12 +70,12 @@ module Textus
         end
       end
 
-      def arg(name, type, required: false, positional: false, description: nil)
+      def arg(name, type, required: false, positional: false, session_default: nil, description: nil)
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
-          positional: positional, description: description
+          positional: positional, session_default: session_default, description: description
         )
       end
 

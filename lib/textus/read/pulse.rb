@@ -12,7 +12,7 @@ module Textus
       verb     :pulse
       summary  "Delta since cursor. Returns {cursor, changed, stale, pending_review, doctor}."
       surfaces :cli, :ruby, :mcp
-      arg :since, Integer, description: "audit seq to diff from; defaults to the session cursor"
+      arg :since, Integer, session_default: :cursor, description: "audit seq to diff from; defaults to the session cursor"
 
       def initialize(container:, call:)
         @container  = container

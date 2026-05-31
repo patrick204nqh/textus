@@ -50,4 +50,20 @@ RSpec.describe Textus::Contract do
     expect { klass.arg(:extra, String) }.to raise_error(RuntimeError, /contract already built/)
     expect { klass.verb(:other) }.to raise_error(RuntimeError, /contract already built/)
   end
+
+  it "carries session_default on an arg when declared" do
+    k = Class.new do
+      extend Textus::Contract::DSL
+
+      verb :example
+      arg :x, Integer, session_default: :cursor
+    end
+    a = k.contract.args.find { |arg| arg.name == :x }
+    expect(a.session_default).to eq(:cursor)
+  end
+
+  it "session_default is nil by default" do
+    a = klass.contract.args.find { |arg| arg.name == :key }
+    expect(a.session_default).to be_nil
+  end
 end

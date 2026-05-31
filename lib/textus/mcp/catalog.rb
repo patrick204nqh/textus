@@ -30,7 +30,7 @@ module Textus
         raise ToolError.new("unknown tool: #{name}") unless klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
 
         spec = klass.contract
-        pos, kw = map_args(spec, args || {})
+        pos, kw = map_args(spec, args || {}, session)
         result = store.as(session.role).public_send(spec.verb, *pos, **kw)
         spec.response.call(result)
       rescue ContractDrift, CursorExpired
@@ -41,16 +41,24 @@ module Textus
 
       # Splits the raw JSON arg hash into the positional list and keyword hash
       # the use-case expects, validating required presence first.
-      def map_args(spec, raw)
+      # Session-default args (session_default: :method_name) are injected from
+      # the session when absent from the wire; they are never treated as missing.
+      # Positional args are emitted in contract declaration order; use-case signatures must match.
+      def map_args(spec, raw, session = nil)
         missing = spec.required_args.map { |a| a.name.to_s } - raw.keys
         raise ToolError.new("#{spec.verb}: missing #{missing.join(", ")}") unless missing.empty?
 
         positional = []
         keyword = {}
         spec.args.each do |a|
-          next unless raw.key?(a.name.to_s)
+          if raw.key?(a.name.to_s)
+            value = raw[a.name.to_s]
+          elsif a.session_default && session
+            value = session.public_send(a.session_default)
+          else
+            next
+          end
 
-          value = raw[a.name.to_s]
           if a.positional
             positional << value
           else

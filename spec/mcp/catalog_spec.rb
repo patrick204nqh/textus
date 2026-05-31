@@ -52,5 +52,50 @@ RSpec.describe Textus::MCP::Catalog do
         described_class.call("get", session: session, store: store, args: {})
       end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
     end
+
+    it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. delete)" do
+      expect do
+        described_class.call("delete", session: session, store: store, args: { "key" => "knowledge.project" })
+      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
+    end
+
+    it "re-raises ContractDrift unmodified (not wrapped in ToolError)" do
+      allow(store).to receive(:as).and_raise(Textus::MCP::ContractDrift.new("boom"))
+      expect do
+        described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
+      end.to raise_error(Textus::MCP::ContractDrift, /boom/)
+    end
+  end
+
+  describe "pulse session_default cursor injection" do
+    # Advance the audit log with a put, then build a session oriented at the
+    # new cursor so session.cursor > 0.
+    let(:advanced_session) do
+      store.as("human").put("knowledge.project",
+                            meta: { "name" => "project", "zone" => "knowledge" }, body: "seed\n")
+      store.session(role: "human")
+    end
+
+    it "pulse without since injects session.cursor (delta from cursor, not from 0)" do
+      cursor = advanced_session.cursor
+      expect(cursor).to be > 0
+
+      result = described_class.call("pulse", session: advanced_session, store: store, args: {})
+      # The returned cursor reflects the current log head; since we injected the
+      # session cursor, no changes happened after boot so changed should be empty.
+      expect(result["changed"]).to eq([])
+      expect(result["cursor"]).to eq(cursor)
+    end
+
+    it "pulse with explicit since: 0 overrides the session default and returns full history" do
+      cursor = advanced_session.cursor
+      expect(cursor).to be > 0
+
+      result = described_class.call("pulse", session: advanced_session, store: store,
+                                             args: { "since" => 0 })
+      # since=0 means diff from the very beginning — changed will be non-empty
+      expect(result["changed"]).not_to be_empty
+      expect(result["cursor"]).to eq(cursor)
+    end
   end
 end
