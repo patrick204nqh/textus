@@ -932,11 +932,14 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
   "changed":        [ { "seq": 1843, "key": "knowledge.notes.x", "verb": "put", "role": "human", "ts": "..." } ],
   "stale":          [ "artifacts.marketplace" ],
   "pending_review": [ "proposals.proposal.123" ],
-  "doctor":         { "ok": true, "warn": 0, "fail": 0 }
+  "doctor":         { "ok": true, "warn": 0, "fail": 0 },
+  "manifest_etag":  "sha256:1f3a…",
+  "next_due_at":    "2026-06-01T09:00:00Z",
+  "hook_errors":    [ { "seq": 1844, "event": "after_put", "hook": "notify", "key": "knowledge.notes.x", "error_class": "Timeout::Error", "error_message": "…", "at": "..." } ]
 }
 ```
 
-`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. `manifest_etag` is the `sha256:`-prefixed content hash of the manifest (ADR 0025), for cheap change-detection. `next_due_at` is the soonest upcoming freshness deadline across entries (ISO-8601, or `null` if none). `hook_errors` lists hook failures recorded since the cursor. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
