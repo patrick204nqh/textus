@@ -1,7 +1,7 @@
 module Textus
   module Doctor
     class Check
-      # Lists per-key fetch lock files under <root>/.locks/ whose
+      # Lists per-key fetch lock files under <root>/.run/locks/ whose
       # recorded PID is no longer running. These are forensic artifacts only:
       # Fetch::Lock uses flock(2), which the kernel releases on process
       # death, so stale files do not block subsequent acquires. The check
@@ -9,7 +9,7 @@ module Textus
       # (e.g. a fetch path that crashes repeatedly).
       class FetchLocks < Check
         def call
-          dir = File.join(root, ".locks")
+          dir = Textus::Layout.locks(root)
           return [] unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.lock")).filter_map { |path| inspect_lock(path) }

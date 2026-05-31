@@ -23,7 +23,7 @@ RSpec.describe Textus::Doctor::Check::FetchLocks do
 
   it "returns no issues when lock file's PID is alive" do
     with_store do |store, root|
-      locks = File.join(root, ".locks")
+      locks = Textus::Layout.locks(root)
       FileUtils.mkdir_p(locks)
       File.write(File.join(locks, "intake.vendor.foo.lock"), Process.pid.to_s)
 
@@ -33,7 +33,7 @@ RSpec.describe Textus::Doctor::Check::FetchLocks do
 
   it "reports an info-level issue when lock file records a dead PID" do
     with_store do |store, root|
-      locks = File.join(root, ".locks")
+      locks = Textus::Layout.locks(root)
       FileUtils.mkdir_p(locks)
       dead_pid = find_dead_pid
       lock_path = File.join(locks, "intake.vendor.foo.lock")
@@ -53,7 +53,7 @@ RSpec.describe Textus::Doctor::Check::FetchLocks do
 
   it "ignores empty or zero-PID files" do
     with_store do |store, root|
-      locks = File.join(root, ".locks")
+      locks = Textus::Layout.locks(root)
       FileUtils.mkdir_p(locks)
       File.write(File.join(locks, "empty.lock"), "")
       File.write(File.join(locks, "zero.lock"), "0")
