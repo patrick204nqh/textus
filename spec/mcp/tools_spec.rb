@@ -87,15 +87,16 @@ RSpec.describe Textus::MCP::Tools do
   end
 
   describe ".call('propose', ...)" do
-    it "prefixes key with the session's propose_zone" do
-      result = described_class.call(
-        "propose",
-        session: session, store: store,
-        args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
-      )
-      expect(result).to include("uid", "etag")
-      # File should land under review/
-      expect(File).to exist(File.join(root, "zones/review/proposal/x.md")).or be_truthy
+    # propose is a composed tool promoted to a first-class verb in Phase C (ADR 0039);
+    # until then it is not in the derived catalog and raises ToolError.
+    it "raises ToolError (not yet a catalog verb; promoted in Phase C)" do
+      expect do
+        described_class.call(
+          "propose",
+          session: session, store: store,
+          args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
+        )
+      end.to raise_error(Textus::MCP::ToolError)
     end
   end
 
@@ -108,9 +109,12 @@ RSpec.describe Textus::MCP::Tools do
   end
 
   describe ".call('rules', ...)" do
-    it "returns a hash for a known key" do
-      result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
-      expect(result).to be_a(Hash)
+    # rules is a composed tool promoted to a first-class verb in Phase C (ADR 0039);
+    # until then it is not in the derived catalog and raises ToolError.
+    it "raises ToolError (not yet a catalog verb; promoted in Phase C)" do
+      expect do
+        described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
+      end.to raise_error(Textus::MCP::ToolError)
     end
   end
 

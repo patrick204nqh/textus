@@ -6,7 +6,7 @@ require "spec_helper"
 # This guard survives Phase B (Catalog derivation) because both sides then
 # derive from one source and parity is automatic — the spec just keeps proving it.
 RSpec.describe "MCP REGISTRY and ToolSchemas name the same tools (ADR 0039)" do
-  let(:registry_names) { Textus::MCP::Tools::REGISTRY.keys.sort }
+  let(:registry_names) { Textus::MCP::Tools.build_registry.keys.sort }
   let(:schema_names)   { Textus::MCP::ToolSchemas.all.map { |t| t[:name] }.sort }
 
   it "advertises exactly the tools it can dispatch" do

@@ -20,7 +20,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   let(:dispatcher) { Textus::Dispatcher::VERBS.keys.map(&:to_s).sort }
-  let(:exposed)    { Textus::MCP::Tools::REGISTRY.keys.sort }
+  let(:exposed)    { Textus::MCP::Tools.build_registry.keys.sort }
 
   it "every exposed tool is a dispatcher verb or an explicit composed tool" do
     stray = exposed - dispatcher - MCP_CATALOG_COMPOSED

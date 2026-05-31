@@ -1,129 +1,23 @@
 module Textus
   module MCP
-    # Dispatch table for MCP tool names → implementations. Each implementation
-    # receives (session:, store:, args:) and returns a JSON-encodable value.
-    # Tool errors are wrapped in ToolError; ContractDrift / CursorExpired
-    # propagate verbatim so the server can map them to JSON-RPC codes.
+    # Thin delegator kept for name stability (ADR 0039). The dispatch table
+    # and JSON schemas are now DERIVED from per-verb contracts by MCP::Catalog;
+    # this module only forwards. build_registry is derived too, so the floor
+    # guards (registry<->schema parity, registry<->dispatcher reconciliation)
+    # keep asserting against the live contract-derived set.
     module Tools
       module_function
 
       def call(name, session:, store:, args:)
-        impl = REGISTRY[name] or raise ToolError.new("unknown tool: #{name}")
-        impl.call(session, store, args || {})
-      rescue ContractDrift, CursorExpired
-        raise
-      rescue Textus::Error => e
-        raise ToolError.new("#{name}: #{e.message}")
+        Catalog.call(name, session: session, store: store, args: args || {})
       end
 
-      def ops_for(session, store)
-        store.as(session.role)
+      # Returns a verb-name (String) -> callable Hash, derived from contracts.
+      # Present so the reconciliation guards have a .build_registry.keys to read.
+      # Evaluated at call time (not load time) to respect Zeitwerk lazy-loading.
+      def build_registry
+        Catalog.names.to_h { |n| [n, ->(s, store, a) { Catalog.call(n, session: s, store: store, args: a) }] }
       end
-
-      REGISTRY = {
-        "boot" => ->(_s, store, _a) { store.boot },
-
-        "list" => lambda do |s, store, args|
-          ops_for(s, store).list(zone: args["zone"], prefix: args["prefix"])
-        end,
-
-        "get" => lambda do |s, store, args|
-          key = args.fetch("key") { raise ToolError.new("get: missing key") }
-          env = ops_for(s, store).get(key)
-          env.to_h_for_wire
-        end,
-
-        "pulse" => lambda do |s, store, args|
-          since = (args["since"] || s.cursor).to_i
-          ops_for(s, store).pulse(since: since)
-        end,
-
-        "put" => lambda do |s, store, args|
-          key = args.fetch("key") { raise ToolError.new("put: missing key") }
-          env = ops_for(s, store).put(
-            key,
-            meta: args["meta"] || {},
-            body: args["body"],
-            content: args["content"],
-            if_etag: args["if_etag"],
-          )
-          { "uid" => env.uid, "etag" => env.etag }
-        end,
-
-        "propose" => lambda do |s, store, args|
-          raise ToolError.new("propose: session has no propose_zone") unless s.propose_zone
-
-          rel = args.fetch("key") { raise ToolError.new("propose: missing key") }
-          target = "#{s.propose_zone}.#{rel}"
-          env = ops_for(s, store).put(
-            target,
-            meta: args["meta"] || {},
-            body: args["body"],
-            content: args["content"],
-          )
-          { "uid" => env.uid, "etag" => env.etag, "key" => target }
-        end,
-
-        "fetch" => lambda do |s, store, args|
-          key = args.fetch("key") { raise ToolError.new("fetch: missing key") }
-          outcome = ops_for(s, store).fetch(key)
-          { "outcome" => outcome.class.name.split("::").last.downcase }
-        end,
-
-        "fetch_all" => lambda do |s, store, args|
-          ops_for(s, store).fetch_all(zone: args["zone"], prefix: args["prefix"])
-        end,
-
-        "schema" => lambda do |_s, store, args|
-          family = args.fetch("family") { raise ToolError.new("schema: missing family") }
-          store.schemas.fetch(family)
-        end,
-
-        "rules" => lambda do |_s, store, args|
-          key = args.fetch("key") { raise ToolError.new("rules: missing key") }
-          set = store.manifest.rules.for(key)
-          {
-            "fetch" => set.fetch&.to_h,
-            "guard" => set.guard,
-          }.compact
-        end,
-
-        "key_mv_prefix" => lambda do |s, store, args|
-          ops_for(s, store).key_mv_prefix(
-            from_prefix: args.fetch("from_prefix") { raise ToolError.new("key_mv_prefix: missing from_prefix") },
-            to_prefix: args.fetch("to_prefix") { raise ToolError.new("key_mv_prefix: missing to_prefix") },
-            dry_run: args["dry_run"] || false,
-          ).to_h
-        end,
-
-        "key_delete_prefix" => lambda do |s, store, args|
-          ops_for(s, store).key_delete_prefix(
-            prefix: args.fetch("prefix") { raise ToolError.new("key_delete_prefix: missing prefix") },
-            dry_run: args["dry_run"] || false,
-          ).to_h
-        end,
-
-        "zone_mv" => lambda do |s, store, args|
-          ops_for(s, store).zone_mv(
-            from: args.fetch("from") { raise ToolError.new("zone_mv: missing from") },
-            to: args.fetch("to") { raise ToolError.new("zone_mv: missing to") },
-            dry_run: args["dry_run"] || false,
-          ).to_h
-        end,
-
-        "rule_lint" => lambda do |s, store, args|
-          ops_for(s, store).rule_lint(
-            candidate_yaml: args.fetch("candidate_yaml") { raise ToolError.new("rule_lint: missing candidate_yaml") },
-          ).to_h
-        end,
-
-        "migrate" => lambda do |s, store, args|
-          ops_for(s, store).migrate(
-            plan_yaml: args.fetch("plan_yaml") { raise ToolError.new("migrate: missing plan_yaml") },
-            dry_run: args["dry_run"] || false,
-          ).to_h
-        end,
-      }.freeze
     end
   end
 end

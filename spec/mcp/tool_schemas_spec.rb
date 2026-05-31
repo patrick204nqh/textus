@@ -6,8 +6,8 @@ RSpec.describe Textus::MCP::ToolSchemas do
       tools = described_class.all
       names = tools.map { |t| t[:name] }
       expect(names).to include("boot", "pulse", "list", "get", "put",
-                               "propose", "fetch", "fetch_all",
-                               "schema", "rules")
+                               "fetch", "fetch_all")
+      # propose/schema/rules are composed tools promoted in Phase C (ADR 0039)
       tools.each do |t|
         expect(t).to include(:name, :description, :inputSchema)
         expect(t[:inputSchema][:type]).to eq("object")
@@ -22,8 +22,8 @@ RSpec.describe Textus::MCP::ToolSchemas do
 
     it "still exposes the unchanged verbs and maintenance tools" do
       names = described_class.all.map { |t| t[:name] }
-      expect(names).to include("boot", "propose", "fetch", "schema", "rules",
-                               "key_mv_prefix", "zone_mv", "migrate")
+      # propose/schema/rules are composed tools promoted in Phase C (ADR 0039)
+      expect(names).to include("boot", "fetch", "key_mv_prefix", "zone_mv", "migrate")
     end
 
     it "marks key-required tools' inputSchema with required: ['key']" do

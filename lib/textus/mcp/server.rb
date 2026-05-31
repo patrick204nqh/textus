@@ -74,7 +74,7 @@ module Textus
       end
 
       def handle_tools_list(rid)
-        emit_result(rid, { "tools" => ToolSchemas.all })
+        emit_result(rid, { "tools" => Catalog.tool_schemas })
       end
 
       def handle_tools_call(rid, params)
@@ -87,7 +87,7 @@ module Textus
 
         name = params["name"]
         args = params["arguments"] || {}
-        result = Tools.call(name, session: @session, store: @store, args: args)
+        result = Catalog.call(name, session: @session, store: @store, args: args)
         @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "pulse"
 
         emit_result(rid, {
