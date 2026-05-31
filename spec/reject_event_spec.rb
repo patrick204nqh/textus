@@ -1,43 +1,41 @@
 # rubocop:disable Style/GlobalVars
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 require "stringio"
-require "json"
 
 RSpec.describe ":proposal_rejected event and store.reject" do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
-    FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: identity, kind: canon }
-        - { name: review,   kind: queue }
-      entries:
-        - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+    store_from_manifest(
+      root,
+      zones: %w[identity review],
+      files: {
+        "hooks/log.rb" => <<~RUBY,
+          $textus_event_log ||= []
+          Textus.hook do |reg|
+            reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, **|
+              $textus_event_log << [:proposal_rejected, key, target_key]
+            end
+            reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
+          end
+        RUBY
+      },
+      manifest: <<~YAML,
+        version: textus/3
+        zones:
+          - { name: identity, kind: canon }
+          - { name: review,   kind: queue }
+        entries:
+          - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
-        - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
+          - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
 
-    YAML
-    File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-      $textus_event_log ||= []
-      Textus.hook do |reg|
-        reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, **|
-          $textus_event_log << [:proposal_rejected, key, target_key]
-        end
-        reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
-      end
-    RUBY
+      YAML
+    )
     $textus_event_log = []
   end
 
   after do
-    FileUtils.remove_entry(tmp)
     $textus_event_log = nil
   end
 
@@ -74,43 +72,45 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   end
 
   context "CLI: textus reject" do
-    def build_cli_store!(root)
-      FileUtils.mkdir_p(File.join(root, "zones/review"))
-      FileUtils.mkdir_p(File.join(root, "zones/identity"))
-      File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: identity, kind: canon }
-          - { name: review,   kind: queue }
-        entries:
-          - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
+    # A second store with its own cwd, nested under the shared-context `tmp` so
+    # the context's `after` cleans it up (the CLI discovers `.textus` from cwd).
+    let(:cli_dir) { File.join(tmp, "cli") }
+    let(:cli_root) { File.join(cli_dir, ".textus") }
+    let(:cli_store) do
+      FileUtils.mkdir_p(cli_dir)
+      store_from_manifest(
+        cli_root,
+        zones: %w[identity review],
+        manifest: <<~YAML,
+          version: textus/3
+          zones:
+            - { name: identity, kind: canon }
+            - { name: review,   kind: queue }
+          entries:
+            - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
 
-          - { key: review.d,   path: review/d.md,   zone: review, kind: leaf}
+            - { key: review.d,   path: review/d.md,   zone: review, kind: leaf}
 
-      YAML
-      store = Textus::Store.new(root)
-      store.as("agent").put(
-        "review.d",
-        meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
-        body: "x",
+        YAML
       )
     end
 
     it "rejects a review entry via CLI and emits JSON" do
-      Dir.mktmpdir do |dir|
-        cli_root = File.join(dir, ".textus")
-        build_cli_store!(cli_root)
-        stdout = StringIO.new
-        stderr = StringIO.new
-        exit_code = Textus::CLI.run(
-          ["--root=#{cli_root}", "reject", "review.d", "--as=human"],
-          stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: dir,
-        )
-        expect(exit_code).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
-        payload = JSON.parse(stdout.string.strip)
-        expect(payload["rejected"]).to eq("review.d")
-        expect(payload["target_key"]).to eq("identity.t")
-      end
+      cli_store.as("agent").put(
+        "review.d",
+        meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
+        body: "x",
+      )
+      stdout = StringIO.new
+      stderr = StringIO.new
+      exit_code = Textus::CLI.run(
+        ["--root=#{cli_root}", "reject", "review.d", "--as=human"],
+        stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: cli_dir,
+      )
+      expect(exit_code).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
+      payload = JSON.parse(stdout.string.strip)
+      expect(payload["rejected"]).to eq("review.d")
+      expect(payload["target_key"]).to eq("identity.t")
     end
   end
 end
