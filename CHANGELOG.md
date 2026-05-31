@@ -9,6 +9,34 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.36.0 — 2026-05-31 — Transports as pure framings: one verb vocabulary, one session, lifted to core ([ADR 0036](docs/architecture/decisions/0036-transports-as-pure-framings.md))
+
+No `textus/3` wire-format change; no manifest-schema change.
+
+### Changed (BREAKING)
+
+- **MCP tool names aligned with the CLI/Ruby verb vocabulary.** The five renamed tools adopt
+  the canonical core names: `tick`→`pulse`, `find`→`list`, `read`→`get`, `write`→`put`,
+  `fetch_stale`→`fetch_all`. The `textus/3` wire format is unchanged; agents that discover
+  tools via `tools/list` (the documented pattern) adapt automatically. Hardcoded tool names
+  in `.mcp.json` files, prompts, or scripts must be updated.
+
+### Added
+
+- **First-class CLI `propose` verb** — `textus propose KEY --as=ROLE [--stdin]` auto-prefixes
+  the manifest's `propose_zone`, matching what the MCP `propose` tool has always done. The
+  previous workaround (`textus put proposals.KEY --as=ROLE`) still works but the caller no
+  longer needs to know the queue zone name.
+- **Stateful `textus pulse` (no `--since`)** — when `--since` is omitted, `pulse` reads and
+  updates a per-role cursor from `.textus/.state/cursor.<role>` (gitignored). Successive
+  invocations see only what changed since the last look, without hand-tracking a sequence
+  number. `--since=N` remains the explicit, stateless override.
+- **`Textus::Session`** — the agent session (role + cursor + propose_zone + manifest_etag,
+  with cursor-advance, `ContractDrift` / `CursorExpired` detection) is now a core value
+  object, not MCP-internal state. `MCP::Session` is now an alias to it.
+- **`Store#session(role:)`** — returns a `Textus::Session` for Ruby embedders; the
+  documented Ruby agent loop uses it instead of hand-tracking `since:`.
+
 ## 0.35.2 — 2026-05-31 — Evaluation field rename + Container doc fix (internal)
 
 No `textus/3` wire-format change; no manifest-schema change; no library behavior

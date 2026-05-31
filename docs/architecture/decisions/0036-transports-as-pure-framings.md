@@ -1,7 +1,7 @@
 # ADR 0036 — Transports are pure framings: one verb vocabulary, one session, lifted to core
 
 **Date:** 2026-05-31
-**Status:** Proposed — targets 0.36.0 (**breaking**: MCP tool names change)
+**Status:** Accepted — ships 0.36.0 (**breaking**: MCP tool names change)
 **Refines:** [ADR 0029](./0029-concept-vocabulary.md) (one canon term per concept), [ADR 0033](./0033-complete-primitives-and-vocabulary.md) (the complete primitive/verb set), [ADR 0027](./0027-hook-signature-and-mcp-policy.md) (MCP policy), [ADR 0015](./0015-agent-gate-mcp.md) (the agent gate).
 **Touches:** [ADR 0021](./0021-session-and-module-use-cases.md) / [ADR 0022](./0022-container-call-dispatcher.md) — the per-call `Session` was replaced by `RoleScope`; the name `Textus::Session` is reclaimed here for the *agent* session (cursor + orientation), a distinct concept.
 
@@ -151,19 +151,14 @@ framings over the core. They differ in transport mechanism only.**
   inverts the dependency (core depending on a transport); the session is a protocol
   concept and belongs in core.
 
-## Open questions (for resolution before merge)
+## Resolutions (accepted)
 
-- **Q1 — concurrent agents under one role/checkout.** The `.textus/.state/cursor.<role>`
-  file assumes a single writer per role. Two agent loops sharing a checkout under the same
-  role would race the cursor. Proposed: **document single-writer as the supported model**;
-  multi-agent stores already separate by role, and the file is a cache (a stale read costs
-  a re-emitted delta, not correctness). Add a lock only if a concrete multi-writer case
-  appears.
-- **Q2 — deprecation shim for the old MCP names?** A one-release alias layer
-  (`tick`→`pulse`, etc.) would soften the break for external `.mcp.json` consumers.
-  Proposed: **no shim** — the gem is pre-1.0, the textus/3 wire is unchanged, agents
-  rediscover tools dynamically, and a shim re-introduces exactly the dual vocabulary this
-  ADR removes. Note the rename prominently in `CHANGELOG.md`.
-- **Q3 — name collision with the retired per-call `Session`.** [ADR 0021](./0021-session-and-module-use-cases.md)'s
-  `Session` is gone (→ `RoleScope`, ADR 0022), so `Textus::Session` is free. Confirm no
-  lingering references before reclaiming the name.
+- **Q1 — concurrent writers: single-writer per role is the supported model.** The cursor
+  file is a convenience cache; a stale read costs a re-emitted delta, not correctness. No
+  lock was added. Multi-agent setups already separate by role.
+- **Q2 — deprecation shim: NO.** The gem is pre-1.0, the `textus/3` wire is unchanged,
+  and agents rediscover tools dynamically via `tools/list`. A shim would re-introduce the
+  dual vocabulary this ADR removes. The rename is documented in `CHANGELOG.md`.
+- **Q3 — Session name collision: resolved.** The retired per-call `Session` (ADR 0021,
+  superseded by `RoleScope`, ADR 0022) left `Textus::Session` free. It was reclaimed for
+  the agent session. `MCP::Session` is now an alias to it.
