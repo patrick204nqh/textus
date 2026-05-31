@@ -13,7 +13,13 @@ RSpec.describe "documentation links" do
   end
 
   md_files.each do |file|
-    content = File.read(file).gsub(/`[^`]+`/, "``") # blank out inline code spans to avoid false-positive ]( hits
+    # Strip code so we don't scan ]( inside examples. Fenced blocks go first
+    # (whole-block), THEN inline spans — and inline matching must NOT cross
+    # newlines (`[^`\n]`), or backtick-dense files pair backticks across lines
+    # and silently swallow real links between them.
+    content = File.read(file)
+                  .gsub(/^[ \t]*```.*?^[ \t]*```/m, "") # fenced code blocks
+                  .gsub(/`[^`\n]*`/, "``")              # inline code spans (single line)
     targets = content.scan(/\]\(([^)]+)\)/).flatten
     rel = Pathname.new(file).relative_path_from(DOCS_REPO_ROOT).to_s # rubocop:disable RSpec/LeakyLocalVariable
 

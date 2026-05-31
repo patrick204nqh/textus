@@ -1003,7 +1003,7 @@ The reference Ruby gem follows semver independently and speaks `textus/3`.
 
 Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable zones, and its propose zone. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
 
-For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/agents-mcp.md`](docs/agents-mcp.md).
+For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md).
 
 ## 12. Conformance fixtures
 
