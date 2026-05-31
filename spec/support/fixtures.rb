@@ -33,6 +33,62 @@ module TextusSpecHelpers
     Textus::Store.new(textus_dir)
   end
 
+  # Preset: a single canon zone "working" holding one leaf entry. The most
+  # common read/write shape. Override `kind_zone:` for quarantine/queue/derived.
+  #
+  #   let(:store) { minimal_store(root) }                     # working.foo leaf
+  #   let(:store) { minimal_store(root, key: "working.doc",   # custom key/path
+  #                                     path: "working/doc.md") }
+  def minimal_store(root, key: "working.foo", path: "working/foo.md", zone: "working", kind_zone: "canon")
+    store_from_manifest(root, zones: [zone], manifest: <<~YAML)
+      version: textus/3
+      zones:
+        - { name: #{zone}, kind: #{kind_zone} }
+      entries:
+        - { key: #{key}, path: #{path}, zone: #{zone}, kind: leaf }
+    YAML
+  end
+
+  # Preset: a quarantine "working" zone + a canon "identity" zone, each with
+  # one leaf. The standard write-path shape (untrusted intake in quarantine,
+  # owned content in canon). Used by put/delete/mv/accept/reject specs.
+  def quarantine_store(root)
+    store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML)
+      version: textus/3
+      zones:
+        - { name: working, kind: quarantine }
+        - { name: identity, kind: canon }
+      entries:
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf }
+        - { key: identity.bar, path: identity/bar.md, zone: identity, kind: leaf }
+    YAML
+  end
+
+  # Preset: a quarantine "working" zone with one intake entry wired to a
+  # `test_intake` handler, plus a fetch rule. Pass the handler's hook body and
+  # the rule's ttl / on_stale. Writes the hook into the store's hooks/ dir.
+  def intake_store(root, intake_body:, ttl: "1h", on_stale: "warn", key: "working.doc", path: "working/doc.md")
+    store_from_manifest(
+      root,
+      zones: %w[working],
+      files: { "hooks/test_intake.rb" => intake_body },
+      manifest: <<~YAML,
+        version: textus/3
+        zones:
+          - { name: working, kind: quarantine }
+        entries:
+          - key: #{key}
+            kind: intake
+            path: #{path}
+            zone: working
+            intake: { handler: test_intake }
+        rules:
+          - match: #{key}
+            fetch: { ttl: #{ttl}, on_stale: #{on_stale} }
+      YAML
+    )
+  end
+
   # Builds a Textus::Call value for tests. Callers pass the role (and
   # optionally correlation_id, dry_run) — collaborators come from the
   # Store/Container, not from Call.
