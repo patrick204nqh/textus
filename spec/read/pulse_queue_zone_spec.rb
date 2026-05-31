@@ -26,7 +26,7 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
   end
 
   it "returns [] cleanly when no queue zone is declared" do
-    s = store_from_manifest(File.join(Dir.mktmpdir, ".textus"), zones: %w[knowledge], manifest: <<~YAML)
+    s = store_from_manifest(File.join(tmp, "no-queue", ".textus"), zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       roles: [{ name: human, can: [author] }]
       zones: [{ name: knowledge, kind: canon }]
