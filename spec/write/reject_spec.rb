@@ -35,7 +35,7 @@ RSpec.describe Textus::Write::Reject do
 
   it "rejects non-authority callers with guard_failed naming the predicate" do
     expect { store.as("agent").reject("review.draft") }
-      .to fail_guard_with("author_signed")
+      .to fail_guard_with("author_held")
   end
 
   it "rejects entries that are not in a proposal zone" do

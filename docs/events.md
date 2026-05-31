@@ -147,6 +147,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ### `textus reject PENDING_KEY --as=human`
 
 ```
+  ┃ guard: actor must hold `author` (author_held)        ── ABORT if no
   ┃ require zone == pending                ── ABORT if no
   ┃ require _meta.proposal block           ── ABORT if no
   ┃ delete the pending file
@@ -189,8 +190,9 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 ### `textus accept PENDING_KEY --as=human`
 
 ```
-  ┃ role gate: must be "human"             ── ABORT if no
+  ┃ guard: actor must hold `author` (author_held)        ── ABORT if no
   ┃ read pending entry frontmatter
+  ┃ guard: target_key must resolve to a canon zone (target_is_canon) ── ABORT if no
   ┃ apply proposal.action to proposal.target_key
   ┃   └─► triggers :entry_put or :entry_deleted pubsub for the target
   ┃ delete pending entry

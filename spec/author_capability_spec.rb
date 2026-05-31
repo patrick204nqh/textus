@@ -32,10 +32,10 @@ RSpec.describe "author capability (ADR 0033)" do
       .to raise_error(Textus::BadManifest, /unknown capability 'accept'/)
   end
 
-  it "fails accept/reject with author_signed when the role lacks `author`" do
+  it "fails accept/reject with author_held when the role lacks `author`" do
     store.as("agent").put("proposals.notes.p1",
                           meta: { "name" => "p1", "proposal" => { "target_key" => "knowledge.notes.p1", "action" => "put" } },
                           body: "please add\n")
-    expect { store.as("agent").accept("proposals.notes.p1") }.to fail_guard_with("author_signed")
+    expect { store.as("agent").accept("proposals.notes.p1") }.to fail_guard_with("author_held")
   end
 end

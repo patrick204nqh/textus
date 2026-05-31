@@ -2,8 +2,8 @@ require "spec_helper"
 
 RSpec.describe Textus::Domain::Policy::Predicates::Registry do
   it "builds a parameterless predicate by name" do
-    pred = described_class.build("author_signed", schemas: nil)
-    expect(pred.name).to eq("author_signed")
+    pred = described_class.build("author_held", schemas: nil)
+    expect(pred.name).to eq("author_held")
   end
 
   it "builds a parameterized predicate from a {name => params} hash" do

@@ -52,7 +52,7 @@ RSpec.describe Textus::Write::Accept do
 
       expect { store.as("proposer").accept("review.foo") }
         .to raise_error(Textus::GuardFailed) do |e|
-          expect(e.details["failed"].map { |f| f["predicate"] }).to include("author_signed")
+          expect(e.details["failed"].map { |f| f["predicate"] }).to include("author_held")
           expect(e.message).to match(/held by: owner/)
         end
     end

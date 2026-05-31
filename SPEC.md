@@ -51,6 +51,7 @@
 - [16. Migrating from textus/2](#16-migrating-from-textus2)
   - [16.1 Breaking changes in 0.31.0 (capability-based roles)](#161-breaking-changes-in-0310-capability-based-roles)
   - [16.2 Breaking changes in 0.33.0 (workspace/keep + Setup-1 scaffold)](#162-breaking-changes-in-0330-workspacekeep--setup-1-scaffold)
+  - [16.3 Breaking changes in 0.35.0 (proposal target-canon + `author_held`)](#163-breaking-changes-in-0350-proposal-target-canon--author_held)
 
 ---
 
@@ -374,8 +375,8 @@ concept and never appear on the wire.
 
 Every write transition is authorized by **one Guard** (ADR 0031): an ordered
 list of predicates over a single evaluation context. Predicate #0 of every write
-guard is `zone_writable_by` (the capability gate above); the `author_signed`
-predicate keys on the `author` capability and is named `author_signed` (it passes
+guard is `zone_writable_by` (the capability gate above); the `author_held`
+predicate keys on the `author` capability and is named `author_held` (it passes
 when the acting role holds `author`). See §5.11 for composing extra predicates via
 `rules[].guard:`.
 
@@ -535,7 +536,7 @@ frontmatter:
 Proposed body content.
 ```
 
-`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content.
+`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content. A proposal's `target_key` MUST resolve to a `canon` zone; `accept` refuses any other target (`target_is_canon`, ADR 0035).
 
 `textus accept <proposal-key>` is a **transition** (not a capability) that requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. The `reject` transition likewise requires `author`. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept or reject.
 
@@ -710,7 +711,7 @@ rules:
 
   - match: proposals.**
     guard:
-      accept: [schema_valid, author_signed]
+      accept: [schema_valid, author_held]
 ```
 
 **Slots (all optional within a block):**
@@ -719,7 +720,7 @@ rules:
 |---|---|---|
 | `fetch` | `{ ttl, on_stale, sync_budget_ms, fetch_timeout_seconds }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
-| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `delete`, `mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_signed`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
+| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `delete`, `mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
 | `retention` | `{ expire_after:, archive_after: }` | Pruning policy for matched leaves. Duration strings: `30s`, `90m`, `12h`, `30d`, or bare integer seconds. `textus retain --as=ROLE` sweeps matched leaves: `expire_after` is checked first, so a leaf older than `expire_after` is deleted (and audited); otherwise a leaf older than `archive_after` is copied to `<store>/archive/<relative-path>` and then deleted. Age is measured from the leaf file's modification time. The `--as` role must be allowed to write the matched zone. |
 
 Both retention windows are optional, and `expire_after` is evaluated before
@@ -981,7 +982,7 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `intake_handler_allowlist`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_allowlist`, `fetch_locks`, `proposal_targets`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 
@@ -1168,6 +1169,25 @@ A manifest still declaring `write_policy:` or a role `kind:` is rejected at load
 **Clarification (not a breaking change):** `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. This has always been true; 0.33.0 makes it explicit by removing `accept` from the capability vocabulary.
 
 A manifest declaring `kind: origin` or capability `accept` (in a `can:` list) is rejected at load.
+
+### 16.3 Breaking changes in 0.35.0 (proposal target-canon + `author_held`)
+
+0.35.0 constrains a proposal's target to a `canon` zone and renames the anchor-gate predicate. No `textus/3` wire change; no manifest-schema change.
+
+**Renames (predicate vocabulary):**
+
+| Removed / renamed (≤ 0.34) | 0.35.0 form |
+|---|---|
+| Promotion predicate `author_signed` | `author_held` |
+
+**New in 0.35.0:**
+
+| Addition | Detail |
+|---|---|
+| Floor predicate `target_is_canon` | On the `accept` base guard. A proposal's `target_key` MUST resolve to a `canon` zone; `accept` refuses any other target with `guard_failed` naming `target_is_canon`. Floor-only — not relaxable via `rules[].guard`. |
+| `doctor` check `proposal_targets` | Warns on queued proposals whose `target_key` is non-canon (`proposal.target_not_canon`) or unresolvable (`proposal.target_unresolved`). |
+
+A `rules[].guard` block referencing the predicate by its old name `author_signed` is rejected at load (unknown predicate).
 
 ---
 

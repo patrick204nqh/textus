@@ -9,10 +9,10 @@ module Textus
         # Write::AuthorityGate so accept/reject and rules[].guard share one
         # implementation. No bespoke #error — failures accumulate into
         # GuardFailed (ADR 0031).
-        class AuthorSigned
+        class AuthorHeld
           attr_reader :reason
 
-          def name = "author_signed"
+          def name = "author_held"
 
           def call(eval)
             holders = eval.manifest.policy.roles_with_capability("author")

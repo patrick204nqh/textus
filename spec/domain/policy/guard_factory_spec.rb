@@ -23,8 +23,8 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
         guard: { accept: [{ fresh_within: "1h" }] }
     RULES
     names = factory.for(:accept, "working.notes").predicates.map(&:name)
-    expect(names.first).to eq("author_signed") # base for :accept
-    expect(names).to include("fresh_within")   # composed from rules
+    expect(names.first).to eq("author_held") # base for :accept
+    expect(names).to include("fresh_within") # composed from rules
   end
 
   it "returns base-only guard when no rule matches" do
@@ -36,9 +36,9 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
   it "dedupes by name when base and composed overlap (first wins)" do
     factory = factory_for(<<~RULES)
       - match: "working.**"
-        guard: { accept: [author_signed, schema_valid] }
+        guard: { accept: [author_held, schema_valid] }
     RULES
     names = factory.for(:accept, "working.notes").predicates.map(&:name)
-    expect(names).to eq(%w[author_signed schema_valid])
+    expect(names).to eq(%w[author_held target_is_canon schema_valid])
   end
 end

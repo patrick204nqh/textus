@@ -24,6 +24,7 @@ module Textus
       Check::RuleAmbiguity,
       Check::HandlerAllowlist,
       Check::FetchLocks,
+      Check::ProposalTargets,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

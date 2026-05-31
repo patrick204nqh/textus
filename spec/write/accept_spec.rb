@@ -47,7 +47,7 @@ RSpec.describe Textus::Write::Accept do
     )
 
     expect { store.as("agent").accept("review.foo") }
-      .to fail_guard_with("author_signed")
+      .to fail_guard_with("author_held")
   end
 
   it "fires :accepted event with correlation_id" do
@@ -181,7 +181,7 @@ RSpec.describe Textus::Write::Accept do
       end
     end
 
-    context "with an author_signed guard" do
+    context "with an author_held guard" do
       let(:store) do
         store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
           version: textus/3
@@ -194,7 +194,7 @@ RSpec.describe Textus::Write::Accept do
           rules:
             - match: "working.network.org.**"
               guard:
-                accept: [author_signed]
+                accept: [author_held]
         YAML
       end
 
