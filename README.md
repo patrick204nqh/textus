@@ -158,7 +158,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md). Write verbs require `--as=<role>` (role resolution: `--as` → `TEXTUS_ROLE` env → `.textus/role` file → default `human`). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block).
 
 - Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
-- Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with a tutorial expansion in [`docs/zones.md`](docs/zones.md).
+- Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
 
 `textus boot` prints the same information for the current store: zones, entry families with schemas, registered hooks, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 

@@ -5,7 +5,7 @@
 
 How to extend textus with Ruby hooks: when each event fires, what arguments it receives, how to define one, and how to test it.
 
-This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](./zones.md).
+This is the hook-author's guide. For the normative event table see [`../SPEC.md` §5.10](../SPEC.md). For configuring zones and entries see [`./zones.md`](reference/zones.md).
 
 **New to hooks?** Read §1 — the RPC-vs-pub-sub model is the whole mental model in ~20 lines. The rest is reference you can skim on demand.
 
@@ -462,7 +462,7 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 
 ## Where to go from here
 
-- [`./zones.md`](./zones.md) — the manifest side: declaring which entries trigger which hooks
+- [`./zones.md`](reference/zones.md) — the manifest side: declaring which entries trigger which hooks
 - [`../SPEC.md` §5.4, §5.10](../SPEC.md) — the normative `:resolve_intake` and event contracts
 - [`architecture/README.md`](architecture/README.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
 - [`../examples/project/.textus/hooks/`](../examples/project/.textus/hooks/) — a worked `:transform_rows` hook that reshapes projection rows for a template
