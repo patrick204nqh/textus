@@ -28,4 +28,21 @@ RSpec.describe Textus::Role do
     expect { Textus::Role.resolve(flag: "AI!", env: {}, root: root) }
       .to raise_error(Textus::InvalidRole)
   end
+
+  it "falls back to the supplied default when no flag/env/file resolves" do
+    Dir.mktmpdir do |dir|
+      expect(Textus::Role.resolve(flag: nil, env: {}, root: dir, default: "agent")).to eq("agent")
+    end
+  end
+
+  it "prefers env over the supplied default" do
+    Dir.mktmpdir do |dir|
+      expect(Textus::Role.resolve(flag: nil, env: { "TEXTUS_ROLE" => "human" }, root: dir, default: "agent"))
+        .to eq("human")
+    end
+  end
+
+  it "exposes the MCP transport default constant" do
+    expect(Textus::Role::AGENT).to eq("agent")
+  end
 end
