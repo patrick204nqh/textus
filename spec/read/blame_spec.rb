@@ -1,14 +1,15 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
-require "json"
 require "open3"
 
 RSpec.describe Textus::Read::Blame do
-  def build_store(repo_root)
-    textus = File.join(repo_root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
+  include_context "textus_store_fixture"
+
+  # `root` is the .textus dir; `tmp` is its parent (the logical "repo root").
+  # For tests that need isolated git repos we create subdirs under `tmp`.
+
+  def make_store_at(textus_dir)
+    FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
+    File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: working, kind: canon }
@@ -16,11 +17,11 @@ RSpec.describe Textus::Read::Blame do
         - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
     YAML
-    Textus::Store.new(textus)
+    Textus::Store.new(textus_dir)
   end
 
-  def write_doc(repo_root, body)
-    path = File.join(repo_root, ".textus", "zones", "working", "doc.md")
+  def write_doc(textus_dir, body)
+    path = File.join(textus_dir, "zones", "working", "doc.md")
     File.write(path, "---\nname: doc\n---\n#{body}\n")
     path
   end
@@ -37,55 +38,62 @@ RSpec.describe Textus::Read::Blame do
   end
 
   it "returns audit rows joined with git commit metadata when path is tracked" do
-    Dir.mktmpdir do |repo|
-      git("init", "-q", "-b", "main", chdir: repo)
-      git("config", "user.email", "t@example.com", chdir: repo)
-      git("config", "user.name",  "T Tester",      chdir: repo)
-      git("config", "commit.gpgsign", "false", chdir: repo)
+    repo = File.join(tmp, "tracked")
+    FileUtils.mkdir_p(repo)
+    textus_dir = File.join(repo, ".textus")
 
-      store = build_store(repo)
-      write_doc(repo, "v1")
-      git("add", "-A", chdir: repo)
-      git("commit", "-q", "-m", "initial doc", chdir: repo)
+    git("init", "-q", "-b", "main", chdir: repo)
+    git("config", "user.email", "t@example.com", chdir: repo)
+    git("config", "user.name",  "T Tester",      chdir: repo)
+    git("config", "commit.gpgsign", "false", chdir: repo)
 
-      write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                           "verb" => "put", "key" => "working.doc" })
+    store = make_store_at(textus_dir)
+    write_doc(textus_dir, "v1")
+    git("add", "-A", chdir: repo)
+    git("commit", "-q", "-m", "initial doc", chdir: repo)
 
-      ops = store.as("human")
-      result = ops.blame(key: "working.doc")
-      expect(result.length).to eq(1)
-      row = result.first
-      expect(row["git"]).to be_a(Hash)
-      expect(row["git"]).to include("sha", "author", "date", "subject")
-      expect(row["git"]["subject"]).to eq("initial doc")
-    end
+    write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
+                         "verb" => "put", "key" => "working.doc" })
+
+    ops = store.as("human")
+    result = ops.blame(key: "working.doc")
+    expect(result.length).to eq(1)
+    row = result.first
+    expect(row["git"]).to be_a(Hash)
+    expect(row["git"]).to include("sha", "author", "date", "subject")
+    expect(row["git"]["subject"]).to eq("initial doc")
   end
 
   it "returns audit rows with git=>nil when not in a git repo" do
-    Dir.mktmpdir do |repo|
-      store = build_store(repo)
-      write_doc(repo, "v1")
-      write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                           "verb" => "put", "key" => "working.doc" })
+    repo = File.join(tmp, "no_git")
+    textus_dir = File.join(repo, ".textus")
+    FileUtils.mkdir_p(textus_dir)
 
-      ops = store.as("human")
-      result = ops.blame(key: "working.doc")
-      expect(result.length).to eq(1)
-      expect(result.first["git"]).to be_nil
-    end
+    store = make_store_at(textus_dir)
+    write_doc(textus_dir, "v1")
+    write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
+                         "verb" => "put", "key" => "working.doc" })
+
+    ops = store.as("human")
+    result = ops.blame(key: "working.doc")
+    expect(result.length).to eq(1)
+    expect(result.first["git"]).to be_nil
   end
 
   it "returns audit rows with git=>nil when file is untracked" do
-    Dir.mktmpdir do |repo|
-      git("init", "-q", "-b", "main", chdir: repo)
-      store = build_store(repo)
-      write_doc(repo, "v1") # never committed
-      write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                           "verb" => "put", "key" => "working.doc" })
+    repo = File.join(tmp, "untracked")
+    FileUtils.mkdir_p(repo)
+    textus_dir = File.join(repo, ".textus")
 
-      ops = store.as("human")
-      result = ops.blame(key: "working.doc")
-      expect(result.first["git"]).to be_nil
-    end
+    git("init", "-q", "-b", "main", chdir: repo)
+
+    store = make_store_at(textus_dir)
+    write_doc(textus_dir, "v1") # never committed
+    write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
+                         "verb" => "put", "key" => "working.doc" })
+
+    ops = store.as("human")
+    result = ops.blame(key: "working.doc")
+    expect(result.first["git"]).to be_nil
   end
 end

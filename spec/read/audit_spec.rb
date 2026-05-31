@@ -1,30 +1,27 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
-require "json"
 require "time"
 
 RSpec.describe Textus::Read::Audit do
-  def build_store(root)
-    textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus, "zones", "identity"))
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: canon }
-        - { name: identity,   kind: canon }
-      entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+  include_context "textus_store_fixture"
 
-        - { key: identity.note,  path: identity/note.md,  zone: identity, kind: leaf}
+  let!(:store) do
+    store_from_manifest(root,
+                        zones: %w[working identity],
+                        manifest: <<~YAML)
+                          version: textus/3
+                          zones:
+                            - { name: working, kind: canon }
+                            - { name: identity,   kind: canon }
+                          entries:
+                            - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
 
-    YAML
-    Textus::Store.new(textus)
+                            - { key: identity.note,  path: identity/note.md,  zone: identity, kind: leaf}
+
+                        YAML
   end
 
-  def write_log(root, rows)
-    File.open(File.join(root, ".textus", "audit.log"), "w") do |f|
+  def write_log(rows)
+    File.open(File.join(root, "audit.log"), "w") do |f|
       rows.each { |r| f.puts(JSON.generate(r)) }
     end
   end
@@ -46,83 +43,65 @@ RSpec.describe Textus::Read::Audit do
   end
 
   it "returns [] when audit.log does not exist" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      ops = store.as("human")
-      expect(ops.audit).to eq([])
-    end
+    ops = store.as("human")
+    expect(ops.audit).to eq([])
   end
 
   it "filters audit rows by key" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      write_log(root, [
-                  { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
-                  { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
-                ])
-      ops = store.as("human")
-      rows = ops.audit(key: "working.doc")
-      expect(rows.length).to eq(2)
-      expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
-    end
+    write_log([
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
+                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
+              ])
+    ops = store.as("human")
+    rows = ops.audit(key: "working.doc")
+    expect(rows.length).to eq(2)
+    expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
   end
 
   it "filters by correlation_id (nested under extras)" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      cid = "abc-123"
-      write_log(root, [
-                  { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc",
-                    "extras" => { "correlation_id" => cid } },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note",
-                    "extras" => { "correlation_id" => "other" } },
-                  { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
-                    "extras" => { "correlation_id" => cid } },
-                ])
-      ops = store.as("human")
-      rows = ops.audit(correlation_id: cid)
-      expect(rows.length).to eq(2)
-      expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
-    end
+    cid = "abc-123"
+    write_log([
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc",
+                  "extras" => { "correlation_id" => cid } },
+                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note",
+                  "extras" => { "correlation_id" => "other" } },
+                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
+                  "extras" => { "correlation_id" => cid } },
+              ])
+    ops = store.as("human")
+    rows = ops.audit(correlation_id: cid)
+    expect(rows.length).to eq(2)
+    expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
   end
 
   it "filters by zone via manifest lookup" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      write_log(root, [
-                  { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
-                ])
-      ops = store.as("human")
-      rows = ops.audit(zone: "identity")
-      expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
-    end
+    write_log([
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
+              ])
+    ops = store.as("human")
+    rows = ops.audit(zone: "identity")
+    expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
   end
 
   it "filters by since" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      write_log(root, [
-                  { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                  { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                ])
-      ops = store.as("human")
-      rows = ops.audit(since: Time.parse("2026-05-01T00:00:00Z"))
-      expect(rows.map { |r| r["ts"] }).to eq(["2026-05-02T00:00:00Z"])
-    end
+    write_log([
+                { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+              ])
+    ops = store.as("human")
+    rows = ops.audit(since: Time.parse("2026-05-01T00:00:00Z"))
+    expect(rows.map { |r| r["ts"] }).to eq(["2026-05-02T00:00:00Z"])
   end
 
   it "honors limit" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      rows = (1..5).map do |i|
-        { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" }
-      end
-      write_log(root, rows)
-      ops = store.as("human")
-      out = ops.audit(limit: 2)
-      expect(out.length).to eq(2)
+    rows = (1..5).map do |i|
+      { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" }
     end
+    write_log(rows)
+    ops = store.as("human")
+    out = ops.audit(limit: 2)
+    expect(out.length).to eq(2)
   end
 end

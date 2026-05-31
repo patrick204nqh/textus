@@ -1,35 +1,35 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Read::Uid do
-  def build_store(root)
-    textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: canon }
-      entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+  include_context "textus_store_fixture"
 
-    YAML
-    File.write(File.join(textus, "zones", "working", "doc.md"), <<~MD)
-      ---
-      uid: "abc123def456"
-      name: doc
-      ---
-      body
-    MD
-    Textus::Store.new(textus)
+  let(:store) do
+    store_from_manifest(
+      root,
+      zones: %w[working],
+      files: {
+        "zones/working/doc.md" => <<~MD,
+          ---
+          uid: "abc123def456"
+          name: doc
+          ---
+          body
+        MD
+      },
+      manifest: <<~YAML,
+        version: textus/3
+        zones:
+          - { name: working, kind: canon }
+        entries:
+          - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+
+      YAML
+    )
   end
 
   it "returns the uid declared in the entry frontmatter" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      ops = store.as("human")
-      result = ops.uid("working.doc")
-      expect(result).to eq("abc123def456")
-    end
+    ops = store.as("human")
+    result = ops.uid("working.doc")
+    expect(result).to eq("abc123def456")
   end
 end
