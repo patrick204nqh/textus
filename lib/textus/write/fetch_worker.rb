@@ -6,7 +6,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :fetch
-      summary  "Run an intake fetch for one key. Returns the fetch Outcome."
+      summary  "Run an intake fetch for one key."
       surfaces :cli, :ruby, :mcp
       arg :key, String, required: true, positional: true
       response { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }

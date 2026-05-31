@@ -7,7 +7,7 @@ module Textus
       summary  "Create or update an entry. Schema-validated. Returns {uid, etag}."
       surfaces :cli, :ruby, :mcp
       arg :key,     String, required: true, positional: true
-      arg :meta,    Hash
+      arg :meta,    Hash, required: true
       arg :body,    String
       arg :content, Hash
       arg :if_etag, String
