@@ -60,4 +60,4 @@ the original reasoning intact. The history is the point.
 | [0032](./0032-drop-read-policy.md) | Drop `read_policy`: gate writes, not reads | Accepted (folded into 0031, 0.32.0) |
 | [0033](./0033-complete-primitives-and-vocabulary.md) | Complete the primitive set (workspace + keep) + clarify vocabulary | Accepted (ships 0.33.0) |
 | [0034](./0034-unify-lane-vocabulary.md) | Unify the zone-kind/capability bijection into a single Lane table | Accepted (ships 0.34.0) |
-| [0035](./0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit | Proposed |
+| [0035](./0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit | Accepted (ships 0.35.0) |

@@ -1,7 +1,7 @@
 # ADR 0035 — Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit
 
 **Date:** 2026-05-31
-**Status:** Proposed
+**Status:** Accepted — ships 0.35.0
 **Refines:** [ADR 0028](./0028-coordination-planes.md) (trust flows uphill through guarded transitions), [ADR 0030](./0030-capability-based-roles.md) (single trust anchor), [ADR 0031](./0031-unified-guard.md) (the unified Guard floor), [ADR 0033](./0033-complete-primitives-and-vocabulary.md) (`accept` is a transition; `author` is the capability). Builds on the in-flight [ADR 0034](./0034-unify-lane-vocabulary.md) (Lane vocabulary).
 
 ## Context
@@ -93,12 +93,13 @@ target.
   semantics and can't account for later manifest edits. Keep accept-time as the floor;
   propose-time/doctor are optional niceties.
 
-## Open questions
+## Resolutions (accepted)
 
-- Should `target_is_canon` permit a proposal targeting a `workspace` **owned by the acting
-  role** (a self-promotion path)? Lean **no** — workspace is `keep`-direct; there is no reason
-  to route it through the queue.
-- Should `doctor` gain a check that flags pending proposals whose `target_key` is missing or
-  non-canon (junk in the queue)?
-- Predicate placement: base-floor only, or also a composable `rules[].guard` predicate so a
-  store could *relax* it? Default is floor-only (no relaxation); revisit if a real need appears.
+- **Q1 — workspace self-promote: NO.** `target_is_canon` permits only `:canon`; a proposal
+  targeting a workspace (even the actor's own) is refused. Workspace is `keep`-direct.
+- **Q2 — doctor check: YES.** `doctor` gains `Check::ProposalTargets`, flagging queued
+  proposals whose `target_key` is non-canon (`proposal.target_not_canon`, warning) or
+  unresolvable (`proposal.target_unresolved`, warning).
+- **Q3 — relaxable: NO.** `target_is_canon` is floor-only (`BaseGuards::BASE[:accept]`); there
+  is no `rules[].guard` path to remove a floor predicate (ADR 0031).
+- **Rename: YES.** `author_signed` → `author_held` (names capability possession, not a gesture).
