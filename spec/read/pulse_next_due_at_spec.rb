@@ -3,7 +3,6 @@ require "time"
 
 RSpec.describe "Pulse next_due_at" do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   before do
     %w[zones/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }

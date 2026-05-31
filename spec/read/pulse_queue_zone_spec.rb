@@ -2,7 +2,6 @@ require "spec_helper"
 
 RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0034 / D1)" do
   include_context "textus_store_fixture"
-  include TextusSpecHelpers
 
   let(:store) do
     store_from_manifest(root, zones: %w[knowledge proposals], manifest: <<~YAML)
