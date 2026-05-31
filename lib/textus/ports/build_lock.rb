@@ -5,7 +5,6 @@ require "time"
 module Textus
   module Ports
     class BuildLock
-      LOCK_FILENAME = ".build.lock"
       MAX_HOLDER_BYTES = 512
 
       def self.with(root:, &)
@@ -13,7 +12,7 @@ module Textus
       end
 
       def initialize(root:)
-        @path = File.join(root, LOCK_FILENAME)
+        @path = Textus::Layout.build_lock(root)
         @file = nil
       end
 

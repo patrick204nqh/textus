@@ -7,7 +7,7 @@ module Textus
         def initialize(root:, key:)
           @root = root
           @key  = key
-          @path = File.join(root, ".locks", "#{safe_key}.lock")
+          @path = File.join(Textus::Layout.locks(root), "#{safe_key}.lock")
           @file = nil
         end
 
