@@ -1,6 +1,14 @@
 module Textus
   module Write
     class FetchAll
+      extend Textus::Contract::DSL
+
+      verb     :fetch_all
+      summary  "Fetch all stale intake entries, optionally scoped by zone/prefix."
+      surfaces :cli, :ruby, :mcp
+      arg :prefix, String
+      arg :zone,   String
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

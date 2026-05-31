@@ -6,6 +6,14 @@ module Textus
     # For interactive reads that want fetch-on-stale, use
     # `Read::GetOrFetch`, which composes this with the orchestrator.
     class Get
+      extend Textus::Contract::DSL
+
+      verb     :get
+      summary  "Read one entry. Returns the envelope (uid, etag, _meta, body, freshness)."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true
+      response(&:to_h_for_wire)
+
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
         @call       = call

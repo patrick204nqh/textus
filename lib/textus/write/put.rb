@@ -1,6 +1,18 @@
 module Textus
   module Write
     class Put
+      extend Textus::Contract::DSL
+
+      verb     :put
+      summary  "Create or update an entry. Schema-validated. Returns {uid, etag}."
+      surfaces :cli, :ruby, :mcp
+      arg :key,     String, required: true, positional: true
+      arg :meta,    Hash
+      arg :body,    String
+      arg :content, Hash
+      arg :if_etag, String
+      response { |env| { "uid" => env.uid, "etag" => env.etag } }
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

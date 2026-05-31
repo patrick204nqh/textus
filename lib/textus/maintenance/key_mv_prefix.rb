@@ -3,6 +3,16 @@ module Textus
     # Bulk-rename every leaf key under `from_prefix` to `to_prefix`.
     # Calls Write::Mv directly for each entry — emits one audit row per file moved.
     class KeyMvPrefix
+      extend Textus::Contract::DSL
+
+      verb     :key_mv_prefix
+      summary  "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false."
+      surfaces :cli, :ruby, :mcp
+      arg :from_prefix, String, required: true
+      arg :to_prefix,   String, required: true
+      arg :dry_run,     :boolean
+      response(&:to_h)
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

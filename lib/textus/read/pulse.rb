@@ -7,6 +7,13 @@ module Textus
     # APIs; pulse is sugar with a stable envelope shape and a monotonic
     # cursor (seq).
     class Pulse
+      extend Textus::Contract::DSL
+
+      verb     :pulse
+      summary  "Delta since cursor. Returns {cursor, changed, stale, pending_review, doctor}."
+      surfaces :cli, :ruby, :mcp
+      arg :since, Integer, description: "audit seq to diff from; defaults to the session cursor"
+
       def initialize(container:, call:)
         @container  = container
         @call       = call

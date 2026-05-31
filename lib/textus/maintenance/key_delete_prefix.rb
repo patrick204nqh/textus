@@ -2,6 +2,15 @@ module Textus
   module Maintenance
     # Bulk-delete every leaf key under `prefix`.
     class KeyDeletePrefix
+      extend Textus::Contract::DSL
+
+      verb     :key_delete_prefix
+      summary  "Bulk-delete every leaf key under prefix."
+      surfaces :cli, :ruby, :mcp
+      arg :prefix,  String, required: true
+      arg :dry_run, :boolean
+      response(&:to_h)
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

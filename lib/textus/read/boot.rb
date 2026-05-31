@@ -5,6 +5,12 @@ module Textus
     # (container:, call:) entry point that Dispatcher::VERBS resolves to.
     # Boot is role-independent, so `call` is not consulted.
     class Boot
+      extend Textus::Contract::DSL
+
+      verb     :boot
+      summary  "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart."
+      surfaces :cli, :ruby, :mcp
+
       def initialize(container:, call:)
         @container = container
         @call      = call
