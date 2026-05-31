@@ -3,10 +3,9 @@ require "spec_helper"
 RSpec.describe Textus::Write::Delete do
   include_context "textus_store_fixture"
 
-  let(:store) { quarantine_store(root) }
+  let!(:store) { quarantine_store(root) }
 
   it "removes the entry file and fires :deleted with correlation_id" do
-    store # ensure zone dirs exist before writing seed file
     File.write(File.join(root, "zones", "working", "foo.md"), "---\nkey: working.foo\n---\nbody\n")
 
     events = []
@@ -21,7 +20,6 @@ RSpec.describe Textus::Write::Delete do
   end
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
-    store # ensure zone dirs exist before writing seed file
     File.write(File.join(root, "zones", "identity", "bar.md"), "---\nkey: identity.bar\n---\nbody\n")
 
     # identity is a canon zone (needs the 'author' capability); automation

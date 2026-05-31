@@ -64,10 +64,12 @@ module TextusSpecHelpers
     YAML
   end
 
-  # Preset: a quarantine "working" zone with one intake entry wired to a
+  # Preset: a "working" zone with one intake entry (key working.doc) wired to a
   # `test_intake` handler, plus a fetch rule. Pass the handler's hook body and
-  # the rule's ttl / on_stale. Writes the hook into the store's hooks/ dir.
-  def intake_store(root, intake_body:, ttl: "1h", on_stale: "warn", key: "working.doc", path: "working/doc.md")
+  # the rule's ttl / on_stale. Writes the hook into the store's hooks/ dir. The
+  # working zone defaults to quarantine; pass `kind_zone: "canon"` for
+  # owned-intake. For a different key/path, use store_from_manifest directly.
+  def intake_store(root, intake_body:, ttl: "1h", on_stale: "warn", kind_zone: "quarantine")
     store_from_manifest(
       root,
       zones: %w[working],
@@ -75,15 +77,15 @@ module TextusSpecHelpers
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: quarantine }
+          - { name: working, kind: #{kind_zone} }
         entries:
-          - key: #{key}
+          - key: working.doc
             kind: intake
-            path: #{path}
+            path: working/doc.md
             zone: working
             intake: { handler: test_intake }
         rules:
-          - match: #{key}
+          - match: working.doc
             fetch: { ttl: #{ttl}, on_stale: #{on_stale} }
       YAML
     )

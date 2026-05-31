@@ -22,28 +22,7 @@ RSpec.describe Textus::Read::GetOrFetch do
   end
 
   def build_store_with_intake(ttl:, on_stale:)
-    store_from_manifest(
-      root,
-      zones: %w[working],
-      files: { "hooks/test_intake.rb" => intake_body },
-      manifest: <<~YAML,
-        version: textus/3
-        zones:
-          - { name: working, kind: canon }
-        entries:
-          - key: working.doc
-            kind: intake
-            path: working/doc.md
-            zone: working
-            intake:
-              handler: test_intake
-        rules:
-          - match: working.doc
-            fetch:
-              ttl: "#{ttl}"
-              on_stale: #{on_stale}
-      YAML
-    )
+    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale, kind_zone: "canon")
   end
 
   def write_doc(last_fetched_at:)

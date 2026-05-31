@@ -46,7 +46,7 @@ RSpec::Matchers.define :have_audit_verb do |verb|
 
   match do |store|
     log = File.join(store.root, "audit.log")
-    return false unless File.exist?(log) && !File.empty?(log)
+    next false unless File.exist?(log) && !File.empty?(log)
 
     @row = JSON.parse(File.readlines(log).last)
     next false unless @row["verb"] == verb

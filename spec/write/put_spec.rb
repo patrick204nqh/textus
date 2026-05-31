@@ -3,17 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Write::Put do
   include_context "textus_store_fixture"
 
-  let(:store) do
-    store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: quarantine }
-        - { name: identity, kind: canon }
-      entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf }
-        - { key: identity.bar, path: identity/bar.md, zone: identity, kind: leaf }
-    YAML
-  end
+  let(:store) { quarantine_store(root) }
 
   it "writes the envelope when role has permission" do
     envelope = store.as("automation").put(
