@@ -151,7 +151,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
 - **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
-- **`textus doctor`.** 15 health checks across schemas, hooks, keys, sentinels, and the audit log.
+- **`textus doctor`.** Health checks across schemas, hooks, keys, sentinels, and the audit log.
 
 ## CLI and zones
 
@@ -225,7 +225,7 @@ See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop
 bundle exec rspec
 ```
 
-~920 examples; includes conformance fixtures A–I from SPEC §12.
+Includes conformance fixtures A–I from SPEC §12.
 
 ## Code quality
 
