@@ -31,7 +31,7 @@ flowchart LR
     agent -->|propose| proposals["proposals<br/>(queue)"]
     proposals -->|human accepts| knowledge
     automation(["automation"]) -->|fetch| feeds["feeds<br/>(quarantine)"]
-    automation -->|build| artifacts["artifacts<br/>(published)"]
+    automation -->|build| artifacts["artifacts<br/>(derived)"]
 ```
 
 *Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
