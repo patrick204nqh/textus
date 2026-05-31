@@ -1,7 +1,7 @@
 # textus documentation
 
 > **Explanation** · for everyone · **read when** you're not sure which doc you need
-> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.31)
+> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.37)
 
 The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides live here.
 
@@ -9,38 +9,42 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 | If you want to… | Read |
 |---|---|
-| See textus work end-to-end | [`../examples/project/`](../examples/project/) |
-| Wire textus into Claude Code / an MCP agent | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) |
-| Use textus as your project's context store | [`../examples/project/`](../examples/project/) |
+| Learn by doing | [`tutorials/`](tutorials/README.md) → [`../examples/project/`](../examples/project/) |
+| Understand the mental model | [`explanation/concepts.md`](explanation/concepts.md) |
+| Wire an agent via MCP | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) |
 
-## Guides (how-to)
+## How-to
 
 | Doc | What it does |
 |---|---|
-| [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | Talk to a store as an agent: quickstart, context store, boot → pulse loop |
-| [`how-to/writing-hooks.md`](how-to/writing-hooks.md) | Write and test Ruby hooks |
-| [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely (rename keys/zones, bulk delete) |
+| [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | Wire an agent: quickstart, context store, boot → pulse loop |
+| [`how-to/writing-hooks.md`](how-to/writing-hooks.md) | Define, wire, and test Ruby hooks |
+| [`how-to/configuring-zones.md`](how-to/configuring-zones.md) | Define zones, wire intake, set up derived entries |
+| [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely |
 
 ## Reference
 
 | Doc | What it documents |
 |---|---|
-| [`../SPEC.md`](../SPEC.md) | The `textus/3` wire protocol — the normative contract |
-| [`reference/zones.md`](reference/zones.md) | Zones, roles, entries, and data flow — the configuration model |
-| [`reference/conventions.md`](reference/conventions.md) | Idiomatic key naming, schema, and automation integration |
+| [`../SPEC.md`](../SPEC.md) | The `textus/3` wire protocol — normative |
+| [`reference/zones.md`](reference/zones.md) | Zone, role/capability, and entry semantics |
+| [`reference/events.md`](reference/events.md) | Event catalog + per-verb lifecycle timelines |
+| [`reference/mcp.md`](reference/mcp.md) | MCP tool catalog, errors, transports, plugin wiring |
+| [`reference/conventions.md`](reference/conventions.md) | Idiomatic `.textus/` tree shaping (integrator-facing) |
 
-## Internals (explanation)
+## Explanation
 
 | Doc | What it explains |
 |---|---|
-| [`architecture/README.md`](architecture/README.md) | How the Ruby implementation is laid out (layers, ports, paths) |
+| [`explanation/concepts.md`](explanation/concepts.md) | The textus mental model |
+| [`architecture/README.md`](architecture/README.md) | How the Ruby implementation is laid out |
 | [`architecture/decisions/`](architecture/decisions/) | ADRs — why each load-bearing decision was made |
 
 ## Doc conventions
 
 These rules keep the docs consistent and cheap to maintain. Follow them when adding or editing docs.
 
-1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide; new facts land in a reference doc; new rationale lands in an ADR.
+1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide; new facts land in a reference doc; new rationale lands in an ADR. Docs live under `docs/<genre>/` (`tutorials/ how-to/ reference/ explanation/`); the folder *is* the genre tag. **Exception:** the ADR sub-tree stays at `docs/architecture/` rather than `docs/explanation/architecture/` — it is self-contained Explanation with dense internal cross-links, and relocating it buys nothing.
 2. **Header contract.** Every doc starts with its H1 followed by two header lines:
    ```markdown
    > **<Genre>** · for <audience> · **read when** <trigger>
