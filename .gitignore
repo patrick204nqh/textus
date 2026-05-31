@@ -11,5 +11,4 @@
 .ruby-lsp/
 docs/plans/
 .worktrees/
-.textus/.state/
-examples/*/.textus/.state/
+**/.textus/.run/
