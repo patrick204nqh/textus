@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 # Proves that IntakeCheck TTL comparison uses the injected clock port rather
 # than wall-clock Time.now. A fake clock is advanced to a deterministic

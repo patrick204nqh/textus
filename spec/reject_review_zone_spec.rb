@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 # Regression test for proposal-zone detection: store.reject must accept a
 # proposal in any zone that declares `kind: queue` (regardless of its name),

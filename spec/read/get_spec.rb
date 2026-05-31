@@ -1,60 +1,26 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Read::Get do
-  def build_store_no_intake(root)
-    textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus, "hooks"))
+  include_context "textus_store_fixture"
 
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: canon }
-      entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
-
-    YAML
-
-    Textus::Store.new(textus)
-  end
-
-  def build_store_with_intake(root, ttl:, on_stale: "warn")
-    textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
-    FileUtils.mkdir_p(File.join(textus, "hooks"))
-
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: canon }
-      entries:
-        - key: working.doc
-          kind: intake
-          path: working/doc.md
-          zone: working
-          intake:
-            handler: test_intake
-      rules:
-        - match: working.doc
-          fetch:
-            ttl: "#{ttl}"
-            on_stale: #{on_stale}
-    YAML
-
-    File.write(File.join(textus, "hooks", "test_intake.rb"), <<~RUBY)
+  let(:intake_body) do
+    <<~RUBY
       Textus.hook do |reg|
         reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
       end
     RUBY
-
-    Textus::Store.new(textus)
   end
 
-  def write_doc(root, last_fetched_at: Time.now.utc.iso8601)
-    textus = File.join(root, ".textus")
-    File.write(File.join(textus, "zones", "working", "doc.md"), <<~MD)
+  def build_store_no_intake
+    minimal_store(root, key: "working.doc", path: "working/doc.md")
+  end
+
+  def build_store_with_intake(ttl:, on_stale: "warn")
+    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale)
+  end
+
+  def write_doc(last_fetched_at: Time.now.utc.iso8601)
+    File.write(File.join(root, "zones", "working", "doc.md"), <<~MD)
       ---
       name: doc
       last_fetched_at: "#{last_fetched_at}"
@@ -70,50 +36,40 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "returns nil when the file does not exist on disk" do
-    Dir.mktmpdir do |root|
-      store = build_store_no_intake(root)
-      use_case = build_use_case(store)
-      expect(use_case.call("working.doc")).to be_nil
-    end
+    store = build_store_no_intake
+    use_case = build_use_case(store)
+    expect(use_case.call("working.doc")).to be_nil
   end
 
   it "annotates as fresh when no fetch policy applies" do
-    Dir.mktmpdir do |root|
-      store = build_store_no_intake(root)
-      write_doc(root)
-      env = build_use_case(store).call("working.doc")
-      expect(env.freshness.stale).to be(false)
-      expect(env.freshness.fetching).to be(false)
-    end
+    store = build_store_no_intake
+    write_doc
+    env = build_use_case(store).call("working.doc")
+    expect(env.freshness.stale).to be(false)
+    expect(env.freshness.fetching).to be(false)
   end
 
   it "annotates as fresh when the envelope is within TTL" do
-    Dir.mktmpdir do |root|
-      store = build_store_with_intake(root, ttl: "1h", on_stale: "warn")
-      write_doc(root, last_fetched_at: Time.now.utc.iso8601)
-      env = build_use_case(store).call("working.doc")
-      expect(env.freshness.stale).to be(false)
-    end
+    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    write_doc(last_fetched_at: Time.now.utc.iso8601)
+    env = build_use_case(store).call("working.doc")
+    expect(env.freshness.stale).to be(false)
   end
 
   it "annotates as stale when the envelope is past TTL — but does NOT fetch" do
-    Dir.mktmpdir do |root|
-      store = build_store_with_intake(root, ttl: "1s", on_stale: "timed_sync")
-      write_doc(root, last_fetched_at: "2020-01-01T00:00:00Z")
-      env = build_use_case(store).call("working.doc")
-      expect(env.freshness.stale).to be(true)
-      expect(env.freshness.fetching).to be(false)
-    end
+    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    write_doc(last_fetched_at: "2020-01-01T00:00:00Z")
+    env = build_use_case(store).call("working.doc")
+    expect(env.freshness.stale).to be(true)
+    expect(env.freshness.fetching).to be(false)
   end
 
   it "does not accept an orchestrator: kwarg (signal of the contract)" do
-    Dir.mktmpdir do |root|
-      store = build_store_no_intake(root)
-      container = Textus::Container.from_store(store)
-      call = Textus::Call.build(role: "automation")
-      expect do
-        described_class.new(container: container, call: call, orchestrator: Object.new)
-      end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
-    end
+    store = build_store_no_intake
+    container = Textus::Container.from_store(store)
+    call = Textus::Call.build(role: "automation")
+    expect do
+      described_class.new(container: container, call: call, orchestrator: Object.new)
+    end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
   end
 end

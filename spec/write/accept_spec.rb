@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe Textus::Write::Accept do
   include_context "textus_store_fixture"
@@ -27,7 +26,7 @@ RSpec.describe Textus::Write::Accept do
       body: "Proposed",
     )
 
-    result = build_accept(store, test_ctx(role: "human")).call("review.2026-05-19-add-bob")
+    result = store.as("human").accept("review.2026-05-19-add-bob")
 
     expect(result["target_key"]).to eq("working.network.org.bob")
     expect(result["action"]).to eq("put")
@@ -47,7 +46,7 @@ RSpec.describe Textus::Write::Accept do
       body: "",
     )
 
-    expect { build_accept(store, test_ctx(role: "agent")).call("review.foo") }
+    expect { store.as("agent").accept("review.foo") }
       .to fail_guard_with("author_signed")
   end
 
@@ -62,13 +61,12 @@ RSpec.describe Textus::Write::Accept do
       body: "Alice content",
     )
 
-    ctx = test_ctx(role: "human", correlation_id: "corr-accept-1")
     events = []
     store.events.register(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
       events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
     end
 
-    build_accept(store, ctx).call("review.p1")
+    store.as("human", correlation_id: "corr-accept-1").accept("review.p1")
 
     expect(events.length).to eq(1)
     expect(events.first[:key]).to eq("review.p1")
@@ -79,7 +77,7 @@ RSpec.describe Textus::Write::Accept do
   it "raises ProposalError when entry has no proposal block" do
     store.as("agent").put("review.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
 
-    expect { build_accept(store, test_ctx(role: "human")).call("review.noproposal") }
+    expect { store.as("human").accept("review.noproposal") }
       .to raise_error(Textus::ProposalError, /no proposal block/)
   end
 
@@ -110,12 +108,12 @@ RSpec.describe Textus::Write::Accept do
     end
 
     it "accept raises an honest error that the author capability is unheld" do
-      expect { build_accept(store, test_ctx(role: "agent")).call("review.p") }
+      expect { store.as("agent").accept("review.p") }
         .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*accept is disabled/i)
     end
 
     it "reject raises an honest error that the author capability is unheld" do
-      expect { build_reject(store, test_ctx(role: "agent")).call("review.p") }
+      expect { store.as("agent").reject("review.p") }
         .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*reject is disabled/i)
     end
   end
@@ -163,7 +161,7 @@ RSpec.describe Textus::Write::Accept do
           body: "Proposed",
         )
 
-        result = build_accept(store, test_ctx(role: "human")).call("review.valid-proposal")
+        result = store.as("human").accept("review.valid-proposal")
         expect(result["accepted"]).to eq("review.valid-proposal")
       end
 
@@ -178,7 +176,7 @@ RSpec.describe Textus::Write::Accept do
           body: "Proposed",
         )
 
-        expect { build_accept(store, test_ctx(role: "human")).call("review.bad-proposal") }
+        expect { store.as("human").accept("review.bad-proposal") }
           .to fail_guard_with("schema_valid")
       end
     end
@@ -211,7 +209,7 @@ RSpec.describe Textus::Write::Accept do
           body: "Proposed",
         )
 
-        result = build_accept(store, test_ctx(role: "human")).call("review.ha-proposal")
+        result = store.as("human").accept("review.ha-proposal")
         expect(result["accepted"]).to eq("review.ha-proposal")
       end
     end

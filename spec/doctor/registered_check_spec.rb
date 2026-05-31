@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "registered doctor_check invocation" do
   def init_store(dir)

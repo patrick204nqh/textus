@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 
 RSpec.describe "a freshly init'd store delivers the agent-memory promise (ADR 0033)" do
   it "lets the agent write its notebook without a human accept" do

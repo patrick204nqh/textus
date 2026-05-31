@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe "Textus UID" do
   include_context "textus_store_fixture"

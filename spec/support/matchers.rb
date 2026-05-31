@@ -25,3 +25,38 @@ RSpec::Matchers.define :fail_guard_with do |*predicates|
     end
   end
 end
+
+# Parses and returns the last row of the store's audit.log as a Hash.
+# Raises if the log is missing/empty — that's a real test failure, not a nil.
+module TextusAuditHelpers
+  def last_audit_row(store)
+    log = File.join(store.root, "audit.log")
+    JSON.parse(File.readlines(log).last)
+  end
+end
+RSpec.configure { |c| c.include TextusAuditHelpers }
+
+# Asserts the last audit row records the given verb, optionally with a
+# correlation_id (matched against extras.correlation_id):
+#
+#   expect(store).to have_audit_verb("put")
+#   expect(store).to have_audit_verb("delete").with_correlation("corr-1")
+RSpec::Matchers.define :have_audit_verb do |verb|
+  chain(:with_correlation) { |cid| @cid = cid }
+
+  match do |store|
+    log = File.join(store.root, "audit.log")
+    next false unless File.exist?(log) && !File.empty?(log)
+
+    @row = JSON.parse(File.readlines(log).last)
+    next false unless @row["verb"] == verb
+
+    @cid.nil? || @row.dig("extras", "correlation_id") == @cid
+  end
+
+  failure_message do
+    cid_part = @cid ? " correlation_id=#{@cid.inspect}" : nil
+    target = "verb=#{verb.inspect}#{cid_part}"
+    "expected last audit row to be #{target}, got #{@row.inspect}"
+  end
+end

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "Pulse hook_errors" do
   include_context "textus_store_fixture"

@@ -1,17 +1,15 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe Textus::Store, ".discover" do
-  let(:tmp) { Dir.mktmpdir("textus-root-spec") }
-
-  after { FileUtils.rm_rf(tmp) }
+  include_context "textus_store_fixture"
 
   def make_store_at(dir)
-    FileUtils.mkdir_p(File.join(dir, "schemas"))
-    FileUtils.mkdir_p(File.join(dir, "zones"))
-    File.write(File.join(dir, "manifest.yaml"),
-               "version: textus/3\nzones:\n  - { name: working, kind: canon }\nentries: []\n")
+    store_from_manifest(dir, zones: %w[working], manifest: <<~YAML)
+      version: textus/3
+      zones:
+        - { name: working, kind: canon }
+      entries: []
+    YAML
   end
 
   it "honors an explicit root: kwarg" do

@@ -1,5 +1,4 @@
 require "spec_helper"
-require "json"
 
 RSpec.describe Textus::Entry::Json do
   describe ".parse" do

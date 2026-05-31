@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe Textus::Role do
   let(:tmp) { Dir.mktmpdir("textus-role") }

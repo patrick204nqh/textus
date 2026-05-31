@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "Manifest format: field validation" do
   include_context "textus_store_fixture"

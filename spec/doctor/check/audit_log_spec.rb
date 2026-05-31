@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Doctor::Check::AuditLog do
   include_context "textus_store_fixture"

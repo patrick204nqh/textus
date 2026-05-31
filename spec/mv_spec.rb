@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
 
 RSpec.describe "textus mv" do
   include_context "textus_store_fixture"
@@ -43,9 +40,8 @@ RSpec.describe "textus mv" do
   it "writes an audit row with verb=mv and top-level structural fields" do
     put_md("working.notes.alpha")
     store.as("human").mv("working.notes.alpha", "working.notes.beta")
-    line = File.read(File.join(root, "audit.log")).lines.last.chomp
-    parsed = JSON.parse(line)
-    expect(parsed["verb"]).to eq("mv")
+    expect(store).to have_audit_verb("mv")
+    parsed = last_audit_row(store)
     expect(parsed["key"]).to eq("working.notes.beta")
     expect(parsed["from_key"]).to eq("working.notes.alpha")
     expect(parsed["to_key"]).to eq("working.notes.beta")
@@ -85,8 +81,7 @@ RSpec.describe "textus mv" do
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
     expect(store.as(Textus::Role::DEFAULT).get("working.notes.beta").uid).to eq(res["uid"])
 
-    line = File.read(File.join(root, "audit.log")).lines.last
-    parsed = JSON.parse(line.chomp)
+    parsed = last_audit_row(store)
     expect(parsed["uid"]).to eq(res["uid"])
   end
 

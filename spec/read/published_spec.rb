@@ -1,42 +1,40 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Read::Published do
-  def build_store(root)
-    textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "working", "people"))
-    FileUtils.mkdir_p(File.join(textus, "zones", "output"))
-    File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones:
-        - { name: working, kind: canon }
-        - { name: output, kind: derived }
-      entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+  include_context "textus_store_fixture"
 
-        - key: output.catalogs.people
-          kind: derived
-          path: output/catalogs/people.md
-          zone: output
-          schema: null
-          owner: automation:auto
-          compute: { kind: projection, select: working.people }
-          template: people.mustache
-          publish_to: [PEOPLE.md]
-    YAML
-    FileUtils.mkdir_p(File.join(textus, "templates"))
-    File.write(File.join(textus, "templates", "people.mustache"), "{{#entries}}- {{name}}\n{{/entries}}")
-    File.write(File.join(textus, "zones", "working", "people", "alice.md"), "---\nname: alice\n---\n")
-    Textus::Store.new(textus)
+  let(:store) do
+    store_from_manifest(
+      root,
+      zones: %w[working output],
+      files: {
+        "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
+        "zones/working/people/alice.md" => "---\nname: alice\n---\n",
+      },
+      manifest: <<~YAML,
+        version: textus/3
+        zones:
+          - { name: working, kind: canon }
+          - { name: output, kind: derived }
+        entries:
+          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+
+          - key: output.catalogs.people
+            kind: derived
+            path: output/catalogs/people.md
+            zone: output
+            schema: null
+            owner: automation:auto
+            compute: { kind: projection, select: working.people }
+            template: people.mustache
+            publish_to: [PEOPLE.md]
+      YAML
+    )
   end
 
   it "returns entries that have publish_to, including output.catalogs.people" do
-    Dir.mktmpdir do |root|
-      store = build_store(root)
-      ops = store.as("human")
-      result = ops.published
-      expect(result.map { |r| r["key"] }).to include("output.catalogs.people")
-    end
+    ops = store.as("human")
+    result = ops.published
+    expect(result.map { |r| r["key"] }).to include("output.catalogs.people")
   end
 end

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "json"
-require "tmpdir"
 
 RSpec.describe Textus::Ports::AuditSubscriber do
   let(:tmpdir)    { Dir.mktmpdir }

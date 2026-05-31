@@ -1,8 +1,5 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "stringio"
-require "json"
 require "time"
 
 RSpec.describe Textus::CLI::Verb::Freshness do

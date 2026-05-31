@@ -1,7 +1,5 @@
 # rubocop:disable Style/GlobalVars
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe "Lifecycle events" do
   include_context "textus_store_fixture"
@@ -52,7 +50,7 @@ RSpec.describe "Lifecycle events" do
       store = Textus::Store.new(root)
       env = store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
       expect(env.body).to eq("hi") # write succeeded
-      last = JSON.parse(File.readlines(File.join(root, "audit.log")).last.chomp)
+      last = last_audit_row(store)
       expect(last["extras"]["event"]).to eq("entry_put")
       expect(last["extras"]["error"]).to match(/bang/)
     end

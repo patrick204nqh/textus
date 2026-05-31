@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "Manifest index_filename: surfaces a fixed basename as the per-directory row" do
   include_context "textus_store_fixture"

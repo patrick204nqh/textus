@@ -1,14 +1,10 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe Textus::Domain::Retention do
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
 
   def write_manifest
-    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+    store_from_manifest(root, zones: %w[review], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
@@ -21,6 +17,7 @@ RSpec.describe Textus::Domain::Retention do
         - match: review.**
           retention: { expire_after: 1d }
     YAML
+    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
   end
 
   def write_leaf(name, mtime)

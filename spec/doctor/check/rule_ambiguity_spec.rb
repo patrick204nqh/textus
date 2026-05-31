@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   def with_store(manifest_yaml)

@@ -1,8 +1,5 @@
 require "spec_helper"
-require "tmpdir"
 require "stringio"
-require "json"
-require "fileutils"
 
 RSpec.describe "textus action verb" do
   def custom_manifest_with_demo!(root)

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 require_relative "../../examples/claude-plugin/recipes/skill_fanout"
 

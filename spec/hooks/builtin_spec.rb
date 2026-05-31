@@ -1,5 +1,4 @@
 require "spec_helper"
-require "yaml"
 
 RSpec.describe "Built-in hooks" do
   let(:events) { Textus::Hooks::EventBus.new }

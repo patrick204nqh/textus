@@ -1,20 +1,12 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Write::Publish do
   include_context "textus_store_fixture"
 
-  let(:store) { Textus::Store.new(root) }
-
-  def write_manifest(yaml)
-    File.write(File.join(root, "manifest.yaml"), yaml)
-  end
-
   context "with two nested leaves under publish_each" do
-    before do
+    let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
-      write_manifest(<<~YAML)
+      s = store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
         version: textus/3
         zones:
           - { name: working, kind: derived }
@@ -32,14 +24,14 @@ RSpec.describe Textus::Write::Publish do
                  "---\nname: alice\n---\nbody\n")
       File.write(File.join(root, "zones/working/agents/bob.md"),
                  "---\nname: bob\n---\nbody\n")
+      s
     end
 
     it "publishes each nested leaf to its publish_each target" do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res["published_leaves"].length).to eq(2)
@@ -49,19 +41,17 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "filters by prefix" do
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call(prefix: "working.agents.alice")
+      res = store.as("automation").publish(prefix: "working.agents.alice")
       expect(res["published_leaves"].map { |r| r["key"] }).to eq(["working.agents.alice"])
     end
   end
 
   context "with a Derived entry with publish_to and a Nested entry with publish_each" do
-    before do
+    let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/working/people"))
       FileUtils.mkdir_p(File.join(root, "zones/output"))
       FileUtils.mkdir_p(File.join(root, "templates"))
-
-      write_manifest(<<~YAML)
+      s = store_from_manifest(root, zones: %w[working output], manifest: <<~YAML)
         version: textus/3
         zones:
           - { name: working, kind: canon }
@@ -88,18 +78,17 @@ RSpec.describe Textus::Write::Publish do
             nested: true
             publish_each: "agents/{basename}.md"
       YAML
-
       File.write(File.join(root, "zones/working/people/alice.md"), "---\nname: alice\norg: x\n---\n")
       File.write(File.join(root, "zones/working/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
       File.write(File.join(root, "templates/people.mustache"),
                  "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
       FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
       File.write(File.join(root, "zones/working/agents/claude.md"), "---\nname: claude\n---\nbody\n")
+      s
     end
 
     it "returns the combined {protocol, built, published_leaves} shape" do
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res).to have_key("built")
@@ -113,8 +102,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
-      ctx = test_ctx(role: "automation")
-      build_publish(store, ctx).call
+      store.as("automation").publish
 
       repo_root = File.dirname(root)
       published_path = File.join(repo_root, "PEOPLE.md")
@@ -129,8 +117,7 @@ RSpec.describe Textus::Write::Publish do
       store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
       store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
 
-      ctx = test_ctx(role: "automation")
-      build_publish(store, ctx).call
+      store.as("automation").publish
 
       expect(build_completed).to include("output.catalogs.people")
       expect(file_published).to include("output.catalogs.people")
@@ -139,9 +126,9 @@ RSpec.describe Textus::Write::Publish do
   end
 
   context "with an Intake entry that has publish_to" do
-    before do
+    let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/output"))
-      write_manifest(<<~YAML)
+      s = store_from_manifest(root, zones: %w[output], manifest: <<~YAML)
         version: textus/3
         zones:
           - { name: output, kind: derived }
@@ -158,14 +145,14 @@ RSpec.describe Textus::Write::Publish do
       YAML
       # Seed a fetched body directly — Publish reads it, doesn't generate it.
       File.write(File.join(root, "zones/output/catalog.txt"), "one\ntwo\nthree\n")
+      s
     end
 
     it "fans out the intake body to each publish_to target" do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       built = res["built"]
       catalog = built.find { |r| r["key"] == "output.catalog" }
@@ -179,8 +166,9 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "skips intake entries with no publish_to" do
+      store # trigger lazy setup so root/.textus dir exists before overwriting manifest
       # Overwrite the manifest without publish_to; same body file.
-      write_manifest(<<~YAML)
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
           - { name: output, kind: derived }
@@ -195,16 +183,15 @@ RSpec.describe Textus::Write::Publish do
               handler: catalog_handler
       YAML
       store_no_publish = Textus::Store.new(root)
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store_no_publish, ctx).call
+      res = store_no_publish.as("automation").publish
       expect(res["built"]).to be_empty
     end
   end
 
   context "with a publish_each target that escapes the repo root" do
-    before do
+    let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/working/bad"))
-      write_manifest(<<~YAML)
+      s = store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
         version: textus/3
         zones:
           - { name: working, kind: derived }
@@ -220,12 +207,12 @@ RSpec.describe Textus::Write::Publish do
       YAML
       File.write(File.join(root, "zones/working/bad/x.md"),
                  "---\nname: x\n---\nbody\n")
+      s
     end
 
     it "rejects publish_each targets that escape repo root" do
-      ctx = test_ctx(role: "automation")
       expect do
-        build_publish(store, ctx).call
+        store.as("automation").publish
       end.to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end

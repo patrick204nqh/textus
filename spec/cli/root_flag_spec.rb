@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
-require "json"
 require "open3"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "textus --root" do
   let(:tmp) { Dir.mktmpdir }

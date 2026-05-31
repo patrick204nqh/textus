@@ -1,13 +1,10 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe Textus::Write::RetentionSweep do
   include_context "textus_store_fixture"
 
   def build_store(retention)
-    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+    s = store_from_manifest(root, zones: %w[review], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
@@ -20,11 +17,12 @@ RSpec.describe Textus::Write::RetentionSweep do
         - match: review.**
           retention: #{retention}
     YAML
+    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
     leaf = File.join(root, "zones", "review", "notes", "old.md")
     File.write(leaf, "---\nname: old\n---\nbody\n")
     old = Time.now - (40 * 86_400)
     File.utime(old, old, leaf)
-    [Textus::Store.new(root), leaf]
+    [s, leaf]
   end
 
   def sweep(store)

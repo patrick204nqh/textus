@@ -1,8 +1,5 @@
 require "spec_helper"
 require "stringio"
-require "json"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "MCP end-to-end" do
   include_context "textus_store_fixture"

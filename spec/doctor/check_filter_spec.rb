@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 RSpec.describe "Doctor checks filter" do
   let(:tmp) { Dir.mktmpdir }

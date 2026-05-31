@@ -1,8 +1,5 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 require "stringio"
-require "json"
 
 RSpec.describe Textus::CLI::Verb::Blame do
   include_context "textus_store_fixture"

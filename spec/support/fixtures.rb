@@ -33,6 +33,64 @@ module TextusSpecHelpers
     Textus::Store.new(textus_dir)
   end
 
+  # Preset: a single canon zone "working" holding one leaf entry. The most
+  # common read/write shape. Override `kind_zone:` for quarantine/queue/derived.
+  #
+  #   let(:store) { minimal_store(root) }                     # working.foo leaf
+  #   let(:store) { minimal_store(root, key: "working.doc",   # custom key/path
+  #                                     path: "working/doc.md") }
+  def minimal_store(root, key: "working.foo", path: "working/foo.md", zone: "working", kind_zone: "canon")
+    store_from_manifest(root, zones: [zone], manifest: <<~YAML)
+      version: textus/3
+      zones:
+        - { name: #{zone}, kind: #{kind_zone} }
+      entries:
+        - { key: #{key}, path: #{path}, zone: #{zone}, kind: leaf }
+    YAML
+  end
+
+  # Preset: a quarantine "working" zone + a canon "identity" zone, each with
+  # one leaf. The standard write-path shape (untrusted intake in quarantine,
+  # owned content in canon). Used by put/delete/mv/accept/reject specs.
+  def quarantine_store(root)
+    store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML)
+      version: textus/3
+      zones:
+        - { name: working, kind: quarantine }
+        - { name: identity, kind: canon }
+      entries:
+        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf }
+        - { key: identity.bar, path: identity/bar.md, zone: identity, kind: leaf }
+    YAML
+  end
+
+  # Preset: a "working" zone with one intake entry (key working.doc) wired to a
+  # `test_intake` handler, plus a fetch rule. Pass the handler's hook body and
+  # the rule's ttl / on_stale. Writes the hook into the store's hooks/ dir. The
+  # working zone defaults to quarantine; pass `kind_zone: "canon"` for
+  # owned-intake. For a different key/path, use store_from_manifest directly.
+  def intake_store(root, intake_body:, ttl: "1h", on_stale: "warn", kind_zone: "quarantine")
+    store_from_manifest(
+      root,
+      zones: %w[working],
+      files: { "hooks/test_intake.rb" => intake_body },
+      manifest: <<~YAML,
+        version: textus/3
+        zones:
+          - { name: working, kind: #{kind_zone} }
+        entries:
+          - key: working.doc
+            kind: intake
+            path: working/doc.md
+            zone: working
+            intake: { handler: test_intake }
+        rules:
+          - match: working.doc
+            fetch: { ttl: #{ttl}, on_stale: #{on_stale} }
+      YAML
+    )
+  end
+
   # Builds a Textus::Call value for tests. Callers pass the role (and
   # optionally correlation_id, dry_run) — collaborators come from the
   # Store/Container, not from Call.
@@ -67,32 +125,22 @@ module TextusSpecHelpers
     Textus::Container.from_store(store)
   end
 
-  def build_put(store, ctx)
-    Textus::Write::Put.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_delete(store, ctx)
-    Textus::Write::Delete.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_mv(store, ctx)
-    Textus::Write::Mv.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_accept(store, ctx)
-    Textus::Write::Accept.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_reject(store, ctx)
-    Textus::Write::Reject.new(container: fresh_container(store), call: ctx)
-  end
-
+  # ── Use-case invocation idiom ───────────────────────────────────────────
+  # Prefer the public façade for anything reachable through it:
+  #
+  #   store.as(role, correlation_id:, dry_run:).put("working.foo", meta:, body:)
+  #
+  # `store.as` reuses the Store's memoized container, whose EventBus is the
+  # *same* object as `store.events` — so in-place `store.events.register(...)`
+  # probes are visible through it.
+  #
+  # `build_worker` (below) builds a FRESH container each call. It exists for
+  # specs that swap the bus wholesale (`store.instance_variable_set(:@events,
+  # probe)`) or drive an internal use-case class the façade does not expose
+  # (Write::FetchWorker). For those the memoized container would be stale, so a
+  # fresh one is required.
   def build_worker(store, ctx)
     Textus::Write::FetchWorker.new(container: fresh_container(store), call: ctx)
-  end
-
-  def build_publish(store, ctx)
-    Textus::Write::Publish.new(container: fresh_container(store), call: ctx)
   end
 end
 

@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSpec/DescribeMethod
   include_context "textus_store_fixture"

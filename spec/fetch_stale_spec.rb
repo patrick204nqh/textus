@@ -1,6 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
 
 RSpec.describe "Textus::RoleScope#fetch_all (fetch_stale)" do
   let(:tmp) { Dir.mktmpdir }

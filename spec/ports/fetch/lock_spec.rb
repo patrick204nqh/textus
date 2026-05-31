@@ -1,5 +1,4 @@
 require "spec_helper"
-require "tmpdir"
 require "timeout"
 
 RSpec.describe Textus::Ports::Fetch::Lock do

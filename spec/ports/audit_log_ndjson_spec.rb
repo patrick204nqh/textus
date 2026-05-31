@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
 
 RSpec.describe Textus::Ports::AuditLog do
   let(:tmp) { Dir.mktmpdir }

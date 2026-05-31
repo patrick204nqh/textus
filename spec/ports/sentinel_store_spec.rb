@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "json"
 require "digest"
 
 RSpec.describe Textus::Ports::SentinelStore do

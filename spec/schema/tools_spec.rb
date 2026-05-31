@@ -1,7 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
-require "yaml"
 
 RSpec.describe Textus::Schema::Tools do
   include_context "textus_store_fixture"

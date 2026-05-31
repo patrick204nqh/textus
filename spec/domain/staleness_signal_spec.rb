@@ -1,6 +1,4 @@
 require "spec_helper"
-require "fileutils"
-require "tmpdir"
 
 # Regression test for Staleness: it must detect generator-kind zones via the
 # kind: derived signal (the zone-kind that requires the `build` capability),

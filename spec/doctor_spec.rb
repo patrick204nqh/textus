@@ -1,7 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
-require "json"
 require "digest"
 
 RSpec.describe Textus::Doctor do

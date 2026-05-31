@@ -1,7 +1,4 @@
 require "spec_helper"
-require "tmpdir"
-require "fileutils"
-require "json"
 
 RSpec.describe Textus::Read::Pulse do
   include_context "textus_store_fixture"
