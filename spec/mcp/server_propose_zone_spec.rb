@@ -20,4 +20,12 @@ RSpec.describe "MCP session propose_zone derives from the connection role (ADR 0
     expect(session.propose_zone).to eq(store.manifest.policy.propose_zone_for("agent"))
     expect(session.propose_zone).not_to be_nil
   end
+
+  it "yields nil propose_zone for a role that cannot propose" do
+    # `automation` holds only `build` — propose_zone_for("automation") => nil.
+    # Under the old proposer_role fallback this would have been the queue zone;
+    # the new per-connection derivation must return nil here.
+    session = session_after_initialize("automation")
+    expect(session.propose_zone).to be_nil
+  end
 end
