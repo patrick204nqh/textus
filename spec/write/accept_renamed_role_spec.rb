@@ -33,8 +33,7 @@ RSpec.describe Textus::Write::Accept do
         body: "Proposed",
       )
 
-      ctx = test_ctx(role: "owner")
-      result = build_accept(store, ctx).call("review.2026-05-19-add-bob")
+      result = store.as("owner").accept("review.2026-05-19-add-bob")
 
       expect(result["target_key"]).to eq("working.network.org.bob")
       expect(result["accepted"]).to eq("review.2026-05-19-add-bob")
@@ -51,8 +50,7 @@ RSpec.describe Textus::Write::Accept do
         body: "",
       )
 
-      ctx = test_ctx(role: "proposer")
-      expect { build_accept(store, ctx).call("review.foo") }
+      expect { store.as("proposer").accept("review.foo") }
         .to raise_error(Textus::GuardFailed) do |e|
           expect(e.details["failed"].map { |f| f["predicate"] }).to include("author_signed")
           expect(e.message).to match(/held by: owner/)

@@ -27,7 +27,7 @@ RSpec.describe Textus::Write::Reject do
     events = []
     store.events.register(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
 
-    res = build_reject(store, test_ctx(role: "human")).call("review.draft")
+    res = store.as("human").reject("review.draft")
 
     expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "review.draft", "target_key" => "identity.target")
     expect(events).to eq([["review.draft", "identity.target"]])
@@ -35,12 +35,12 @@ RSpec.describe Textus::Write::Reject do
   end
 
   it "rejects non-authority callers with guard_failed naming the predicate" do
-    expect { build_reject(store, test_ctx(role: "agent")).call("review.draft") }
+    expect { store.as("agent").reject("review.draft") }
       .to fail_guard_with("author_signed")
   end
 
   it "rejects entries that are not in a proposal zone" do
-    expect { build_reject(store, test_ctx(role: "human")).call("identity.target") }
+    expect { store.as("human").reject("identity.target") }
       .to raise_error(Textus::ProposalError, /not in a proposal zone/)
   end
 end

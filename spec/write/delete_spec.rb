@@ -9,13 +9,12 @@ RSpec.describe Textus::Write::Delete do
     store # ensure zone dirs exist before writing seed file
     File.write(File.join(root, "zones", "working", "foo.md"), "---\nkey: working.foo\n---\nbody\n")
 
-    ctx = test_ctx(role: "automation", correlation_id: "del-1")
     events = []
     store.events.register(:entry_deleted, :capture) do |ctx:, key:, **|
       events << [:entry_deleted, key, ctx.correlation_id]
     end
 
-    build_delete(store, ctx).call("working.foo")
+    store.as("automation", correlation_id: "del-1").delete("working.foo")
 
     expect(File.exist?(File.join(root, "zones", "working", "foo.md"))).to be(false)
     expect(events).to include([:entry_deleted, "working.foo", "del-1"])
@@ -27,10 +26,8 @@ RSpec.describe Textus::Write::Delete do
 
     # identity is a canon zone (needs the 'author' capability); automation
     # holds only [fetch, build], so the delete is genuinely refused.
-    ctx = test_ctx(role: "automation")
-
     expect do
-      build_delete(store, ctx).call("identity.bar")
+      store.as("automation").delete("identity.bar")
     end.to raise_error(
       Textus::WriteForbidden,
       /writing 'identity.bar' \(zone 'identity'\) needs capability 'author'/,

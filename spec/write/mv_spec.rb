@@ -13,9 +13,8 @@ RSpec.describe Textus::Write::Mv do
       events = []
       store.events.register(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
 
-      ctx = test_ctx(role: "human")
-      result = build_mv(store, ctx).call("knowledge.notes.alpha",
-                                         "knowledge.notes.beta")
+      result = store.as("human").mv("knowledge.notes.alpha",
+                                    "knowledge.notes.beta")
 
       expect(result["ok"]).to be(true)
       expect(result["from_key"]).to eq("knowledge.notes.alpha")
@@ -32,9 +31,7 @@ RSpec.describe Textus::Write::Mv do
       ops = store.as("human")
       ops.put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
-      ctx = test_ctx(role: "human")
-      result = build_mv(store, ctx)
-               .call("knowledge.notes.alpha", "knowledge.notes.beta", dry_run: true)
+      result = store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.beta", dry_run: true)
 
       expect(result["dry_run"]).to be(true)
       expect(File.exist?(File.join(tmp, ".textus/zones/knowledge/notes/alpha.md"))).to be(true)
@@ -48,8 +45,7 @@ RSpec.describe Textus::Write::Mv do
       store = Textus::Store.new(File.join(tmp, ".textus"))
       store.as("human").put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
 
-      ctx = test_ctx(role: "human", correlation_id: "cid-test")
-      build_mv(store, ctx).call("knowledge.notes.alpha", "knowledge.notes.beta")
+      store.as("human", correlation_id: "cid-test").mv("knowledge.notes.alpha", "knowledge.notes.beta")
 
       log_path = File.join(tmp, ".textus/audit.log")
       rows = File.readlines(log_path, chomp: true).map { |l| JSON.parse(l) }

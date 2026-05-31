@@ -31,8 +31,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res["published_leaves"].length).to eq(2)
@@ -42,8 +41,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "filters by prefix" do
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call(prefix: "working.agents.alice")
+      res = store.as("automation").publish(prefix: "working.agents.alice")
       expect(res["published_leaves"].map { |r| r["key"] }).to eq(["working.agents.alice"])
     end
   end
@@ -90,8 +88,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "returns the combined {protocol, built, published_leaves} shape" do
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res).to have_key("built")
@@ -105,8 +102,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
-      ctx = test_ctx(role: "automation")
-      build_publish(store, ctx).call
+      store.as("automation").publish
 
       repo_root = File.dirname(root)
       published_path = File.join(repo_root, "PEOPLE.md")
@@ -121,8 +117,7 @@ RSpec.describe Textus::Write::Publish do
       store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
       store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
 
-      ctx = test_ctx(role: "automation")
-      build_publish(store, ctx).call
+      store.as("automation").publish
 
       expect(build_completed).to include("output.catalogs.people")
       expect(file_published).to include("output.catalogs.people")
@@ -157,8 +152,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store, ctx).call
+      res = store.as("automation").publish
 
       built = res["built"]
       catalog = built.find { |r| r["key"] == "output.catalog" }
@@ -189,8 +183,7 @@ RSpec.describe Textus::Write::Publish do
               handler: catalog_handler
       YAML
       store_no_publish = Textus::Store.new(root)
-      ctx = test_ctx(role: "automation")
-      res = build_publish(store_no_publish, ctx).call
+      res = store_no_publish.as("automation").publish
       expect(res["built"]).to be_empty
     end
   end
@@ -218,9 +211,8 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "rejects publish_each targets that escape repo root" do
-      ctx = test_ctx(role: "automation")
       expect do
-        build_publish(store, ctx).call
+        store.as("automation").publish
       end.to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end
