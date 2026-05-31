@@ -5,8 +5,8 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "returns one entry per tool, each with name/description/inputSchema" do
       tools = described_class.all
       names = tools.map { |t| t[:name] }
-      expect(names).to include("boot", "tick", "find", "read", "write",
-                               "propose", "fetch", "fetch_stale",
+      expect(names).to include("boot", "pulse", "list", "get", "put",
+                               "propose", "fetch", "fetch_all",
                                "schema", "rules")
       tools.each do |t|
         expect(t).to include(:name, :description, :inputSchema)
@@ -14,9 +14,21 @@ RSpec.describe Textus::MCP::ToolSchemas do
       end
     end
 
+    it "exposes the core verb names, not the old MCP aliases" do
+      names = described_class.all.map { |t| t[:name] }
+      expect(names).to include("pulse", "list", "get", "put", "fetch_all")
+      expect(names).not_to include("tick", "find", "read", "write", "fetch_stale")
+    end
+
+    it "still exposes the unchanged verbs and maintenance tools" do
+      names = described_class.all.map { |t| t[:name] }
+      expect(names).to include("boot", "propose", "fetch", "schema", "rules",
+                               "key_mv_prefix", "zone_mv", "migrate")
+    end
+
     it "marks key-required tools' inputSchema with required: ['key']" do
-      read = described_class.all.find { |t| t[:name] == "read" }
-      expect(read[:inputSchema][:required]).to eq(["key"])
+      get = described_class.all.find { |t| t[:name] == "get" }
+      expect(get[:inputSchema][:required]).to eq(["key"])
     end
 
     it "boot tool takes no arguments" do

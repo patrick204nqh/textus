@@ -9,13 +9,13 @@ module Textus
       def all # rubocop:disable Metrics/MethodLength
         [
           tool("boot", "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.", {}, []),
-          tool("tick", "Delta since cursor. Returns {cursor, changed, stale, pending_review, doctor}.",
+          tool("pulse", "Delta since cursor. Returns {cursor, changed, stale, pending_review, doctor}.",
                { "since" => { "type" => "integer", "minimum" => 0 } }, []),
-          tool("find", "List keys filtered by zone and/or prefix.",
+          tool("list", "List keys filtered by zone and/or prefix.",
                { "zone" => { "type" => "string" }, "prefix" => { "type" => "string" } }, []),
-          tool("read", "Read one entry. Returns the envelope (uid, etag, _meta, body, freshness).",
+          tool("get", "Read one entry. Returns the envelope (uid, etag, _meta, body, freshness).",
                { "key" => { "type" => "string" } }, ["key"]),
-          tool("write", "Create or update an entry. Schema-validated. Returns {uid, etag}.",
+          tool("put", "Create or update an entry. Schema-validated. Returns {uid, etag}.",
                {
                  "key" => { "type" => "string" },
                  "meta" => { "type" => "object" },
@@ -31,7 +31,7 @@ module Textus
                }, %w[key meta]),
           tool("fetch", "Run an intake fetch for one key. Returns the fetch Outcome.",
                { "key" => { "type" => "string" } }, ["key"]),
-          tool("fetch_stale", "Fetch all stale intake entries, optionally scoped by zone/prefix.",
+          tool("fetch_all", "Fetch all stale intake entries, optionally scoped by zone/prefix.",
                {
                  "zone" => { "type" => "string" },
                  "prefix" => { "type" => "string" },

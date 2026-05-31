@@ -81,7 +81,7 @@ module Textus
         name = params["name"]
         args = params["arguments"] || {}
         result = Tools.call(name, session: @session, store: @store, args: args)
-        @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "tick"
+        @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "pulse"
 
         emit_result(rid, {
                       "content" => [{ "type" => "text", "text" => JSON.dump(result) }],
