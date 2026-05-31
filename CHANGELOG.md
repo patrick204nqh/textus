@@ -451,7 +451,7 @@ Protocol remains `textus/3`.
   `refresh`, `refresh_stale`, `schema`, `rules`). Session state (cursor,
   role, manifest_etag) held server-side. Manifest drift surfaces as
   `ContractDrift` (-32001); cursor expiry as `CursorExpired` (-32002).
-  See [`docs/mcp.md`](docs/mcp.md) and [ADR 0015](docs/architecture/decisions/0015-agent-gate-mcp.md).
+  See [`docs/reference/mcp.md`](docs/reference/mcp.md) and [ADR 0015](docs/architecture/decisions/0015-agent-gate-mcp.md).
 - `examples/claude-plugin/.mcp.json` and migrated skills/commands/agents —
   zero `textus <verb>` shell strings remain in plugin markdown.
 

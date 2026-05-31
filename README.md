@@ -68,7 +68,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 ## Try it
 
 - **Worked end-to-end store** — the role gate (propose → accept), build/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
-- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/agents-mcp.md`](docs/agents-mcp.md)
+- **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
 
@@ -150,7 +150,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
 - **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
-- **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/agents-mcp.md](docs/agents-mcp.md))
+- **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **`textus doctor`.** Health checks across schemas, hooks, keys, sentinels, and the audit log.
 
 ## CLI and zones
@@ -158,7 +158,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md). Write verbs require `--as=<role>` (role resolution: `--as` → `TEXTUS_ROLE` env → `.textus/role` file → default `human`). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block).
 
 - Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
-- Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with a tutorial expansion in [`docs/zones.md`](docs/zones.md).
+- Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
 
 `textus boot` prints the same information for the current store: zones, entry families with schemas, registered hooks, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 
@@ -213,7 +213,7 @@ See SPEC.md §5.10 for the full hook contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
-See [`docs/agents-mcp.md`](docs/agents-mcp.md) for the agent boot → pulse loop.
+See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot → pulse loop.
 
 ## Examples
 

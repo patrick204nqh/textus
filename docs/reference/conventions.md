@@ -3,7 +3,7 @@
 > **Reference** · for integrators · **read when** you're shaping a `.textus/` tree and want the idiomatic choices
 > **SSoT for** idiomatic key naming, schema design, and automation integration · **reviewed** 2026-05 (v0.35)
 
-Guidelines for shaping a `.textus/` tree, naming keys, organising schemas, and integrating with build automation. The spec ([`../SPEC.md`](../SPEC.md)) defines what's enforceable; this document captures what's *idiomatic*.
+Guidelines for shaping a `.textus/` tree, naming keys, organising schemas, and integrating with build automation. The spec ([`../../SPEC.md`](../../SPEC.md)) defines what's enforceable; this document captures what's *idiomatic*.
 
 ## Key naming
 
@@ -83,7 +83,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
 
 The build automation is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `compute.sources` — same list, recorded twice so a diff proves what was consumed.
 
-Full contract for both shapes is in [`../SPEC.md` §5.2.1 and §5.2.2](../SPEC.md). Transforms (`compute.transform:`) and per-leaf publishing (`publish_each:`) are also covered there.
+Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and per-leaf publishing (`publish_each:`) are also covered there.
 
 ## Intake and freshness
 
@@ -108,7 +108,7 @@ A typical scheduled-fetch integration shells the `fetch stale` sweep itself:
 textus fetch stale --zone=intake --as=automation   # in cron / CI
 ```
 
-See [`./zones.md` §6](zones.md) for the full intake contract and [`./events.md`](events.md) for writing custom handlers.
+See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
 
 ### Read vs. fetch
 
@@ -133,7 +133,7 @@ For multi-writer environments, **always pass `if_etag`** on `put`. The gem treat
 
 ## Application layering
 
-The application layer is organised around three shapes — `Manifest` as a composition record, a single `Container` capability record handed to every use case, and a split envelope reader/writer. See [ADR 0018](architecture/decisions/0018-manifest-carving.md), [ADR 0017](architecture/decisions/0017-envelope-io-split.md), [ADR 0022](architecture/decisions/0022-container-call-dispatcher.md), and [ADR 0023](architecture/decisions/0023-uniform-use-case-shape.md).
+The application layer is organised around three shapes — `Manifest` as a composition record, a single `Container` capability record handed to every use case, and a split envelope reader/writer. See [ADR 0018](../architecture/decisions/0018-manifest-carving.md), [ADR 0017](../architecture/decisions/0017-envelope-io-split.md), [ADR 0022](../architecture/decisions/0022-container-call-dispatcher.md), and [ADR 0023](../architecture/decisions/0023-uniform-use-case-shape.md).
 
 - **`Manifest` is a composition record** (`Data.define(:data, :resolver, :policy, :rules)`). Reach individual concerns through the field accessors: `manifest.data.entries`, `manifest.policy.permission_for(zone)`, `manifest.resolver.resolve(key)`, `manifest.rules.for(key)`.
 - **Use cases are plain `(container:, call:)` classes.** Each is a single class under `lib/textus/{read,write,maintenance}/` with `def initialize(container:, call:)` and a `#call(...)` method; verbs are looked up in the static `Textus::Dispatcher::VERBS` table. `Container` is a `Data.define` record bundling the wired ports + manifest (`manifest`, `file_store`, `schemas`, `root`, `audit_log`, `events`, `rpc`, `authorizer`); `Call` is the immutable per-invocation value (`role`, `correlation_id`, `now`, `dry_run`). A use case that emits events derives its `Hooks::Context` from `(container, call)` — nothing is injected. Use cases pull only what they need into ivars; nobody passes the raw `Store` around the application layer. `store.as(role)` returns a `RoleScope` that forwards verbs to the dispatcher.
