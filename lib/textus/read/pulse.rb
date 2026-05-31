@@ -10,7 +10,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :pulse
-      summary  "Delta since cursor. Returns {cursor, changed, stale, pending_review, doctor}."
+      summary  "Delta since cursor — changed entries, stale, pending proposals, doctor summary."
       surfaces :cli, :ruby, :mcp
       arg :since, Integer, session_default: :cursor, description: "audit seq to diff from; defaults to the session cursor"
 

@@ -4,7 +4,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :fetch_all
-      summary  "Fetch all stale intake entries, optionally scoped by zone/prefix."
+      summary  "Fetch all stale quarantine entries, optionally scoped by zone/prefix."
       surfaces :cli, :ruby, :mcp
       arg :prefix, String
       arg :zone,   String

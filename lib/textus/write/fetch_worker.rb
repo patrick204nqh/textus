@@ -6,7 +6,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :fetch
-      summary  "Run an intake fetch for one key."
+      summary  "Run a fetch action for one quarantine entry."
       surfaces :cli, :ruby, :mcp
       arg :key, String, required: true, positional: true
       response { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }
