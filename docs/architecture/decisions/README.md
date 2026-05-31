@@ -63,3 +63,5 @@ the original reasoning intact. The history is the point.
 | [0035](./0035-proposal-target-zone-constraint.md) | Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit | Accepted (ships 0.35.0) |
 | [0036](./0036-transports-as-pure-framings.md) | Transports are pure framings: one verb vocabulary, one session, lifted to core | Accepted |
 | [0037](./0037-boot-pulse-derive-or-guard.md) | Boot/pulse: derive-or-guard, no unguarded hand-maintained mirror | Accepted |
+| [0039](./0039-mcp-catalog-derive-or-guard.md) | The MCP catalog derives from one declared verb contract | Accepted |
+| [0040](./0040-mcp-connection-role-and-two-channels.md) | MCP connection acts as `agent`; human authority is a separate channel | Proposed |

@@ -5,6 +5,15 @@ module Textus
     # Loads a YAML migration plan and dispatches each op to the
     # appropriate Maintenance use case. Concatenates resulting Plans.
     class Migrate
+      extend Textus::Contract::DSL
+
+      verb     :migrate
+      summary  "Run a YAML migration plan (multi-op)."
+      surfaces :cli, :ruby, :mcp
+      arg :plan_yaml, String, required: true
+      arg :dry_run,   :boolean
+      response(&:to_h)
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

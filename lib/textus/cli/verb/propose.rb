@@ -14,18 +14,13 @@ module Textus
           rel = positional.shift or raise UsageError.new("propose requires a key")
           raise UsageError.new("propose requires --stdin") unless use_stdin
 
-          role = resolved_role(store)
-          zone = store.manifest.policy.propose_zone_for(role)
-          raise UsageError.new("no propose_zone is defined in this manifest") unless zone
-
           payload = JSON.parse(@stdin.read)
-          # if_etag is intentionally omitted: a proposal is always a fresh write into the queue.
-          result = store.as(role).put(
-            "#{zone}.#{rel}",
+          env = store.as(resolved_role(store)).propose(
+            rel,
             meta: payload["_meta"] || {},
             body: payload["body"] || "",
           )
-          emit(result.to_h_for_wire)
+          emit(env.to_h_for_wire)
         end
       end
     end

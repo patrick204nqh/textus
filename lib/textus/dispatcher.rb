@@ -6,6 +6,7 @@ module Textus
     VERBS = {
       # Write
       put: Textus::Write::Put,
+      propose: Textus::Write::Propose,
       delete: Textus::Write::Delete,
       mv: Textus::Write::Mv,
       accept: Textus::Write::Accept,
@@ -30,11 +31,12 @@ module Textus
       pulse: Textus::Read::Pulse,
       policy_explain: Textus::Read::PolicyExplain,
       published: Textus::Read::Published,
-      schema_envelope: Textus::Read::SchemaEnvelope,
+      schema: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
       retainable: Textus::Read::Retainable,
+      rules: Textus::Read::Rules,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,

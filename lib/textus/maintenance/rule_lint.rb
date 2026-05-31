@@ -6,6 +6,14 @@ module Textus
     # YAML string. Returns a Plan describing rule additions/removals/
     # changes. Does NOT write anything.
     class RuleLint
+      extend Textus::Contract::DSL
+
+      verb     :rule_lint
+      summary  "Diff candidate manifest YAML's rules against the live manifest. No writes."
+      surfaces :cli, :ruby, :mcp
+      arg :candidate_yaml, String, required: true
+      response(&:to_h)
+
       def initialize(container:, call:)
         @container = container
         @call      = call

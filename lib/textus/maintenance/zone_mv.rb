@@ -6,6 +6,16 @@ module Textus
     # the `zone:` field on every entry under the old zone, and moves
     # every file from zones/<old>/ to zones/<new>/.
     class ZoneMv
+      extend Textus::Contract::DSL
+
+      verb     :zone_mv
+      summary  "Rename a zone — manifest + files. Refuses if destination exists."
+      surfaces :cli, :ruby, :mcp
+      arg :from,    String, required: true
+      arg :to,      String, required: true
+      arg :dry_run, :boolean
+      response(&:to_h)
+
       def initialize(container:, call:)
         @container = container
         @call      = call

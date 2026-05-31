@@ -7,7 +7,7 @@ module Textus
 
         def call(store)
           key = positional.shift or raise UsageError.new("schema requires a key")
-          emit(session_for(store).schema_envelope(key))
+          emit(session_for(store).schema(key))
         end
       end
     end

@@ -3,6 +3,14 @@ require "timeout"
 module Textus
   module Write
     class FetchWorker
+      extend Textus::Contract::DSL
+
+      verb     :fetch
+      summary  "Run a fetch action for one quarantine entry."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true
+      response { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }
+
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)

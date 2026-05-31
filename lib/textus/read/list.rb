@@ -1,6 +1,14 @@
 module Textus
   module Read
     class List
+      extend Textus::Contract::DSL
+
+      verb     :list
+      summary  "List keys filtered by zone and/or prefix."
+      surfaces :cli, :ruby, :mcp
+      arg :prefix, String
+      arg :zone,   String
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end
