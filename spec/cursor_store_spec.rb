@@ -22,4 +22,9 @@ RSpec.describe Textus::CursorStore do
     cursor.write(10)
     expect(described_class.new(root: root, role: :human).read).to eq(0)
   end
+
+  it "writes the cursor under .run/state" do
+    described_class.new(root: root, role: "agent").write(42)
+    expect(File.read(Textus::Layout.cursor(root, "agent"))).to eq("42")
+  end
 end
