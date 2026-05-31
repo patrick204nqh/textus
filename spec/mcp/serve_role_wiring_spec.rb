@@ -20,6 +20,9 @@ RSpec.describe "MCP serve role wiring (ADR 0040)" do
       fake
     end
 
+    allow(ENV).to receive(:[]).and_call_original
+    allow(ENV).to receive(:[]).with("TEXTUS_ROLE").and_return(nil)
+
     verb.call(store)
     captured
   end
