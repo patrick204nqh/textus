@@ -11,15 +11,18 @@ module Textus
             next unless File.directory?(base)
 
             index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
-            index_fn ? check_index_paths(entry, index_fn, base, out) : check_all_paths(base, out)
+            index_fn ? check_index_paths(entry, index_fn, base, out) : check_all_paths(entry, base, out)
           end
           out
         end
 
         private
 
-        def check_all_paths(base, out)
+        def check_all_paths(entry, base, out)
           walk_nested(base) do |abs_path, is_dir|
+            rel = abs_path.sub(%r{\A#{Regexp.escape(base)}/?}, "")
+            next if entry.ignored?(rel)
+
             basename = File.basename(abs_path)
             stem = is_dir ? basename : basename.sub(/#{Regexp.escape(File.extname(basename))}\z/, "")
             next if stem.match?(Key::Grammar::SEGMENT)
@@ -31,10 +34,13 @@ module Textus
         # When the entry uses `index_filename:`, only the parent-directory
         # segments leading to each index file participate in keys. Sibling
         # files and unrelated subtrees are not enumerated and must not be
-        # flagged. Each illegal segment is reported once per path.
-        def check_index_paths(_entry, index_fn, base, out)
+        # flagged. Each illegal segment is reported once per path. Paths under
+        # an ignored subtree (ADR 0042) are excluded before any segment check.
+        def check_index_paths(entry, index_fn, base, out)
           Dir.glob(File.join(base, "**", index_fn)).each do |fp|
             rel = fp.sub(%r{\A#{Regexp.escape(base)}/?}, "")
+            next if entry.ignored?(rel)
+
             File.dirname(rel).split("/").reject { |s| s.empty? || s == "." }.each do |seg|
               next if seg.match?(Key::Grammar::SEGMENT)
 
