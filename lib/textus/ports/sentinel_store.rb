@@ -51,6 +51,7 @@ module Textus
 
         prefix = File.join(store_root, DIR) + "/"
         Dir.glob(File.join(sdir, "**", "*#{SUFFIX}")).map do |spath|
+          # strip the sentinel-store prefix and the .textus-managed.json suffix to recover the repo-relative target path
           trel = spath.delete_prefix(prefix).delete_suffix(SUFFIX)
           File.join(repo_root, trel)
         end

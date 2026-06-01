@@ -41,7 +41,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
-          pruned = [] # populated by the prune step (later task); empty here
+          pruned = [] # accumulates orphans removed by prune_orphans below
           pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
