@@ -64,21 +64,26 @@ entries:
     - knowledge.runbooks
     transform: orientation_reducer
   kind: derived
-# A snapshot of this host, pulled by `textus fetch feeds.machine
-# --as=automation` (the same entry + machine_intake.rb hook that `textus init`
-# scaffolds). tracked:false → the fetched file is gitignored (machine info can
-# be sensitive/noisy) but stays readable via `textus get feeds.machine`, and is
-# never published. Delete to opt out. (ADR 0043)
-- key: feeds.machine
-  path: feeds/machine.yaml
+# A per-host snapshot, pulled by `textus fetch feeds.machines.local
+# --as=automation` (the same nested entry + machine_intake.rb hook that
+# `textus init` scaffolds). Grows to a fleet — add feeds.machines.<host> over
+# SSH (see ../../../docs/cookbook/environment-scan.md). tracked:false → the
+# fetched files are gitignored (machine info can be sensitive/noisy) but stay
+# readable via `textus get feeds.machines.local`, and are never published. (ADR 0043)
+- key: feeds.machines
+  path: feeds/machines
   zone: feeds
   format: yaml
+  nested: true
   tracked: false
   kind: intake
   intake:
-    handler: machine
+    handler: machines
+    config:
+      machines:
+        local: { via: local }
 rules:
-- match: feeds.machine
+- match: feeds.machines.**
   fetch:
     ttl: 1h
     on_stale: warn

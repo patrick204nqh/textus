@@ -32,7 +32,7 @@ project/
         runbooks/
           deploy.md                  # how to ship a release
           oncall.md                  # first response when the service pages
-      feeds/                         # machine.yaml lands here on fetch — tracked:false, gitignored
+      feeds/                         # machines/local.yaml lands here on fetch — tracked:false, gitignored
       proposals/decisions/
         0001-switch-to-sidekiq-pro.md  # pre-staged ADR proposal (agent → human)
       artifacts/orientation.md       # ← published to CLAUDE.md and AGENTS.md
@@ -61,11 +61,11 @@ bundle exec ../../exe/textus doctor
 bundle exec ../../exe/textus get proposals.decisions.0001-switch-to-sidekiq-pro
 # bundle exec ../../exe/textus accept proposals.decisions.0001-switch-to-sidekiq-pro --as=human
 
-# Pull a snapshot of this host into feeds.machine (the same entry + hook
-# `textus init` scaffolds). machine_intake.rb gathers git/ruby/os facts.
-bundle exec ../../exe/textus fetch feeds.machine --as=automation
-bundle exec ../../exe/textus get feeds.machine            # retrievable via the protocol…
-git check-ignore .textus/zones/feeds/machine.yaml         # …yet gitignored (tracked:false)
+# Pull a snapshot of this host into feeds.machines.local (the same nested entry
+# + hook `textus init` scaffolds). machine_intake.rb gathers git/os/runtime facts.
+bundle exec ../../exe/textus fetch feeds.machines.local --as=automation
+bundle exec ../../exe/textus get feeds.machines.local           # retrievable via the protocol…
+git check-ignore .textus/zones/feeds/machines/local.yaml        # …yet gitignored (tracked:false)
 ```
 
 ## Adoption recipe for your project
@@ -93,7 +93,7 @@ git commit -m "Adopt textus context store"
 | Use case | Zone | Writers | Example here |
 |---|---|---|---|
 | Project facts and operational knowledge | `knowledge` | human only | `knowledge.project` — the `ledger` service description; `knowledge.runbooks.*` |
-| External data pulled in on `fetch` | `feeds` | automation (`fetch`) | `feeds.machine` — host snapshot (git/ruby/os); `tracked:false` so it's protocol-readable but gitignored |
+| External data pulled in on `fetch` | `feeds` | automation (`fetch`) | `feeds.machines.local` — nested host snapshot (git/os/runtimes); `tracked:false` so it's protocol-readable but gitignored |
 | Agent suggests a change for human approval | `proposals` | agent → human accept | `proposals.decisions.0001-…` |
 | Build-computed projection of all of the above | `artifacts` | automation only | `artifacts.orientation` → `CLAUDE.md` + `AGENTS.md` |
 

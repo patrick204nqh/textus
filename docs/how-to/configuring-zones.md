@@ -174,16 +174,29 @@ The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the 
 
 ### Machine snapshot (scaffolded)
 
-`textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a
-`feeds.machine` entry (`tracked: false`). `textus fetch feeds.machine
---as=automation` pulls a snapshot of this host (git HEAD/branch/dirty, repo
-root, now, ruby/os, textus version) into the `feeds` zone. It is **retrievable
-via the protocol** (`textus get feeds.machine`) but **gitignored and never
-published**, because machine info can be sensitive or noisy — the entry's
-`tracked: false` flag drives the generated `.gitignore`. A `feeds.machine`
-freshness rule (`ttl: 1h`) re-fetches on a long-running server. Don't want it?
-Delete the entry from `manifest.yaml` (and the hook). Customize the hook to
-capture more; keep secrets out.
+`textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a **nested**
+`feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
+`textus fetch feeds.machines.local --as=automation` pulls a snapshot of this
+host into the `feeds` zone:
+
+- **git** — short HEAD, branch, dirty flag, repo root (the *control* host's repo; only meaningful for `local`)
+- **platform** — os, arch, ruby version, and `runtimes` (node/python/go versions, `null` when not installed)
+- **packages** — counts per manager (`brew`, `apt`); never the package list
+- `captured_at`, `textus_version`, `protocol`
+
+It is **retrievable via the protocol** (`textus get feeds.machines.local`) but
+**gitignored and never published**, because machine info can be sensitive or
+noisy — the entry's `tracked: false` flag drives the generated `.gitignore`
+(the whole `zones/feeds/machines/` subtree). The scan runs **only on `fetch`**
+(never the `boot`/`pulse` read path), and a `feeds.machines.**` freshness rule
+(`ttl: 1h`) amortizes the cost (a `brew list` count is ~1–3 s) on a long-running
+server. The hook is a deliberate **allowlist** — versions and counts, no raw
+`env`, no secrets.
+
+Because it's **nested**, it grows to a fleet without renaming: add
+`feeds.machines.<host>` leaves pulled over SSH (the *Environment scan across
+machines* cookbook recipe shows the fan-out). Don't want it? Delete the entry +
+hook to opt out.
 
 ### Aging entries out — `retention`
 
