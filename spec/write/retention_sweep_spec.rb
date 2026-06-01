@@ -4,21 +4,21 @@ RSpec.describe Textus::Write::RetentionSweep do
   include_context "textus_store_fixture"
 
   def build_store(retention)
-    s = store_from_manifest(root, zones: %w[review], manifest: <<~YAML)
+    s = store_from_manifest(root, zones: %w[proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: review, kind: queue }
+        - { name: proposals, kind: queue }
       entries:
-        - { key: review.notes, path: review/notes, zone: review, owner: agent:self, kind: nested }
+        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
       rules:
-        - match: review.**
+        - match: proposals.**
           retention: #{retention}
     YAML
-    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
-    leaf = File.join(root, "zones", "review", "notes", "old.md")
+    FileUtils.mkdir_p(File.join(root, "zones", "proposals", "notes"))
+    leaf = File.join(root, "zones", "proposals", "notes", "old.md")
     File.write(leaf, "---\nname: old\n---\nbody\n")
     old = Time.now - (40 * 86_400)
     File.utime(old, old, leaf)
@@ -35,7 +35,7 @@ RSpec.describe Textus::Write::RetentionSweep do
   it "deletes a leaf past expire_after and lists it under expired" do
     store, leaf = build_store("{ expire_after: 30d }")
     result = sweep(store)
-    expect(result["expired"]).to eq(["review.notes.old"])
+    expect(result["expired"]).to eq(["proposals.notes.old"])
     expect(result["archived"]).to eq([])
     expect(File.exist?(leaf)).to be(false)
     expect(result["ok"]).to be(true)
@@ -44,9 +44,9 @@ RSpec.describe Textus::Write::RetentionSweep do
   it "archives a leaf past archive_after into <root>/archive and removes the original" do
     store, leaf = build_store("{ archive_after: 30d }")
     result = sweep(store)
-    expect(result["archived"]).to eq(["review.notes.old"])
+    expect(result["archived"]).to eq(["proposals.notes.old"])
     expect(result["expired"]).to eq([])
     expect(File.exist?(leaf)).to be(false)
-    expect(File.exist?(File.join(root, "archive", "zones", "review", "notes", "old.md"))).to be(true)
+    expect(File.exist?(File.join(root, "archive", "zones", "proposals", "notes", "old.md"))).to be(true)
   end
 end

@@ -3,34 +3,34 @@ require "spec_helper"
 # Regression test for Staleness: it must detect generator-kind zones via the
 # kind: derived signal (the zone-kind that requires the `build` capability),
 # not via the literal zone name "derived". Prior to signal-based detection,
-# post-0.9.2 default `output` zones were skipped entirely.
+# post-0.9.2 default `artifacts` zones were skipped entirely.
 RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection" do
   include_context "textus_store_fixture"
 
   def build_output_zone_fixture!
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: output,  kind: derived }
+        - { name: artifacts,  kind: derived }
       entries:
         - key: knowledge.src
           kind: leaf
           path: knowledge/src.md
           zone: knowledge
-        - key: output.catalog
+        - key: artifacts.catalog
           kind: derived
-          path: output/catalog.md
-          zone: output
+          path: artifacts/catalog.md
+          zone: artifacts
           compute:
             kind: external
             command: "rake catalog"
             sources: [knowledge.src]
     YAML
     File.write(File.join(root, "zones/knowledge/src.md"), "---\nname: src\n---\nbody\n")
-    File.write(File.join(root, "zones/output/catalog.md"), <<~MD)
+    File.write(File.join(root, "zones/artifacts/catalog.md"), <<~MD)
       ---
       generated:
         by: "rake catalog"
@@ -43,12 +43,12 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     File.utime(Time.now, Time.now, File.join(root, "zones/knowledge/src.md"))
   end
 
-  it "flags a generator entry in a zone literally named 'output' (post-0.9.2 default)" do
+  it "flags a generator entry in a zone literally named 'artifacts' (post-0.9.2 default)" do
     build_output_zone_fixture!
     store = Textus::Store.new(root)
     rows = store.as(Textus::Role::DEFAULT).stale
     expect(rows.length).to eq(1)
-    expect(rows.first["key"]).to eq("output.catalog")
+    expect(rows.first["key"]).to eq("artifacts.catalog")
     expect(rows.first["reason"]).to match(/knowledge\.src/)
   end
 
@@ -63,22 +63,22 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     [File.join(src_dir, "subdir"), File.join(src_dir, "data.txt")].each do |f|
       File.utime(future, future, f)
     end
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
-        - key: output.report
+        - key: artifacts.report
           kind: derived
-          path: output/report.md
-          zone: output
+          path: artifacts/report.md
+          zone: artifacts
           compute:
             kind: external
             command: "make report"
             sources: ["#{src_dir}"]
     YAML
-    File.write(File.join(root, "zones/output/report.md"), <<~MD)
+    File.write(File.join(root, "zones/artifacts/report.md"), <<~MD)
       ---
       generated:
         by: "make report"
@@ -95,7 +95,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     rows = store.as(Textus::Role::DEFAULT).stale
 
     expect(rows.length).to eq(1)
-    expect(rows.first["key"]).to eq("output.report")
+    expect(rows.first["key"]).to eq("artifacts.report")
     expect(rows.first["reason"]).to match(/modified after generated\.at/)
   end
 

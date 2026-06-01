@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::Rdeps do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge output],
+      zones: %w[knowledge artifacts],
       files: {
         "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
         "zones/knowledge/people/alice.md" => "---\nname: alice\n---\n",
@@ -15,14 +15,14 @@ RSpec.describe Textus::Read::Rdeps do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
-          - key: output.catalogs.people
+          - key: artifacts.catalogs.people
             kind: derived
-            path: output/catalogs/people.md
-            zone: output
+            path: artifacts/catalogs/people.md
+            zone: artifacts
             owner: automation:auto
             compute: { kind: projection, select: knowledge.people }
             template: people.mustache
@@ -33,6 +33,6 @@ RSpec.describe Textus::Read::Rdeps do
   it "returns the keys that depend on knowledge.people" do
     ops = store.as("human")
     result = ops.rdeps("knowledge.people")
-    expect(result).to include("output.catalogs.people")
+    expect(result).to include("artifacts.catalogs.people")
   end
 end

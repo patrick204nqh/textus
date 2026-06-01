@@ -5,7 +5,7 @@ RSpec.describe Textus::Boot do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -14,7 +14,7 @@ RSpec.describe Textus::Boot do
         - { name: agent, can: [propose] }
       zones:
         - { name: knowledge, kind: canon }
-        - { name: review,  kind: queue }
+        - { name: proposals,  kind: queue }
       entries: []
     YAML
   end
@@ -26,8 +26,8 @@ RSpec.describe Textus::Boot do
       expect(qs).to be_a(Hash)
       expect(qs["read_verbs"]).to include("boot", "get", "list", "audit", "pulse", "freshness", "doctor")
       expect(qs["write_verbs"]).to include(a_string_matching(/put.*--as=agent/))
-      expect(qs["writable_zones"]).to include("review")
-      expect(qs["propose_zone"]).to eq("review")
+      expect(qs["writable_zones"]).to include("proposals")
+      expect(qs["propose_zone"]).to eq("proposals")
       expect(qs).to have_key("latest_seq")
       expect(qs["latest_seq"]).to be_a(Integer)
     end

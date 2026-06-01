@@ -88,7 +88,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: automation, can: [fetch, build] }
         zones:
           - { name: intake, kind: quarantine }
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -125,7 +125,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: agent, can: [propose, build] }
         zones:
           - { name: review, kind: queue }
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -231,7 +231,7 @@ RSpec.describe Textus::Manifest::Policy do
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
-          - { name: output,  kind: derived }
+          - { name: artifacts,  kind: derived }
         entries: []
       YAML
     end
@@ -246,7 +246,7 @@ RSpec.describe Textus::Manifest::Policy do
     end
 
     it "treats a kind: derived zone as derived" do
-      expect(policy.derived_zone?("output")).to be(true)
+      expect(policy.derived_zone?("artifacts")).to be(true)
       expect(policy.derived_zone?("knowledge")).to be(false)
     end
 
@@ -294,9 +294,9 @@ RSpec.describe Textus::Manifest::Policy do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
       roles: [{ name: automation, can: [fetch, build] }]
-      zones: [{ name: output, kind: derived }]
+      zones: [{ name: artifacts, kind: derived }]
       entries:
-        - { key: output.x, path: output/x.md, zone: output, owner: automation:auto, kind: derived,
+        - { key: artifacts.x, path: artifacts/x.md, zone: artifacts, owner: automation:auto, kind: derived,
             compute: { kind: projection, select: [knowledge.notes], pluck: "*" }, template: x.mustache }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
@@ -315,14 +315,14 @@ RSpec.describe Textus::Manifest::Policy do
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
-          - { name: output,  kind: derived }
+          - { name: artifacts,  kind: derived }
         entries: []
       YAML
     end
 
     it "exposes declared_zone_kinds keyed by zone name with symbol values" do
       expect(data.declared_zone_kinds).to eq(
-        "knowledge" => :canon, "review" => :queue, "output" => :derived,
+        "knowledge" => :canon, "review" => :queue, "artifacts" => :derived,
       )
     end
 

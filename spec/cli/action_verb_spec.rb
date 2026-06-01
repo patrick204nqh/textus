@@ -10,7 +10,7 @@ RSpec.describe "textus action verb" do
         - { name: knowledge,  kind: canon }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: canon }
-        - { name: output,   kind: derived }
+        - { name: artifacts,   kind: derived }
       entries:
         - { key: knowledge.demo, path: knowledge/demo.md, zone: knowledge, kind: leaf}
 

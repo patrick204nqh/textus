@@ -14,23 +14,23 @@ RSpec.describe Textus::MCP::Tools do
       zones:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
-        - { name: review,   kind: queue }
+        - { name: proposals,   kind: queue }
       entries:
         - { key: identity.self,   path: identity/self.md, zone: identity, owner: human:self, kind: leaf }
         - { key: knowledge.note,    path: knowledge/note.md,  zone: knowledge,  owner: human:self, kind: leaf }
-        - { key: review.proposal, path: review/proposal,  zone: review,   owner: agent, kind: nested }
+        - { key: proposals.proposal, path: proposals/proposal,  zone: proposals,   owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }
   let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
   let(:session) do
-    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "review", manifest_etag: etag)
+    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "proposals", manifest_etag: etag)
   end
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
@@ -83,7 +83,7 @@ RSpec.describe Textus::MCP::Tools do
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
       human_session = Textus::MCP::Session.new(
-        role: "human", cursor: 0, propose_zone: "review", manifest_etag: etag,
+        role: "human", cursor: 0, propose_zone: "proposals", manifest_etag: etag,
       )
       result = described_class.call(
         "put",
@@ -104,7 +104,7 @@ RSpec.describe Textus::MCP::Tools do
         args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
       )
       expect(result.keys).to contain_exactly("uid", "etag", "key")
-      expect(result["key"]).to eq("review.proposal.x")
+      expect(result["key"]).to eq("proposals.proposal.x")
     end
   end
 

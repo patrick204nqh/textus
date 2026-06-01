@@ -16,21 +16,21 @@ RSpec.describe Textus::Write::Materializer do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
         - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
 
-        - key: output.catalogs.people
+        - key: artifacts.catalogs.people
           kind: derived
-          path: output/catalogs/people.md
-          zone: output
+          path: artifacts/catalogs/people.md
+          zone: artifacts
           owner: automation:auto
           compute: { kind: projection, select: knowledge.people, pluck: [name, org], sort_by: name }
           template: people.mustache
@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::Materializer do
   end
 
   it "materializes a Derived entry and writes rendered content to disk" do
-    mentry = store.manifest.data.entries.find { |e| e.key == "output.catalogs.people" }
+    mentry = store.manifest.data.entries.find { |e| e.key == "artifacts.catalogs.people" }
     expect(mentry).to be_a(Textus::Manifest::Entry::Derived)
 
     target_path = materializer.run(mentry)

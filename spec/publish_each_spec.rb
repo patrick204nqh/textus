@@ -8,7 +8,7 @@ RSpec.describe "publish_each:" do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/skills/writing"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/skills/research"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/commands"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
   end
 
   def write_manifest(entries_yaml)
@@ -16,7 +16,7 @@ RSpec.describe "publish_each:" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
       #{entries_yaml}
     YAML

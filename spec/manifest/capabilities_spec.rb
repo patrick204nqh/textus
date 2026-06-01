@@ -64,8 +64,8 @@ RSpec.describe Textus::Manifest::Capabilities do
         zones:
           - { name: identity, kind: canon }
           - { name: intake,   kind: quarantine }
-          - { name: review,   kind: queue }
-          - { name: output,   kind: derived }
+          - { name: proposals,   kind: queue }
+          - { name: artifacts,   kind: derived }
         entries: []
       YAML
       expect(m.data.role_caps).to eq(
@@ -83,7 +83,7 @@ RSpec.describe Textus::Manifest::Capabilities do
           - { name: automation, can: [fetch, build] }
         zones:
           - { name: identity, kind: canon }
-          - { name: output,   kind: derived }
+          - { name: artifacts,   kind: derived }
         entries: []
       YAML
       expect(m.data.role_caps).to eq(

@@ -9,32 +9,32 @@ require "spec_helper"
 RSpec.describe "store.reject with declared-kind proposal-zone detection" do
   include_context "textus_store_fixture"
 
-  it "accepts a proposal in a zone declaring kind: queue (named 'review')" do
+  it "accepts a proposal in a zone declaring kind: queue (named 'proposals')" do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: review,   kind: queue }
+        - { name: proposals,   kind: queue }
       entries:
         - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
-        - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
+        - { key: proposals.draft,    path: proposals/draft.md,    zone: proposals, kind: leaf}
 
     YAML
 
     store = Textus::Store.new(root)
     store.as("agent").put(
-      "review.draft",
+      "proposals.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "proposed body",
     )
 
-    result = store.as("human").reject("review.draft")
-    expect(result["rejected"]).to eq("review.draft")
+    result = store.as("human").reject("proposals.draft")
+    expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
+    expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 
   it "refuses: a zone declaring kind: canon is not a proposal zone (even if named 'pending')" do

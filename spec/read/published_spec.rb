@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::Published do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge output],
+      zones: %w[knowledge artifacts],
       files: {
         "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
         "zones/knowledge/people/alice.md" => "---\nname: alice\n---\n",
@@ -15,14 +15,14 @@ RSpec.describe Textus::Read::Published do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
-          - key: output.catalogs.people
+          - key: artifacts.catalogs.people
             kind: derived
-            path: output/catalogs/people.md
-            zone: output
+            path: artifacts/catalogs/people.md
+            zone: artifacts
             owner: automation:auto
             compute: { kind: projection, select: knowledge.people }
             template: people.mustache
@@ -31,9 +31,9 @@ RSpec.describe Textus::Read::Published do
     )
   end
 
-  it "returns entries that have publish_to, including output.catalogs.people" do
+  it "returns entries that have publish_to, including artifacts.catalogs.people" do
     ops = store.as("human")
     result = ops.published
-    expect(result.map { |r| r["key"] }).to include("output.catalogs.people")
+    expect(result.map { |r| r["key"] }).to include("artifacts.catalogs.people")
   end
 end

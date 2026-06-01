@@ -5,7 +5,7 @@ RSpec.describe "Manifest format: field validation" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
   end
 
   def write_manifest(entries_yaml)
@@ -13,7 +13,7 @@ RSpec.describe "Manifest format: field validation" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
       #{entries_yaml}
     YAML
@@ -51,24 +51,24 @@ RSpec.describe "Manifest format: field validation" do
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("markdown")
   end
 
-  it "rejects output markdown without template" do
+  it "rejects markdown output without template" do
     write_manifest(<<~YAML)
-      - key: output.x
+      - key: artifacts.x
         kind: derived
-        path: output/x.md
-        zone: output
+        path: artifacts/x.md
+        zone: artifacts
         compute: { kind: projection, select: [knowledge] }
     YAML
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
   end
 
-  it "accepts output json without template (templateless escape hatch is also OK)" do
+  it "accepts json output without template (templateless escape hatch is also OK)" do
     write_manifest(<<~YAML)
-      - key: output.x
+      - key: artifacts.x
         kind: derived
-        path: output/x.json
-        zone: output
+        path: artifacts/x.json
+        zone: artifacts
         compute: { kind: projection, select: [knowledge] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error

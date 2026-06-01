@@ -6,21 +6,21 @@ RSpec.describe "textus build concurrency" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
-        - key: output.note
+        - key: artifacts.note
           kind: derived
-          path: output/note.md
-          zone: output
+          path: artifacts/note.md
+          zone: artifacts
           owner: automation:auto
           compute: { kind: projection, select: knowledge.note }
           template: echo.mustache
