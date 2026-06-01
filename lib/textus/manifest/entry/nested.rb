@@ -88,6 +88,9 @@ module Textus
           end
         end
 
+        # Scoped to this leaf's target_dir only. Safe across leaves because ADR 0046
+        # Decision 5 (shallowest-index-wins) keeps leaf dirs non-nesting, so {leaf}-derived
+        # target dirs never nest and targets_under can't reach another leaf's sentinels.
         def prune_orphans(target_dir, written, pctx)
           kept = written.map { |w| File.expand_path(w["target"]) }
           store = Textus::Ports::SentinelStore.new
