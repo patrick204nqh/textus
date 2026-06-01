@@ -25,7 +25,7 @@ RSpec.describe Textus::Write::Materializer do
         - { name: working, kind: canon }
         - { name: output, kind: derived }
       entries:
-        - { key: working.people, path: working/people, zone: working, owner: o, kind: nested }
+        - { key: working.people, path: working/people, zone: working, owner: human:self, kind: nested }
 
         - key: output.catalogs.people
           kind: derived

@@ -11,7 +11,7 @@ RSpec.describe Textus::Schema::Tools do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.people, path: working/people, zone: working, owner: o, kind: nested}
+        - { key: working.people, path: working/people, zone: working, owner: human:self, kind: nested}
 
     YAML
   end

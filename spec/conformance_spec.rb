@@ -236,7 +236,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         entries:
-          - { key: state.x, path: state/x.md, zone: state, owner: o, kind: leaf}
+          - { key: state.x, path: state/x.md, zone: state, owner: human:self, kind: leaf}
 
       YAML
       expect { Textus::Manifest.load(root) }
