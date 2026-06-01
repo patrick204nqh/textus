@@ -31,6 +31,7 @@ end
 # manifest.yaml
 entries:
   - key: feeds.api.users
+    path: feeds/api/users.md
     zone: feeds
     kind: intake
     intake: { handler: http_json, config: { url: "https://api.example.com/users" } }
@@ -39,6 +40,12 @@ rules:
 ```
 
 Run: `textus fetch feeds.api.users --as=automation`
+
+> **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
+> top level must be a **mapping** (an object). If your source is a top-level
+> **array** (a `:json` array, `:csv` rows, `:rss`/`:ical-events` items), either
+> wrap it in an object (`{ "items": [...] }`) or keep the entry `format:
+> markdown` (the default), which stores the parsed YAML as the body.
 
 ## RSS feed
 
