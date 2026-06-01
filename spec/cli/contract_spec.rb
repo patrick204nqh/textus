@@ -5,11 +5,11 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
       yield root
@@ -25,7 +25,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
 
   it "fetch stale on an empty store returns 0 (was nil → TypeError, #61)" do
     with_store do |root|
-      code, _stdout, _stderr = run_cli(%w[fetch stale --prefix=working --as=automation], cwd: root)
+      code, _stdout, _stderr = run_cli(%w[fetch stale --prefix=knowledge --as=automation], cwd: root)
       expect(code).to be_an(Integer)
       expect(code).to eq(0)
     end

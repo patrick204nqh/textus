@@ -13,11 +13,11 @@ RSpec.describe Textus::MCP::Tools do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
+        - { name: knowledge,  kind: canon }
         - { name: review,   kind: queue }
       entries:
         - { key: identity.self,   path: identity/self.md, zone: identity, owner: human:self, kind: leaf }
-        - { key: working.note,    path: working/note.md,  zone: working,  owner: human:self, kind: leaf }
+        - { key: knowledge.note,    path: knowledge/note.md,  zone: knowledge,  owner: human:self, kind: leaf }
         - { key: review.proposal, path: review/proposal,  zone: review,   owner: agent, kind: nested }
     YAML
   end
@@ -29,7 +29,7 @@ RSpec.describe Textus::MCP::Tools do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/review"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
@@ -60,7 +60,7 @@ RSpec.describe Textus::MCP::Tools do
 
   describe ".call('list', ...)" do
     it "lists keys filtered by zone" do
-      result = described_class.call("list", session: session, store: store, args: { "zone" => "working" })
+      result = described_class.call("list", session: session, store: store, args: { "zone" => "knowledge" })
       expect(result).to be_an(Array)
     end
   end
@@ -88,7 +88,7 @@ RSpec.describe Textus::MCP::Tools do
       result = described_class.call(
         "put",
         session: human_session, store: store,
-        args: { "key" => "working.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
+        args: { "key" => "knowledge.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
       )
       expect(result).to include("uid", "etag")
     end
@@ -124,7 +124,7 @@ RSpec.describe Textus::MCP::Tools do
 
   describe ".call('rules', ...)" do
     it "returns a Hash with at most fetch/guard keys" do
-      result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
+      result = described_class.call("rules", session: session, store: store, args: { "key" => "knowledge.note" })
       expect(result).to be_a(Hash)
       expect(result.keys - %w[fetch guard]).to be_empty
     end
@@ -136,7 +136,7 @@ RSpec.describe Textus::MCP::Tools do
     it "returns a plan without mutating files" do
       result = described_class.call(
         "key_mv_prefix", session: session, store: store,
-                         args: { "from_prefix" => "working", "to_prefix" => "renamed", "dry_run" => true }
+                         args: { "from_prefix" => "knowledge", "to_prefix" => "renamed", "dry_run" => true }
       )
       expect(result).to include("steps", "warnings")
     end

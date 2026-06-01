@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::SchemaEnvelope do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working],
+      zones: %w[knowledge],
       schemas: {
         "person" => <<~YAML,
           name: person
@@ -15,14 +15,14 @@ RSpec.describe Textus::Read::SchemaEnvelope do
         YAML
       },
       files: {
-        "zones/working/person.md" => "---\nfull_name: Alice\n---\nbody\n",
+        "zones/knowledge/person.md" => "---\nfull_name: Alice\n---\nbody\n",
       },
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.person, path: working/person.md, zone: working, schema: person, kind: leaf}
+          - { key: knowledge.person, path: knowledge/person.md, zone: knowledge, schema: person, kind: leaf}
 
       YAML
     )
@@ -30,10 +30,10 @@ RSpec.describe Textus::Read::SchemaEnvelope do
 
   it "returns a hash with key, schema_ref, and schema as a Hash for a declared schema" do
     ops = store.as("human")
-    result = ops.schema("working.person")
+    result = ops.schema("knowledge.person")
 
     expect(result).to include(
-      "key" => "working.person",
+      "key" => "knowledge.person",
       "schema_ref" => "person",
       "schema" => be_a(Hash),
     )

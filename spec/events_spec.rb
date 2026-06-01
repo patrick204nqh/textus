@@ -6,13 +6,13 @@ RSpec.describe "Lifecycle events" do
 
   describe "entry put/delete hooks" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, kind: canon }]
+        zones: [{ name: knowledge, kind: canon }]
         entries:
-          - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+          - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
       YAML
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
@@ -29,16 +29,16 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_put after a write" do
       store = Textus::Store.new(root)
-      store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
-      expect($textus_event_log).to include([:entry_put, "working.x"])
+      store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
+      expect($textus_event_log).to include([:entry_put, "knowledge.x"])
     end
 
     it "fires :entry_deleted after a delete" do
       store = Textus::Store.new(root)
       ops = store.as("human")
-      ops.put("working.x", meta: { "name" => "x" }, body: "hi")
-      ops.delete("working.x")
-      expect($textus_event_log).to include([:entry_deleted, "working.x"])
+      ops.put("knowledge.x", meta: { "name" => "x" }, body: "hi")
+      ops.delete("knowledge.x")
+      expect($textus_event_log).to include([:entry_deleted, "knowledge.x"])
     end
 
     it "logs hook errors to audit log but does not abort the write" do
@@ -48,7 +48,7 @@ RSpec.describe "Lifecycle events" do
         end
       RUBY
       store = Textus::Store.new(root)
-      env = store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
+      env = store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
       expect(env.body).to eq("hi") # write succeeded
       last = last_audit_row(store)
       expect(last["extras"]["event"]).to eq("entry_put")
@@ -143,16 +143,16 @@ RSpec.describe "Lifecycle events" do
 
   describe "build and accept events" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       FileUtils.mkdir_p(File.join(root, "zones/output"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: output,  kind: derived }
         entries:
-          - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+          - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
           - key: output.summary
             kind: derived
@@ -161,12 +161,12 @@ RSpec.describe "Lifecycle events" do
             template: summary.mustache
             compute:
               kind: projection
-              select: [working]
+              select: [knowledge]
               pluck: [name]
       YAML
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")
-      File.write(File.join(root, "zones/working/x.md"), "---\nname: x\n---\nhi\n")
+      File.write(File.join(root, "zones/knowledge/x.md"), "---\nname: x\n---\nhi\n")
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
@@ -183,22 +183,22 @@ RSpec.describe "Lifecycle events" do
     it "fires :build_completed after Builder materializes an output entry" do
       store = Textus::Store.new(root)
       store.as("automation").publish
-      expect($log).to include([:build_completed, "output.summary", ["working"]])
+      expect($log).to include([:build_completed, "output.summary", ["knowledge"]])
     end
   end
 
   describe "accept event" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       FileUtils.mkdir_p(File.join(root, "zones/review"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
         entries:
-          - { key: working.bob, path: working/bob.md, zone: working, kind: leaf}
+          - { key: knowledge.bob, path: knowledge/bob.md, zone: knowledge, kind: leaf}
 
           - { key: review.bob,  path: review/bob.md,  zone: review, kind: leaf}
 
@@ -207,7 +207,7 @@ RSpec.describe "Lifecycle events" do
         ---
         name: bob
         proposal:
-          target_key: working.bob
+          target_key: knowledge.bob
           action: put
         frontmatter:
           name: bob
@@ -230,7 +230,7 @@ RSpec.describe "Lifecycle events" do
     it "fires :proposal_accepted after Proposal.accept completes" do
       store = Textus::Store.new(root)
       store.as("human").accept("review.bob")
-      expect($log).to include([:proposal_accepted, "review.bob", "working.bob"])
+      expect($log).to include([:proposal_accepted, "review.bob", "knowledge.bob"])
     end
 
     it "records both target_key and key when a :proposal_accepted hook fails" do
@@ -246,7 +246,7 @@ RSpec.describe "Lifecycle events" do
       expect(err).not_to be_nil
       expect(err["extras"]["event"]).to eq("proposal_accepted")
       expect(err["key"]).to eq("review.bob")
-      expect(err["extras"]["target_key"]).to eq("working.bob")
+      expect(err["extras"]["target_key"]).to eq("knowledge.bob")
     end
   end
 end

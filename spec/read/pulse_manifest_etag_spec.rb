@@ -4,13 +4,13 @@ RSpec.describe "Pulse manifest_etag" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[zones/knowledge schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")

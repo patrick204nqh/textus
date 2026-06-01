@@ -7,12 +7,12 @@ RSpec.describe "textus action verb" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
+        - { name: knowledge,  kind: canon }
         - { name: intake,   kind: quarantine }
         - { name: review,   kind: canon }
         - { name: output,   kind: derived }
       entries:
-        - { key: working.demo, path: working/demo.md, zone: working, kind: leaf}
+        - { key: knowledge.demo, path: knowledge/demo.md, zone: knowledge, kind: leaf}
 
     YAML
   end

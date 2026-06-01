@@ -6,13 +6,13 @@ RSpec.describe ":store_loaded event" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: canon }]
+      zones: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+        - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
@@ -47,7 +47,7 @@ RSpec.describe ":store_loaded event" do
 
   it "fires :store_loaded before any subsequent :entry_put" do
     store = Textus::Store.new(root)
-    store.as("human").put("working.x", meta: { "name" => "x" }, body: "hi")
+    store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
     order = $textus_event_log.map(&:first)
     expect(order.index(:store_loaded)).to be < order.index(:entry_put)
   end

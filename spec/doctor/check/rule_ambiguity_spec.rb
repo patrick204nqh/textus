@@ -4,7 +4,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   def with_store(manifest_yaml)
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), manifest_yaml)
       yield Textus::Store.new(textus)
     end
@@ -14,12 +14,12 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
 
       rules:
-        - match: working.foo
+        - match: knowledge.foo
           fetch: { ttl: 10m }
     YAML
 
@@ -29,16 +29,16 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   end
 
   it "warns when two rules of equal specificity carry the same slot" do
-    # Both globs (`working.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
+    # Both globs (`knowledge.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
 
       rules:
-        - match: working.*
+        - match: knowledge.*
           fetch: { ttl: 10m }
         - match: "*.foo"
           fetch: { ttl: 1h }
@@ -48,7 +48,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       issues = described_class.new(store.container).call
       ambig = issues.find { |i| i["code"] == "rule.ambiguity" }
       expect(ambig).not_to be_nil
-      expect(ambig["subject"]).to eq("working.foo")
+      expect(ambig["subject"]).to eq("knowledge.foo")
       expect(ambig["level"]).to eq("warning")
       expect(ambig["message"]).to include("fetch")
     end
@@ -58,14 +58,14 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     manifest = <<~YAML
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
 
       rules:
-        - match: working.*
+        - match: knowledge.*
           fetch: { ttl: 10m }
-        - match: working.foo
+        - match: knowledge.foo
           fetch: { ttl: 1h }
     YAML
 

@@ -5,10 +5,10 @@ RSpec.describe "textus audit --seq-since" do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: working, kind: canon }]
+        zones: [{ name: knowledge, kind: canon }]
         entries: []
       YAML
       yield root, textus

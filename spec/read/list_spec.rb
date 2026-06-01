@@ -6,21 +6,21 @@ RSpec.describe Textus::Read::List do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working notes],
+      zones: %w[knowledge notes],
       files: {
-        "zones/working/alpha.md" => "---\nname: alpha\n---\nbody\n",
-        "zones/working/beta.md" => "---\nname: beta\n---\nbody\n",
+        "zones/knowledge/alpha.md" => "---\nname: alpha\n---\nbody\n",
+        "zones/knowledge/beta.md" => "---\nname: beta\n---\nbody\n",
         "zones/notes/report.md" => "---\nname: report\n---\nbody\n",
       },
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: notes,   kind: canon }
         entries:
-          - { key: working.alpha, path: working/alpha.md, zone: working, kind: leaf}
+          - { key: knowledge.alpha, path: knowledge/alpha.md, zone: knowledge, kind: leaf}
 
-          - { key: working.beta,  path: working/beta.md,  zone: working, kind: leaf}
+          - { key: knowledge.beta,  path: knowledge/beta.md,  zone: knowledge, kind: leaf}
 
           - { key: notes.report,  path: notes/report.md,  zone: notes, kind: leaf}
 
@@ -32,14 +32,14 @@ RSpec.describe Textus::Read::List do
     ops = store.as("human")
     rows = ops.list
     expect(rows.map { |r| r["key"] }).to contain_exactly(
-      "working.alpha", "working.beta", "notes.report"
+      "knowledge.alpha", "knowledge.beta", "notes.report"
     )
   end
 
   it "filters by prefix" do
     ops = store.as("human")
-    rows = ops.list(prefix: "working")
-    expect(rows.map { |r| r["key"] }).to contain_exactly("working.alpha", "working.beta")
+    rows = ops.list(prefix: "knowledge")
+    expect(rows.map { |r| r["key"] }).to contain_exactly("knowledge.alpha", "knowledge.beta")
   end
 
   it "filters by zone" do

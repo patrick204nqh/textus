@@ -13,29 +13,29 @@ RSpec.describe Textus::CLI::Verb::Blame do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
     YAML
-    File.write(File.join(root, "zones/working/doc.md"), "---\nname: doc\n---\nbody\n")
+    File.write(File.join(root, "zones/knowledge/doc.md"), "---\nname: doc\n---\nbody\n")
     FileUtils.mkdir_p(audit_dir_path(root))
     File.open(audit_log_path(root), "w") do |f|
       f.puts JSON.generate({ "ts" => "2026-05-01T00:00:00Z", "role" => "human",
-                             "verb" => "put", "key" => "working.doc" })
+                             "verb" => "put", "key" => "knowledge.doc" })
     end
   end
 
   it "emits a JSON envelope with verb=blame, key, and rows (git nil without a repo)" do
-    rc = run(["blame", "working.doc"])
+    rc = run(["blame", "knowledge.doc"])
     expect(rc).to eq(0)
     payload = JSON.parse(stdout.string)
     expect(payload["verb"]).to eq("blame")
-    expect(payload["key"]).to eq("working.doc")
+    expect(payload["key"]).to eq("knowledge.doc")
     expect(payload["rows"].length).to eq(1)
     expect(payload["rows"].first["git"]).to be_nil
   end

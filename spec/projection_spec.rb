@@ -17,18 +17,18 @@ RSpec.describe Textus::Projection do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.people, path: working/people, zone: working, owner: human:self, kind: nested}
+        - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
     YAML
-    File.write(File.join(root, "zones/working/people/alice.md"),
+    File.write(File.join(root, "zones/knowledge/people/alice.md"),
                "---\nname: alice\norg: x\n---\n")
-    File.write(File.join(root, "zones/working/people/bob.md"),
+    File.write(File.join(root, "zones/knowledge/people/bob.md"),
                "---\nname: bob\norg: y\n---\n")
   end
 
@@ -36,7 +36,7 @@ RSpec.describe Textus::Projection do
 
   it "selects + plucks + sorts" do
     proj = build_projection(
-      "select" => "working.people",
+      "select" => "knowledge.people",
       "pluck" => %w[name org],
       "sort_by" => "name",
     )
@@ -48,13 +48,13 @@ RSpec.describe Textus::Projection do
   end
 
   it "caps at limit=1000 by default" do
-    proj = build_projection("select" => "working.people")
+    proj = build_projection("select" => "knowledge.people")
     expect(proj.run["entries"].length).to be <= 1000
   end
 
   it "raises if limit > 1000" do
     expect do
-      build_projection("select" => "working.people", "limit" => 5000)
+      build_projection("select" => "knowledge.people", "limit" => 5000)
     end.to raise_error(Textus::InvalidProjection)
   end
 
@@ -65,7 +65,7 @@ RSpec.describe Textus::Projection do
       rows.map { |r| r.merge("score" => r["name"].length) }
     end
     proj = build_projection(
-      "select" => "working.people",
+      "select" => "knowledge.people",
       "pluck" => ["name"],
       "transform" => "score",
       "sort_by" => "score",
@@ -82,7 +82,7 @@ RSpec.describe Textus::Projection do
       sleep 5
     end
     proj = build_projection(
-      "select" => "working.people",
+      "select" => "knowledge.people",
       "transform" => "slow",
     )
     expect { proj.run }.to raise_error(Textus::UsageError, /transform_rows 'slow' exceeded 2s timeout/)

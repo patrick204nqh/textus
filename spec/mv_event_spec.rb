@@ -6,15 +6,15 @@ RSpec.describe ":entry_renamed event" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: canon }]
+      zones: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: working.a, path: working/a.md, zone: working, kind: leaf}
+        - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf}
 
-        - { key: working.b, path: working/b.md, zone: working, kind: leaf}
+        - { key: knowledge.b, path: knowledge/b.md, zone: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
@@ -37,29 +37,29 @@ RSpec.describe ":entry_renamed event" do
 
   it "fires :entry_renamed with from_key, to_key, and envelope after a successful mv" do
     store = Textus::Store.new(root)
-    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("working.a", "working.b")
+    store.as("human").mv("knowledge.a", "knowledge.b")
     mv_events = $textus_event_log.select { |e| e[0] == :entry_renamed }
     expect(mv_events.length).to eq(1)
-    expect(mv_events.first[1]).to eq("working.a")
-    expect(mv_events.first[2]).to eq("working.b")
+    expect(mv_events.first[1]).to eq("knowledge.a")
+    expect(mv_events.first[2]).to eq("knowledge.b")
     expect(mv_events.first[3]).to match(/\A[0-9a-f]{16}\z/)
   end
 
   it "does NOT fire :entry_put or :entry_deleted on mv (entry_renamed is its own signal)" do
     store = Textus::Store.new(root)
-    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("working.a", "working.b")
+    store.as("human").mv("knowledge.a", "knowledge.b")
     expect($textus_event_log.map(&:first)).not_to include(:entry_put, :entry_deleted)
   end
 
   it "does NOT fire :entry_renamed on dry_run" do
     store = Textus::Store.new(root)
-    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("working.a", "working.b", dry_run: true)
+    store.as("human").mv("knowledge.a", "knowledge.b", dry_run: true)
     expect($textus_event_log).to be_empty
   end
 
@@ -67,14 +67,14 @@ RSpec.describe ":entry_renamed event" do
     File.write(File.join(root, "hooks/scoped.rb"), <<~RUBY)
       $textus_scoped_log ||= []
       Textus.hook do |reg|
-        reg.on(:entry_renamed, :scoped_match,    keys: ["working.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
+        reg.on(:entry_renamed, :scoped_match,    keys: ["knowledge.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
         reg.on(:entry_renamed, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
       end
     RUBY
     $textus_scoped_log = []
     store = Textus::Store.new(root)
-    store.as("human").put("working.a", meta: { "name" => "a" }, body: "hi")
-    store.as("human").mv("working.a", "working.b")
+    store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
+    store.as("human").mv("knowledge.a", "knowledge.b")
     expect($textus_scoped_log.map(&:first)).to eq([:match])
   ensure
     $textus_scoped_log = nil

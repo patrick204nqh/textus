@@ -33,13 +33,13 @@ RSpec.describe Textus::CLI::Verb::Build do
 
   context "when no role holds build" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
     end

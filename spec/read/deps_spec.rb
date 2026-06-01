@@ -6,25 +6,25 @@ RSpec.describe Textus::Read::Deps do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working output],
+      zones: %w[knowledge output],
       files: {
         "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
-        "zones/working/people/alice.md" => "---\nname: alice\n---\n",
+        "zones/knowledge/people/alice.md" => "---\nname: alice\n---\n",
       },
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: output, kind: derived }
         entries:
-          - { key: working.people, path: working/people, zone: working, owner: human:self, kind: nested}
+          - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
           - key: output.catalogs.people
             kind: derived
             path: output/catalogs/people.md
             zone: output
             owner: automation:auto
-            compute: { kind: projection, select: working.people }
+            compute: { kind: projection, select: knowledge.people }
             template: people.mustache
       YAML
     )
@@ -33,6 +33,6 @@ RSpec.describe Textus::Read::Deps do
   it "returns the keys that output.catalogs.people depends on" do
     ops = store.as("human")
     result = ops.deps("output.catalogs.people")
-    expect(result).to include("working.people")
+    expect(result).to include("knowledge.people")
   end
 end

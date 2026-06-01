@@ -4,7 +4,7 @@ RSpec.describe "Hook loader subdirectory support" do
   def write_minimal_manifest(textus_root)
     File.write(
       File.join(textus_root, "manifest.yaml"),
-      "version: textus/3\nzones:\n  - { name: working, kind: canon }\nentries: []\n",
+      "version: textus/3\nzones:\n  - { name: knowledge, kind: canon }\nentries: []\n",
     )
   end
 

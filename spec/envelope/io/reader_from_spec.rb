@@ -4,13 +4,13 @@ RSpec.describe "Textus::Envelope::IO::Reader.from" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
-        - { key: working.missing, path: working/missing.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.missing, path: knowledge/missing.md, zone: knowledge, kind: leaf}
     YAML
   end
 
@@ -22,11 +22,11 @@ RSpec.describe "Textus::Envelope::IO::Reader.from" do
   it "reads an existing entry equivalently to a hand-wired .new" do
     container = fresh_container(store)
     call = test_ctx(role: "automation")
-    mentry = store.manifest.resolver.resolve("working.foo").entry
+    mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
     writer = Textus::Envelope::IO::Writer.from(container: container, call: call)
     env = writer.put(
-      "working.foo",
+      "knowledge.foo",
       mentry: mentry,
       payload: Textus::Envelope::IO::Writer::Payload.new(meta: {}, body: "hello", content: nil),
     )
@@ -34,14 +34,14 @@ RSpec.describe "Textus::Envelope::IO::Reader.from" do
     from_reader = Textus::Envelope::IO::Reader.from(container: container)
     hand_reader = build_envelope_reader(store)
 
-    expect(from_reader.read("working.foo").body).to include("hello")
-    expect(from_reader.existing_uid("working.foo")).to eq(env.uid)
-    expect(from_reader.exists?("working.foo")).to be(true)
-    expect(from_reader.read("working.foo").uid).to eq(hand_reader.read("working.foo").uid)
+    expect(from_reader.read("knowledge.foo").body).to include("hello")
+    expect(from_reader.existing_uid("knowledge.foo")).to eq(env.uid)
+    expect(from_reader.exists?("knowledge.foo")).to be(true)
+    expect(from_reader.read("knowledge.foo").uid).to eq(hand_reader.read("knowledge.foo").uid)
   end
 
   it "returns nil for a missing entry" do
     reader = Textus::Envelope::IO::Reader.from(container: fresh_container(store))
-    expect(reader.read("working.missing")).to be_nil
+    expect(reader.read("knowledge.missing")).to be_nil
   end
 end

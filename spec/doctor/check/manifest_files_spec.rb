@@ -4,19 +4,19 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
     YAML
   end
 
   it "returns empty array when the declared leaf file exists" do
-    File.write(File.join(root, "zones/working/note.md"), "hi\n")
+    File.write(File.join(root, "zones/knowledge/note.md"), "hi\n")
     store = Textus::Store.new(root)
     expect(described_class.new(store.container).call).to eq([])
   end
@@ -27,7 +27,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
     expect(issues).to include(hash_including(
                                 "code" => "manifest.missing_file",
                                 "level" => "info",
-                                "subject" => "working.note",
+                                "subject" => "knowledge.note",
                               ))
   end
 
@@ -35,9 +35,9 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, kind: nested}
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, kind: nested}
 
     YAML
     store = Textus::Store.new(root)

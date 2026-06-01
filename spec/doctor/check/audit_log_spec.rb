@@ -4,11 +4,11 @@ RSpec.describe Textus::Doctor::Check::AuditLog do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries: []
     YAML
   end

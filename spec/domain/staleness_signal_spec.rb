@@ -8,18 +8,18 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
   include_context "textus_store_fixture"
 
   def build_output_zone_fixture!
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: output,  kind: derived }
       entries:
-        - key: working.src
+        - key: knowledge.src
           kind: leaf
-          path: working/src.md
-          zone: working
+          path: knowledge/src.md
+          zone: knowledge
         - key: output.catalog
           kind: derived
           path: output/catalog.md
@@ -27,20 +27,20 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
           compute:
             kind: external
             command: "rake catalog"
-            sources: [working.src]
+            sources: [knowledge.src]
     YAML
-    File.write(File.join(root, "zones/working/src.md"), "---\nname: src\n---\nbody\n")
+    File.write(File.join(root, "zones/knowledge/src.md"), "---\nname: src\n---\nbody\n")
     File.write(File.join(root, "zones/output/catalog.md"), <<~MD)
       ---
       generated:
         by: "rake catalog"
         at: "2020-01-01T00:00:00Z"
         from:
-          - working.src
+          - knowledge.src
       ---
       catalog
     MD
-    File.utime(Time.now, Time.now, File.join(root, "zones/working/src.md"))
+    File.utime(Time.now, Time.now, File.join(root, "zones/knowledge/src.md"))
   end
 
   it "flags a generator entry in a zone literally named 'output' (post-0.9.2 default)" do
@@ -49,7 +49,7 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     rows = store.as(Textus::Role::DEFAULT).stale
     expect(rows.length).to eq(1)
     expect(rows.first["key"]).to eq("output.catalog")
-    expect(rows.first["reason"]).to match(/working\.src/)
+    expect(rows.first["reason"]).to match(/knowledge\.src/)
   end
 
   # Closes Known-risk: the file? helper skips directories under a glob so that
@@ -100,18 +100,18 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
   end
 
   it "negative-signal: a zone literally named 'derived' but with kind: canon is NOT generator-kind" do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: derived, kind: canon }
       entries:
-        - key: working.src
+        - key: knowledge.src
           kind: leaf
-          path: working/src.md
-          zone: working
+          path: knowledge/src.md
+          zone: knowledge
         - key: derived.note
           kind: derived
           path: derived/note.md
@@ -119,10 +119,10 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
           compute:
             kind: external
             command: "echo"
-            sources: [working.src]
+            sources: [knowledge.src]
     YAML
 
-    File.write(File.join(root, "zones/working/src.md"), "---\nname: src\n---\nbody\n")
+    File.write(File.join(root, "zones/knowledge/src.md"), "---\nname: src\n---\nbody\n")
     # No file at derived/note.md → if treated as generator zone, would be flagged
     # with "derived entry has never been generated". Because the zone declares
     # kind: canon (not derived), it must NOT be inspected by Staleness's

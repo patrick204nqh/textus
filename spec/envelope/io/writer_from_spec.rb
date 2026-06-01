@@ -4,12 +4,12 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
     YAML
   end
 
@@ -20,21 +20,21 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
     writer = Textus::Envelope::IO::Writer.from(container: container, call: call)
     expect(writer).to be_a(Textus::Envelope::IO::Writer)
 
-    mentry = store.manifest.resolver.resolve("working.foo").entry
+    mentry = store.manifest.resolver.resolve("knowledge.foo").entry
     env = writer.put(
-      "working.foo",
+      "knowledge.foo",
       mentry: mentry,
       payload: Textus::Envelope::IO::Writer::Payload.new(meta: {}, body: "hello", content: nil),
     )
 
     expect(env).to be_a(Textus::Envelope)
-    path = File.join(root, "zones", "working", "foo.md")
+    path = File.join(root, "zones", "knowledge", "foo.md")
     expect(File.binread(path)).to include("hello")
 
     # The internally-built reader is wired correctly: reading back the entry
     # resolves the persisted uid (existing-uid lookup path).
     reader = Textus::Envelope::IO::Reader.from(container: container)
-    expect(reader.existing_uid("working.foo")).to eq(env.uid)
+    expect(reader.existing_uid("knowledge.foo")).to eq(env.uid)
 
     expect(store).to have_audit_verb("put").with_correlation("corr-from")
   end
@@ -42,15 +42,15 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
   it "behaves identically to a hand-wired .new" do
     container = fresh_container(store)
     call = test_ctx(role: "automation")
-    mentry = store.manifest.resolver.resolve("working.foo").entry
+    mentry = store.manifest.resolver.resolve("knowledge.foo").entry
     payload = Textus::Envelope::IO::Writer::Payload.new(meta: {}, body: "x", content: nil)
 
     from_writer = Textus::Envelope::IO::Writer.from(container: container, call: call)
     hand_writer = build_envelope_writer(store, call)
 
-    from_env = from_writer.put("working.foo", mentry: mentry, payload: payload)
+    from_env = from_writer.put("knowledge.foo", mentry: mentry, payload: payload)
     # Re-put via the hand-wired writer; uid must be preserved across both.
-    hand_env = hand_writer.put("working.foo", mentry: mentry, payload: payload)
+    hand_env = hand_writer.put("knowledge.foo", mentry: mentry, payload: payload)
 
     expect(hand_env.uid).to eq(from_env.uid)
   end

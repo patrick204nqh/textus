@@ -6,9 +6,9 @@ RSpec.describe Textus::Read::Uid do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working],
+      zones: %w[knowledge],
       files: {
-        "zones/working/doc.md" => <<~MD,
+        "zones/knowledge/doc.md" => <<~MD,
           ---
           uid: "abc123def456"
           name: doc
@@ -19,9 +19,9 @@ RSpec.describe Textus::Read::Uid do
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       YAML
     )
@@ -29,7 +29,7 @@ RSpec.describe Textus::Read::Uid do
 
   it "returns the uid declared in the entry frontmatter" do
     ops = store.as("human")
-    result = ops.uid("working.doc")
+    result = ops.uid("knowledge.doc")
     expect(result).to eq("abc123def456")
   end
 end

@@ -12,25 +12,25 @@ RSpec.describe "CLI subcommand groups" do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: archive, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
     YAML
-    File.write(File.join(root, "zones/working/note.md"), "---\nuid: abc123\n---\nhello\n")
+    File.write(File.join(root, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
 
   # ── key group ─────────────────────────────────────────────────────────────
 
   describe "textus key uid KEY" do
     it "returns the uid and prints no deprecation warning" do
-      rc = run(["key", "uid", "working.note"])
+      rc = run(["key", "uid", "knowledge.note"])
       expect(rc).to eq(0)
       expect(JSON.parse(stdout.string)["uid"]).to eq("abc123")
       expect(stderr.string).to be_empty
@@ -42,17 +42,17 @@ RSpec.describe "CLI subcommand groups" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+          - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
-          - { key: working.memo, path: working/memo.md, zone: working, kind: leaf}
+          - { key: knowledge.memo, path: knowledge/memo.md, zone: knowledge, kind: leaf}
 
       YAML
-      rc = run(["key", "mv", "working.note", "working.memo", "--as=human"])
+      rc = run(["key", "mv", "knowledge.note", "knowledge.memo", "--as=human"])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
-      expect(payload).to include("from_key" => "working.note", "to_key" => "working.memo")
+      expect(payload).to include("from_key" => "knowledge.note", "to_key" => "knowledge.memo")
       expect(stderr.string).to be_empty
     end
   end
@@ -61,7 +61,7 @@ RSpec.describe "CLI subcommand groups" do
 
   describe "textus schema show KEY" do
     it "returns schema envelope and prints no deprecation warning" do
-      rc = run(["schema", "show", "working.note"])
+      rc = run(["schema", "show", "knowledge.note"])
       expect(rc).to eq(0)
       expect(stderr.string).to be_empty
     end

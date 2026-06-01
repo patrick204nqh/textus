@@ -4,13 +4,13 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
   include_context "textus_store_fixture"
 
   def factory_for(rules_yaml)
-    store = store_from_manifest(root, zones: %w[working identity], manifest: <<~YAML + rules_yaml)
+    store = store_from_manifest(root, zones: %w[knowledge identity], manifest: <<~YAML + rules_yaml)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: identity, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, kind: leaf }
+        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, kind: leaf }
         - { key: identity.x, path: identity/x.md, zone: identity, kind: leaf }
       rules:
     YAML
@@ -19,10 +19,10 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
 
   it "builds base ++ composed for a transition+key" do
     factory = factory_for(<<~RULES)
-      - match: "working.**"
+      - match: "knowledge.**"
         guard: { accept: [{ fresh_within: "1h" }] }
     RULES
-    names = factory.for(:accept, "working.notes").predicates.map(&:name)
+    names = factory.for(:accept, "knowledge.notes").predicates.map(&:name)
     expect(names.first).to eq("author_held") # base for :accept
     expect(names).to include("fresh_within") # composed from rules
   end
@@ -35,10 +35,10 @@ RSpec.describe Textus::Domain::Policy::GuardFactory do
 
   it "dedupes by name when base and composed overlap (first wins)" do
     factory = factory_for(<<~RULES)
-      - match: "working.**"
+      - match: "knowledge.**"
         guard: { accept: [author_held, schema_valid] }
     RULES
-    names = factory.for(:accept, "working.notes").predicates.map(&:name)
+    names = factory.for(:accept, "knowledge.notes").predicates.map(&:name)
     expect(names).to eq(%w[author_held target_is_canon schema_valid])
   end
 end

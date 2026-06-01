@@ -16,7 +16,7 @@ RSpec.describe "SPEC §9 examples snapshot the live envelope keys (ADR 0037)" do
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: review,  kind: queue }
       entries: []
     YAML

@@ -4,14 +4,14 @@ RSpec.describe "doctor verb dispatch" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")

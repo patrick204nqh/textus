@@ -5,30 +5,30 @@ RSpec.describe "textus build concurrency" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/output"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: output, kind: derived }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
         - key: output.note
           kind: derived
           path: output/note.md
           zone: output
           owner: automation:auto
-          compute: { kind: projection, select: working.note }
+          compute: { kind: projection, select: knowledge.note }
           template: echo.mustache
     YAML
 
     File.write(File.join(root, "templates/echo.mustache"), "hello {{key}}\n")
-    File.write(File.join(root, "zones/working/note.md"),
-               "---\nkey: working.note\n---\nbody\n")
+    File.write(File.join(root, "zones/knowledge/note.md"),
+               "---\nkey: knowledge.note\n---\nbody\n")
   end
 
   it "second concurrent build exits 75 with build_in_progress code" do
