@@ -55,7 +55,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
       end.to raise_error(Textus::UsageError, %r{names a directory.*\{basename\}/\{ext\} are file-only})
     end
 
-    it "rejects {ext} on a directory leaf" do
+    it "rejects {ext} even alongside {leaf} on a directory leaf" do
       expect do
         described_class.call(entry_with(publish_each: "skills/{leaf}.{ext}", index_filename: "SKILL.md"))
       end.to raise_error(Textus::UsageError, %r{\{basename\}/\{ext\} are file-only})
@@ -65,6 +65,12 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
       expect do
         described_class.call(entry_with(publish_each: "skills/static", index_filename: "SKILL.md"))
       end.to raise_error(Textus::UsageError, /directory-leaf publish_each must reference \{leaf\} or \{key\}/)
+    end
+
+    it "accepts {key} on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{key}", index_filename: "SKILL.md"))
+      end.not_to raise_error
     end
 
     it "accepts {leaf} on a directory leaf" do

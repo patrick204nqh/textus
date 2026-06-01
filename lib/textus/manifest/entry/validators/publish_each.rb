@@ -36,7 +36,7 @@ module Textus
               unless forbidden.empty?
                 raise UsageError.new(
                   "entry '#{entry.key}': publish_each names a directory " \
-                  "(index_filename: #{entry.index_filename}); {basename}/{ext} are file-only — " \
+                  "(index_filename: '#{entry.index_filename}'); {basename}/{ext} are file-only — " \
                   "use {leaf} or {key}.",
                 )
               end
