@@ -42,6 +42,7 @@ module Textus
         validate_roles!(raw["roles"])
         validate_zones!(raw["zones"])
         validate_entries!(raw["entries"])
+        validate_owners!(raw)
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_single_queue!(raw)
@@ -112,6 +113,30 @@ module Textus
 
         raise BadManifest.new(
           "manifest declares #{author_holders} roles with the author capability; at most one is allowed",
+        )
+      end
+
+      # Owners are validated against the SAME closed archetype set as role names
+      # (ADR 0045 D1) so attribution can't bypass the closed-name guarantee.
+      # Applies to both zone owners and entry owners; owner is optional, so a
+      # nil owner is not an error.
+      def self.validate_owners!(raw)
+        Array(raw["zones"]).each_with_index do |z, i|
+          check_owner!(z["owner"], "$.zones[#{i}]")
+        end
+        Array(raw["entries"]).each_with_index do |e, i|
+          check_owner!(e["owner"], "$.entries[#{i}]")
+        end
+      end
+
+      def self.check_owner!(owner, path)
+        return if owner.nil?
+        return if Textus::Role.valid_owner?(owner)
+
+        raise BadManifest.new(
+          "invalid owner '#{owner}' at '#{path}' " \
+          "(expected <archetype> or <archetype>:<subject>, " \
+          "archetype one of: #{Textus::Role::NAMES.join(", ")})",
         )
       end
 
