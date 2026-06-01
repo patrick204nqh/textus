@@ -1,15 +1,16 @@
 # Concepts — how textus thinks
 
 > **Explanation** · for everyone · **read when** you want the mental model before the reference
-> **SSoT for** the textus mental model: zones/coordination space, RPC vs pub-sub, and the boot/pulse two-channel model · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the textus mental model: zones/coordination space, the proposal trust path, RPC vs pub-sub, and the boot/pulse two-channel model · **reviewed** 2026-06 (v0.39)
 
 The shape of your context in textus is a small set of ideas that everything else layers on top of: zones and the roles that write to them, the entries that live in them, how data flows from input adapters out to published files, how hooks extend each verb, and how an agent orients to a store and tracks change. This doc is the mental model — read it once, then reach for the reference docs for exact fields and tables.
 
 ## Table of contents
 
 1. [The zone mental model](#the-zone-mental-model)
-2. [Hooks: RPC vs pub-sub](#hooks-rpc-vs-pub-sub)
-3. [Two channels: boot & pulse](#two-channels-boot--pulse)
+2. [The proposal trust path](#the-proposal-trust-path)
+3. [Hooks: RPC vs pub-sub](#hooks-rpc-vs-pub-sub)
+4. [Two channels: boot & pulse](#two-channels-boot--pulse)
 
 ---
 
@@ -39,6 +40,25 @@ Two ideas do all the work:
 - **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `fetch`, `build` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→verb table are the SSoT of [`../reference/zones.md`](../reference/zones.md).
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
+
+## The proposal trust path
+
+The single edge in the zone diagram from `proposals` to `knowledge` is where the human-in-the-loop lives. It is the only way bytes reach a `canon` zone without already holding `author` — and it is deliberately a two-capability path: an agent can *queue* a change, but only a human can *land* it.
+
+```mermaid
+flowchart LR
+    agent(["agent<br/>(cap: propose)"]) -->|"propose --as=agent"| q["proposals (queue)<br/>meta.proposal:<br/>target_key + action"]
+    human(["human<br/>(cap: author)"]) -.->|"review (get / list)"| q
+    q -->|"accept --as=human"| guard{"guard :accept<br/>author_held<br/>+ target_is_canon"}
+    q -->|"reject --as=human"| rej["discarded<br/>:proposal_rejected"]
+    guard -->|pass| canon["knowledge (canon)<br/>body promoted ·<br/>pending leaf deleted<br/>:proposal_accepted"]
+```
+
+Three ideas make this a *trust* path, not just a copy:
+
+- **Two capabilities, never one.** `propose` lets an agent write into the queue zone (`textus propose` auto-prefixes the key with whatever zone declares `kind: queue`). `author` — the single trust anchor, held by at most one role — is what `accept` requires. An agent has no path to `canon` of its own.
+- **`accept` is a transition, not a capability.** It is gated by two floor predicates — **`author_held`** (you hold the anchor) and **`target_is_canon`** (you may only promote *into* a canon zone). A proposal whose `target_key` points elsewhere is refused as `guard_failed`, and `textus doctor`'s `proposal_targets` check flags it ahead of time. The exact predicate set is the SSoT of [`../reference/zones.md`](../reference/zones.md).
+- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` retention rule swept by `textus retain` ages out whatever is never resolved.
 
 ## Hooks: RPC vs pub-sub
 

@@ -122,7 +122,7 @@ rules:
 |---|---|
 | `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
 | `sync` | Block the `get` call and fetch in-process before returning. |
-| `timed_sync` | Try to fetch within `sync_budget_ms` (default 500 ms). Return stale data with `fetching: true` if the budget is exceeded; the fetch continues in the background. |
+| `timed_sync` | Try to fetch within `sync_budget_ms`. Return stale data with `fetching: true` if the budget is exceeded; the fetch continues in the background. `sync_budget_ms` has no default — set it explicitly alongside `timed_sync`. |
 
 ### Built-in `:resolve_intake` handlers
 
