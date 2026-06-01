@@ -13,20 +13,20 @@ RSpec.describe Textus::RoleScope do
 
   it "Store#as(role).put writes and Store#as(role).get reads back" do
     result = store.as("human").put(
-      "working.foo",
+      "knowledge.foo",
       meta: { "name" => "foo" },
       body: "hello-rolescope",
     )
     expect(result).not_to be_nil
 
-    env = store.as("human").get("working.foo")
+    env = store.as("human").get("knowledge.foo")
     expect(env).not_to be_nil
     expect(env.body.strip).to eq("hello-rolescope")
   end
 
   it "passes correlation_id: through to the audit record" do
     store.as("human", correlation_id: "test-corr-rolescope").put(
-      "working.foo",
+      "knowledge.foo",
       meta: { "name" => "foo" },
       body: "hi",
     )
@@ -46,8 +46,8 @@ RSpec.describe Textus::RoleScope do
   end
 
   it "Store#put delegates to the default role's RoleScope" do
-    store.put("working.foo", role: "human", meta: { "name" => "foo" }, body: "default")
-    env = store.get("working.foo")
+    store.put("knowledge.foo", role: "human", meta: { "name" => "foo" }, body: "default")
+    env = store.get("knowledge.foo")
     expect(env.body.strip).to eq("default")
   end
 end

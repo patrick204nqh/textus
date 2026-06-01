@@ -26,7 +26,7 @@ RSpec.describe Textus::Read::GetOrFetch do
   end
 
   def write_doc(last_fetched_at:)
-    File.write(File.join(root, "zones", "working", "doc.md"), <<~MD)
+    File.write(File.join(root, "zones", "knowledge", "doc.md"), <<~MD)
       ---
       name: doc
       last_fetched_at: "#{last_fetched_at}"
@@ -44,7 +44,7 @@ RSpec.describe Textus::Read::GetOrFetch do
     use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                    orchestrator: orch)
 
-    env = use_case.call("working.doc")
+    env = use_case.call("knowledge.doc")
     expect(env).not_to be_nil
     expect(env.freshness.stale).to be(false)
   end
@@ -58,7 +58,7 @@ RSpec.describe Textus::Read::GetOrFetch do
     use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                    orchestrator: orch)
 
-    env = use_case.call("working.doc")
+    env = use_case.call("knowledge.doc")
     expect(env.freshness.stale).to be(true)
     expect(env.freshness.fetching).to be(false)
   end
@@ -72,7 +72,7 @@ RSpec.describe Textus::Read::GetOrFetch do
     use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                    orchestrator: orch)
 
-    env = use_case.call("working.doc")
+    env = use_case.call("knowledge.doc")
     expect(env.freshness.fetching).to be(true)
   end
 
@@ -84,6 +84,6 @@ RSpec.describe Textus::Read::GetOrFetch do
     use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
                                    orchestrator: orch)
 
-    expect(use_case.call("working.doc")).to be_nil
+    expect(use_case.call("knowledge.doc")).to be_nil
   end
 end

@@ -17,10 +17,10 @@ RSpec.describe "Reader honors on_stale policy" do
     Thread.current[:fetch_count] = 0
     store = intake_store(root, intake_body: hook_body, ttl: "1s", on_stale: "warn")
     File.write(
-      File.join(root, "zones", "working", "doc.md"),
-      "---\nkey: working.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
+      File.join(root, "zones", "feeds", "doc.md"),
+      "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
     )
-    envelope = store.as("automation").get_or_fetch("working.doc")
+    envelope = store.as("automation").get_or_fetch("feeds.doc")
 
     expect(envelope.stale?).to be(true)
     expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -39,10 +39,10 @@ RSpec.describe "Reader honors on_stale policy" do
 
     store = intake_store(root, intake_body: hook_body, ttl: "1s", on_stale: "sync")
     File.write(
-      File.join(root, "zones", "working", "doc.md"),
-      "---\nkey: working.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
+      File.join(root, "zones", "feeds", "doc.md"),
+      "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
     )
-    envelope = store.as("automation").get_or_fetch("working.doc")
+    envelope = store.as("automation").get_or_fetch("feeds.doc")
 
     expect(envelope.stale?).to be(false)
     expect(envelope.body || envelope.content).to include("fresh body")
@@ -51,31 +51,31 @@ RSpec.describe "Reader honors on_stale policy" do
   it "timed_sync: returns stale + fetching when handler exceeds budget", # rubocop:disable RSpec/ExampleLength
      skip: ("Process.fork unavailable" unless Process.respond_to?(:fork)) do
     timed_root = File.join(tmp, "timed")
-    FileUtils.mkdir_p(File.join(timed_root, "zones", "working"))
+    FileUtils.mkdir_p(File.join(timed_root, "zones", "feeds"))
     FileUtils.mkdir_p(File.join(timed_root, "hooks"))
 
     File.write(File.join(timed_root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: quarantine }
+        - { name: feeds, kind: quarantine }
       entries:
-        - key: working.slow
+        - key: feeds.slow
           kind: intake
-          path: working/slow.md
-          zone: working
+          path: feeds/slow.md
+          zone: feeds
           intake:
             handler: slow_intake
       rules:
-        - match: working.slow
+        - match: feeds.slow
           fetch:
             ttl: 1s
             on_stale: timed_sync
             sync_budget_ms: 50
     YAML
 
-    File.write(File.join(timed_root, "zones", "working", "slow.md"), <<~MD)
+    File.write(File.join(timed_root, "zones", "feeds", "slow.md"), <<~MD)
       ---
-      key: working.slow
+      key: feeds.slow
       last_fetched_at: "2020-01-01T00:00:00Z"
       ---
       old
@@ -92,7 +92,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
     store = Textus::Store.new(timed_root)
     t0 = Time.now
-    envelope = store.as("automation").get_or_fetch("working.slow")
+    envelope = store.as("automation").get_or_fetch("feeds.slow")
     elapsed = Time.now - t0
 
     expect(elapsed).to be < 0.4
@@ -100,38 +100,38 @@ RSpec.describe "Reader honors on_stale policy" do
     expect(envelope.fetching?).to be(true)
 
     sleep 1.5
-    raw = File.read(File.join(timed_root, "zones", "working", "slow.md"))
+    raw = File.read(File.join(timed_root, "zones", "feeds", "slow.md"))
     expect(raw).to include("fresh-from-child")
   end
 
   it "build materializes using the pure read path (issue #59)" do # rubocop:disable RSpec/ExampleLength
     build_root = File.join(tmp, "build")
-    FileUtils.mkdir_p(File.join(build_root, "zones", "working"))
-    FileUtils.mkdir_p(File.join(build_root, "zones", "output"))
+    FileUtils.mkdir_p(File.join(build_root, "zones", "feeds"))
+    FileUtils.mkdir_p(File.join(build_root, "zones", "artifacts"))
     FileUtils.mkdir_p(File.join(build_root, "templates"))
     FileUtils.mkdir_p(File.join(build_root, "hooks"))
 
     File.write(File.join(build_root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: quarantine }
-        - { name: output, kind: derived }
+        - { name: feeds, kind: quarantine }
+        - { name: artifacts, kind: derived }
       entries:
-        - key: working.foo
+        - key: feeds.foo
           kind: intake
-          path: working/foo.md
-          zone: working
+          path: feeds/foo.md
+          zone: feeds
           intake:
             handler: test_intake
-        - key: output.summary
+        - key: artifacts.summary
           kind: derived
-          path: output/summary.md
-          zone: output
+          path: artifacts/summary.md
+          zone: artifacts
           owner: automation:auto
-          compute: { kind: projection, select: working.foo }
+          compute: { kind: projection, select: feeds.foo }
           template: echo.mustache
       rules:
-        - match: working.foo
+        - match: feeds.foo
           fetch:
             ttl: 1s
             on_stale: timed_sync
@@ -140,9 +140,9 @@ RSpec.describe "Reader honors on_stale policy" do
 
     File.write(File.join(build_root, "templates", "echo.mustache"), "built {{count}}\n")
 
-    File.write(File.join(build_root, "zones", "working", "foo.md"), <<~MD)
+    File.write(File.join(build_root, "zones", "feeds", "foo.md"), <<~MD)
       ---
-      key: working.foo
+      key: feeds.foo
       last_fetched_at: "2020-01-01T00:00:00Z"
       ---
       old body
