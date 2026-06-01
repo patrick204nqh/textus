@@ -7,6 +7,7 @@ module Textus
           PublishEach,
           InjectBoot,
           IndexFilename,
+          Ignore,
           FormatMatrix,
         ].freeze
 
