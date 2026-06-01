@@ -172,6 +172,19 @@ rules:
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_intake` args)](../reference/events.md#resolve_intake-args).
 
+### Machine snapshot (scaffolded)
+
+`textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a
+`feeds.machine` entry (`tracked: false`). `textus fetch feeds.machine
+--as=automation` pulls a snapshot of this host (git HEAD/branch/dirty, repo
+root, now, ruby/os, textus version) into the `feeds` zone. It is **retrievable
+via the protocol** (`textus get feeds.machine`) but **gitignored and never
+published**, because machine info can be sensitive or noisy — the entry's
+`tracked: false` flag drives the generated `.gitignore`. A `feeds.machine`
+freshness rule (`ttl: 1h`) re-fetches on a long-running server. Don't want it?
+Delete the entry from `manifest.yaml` (and the hook). Customize the hook to
+capture more; keep secrets out.
+
 ### Aging entries out — `retention`
 
 Queue and quarantine zones accumulate; `retention` lets them self-prune. Declare
