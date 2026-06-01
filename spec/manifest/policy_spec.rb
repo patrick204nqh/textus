@@ -71,14 +71,14 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: owner, can: [author, propose] }
+          - { name: human, can: [author, propose] }
         zones:
           - { name: working, kind: canon }
           - { name: review,  kind: queue }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.proposer_role).to eq("owner")
+      expect(p2.proposer_role).to eq("human")
     end
 
     it "returns nil when no role holds propose" do
@@ -103,34 +103,33 @@ RSpec.describe Textus::Manifest::Policy do
       expect(policy.actor_for("author")).to eq("human")
     end
 
-    it "returns the first holder when several roles hold the verb" do
+    it "returns the first declared holder when several roles hold the verb" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: alpha, can: [build] }
-          - { name: bravo, can: [build] }
+          - { name: human, can: [author, propose] }
+          - { name: agent, can: [propose] }
         zones:
-          - { name: out, kind: derived }
+          - { name: working, kind: canon }
+          - { name: review,  kind: queue }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.actor_for("build")).to eq("alpha")
+      expect(p2.actor_for("propose")).to eq("human")
     end
 
-    it "is rename-safe: resolves a custom-named holder, not a literal" do
+    it "resolves by capability, not by a conventional name (agent may hold build)" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: importer, can: [fetch] }
-          - { name: compiler, can: [build] }
+          - { name: agent, can: [propose, build] }
         zones:
-          - { name: feeds,  kind: quarantine }
+          - { name: review, kind: queue }
           - { name: output, kind: derived }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.actor_for("fetch")).to eq("importer")
-      expect(p2.actor_for("build")).to eq("compiler")
+      expect(p2.actor_for("build")).to eq("agent")
     end
 
     it "returns nil when no role holds the verb" do

@@ -1,15 +1,31 @@
 module Textus
   module Role
+    # The three role archetypes, each string sourced exactly once: human curates
+    # canon, agent proposes, automation fetches/builds (explanation/concepts.md).
+    # Reference these constants instead of bare literals (ADR 0044).
+    HUMAN      = "human".freeze
+    AGENT      = "agent".freeze
+    AUTOMATION = "automation".freeze
+
+    # The closed set of legal role names (ADR 0045), built FROM the archetypes
+    # above so it stays the single source of truth — a manifest declaring any
+    # other name is rejected at load, and DEFAULT ∈ NAMES holds structurally.
+    # Capabilities (`can:`) remain freely tunable per role.
+    NAMES = [HUMAN, AGENT, AUTOMATION].freeze
+
+    # Default acting identity (ADR 0040): a *choice* over the vocabulary, not a
+    # new name. CLI callers act as the human; an agent over stdio proposes and
+    # does not inherit the human's authority (it defaults to AGENT per transport).
+    DEFAULT = HUMAN
+
+    # Syntactic shape of an `owner:` subject token (e.g. `human:patrick`); ADR
+    # 0045 reserves PATTERN for that. Acting-role names are gated against the
+    # closed NAMES set in .resolve, not by this regex.
     PATTERN = /\A[a-z][a-z0-9_-]*\z/
-    DEFAULT = "human".freeze
-    # The default acting identity for the MCP transport (ADR 0040): an agent
-    # over stdio proposes; it does not inherit the human's authority. CLI
-    # callers keep the `human` DEFAULT.
-    AGENT = "agent".freeze
 
     def self.resolve(root:, flag: nil, env: ENV, default: DEFAULT)
       candidate = flag || env["TEXTUS_ROLE"] || read_file(root) || default
-      raise InvalidRole.new(candidate) unless candidate.match?(PATTERN)
+      raise InvalidRole.new(candidate) unless NAMES.include?(candidate)
 
       candidate
     end

@@ -9,10 +9,9 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       roles:
-        - { name: owner,    can: [author, propose] }
-        - { name: compiler, can: [build] }
-        - { name: proposer, can: [propose] }
-        - { name: fetcher,  can: [fetch] }
+        - { name: human,      can: [author, propose] }
+        - { name: agent,      can: [propose] }
+        - { name: automation, can: [fetch, build] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -24,7 +23,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       roles:
-        - { name: weirdo, can: [teleport] }
+        - { name: human, can: [teleport] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -36,8 +35,8 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       roles:
-        - { name: owner,    can: [author] }
-        - { name: co_owner, can: [author] }
+        - { name: human, can: [author] }
+        - { name: agent, can: [author] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -49,12 +48,25 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       roles:
-        - { name: owner, can: [author], color: blue }
+        - { name: human, can: [author], color: blue }
       zones:
         - { name: identity, kind: canon }
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown key 'color'/)
+  end
+
+  it "rejects a role name outside the closed set {human, agent, automation}" do
+    yaml = <<~YAML
+      version: textus/3
+      roles:
+        - { name: importer, can: [fetch] }
+      zones:
+        - { name: feeds, kind: quarantine }
+      entries: []
+    YAML
+    expect { Textus::Manifest::Data.parse(YAML.safe_load(yaml, aliases: false), root: ".") }
+      .to raise_error(Textus::BadManifest, /unknown role name 'importer'/)
   end
 
   it "still parses manifests with no roles: block (defaults apply)" do

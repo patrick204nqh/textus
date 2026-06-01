@@ -23,4 +23,10 @@ RSpec.describe "default role vocabulary: fallback stays consistent with the scaf
                          "fallback role #{role.inspect} has #{caps.inspect}, exceeding scaffold #{scaffold[role].inspect}"
     end
   end
+
+  it "keeps every default role name within the closed Role::NAMES set" do
+    expect(Textus::Manifest::Capabilities::DEFAULT_MAPPING.keys)
+      .to all(satisfy { |n| Textus::Role::NAMES.include?(n) })
+    expect(Textus::Role::NAMES).to include(Textus::Role::DEFAULT, Textus::Role::AGENT)
+  end
 end

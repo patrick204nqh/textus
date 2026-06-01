@@ -11,9 +11,9 @@ module Textus
       # declares a `kind: workspace` zone is therefore rejected at load (no
       # `keep`-holder); declare `roles:` to opt into a workspace lane (ADR 0033).
       DEFAULT_MAPPING = {
-        "human" => %w[author propose].freeze,
-        "agent" => %w[propose].freeze,
-        "automation" => %w[fetch build].freeze,
+        Textus::Role::HUMAN => %w[author propose].freeze,
+        Textus::Role::AGENT => %w[propose].freeze,
+        Textus::Role::AUTOMATION => %w[fetch build].freeze,
       }.freeze
 
       # Returns { role_name => [verbs] }. When `roles:` is declared we use

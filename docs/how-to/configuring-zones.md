@@ -73,26 +73,25 @@ zones:
   - { name: built,       kind: derived }    # rendered outputs — build-holders write
 ```
 
-### Custom roles
+### Tuning role capabilities
 
-Role names are arbitrary strings; what matters is the capabilities they hold. Invent roles and hand them whichever verbs fit:
+Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `fetch`, `build`), subject to the one rule that at most one role may hold `author`:
 
 ```yaml
 roles:
-  - { name: owner,    can: [author, propose] }   # trust anchor
-  - { name: reviewer, can: [propose] }
-  - { name: importer, can: [fetch] }
-  - { name: compiler, can: [build] }
+  - { name: human,      can: [author, propose] }   # the trust anchor
+  - { name: agent,      can: [propose, keep] }
+  - { name: automation, can: [fetch, build] }       # or just [fetch], or just [build]
 ```
 
-Custom roles work everywhere conventional ones do (`--as=reviewer`, audit log, doctor checks). What makes a zone derived, a queue, or a quarantine is its declared `kind:`, not any role name — and a role can write a given zone only if it holds the verb that zone's kind requires.
+A manifest need not declare all three — declare the subset you use. Declaring a role whose name is not one of the three is rejected at load. To attribute work to individual people or bots, use the `owner:` field (`owner: human:patrick`, `owner: automation:ci`) — attribution, not authority.
 
 ### Rules to keep in mind
 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
 - **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `build` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
-- **There is no implicit role hierarchy.** `human` is not a superuser; if no role but `compiler` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
+- **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
 - **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
 ---

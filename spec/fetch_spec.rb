@@ -132,14 +132,14 @@ RSpec.describe "Textus::RoleScope#fetch" do
       sess          = instance_spy(Textus::RoleScope)
       fake_lock     = instance_double(Textus::Ports::Fetch::Lock, try_acquire: true, release: nil)
       # The child resolves its actor by capability (ADR 0044), not a literal:
-      # a fetch-holder named anything (here "importer") must be picked up.
+      # the fetch-holder is picked up by capability resolution.
       fake_policy   = instance_double(Textus::Manifest::Policy)
       fake_manifest = instance_double(Textus::Manifest, policy: fake_policy)
-      allow(fake_policy).to receive(:actor_for).with("fetch").and_return("importer")
+      allow(fake_policy).to receive(:actor_for).with("fetch").and_return("automation")
 
       allow(Textus::Store).to receive(:new).and_return(fake_store)
       allow(fake_store).to receive(:manifest).and_return(fake_manifest)
-      allow(fake_store).to receive(:as).with("importer").and_return(sess)
+      allow(fake_store).to receive(:as).with("automation").and_return(sess)
       allow(Textus::Ports::Fetch::Lock).to receive(:new).and_return(fake_lock)
       allow(Process).to receive(:fork) do |&blk|
         blk.call

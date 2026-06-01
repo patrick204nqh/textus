@@ -91,6 +91,12 @@ module Textus
           path = "$.roles[#{i}]"
           walk(r, ROLE_KEYS, path)
           name = r["name"] or raise BadManifest.new("role at '#{path}' missing name")
+          unless Textus::Role::NAMES.include?(name)
+            raise BadManifest.new(
+              "unknown role name '#{name}' at '#{path}' " \
+              "(allowed: #{Textus::Role::NAMES.join(", ")})",
+            )
+          end
           Array(r["can"]).each do |verb|
             next if CAPABILITIES.include?(verb)
 

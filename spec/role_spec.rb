@@ -29,6 +29,11 @@ RSpec.describe Textus::Role do
       .to raise_error(Textus::InvalidRole)
   end
 
+  it "rejects a syntactically valid name outside the closed set (ADR 0045)" do
+    expect { Textus::Role.resolve(flag: "compiler", env: {}, root: root) }
+      .to raise_error(Textus::InvalidRole)
+  end
+
   it "falls back to the supplied default when no flag/env/file resolves" do
     expect(Textus::Role.resolve(flag: nil, env: {}, root: root, default: "agent")).to eq("agent")
   end
@@ -41,5 +46,11 @@ RSpec.describe Textus::Role do
   it "exposes the MCP transport default constant" do
     expect(Textus::Role::AGENT).to eq("agent")
     expect(Textus::Role::AGENT).to match(Textus::Role::PATTERN)
+  end
+
+  it "builds the closed name set from the archetype constants (ADR 0045)" do
+    expect(Textus::Role::NAMES).to eq(%w[human agent automation])
+    expect(Textus::Role::NAMES).to include(Textus::Role::DEFAULT, Textus::Role::AGENT)
+    expect(Textus::Role::DEFAULT).to eq(Textus::Role::HUMAN)
   end
 end

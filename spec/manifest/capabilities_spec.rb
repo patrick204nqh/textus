@@ -25,23 +25,24 @@ RSpec.describe Textus::Manifest::Capabilities do
     describe "user-declared roles: block" do
       it "parses each role to name → [verbs]" do
         raw = [
-          { "name" => "owner", "can" => %w[author propose] },
-          { "name" => "bot",   "can" => %w[fetch build] },
+          { "name" => "human",      "can" => %w[author propose] },
+          { "name" => "automation", "can" => %w[fetch build] },
         ]
         caps = described_class.resolve(raw)
-        expect(caps["owner"]).to eq(%w[author propose])
-        expect(caps["bot"]).to eq(%w[fetch build])
+        expect(caps["human"]).to eq(%w[author propose])
+        expect(caps["automation"]).to eq(%w[fetch build])
       end
 
       it "does not fall back to defaults when roles: is declared" do
-        caps = described_class.resolve([{ "name" => "owner", "can" => %w[author] }])
-        expect(caps["human"]).to be_nil
+        caps = described_class.resolve([{ "name" => "human", "can" => %w[author] }])
+        expect(caps["human"]).to eq(%w[author]) # the declared caps, not the default [author, propose]
+        expect(caps["agent"]).to be_nil
         expect(caps["automation"]).to be_nil
       end
 
       it "treats a missing can: as no capabilities" do
-        caps = described_class.resolve([{ "name" => "watcher" }])
-        expect(caps["watcher"]).to eq([])
+        caps = described_class.resolve([{ "name" => "agent" }])
+        expect(caps["agent"]).to eq([])
       end
     end
 
@@ -78,16 +79,16 @@ RSpec.describe Textus::Manifest::Capabilities do
       m = parse(<<~YAML)
         version: textus/3
         roles:
-          - { name: owner, can: [author, propose] }
-          - { name: bot,   can: [fetch, build] }
+          - { name: human,      can: [author, propose] }
+          - { name: automation, can: [fetch, build] }
         zones:
           - { name: identity, kind: canon }
           - { name: output,   kind: derived }
         entries: []
       YAML
       expect(m.data.role_caps).to eq(
-        "owner" => %w[author propose],
-        "bot" => %w[fetch build],
+        "human" => %w[author propose],
+        "automation" => %w[fetch build],
       )
     end
 
@@ -95,7 +96,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: owner, can: [author, teleport] }
+          - { name: human, can: [author, teleport] }
         zones:
           - { name: identity, kind: canon }
         entries: []
@@ -107,7 +108,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: everything, can: [propose, author, fetch, build] }
+          - { name: human, can: [propose, author, fetch, build] }
         zones:
           - { name: identity, kind: canon }
         entries: []
