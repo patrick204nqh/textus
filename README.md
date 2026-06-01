@@ -30,12 +30,34 @@ flowchart LR
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
     agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
-    proposals -->|human accepts| knowledge
+    proposals ==>|human accept| knowledge
     automation(["automation"]) -->|fetch| feeds["feeds<br/>(quarantine)"]
     automation -->|build| artifacts["artifacts<br/>(derived)"]
+    feeds -.->|projection source| artifacts
+    knowledge -.->|projection source| artifacts
+
+    classDef anchor fill:#1f6feb,stroke:#1f6feb,color:#fff;
+    class knowledge anchor;
 ```
 
 *Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
+
+The point of those lanes is to **build context you can trust**. Place each lane on two axes — how durable it is, and how much you can rely on it without review — and the value shows up as a climb: the high-trust corner (durable *and* authoritative = `knowledge`) is the one place nothing is *written* directly. It's *earned* by crossing the `accept` gate.
+
+```
+                       LOW TRUST                     HIGH TRUST
+                      (unreviewed)                (authoritative)
+              ┌──────────────────────────┬───────────────────────────────┐
+DURABLE       │  notebook                │  knowledge  ★ the goal        │
+(kept)        │  agent's working truth   │  canon — a human authors      │
+              │  durable, but low-trust  │  here · the context you ship  │
+              ├──────────────────────────┼───────────────────────────────┤
+TRANSIENT     │  feeds                   │  proposals  (queue)           │
+(staging)     │  raw external input,     │  a candidate, in review       │
+              │  unverified              │  ▲ climbs via human accept    │
+              └──────────────────────────┴───────────────────────────────┘
+                raw material ──── propose ────► a human accept lifts it to canon
+```
 
 Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
 
