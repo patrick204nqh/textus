@@ -11,6 +11,16 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+### Changed
+
+- **Hook event tables consolidated into `Textus::Hooks::Catalog` (single source
+  of truth).** `EventBus` and `RpcRegistry` no longer keep their own event
+  tables; both registries, the Loader DSL router, and internal consumers read
+  `Catalog::PUBSUB` / `Catalog::RPC` directly. This removes the drift-prone
+  `EventBus::RPC_EVENTS` literal that could silently fall out of sync with
+  `RpcRegistry`'s events and weaken the cross-registry guards. Internal
+  refactor — no `textus/3` wire-format change.
+
 ## 0.39.1 — 2026-06-01 — Feed ergonomics: `feeds.machine` env snapshot + intake cookbook ([ADR 0043](docs/architecture/decisions/0043-feed-ergonomics-without-breaking-core-purity.md))
 
 No `textus/3` wire-format change. `textus init` scaffolds an additional

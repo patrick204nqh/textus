@@ -4,7 +4,7 @@ module Textus
       module Validators
         module Events
           def self.call(entry, policy: nil) # rubocop:disable Lint/UnusedMethodArgument
-            pubsub_events = Textus::Hooks::EventBus::EVENTS.keys
+            pubsub_events = Textus::Hooks::Catalog::PUBSUB.keys
             events = entry.events
             events.each_key do |evt|
               next if pubsub_events.include?(evt.to_sym)

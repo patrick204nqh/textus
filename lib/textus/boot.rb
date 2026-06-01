@@ -236,10 +236,10 @@ module Textus
 
     def self.hooks_for_container_internal(rpc:, events:)
       sections = {}
-      Hooks::RpcRegistry::EVENTS.each_key do |event|
+      Hooks::Catalog::RPC.each_key do |event|
         sections[event.to_s] = rpc.names(event).map(&:to_s).sort
       end
-      Hooks::EventBus::EVENTS.each_key do |event|
+      Hooks::Catalog::PUBSUB.each_key do |event|
         sections[event.to_s] = events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
       end
       sections
