@@ -18,6 +18,7 @@ module Textus
       def call(prefix: nil)
         built  = []
         leaves = []
+        pruned = []
         context = build_context
 
         @manifest.data.entries.each do |mentry|
@@ -27,12 +28,14 @@ module Textus
           next if result.nil?
 
           case result[:kind]
-          when :built  then built << result[:value]
-          when :leaves then leaves.concat(result[:value])
+          when :built then built << result[:value]
+          when :leaves
+            leaves.concat(result[:value])
+            pruned.concat(result[:pruned]) if result[:pruned]
           end
         end
 
-        { "protocol" => Textus::PROTOCOL, "built" => built, "published_leaves" => leaves }
+        { "protocol" => Textus::PROTOCOL, "built" => built, "published_leaves" => leaves, "pruned" => pruned }
       end
 
       private

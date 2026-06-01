@@ -55,6 +55,7 @@ module Textus
             end
 
             written = @index_filename ? publish_subtree(row, target_abs, pctx) : [publish_one(row, target_abs, pctx)]
+            pruned.concat(prune_orphans(target_abs, written, pctx)) if @index_filename
             written.each { |w| leaves << { "key" => row[:key], "source" => w["source"], "target" => w["target"] } }
           end
 
@@ -87,8 +88,19 @@ module Textus
           end
         end
 
+        def prune_orphans(target_dir, written, pctx)
+          kept = written.map { |w| File.expand_path(w["target"]) }
+          store = Textus::Ports::SentinelStore.new
+          store.targets_under(target_dir, pctx.root).filter_map do |managed|
+            next nil if kept.include?(File.expand_path(managed))
+
+            Textus::Ports::Publisher.unpublish(target: managed, store_root: pctx.root)
+            managed
+          end
+        end
+
         # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
-        private :publish_one, :publish_subtree
+        private :publish_one, :publish_subtree, :prune_orphans
 
         KIND = :nested
 

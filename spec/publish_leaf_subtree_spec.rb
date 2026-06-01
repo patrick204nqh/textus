@@ -84,4 +84,38 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/scratch.tmp"))).to be false
     end
   end
+
+  describe "prune on rebuild" do
+    before do
+      write_manifest(skills_entry)
+      write_file("skills/my-skill/SKILL.md", "---\nname: my-skill\n---\nbody\n")
+      write_file("skills/my-skill/references/foo.md", "foo\n")
+    end
+
+    it "deletes a managed file when its source is removed, and reports it in 'pruned'" do
+      repo_root = File.dirname(root)
+      store = Textus::Store.new(root)
+      store.as("automation").publish
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
+
+      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      envelope = store.as("automation").publish
+
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
+      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
+      expect(envelope["pruned"]).to include(File.join(repo_root, "skills/my-skill/references/foo.md"))
+    end
+
+    it "never deletes an unmanaged file a human placed in the target tree" do
+      repo_root = File.dirname(root)
+      store = Textus::Store.new(root)
+      store.as("automation").publish
+
+      human_file = File.join(repo_root, "skills/my-skill/NOTES.md")
+      File.write(human_file, "hand-written\n")
+      store.as("automation").publish
+
+      expect(File.exist?(human_file)).to be true
+    end
+  end
 end
