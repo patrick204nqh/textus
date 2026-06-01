@@ -72,5 +72,16 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       rows = envelope["published_leaves"].select { |r| r["key"] == "working.skills.my-skill" }
       expect(rows.map { |r| File.basename(r["target"]) }).to contain_exactly("SKILL.md", "commands.md", "foo.md")
     end
+
+    it "excludes files matching the entry's ignore globs" do
+      write_manifest(skills_entry("  ignore: [\"**/*.tmp\"]"))
+      write_file("skills/my-skill/references/scratch.tmp", "junk\n")
+
+      repo_root = File.dirname(root)
+      Textus::Store.new(root).as("automation").publish
+
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/SKILL.md"))).to be true
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/scratch.tmp"))).to be false
+    end
   end
 end
