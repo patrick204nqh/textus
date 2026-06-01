@@ -27,4 +27,44 @@ RSpec.describe Textus::Manifest::Resolver do
   it "raises UnknownKey for missing entries with suggestions" do
     expect { resolver.resolve("working.note") }.to raise_error(Textus::UnknownKey)
   end
+
+  describe "ignore patterns" do
+    include TextusSpecHelpers
+
+    before do
+      # `build` has legal key segments, so without `ignore:` it WOULD enumerate
+      # as skills.alpha.build.generated — this proves exclusion is by the ignore
+      # rule, not by incidental segment-illegality.
+      store_from_manifest(
+        root,
+        zones: %w[knowledge],
+        manifest: <<~YAML,
+          version: textus/3
+          zones:
+            - { name: knowledge, kind: canon }
+          entries:
+            - key: skills
+              path: knowledge/skills
+              zone: knowledge
+              owner: human:self
+              kind: nested
+              nested: true
+              index_filename: SKILL.md
+              ignore:
+                - "**/build/**"
+        YAML
+        files: {
+          "zones/knowledge/skills/alpha/SKILL.md" => "# alpha\n",
+          "zones/knowledge/skills/alpha/build/generated/SKILL.md" => "# generated\n",
+        },
+      )
+    end
+
+    it "drops paths under an ignored subtree from enumeration" do
+      keys = resolver.enumerate.map { |r| r[:key] }
+      expect(keys).to include("skills.alpha")
+      expect(keys).not_to include("skills.alpha.build.generated")
+      expect(keys.none? { |k| k.include?("build") }).to be(true)
+    end
+  end
 end

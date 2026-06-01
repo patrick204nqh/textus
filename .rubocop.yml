@@ -107,3 +107,5 @@ RSpec/SpecFilePathFormat:
 # --- Naming ---
 Naming/MethodParameterName:
   AllowedNames: [as, fm, o, e, h, k, v, r, s, n, p, m, f, d, w, g, z, to]
+Naming/MemoizedInstanceVariableName:
+  EnforcedStyleForLeadingUnderscores: optional

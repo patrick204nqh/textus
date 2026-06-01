@@ -5,15 +5,21 @@ module Textus
         PUBLISH_EACH_VARS   = Validators::PublishEach::KNOWN_VARS
         PUBLISH_EACH_VAR_RE = Validators::PublishEach::VAR_RE
 
-        attr_reader :index_filename, :publish_each
+        attr_reader :index_filename, :publish_each, :ignore
 
-        def initialize(index_filename: nil, publish_each: nil, **rest)
+        def initialize(index_filename: nil, publish_each: nil, ignore: nil, **rest)
           super(**rest)
           @index_filename = index_filename
           @publish_each = publish_each
+          @ignore = Array(ignore)
         end
 
         def nested? = true
+
+        # True when `rel_path` (slash-joined, relative to the entry base) matches
+        # any configured ignore glob. Evaluated ABOVE key-legality (ADR 0042):
+        # an ignored path is excluded, never judged.
+        def ignored?(rel_path) = IgnoreMatcher.match?(@ignore, rel_path)
 
         def publish_target_for(full_key)
           return nil if @publish_each.nil?
@@ -65,6 +71,7 @@ module Textus
           new(
             index_filename: raw["index_filename"],
             publish_each: raw["publish_each"],
+            ignore: raw["ignore"],
             **common,
           )
         end

@@ -132,6 +132,7 @@ entries:
 | `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
 | `publish_to:` | no | List of external paths to byte-copy the built file to. |
 | `publish_each:` | no | For `nested:` entries — pattern like `"skills/{basename}/SKILL.md"` that publishes each child file to its own external path. |
+| `ignore:` | no | For `nested:` entries — a list of gitignore-style globs (e.g. `["**/node_modules/**"]`). Matching paths are excluded from enumeration **and** from `doctor`'s key checks. See [Nested entries](#nested-entries). |
 | `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build` event). |
 
 The full schema lives in [`SPEC.md §4`](../../SPEC.md).
@@ -148,6 +149,21 @@ A single entry can host an unbounded subtree:
 ```
 
 That declaration covers `knowledge.notes.daily.2026-05-21`, `knowledge.notes.meetings.kickoff`, etc. — textus resolves the suffix as `/`-joined subdirectories under `knowledge/notes/`.
+
+Real source trees often contain vendored or generated subtrees that ship their own index files — a `node_modules/` whose dependencies bundle `SKILL.md` files, or a `dist/` of generated output. Use `ignore:` to keep them out of the store entirely. The patterns are honoured consistently by enumeration (`list`, `build`) and by `textus doctor`, so the store cannot `list` cleanly while `doctor` is red on the same paths:
+
+```yaml
+- key: skills
+  path: skills
+  zone: knowledge
+  nested: true
+  index_filename: SKILL.md
+  ignore:
+    - "**/node_modules/**"
+    - "**/dist/**"
+```
+
+Patterns match the file's path relative to the entry directory. A `**` globstar matches zero or more directory levels (so `**/node_modules/**` catches the subtree at any depth, including the store root); within a single path segment, `*` is anchored (it does not cross `/`) and `{a,b}` is alternation.
 
 ---
 

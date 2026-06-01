@@ -25,7 +25,7 @@ module Textus
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
         compute template publish_to publish_each
-        intake events inject_boot index_filename
+        intake events inject_boot index_filename ignore
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze

@@ -90,7 +90,13 @@ classes plain.
 Hooks::Context.for(container:, call:)` one-liner repeated in seven use cases).
 Rejected for this release: it is already a single-line factory call; a shared
 module to save three lines × seven buys inheritance coupling for almost nothing.
-Left as a conscious non-change.
+Left as a conscious non-change. The same rationale covers the bare
+`def initialize(container:, call:); @container = container; @call = call; end`
+repeated across every use case (~20 files): it is the deliberate uniform shape
+from [ADR 0023](./0023-uniform-use-case-shape.md), not duplicated knowledge.
+Collapsing it into a base class or mixin would re-introduce the inheritance
+coupling rejected above to save four trivial, logic-free lines per class. Left
+as-is by design.
 
 **Fold `RefreshWorker#call_intake` into `IntakeFetch` as well.** Rejected:
 `call_intake` passes `caps: @container` (not `nil`), uses a per-rule timeout, and
