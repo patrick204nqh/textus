@@ -45,45 +45,11 @@ RSpec.describe Textus::Role do
 
   it "exposes the MCP transport default constant" do
     expect(Textus::Role::AGENT).to eq("agent")
-    expect(Textus::Role::AGENT).to match(Textus::Role::PATTERN)
   end
 
   it "builds the closed name set from the archetype constants (ADR 0045)" do
     expect(Textus::Role::NAMES).to eq(%w[human agent automation])
     expect(Textus::Role::NAMES).to include(Textus::Role::DEFAULT, Textus::Role::AGENT)
     expect(Textus::Role::DEFAULT).to eq(Textus::Role::HUMAN)
-  end
-
-  describe ".valid_owner?" do
-    it "accepts a bare archetype (the shipped `owner: agent` zone form)" do
-      expect(Textus::Role.valid_owner?("agent")).to be(true)
-      expect(Textus::Role.valid_owner?("human")).to be(true)
-      expect(Textus::Role.valid_owner?("automation")).to be(true)
-    end
-
-    it "accepts <archetype>:<subject>" do
-      expect(Textus::Role.valid_owner?("human:patrick")).to be(true)
-      expect(Textus::Role.valid_owner?("agent:self")).to be(true)
-      expect(Textus::Role.valid_owner?("automation:ci")).to be(true)
-    end
-
-    it "rejects an archetype outside the closed set" do
-      expect(Textus::Role.valid_owner?("compiler:whoever")).to be(false)
-      expect(Textus::Role.valid_owner?("garbage")).to be(false)
-    end
-
-    it "rejects an empty subject" do
-      expect(Textus::Role.valid_owner?("human:")).to be(false)
-    end
-
-    it "rejects a subject containing a colon (PATTERN excludes ':')" do
-      expect(Textus::Role.valid_owner?("human:a:b")).to be(false)
-    end
-
-    it "rejects non-strings and the empty string" do
-      expect(Textus::Role.valid_owner?(nil)).to be(false)
-      expect(Textus::Role.valid_owner?("")).to be(false)
-      expect(Textus::Role.valid_owner?(42)).to be(false)
-    end
   end
 end

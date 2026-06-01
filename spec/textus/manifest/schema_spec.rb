@@ -126,6 +126,39 @@ RSpec.describe Textus::Manifest::Schema do
     end.not_to raise_error
   end
 
+  describe ".valid_owner? (#135)" do
+    it "accepts a bare archetype (the shipped `owner: agent` zone form)" do
+      expect(described_class.valid_owner?("agent")).to be(true)
+      expect(described_class.valid_owner?("human")).to be(true)
+      expect(described_class.valid_owner?("automation")).to be(true)
+    end
+
+    it "accepts <archetype>:<subject>" do
+      expect(described_class.valid_owner?("human:patrick")).to be(true)
+      expect(described_class.valid_owner?("agent:self")).to be(true)
+      expect(described_class.valid_owner?("automation:ci")).to be(true)
+    end
+
+    it "rejects an archetype outside the closed set" do
+      expect(described_class.valid_owner?("compiler:whoever")).to be(false)
+      expect(described_class.valid_owner?("garbage")).to be(false)
+    end
+
+    it "rejects an empty subject" do
+      expect(described_class.valid_owner?("human:")).to be(false)
+    end
+
+    it "rejects a subject containing a colon (PATTERN excludes ':')" do
+      expect(described_class.valid_owner?("human:a:b")).to be(false)
+    end
+
+    it "rejects non-strings and the empty string" do
+      expect(described_class.valid_owner?(nil)).to be(false)
+      expect(described_class.valid_owner?("")).to be(false)
+      expect(described_class.valid_owner?(42)).to be(false)
+    end
+  end
+
   describe "owner-subject validation (#135)" do
     it "accepts a bare archetype owner on a zone (shipped `owner: agent`)" do
       expect do
