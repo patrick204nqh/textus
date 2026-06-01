@@ -14,10 +14,10 @@ RSpec.describe Textus::Write::Reject do
         version: textus/3
         zones:
           - { name: identity, kind: canon }
-          - { name: review, kind: queue }
+          - { name: proposals, kind: queue }
         entries:
-          - { key: identity.target, path: target.md, zone: identity, schema: null, owner: human:o, kind: leaf }
-          - { key: review.draft, path: draft.md, zone: review, schema: null, owner: human:o, kind: leaf }
+          - { key: identity.target, path: target.md, zone: identity, owner: human:self, kind: leaf }
+          - { key: proposals.draft, path: draft.md, zone: proposals, owner: human:self, kind: leaf }
       YAML
     )
   end
@@ -26,15 +26,15 @@ RSpec.describe Textus::Write::Reject do
     events = []
     store.events.register(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
 
-    res = store.as("human").reject("review.draft")
+    res = store.as("human").reject("proposals.draft")
 
-    expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "review.draft", "target_key" => "identity.target")
-    expect(events).to eq([["review.draft", "identity.target"]])
-    expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
+    expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "proposals.draft", "target_key" => "identity.target")
+    expect(events).to eq([["proposals.draft", "identity.target"]])
+    expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 
   it "rejects non-authority callers with guard_failed naming the predicate" do
-    expect { store.as("agent").reject("review.draft") }
+    expect { store.as("agent").reject("proposals.draft") }
       .to fail_guard_with("author_held")
   end
 

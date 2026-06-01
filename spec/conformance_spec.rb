@@ -9,8 +9,8 @@ RSpec.describe "textus/3 conformance" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
-    FileUtils.mkdir_p(File.join(root, "zones/working/projects"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/network/org"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/feeds/calendar"))
@@ -19,22 +19,21 @@ RSpec.describe "textus/3 conformance" do
       version: textus/3
       zones:
         - { name: identity,  kind: canon }
-        - { name: working,   kind: canon }
+        - { name: knowledge,   kind: canon }
         - { name: artifacts, kind: derived }
         - { name: feeds,     kind: quarantine }
       entries:
-        - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick, kind: leaf}
+        - { key: identity.self,         path: identity/self,         zone: identity,   owner: human:patrick, kind: leaf}
 
-        - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true, kind: nested}
+        - { key: knowledge.network.org,   path: knowledge/network/org,   zone: knowledge,  schema: person, owner: human:patrick, kind: nested}
 
-        - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true, kind: nested}
+        - { key: knowledge.projects,      path: knowledge/projects,      zone: knowledge,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, schema: null, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: feeds.calendar.events
           kind: intake
           path: feeds/calendar/events
           zone: feeds
-          schema: null
           owner: automation:cron
           intake:
             handler: http_json
@@ -63,7 +62,7 @@ RSpec.describe "textus/3 conformance" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "zones/working/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "zones/knowledge/network/org/jane.md"), <<~MD)
       ---
       name: jane
       relationship: peer
@@ -77,15 +76,15 @@ RSpec.describe "textus/3 conformance" do
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
-      env = store.as(Textus::Role::DEFAULT).get("working.network.org.jane")
+      env = store.as(Textus::Role::DEFAULT).get("knowledge.network.org.jane")
 
       aggregate_failures do
         expect(env.protocol).to eq("textus/3")
-        expect(env.key).to eq("working.network.org.jane")
-        expect(env.zone).to eq("working")
+        expect(env.key).to eq("knowledge.network.org.jane")
+        expect(env.zone).to eq("knowledge")
         expect(env.owner).to eq("human:patrick")
         expect(File.absolute_path?(env.path)).to be true
-        expect(env.path).to end_with("working/network/org/jane.md")
+        expect(env.path).to end_with("knowledge/network/org/jane.md")
 
         expect(env.meta).to eq(
           "name" => "jane", "relationship" => "peer", "org" => "acme",
@@ -116,7 +115,7 @@ RSpec.describe "textus/3 conformance" do
     it "raises SchemaViolation listing the missing required field" do
       expect do
         store.as("human").put(
-          "working.network.org.bob",
+          "knowledge.network.org.bob",
           meta: { "name" => "bob", "org" => "acme" },
           body: "",
         )
@@ -138,12 +137,12 @@ RSpec.describe "textus/3 conformance" do
           by: "rake catalog:skills"
           at: "2020-01-01T00:00:00Z"
           from:
-            - working.projects
+            - knowledge.projects
         ---
         catalog body
       MD
 
-      project_path = File.join(root, "zones/working/projects/acme.md")
+      project_path = File.join(root, "zones/knowledge/projects/acme.md")
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
@@ -152,7 +151,7 @@ RSpec.describe "textus/3 conformance" do
       row = rows.first
       expect(row["key"]).to eq("artifacts.catalogs.skills")
       expect(row["generator"]["command"]).to eq("rake catalog:skills")
-      expect(row["reason"]).to match(/working\.projects/)
+      expect(row["reason"]).to match(/knowledge\.projects/)
     end
   end
 
@@ -219,9 +218,9 @@ RSpec.describe "textus/3 conformance" do
         version: textus/3
         zones:
           - { name: identity, kind: canon }
-          - { name: working,  kind: queue }
+          - { name: proposals,  kind: queue }
         entries:
-          - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick, kind: leaf}
+          - { key: identity.self, path: identity/self.md, zone: identity, owner: human:patrick, kind: leaf}
 
       YAML
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
@@ -230,14 +229,14 @@ RSpec.describe "textus/3 conformance" do
       # canon requires author; only human holds it under the default mapping.
       expect(m.policy.zone_writers("identity")).to eq(["human"])
       # queue requires propose; both human and agent hold it.
-      expect(m.policy.zone_writers("working")).to contain_exactly("human", "agent")
+      expect(m.policy.zone_writers("proposals")).to contain_exactly("human", "agent")
     end
 
     it "raises BadFrontmatter if zones block is absent" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         entries:
-          - { key: state.x, path: state/x.md, zone: state, schema: null, owner: human:o, kind: leaf}
+          - { key: state.x, path: state/x.md, zone: state, owner: human:self, kind: leaf}
 
       YAML
       expect { Textus::Manifest.load(root) }
@@ -249,19 +248,19 @@ RSpec.describe "textus/3 conformance" do
     it "emits a textus/3 envelope for `get`" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["get", "working.network.org.jane", "--output=json"],
+        ["get", "knowledge.network.org.jane", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
       expect(env["protocol"]).to eq("textus/3")
-      expect(env["key"]).to eq("working.network.org.jane")
+      expect(env["key"]).to eq("knowledge.network.org.jane")
     end
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["put", "working.network.org.jane", "--stdin", "--output=json"],
+        ["put", "knowledge.network.org.jane", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
                               "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
                               "body" => "updated\n",
@@ -279,7 +278,7 @@ RSpec.describe "textus/3 conformance" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["delete", "working.network.org.jane", "--as=human", "--output=json"],
+        ["delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)
@@ -298,7 +297,7 @@ RSpec.describe "textus/3 conformance" do
 
   describe "--zone filter on list" do
     it "returns only entries in the named zone" do
-      expect(store.as(Textus::Role::DEFAULT).list(zone: "working").map { |r| r["zone"] }.uniq).to eq(["working"])
+      expect(store.as(Textus::Role::DEFAULT).list(zone: "knowledge").map { |r| r["zone"] }.uniq).to eq(["knowledge"])
     end
   end
 
@@ -310,12 +309,12 @@ RSpec.describe "textus/3 conformance" do
     end
 
     it "reports schema violations and bad frontmatter" do
-      File.write(File.join(root, "zones/working/network/org/broken.md"),
+      File.write(File.join(root, "zones/knowledge/network/org/broken.md"),
                  "---\nname: broken\n---\n")
       res = store.as(Textus::Role::DEFAULT).validate_all
       expect(res["ok"]).to be false
       keys = res["violations"].map { |v| v["key"] }
-      expect(keys).to include("working.network.org.broken")
+      expect(keys).to include("knowledge.network.org.broken")
     end
   end
 end

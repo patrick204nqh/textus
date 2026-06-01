@@ -5,48 +5,48 @@ RSpec.describe "Textus::RoleScope#fetch_all (fetch_stale)" do
   let(:textus) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+    FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
     FileUtils.mkdir_p(File.join(textus, "hooks"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: quarantine }
+        - { name: feeds, kind: quarantine }
       entries:
-        - key: working.fresh
+        - key: feeds.fresh
           kind: intake
-          path: working/fresh.md
-          zone: working
+          path: feeds/fresh.md
+          zone: feeds
           intake:
             handler: counter
-        - key: working.stale
+        - key: feeds.stale
           kind: intake
-          path: working/stale.md
-          zone: working
+          path: feeds/stale.md
+          zone: feeds
           intake:
             handler: counter
       rules:
-        - match: working.fresh
+        - match: feeds.fresh
           fetch:
             ttl: 1h
             on_stale: warn
-        - match: working.stale
+        - match: feeds.stale
           fetch:
             ttl: 1s
             on_stale: warn
     YAML
 
-    File.write(File.join(textus, "zones", "working", "fresh.md"), <<~MD)
+    File.write(File.join(textus, "zones", "feeds", "fresh.md"), <<~MD)
       ---
-      key: working.fresh
+      key: feeds.fresh
       last_fetched_at: "#{(Time.now - 60).utc.iso8601}"
       ---
       fresh
     MD
 
-    File.write(File.join(textus, "zones", "working", "stale.md"), <<~MD)
+    File.write(File.join(textus, "zones", "feeds", "stale.md"), <<~MD)
       ---
-      key: working.stale
+      key: feeds.stale
       last_fetched_at: "2020-01-01T00:00:00Z"
       ---
       old
@@ -68,7 +68,7 @@ RSpec.describe "Textus::RoleScope#fetch_all (fetch_stale)" do
     result = store.as("automation").fetch_all
 
     expect(result["ok"]).to be(true)
-    expect(result["fetched"]).to eq(["working.stale"])
+    expect(result["fetched"]).to eq(["feeds.stale"])
     expect(result["failed"]).to eq([])
   end
 end

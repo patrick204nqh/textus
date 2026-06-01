@@ -4,8 +4,8 @@ RSpec.describe Textus::Boot do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -13,8 +13,8 @@ RSpec.describe Textus::Boot do
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: canon }
-        - { name: review,  kind: queue }
+        - { name: knowledge, kind: canon }
+        - { name: proposals,  kind: queue }
       entries: []
     YAML
   end
@@ -26,8 +26,8 @@ RSpec.describe Textus::Boot do
       expect(qs).to be_a(Hash)
       expect(qs["read_verbs"]).to include("boot", "get", "list", "audit", "pulse", "freshness", "doctor")
       expect(qs["write_verbs"]).to include(a_string_matching(/put.*--as=agent/))
-      expect(qs["writable_zones"]).to include("review")
-      expect(qs["propose_zone"]).to eq("review")
+      expect(qs["writable_zones"]).to include("proposals")
+      expect(qs["propose_zone"]).to eq("proposals")
       expect(qs).to have_key("latest_seq")
       expect(qs["latest_seq"]).to be_a(Integer)
     end
@@ -44,7 +44,7 @@ RSpec.describe Textus::Boot do
         roles:
           - { name: human, can: [author] }
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
       out = described_class.build(container: Textus::Store.new(root).container)

@@ -5,20 +5,20 @@ RSpec.describe "inject_boot:" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: output,   kind: derived }
+        - { name: artifacts,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
-        - key: output.root
+        - key: artifacts.root
           kind: derived
-          path: output/root.md
-          zone: output
+          path: artifacts/root.md
+          zone: artifacts
           compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
           inject_boot: true
@@ -34,10 +34,10 @@ RSpec.describe "inject_boot:" do
   it "injects boot: into template data when the flag is true" do
     store = Textus::Store.new(root)
     store.as("automation").publish
-    body = File.read(File.join(root, "zones/output/root.md"))
+    body = File.read(File.join(root, "zones/artifacts/root.md"))
     expect(body).to include("protocol=textus/3")
     expect(body).to include("zone:identity/")
-    expect(body).to include("zone:output/")
+    expect(body).to include("zone:artifacts/")
   end
 
   it "raises on inject_boot: on a non-derived entry" do
@@ -50,7 +50,6 @@ RSpec.describe "inject_boot:" do
           kind: derived
           path: identity/bad.md
           zone: identity
-          schema: null
           template: root.mustache
           compute: { kind: projection }
           inject_boot: true
@@ -65,14 +64,14 @@ RSpec.describe "inject_boot:" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: output,   kind: derived }
+        - { name: artifacts,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
-        - key: output.root
+        - key: artifacts.root
           kind: derived
-          path: output/root.json
-          zone: output
+          path: artifacts/root.json
+          zone: artifacts
           format: json
           compute: { kind: projection, select: [identity.id], pluck: "*" }
           inject_boot: true
@@ -85,20 +84,20 @@ RSpec.describe "inject_boot:" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: output,   kind: derived }
+        - { name: artifacts,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
-        - key: output.root
+        - key: artifacts.root
           kind: derived
-          path: output/root.md
-          zone: output
+          path: artifacts/root.md
+          zone: artifacts
           compute: { kind: projection, select: [identity.id], pluck: "*" }
           template: root.mustache
     YAML
     store = Textus::Store.new(root)
     store.as("automation").publish
-    body = File.read(File.join(root, "zones/output/root.md"))
+    body = File.read(File.join(root, "zones/artifacts/root.md"))
     expect(body).not_to include("protocol=textus/3")
   end
 end

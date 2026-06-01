@@ -68,7 +68,7 @@ RSpec.describe "Key grammar enforcement" do
   describe "UnknownKey suggestions" do
     it "attaches ranked suggestions when a near-miss key is requested" do
       write_manifest(<<~YAML)
-        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }
+        - { key: working.notes, path: working/notes, zone: working, kind: nested }
       YAML
       FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
       %w[alpha beta gamma].each do |n|
@@ -90,7 +90,7 @@ RSpec.describe "Key grammar enforcement" do
   describe "Manifest#enumerate — illegal filenames" do
     it "warns and skips illegal nested filenames rather than raising" do
       write_manifest(<<~YAML)
-        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested }
+        - { key: working.notes, path: working/notes, zone: working, kind: nested }
       YAML
       FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
       File.write(File.join(root, "zones/working/notes/Bad_Name.md"), "---\n---\nx")

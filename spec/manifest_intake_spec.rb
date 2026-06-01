@@ -21,12 +21,12 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.handler and intake.config" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: quarantine }]
+      zones: [{ name: feeds, kind: quarantine }]
       entries:
-        - key: working.news
+        - key: feeds.news
           kind: intake
-          path: working/news.md
-          zone: working
+          path: feeds/news.md
+          zone: feeds
           intake:
             handler: news_handler
             config: { url: https://example.com/feed }
@@ -39,22 +39,22 @@ RSpec.describe "Manifest intake:" do
   it "exposes fetch rule via Manifest#rules_for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: quarantine }]
+      zones: [{ name: feeds, kind: quarantine }]
       entries:
-        - key: working.news
+        - key: feeds.news
           kind: intake
-          path: working/news.md
-          zone: working
+          path: feeds/news.md
+          zone: feeds
           intake:
             handler: news_handler
       rules:
-        - match: working.news
+        - match: feeds.news
           fetch:
             ttl: 10m
             on_stale: timed_sync
             sync_budget_ms: 800
     YAML
-    set = m.rules.for("working.news")
+    set = m.rules.for("feeds.news")
     expect(set.fetch).to be_a(Textus::Domain::Policy::Fetch)
     expect(set.fetch.ttl_seconds).to eq(600)
     expect(set.fetch.on_stale).to eq(:timed_sync)
@@ -64,20 +64,20 @@ RSpec.describe "Manifest intake:" do
   it "returns an empty RuleSet for keys with no matching fetch rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: canon }]
+      zones: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+        - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
-    expect(m.rules.for("working.x").fetch).to be_nil
+    expect(m.rules.for("knowledge.x").fetch).to be_nil
   end
 
   it "defaults to a Leaf entry when no intake block is present" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: canon }]
+      zones: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: working.x, path: working/x.md, zone: working, kind: leaf}
+        - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
     expect(e).to be_a(Textus::Manifest::Entry::Leaf)
@@ -87,12 +87,12 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.publish_to as a list of targets" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: quarantine }]
+      zones: [{ name: feeds, kind: quarantine }]
       entries:
-        - key: working.news
+        - key: feeds.news
           kind: intake
-          path: working/news.md
-          zone: working
+          path: feeds/news.md
+          zone: feeds
           publish_to: [NEWS.md, docs/news.md]
           intake:
             handler: news_handler
@@ -103,12 +103,12 @@ RSpec.describe "Manifest intake:" do
   it "defaults publish_to to an empty array when omitted" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: quarantine }]
+      zones: [{ name: feeds, kind: quarantine }]
       entries:
-        - key: working.news
+        - key: feeds.news
           kind: intake
-          path: working/news.md
-          zone: working
+          path: feeds/news.md
+          zone: feeds
           intake:
             handler: news_handler
     YAML

@@ -5,24 +5,22 @@ RSpec.describe Textus::Write::Publish do
 
   context "with two nested leaves under publish_each" do
     let(:store) do
-      FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
-      s = store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts/agents"))
+      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
-          - key: working.agents
+          - key: artifacts.agents
             kind: nested
-            path: working/agents
-            zone: working
-            schema: null
+            path: artifacts/agents
+            zone: artifacts
             owner: human:self
-            nested: true
             publish_each: "agents/{basename}.md"
       YAML
-      File.write(File.join(root, "zones/working/agents/alice.md"),
+      File.write(File.join(root, "zones/artifacts/agents/alice.md"),
                  "---\nname: alice\n---\nbody\n")
-      File.write(File.join(root, "zones/working/agents/bob.md"),
+      File.write(File.join(root, "zones/artifacts/agents/bob.md"),
                  "---\nname: bob\n---\nbody\n")
       s
     end
@@ -36,54 +34,51 @@ RSpec.describe Textus::Write::Publish do
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res["published_leaves"].length).to eq(2)
       keys = res["published_leaves"].map { |r| r["key"] }
-      expect(keys).to contain_exactly("working.agents.alice", "working.agents.bob")
+      expect(keys).to contain_exactly("artifacts.agents.alice", "artifacts.agents.bob")
       expect(events.length).to eq(2)
     end
 
     it "filters by prefix" do
-      res = store.as("automation").publish(prefix: "working.agents.alice")
-      expect(res["published_leaves"].map { |r| r["key"] }).to eq(["working.agents.alice"])
+      res = store.as("automation").publish(prefix: "artifacts.agents.alice")
+      expect(res["published_leaves"].map { |r| r["key"] }).to eq(["artifacts.agents.alice"])
     end
   end
 
   context "with a Derived entry with publish_to and a Nested entry with publish_each" do
     let(:store) do
-      FileUtils.mkdir_p(File.join(root, "zones/working/people"))
-      FileUtils.mkdir_p(File.join(root, "zones/output"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
       FileUtils.mkdir_p(File.join(root, "templates"))
-      s = store_from_manifest(root, zones: %w[working output], manifest: <<~YAML)
+      s = store_from_manifest(root, zones: %w[knowledge artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
-          - { name: output, kind: derived }
+          - { name: knowledge, kind: canon }
+          - { name: artifacts, kind: derived }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: null, owner: human:o, nested: true, kind: nested }
+          - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
 
-          - key: output.catalogs.people
+          - key: artifacts.catalogs.people
             kind: derived
-            path: output/catalogs/people.md
-            zone: output
-            schema: null
+            path: artifacts/catalogs/people.md
+            zone: artifacts
             owner: automation:auto
-            compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
+            compute: { kind: projection, select: knowledge.people, pluck: [name, org], sort_by: name }
             template: people.mustache
             publish_to: [PEOPLE.md]
 
-          - key: working.agents
+          - key: knowledge.agents
             kind: nested
-            path: working/agents
-            zone: working
-            schema: null
+            path: knowledge/agents
+            zone: knowledge
             owner: human:self
-            nested: true
             publish_each: "agents/{basename}.md"
       YAML
-      File.write(File.join(root, "zones/working/people/alice.md"), "---\nname: alice\norg: x\n---\n")
-      File.write(File.join(root, "zones/working/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
+      File.write(File.join(root, "zones/knowledge/people/alice.md"), "---\nname: alice\norg: x\n---\n")
+      File.write(File.join(root, "zones/knowledge/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
       File.write(File.join(root, "templates/people.mustache"),
                  "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
-      FileUtils.mkdir_p(File.join(root, "zones/working/agents"))
-      File.write(File.join(root, "zones/working/agents/claude.md"), "---\nname: claude\n---\nbody\n")
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge/agents"))
+      File.write(File.join(root, "zones/knowledge/agents/claude.md"), "---\nname: claude\n---\nbody\n")
       s
     end
 
@@ -101,10 +96,10 @@ RSpec.describe Textus::Write::Publish do
       expect(res).to have_key("published_leaves")
 
       built_keys = res["built"].map { |b| b["key"] }
-      expect(built_keys).to include("output.catalogs.people")
+      expect(built_keys).to include("artifacts.catalogs.people")
 
       leaf_keys = res["published_leaves"].map { |r| r["key"] }
-      expect(leaf_keys).to include("working.agents.claude")
+      expect(leaf_keys).to include("knowledge.agents.claude")
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
@@ -125,24 +120,24 @@ RSpec.describe Textus::Write::Publish do
 
       store.as("automation").publish
 
-      expect(build_completed).to include("output.catalogs.people")
-      expect(file_published).to include("output.catalogs.people")
-      expect(file_published).to include("working.agents.claude")
+      expect(build_completed).to include("artifacts.catalogs.people")
+      expect(file_published).to include("artifacts.catalogs.people")
+      expect(file_published).to include("knowledge.agents.claude")
     end
   end
 
   context "with an Intake entry that has publish_to" do
     let(:store) do
-      FileUtils.mkdir_p(File.join(root, "zones/output"))
-      s = store_from_manifest(root, zones: %w[output], manifest: <<~YAML)
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
-          - key: output.catalog
+          - key: artifacts.catalog
             kind: intake
-            path: output/catalog.txt
-            zone: output
+            path: artifacts/catalog.txt
+            zone: artifacts
             format: text
             owner: automation:auto
             publish_to: [CATALOG.txt, docs/catalog.txt]
@@ -150,7 +145,7 @@ RSpec.describe Textus::Write::Publish do
               handler: catalog_handler
       YAML
       # Seed a fetched body directly — Publish reads it, doesn't generate it.
-      File.write(File.join(root, "zones/output/catalog.txt"), "one\ntwo\nthree\n")
+      File.write(File.join(root, "zones/artifacts/catalog.txt"), "one\ntwo\nthree\n")
       s
     end
 
@@ -161,14 +156,14 @@ RSpec.describe Textus::Write::Publish do
       res = store.as("automation").publish
 
       built = res["built"]
-      catalog = built.find { |r| r["key"] == "output.catalog" }
+      catalog = built.find { |r| r["key"] == "artifacts.catalog" }
       expect(catalog).not_to be_nil
       expect(catalog["published_to"]).to eq(["CATALOG.txt", "docs/catalog.txt"])
 
       repo_root = File.dirname(root)
       expect(File.read(File.join(repo_root, "CATALOG.txt"))).to eq("one\ntwo\nthree\n")
       expect(File.read(File.join(repo_root, "docs/catalog.txt"))).to eq("one\ntwo\nthree\n")
-      expect(events.map(&:first)).to contain_exactly("output.catalog", "output.catalog")
+      expect(events.map(&:first)).to contain_exactly("artifacts.catalog", "artifacts.catalog")
     end
 
     it "skips intake entries with no publish_to" do
@@ -177,12 +172,12 @@ RSpec.describe Textus::Write::Publish do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
-          - key: output.catalog
+          - key: artifacts.catalog
             kind: intake
-            path: output/catalog.txt
-            zone: output
+            path: artifacts/catalog.txt
+            zone: artifacts
             format: text
             owner: automation:auto
             intake:
@@ -196,22 +191,20 @@ RSpec.describe Textus::Write::Publish do
 
   context "with a publish_each target that escapes the repo root" do
     let(:store) do
-      FileUtils.mkdir_p(File.join(root, "zones/working/bad"))
-      s = store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts/bad"))
+      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
-          - key: working.bad
+          - key: artifacts.bad
             kind: nested
-            path: working/bad
-            zone: working
-            schema: null
+            path: artifacts/bad
+            zone: artifacts
             owner: human:self
-            nested: true
             publish_each: "../../../etc/{basename}.md"
       YAML
-      File.write(File.join(root, "zones/working/bad/x.md"),
+      File.write(File.join(root, "zones/artifacts/bad/x.md"),
                  "---\nname: x\n---\nbody\n")
       s
     end

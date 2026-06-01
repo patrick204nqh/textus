@@ -5,12 +5,12 @@ RSpec.describe "textus pulse CLI" do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
       FileUtils.mkdir_p(File.join(textus, "zones", "review"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: review,  kind: canon }
         entries: []
       YAML
@@ -69,7 +69,7 @@ RSpec.describe "textus pulse CLI" do
       Textus::Ports::AuditLog.new(textus).append(
         role: "human",
         verb: "put",
-        key: "working.note",
+        key: "knowledge.note",
         etag_before: nil,
         etag_after: "e2",
       )
@@ -77,7 +77,7 @@ RSpec.describe "textus pulse CLI" do
       _code, out2 = run_cli(%w[pulse --as=agent], cwd: root)
       out2_parsed = JSON.parse(out2)
       expect(out2_parsed["cursor"]).to be > first_cursor
-      expect(out2_parsed["changed"].map { |c| c["key"] }).to include("working.note")
+      expect(out2_parsed["changed"].map { |c| c["key"] }).to include("knowledge.note")
 
       _code, out3 = run_cli(%w[pulse --as=agent], cwd: root)
       out3_parsed = JSON.parse(out3)

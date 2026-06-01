@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Entry do
     Textus::Manifest.parse(<<~YAML)
       version: textus/3
       zones:
-        - { name: output, kind: derived }
+        - { name: artifacts, kind: derived }
       entries:
       #{yaml_body.gsub(/^/, "  ")}
     YAML
@@ -13,9 +13,9 @@ RSpec.describe Textus::Manifest::Entry do
 
   it "parses compute.kind=projection with transform" do
     mf = parse_manifest(<<~YAML)
-      - key: output.x
+      - key: artifacts.x
         kind: derived
-        zone: output
+        zone: artifacts
         path: x.json
         format: json
         compute:
@@ -33,9 +33,9 @@ RSpec.describe Textus::Manifest::Entry do
 
   it "parses compute.kind=external" do
     mf = parse_manifest(<<~YAML)
-      - key: output.big
+      - key: artifacts.big
         kind: derived
-        zone: output
+        zone: artifacts
         path: big.json
         format: json
         compute:
@@ -52,9 +52,9 @@ RSpec.describe Textus::Manifest::Entry do
   it "rejects unknown compute.kind" do
     expect do
       parse_manifest(<<~YAML)
-        - key: output.x
+        - key: artifacts.x
           kind: derived
-          zone: output
+          zone: artifacts
           path: x.json
           format: json
           compute:

@@ -13,24 +13,24 @@ RSpec.describe Textus::MCP::Tools do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
-        - { name: review,   kind: queue }
+        - { name: knowledge,  kind: canon }
+        - { name: proposals,   kind: queue }
       entries:
-        - { key: identity.self,   path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
-        - { key: working.note,    path: working/note.md,  zone: working,  schema: null, owner: human:self, kind: leaf }
-        - { key: review.proposal, path: review/proposal,  zone: review,   schema: null, owner: agent, nested: true, kind: nested }
+        - { key: identity.self,   path: identity/self.md, zone: identity, owner: human:self, kind: leaf }
+        - { key: knowledge.note,    path: knowledge/note.md,  zone: knowledge,  owner: human:self, kind: leaf }
+        - { key: proposals.proposal, path: proposals/proposal,  zone: proposals,   owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }
   let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
   let(:session) do
-    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "review", manifest_etag: etag)
+    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "proposals", manifest_etag: etag)
   end
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
@@ -60,7 +60,7 @@ RSpec.describe Textus::MCP::Tools do
 
   describe ".call('list', ...)" do
     it "lists keys filtered by zone" do
-      result = described_class.call("list", session: session, store: store, args: { "zone" => "working" })
+      result = described_class.call("list", session: session, store: store, args: { "zone" => "knowledge" })
       expect(result).to be_an(Array)
     end
   end
@@ -83,12 +83,12 @@ RSpec.describe Textus::MCP::Tools do
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
       human_session = Textus::MCP::Session.new(
-        role: "human", cursor: 0, propose_zone: "review", manifest_etag: etag,
+        role: "human", cursor: 0, propose_zone: "proposals", manifest_etag: etag,
       )
       result = described_class.call(
         "put",
         session: human_session, store: store,
-        args: { "key" => "working.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
+        args: { "key" => "knowledge.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
       )
       expect(result).to include("uid", "etag")
     end
@@ -104,7 +104,7 @@ RSpec.describe Textus::MCP::Tools do
         args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
       )
       expect(result.keys).to contain_exactly("uid", "etag", "key")
-      expect(result["key"]).to eq("review.proposal.x")
+      expect(result["key"]).to eq("proposals.proposal.x")
     end
   end
 
@@ -124,7 +124,7 @@ RSpec.describe Textus::MCP::Tools do
 
   describe ".call('rules', ...)" do
     it "returns a Hash with at most fetch/guard keys" do
-      result = described_class.call("rules", session: session, store: store, args: { "key" => "working.note" })
+      result = described_class.call("rules", session: session, store: store, args: { "key" => "knowledge.note" })
       expect(result).to be_a(Hash)
       expect(result.keys - %w[fetch guard]).to be_empty
     end
@@ -136,7 +136,7 @@ RSpec.describe Textus::MCP::Tools do
     it "returns a plan without mutating files" do
       result = described_class.call(
         "key_mv_prefix", session: session, store: store,
-                         args: { "from_prefix" => "working", "to_prefix" => "renamed", "dry_run" => true }
+                         args: { "from_prefix" => "knowledge", "to_prefix" => "renamed", "dry_run" => true }
       )
       expect(result).to include("steps", "warnings")
     end

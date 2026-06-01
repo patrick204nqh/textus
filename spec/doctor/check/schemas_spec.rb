@@ -4,14 +4,14 @@ RSpec.describe Textus::Doctor::Check::Schemas do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, schema: note, kind: leaf}
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)

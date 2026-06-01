@@ -13,8 +13,8 @@ RSpec.describe "author capability (ADR 0033)" do
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: proposals.notes, path: proposals/notes, zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
+        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
     YAML
   end
 

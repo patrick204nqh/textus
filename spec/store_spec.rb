@@ -8,13 +8,13 @@ RSpec.describe Textus::Store do
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.demo, path: working/demo, zone: working, schema: null, owner: human:patrick, kind: leaf}
+        - { key: knowledge.demo, path: knowledge/demo, zone: knowledge, owner: human:patrick, kind: leaf}
 
     YAML
   end

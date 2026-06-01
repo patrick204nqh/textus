@@ -56,11 +56,11 @@ RSpec.describe "CLI hook verbs" do
   end
 
   it "textus put --fetch=NAME applies the fetch hook to stdin bytes" do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: working, kind: canon }]
-      entries: [{ key: working.j, path: working/j.md, zone: working, kind: leaf }]
+      zones: [{ name: knowledge, kind: canon }]
+      entries: [{ key: knowledge.j, path: knowledge/j.md, zone: knowledge, kind: leaf }]
     YAML
     File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
       Textus.hook do |reg|
@@ -69,7 +69,7 @@ RSpec.describe "CLI hook verbs" do
     RUBY
     out = StringIO.new
     rc = Textus::CLI.run(
-      ["put", "working.j", "--stdin", "--fetch=jbytes", "--as=human", "--output=json"],
+      ["put", "knowledge.j", "--stdin", "--fetch=jbytes", "--as=human", "--output=json"],
       stdin: StringIO.new('{"a":1}'), stdout: out, stderr: StringIO.new, cwd: tmp,
     )
     expect(rc).to eq(0)

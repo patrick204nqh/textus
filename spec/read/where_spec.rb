@@ -6,14 +6,14 @@ RSpec.describe Textus::Read::Where do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working],
-      files: { "zones/working/doc.md" => "---\nname: doc\n---\nbody\n" },
+      zones: %w[knowledge],
+      files: { "zones/knowledge/doc.md" => "---\nname: doc\n---\nbody\n" },
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.doc, path: working/doc.md, zone: working, owner: human:alice, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, owner: human:alice, kind: leaf}
 
       YAML
     )
@@ -21,14 +21,14 @@ RSpec.describe Textus::Read::Where do
 
   it "returns a hash with protocol, key, zone, owner, path for a known key" do
     ops = store.as("human")
-    result = ops.where("working.doc")
+    result = ops.where("knowledge.doc")
 
     expect(result).to include(
       "protocol" => be_a(String),
-      "key" => "working.doc",
-      "zone" => "working",
+      "key" => "knowledge.doc",
+      "zone" => "knowledge",
       "owner" => "human:alice",
-      "path" => end_with("working/doc.md"),
+      "path" => end_with("knowledge/doc.md"),
     )
   end
 end

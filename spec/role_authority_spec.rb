@@ -7,14 +7,14 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals/people"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: queue }
+        - { name: proposals, kind: queue }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+        - { key: proposals.people, path: proposals/people, zone: proposals, schema: person, owner: human:patrick, kind: nested}
 
     YAML
 
@@ -31,7 +31,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
   it "flags fields written by the wrong role" do
     store.as("agent").put(
-      "working.people.alice",
+      "proposals.people.alice",
       meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
       body: "",
     )
@@ -46,7 +46,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
   it "allows human to override ai-owned fields" do
     store.as("human").put(
-      "working.people.bob",
+      "proposals.people.bob",
       meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
       body: "",
     )
@@ -61,7 +61,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
     before do
       FileUtils.mkdir_p(File.join(root, "schemas"))
-      FileUtils.mkdir_p(File.join(root, "zones/working/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/proposals/people"))
 
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -69,9 +69,9 @@ RSpec.describe "Role authority via schema.maintained_by" do
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+          - { key: knowledge.people, path: knowledge/people, zone: knowledge, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 
@@ -86,7 +86,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
     it "allows the author role to override agent-owned fields" do
       store.as("human").put(
-        "working.people.carol",
+        "knowledge.people.carol",
         meta: { "name" => "carol", "full_name" => "Carol Override", "embedding" => [0.5] },
         body: "",
       )

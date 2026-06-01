@@ -4,8 +4,8 @@ RSpec.describe Textus::Read::Pulse do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -13,8 +13,8 @@ RSpec.describe Textus::Read::Pulse do
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: canon }
-        - { name: review,  kind: queue }
+        - { name: knowledge, kind: canon }
+        - { name: proposals,  kind: queue }
       entries: []
     YAML
   end

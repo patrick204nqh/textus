@@ -8,7 +8,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   before do
     store_from_manifest(
       root,
-      zones: %w[identity review],
+      zones: %w[identity proposals],
       files: {
         "hooks/log.rb" => <<~RUBY,
           $textus_event_log ||= []
@@ -24,11 +24,11 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         version: textus/3
         zones:
           - { name: identity, kind: canon }
-          - { name: review,   kind: queue }
+          - { name: proposals,   kind: queue }
         entries:
           - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
 
-          - { key: review.draft,    path: review/draft.md,    zone: review, kind: leaf}
+          - { key: proposals.draft,    path: proposals/draft.md,    zone: proposals, kind: leaf}
 
       YAML
     )
@@ -39,25 +39,25 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     $textus_event_log = nil
   end
 
-  it "fires :reject with review key and proposal target_key, then deletes the entry" do
+  it "fires :reject with proposals key and proposal target_key, then deletes the entry" do
     store = Textus::Store.new(root)
     store.as("agent").put(
-      "review.draft",
+      "proposals.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "proposed body",
     )
     $textus_event_log.clear
-    result = store.as("human").reject("review.draft")
-    expect(result["rejected"]).to eq("review.draft")
+    result = store.as("human").reject("proposals.draft")
+    expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
     reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
     expect(reject_events.length).to eq(1)
-    expect(reject_events.first[1]).to eq("review.draft")
+    expect(reject_events.first[1]).to eq("proposals.draft")
     expect(reject_events.first[2]).to eq("identity.target")
-    expect(store.as(Textus::Role::DEFAULT).get("review.draft")).to be_nil
+    expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 
-  it "refuses to reject a non-review entry" do
+  it "refuses to reject a non-proposals entry" do
     store = Textus::Store.new(root)
     store.as("human").put("identity.target", meta: { "name" => "target" }, body: "x")
     expect { store.as("human").reject("identity.target") }
@@ -66,8 +66,8 @@ RSpec.describe ":proposal_rejected event and store.reject" do
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
-    store.as("agent").put("review.draft", meta: { "name" => "draft" }, body: "x")
-    expect { store.as("human").reject("review.draft") }
+    store.as("agent").put("proposals.draft", meta: { "name" => "draft" }, body: "x")
+    expect { store.as("human").reject("proposals.draft") }
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
 
@@ -80,36 +80,36 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(cli_dir)
       store_from_manifest(
         cli_root,
-        zones: %w[identity review],
+        zones: %w[identity proposals],
         manifest: <<~YAML,
           version: textus/3
           zones:
             - { name: identity, kind: canon }
-            - { name: review,   kind: queue }
+            - { name: proposals,   kind: queue }
           entries:
             - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
 
-            - { key: review.d,   path: review/d.md,   zone: review, kind: leaf}
+            - { key: proposals.d,   path: proposals/d.md,   zone: proposals, kind: leaf}
 
         YAML
       )
     end
 
-    it "rejects a review entry via CLI and emits JSON" do
+    it "rejects a proposals entry via CLI and emits JSON" do
       cli_store.as("agent").put(
-        "review.d",
+        "proposals.d",
         meta: { "name" => "d", "proposal" => { "target_key" => "identity.t", "action" => "put" } },
         body: "x",
       )
       stdout = StringIO.new
       stderr = StringIO.new
       exit_code = Textus::CLI.run(
-        ["--root=#{cli_root}", "reject", "review.d", "--as=human"],
+        ["--root=#{cli_root}", "reject", "proposals.d", "--as=human"],
         stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: cli_dir,
       )
       expect(exit_code).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
       payload = JSON.parse(stdout.string.strip)
-      expect(payload["rejected"]).to eq("review.d")
+      expect(payload["rejected"]).to eq("proposals.d")
       expect(payload["target_key"]).to eq("identity.t")
     end
   end

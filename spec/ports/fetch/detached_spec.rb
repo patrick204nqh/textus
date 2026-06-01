@@ -19,13 +19,13 @@ RSpec.describe Textus::Ports::Fetch::Detached do
     end
 
     it "returns nil when no role holds fetch" do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
       store = Textus::Store.new(root)

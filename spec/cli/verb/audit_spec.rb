@@ -13,22 +13,22 @@ RSpec.describe Textus::CLI::Verb::Audit do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.open(audit_log_path(root), "w") do |f|
       f.puts JSON.generate({ "ts" => "2026-05-01T00:00:00Z", "role" => "human",
-                             "verb" => "put", "key" => "working.doc",
+                             "verb" => "put", "key" => "knowledge.doc",
                              "extras" => { "correlation_id" => "abc" } })
       f.puts JSON.generate({ "ts" => "2026-05-02T00:00:00Z", "role" => "ai",
-                             "verb" => "put", "key" => "working.doc" })
+                             "verb" => "put", "key" => "knowledge.doc" })
     end
   end
 

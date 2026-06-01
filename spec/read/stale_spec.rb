@@ -6,14 +6,14 @@ RSpec.describe Textus::Read::Stale do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[working],
-      files: { "zones/working/doc.md" => "---\nname: doc\n---\nbody\n" },
+      zones: %w[knowledge],
+      files: { "zones/knowledge/doc.md" => "---\nname: doc\n---\nbody\n" },
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       YAML
     )

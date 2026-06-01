@@ -13,13 +13,13 @@ RSpec.describe Textus::CLI::Verb::Build do
 
   context "when a non-default legal role holds build" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/output"))
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose, build] }
         zones:
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries: []
       YAML
     end
@@ -33,13 +33,13 @@ RSpec.describe Textus::CLI::Verb::Build do
 
   context "when no role holds build" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
     end

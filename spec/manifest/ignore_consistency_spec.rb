@@ -18,7 +18,6 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
             zone: knowledge
             owner: human:self
             kind: nested
-            nested: true
             index_filename: SKILL.md
             ignore:
               - "**/node_modules/**"

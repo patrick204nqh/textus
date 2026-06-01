@@ -10,8 +10,8 @@ RSpec.describe Textus::Maintenance::Migrate do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.old, path: working/old, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
-        - { key: working.new, path: working/new, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
+        - { key: working.old, path: working/old, zone: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.new, path: working/new, zone: working, owner: human:self, kind: nested, nested: true }
     YAML
     File.write(File.join(root, "zones/working/old/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
     FileUtils.mkdir_p(audit_dir_path(root))

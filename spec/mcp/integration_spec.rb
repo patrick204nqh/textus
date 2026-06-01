@@ -9,17 +9,17 @@ RSpec.describe "MCP end-to-end" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/identity zones/working zones/review schemas hooks].each do |d|
+    %w[zones/identity zones/knowledge zones/proposals schemas hooks].each do |d|
       FileUtils.mkdir_p(File.join(root, d))
     end
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
-        - { name: review,   kind: queue }
+        - { name: knowledge,  kind: canon }
+        - { name: proposals,   kind: queue }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -76,7 +76,7 @@ RSpec.describe "MCP end-to-end" do
                                 params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
                               { id: 2, method: "tools/call",
                                 params: { name: "put",
-                                          arguments: { key: "working.note",
+                                          arguments: { key: "knowledge.note",
                                                        meta: { "name" => "note" }, body: "cursor-advance-probe\n" } } },
                               { id: 3, method: "tools/call",
                                 params: { name: "pulse", arguments: {} } },
@@ -91,7 +91,7 @@ RSpec.describe "MCP end-to-end" do
 
     # First pulse (using session cursor C0): must see the put entry
     expect(pulse1["changed"].length).to eq(1)
-    expect(pulse1["changed"].first["key"]).to eq("working.note")
+    expect(pulse1["changed"].first["key"]).to eq("knowledge.note")
     cursor_after_first_pulse = pulse1["cursor"]
     expect(cursor_after_first_pulse).to be > 0
 
@@ -107,10 +107,10 @@ RSpec.describe "MCP end-to-end" do
                                 params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
                               { id: 2, method: "tools/call",
                                 params: { name: "put",
-                                          arguments: { key: "working.note",
+                                          arguments: { key: "knowledge.note",
                                                        meta: { "name" => "note" }, body: "round-trip\n" } } },
                               { id: 3, method: "tools/call",
-                                params: { name: "get", arguments: { key: "working.note" } } },
+                                params: { name: "get", arguments: { key: "knowledge.note" } } },
                             ])
     expect(responses.map { |r| r["id"] }).to eq([1, 2, 3])
     expect(responses.all? { |r| r["error"].nil? }).to be(true)

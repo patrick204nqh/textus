@@ -14,9 +14,9 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
         - { name: notebook,  kind: workspace, owner: agent }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: notebook.notes,  path: notebook/notes,  zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
-        - { key: proposals.notes, path: proposals/notes, zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
+        - { key: notebook.notes,  path: notebook/notes,  zone: notebook,  owner: agent:self, kind: nested }
+        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
     YAML
   end
 

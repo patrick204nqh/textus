@@ -13,18 +13,18 @@ RSpec.describe "textus rule group" do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       rules:
-        - match: "working.*"
+        - match: "knowledge.*"
           fetch: { ttl: 1h, on_stale: warn }
-        - match: working.doc
+        - match: knowledge.doc
           fetch: { ttl: 5m, on_stale: sync }
           intake_handler_allowlist: [src_a]
     YAML
@@ -37,38 +37,38 @@ RSpec.describe "textus rule group" do
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("policy_list")
       expect(payload["policies"].length).to eq(2)
-      expect(payload["policies"].map { |b| b["match"] }).to eq(["working.*", "working.doc"])
+      expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
       expect(payload["policies"].first["fetch"]["ttl_seconds"]).to eq(3600)
     end
 
     it "serializes retention as a plain hash with integer seconds" do
-      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries:
-          - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
         rules:
-          - match: working.doc
+          - match: knowledge.doc
             retention: { expire_after: 30d }
       YAML
       rc = run(%w[rule list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
-      block = payload["policies"].find { |b| b["match"] == "working.doc" }
+      block = payload["policies"].find { |b| b["match"] == "knowledge.doc" }
       expect(block["retention"]).to eq("expire_after" => 2_592_000, "archive_after" => nil)
     end
   end
 
   describe "textus rule explain KEY" do
     it "returns matched blocks and effective values for a key" do
-      rc = run(%w[rule explain working.doc])
+      rc = run(%w[rule explain knowledge.doc])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("policy_explain")
-      expect(payload["key"]).to eq("working.doc")
+      expect(payload["key"]).to eq("knowledge.doc")
       expect(payload["matched_blocks"].length).to eq(2)
       expect(payload["effective"]["fetch"]["ttl_seconds"]).to eq(300)
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])

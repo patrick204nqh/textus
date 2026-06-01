@@ -4,10 +4,10 @@ RSpec.describe Textus::Store, ".discover" do
   include_context "textus_store_fixture"
 
   def make_store_at(dir)
-    store_from_manifest(dir, zones: %w[working], manifest: <<~YAML)
+    store_from_manifest(dir, zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries: []
     YAML
   end

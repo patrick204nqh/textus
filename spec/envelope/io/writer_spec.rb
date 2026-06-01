@@ -4,13 +4,13 @@ RSpec.describe Textus::Envelope::IO::Writer do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[working], manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.foo, path: working/foo.md, zone: working, kind: leaf}
-        - { key: working.bar, path: working/bar.md, zone: working, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.bar, path: knowledge/bar.md, zone: knowledge, kind: leaf}
     YAML
   end
 
@@ -22,11 +22,11 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "writes bytes, returns an envelope, and appends a 'put' audit row" do
       ctx = test_ctx(role: "automation", correlation_id: "corr-put")
       writer = build_envelope_writer(store, ctx)
-      mentry = store.manifest.resolver.resolve("working.foo").entry
+      mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
-      env = writer.put("working.foo", mentry: mentry, payload: payload(body: "hi"))
+      env = writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "hi"))
       expect(env).to be_a(Textus::Envelope)
-      path = File.join(root, "zones", "working", "foo.md")
+      path = File.join(root, "zones", "knowledge", "foo.md")
       expect(File.binread(path)).to include("hi")
 
       expect(store).to have_audit_verb("put").with_correlation("corr-put")
@@ -35,11 +35,11 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "raises EtagMismatch when if_etag does not match" do
       ctx = test_ctx(role: "automation")
       writer = build_envelope_writer(store, ctx)
-      mentry = store.manifest.resolver.resolve("working.foo").entry
+      mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
-      writer.put("working.foo", mentry: mentry, payload: payload(body: "v1"))
+      writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "v1"))
       expect do
-        writer.put("working.foo", mentry: mentry, payload: payload(body: "v2"), if_etag: "nope")
+        writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "v2"), if_etag: "nope")
       end.to raise_error(Textus::EtagMismatch)
     end
   end
@@ -48,11 +48,11 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "removes the file and appends a 'delete' audit row" do
       ctx = test_ctx(role: "automation")
       writer = build_envelope_writer(store, ctx)
-      mentry = store.manifest.resolver.resolve("working.foo").entry
+      mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
-      writer.put("working.foo", mentry: mentry, payload: payload(body: "x"))
-      writer.delete("working.foo", mentry: mentry)
-      path = File.join(root, "zones", "working", "foo.md")
+      writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "x"))
+      writer.delete("knowledge.foo", mentry: mentry)
+      path = File.join(root, "zones", "knowledge", "foo.md")
       expect(File.exist?(path)).to be(false)
 
       last = File.read(audit_log_path(root)).lines.last
@@ -63,11 +63,11 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "raises EtagMismatch when if_etag does not match" do
       ctx = test_ctx(role: "automation")
       writer = build_envelope_writer(store, ctx)
-      mentry = store.manifest.resolver.resolve("working.foo").entry
+      mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
-      writer.put("working.foo", mentry: mentry, payload: payload(body: "x"))
+      writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "x"))
       expect do
-        writer.delete("working.foo", mentry: mentry, if_etag: "wrong")
+        writer.delete("knowledge.foo", mentry: mentry, if_etag: "wrong")
       end.to raise_error(Textus::EtagMismatch)
     end
   end
@@ -76,26 +76,26 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "renames file, returns envelope with new key/uid, and appends a 'mv' audit row with from_key/to_key/uid" do
       ctx = test_ctx(role: "automation", correlation_id: "corr-mv")
       writer = build_envelope_writer(store, ctx)
-      old_mentry = store.manifest.resolver.resolve("working.foo").entry
-      new_mentry = store.manifest.resolver.resolve("working.bar").entry
+      old_mentry = store.manifest.resolver.resolve("knowledge.foo").entry
+      new_mentry = store.manifest.resolver.resolve("knowledge.bar").entry
 
       before = writer.put(
-        "working.foo", mentry: old_mentry,
-                       payload: payload(meta: { "name" => "foo" }, body: "hello")
+        "knowledge.foo", mentry: old_mentry,
+                         payload: payload(meta: { "name" => "foo" }, body: "hello")
       )
-      env = writer.move(from_key: "working.foo", to_key: "working.bar", new_mentry: new_mentry)
+      env = writer.move(from_key: "knowledge.foo", to_key: "knowledge.bar", new_mentry: new_mentry)
 
-      old_path = File.join(root, "zones", "working", "foo.md")
-      new_path = File.join(root, "zones", "working", "bar.md")
+      old_path = File.join(root, "zones", "knowledge", "foo.md")
+      new_path = File.join(root, "zones", "knowledge", "bar.md")
       expect(File.exist?(old_path)).to be(false)
       expect(File.exist?(new_path)).to be(true)
-      expect(env.key).to eq("working.bar")
+      expect(env.key).to eq("knowledge.bar")
       expect(env.uid).to eq(before.uid)
 
       row = last_audit_row(store)
       expect(row["verb"]).to eq("mv")
-      expect(row["from_key"]).to eq("working.foo")
-      expect(row["to_key"]).to eq("working.bar")
+      expect(row["from_key"]).to eq("knowledge.foo")
+      expect(row["to_key"]).to eq("knowledge.bar")
       expect(row["uid"]).to eq(env.uid)
       expect(row.dig("extras", "correlation_id")).to eq("corr-mv")
     end
@@ -103,15 +103,15 @@ RSpec.describe Textus::Envelope::IO::Writer do
     it "raises EtagMismatch when if_etag does not match the source" do
       ctx = test_ctx(role: "automation")
       writer = build_envelope_writer(store, ctx)
-      old_mentry = store.manifest.resolver.resolve("working.foo").entry
-      new_mentry = store.manifest.resolver.resolve("working.bar").entry
+      old_mentry = store.manifest.resolver.resolve("knowledge.foo").entry
+      new_mentry = store.manifest.resolver.resolve("knowledge.bar").entry
 
       writer.put(
-        "working.foo", mentry: old_mentry,
-                       payload: payload(meta: { "name" => "foo" }, body: "x")
+        "knowledge.foo", mentry: old_mentry,
+                         payload: payload(meta: { "name" => "foo" }, body: "x")
       )
       expect do
-        writer.move(from_key: "working.foo", to_key: "working.bar",
+        writer.move(from_key: "knowledge.foo", to_key: "knowledge.bar",
                     new_mentry: new_mentry, if_etag: "nope")
       end.to raise_error(Textus::EtagMismatch)
     end

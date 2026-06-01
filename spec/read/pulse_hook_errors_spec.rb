@@ -4,13 +4,13 @@ RSpec.describe "Pulse hook_errors" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[zones/knowledge schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -26,7 +26,7 @@ RSpec.describe "Pulse hook_errors" do
   it "includes a row when a hook errors" do
     store.events.error_log.record(
       seq: 1, event: :entry_put, hook: :sample,
-      key: "working.note", error_class: "RuntimeError", error_message: "boom"
+      key: "knowledge.note", error_class: "RuntimeError", error_message: "boom"
     )
     result = store.as("human").pulse(since: 0)
     expect(result["hook_errors"].size).to eq(1)

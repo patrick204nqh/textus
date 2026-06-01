@@ -8,20 +8,20 @@ RSpec.describe Textus::Hooks::Context do
   let(:ctx)   { described_class.new(scope: ops) }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: queue }
+        - { name: proposals, kind: queue }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: agent, kind: leaf}
+        - { key: proposals.notes, path: proposals/notes.md, zone: proposals, owner: agent, kind: leaf}
 
     YAML
   end
 
   it "exposes get/put/audit through Operations (so authz + audit fire)" do
-    ctx.put("working.notes", body: "hello")
-    env = ctx.get("working.notes")
+    ctx.put("proposals.notes", body: "hello")
+    env = ctx.get("proposals.notes")
     expect(env.body.chomp).to eq("hello")
   end
 
@@ -38,7 +38,7 @@ RSpec.describe Textus::Hooks::Context do
   it "publish_followup routes through the bus with the same ctx" do
     seen = nil
     store.events.register(:entry_put, :spy) { |key:, **| seen = key }
-    ctx.publish_followup(:entry_put, key: "working.notes", envelope: nil)
-    expect(seen).to eq("working.notes")
+    ctx.publish_followup(:entry_put, key: "proposals.notes", envelope: nil)
+    expect(seen).to eq("proposals.notes")
   end
 end

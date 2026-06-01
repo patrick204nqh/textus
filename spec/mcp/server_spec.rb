@@ -6,18 +6,18 @@ RSpec.describe Textus::MCP::Server do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: working,  kind: canon }
-        - { name: review,   kind: queue }
+        - { name: knowledge,  kind: canon }
+        - { name: proposals,   kind: queue }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")

@@ -8,20 +8,20 @@ RSpec.describe Textus::Read::Blame do
   # For tests that need isolated git repos we create subdirs under `tmp`.
 
   def make_store_at(textus_dir)
-    FileUtils.mkdir_p(File.join(textus_dir, "zones", "working"))
+    FileUtils.mkdir_p(File.join(textus_dir, "zones", "knowledge"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
     YAML
     Textus::Store.new(textus_dir)
   end
 
   def write_doc(textus_dir, body)
-    path = File.join(textus_dir, "zones", "working", "doc.md")
+    path = File.join(textus_dir, "zones", "knowledge", "doc.md")
     File.write(path, "---\nname: doc\n---\n#{body}\n")
     path
   end
@@ -54,10 +54,10 @@ RSpec.describe Textus::Read::Blame do
     git("commit", "-q", "-m", "initial doc", chdir: repo)
 
     write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                         "verb" => "put", "key" => "working.doc" })
+                         "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "working.doc")
+    result = ops.blame(key: "knowledge.doc")
     expect(result.length).to eq(1)
     row = result.first
     expect(row["git"]).to be_a(Hash)
@@ -73,10 +73,10 @@ RSpec.describe Textus::Read::Blame do
     store = make_store_at(textus_dir)
     write_doc(textus_dir, "v1")
     write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                         "verb" => "put", "key" => "working.doc" })
+                         "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "working.doc")
+    result = ops.blame(key: "knowledge.doc")
     expect(result.length).to eq(1)
     expect(result.first["git"]).to be_nil
   end
@@ -91,10 +91,10 @@ RSpec.describe Textus::Read::Blame do
     store = make_store_at(textus_dir)
     write_doc(textus_dir, "v1") # never committed
     write_audit(store, { "ts" => Time.now.utc.iso8601, "role" => "human",
-                         "verb" => "put", "key" => "working.doc" })
+                         "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "working.doc")
+    result = ops.blame(key: "knowledge.doc")
     expect(result.first["git"]).to be_nil
   end
 end

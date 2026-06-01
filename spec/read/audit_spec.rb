@@ -6,14 +6,14 @@ RSpec.describe Textus::Read::Audit do
 
   let!(:store) do
     store_from_manifest(root,
-                        zones: %w[working identity],
+                        zones: %w[knowledge identity],
                         manifest: <<~YAML)
                           version: textus/3
                           zones:
-                            - { name: working, kind: canon }
+                            - { name: knowledge, kind: canon }
                             - { name: identity,   kind: canon }
                           entries:
-                            - { key: working.doc, path: working/doc.md, zone: working, kind: leaf}
+                            - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
                             - { key: identity.note,  path: identity/note.md,  zone: identity, kind: leaf}
 
@@ -50,35 +50,35 @@ RSpec.describe Textus::Read::Audit do
 
   it "filters audit rows by key" do
     write_log([
-                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc" },
                 { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
-                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "knowledge.doc" },
               ])
     ops = store.as("human")
-    rows = ops.audit(key: "working.doc")
+    rows = ops.audit(key: "knowledge.doc")
     expect(rows.length).to eq(2)
-    expect(rows.map { |r| r["key"] }).to all(eq("working.doc"))
+    expect(rows.map { |r| r["key"] }).to all(eq("knowledge.doc"))
   end
 
   it "filters by correlation_id (nested under extras)" do
     cid = "abc-123"
     write_log([
-                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc",
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc",
                   "extras" => { "correlation_id" => cid } },
                 { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note",
                   "extras" => { "correlation_id" => "other" } },
-                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "working.doc",
+                { "ts" => "2026-05-03T00:00:00Z", "role" => "ai",    "verb" => "put", "key" => "knowledge.doc",
                   "extras" => { "correlation_id" => cid } },
               ])
     ops = store.as("human")
     rows = ops.audit(correlation_id: cid)
     expect(rows.length).to eq(2)
-    expect(rows.map { |r| r["key"] }).to contain_exactly("working.doc", "working.doc")
+    expect(rows.map { |r| r["key"] }).to contain_exactly("knowledge.doc", "knowledge.doc")
   end
 
   it "filters by zone via manifest lookup" do
     write_log([
-                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-05-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc" },
                 { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
               ])
     ops = store.as("human")
@@ -88,8 +88,8 @@ RSpec.describe Textus::Read::Audit do
 
   it "filters by since" do
     write_log([
-                { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
-                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" },
+                { "ts" => "2026-04-30T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc" },
+                { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc" },
               ])
     ops = store.as("human")
     rows = ops.audit(since: Time.parse("2026-05-01T00:00:00Z"))
@@ -98,7 +98,7 @@ RSpec.describe Textus::Read::Audit do
 
   it "honors limit" do
     rows = (1..5).map do |i|
-      { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "working.doc" }
+      { "ts" => "2026-05-0#{i}T00:00:00Z", "role" => "human", "verb" => "put", "key" => "knowledge.doc" }
     end
     write_log(rows)
     ops = store.as("human")

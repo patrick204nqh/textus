@@ -8,12 +8,12 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - key: working.skills
+        - key: knowledge.skills
           kind: nested
-          path: working/skills
-          zone: working
+          path: knowledge/skills
+          zone: knowledge
           schema: null
           nested: true
           index_filename: SKILL.md
@@ -22,7 +22,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
   end
 
   def write_file(rel, contents)
-    abs = File.join(root, "zones/working", rel)
+    abs = File.join(root, "zones/knowledge", rel)
     FileUtils.mkdir_p(File.dirname(abs))
     File.write(abs, contents)
   end
@@ -34,7 +34,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     store.as("automation").publish
 
     # Whole-leaf removal: delete the source dir; per-entry build won't revisit it.
-    FileUtils.rm_rf(File.join(root, "zones/working/skills/my-skill"))
+    FileUtils.rm_rf(File.join(root, "zones/knowledge/skills/my-skill"))
 
     issues = described_class.new(store.container).call
     subjects = issues.map { |i| i["subject"] }

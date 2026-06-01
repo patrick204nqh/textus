@@ -10,10 +10,10 @@ RSpec.describe Textus::Manifest::Data do
         - { name: human, can: [author, propose] }
         - { name: automation, can: [build] }
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
         - { name: review,  kind: derived }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
@@ -26,7 +26,7 @@ RSpec.describe Textus::Manifest::Data do
   end
 
   it "derives zone writers from capability × zone-kind" do
-    expect(data.policy.zone_writers("working")).to eq(["human"])
+    expect(data.policy.zone_writers("knowledge")).to eq(["human"])
     expect(data.policy.zone_writers("review")).to eq(["automation"])
   end
 

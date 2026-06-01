@@ -17,8 +17,8 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   end
 
   it "rejects a zone with no kind (kind is required)" do
-    expect { parse("  - { name: working }") }
-      .to raise_error(Textus::BadManifest, /zone 'working' at '\$\.zones\[0\]' must declare a kind/)
+    expect { parse("  - { name: knowledge }") }
+      .to raise_error(Textus::BadManifest, /zone 'knowledge' at '\$\.zones\[0\]' must declare a kind/)
   end
 
   it "rejects an unknown kind" do
@@ -40,7 +40,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
       roles:
         - { name: human, can: [author, propose] }
     ROLES
-    expect { parse("  - { name: output, kind: derived }", roles) }
+    expect { parse("  - { name: artifacts, kind: derived }", roles) }
       .to raise_error(Textus::BadManifest, /needs a role with capability 'build'/)
   end
 
@@ -50,6 +50,6 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
         - { name: human,      can: [author, propose] }
         - { name: automation, can: [build] }
     ROLES
-    expect { parse("  - { name: output, kind: derived }", roles) }.not_to raise_error
+    expect { parse("  - { name: artifacts, kind: derived }", roles) }.not_to raise_error
   end
 end

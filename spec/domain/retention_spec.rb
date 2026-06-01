@@ -4,24 +4,24 @@ RSpec.describe Textus::Domain::Retention do
   include_context "textus_store_fixture"
 
   def write_manifest
-    store_from_manifest(root, zones: %w[review], manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
       zones:
-        - { name: review, kind: queue }
+        - { name: proposals, kind: queue }
       entries:
-        - { key: review.notes, path: review/notes, zone: review, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
       rules:
-        - match: review.**
+        - match: proposals.**
           retention: { expire_after: 1d }
     YAML
-    FileUtils.mkdir_p(File.join(root, "zones", "review", "notes"))
+    FileUtils.mkdir_p(File.join(root, "zones", "proposals", "notes"))
   end
 
   def write_leaf(name, mtime)
-    path = File.join(root, "zones", "review", "notes", "#{name}.md")
+    path = File.join(root, "zones", "proposals", "notes", "#{name}.md")
     File.write(path, "---\nname: #{name}\n---\nbody\n")
     File.utime(mtime, mtime, path)
     path
@@ -39,7 +39,7 @@ RSpec.describe Textus::Domain::Retention do
       clock: clock,
     ).call
 
-    expect(rows.map { |r| r["key"] }).to eq(["review.notes.old"])
+    expect(rows.map { |r| r["key"] }).to eq(["proposals.notes.old"])
     expect(rows.first["action"]).to eq("expire")
   end
 

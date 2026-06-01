@@ -10,7 +10,7 @@ RSpec.describe Textus::Maintenance::ZoneMv do
       zones:
         - { name: scratch, kind: canon }
       entries:
-        - { key: scratch.note, path: scratch/note.md, zone: scratch, schema: null, owner: human:self, kind: leaf }
+        - { key: scratch.note, path: scratch/note.md, zone: scratch, owner: human:self, kind: leaf }
     YAML
     File.write(File.join(root, "zones/scratch/note.md"), "---\n_meta: {name: note, uid: nnnnnnnnnnnnnnnn}\n---\nN\n")
     FileUtils.mkdir_p(audit_dir_path(root))

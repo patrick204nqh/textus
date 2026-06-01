@@ -10,7 +10,7 @@ RSpec.describe Textus::Maintenance::RuleLint do
       zones:
         - { name: intake, kind: quarantine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, zone: intake, schema: null, owner: automation:self, kind: intake, intake: { handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: intake, intake: { handler: noop } }
       rules:
         - { match: "intake.*", fetch: { ttl: 600, on_stale: warn } }
     YAML

@@ -8,7 +8,7 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
       #{entries_yaml}
     YAML
@@ -16,10 +16,10 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
 
   def skills_entry(extra = "")
     <<~Y
-      - key: working.skills
+      - key: knowledge.skills
         kind: nested
-        path: working/skills
-        zone: working
+        path: knowledge/skills
+        zone: knowledge
         schema: null
         nested: true
         index_filename: SKILL.md
@@ -29,7 +29,7 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
   end
 
   def write_file(rel, contents)
-    abs = File.join(root, "zones/working", rel)
+    abs = File.join(root, "zones/knowledge", rel)
     FileUtils.mkdir_p(File.dirname(abs))
     File.write(abs, contents)
   end
@@ -41,8 +41,8 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       write_file("skills/my-skill/references/SKILL.md", "nested index, not a leaf\n")
 
       m = Textus::Manifest.load(root)
-      keys = m.resolver.enumerate(prefix: "working.skills").map { |r| r[:key] }
-      expect(keys).to contain_exactly("working.skills.my-skill")
+      keys = m.resolver.enumerate(prefix: "knowledge.skills").map { |r| r[:key] }
+      expect(keys).to contain_exactly("knowledge.skills.my-skill")
     end
   end
 
@@ -69,7 +69,7 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
 
     it "reports every published file in published_leaves under the leaf key" do
       envelope = Textus::Store.new(root).as("automation").publish
-      rows = envelope["published_leaves"].select { |r| r["key"] == "working.skills.my-skill" }
+      rows = envelope["published_leaves"].select { |r| r["key"] == "knowledge.skills.my-skill" }
       expect(rows.map { |r| File.basename(r["target"]) }).to contain_exactly("SKILL.md", "commands.md", "foo.md")
     end
 
@@ -98,7 +98,7 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       store.as("automation").publish
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
 
-      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      File.delete(File.join(root, "zones/knowledge/skills/my-skill/references/foo.md"))
       envelope = store.as("automation").publish
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
@@ -126,7 +126,7 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       store.as("automation").publish
       expect(File.exist?(File.join(repo_root, "skills/other-skill/refs/keep.md"))).to be true
 
-      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      File.delete(File.join(root, "zones/knowledge/skills/my-skill/references/foo.md"))
       store.as("automation").publish
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
