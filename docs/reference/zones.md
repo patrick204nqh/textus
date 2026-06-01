@@ -54,7 +54,7 @@ Two analogies that usually click for `automation`:
 - **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`).
 - **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`).
 
-You can also invent your own role names (`reviewer`, `import-bot`, `compiler`) and hand them whichever capabilities fit — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
+Role names are the closed set `human`, `agent`, `automation`; what you customize is each role's `can:` capabilities — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). Per-person/per-bot attribution uses the `owner:` field. Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
 
 ---
 

@@ -1,7 +1,7 @@
 # ADR 0045 — Close the role-name set to {human, agent, automation}; keep capabilities open
 
 **Date:** 2026-06-01
-**Status:** Proposed
+**Status:** Accepted
 **Amends:** [ADR 0028](./0028-coordination-planes.md) (its "open policy" plane — role *names* are now closed; only `can` stays open). **Refines:** [ADR 0030](./0030-capability-based-roles.md) (a role is now a *fixed-archetype name* + composable verbs, not an arbitrary name + verbs). **Complements:** [ADR 0044](./0044-system-actors-resolved-by-capability.md) (capability-resolution of system actors), [ADR 0040](./0040-mcp-connection-role-and-two-channels.md) (per-transport default identity).
 
 ## Context
@@ -40,7 +40,7 @@ The deciding insight: **multiplicity of *principals* belongs on the `owner:` fie
 
 - **Single source of truth achieved.** The recurring "should we define human/agent/automation as a source of truth?" question resolves: yes — `Role::NAMES`. Closing the set is precisely what makes that constant meaningful (it was *not* meaningful while names were open).
 - **Accepted trade-off — loss of per-coordinator least privilege (security-relevant).** Two automations with *different enforced* capabilities (a `fetch`-only ingest bot vs a `build`-only CI bot) is no longer expressible: all automation shares one role and one capability profile. Distinguishing them is now *attribution only* (`owner: automation:ci` vs `automation:nightly`), not enforcement. **This is accepted.** Escape hatch if it ever bites: owner-scoped enforcement (the deferred feature in `reference/zones.md`) or re-opening names via a future ADR.
-- **Wire-version bump `textus/3 → textus/4`.** Real manifests already comply (zero migration). Cost is concentrated in tests + docs: ~10 spec fixtures using custom names move to the three; tests asserting *custom names are accepted* invert to assert *rejection*; the "Custom roles" section of `how-to/configuring-zones.md` and the role prose in `reference/zones.md` / `explanation/concepts.md` are rewritten.
+- **No `PROTOCOL` bump.** Closing names is a stricter `textus/3` validation in `Schema.validate_roles!`. Compliant manifests (all real ones) are unaffected; only manifests declaring custom role names are now rejected. Cost was concentrated in test fixtures + docs, not a protocol revision.
 - **Amends ADR 0028 / refines ADR 0030.** Policy is no longer fully open: names are closed, capabilities remain open. A role is an archetype-name + composable verbs.
 - **ADR 0044 stands unchanged.** Its capability-resolution code is still correct and still needed (a manifest may omit a role), and closed names now make its Tier-C literals (`DEFAULT_MAPPING`, `Role::DEFAULT`) legitimate rather than tolerated.
 
@@ -55,4 +55,10 @@ The deciding insight: **multiplicity of *principals* belongs on the `owner:` fie
 - **Q1 — extensibility.** Should `Role::NAMES` ever be operator-extensible (a manifest-level allow-list), or strictly hardcoded? Recommendation: **strictly hardcoded** — closure is the point; revisit only on a concrete need (which would likely be the `archetype:` alternative above, not a longer name list).
 - **Q2 — least-privilege escape hatch.** Owner-scoped enforcement (promoting `owner:` from advisory to authority-bearing) is the mitigation if the accepted trade-off bites. Separate future ADR; not in scope here.
 - **Q3 — migration behavior.** Should `textus migrate` rewrite/flag a `textus/3` manifest carrying custom role names, or fail closed with guidance? Lean: fail closed with a clear "role names must be one of human/agent/automation" error and a doctor check, mirroring 0035's `ProposalTargets` precedent.
+
+## Resolutions (accepted)
+
+- **Version: no bump** — closing names ships as a stricter `textus/3` validation in `Schema.validate_roles!`, not a wire-version revision (see Consequences).
+- **Q1: `Role::NAMES` is hardcoded**, not operator-extensible. Closure is the point; re-opening would go through the `archetype:` alternative in a future ADR, not a longer name list.
+- **Q3: fail closed** — a manifest with an illegal role name is rejected at load with `unknown role name '<x>' (allowed: human, agent, automation)`; dedicated migration tooling is out of scope.
 </content>
