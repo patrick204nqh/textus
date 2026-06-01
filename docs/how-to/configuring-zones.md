@@ -130,6 +130,9 @@ Out of the box, textus ships **parsers** for common shapes — `json`, `csv`, `m
 
 If you want bytes to come from disk or a URL, you write the handler.
 
+> Copy-paste starting points for common sources (HTTP JSON, RSS, iCal, local
+> file, Notion) live in [`../cookbook/intake-recipes.md`](../cookbook/intake-recipes.md).
+
 ### Custom `:resolve_intake` hooks
 
 Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
