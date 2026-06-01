@@ -195,35 +195,7 @@ RSpec.describe Textus::Boot do
     end
   end
 
-  describe "with user-renamed roles" do
-    it "renders write_flows keyed by the configured role names" do
-      yaml = <<~YAML
-        version: textus/3
-        roles:
-          - { name: owner,    can: [author] }
-          - { name: proposer, can: [propose] }
-          - { name: fetcher,  can: [fetch] }
-          - { name: compiler, can: [build] }
-        zones:
-          - { name: self,    kind: canon }
-          - { name: review,  kind: queue }
-          - { name: world,   kind: quarantine }
-          - { name: build,   kind: derived }
-        entries: []
-      YAML
-      s = store_from_manifest(root, manifest: yaml)
-      env = described_class.build(container: s.container)
-      flows = env["write_flows"]
-      expect(flows.keys).to contain_exactly("owner", "proposer", "fetcher", "compiler")
-      expect(flows["owner"]).to include("owner")
-      expect(flows["proposer"]).to include("proposer", "owner")
-      expect(flows["proposer"]).not_to include("accept_authority")
-      expect(flows["fetcher"]).to include("fetcher")
-
-      roles = env["agent_protocol"]["role_resolution"]["roles"]
-      expect(roles).to eq(%w[owner proposer fetcher compiler])
-    end
-
+  describe "write_flows role resolution" do
     it "falls back to default role names when roles: block is omitted" do
       yaml = <<~YAML
         version: textus/3

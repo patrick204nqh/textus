@@ -22,9 +22,9 @@ RSpec.describe Textus::Domain::Policy::Predicates::AuthorHeld do
     expect(pred.reason).to be_nil
   end
 
-  it "passes when the author holder is a renamed role" do
-    allow(policy).to receive(:roles_with_capability).with("author").and_return(["owner"])
-    expect(described_class.new.call(eval_for("owner"))).to be(true)
+  it "passes when the actor holds author" do
+    allow(policy).to receive(:roles_with_capability).with("author").and_return(["human"])
+    expect(described_class.new.call(eval_for("human"))).to be(true)
   end
 
   it "fails and sets reason for an actor without 'author' (no bespoke #error — folds into GuardFailed)" do

@@ -11,13 +11,13 @@ RSpec.describe Textus::CLI::Verb::Build do
     Textus::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
   end
 
-  context "when a custom-named role holds build" do
+  context "when a non-default legal role holds build" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/output"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: compiler, can: [build] }
+          - { name: agent, can: [propose, build] }
         zones:
           - { name: output, kind: derived }
         entries: []

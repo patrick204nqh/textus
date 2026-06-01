@@ -7,8 +7,8 @@ RSpec.describe Textus::Write::Accept do
     store_from_manifest(root, zones: %w[working review], manifest: <<~YAML)
       version: textus/3
       roles:
-        - { name: owner,    can: [author, propose] }
-        - { name: proposer, can: [propose] }
+        - { name: human, can: [author, propose] }
+        - { name: agent, can: [propose] }
       zones:
         - { name: working, kind: canon }
         - { name: review,  kind: queue }
@@ -20,10 +20,10 @@ RSpec.describe Textus::Write::Accept do
     YAML
   end
 
-  context "with a renamed author-capability role" do
+  context "with the author capability on human" do
     it "lets the renamed author-capability role accept proposals" do
       FileUtils.mkdir_p(File.join(root, "zones/working/network/org"))
-      store.as("proposer").put(
+      store.as("agent").put(
         "review.2026-05-19-add-bob",
         meta: {
           "name" => "2026-05-19-add-bob",
@@ -33,14 +33,14 @@ RSpec.describe Textus::Write::Accept do
         body: "Proposed",
       )
 
-      result = store.as("owner").accept("review.2026-05-19-add-bob")
+      result = store.as("human").accept("review.2026-05-19-add-bob")
 
       expect(result["target_key"]).to eq("working.network.org.bob")
       expect(result["accepted"]).to eq("review.2026-05-19-add-bob")
     end
 
     it "rejects callers whose role does not hold the author capability, using the configured name" do
-      store.as("proposer").put(
+      store.as("agent").put(
         "review.foo",
         meta: {
           "name" => "foo",
@@ -50,10 +50,10 @@ RSpec.describe Textus::Write::Accept do
         body: "",
       )
 
-      expect { store.as("proposer").accept("review.foo") }
+      expect { store.as("agent").accept("review.foo") }
         .to raise_error(Textus::GuardFailed) do |e|
           expect(e.details["failed"].map { |f| f["predicate"] }).to include("author_held")
-          expect(e.message).to match(/held by: owner/)
+          expect(e.message).to match(/held by: human/)
         end
     end
   end
