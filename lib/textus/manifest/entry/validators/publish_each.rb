@@ -27,13 +27,35 @@ module Textus
               )
             end
 
-            return if used_vars.any? { |v| REQUIRED_DISCRIMINATOR_VARS.include?(v) }
+            validate_discriminator(entry, used_vars)
+          end
+
+          def self.validate_discriminator(entry, used_vars)
+            if entry.index_filename
+              forbidden = used_vars & %w[basename ext]
+              unless forbidden.empty?
+                raise UsageError.new(
+                  "entry '#{entry.key}': publish_each names a directory " \
+                  "(index_filename: #{entry.index_filename}); {basename}/{ext} are file-only — " \
+                  "use {leaf} or {key}.",
+                )
+              end
+              return if used_vars.intersect?(%w[leaf key])
+
+              raise UsageError.new(
+                "entry '#{entry.key}': directory-leaf publish_each must reference {leaf} or {key} " \
+                "(else every leaf would clobber the same directory).",
+              )
+            end
+
+            return if used_vars.intersect?(REQUIRED_DISCRIMINATOR_VARS)
 
             raise UsageError.new(
               "entry '#{entry.key}': publish_each must reference at least one of {leaf}, {basename}, or {key} " \
               "(else every leaf would clobber the same target).",
             )
           end
+          private_class_method :validate_discriminator
         end
       end
     end
