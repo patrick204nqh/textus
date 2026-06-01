@@ -47,6 +47,9 @@ Run: `textus fetch feeds.api.users --as=automation`
 > wrap it in an object (`{ "items": [...] }`) or keep the entry `format:
 > markdown` (the default), which stores the parsed YAML as the body.
 
+> The recipes below show only the hook — pair each with an `intake:` entry naming
+> the handler plus a `rules:` fetch block, exactly like the HTTP JSON example above.
+
 ## RSS feed
 
 ```ruby
@@ -106,3 +109,8 @@ end
 
 > **Secrets:** credentials belong in *your* hook's environment (e.g. `ENV`),
 > never in `manifest.yaml` `config:` — the manifest is committed.
+
+## See also
+
+- [Environment scan across machines](./environment-scan.md) — a **nested** intake
+  (`feeds.machines.*`) that fans out one leaf per host, pulling each over SSH.
