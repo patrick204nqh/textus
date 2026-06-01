@@ -1,7 +1,7 @@
 # Agents & MCP — wiring an agent to a store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store
-> **SSoT for** the Claude Code quickstart, context-store setup, and the agent boot → pulse loop · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the Claude Code quickstart, context-store setup, and the agent boot → pulse loop · **reviewed** 2026-06 (v0.39)
 
 How an AI agent reads from and writes to a textus store — a 5-minute Claude Code setup, what you get, and the operational loop you run each turn.
 
@@ -38,8 +38,8 @@ From your project root:
 textus init
 ```
 
-You get a `.textus/` directory with five default zones (`identity`,
-`working`, `intake`, `review`, `output`), baseline schemas, and a
+You get a `.textus/` directory with five default zones (`knowledge`,
+`notebook`, `feeds`, `proposals`, `artifacts`), baseline schemas, and a
 starter manifest. Commit `.textus/` to git.
 
 ### 3. Wire the MCP server
@@ -103,9 +103,10 @@ call the `boot` MCP tool — it returns the manifest, your write
 authority, and the tool catalog. Call `pulse` once per turn to see
 what changed since you last looked.
 
-You can't write to `working/` or `identity/` directly. Use the
-`propose` tool to land a change in the `review/` queue; a human runs
-`textus accept` to promote it to `working/`.
+You keep your own working notes in `notebook/`, but you can't write to
+`knowledge/` directly. Use the `propose` tool to land a change in the
+`proposals/` queue; a human runs `textus accept` to promote it to
+`knowledge/`.
 ```
 
 That's the full integration. Claude Code reads `CLAUDE.md` on session
@@ -121,8 +122,9 @@ the boot/pulse protocol.
   them in `CLAUDE.md`.
 - **`pulse` per turn:** the agent sees what files changed since its
   last turn — no full re-read of the project.
-- **Role-gated writes:** the agent cannot write to `working/` or
-  `identity/` directly; it can only propose to `review/`. You
+- **Role-gated writes:** the agent keeps its own `notebook/`, but
+  cannot write to `knowledge/` directly; to change canon it proposes
+  to `proposals/`. You
   retain control over what becomes load-bearing. The connection acts
   as the `agent` role by default (ADR 0040); to run it with your own
   authority instead, launch with `--as=human` (the gate then becomes

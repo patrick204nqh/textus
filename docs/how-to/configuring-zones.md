@@ -1,7 +1,7 @@
 # Configuring zones
 
 > **How-to** · for integrators · **read when** you're defining zones, wiring intake, or setting up derived entries
-> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-06 (v0.39)
 
 How to shape your context: define your own zones, wire external data in through intake hooks, wire derived data out through projections and publishing, and a full worked example.
 
@@ -240,7 +240,7 @@ For every entry in a build-writable zone:
 2. **Project** — pluck fields, run the reducer if any
 3. **Render** — pass the projected data to the format renderer (markdown/text/json/yaml), using a template if declared
 4. **Write** — save the bytes to the derived path
-5. **Publish** — for each `publish_to:` target (or per-leaf `publish_each:` match), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:publish` pub-sub event. Listeners can subscribe to `:publish` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
+5. **Publish** — for each `publish_to:` target (or per-leaf `publish_each:` match), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:file_published` pub-sub event. Listeners can subscribe to `:file_published` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
 
 ### The sentinel guard
 
