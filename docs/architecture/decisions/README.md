@@ -68,3 +68,5 @@ the original reasoning intact. The history is the point.
 | [0041](./0041-dogfood-textus-in-its-own-repo.md) | Dogfood textus in its own repo: a self-development store + MCP wiring | Accepted |
 | [0042](./0042-native-ignore-patterns-for-entry-enumeration.md) | Native ignore patterns for entry enumeration: one shared filter seam, evaluated above legality | Accepted (ships 0.39.0) |
 | [0043](./0043-feed-ergonomics-without-breaking-core-purity.md) | Feed ergonomics without breaking core purity: intake cookbook + environment as a `feeds.machine` snapshot | Proposed |
+| [0044](./0044-system-actors-resolved-by-capability.md) | System-initiated actors are resolved by capability, never by a hardcoded role name | Proposed |
+| [0045](./0045-close-role-name-set.md) | Close the role-name set to {human, agent, automation}; keep capabilities open | Proposed |
