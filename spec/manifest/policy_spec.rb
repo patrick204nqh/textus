@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Policy do
         - { name: working, kind: canon }
         - { name: review,  kind: derived }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: working.notes, path: working/notes.md, zone: working, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
@@ -158,7 +158,7 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: review, kind: queue }
             - { name: draft,  kind: derived }
           entries:
-            - { key: review.notes, path: review/notes.md, zone: review, schema: null, owner: human:self, kind: leaf }
+            - { key: review.notes, path: review/notes.md, zone: review, owner: human:self, kind: leaf }
         YAML
       end
 
@@ -209,8 +209,8 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: working, kind: canon }
             - { name: review,  kind: queue }
           entries:
-            - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
-            - { key: review.notes,  path: review/notes.md,  zone: review,  schema: null, owner: human:self, kind: leaf }
+            - { key: working.notes, path: working/notes.md, zone: working, owner: human:self, kind: leaf }
+            - { key: review.notes,  path: review/notes.md,  zone: review,  owner: human:self, kind: leaf }
         YAML
       end
 
@@ -296,7 +296,7 @@ RSpec.describe Textus::Manifest::Policy do
       roles: [{ name: automation, can: [fetch, build] }]
       zones: [{ name: output, kind: derived }]
       entries:
-        - { key: output.x, path: output/x.md, zone: output, schema: null, owner: automation:auto, kind: derived,
+        - { key: output.x, path: output/x.md, zone: output, owner: automation:auto, kind: derived,
             compute: { kind: projection, select: [working.notes], pluck: "*" }, template: x.mustache }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")

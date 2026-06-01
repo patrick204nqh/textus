@@ -13,9 +13,9 @@ RSpec.describe Textus::Write::Accept do
         - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries:
-        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested}
+        - { key: working.network.org, path: working/network/org, zone: working, owner: o, kind: nested}
 
-        - { key: review,             path: review,             zone: review, schema: null, owner: o, nested: true, kind: nested}
+        - { key: review,             path: review,             zone: review, owner: o, kind: nested}
 
     YAML
   end

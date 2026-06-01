@@ -20,7 +20,7 @@ RSpec.describe Textus::Dispatcher do
         zones:
           - { name: working, kind: canon }
         entries:
-          - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
+          - { key: working.notes, path: working/notes, zone: working, kind: nested}
       YAML
       store.as("human").put("working.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
     end

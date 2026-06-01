@@ -14,7 +14,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       zones:
         - { name: working, kind: queue }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+        - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, kind: nested}
 
     YAML
 
@@ -71,7 +71,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
         zones:
           - { name: working, kind: canon }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

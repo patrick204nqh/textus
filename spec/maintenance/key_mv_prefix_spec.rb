@@ -10,8 +10,8 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.old, path: working/old, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
-        - { key: working.new, path: working/new, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
+        - { key: working.old, path: working/old, zone: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.new, path: working/new, zone: working, owner: human:self, kind: nested, nested: true }
     YAML
     FileUtils.mkdir_p(File.join(root, "zones/working/old"))
     File.write(File.join(root, "zones/working/old/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nbody-a\n")

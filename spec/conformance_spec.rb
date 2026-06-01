@@ -23,18 +23,17 @@ RSpec.describe "textus/3 conformance" do
         - { name: artifacts, kind: derived }
         - { name: feeds,     kind: quarantine }
       entries:
-        - { key: identity.self,         path: identity/self,         zone: identity, schema: null,   owner: human:patrick, kind: leaf}
+        - { key: identity.self,         path: identity/self,         zone: identity,   owner: human:patrick, kind: leaf}
 
-        - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, nested: true, kind: nested}
+        - { key: working.network.org,   path: working/network/org,   zone: working,  schema: person, owner: human:patrick, kind: nested}
 
-        - { key: working.projects,      path: working/projects,      zone: working,  schema: null,   owner: human:patrick, nested: true, kind: nested}
+        - { key: working.projects,      path: working/projects,      zone: working,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, schema: null, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [working.projects] } }
         - key: feeds.calendar.events
           kind: intake
           path: feeds/calendar/events
           zone: feeds
-          schema: null
           owner: automation:cron
           intake:
             handler: http_json
@@ -221,7 +220,7 @@ RSpec.describe "textus/3 conformance" do
           - { name: identity, kind: canon }
           - { name: working,  kind: queue }
         entries:
-          - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:patrick, kind: leaf}
+          - { key: identity.self, path: identity/self.md, zone: identity, owner: human:patrick, kind: leaf}
 
       YAML
       FileUtils.mkdir_p(File.join(root, "zones/identity"))
@@ -237,7 +236,7 @@ RSpec.describe "textus/3 conformance" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         entries:
-          - { key: state.x, path: state/x.md, zone: state, schema: null, owner: o, kind: leaf}
+          - { key: state.x, path: state/x.md, zone: state, owner: o, kind: leaf}
 
       YAML
       expect { Textus::Manifest.load(root) }

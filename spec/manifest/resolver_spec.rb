@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Resolver do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf}
+        - { key: working.notes, path: working/notes.md, zone: working, owner: human:self, kind: leaf}
 
     YAML
   end
@@ -48,7 +48,6 @@ RSpec.describe Textus::Manifest::Resolver do
               zone: knowledge
               owner: human:self
               kind: nested
-              nested: true
               index_filename: SKILL.md
               ignore:
                 - "**/build/**"

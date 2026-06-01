@@ -21,7 +21,6 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
             zone: knowledge
             owner: human:self
             kind: nested
-            nested: true
             index_filename: SKILL.md
             ignore:
               - "**/node_modules/**"
@@ -61,7 +60,6 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
             zone: knowledge
             owner: human:self
             kind: nested
-            nested: true
             ignore:
               - "**/dist/**"
       YAML

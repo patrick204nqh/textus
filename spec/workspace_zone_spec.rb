@@ -14,7 +14,7 @@ RSpec.describe "workspace zone-kind + keep capability (ADR 0033)" do
         - { name: notebook,  kind: workspace, owner: agent }
         - { name: proposals, kind: queue }
       entries:
-        - { key: notebook.notes, path: notebook/notes, zone: notebook, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: notebook.notes, path: notebook/notes, zone: notebook, owner: agent:self, kind: nested }
     YAML
   end
 

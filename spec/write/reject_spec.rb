@@ -16,8 +16,8 @@ RSpec.describe Textus::Write::Reject do
           - { name: identity, kind: canon }
           - { name: review, kind: queue }
         entries:
-          - { key: identity.target, path: target.md, zone: identity, schema: null, owner: o, kind: leaf }
-          - { key: review.draft, path: draft.md, zone: review, schema: null, owner: o, kind: leaf }
+          - { key: identity.target, path: target.md, zone: identity, owner: o, kind: leaf }
+          - { key: review.draft, path: draft.md, zone: review, owner: o, kind: leaf }
       YAML
     )
   end

@@ -12,7 +12,7 @@ RSpec.describe Textus::Domain::Retention do
       zones:
         - { name: review, kind: queue }
       entries:
-        - { key: review.notes, path: review/notes, zone: review, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: review.notes, path: review/notes, zone: review, owner: agent:self, kind: nested }
       rules:
         - match: review.**
           retention: { expire_after: 1d }

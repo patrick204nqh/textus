@@ -10,8 +10,8 @@ RSpec.describe Textus::Write::Accept do
         - { name: working, kind: canon }
         - { name: review,  kind: queue }
       entries:
-        - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
-        - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+        - { key: working.network.org, path: working/network/org, zone: working, owner: o, kind: nested }
+        - { key: review, path: review, zone: review, owner: o, kind: nested }
     YAML
   end
 
@@ -95,8 +95,8 @@ RSpec.describe Textus::Write::Accept do
           - { name: working, kind: quarantine }
           - { name: review, kind: queue }
         entries:
-          - { key: working.n, path: working/n.md, zone: working, schema: null, owner: o, kind: leaf }
-          - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+          - { key: working.n, path: working/n.md, zone: working, owner: o, kind: leaf }
+          - { key: review, path: review, zone: review, owner: o, kind: nested }
         rules: []
       YAML
       s.as("agent").put(
@@ -140,8 +140,8 @@ RSpec.describe Textus::Write::Accept do
               - { name: working, kind: canon }
               - { name: review,  kind: queue }
             entries:
-              - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, nested: true, kind: nested }
-              - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+              - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: o, kind: nested }
+              - { key: review, path: review, zone: review, owner: o, kind: nested }
             rules:
               - match: "working.network.org.**"
                 guard:
@@ -189,8 +189,8 @@ RSpec.describe Textus::Write::Accept do
             - { name: working, kind: canon }
             - { name: review,  kind: queue }
           entries:
-            - { key: working.network.org, path: working/network/org, zone: working, schema: null, owner: o, nested: true, kind: nested }
-            - { key: review, path: review, zone: review, schema: null, owner: o, nested: true, kind: nested }
+            - { key: working.network.org, path: working/network/org, zone: working, owner: o, kind: nested }
+            - { key: review, path: review, zone: review, owner: o, kind: nested }
           rules:
             - match: "working.network.org.**"
               guard:

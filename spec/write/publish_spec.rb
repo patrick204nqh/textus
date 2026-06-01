@@ -15,9 +15,7 @@ RSpec.describe Textus::Write::Publish do
             kind: nested
             path: working/agents
             zone: working
-            schema: null
             owner: human:self
-            nested: true
             publish_each: "agents/{basename}.md"
       YAML
       File.write(File.join(root, "zones/working/agents/alice.md"),
@@ -57,13 +55,12 @@ RSpec.describe Textus::Write::Publish do
           - { name: working, kind: canon }
           - { name: output, kind: derived }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested }
+          - { key: working.people, path: working/people, zone: working, owner: o, kind: nested }
 
           - key: output.catalogs.people
             kind: derived
             path: output/catalogs/people.md
             zone: output
-            schema: null
             owner: automation:auto
             compute: { kind: projection, select: working.people, pluck: [name, org], sort_by: name }
             template: people.mustache
@@ -73,9 +70,7 @@ RSpec.describe Textus::Write::Publish do
             kind: nested
             path: working/agents
             zone: working
-            schema: null
             owner: human:self
-            nested: true
             publish_each: "agents/{basename}.md"
       YAML
       File.write(File.join(root, "zones/working/people/alice.md"), "---\nname: alice\norg: x\n---\n")
@@ -200,9 +195,7 @@ RSpec.describe Textus::Write::Publish do
             kind: nested
             path: working/bad
             zone: working
-            schema: null
             owner: human:self
-            nested: true
             publish_each: "../../../etc/{basename}.md"
       YAML
       File.write(File.join(root, "zones/working/bad/x.md"),

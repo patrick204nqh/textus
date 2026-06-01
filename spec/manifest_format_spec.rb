@@ -82,7 +82,7 @@ RSpec.describe "Manifest format: field validation" do
 
   it "globs both .yaml and .yml for nested yaml entries" do
     write_manifest(<<~YAML)
-      - { key: working.cfg, path: working/cfg, zone: working, format: yaml, nested: true, kind: nested }
+      - { key: working.cfg, path: working/cfg, zone: working, format: yaml, kind: nested }
     YAML
     base = File.join(root, "zones/working/cfg")
     FileUtils.mkdir_p(base)
@@ -96,7 +96,7 @@ RSpec.describe "Manifest format: field validation" do
 
   it "resolves nested json paths with .json extension" do
     write_manifest(<<~YAML)
-      - { key: working.cfg, path: working/cfg, zone: working, format: json, nested: true, kind: nested }
+      - { key: working.cfg, path: working/cfg, zone: working, format: json, kind: nested }
     YAML
     manifest = Textus::Manifest.load(root)
     path = manifest.resolver.resolve("working.cfg.alpha").path

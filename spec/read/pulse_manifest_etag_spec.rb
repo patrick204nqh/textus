@@ -10,7 +10,7 @@ RSpec.describe "Pulse manifest_etag" do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: working.note, path: working/note.md, zone: working, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")

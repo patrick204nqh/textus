@@ -10,7 +10,7 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, schema: null, owner: human:self, kind: nested, nested: true }
+        - { key: working.notes, path: working/notes, zone: working, owner: human:self, kind: nested, nested: true }
     YAML
     File.write(File.join(root, "zones/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
     File.write(File.join(root, "zones/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")

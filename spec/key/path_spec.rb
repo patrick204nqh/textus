@@ -11,7 +11,7 @@ RSpec.describe Textus::Key::Path do
       entries:
         - { key: working.x,   path: working/x.md,   zone: working, kind: leaf}
 
-        - { key: working.dir, path: working/dir,    zone: working, nested: true, kind: nested}
+        - { key: working.dir, path: working/dir,    zone: working, kind: nested}
 
     YAML
   end

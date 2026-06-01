@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Data do
         - { name: working, kind: canon }
         - { name: review,  kind: derived }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, schema: null, owner: human:self, kind: leaf }
+        - { key: working.notes, path: working/notes.md, zone: working, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }

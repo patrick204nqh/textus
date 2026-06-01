@@ -13,7 +13,7 @@ RSpec.describe "inject_boot:" do
         - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
         - key: output.root
           kind: derived
@@ -50,7 +50,6 @@ RSpec.describe "inject_boot:" do
           kind: derived
           path: identity/bad.md
           zone: identity
-          schema: null
           template: root.mustache
           compute: { kind: projection }
           inject_boot: true
@@ -67,7 +66,7 @@ RSpec.describe "inject_boot:" do
         - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
         - key: output.root
           kind: derived
@@ -87,7 +86,7 @@ RSpec.describe "inject_boot:" do
         - { name: identity, kind: canon }
         - { name: output,   kind: derived }
       entries:
-        - { key: identity.id, path: identity/id.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
         - key: output.root
           kind: derived

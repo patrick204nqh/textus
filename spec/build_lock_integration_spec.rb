@@ -15,13 +15,12 @@ RSpec.describe "textus build concurrency" do
         - { name: working, kind: canon }
         - { name: output, kind: derived }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: null, kind: leaf}
+        - { key: working.note, path: working/note.md, zone: working, kind: leaf}
 
         - key: output.note
           kind: derived
           path: output/note.md
           zone: output
-          schema: null
           owner: automation:auto
           compute: { kind: projection, select: working.note }
           template: echo.mustache

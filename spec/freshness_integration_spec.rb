@@ -127,7 +127,6 @@ RSpec.describe "Reader honors on_stale policy" do
           kind: derived
           path: output/summary.md
           zone: output
-          schema: null
           owner: automation:auto
           compute: { kind: projection, select: working.foo }
           template: echo.mustache

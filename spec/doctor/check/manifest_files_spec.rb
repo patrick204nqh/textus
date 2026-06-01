@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
+        - { key: working.notes, path: working/notes, zone: working, kind: nested}
 
     YAML
     store = Textus::Store.new(root)

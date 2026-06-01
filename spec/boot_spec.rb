@@ -27,13 +27,12 @@ RSpec.describe Textus::Boot do
         - { name: review,   kind: queue }
         - { name: output,   kind: derived }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf}
+        - { key: identity.self, path: identity/self.md, zone: identity, owner: human:self, kind: leaf}
 
         - key: working.notes
           kind: nested
           path: working/notes
           zone: working
-          schema: null
           nested: true
         - key: intake.feed
           kind: intake
@@ -108,7 +107,7 @@ RSpec.describe Textus::Boot do
         - { name: identity, kind: canon }
         - { name: weird,    kind: canon }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, schema: null, kind: leaf}
+        - { key: identity.self, path: identity/self.md, zone: identity, kind: leaf}
 
     YAML
     s = Textus::Store.new(root)

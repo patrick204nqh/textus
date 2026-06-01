@@ -23,7 +23,7 @@ RSpec.describe Textus::Projection do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+        - { key: working.people, path: working/people, zone: working, owner: o, kind: nested}
 
     YAML
     File.write(File.join(root, "zones/working/people/alice.md"),

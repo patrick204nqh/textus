@@ -14,7 +14,7 @@ RSpec.describe Textus::Store do
       zones:
         - { name: working, kind: canon }
       entries:
-        - { key: working.demo, path: working/demo, zone: working, schema: null, owner: human:patrick, kind: leaf}
+        - { key: working.demo, path: working/demo, zone: working, owner: human:patrick, kind: leaf}
 
     YAML
   end

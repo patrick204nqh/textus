@@ -12,8 +12,8 @@ RSpec.describe Textus::CLI::Verb::Propose do
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: proposals, path: proposals, zone: proposals, schema: null, owner: agent, nested: true, kind: nested }
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
+        - { key: proposals, path: proposals, zone: proposals, owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }

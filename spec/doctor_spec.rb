@@ -14,7 +14,7 @@ RSpec.describe Textus::Doctor do
         - { name: working, kind: canon }
         - { name: output, kind: derived }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
+        - { key: working.notes, path: working/notes, zone: working, schema: note, kind: nested}
 
         - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
@@ -100,11 +100,11 @@ RSpec.describe Textus::Doctor do
           - { name: skills, kind: canon }
           - { name: output, kind: derived }
         entries:
-          - { key: working.notes, path: working/notes, zone: working, schema: note, nested: true, kind: nested}
+          - { key: working.notes, path: working/notes, zone: working, schema: note, kind: nested}
 
           - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
-          - { key: skills, path: skills, zone: skills, nested: true, index_filename: SKILL.md, kind: nested}
+          - { key: skills, path: skills, zone: skills, index_filename: SKILL.md, kind: nested}
 
       YAML
     end
@@ -224,7 +224,7 @@ RSpec.describe Textus::Doctor do
         zones:
           - { name: working, kind: queue }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

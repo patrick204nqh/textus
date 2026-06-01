@@ -25,7 +25,7 @@ RSpec.describe "publish_each:" do
   describe "manifest validation" do
     it "raises if publish_each is set without nested: true" do
       write_manifest(
-        "  - { key: working.flat, path: working/flat.md, zone: working, schema: null, kind: leaf, " \
+        "  - { key: working.flat, path: working/flat.md, zone: working, kind: leaf, " \
         "publish_each: \"out/{basename}.md\" }",
       )
       expect { Textus::Manifest.load(root) }
@@ -38,8 +38,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_to: [out.md]
           publish_each: "out/{basename}.md"
       Y
@@ -53,8 +51,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_each: "agents/static.md"
       Y
       expect { Textus::Manifest.load(root) }
@@ -67,8 +63,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_each: "agents/{basename}-{bogus}.md"
       Y
       expect { Textus::Manifest.load(root) }
@@ -81,8 +75,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_each: "agents/{leaf}.{ext}"
       Y
       expect { Textus::Manifest.load(root) }.not_to raise_error
@@ -96,8 +88,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/skills
           zone: working
-          schema: null
-          nested: true
           publish_each: "out/{leaf}/k={key}/b={basename}.{ext}"
       Y
       m = Textus::Manifest.load(root)
@@ -123,24 +113,18 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_each: "agents/{basename}.md"
 
         - key: working.skills
           kind: nested
           path: working/skills
           zone: working
-          schema: null
-          nested: true
           publish_each: "skills/{basename}/SKILL.md"
 
         - key: working.commands
           kind: nested
           path: working/commands
           zone: working
-          schema: null
-          nested: true
           publish_each: "commands/{basename}.md"
       Y
 
@@ -190,8 +174,6 @@ RSpec.describe "publish_each:" do
           kind: nested
           path: working/agents
           zone: working
-          schema: null
-          nested: true
           publish_each: "../../{basename}.md"
       Y
       File.write(File.join(root, "zones/working/agents/x.md"), "---\nname: x\n---\n")

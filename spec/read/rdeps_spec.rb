@@ -17,13 +17,12 @@ RSpec.describe Textus::Read::Rdeps do
           - { name: working, kind: canon }
           - { name: output, kind: derived }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested}
+          - { key: working.people, path: working/people, zone: working, owner: o, kind: nested}
 
           - key: output.catalogs.people
             kind: derived
             path: output/catalogs/people.md
             zone: output
-            schema: null
             owner: automation:auto
             compute: { kind: projection, select: working.people }
             template: people.mustache

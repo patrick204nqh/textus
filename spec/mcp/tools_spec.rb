@@ -16,9 +16,9 @@ RSpec.describe Textus::MCP::Tools do
         - { name: working,  kind: canon }
         - { name: review,   kind: queue }
       entries:
-        - { key: identity.self,   path: identity/self.md, zone: identity, schema: null, owner: human:self, kind: leaf }
-        - { key: working.note,    path: working/note.md,  zone: working,  schema: null, owner: human:self, kind: leaf }
-        - { key: review.proposal, path: review/proposal,  zone: review,   schema: null, owner: agent, nested: true, kind: nested }
+        - { key: identity.self,   path: identity/self.md, zone: identity, owner: human:self, kind: leaf }
+        - { key: working.note,    path: working/note.md,  zone: working,  owner: human:self, kind: leaf }
+        - { key: review.proposal, path: review/proposal,  zone: review,   owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }

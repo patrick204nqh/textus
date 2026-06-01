@@ -14,9 +14,9 @@ RSpec.describe "textus mv" do
         - { name: working, kind: canon }
         - { name: identity,   kind: canon }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, nested: true, kind: nested}
+        - { key: working.notes, path: working/notes, zone: working, kind: nested}
 
-        - { key: identity.notes,   path: identity/notes,   zone: identity,   nested: true, kind: nested}
+        - { key: identity.notes,   path: identity/notes,   zone: identity,   kind: nested}
 
     YAML
   end

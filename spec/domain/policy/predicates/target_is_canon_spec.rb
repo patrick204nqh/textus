@@ -13,8 +13,8 @@ RSpec.describe Textus::Domain::Policy::Predicates::TargetIsCanon do
         - { name: knowledge, kind: canon }
         - { name: notebook,  kind: workspace, owner: agent }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: notebook.notes,  path: notebook/notes,  zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
+        - { key: notebook.notes,  path: notebook/notes,  zone: notebook,  owner: agent:self, kind: nested }
     YAML
   end
 
