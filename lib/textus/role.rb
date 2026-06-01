@@ -23,6 +23,22 @@ module Textus
     # closed NAMES set in .resolve, not by this regex.
     PATTERN = /\A[a-z][a-z0-9_-]*\z/
 
+    # An `owner:` token is either a bare archetype (`agent`) or
+    # `<archetype>:<subject>` (`human:patrick`). The archetype is gated against
+    # the closed NAMES set (so attribution can't smuggle in a name the role side
+    # rejects, ADR 0045 D1); the subject is the free-form principal, validated by
+    # PATTERN. Split on the FIRST ':' only — a subject may not itself contain ':'
+    # (PATTERN excludes it), so `human:a:b` is rejected.
+    def self.valid_owner?(token)
+      return false unless token.is_a?(String) && !token.empty?
+
+      archetype, subject = token.split(":", 2)
+      return false unless NAMES.include?(archetype)
+      return true if subject.nil?
+
+      !subject.empty? && PATTERN.match?(subject)
+    end
+
     def self.resolve(root:, flag: nil, env: ENV, default: DEFAULT)
       candidate = flag || env["TEXTUS_ROLE"] || read_file(root) || default
       raise InvalidRole.new(candidate) unless NAMES.include?(candidate)
