@@ -13,6 +13,7 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ### Changed
 
+- **Role names are now a closed set `{human, agent, automation}` ([ADR 0045](docs/architecture/decisions/0045-close-role-name-set.md)).** A manifest declaring any other role name is rejected at load with `unknown role name '<x>' (allowed: human, agent, automation)`. `Role::NAMES` is the single source of truth; each role's `can:` capabilities remain fully tunable. Principal multiplicity moves to the `owner:` field (`owner: human:patrick`). Stricter `textus/3` validation in `Schema.validate_roles!` — no protocol bump; all shipped manifests already comply.
 - **Hook event tables consolidated into `Textus::Hooks::Catalog` (single source
   of truth).** `EventBus` and `RpcRegistry` no longer keep their own event
   tables; both registries, the Loader DSL router, and internal consumers read
