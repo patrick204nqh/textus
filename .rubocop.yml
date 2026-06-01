@@ -10,6 +10,7 @@ AllCops:
     - "tmp/**/*"
     - "pkg/**/*"
     - "examples/**/.textus/hooks/*.rb"
+    - "lib/textus/init/templates/**/*" # scaffold sources copied verbatim into user stores (ADR 0043)
     - "docs/plans/**/*"
 
 # --- Style ---
