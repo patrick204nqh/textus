@@ -39,6 +39,11 @@ module Textus
         def events         = {}
         def publish_each   = nil
         def index_filename = nil
+        def ignore         = []
+
+        # Per-entry ignore (ADR 0042). Base entries enumerate no tree, so
+        # nothing is ever ignored; Nested overrides with real patterns.
+        def ignored?(_rel_path) = false
 
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived. Data.define
