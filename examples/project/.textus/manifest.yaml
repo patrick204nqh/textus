@@ -64,22 +64,21 @@ entries:
     - knowledge.runbooks
     transform: orientation_reducer
   kind: derived
-# A snapshot of recent incidents, pulled by `textus fetch feeds.incidents
-# --as=automation`. tracked:false → the fetched file is gitignored (incident
-# data is operational and noisy) but stays readable via `textus get
-# feeds.incidents`, and is never published. (ADR 0043)
-- key: feeds.incidents
-  path: feeds/incidents.yaml
+# A snapshot of this host, pulled by `textus fetch feeds.machine
+# --as=automation` (the same entry + machine_intake.rb hook that `textus init`
+# scaffolds). tracked:false → the fetched file is gitignored (machine info can
+# be sensitive/noisy) but stays readable via `textus get feeds.machine`, and is
+# never published. Delete to opt out. (ADR 0043)
+- key: feeds.machine
+  path: feeds/machine.yaml
   zone: feeds
   format: yaml
   tracked: false
   kind: intake
   intake:
-    handler: incidents
-    config:
-      path: incidents.json
+    handler: machine
 rules:
-- match: feeds.incidents
+- match: feeds.machine
   fetch:
     ttl: 1h
     on_stale: warn
