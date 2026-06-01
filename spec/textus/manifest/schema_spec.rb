@@ -131,6 +131,7 @@ RSpec.describe Textus::Manifest::Schema do
       expect do
         validate!(
           "version" => "textus/3",
+          # roles: present only so the workspace zone clears validate_zone_kind_consistency! (needs `keep`); unrelated to owner validation
           "roles" => [{ "name" => "agent", "can" => ["keep"] }],
           "zones" => [{ "name" => "notebook", "kind" => "workspace", "owner" => "agent" }],
           "entries" => [],
@@ -188,6 +189,16 @@ RSpec.describe Textus::Manifest::Schema do
                           "kind" => "leaf", "owner" => "human:" }],
         )
       end.to raise_error(Textus::BadManifest, /invalid owner 'human:' at '\$\.entries\[0\]'/)
+    end
+
+    it "rejects a non-string owner value" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
+          "entries" => [],
+        )
+      end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.zones\[0\]'/)
     end
   end
 end
