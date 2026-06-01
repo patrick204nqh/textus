@@ -1,7 +1,7 @@
 # ADR 0046 — `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys
 
 **Date:** 2026-06-01
-**Status:** Proposed
+**Status:** Accepted
 **Touches:** [ADR 0007](./0007-envelope-data-class.md) (the build/publish split — publish is copy, not parse), [ADR 0042](./0042-native-ignore-patterns-for-entry-enumeration.md) (the shared `ignore` filter seam, evaluated above key-legality), [ADR 0044](./0044-system-actors-resolved-by-capability.md) (`build` runs as `actor_for("build")`).
 
 > **Publish surface today (SPEC §4, §5.3).** Two mutually-exclusive keys, split on a real axis: `publish_to:` (a list of fixed repo paths — 1 stored file → N explicit destinations; leaf/derived/intake entries, `base.rb:82-101`) and `publish_each:` (one template — 1 *nested* entry → N leaves at derived paths; `nested.rb`, requires `nested: true`, `validators/publish_each.rb:15,18`). This ADR adds **no third key**: a multi-file artifact is a nested leaf, so it belongs to `publish_each`, and `publish_to` (single stored file → fixed paths) cannot express a tree anyway. Tree-vs-file is an *orthogonal sub-property* of the `publish_each` case, derived from `index_filename`.
