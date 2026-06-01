@@ -50,7 +50,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     store_from_manifest(root, zones: %w[working], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
       version: textus/3
       roles:
-        - { name: owner,  can: [author, propose] }
+        - { name: human,  can: [author, propose] }
         - { name: agent,  can: [propose] }
       zones:
         - { name: working, kind: canon }
@@ -59,10 +59,10 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     YAML
   end
 
-  it "migrate uses the declared accept_authority role (owner), not the literal human fallback" do
+  it "migrate uses the declared author-capability role, not the literal human fallback" do
     store = store_with_roles
 
-    store.as("owner").put(
+    store.as("human").put(
       "working.note",
       meta: { "name" => "note", "headline" => "My Headline" },
       body: "body text",
@@ -77,7 +77,7 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     expect(env.meta).not_to have_key("headline")
 
     audit = Textus::Ports::AuditLog.new(root)
-    expect(audit.last_writer_for("working.note")).to eq("owner")
+    expect(audit.last_writer_for("working.note")).to eq("human")
   end
 
   it "migrate raises UsageError when roles: is declared but no author kind exists" do

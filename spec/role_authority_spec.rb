@@ -54,7 +54,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
     expect(res["violations"]).to be_empty
   end
 
-  context "with a renamed accept_authority role" do
+  context "with a non-default capability assignment" do
     let(:tmp)   { Dir.mktmpdir("textus-role-authority-renamed") }
     let(:root)  { File.join(tmp, ".textus") }
     let(:store) { Textus::Store.new(root) }
@@ -66,12 +66,12 @@ RSpec.describe "Role authority via schema.maintained_by" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: owner,    can: [author, propose] }
-          - { name: proposer, can: [propose] }
+          - { name: human, can: [author, propose] }
+          - { name: agent, can: [propose] }
         zones:
           - { name: working, kind: canon }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: owner:patrick, nested: true, kind: nested}
+          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, nested: true, kind: nested}
 
       YAML
 
@@ -79,13 +79,13 @@ RSpec.describe "Role authority via schema.maintained_by" do
         name: person
         required: [full_name]
         fields:
-          full_name:  { type: string, maintained_by: proposer }
-          embedding:  { type: array,  maintained_by: proposer }
+          full_name:  { type: string, maintained_by: agent }
+          embedding:  { type: array,  maintained_by: agent }
       YAML
     end
 
-    it "allows the renamed accept_authority role to override proposer-owned fields" do
-      store.as("owner").put(
+    it "allows the author role to override agent-owned fields" do
+      store.as("human").put(
         "working.people.carol",
         meta: { "name" => "carol", "full_name" => "Carol Override", "embedding" => [0.5] },
         body: "",

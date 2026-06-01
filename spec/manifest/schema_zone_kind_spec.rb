@@ -38,7 +38,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   it "rejects a derived zone when no declared role holds build" do
     roles = <<~ROLES
       roles:
-        - { name: owner, can: [author, propose] }
+        - { name: human, can: [author, propose] }
     ROLES
     expect { parse("  - { name: output, kind: derived }", roles) }
       .to raise_error(Textus::BadManifest, /needs a role with capability 'build'/)
@@ -47,8 +47,8 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
   it "accepts a derived zone when a declared role holds build" do
     roles = <<~ROLES
       roles:
-        - { name: owner,    can: [author, propose] }
-        - { name: compiler, can: [build] }
+        - { name: human,      can: [author, propose] }
+        - { name: automation, can: [build] }
     ROLES
     expect { parse("  - { name: output, kind: derived }", roles) }.not_to raise_error
   end
