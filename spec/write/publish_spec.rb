@@ -87,6 +87,12 @@ RSpec.describe Textus::Write::Publish do
       s
     end
 
+    it "includes a 'pruned' array in the build envelope" do
+      res = store.as("automation").publish
+      expect(res).to have_key("pruned")
+      expect(res["pruned"]).to be_an(Array)
+    end
+
     it "returns the combined {protocol, built, published_leaves} shape" do
       res = store.as("automation").publish
 
