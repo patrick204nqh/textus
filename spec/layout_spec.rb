@@ -15,5 +15,6 @@ RSpec.describe Textus::Layout do
 
   it "exposes a .gitignore body that ignores the run subtree" do
     expect(described_class::GITIGNORE).to include(".run/\n")
+    expect(described_class.gitignore_body).to include(".run/\n")
   end
 end

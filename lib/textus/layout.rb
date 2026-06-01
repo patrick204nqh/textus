@@ -33,9 +33,22 @@ module Textus
       File.join(audit_dir(root), "audit.log")
     end
 
-    GITIGNORE = <<~GITIGNORE
-      # textus runtime artifacts — safe to delete, never commit
-      #{RUN}/
-    GITIGNORE
+    # The store's `.gitignore` body. Always ignores the runtime subtree
+    # (`.run/`, ADR 0038); when given untracked entry paths (entries marked
+    # `tracked: false`), it also lists those so they stay protocol-readable but
+    # uncommitted (ADR 0043, refining 0038). Generated, never hand-kept — no
+    # drift between the manifest and the ignore file.
+    def self.gitignore_body(untracked_paths: [])
+      lines = ["# textus runtime artifacts — safe to delete, never commit",
+               "#{RUN}/"]
+      unless untracked_paths.empty?
+        lines << "# tracked:false entries — protocol-readable, not committed (sensitive)"
+        lines.concat(untracked_paths)
+      end
+      "#{lines.join("\n")}\n"
+    end
+
+    # Back-compat constant: the no-untracked-entries body (just the run subtree).
+    GITIGNORE = gitignore_body
   end
 end

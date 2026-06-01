@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-05-31T00:00:00Z",
+  "incidents": [
+    {
+      "id": "INC-204",
+      "severity": "sev2",
+      "summary": "elevated 5xx on the ledger API after the 14:02 deploy",
+      "opened_at": "2026-05-28T14:09:00Z",
+      "resolved": true
+    },
+    {
+      "id": "INC-205",
+      "severity": "sev3",
+      "summary": "nightly reconciliation job ran 40m late",
+      "opened_at": "2026-05-30T02:11:00Z",
+      "resolved": false
+    }
+  ]
+}

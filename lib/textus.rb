@@ -17,6 +17,10 @@ loader.inflector.inflect(
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp/errors.rb", __dir__))
+# Scaffold sources copied verbatim into user stores by `textus init`. They are
+# file templates (one calls `Textus.hook` at load time), not gem constants —
+# Zeitwerk must not manage or eager-load them (ADR 0043).
+loader.ignore(File.expand_path("textus/init/templates", __dir__))
 loader.setup
 loader.eager_load
 

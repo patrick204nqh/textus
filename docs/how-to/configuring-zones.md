@@ -130,6 +130,9 @@ Out of the box, textus ships **parsers** for common shapes — `json`, `csv`, `m
 
 If you want bytes to come from disk or a URL, you write the handler.
 
+> Copy-paste starting points for common sources (HTTP JSON, RSS, iCal, local
+> file, Notion) live in [`../cookbook/intake-recipes.md`](../cookbook/intake-recipes.md).
+
 ### Custom `:resolve_intake` hooks
 
 Drop a Ruby file in `.textus/hooks/`. The return shape must be one of three:
@@ -168,6 +171,19 @@ rules:
 `textus fetch feeds.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_intake` args)](../reference/events.md#resolve_intake-args).
+
+### Machine snapshot (scaffolded)
+
+`textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a
+`feeds.machine` entry (`tracked: false`). `textus fetch feeds.machine
+--as=automation` pulls a snapshot of this host (git HEAD/branch/dirty, repo
+root, now, ruby/os, textus version) into the `feeds` zone. It is **retrievable
+via the protocol** (`textus get feeds.machine`) but **gitignored and never
+published**, because machine info can be sensitive or noisy — the entry's
+`tracked: false` flag drives the generated `.gitignore`. A `feeds.machine`
+freshness rule (`ttl: 1h`) re-fetches on a long-running server. Don't want it?
+Delete the entry from `manifest.yaml` (and the hook). Customize the hook to
+capture more; keep secrets out.
 
 ### Aging entries out — `retention`
 

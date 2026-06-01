@@ -22,7 +22,8 @@ RSpec.describe "MCP session propose_zone derives from the connection role (ADR 0
   end
 
   it "yields nil propose_zone for a role that cannot propose" do
-    # `automation` holds only `build` — propose_zone_for("automation") => nil.
+    # `automation` holds `build` + `fetch` — neither grants propose, so
+    # propose_zone_for("automation") => nil.
     # Under the old proposer_role fallback this would have been the queue zone;
     # the new per-connection derivation must return nil here.
     session = session_after_initialize("automation")

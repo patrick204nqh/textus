@@ -1,4 +1,5 @@
 require "fileutils"
+require "pathname"
 
 module Textus
   module Init
@@ -21,6 +22,13 @@ module Textus
         - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
+        # A snapshot of this host, pulled by `textus fetch feeds.machine --as=automation`.
+        # tracked:false → gitignored (machine info can be sensitive/noisy) but still
+        # protocol-readable via `textus get feeds.machine`. Delete to opt out. (ADR 0043)
+        - { key: feeds.machine,      path: feeds/machine.yaml,    zone: feeds,     format: yaml, tracked: false, kind: intake, intake: { handler: machine } }
+      rules:
+        - match: feeds.machine
+          fetch: { ttl: 1h, on_stale: warn } # meaningful on a long-running server
     YAML
 
     HOOKS_README = <<~MD
@@ -91,12 +99,27 @@ module Textus
         File.write(File.join(dir, ".gitkeep"), "")
       end
       File.write(File.join(target_root, "hooks", "README.md"), HOOKS_README)
+      scaffold_dir = File.expand_path("init/templates", __dir__)
+      File.write(File.join(target_root, "hooks", "machine_intake.rb"),
+                 File.read(File.join(scaffold_dir, "machine_intake.rb")))
       File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
-      File.write(File.join(target_root, ".gitignore"), Textus::Layout::GITIGNORE)
+      File.write(File.join(target_root, ".gitignore"), derived_gitignore(target_root))
       { "protocol" => PROTOCOL, "initialized" => target_root }
+    end
+
+    # The store's `.gitignore` is generated, never hand-kept (ADR 0038), and now
+    # derived from the manifest: the run subtree plus every `tracked: false`
+    # entry's resolved path (ADR 0043).
+    def self.derived_gitignore(target_root)
+      manifest = Textus::Manifest.load(target_root)
+      root = Pathname.new(target_root)
+      untracked = manifest.data.entries.reject(&:tracked?).map do |e|
+        Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
+      end
+      Textus::Layout.gitignore_body(untracked_paths: untracked)
     end
   end
 end
