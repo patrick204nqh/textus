@@ -41,6 +41,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
+          pruned = []
           pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
@@ -53,17 +54,39 @@ module Textus
               )
             end
 
-            Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
-            pctx.emit(:file_published,
-                      key: row[:key],
-                      envelope: pctx.reader.call(row[:key]),
-                      source: row[:path],
-                      target: target_abs)
-            leaves << { "key" => row[:key], "source" => row[:path], "target" => target_abs }
+            written = @index_filename ? publish_subtree(row, target_abs, pctx) : [publish_one(row, target_abs, pctx)]
+            written.each { |w| leaves << { "key" => row[:key], "source" => w["source"], "target" => w["target"] } }
           end
 
-          { kind: :leaves, value: leaves }
+          { kind: :leaves, value: leaves, pruned: pruned }
         end
+
+        def publish_one(row, target_abs, pctx)
+          Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
+          pctx.emit(:file_published, key: row[:key], envelope: pctx.reader.call(row[:key]),
+                                     source: row[:path], target: target_abs)
+          { "source" => row[:path], "target" => target_abs }
+        end
+
+        def publish_subtree(row, target_dir, pctx)
+          base = File.join(pctx.root, "zones", path)
+          leaf_dir = File.dirname(row[:path])
+          Dir.glob(File.join(leaf_dir, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
+            next nil unless File.file?(src)
+
+            rel_to_base = src.sub(%r{\A#{Regexp.escape(base)}/}, "")
+            next nil if ignored?(rel_to_base)
+
+            rel_to_leaf = src.sub(%r{\A#{Regexp.escape(leaf_dir)}/}, "")
+            dst = File.join(target_dir, rel_to_leaf)
+            Textus::Ports::Publisher.publish(source: src, target: dst, store_root: pctx.root)
+            pctx.emit(:file_published, key: row[:key], envelope: pctx.reader.call(row[:key]),
+                                       source: src, target: dst)
+            { "source" => src, "target" => dst }
+          end
+        end
+
+        private :publish_one, :publish_subtree
 
         KIND = :nested
 
