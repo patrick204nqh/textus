@@ -1,7 +1,7 @@
 # ADR 0042 — Native ignore patterns for entry enumeration (one shared filter seam, evaluated above legality)
 
 **Date:** 2026-06-01
-**Status:** Proposed
+**Status:** Accepted (ships 0.39.0)
 **Refines:** [ADR 0018](./0018-manifest-carving.md), [ADR 0025](./0025-boot-doctor-as-verbs-and-etag-via-port.md), [ADR 0034](./0034-unify-lane-vocabulary.md)
 
 ## Context

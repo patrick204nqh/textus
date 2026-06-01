@@ -11,6 +11,31 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+## 0.39.0 — 2026-06-01 — Native ignore patterns for entry enumeration ([ADR 0042](docs/architecture/decisions/0042-native-ignore-patterns-for-entry-enumeration.md))
+
+No `textus/3` wire-format change. Manifest schema gains one optional, backward-compatible key (`ignore:`); existing manifests are unaffected.
+
+### Added
+
+- **Per-entry `ignore:` globs on `nested` entries (ADR 0042).** A `nested`
+  entry may declare a list of gitignore-style globs (e.g.
+  `["**/node_modules/**", "**/dist/**"]`) to keep vendored or generated
+  subtrees out of the store. Patterns are honoured by **one shared filter
+  seam** consulted by both resolver enumeration (`list`, `build`) and
+  `textus doctor`, evaluated *above* key-legality: an ignored path is excluded,
+  never judged. This closes the prior divergence where a store could `list`
+  cleanly while `doctor` was red on the same vendored paths. Matching is
+  segment-wise globstar — `**` spans zero or more path segments; within a
+  segment `*` is anchored and `{a,b}` alternates (stdlib `File.fnmatch`,
+  no new dependency). Documented in
+  [`docs/reference/zones.md`](docs/reference/zones.md#nested-entries).
+
+### Internal
+
+- **Dogfood textus in its own repo ([ADR 0041](docs/architecture/decisions/0041-dogfood-textus-in-its-own-repo.md)).**
+  A self-development store and MCP wiring for textus's own repository. No change
+  to the published gem's behavior.
+
 ## 0.38.0 — 2026-05-31 — MCP serve acts as agent by default ([ADR 0040](docs/architecture/decisions/0040-mcp-connection-role-and-two-channels.md))
 
 No `textus/3` wire-format change; no manifest-schema change.
