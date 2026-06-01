@@ -56,6 +56,19 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown key 'color'/)
   end
 
+  it "rejects a role name outside the closed set {human, agent, automation}" do
+    yaml = <<~YAML
+      version: textus/3
+      roles:
+        - { name: importer, can: [fetch] }
+      zones:
+        - { name: feeds, kind: quarantine }
+      entries: []
+    YAML
+    expect { Textus::Manifest::Data.parse(YAML.safe_load(yaml, aliases: false), root: ".") }
+      .to raise_error(Textus::BadManifest, /unknown role name 'importer'/)
+  end
+
   it "still parses manifests with no roles: block (defaults apply)" do
     yaml = <<~YAML
       version: textus/3
