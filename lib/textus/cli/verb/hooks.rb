@@ -35,7 +35,7 @@ module Textus
 
                 rows << {
                   "event" => evt.to_s, "mode" => "manifest", "exec" => defn["exec"],
-                  "key" => e.key, "as" => defn["as"] || "automation"
+                  "key" => e.key, "as" => defn["as"] || Textus::Role::AUTOMATION
                 }
               end
             end
