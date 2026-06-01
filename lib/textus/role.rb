@@ -18,9 +18,9 @@ module Textus
     # does not inherit the human's authority (it defaults to AGENT per transport).
     DEFAULT = HUMAN
 
-    # Syntactic shape of an `owner:` subject token (e.g. `human:patrick`); ADR
-    # 0045 reserves PATTERN for that. Acting-role names are gated against the
-    # closed NAMES set in .resolve, not by this regex.
+    # Syntactic shape of an `owner:` subject token (e.g. the `patrick` in
+    # `human:patrick`); consumed by `.valid_owner?` (ADR 0045 D1). Acting-role
+    # names are gated against the closed NAMES set in .resolve, not by this regex.
     PATTERN = /\A[a-z][a-z0-9_-]*\z/
 
     # An `owner:` token is either a bare archetype (`agent`) or

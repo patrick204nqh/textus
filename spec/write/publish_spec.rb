@@ -57,7 +57,7 @@ RSpec.describe Textus::Write::Publish do
           - { name: working, kind: canon }
           - { name: output, kind: derived }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: null, owner: o, nested: true, kind: nested }
+          - { key: working.people, path: working/people, zone: working, schema: null, owner: human:o, nested: true, kind: nested }
 
           - key: output.catalogs.people
             kind: derived
