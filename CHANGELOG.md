@@ -11,8 +11,20 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+## 0.40.0 — 2026-06-02 — `publish_each` owns multi-file leaf subtrees ([ADR 0046](docs/architecture/decisions/0046-publish-leaf-subtrees.md))
+
+No `textus/3` wire-format change — publish is repo-local materialization. The
+publish *unit* is derived from the entry's existing `index_filename`, not a new
+manifest key (SPEC §4, §5.3).
+
+### Added
+
+- **`publish_each` copies a leaf's whole subtree when the entry declares `index_filename` ([ADR 0046](docs/architecture/decisions/0046-publish-leaf-subtrees.md)).** textus can now own a prose-heavy, multi-file artifact (e.g. a Claude Code Agent Skill: `SKILL.md` + `commands.md` + `references/*`) as a single addressable unit. An entry *without* `index_filename` still publishes one file per leaf (unchanged); an entry *with* `index_filename` treats each leaf as a directory and copies the whole subtree — ignore-filtered (ADR 0042), preserving in-leaf layout, one sentinel per file. Siblings ride along at publish time only: they are never enumerated, addressable, or proposable (the key↔path bijection is preserved). On rebuild, managed orphans under a leaf are pruned (file + sentinel); **unmanaged files are never deleted**. The build envelope grows a `pruned` array.
+- **`doctor` flags orphaned publish targets.** A new `orphaned_publish_targets` check reports a published file whose recorded source no longer exists in the store (a renamed or removed whole leaf) — drift that per-entry `build` won't revisit.
+
 ### Changed
 
+- **BREAKING (pre-1.0): directory-leaf `publish_each` semantics ([ADR 0046](docs/architecture/decisions/0046-publish-leaf-subtrees.md)).** An entry with `index_filename` + `publish_each` whose leaf directories contain siblings previously published *only the index file*; it now publishes the whole subtree. This breaks no correct usage — it is either the dropped-siblings defect this fixes, or a template that named a file rather than a directory, which the validator now **rejects loudly** at manifest load. **Migration:** a directory-leaf `publish_each` template must name the target *directory* — drop a trailing index filename (`.../{leaf}/SKILL.md` → `.../{leaf}`) or any file extension (`.../{leaf}.md` → `.../{leaf}`), and use `{leaf}` or `{key}` (not `{basename}`/`{ext}`, which are file-only).
 - **Role names are now a closed set `{human, agent, automation}` ([ADR 0045](docs/architecture/decisions/0045-close-role-name-set.md)).** A manifest declaring any other role name is rejected at load with `unknown role name '<x>' (allowed: human, agent, automation)`. `Role::NAMES` is the single source of truth; each role's `can:` capabilities remain fully tunable. Principal multiplicity moves to the `owner:` field (`owner: human:patrick`). Stricter `textus/3` validation in `Schema.validate_roles!` — no protocol bump; all shipped manifests already comply.
 - **Hook event tables consolidated into `Textus::Hooks::Catalog` (single source
   of truth).** `EventBus` and `RpcRegistry` no longer keep their own event

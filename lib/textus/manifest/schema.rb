@@ -35,6 +35,13 @@ module Textus
       RETENTION_KEYS = %w[expire_after archive_after].freeze
       AUDIT_KEYS = %w[max_size keep].freeze
 
+      # Syntactic shape of an `owner:` subject token (the `patrick` in
+      # `human:patrick`) — the subject half of the owner-validation rule below.
+      # Role supplies the archetype set (Role::NAMES); this pattern is the
+      # owner-specific part, so it lives with the rule that composes them
+      # (ADR 0045 D1). Acting-role *names* are gated by Role::NAMES, not a regex.
+      OWNER_SUBJECT_PATTERN = /\A[a-z][a-z0-9_-]*\z/
+
       def self.validate!(raw)
         raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
@@ -42,6 +49,7 @@ module Textus
         validate_roles!(raw["roles"])
         validate_zones!(raw["zones"])
         validate_entries!(raw["entries"])
+        validate_owners!(raw["zones"], raw["entries"])
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_single_queue!(raw)
@@ -113,6 +121,47 @@ module Textus
         raise BadManifest.new(
           "manifest declares #{author_holders} roles with the author capability; at most one is allowed",
         )
+      end
+
+      # Owners are validated against the SAME closed archetype set as role names
+      # (ADR 0045 D1) so attribution can't bypass the closed-name guarantee.
+      # Applies to both zone owners and entry owners; owner is optional, so a
+      # nil owner is not an error.
+      def self.validate_owners!(zones, entries)
+        Array(zones).each_with_index do |z, i|
+          check_owner!(z["owner"], "$.zones[#{i}]")
+        end
+        Array(entries).each_with_index do |e, i|
+          check_owner!(e["owner"], "$.entries[#{i}]")
+        end
+      end
+
+      def self.check_owner!(owner, path)
+        return if owner.nil?
+        return if valid_owner?(owner)
+
+        raise BadManifest.new(
+          "invalid owner '#{owner}' at '#{path}' " \
+          "(expected <archetype> or <archetype>:<subject>, " \
+          "archetype one of: #{Textus::Role::NAMES.join(", ")})",
+        )
+      end
+
+      # The owner-validation rule: an `owner:` token is either a bare archetype
+      # (`agent`) or `<archetype>:<subject>` (`human:patrick`). The archetype is
+      # gated against the closed Role::NAMES set (so attribution can't smuggle in
+      # a name the role side rejects, ADR 0045 D1); the subject is the free-form
+      # principal, validated by OWNER_SUBJECT_PATTERN. Split on the FIRST ':'
+      # only — a subject may not itself contain ':' (the pattern excludes it), so
+      # `human:a:b` is rejected.
+      def self.valid_owner?(token)
+        return false unless token.is_a?(String) && !token.empty?
+
+        archetype, subject = token.split(":", 2)
+        return false unless Textus::Role::NAMES.include?(archetype)
+        return true if subject.nil?
+
+        OWNER_SUBJECT_PATTERN.match?(subject)
       end
 
       def self.validate_fetch_timeout!(value, path)

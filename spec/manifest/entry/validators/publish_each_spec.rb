@@ -10,6 +10,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
       publish_each: opts[:publish_each],
       nested?: opts.fetch(:nested, true),
       publish_to: opts.fetch(:publish_to, []),
+      index_filename: opts.fetch(:index_filename, nil),
     )
   end
 
@@ -45,5 +46,55 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
 
   it "accepts a valid template" do
     expect { described_class.call(entry_with(publish_each: "agents/{basename}.md")) }.not_to raise_error
+  end
+
+  context "directory-leaf entries (index_filename set)" do
+    it "rejects {basename} (file-only) on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{basename}", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, %r{names a directory.*\{basename\}/\{ext\} are file-only})
+    end
+
+    it "rejects {ext} even alongside {leaf} on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}.{ext}", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, %r{\{basename\}/\{ext\} are file-only})
+    end
+
+    it "requires {leaf} or {key} on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/static", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /directory-leaf publish_each must reference \{leaf\} or \{key\}/)
+    end
+
+    it "accepts {key} on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{key}", index_filename: "SKILL.md"))
+      end.not_to raise_error
+    end
+
+    it "accepts {leaf} on a directory leaf" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}", index_filename: "SKILL.md"))
+      end.not_to raise_error
+    end
+
+    it "rejects a template that names the index file (the copy-into-SKILL.md footgun)" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}/SKILL.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /must name the target DIRECTORY, not the index file/)
+    end
+
+    it "rejects a file-looking final segment with {leaf} (the copy-into-skill.md footgun)" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /final segment '\{leaf\}\.md' looks like a file/)
+    end
+
+    it "rejects a literal file segment nested under {leaf}" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}/foo.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /looks like a file.*extension '\.md'/m)
+    end
   end
 end

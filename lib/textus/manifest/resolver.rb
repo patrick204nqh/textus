@@ -72,8 +72,21 @@ module Textus
         return [] unless File.directory?(base)
 
         entry_index_filename = entry.index_filename
-        glob_pattern = entry_index_filename ? "**/#{entry_index_filename}" : nested_glob(entry.format)
-        Dir.glob(File.join(base, glob_pattern)).filter_map { |path| nested_row_for(entry, base, path) }
+        unless entry_index_filename
+          return Dir.glob(File.join(base, nested_glob(entry.format)))
+                    .filter_map { |path| nested_row_for(entry, base, path) }
+        end
+
+        claimed = []
+        Dir.glob(File.join(base, "**", entry_index_filename))
+           .sort_by { |path| path.count("/") }
+           .filter_map do |path|
+          leaf_dir = File.dirname(path)
+          next nil if claimed.any? { |d| leaf_dir.start_with?("#{d}/") }
+
+          claimed << leaf_dir
+          nested_row_for(entry, base, path)
+        end
       end
 
       def nested_row_for(entry, base, path)

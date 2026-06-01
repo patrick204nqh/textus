@@ -42,6 +42,21 @@ module Textus
         File.join(store_root, DIR, rel + SUFFIX)
       end
 
+      # Absolute target paths of every sentinel recorded under `target_dir`.
+      def targets_under(target_dir, store_root)
+        repo_root = File.dirname(store_root)
+        rel = relative_to(target_dir, repo_root) or return []
+        sdir = File.join(store_root, DIR, rel)
+        return [] unless File.directory?(sdir)
+
+        prefix = File.join(store_root, DIR) + "/"
+        Dir.glob(File.join(sdir, "**", "*#{SUFFIX}")).map do |spath|
+          # strip the sentinel-store prefix and the .textus-managed.json suffix to recover the repo-relative target path
+          trel = spath.delete_prefix(prefix).delete_suffix(SUFFIX)
+          File.join(repo_root, trel)
+        end
+      end
+
       private
 
       def rel_or_abs(path, repo_root)
