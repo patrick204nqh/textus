@@ -4,58 +4,58 @@ RSpec.describe Textus::Write::Accept do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
+    store_from_manifest(root, zones: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
-        - { name: review,  kind: queue }
+        - { name: knowledge, kind: canon }
+        - { name: proposals,  kind: queue }
       entries:
-        - { key: working.network.org, path: working/network/org, zone: working, owner: human:self, kind: nested }
-        - { key: review, path: review, zone: review, owner: human:self, kind: nested }
+        - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, owner: human:self, kind: nested }
+        - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
     YAML
   end
 
-  it "applies the proposal target action and deletes the review entry" do
+  it "applies the proposal target action and deletes the proposals entry" do
     store.as("agent").put(
-      "review.2026-05-19-add-bob",
+      "proposals.2026-05-19-add-bob",
       meta: {
         "name" => "2026-05-19-add-bob",
-        "proposal" => { "target_key" => "working.network.org.bob", "action" => "put" },
+        "proposal" => { "target_key" => "knowledge.network.org.bob", "action" => "put" },
         "frontmatter" => { "name" => "bob", "org" => "acme" },
       },
       body: "Proposed",
     )
 
-    result = store.as("human").accept("review.2026-05-19-add-bob")
+    result = store.as("human").accept("proposals.2026-05-19-add-bob")
 
-    expect(result["target_key"]).to eq("working.network.org.bob")
+    expect(result["target_key"]).to eq("knowledge.network.org.bob")
     expect(result["action"]).to eq("put")
-    expect(result["accepted"]).to eq("review.2026-05-19-add-bob")
-    expect(File.exist?(File.join(root, "zones/working/network/org/bob.md"))).to be(true)
-    expect(File.exist?(File.join(root, "zones/review/2026-05-19-add-bob.md"))).to be(false)
+    expect(result["accepted"]).to eq("proposals.2026-05-19-add-bob")
+    expect(File.exist?(File.join(root, "zones/knowledge/network/org/bob.md"))).to be(true)
+    expect(File.exist?(File.join(root, "zones/proposals/2026-05-19-add-bob.md"))).to be(false)
   end
 
   it "refuses a non-authority actor with guard_failed naming the predicate" do
     store.as("agent").put(
-      "review.foo",
+      "proposals.foo",
       meta: {
         "name" => "foo",
-        "proposal" => { "target_key" => "working.network.org.x", "action" => "put" },
+        "proposal" => { "target_key" => "knowledge.network.org.x", "action" => "put" },
         "frontmatter" => { "name" => "x" },
       },
       body: "",
     )
 
-    expect { store.as("agent").accept("review.foo") }
+    expect { store.as("agent").accept("proposals.foo") }
       .to fail_guard_with("author_held")
   end
 
   it "fires :accepted event with correlation_id" do
     store.as("agent").put(
-      "review.p1",
+      "proposals.p1",
       meta: {
         "name" => "p1",
-        "proposal" => { "target_key" => "working.network.org.alice", "action" => "put" },
+        "proposal" => { "target_key" => "knowledge.network.org.alice", "action" => "put" },
         "frontmatter" => { "name" => "alice" },
       },
       body: "Alice content",
@@ -66,54 +66,54 @@ RSpec.describe Textus::Write::Accept do
       events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
     end
 
-    store.as("human", correlation_id: "corr-accept-1").accept("review.p1")
+    store.as("human", correlation_id: "corr-accept-1").accept("proposals.p1")
 
     expect(events.length).to eq(1)
-    expect(events.first[:key]).to eq("review.p1")
-    expect(events.first[:target_key]).to eq("working.network.org.alice")
+    expect(events.first[:key]).to eq("proposals.p1")
+    expect(events.first[:target_key]).to eq("knowledge.network.org.alice")
     expect(events.first[:correlation_id]).to eq("corr-accept-1")
   end
 
   it "raises ProposalError when entry has no proposal block" do
-    store.as("agent").put("review.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
+    store.as("agent").put("proposals.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
 
-    expect { store.as("human").accept("review.noproposal") }
+    expect { store.as("human").accept("proposals.noproposal") }
       .to raise_error(Textus::ProposalError, /no proposal block/)
   end
 
   describe "manifest with no role holding the author capability" do
     # No role holds `author`: agent only proposes, automation only fetches.
-    # review is a queue (propose), working is quarantine (fetch) so the
+    # proposals is a queue (propose), feeds is quarantine (fetch) so the
     # manifest still validates — yet accept/reject have no authority to gate.
     let(:store) do
-      s = store_from_manifest(root, zones: %w[working review], manifest: <<~YAML)
+      s = store_from_manifest(root, zones: %w[feeds proposals], manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
           - { name: automation, can: [fetch] }
         zones:
-          - { name: working, kind: quarantine }
-          - { name: review, kind: queue }
+          - { name: feeds, kind: quarantine }
+          - { name: proposals, kind: queue }
         entries:
-          - { key: working.n, path: working/n.md, zone: working, owner: human:self, kind: leaf }
-          - { key: review, path: review, zone: review, owner: human:self, kind: nested }
+          - { key: feeds.n, path: feeds/n.md, zone: feeds, owner: human:self, kind: leaf }
+          - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
         rules: []
       YAML
       s.as("agent").put(
-        "review.p",
-        meta: { "name" => "p", "proposal" => { "target_key" => "working.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
+        "proposals.p",
+        meta: { "name" => "p", "proposal" => { "target_key" => "feeds.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
         body: "b",
       )
       s
     end
 
     it "accept raises an honest error that the author capability is unheld" do
-      expect { store.as("agent").accept("review.p") }
+      expect { store.as("agent").accept("proposals.p") }
         .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*accept is disabled/i)
     end
 
     it "reject raises an honest error that the author capability is unheld" do
-      expect { store.as("agent").reject("review.p") }
+      expect { store.as("agent").reject("proposals.p") }
         .to raise_error(Textus::GuardFailed, /no role holds the 'author' capability.*reject is disabled/i)
     end
   end
@@ -132,18 +132,18 @@ RSpec.describe Textus::Write::Accept do
       let(:store) do
         store_from_manifest(
           root,
-          zones: ["working/network/org", "review"],
+          zones: ["knowledge/network/org", "proposals"],
           schemas: { "org-member" => org_member_schema },
           manifest: <<~YAML,
             version: textus/3
             zones:
-              - { name: working, kind: canon }
-              - { name: review,  kind: queue }
+              - { name: knowledge, kind: canon }
+              - { name: proposals,  kind: queue }
             entries:
-              - { key: working.network.org, path: working/network/org, zone: working, schema: org-member, owner: human:self, kind: nested }
-              - { key: review, path: review, zone: review, owner: human:self, kind: nested }
+              - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, schema: org-member, owner: human:self, kind: nested }
+              - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
             rules:
-              - match: "working.network.org.**"
+              - match: "knowledge.network.org.**"
                 guard:
                   accept: [schema_valid]
           YAML
@@ -152,47 +152,47 @@ RSpec.describe Textus::Write::Accept do
 
       it "passes the gate when schema_valid succeeds (all required fields present)" do
         store.as("agent").put(
-          "review.valid-proposal",
+          "proposals.valid-proposal",
           meta: {
             "name" => "valid-proposal",
-            "proposal" => { "target_key" => "working.network.org.carol", "action" => "put" },
+            "proposal" => { "target_key" => "knowledge.network.org.carol", "action" => "put" },
             "frontmatter" => { "name" => "carol", "org" => "acme" },
           },
           body: "Proposed",
         )
 
-        result = store.as("human").accept("review.valid-proposal")
-        expect(result["accepted"]).to eq("review.valid-proposal")
+        result = store.as("human").accept("proposals.valid-proposal")
+        expect(result["accepted"]).to eq("proposals.valid-proposal")
       end
 
       it "raises guard_failed when schema_valid fails (missing required field)" do
         store.as("agent").put(
-          "review.bad-proposal",
+          "proposals.bad-proposal",
           meta: {
             "name" => "bad-proposal",
-            "proposal" => { "target_key" => "working.network.org.dave", "action" => "put" },
+            "proposal" => { "target_key" => "knowledge.network.org.dave", "action" => "put" },
             "frontmatter" => { "name" => "dave" }, # missing required 'org'
           },
           body: "Proposed",
         )
 
-        expect { store.as("human").accept("review.bad-proposal") }
+        expect { store.as("human").accept("proposals.bad-proposal") }
           .to fail_guard_with("schema_valid")
       end
     end
 
     context "with an author_held guard" do
       let(:store) do
-        store_from_manifest(root, zones: ["working/network/org", "review"], manifest: <<~YAML)
+        store_from_manifest(root, zones: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
           version: textus/3
           zones:
-            - { name: working, kind: canon }
-            - { name: review,  kind: queue }
+            - { name: knowledge, kind: canon }
+            - { name: proposals,  kind: queue }
           entries:
-            - { key: working.network.org, path: working/network/org, zone: working, owner: human:self, kind: nested }
-            - { key: review, path: review, zone: review, owner: human:self, kind: nested }
+            - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, owner: human:self, kind: nested }
+            - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
           rules:
-            - match: "working.network.org.**"
+            - match: "knowledge.network.org.**"
               guard:
                 accept: [author_held]
         YAML
@@ -200,17 +200,17 @@ RSpec.describe Textus::Write::Accept do
 
       it "passes when the role holds the author capability" do
         store.as("agent").put(
-          "review.ha-proposal",
+          "proposals.ha-proposal",
           meta: {
             "name" => "ha-proposal",
-            "proposal" => { "target_key" => "working.network.org.eve", "action" => "put" },
+            "proposal" => { "target_key" => "knowledge.network.org.eve", "action" => "put" },
             "frontmatter" => { "name" => "eve" },
           },
           body: "Proposed",
         )
 
-        result = store.as("human").accept("review.ha-proposal")
-        expect(result["accepted"]).to eq("review.ha-proposal")
+        result = store.as("human").accept("proposals.ha-proposal")
+        expect(result["accepted"]).to eq("proposals.ha-proposal")
       end
     end
   end

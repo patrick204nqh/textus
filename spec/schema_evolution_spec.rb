@@ -47,15 +47,15 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
   include_context "textus_store_fixture"
 
   let(:store_with_roles) do
-    store_from_manifest(root, zones: %w[working], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human,  can: [author, propose] }
         - { name: agent,  can: [propose] }
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, schema: note, kind: leaf }
     YAML
   end
 
@@ -63,32 +63,32 @@ RSpec.describe "Schema::Tools.migrate with renamed authority role" do
     store = store_with_roles
 
     store.as("human").put(
-      "working.note",
+      "knowledge.note",
       meta: { "name" => "note", "headline" => "My Headline" },
       body: "body text",
     )
 
     res = Textus::Schema::Tools.migrate(store, name: "note", rename: nil)
 
-    expect(res["migrated"]).to include("working.note")
+    expect(res["migrated"]).to include("knowledge.note")
 
-    env = store.as(Textus::Role::DEFAULT).get("working.note")
+    env = store.as(Textus::Role::DEFAULT).get("knowledge.note")
     expect(env.meta).to have_key("title")
     expect(env.meta).not_to have_key("headline")
 
     audit = Textus::Ports::AuditLog.new(root)
-    expect(audit.last_writer_for("working.note")).to eq("human")
+    expect(audit.last_writer_for("knowledge.note")).to eq("human")
   end
 
   it "migrate raises UsageError when roles: is declared but no author kind exists" do
-    store = store_from_manifest(root, zones: %w[working], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
+    store = store_from_manifest(root, zones: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: agent, can: [propose] }
       zones:
-        - { name: working, kind: queue }
+        - { name: proposals, kind: queue }
       entries:
-        - { key: working.note, path: working/note.md, zone: working, schema: note, kind: leaf }
+        - { key: proposals.note, path: proposals/note.md, zone: proposals, schema: note, kind: leaf }
     YAML
 
     expect do

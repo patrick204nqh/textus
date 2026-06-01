@@ -7,25 +7,25 @@ RSpec.describe Textus::Manifest::Resolver do
   let(:resolver) { described_class.new(manifest.data) }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
+        - { name: knowledge, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes.md, zone: working, owner: human:self, kind: leaf}
+        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf}
 
     YAML
   end
 
   it "resolves a leaf key to a Resolution" do
-    res = resolver.resolve("working.notes")
+    res = resolver.resolve("knowledge.notes")
     expect(res).to be_a(Textus::Manifest::Resolver::Resolution)
-    expect(res.path).to end_with("/zones/working/notes.md")
+    expect(res.path).to end_with("/zones/knowledge/notes.md")
   end
 
   it "raises UnknownKey for missing entries with suggestions" do
-    expect { resolver.resolve("working.note") }.to raise_error(Textus::UnknownKey)
+    expect { resolver.resolve("knowledge.note") }.to raise_error(Textus::UnknownKey)
   end
 
   describe "ignore patterns" do

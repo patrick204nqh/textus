@@ -6,10 +6,10 @@ RSpec.describe Textus::Boot do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
     FileUtils.mkdir_p(File.join(root, "zones/intake"))
-    FileUtils.mkdir_p(File.join(root, "zones/output"))
-    FileUtils.mkdir_p(File.join(root, "zones/review"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
@@ -22,17 +22,17 @@ RSpec.describe Textus::Boot do
         - { name: automation, can: [fetch, build] }
       zones:
         - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
-        - { name: working,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
+        - { name: knowledge,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
         - { name: intake,   kind: quarantine }
-        - { name: review,   kind: queue }
-        - { name: output,   kind: derived }
+        - { name: proposals,   kind: queue }
+        - { name: artifacts,   kind: derived }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, owner: human:self, kind: leaf}
 
-        - key: working.notes
+        - key: knowledge.notes
           kind: nested
-          path: working/notes
-          zone: working
+          path: knowledge/notes
+          zone: knowledge
           nested: true
         - key: intake.feed
           kind: intake
@@ -42,14 +42,14 @@ RSpec.describe Textus::Boot do
           intake:
             handler: demo-action
             config: { foo: 1 }
-        - key: output.report
+        - key: artifacts.report
           kind: derived
-          path: output/report.md
-          zone: output
+          path: artifacts/report.md
+          zone: artifacts
           owner: automation:auto
           compute:
             kind: projection
-            select: [working.notes]
+            select: [knowledge.notes]
             pluck: "*"
           template: report.mustache
           publish_to: [REPORT.md]
@@ -81,23 +81,23 @@ RSpec.describe Textus::Boot do
   it "lists zones with writers and purposes derived from manifest desc:" do
     env = described_class.build(container: store.container)
     names = env["zones"].map { |z| z["name"] }
-    expect(names).to contain_exactly("identity", "working", "intake", "review", "output")
+    expect(names).to contain_exactly("identity", "knowledge", "intake", "proposals", "artifacts")
     identity = env["zones"].find { |z| z["name"] == "identity" }
     expect(identity["writers"]).to eq(["human"])
     expect(identity["purpose"]).to include("human-only")
 
-    working = env["zones"].find { |z| z["name"] == "working" }
-    expect(working["writers"]).to eq(["human"])
-    expect(working).to have_key("purpose")
+    knowledge = env["zones"].find { |z| z["name"] == "knowledge" }
+    expect(knowledge["writers"]).to eq(["human"])
+    expect(knowledge).to have_key("purpose")
 
     intake = env["zones"].find { |z| z["name"] == "intake" }
     expect(intake["writers"]).to eq(["automation"])
 
-    review = env["zones"].find { |z| z["name"] == "review" }
-    expect(review["writers"]).to contain_exactly("human", "agent")
+    proposals = env["zones"].find { |z| z["name"] == "proposals" }
+    expect(proposals["writers"]).to contain_exactly("human", "agent")
 
-    output = env["zones"].find { |z| z["name"] == "output" }
-    expect(output["writers"]).to eq(["automation"])
+    artifacts = env["zones"].find { |z| z["name"] == "artifacts" }
+    expect(artifacts["writers"]).to eq(["automation"])
   end
 
   it "omits purpose for unknown zone names" do
@@ -126,11 +126,11 @@ RSpec.describe Textus::Boot do
     expect(by_key["intake.feed"]["intake"]).to be true
     expect(by_key["intake.feed"]["derived"]).to be false
 
-    expect(by_key["output.report"]["derived"]).to be true
-    expect(by_key["output.report"]["publish_to"]).to eq(["REPORT.md"])
-    expect(by_key["output.report"]["publish_each"]).to be_nil
+    expect(by_key["artifacts.report"]["derived"]).to be true
+    expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
+    expect(by_key["artifacts.report"]["publish_each"]).to be_nil
 
-    expect(by_key["working.notes"]["nested"]).to be true
+    expect(by_key["knowledge.notes"]["nested"]).to be true
   end
 
   it "lists hooks grouped by event, sorted alphabetically" do
@@ -200,8 +200,8 @@ RSpec.describe Textus::Boot do
         version: textus/3
         zones:
           - { name: identity, kind: canon }
-          - { name: review,   kind: queue }
-          - { name: output,   kind: derived }
+          - { name: proposals,   kind: queue }
+          - { name: artifacts,   kind: derived }
         entries: []
       YAML
       s = store_from_manifest(root, manifest: yaml)

@@ -5,18 +5,18 @@ RSpec.describe Textus::Doctor do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: working, kind: canon }
-        - { name: output, kind: derived }
+        - { name: knowledge, kind: canon }
+        - { name: artifacts, kind: derived }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, schema: note, kind: nested}
+        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
 
-        - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
+        - { key: artifacts.summary, path: artifacts/summary.md, zone: artifacts, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
@@ -81,7 +81,7 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports key.illegal for nested entries with bad filenames" do
-    File.write(File.join(root, "zones/working/notes/Bad_Name.md"), "---\n---\nx\n")
+    File.write(File.join(root, "zones/knowledge/notes/Bad_Name.md"), "---\n---\nx\n")
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
     expect(issue).not_to be_nil
@@ -96,13 +96,13 @@ RSpec.describe Textus::Doctor do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
           - { name: skills, kind: canon }
-          - { name: output, kind: derived }
+          - { name: artifacts, kind: derived }
         entries:
-          - { key: working.notes, path: working/notes, zone: working, schema: note, kind: nested}
+          - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
 
-          - { key: output.summary, path: output/summary.md, zone: output, template: summary.mustache, kind: derived, compute: { kind: projection }}
+          - { key: artifacts.summary, path: artifacts/summary.md, zone: artifacts, template: summary.mustache, kind: derived, compute: { kind: projection }}
 
           - { key: skills, path: skills, zone: skills, index_filename: SKILL.md, kind: nested}
 
@@ -217,14 +217,14 @@ RSpec.describe Textus::Doctor do
     it "surfaces validate_all role_authority violations as error-level issues" do
       ra_root = File.join(tmp2, ".textus")
       FileUtils.mkdir_p(File.join(ra_root, "schemas"))
-      FileUtils.mkdir_p(File.join(ra_root, "zones/working/people"))
+      FileUtils.mkdir_p(File.join(ra_root, "zones/knowledge/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: queue }
+          - { name: proposals, kind: queue }
         entries:
-          - { key: working.people, path: working/people, zone: working, schema: person, owner: human:patrick, kind: nested}
+          - { key: proposals.people, path: proposals/people, zone: proposals, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 
@@ -239,7 +239,7 @@ RSpec.describe Textus::Doctor do
       ra_store = Textus::Store.new(ra_root)
       # Write full_name as ai — violates maintained_by: human
       ra_store.as("agent").put(
-        "working.people.alice",
+        "proposals.people.alice",
         meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] }, body: "",
       )
 

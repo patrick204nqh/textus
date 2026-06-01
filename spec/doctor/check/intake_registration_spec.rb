@@ -4,16 +4,16 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
   it "reports an error when manifest references an unregistered handler" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: quarantine }
+          - { name: feeds, kind: quarantine }
         entries:
-          - key: working.foo
+          - key: feeds.foo
             kind: intake
-            path: working/foo.md
-            zone: working
+            path: feeds/foo.md
+            zone: feeds
             intake:
               handler: nonexistent_handler
       YAML
@@ -30,12 +30,12 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
   it "reports a warning for orphan handlers (registered, not in manifest)" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "working"))
+      FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
       FileUtils.mkdir_p(File.join(textus, "hooks"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: working, kind: canon }
+          - { name: knowledge, kind: canon }
         entries: []
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
