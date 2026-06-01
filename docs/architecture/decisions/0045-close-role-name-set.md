@@ -61,4 +61,8 @@ The deciding insight: **multiplicity of *principals* belongs on the `owner:` fie
 - **Version: no bump** — closing names ships as a stricter `textus/3` validation in `Schema.validate_roles!`, not a wire-version revision (see Consequences).
 - **Q1: `Role::NAMES` is hardcoded**, not operator-extensible. Closure is the point; re-opening would go through the `archetype:` alternative in a future ADR, not a longer name list.
 - **Q3: fail closed** — a manifest with an illegal role name is rejected at load with `unknown role name '<x>' (allowed: human, agent, automation)`; dedicated migration tooling is out of scope.
+
+## Implementation notes
+
+- **Owner-subject validation lives in `Manifest::Schema`, not `Role`** (#135). D1 above anticipated `Role::PATTERN` validating `owner:` subjects; in implementation the owner-validation *rule* is `Manifest::Schema.valid_owner?`, which composes the archetype set (`Role::NAMES`, still owned by `Role`) with an owner-specific subject shape (`Manifest::Schema::OWNER_SUBJECT_PATTERN`). The old `Role::PATTERN` constant — a vestige of ADR 0030's open role *names* — was relocated and renamed accordingly: `Role` keeps the role-name vocabulary, `Schema` owns the owner grammar. An owner is a bare archetype (`agent`) or `<archetype>:<subject>` (`human:patrick`); both zone and entry owners are validated at load, raising `BadManifest`.
 </content>

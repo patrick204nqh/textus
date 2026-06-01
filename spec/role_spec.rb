@@ -45,7 +45,6 @@ RSpec.describe Textus::Role do
 
   it "exposes the MCP transport default constant" do
     expect(Textus::Role::AGENT).to eq("agent")
-    expect(Textus::Role::AGENT).to match(Textus::Role::PATTERN)
   end
 
   it "builds the closed name set from the archetype constants (ADR 0045)" do

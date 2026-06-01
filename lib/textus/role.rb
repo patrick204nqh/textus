@@ -18,11 +18,6 @@ module Textus
     # does not inherit the human's authority (it defaults to AGENT per transport).
     DEFAULT = HUMAN
 
-    # Syntactic shape of an `owner:` subject token (e.g. `human:patrick`); ADR
-    # 0045 reserves PATTERN for that. Acting-role names are gated against the
-    # closed NAMES set in .resolve, not by this regex.
-    PATTERN = /\A[a-z][a-z0-9_-]*\z/
-
     def self.resolve(root:, flag: nil, env: ENV, default: DEFAULT)
       candidate = flag || env["TEXTUS_ROLE"] || read_file(root) || default
       raise InvalidRole.new(candidate) unless NAMES.include?(candidate)

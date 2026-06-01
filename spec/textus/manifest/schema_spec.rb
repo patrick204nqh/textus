@@ -125,4 +125,113 @@ RSpec.describe Textus::Manifest::Schema do
       )
     end.not_to raise_error
   end
+
+  describe ".valid_owner? (#135)" do
+    it "accepts a bare archetype (the shipped `owner: agent` zone form)" do
+      expect(described_class.valid_owner?("agent")).to be(true)
+      expect(described_class.valid_owner?("human")).to be(true)
+      expect(described_class.valid_owner?("automation")).to be(true)
+    end
+
+    it "accepts <archetype>:<subject>" do
+      expect(described_class.valid_owner?("human:patrick")).to be(true)
+      expect(described_class.valid_owner?("agent:self")).to be(true)
+      expect(described_class.valid_owner?("automation:ci")).to be(true)
+    end
+
+    it "rejects an archetype outside the closed set" do
+      expect(described_class.valid_owner?("compiler:whoever")).to be(false)
+      expect(described_class.valid_owner?("garbage")).to be(false)
+    end
+
+    it "rejects an empty subject" do
+      expect(described_class.valid_owner?("human:")).to be(false)
+    end
+
+    it "rejects a subject containing a colon (PATTERN excludes ':')" do
+      expect(described_class.valid_owner?("human:a:b")).to be(false)
+    end
+
+    it "rejects non-strings and the empty string" do
+      expect(described_class.valid_owner?(nil)).to be(false)
+      expect(described_class.valid_owner?("")).to be(false)
+      expect(described_class.valid_owner?(42)).to be(false)
+    end
+  end
+
+  describe "owner-subject validation (#135)" do
+    it "accepts a bare archetype owner on a zone (shipped `owner: agent`)" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          # roles: present only so the workspace zone clears validate_zone_kind_consistency! (needs `keep`); unrelated to owner validation
+          "roles" => [{ "name" => "agent", "can" => ["keep"] }],
+          "zones" => [{ "name" => "notebook", "kind" => "workspace", "owner" => "agent" }],
+          "entries" => [],
+        )
+      end.not_to raise_error
+    end
+
+    it "accepts <archetype>:<subject> on a zone and an entry" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "knowledge", "kind" => "canon", "owner" => "human:self" }],
+          "entries" => [{ "key" => "knowledge.identity", "path" => "knowledge/identity.md",
+                          "zone" => "knowledge", "kind" => "leaf", "owner" => "human:self" }],
+        )
+      end.not_to raise_error
+    end
+
+    it "accepts a zone with no owner declared" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
+          "entries" => [],
+        )
+      end.not_to raise_error
+    end
+
+    it "rejects an archetype outside the closed set, with a path-prefixed message" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => "compiler:whoever" }],
+          "entries" => [],
+        )
+      end.to raise_error(Textus::BadManifest, /invalid owner 'compiler:whoever' at '\$\.zones\[0\]'/)
+    end
+
+    it "rejects a garbage bare token" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => "garbage" }],
+          "entries" => [],
+        )
+      end.to raise_error(Textus::BadManifest, /invalid owner 'garbage'/)
+    end
+
+    it "rejects an empty subject on an entry, with the entry path" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "z", "kind" => "canon" }],
+          "entries" => [{ "key" => "z.x", "path" => "z/x.md", "zone" => "z",
+                          "kind" => "leaf", "owner" => "human:" }],
+        )
+      end.to raise_error(Textus::BadManifest, /invalid owner 'human:' at '\$\.entries\[0\]'/)
+    end
+
+    it "rejects a non-string owner value" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
+          "entries" => [],
+        )
+      end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.zones\[0\]'/)
+    end
+  end
 end

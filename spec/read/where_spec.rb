@@ -13,7 +13,7 @@ RSpec.describe Textus::Read::Where do
         zones:
           - { name: working, kind: canon }
         entries:
-          - { key: working.doc, path: working/doc.md, zone: working, owner: alice, kind: leaf}
+          - { key: working.doc, path: working/doc.md, zone: working, owner: human:alice, kind: leaf}
 
       YAML
     )
@@ -27,7 +27,7 @@ RSpec.describe Textus::Read::Where do
       "protocol" => be_a(String),
       "key" => "working.doc",
       "zone" => "working",
-      "owner" => "alice",
+      "owner" => "human:alice",
       "path" => end_with("working/doc.md"),
     )
   end
