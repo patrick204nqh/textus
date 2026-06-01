@@ -20,6 +20,18 @@ RSpec.describe Textus::Hooks::EventBus do
       .to raise_error(Textus::UsageError, /resolve_intake is an RPC event/)
   end
 
+  it "aliases EVENTS to the Catalog pubsub table (same object, no copy)" do
+    expect(Textus::Hooks::EventBus::EVENTS).to equal(Textus::Hooks::Catalog::PUBSUB)
+  end
+
+  it "rejects every RPC event in the Catalog (derived, not hard-coded)" do
+    bus = Textus::Hooks::EventBus.new
+    expect(Textus::Hooks::Catalog::RPC).not_to be_empty
+    Textus::Hooks::Catalog::RPC.each_key do |ev|
+      expect { bus.on(ev, :_) { |**kwargs| kwargs } }.to raise_error(Textus::UsageError, /is an RPC event/)
+    end
+  end
+
   it "filters by key glob" do
     fired = []
     bus.on(:entry_put, :only_a, keys: "a.*") { |key:, **| fired << key }

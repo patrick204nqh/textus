@@ -7,22 +7,8 @@ module Textus
 
       class HookTimeout < StandardError; end
 
-      EVENTS = {
-        entry_put: %i[ctx key envelope],
-        entry_deleted: %i[ctx key],
-        entry_fetched: %i[ctx key envelope change],
-        entry_renamed: %i[ctx key from_key to_key envelope],
-        build_completed: %i[ctx key envelope sources],
-        proposal_accepted: %i[ctx key target_key],
-        proposal_rejected: %i[ctx key target_key],
-        file_published: %i[ctx key envelope source target],
-        store_loaded: %i[ctx],
-        fetch_started: %i[ctx key mode],
-        fetch_failed: %i[ctx key error_class error_message],
-        fetch_backgrounded: %i[ctx key started_at budget_ms],
-      }.freeze
-
-      RPC_EVENTS = %i[resolve_intake transform_rows validate].freeze
+      # Pubsub event table — aliased from the single source (Hooks::Catalog).
+      EVENTS = Catalog::PUBSUB
 
       def initialize(error_log: ErrorLog.new)
         @pubsub = Hash.new { |h, k| h[k] = [] }
@@ -36,7 +22,7 @@ module Textus
 
       def register(event, name, keys: nil, &blk)
         event_sym = event.to_sym
-        raise UsageError.new("#{event_sym} is an RPC event; register on RpcRegistry") if RPC_EVENTS.include?(event_sym)
+        raise UsageError.new("#{event_sym} is an RPC event; register on RpcRegistry") if Catalog::RPC.key?(event_sym)
 
         required = EVENTS[event_sym] or raise UsageError.new("unknown event: #{event}")
         sig = Signature.new(blk)
