@@ -12,7 +12,7 @@ module Textus
         # Pubsub registration — delegates to EventBus.
         # Also handles RPC event names by delegating to RpcRegistry.
         def on(event, name, keys: nil, &)
-          if Hooks::RpcRegistry::EVENTS.key?(event.to_sym)
+          if Hooks::Catalog::RPC.key?(event.to_sym)
             @rpc.register(event, name, &)
           else
             @events.register(event, name, keys: keys, &)

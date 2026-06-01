@@ -7,9 +7,6 @@ module Textus
 
       class HookTimeout < StandardError; end
 
-      # Pubsub event table — aliased from the single source (Hooks::Catalog).
-      EVENTS = Catalog::PUBSUB
-
       def initialize(error_log: ErrorLog.new)
         @pubsub = Hash.new { |h, k| h[k] = [] }
         @error_handlers = []
@@ -24,7 +21,7 @@ module Textus
         event_sym = event.to_sym
         raise UsageError.new("#{event_sym} is an RPC event; register on RpcRegistry") if Catalog::RPC.key?(event_sym)
 
-        required = EVENTS[event_sym] or raise UsageError.new("unknown event: #{event}")
+        required = Catalog::PUBSUB[event_sym] or raise UsageError.new("unknown event: #{event}")
         sig = Signature.new(blk)
         missing = sig.missing(required)
         if missing.any?

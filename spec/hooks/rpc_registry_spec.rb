@@ -25,10 +25,6 @@ RSpec.describe Textus::Hooks::RpcRegistry do
       .to raise_error(Textus::UsageError, /entry_put is a pubsub event/)
   end
 
-  it "aliases EVENTS to the Catalog rpc table (same object, no copy)" do
-    expect(Textus::Hooks::RpcRegistry::EVENTS).to equal(Textus::Hooks::Catalog::RPC)
-  end
-
   it "rejects every pubsub event in the Catalog (derived, not hard-coded)" do
     rpc = Textus::Hooks::RpcRegistry.new
     expect(Textus::Hooks::Catalog::PUBSUB).not_to be_empty

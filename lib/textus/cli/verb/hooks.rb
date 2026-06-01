@@ -16,12 +16,12 @@ module Textus
           end
 
           rows = []
-          Textus::Hooks::RpcRegistry::EVENTS.each_key do |event|
+          Textus::Hooks::Catalog::RPC.each_key do |event|
             store.rpc.names(event).each do |name|
               rows << { "event" => event.to_s, "mode" => "rpc", "name" => name.to_s }
             end
           end
-          Textus::Hooks::EventBus::EVENTS.each_key do |event|
+          Textus::Hooks::Catalog::PUBSUB.each_key do |event|
             store.events.pubsub_handlers(event).each do |h|
               row = { "event" => event.to_s, "mode" => "pubsub", "name" => h[:name].to_s }
               row["keys"] = Array(h[:keys]) if h[:keys]

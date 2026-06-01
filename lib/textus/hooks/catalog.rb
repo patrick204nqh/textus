@@ -3,12 +3,11 @@
 module Textus
   module Hooks
     # The single source of truth for hook event names and their required
-    # kwargs. `EventBus::EVENTS` and `RpcRegistry::EVENTS` alias these tables,
-    # and the cross-guards (EventBus rejects RPC events, RpcRegistry rejects
-    # pubsub events) and the Loader DSL router all derive from them. Catalog
-    # references no other constant, so it has no load-order cycle — which is
-    # what lets both registries share one table instead of each keeping its
-    # own copy (the drift hazard that motivated this module).
+    # kwargs. EventBus, RpcRegistry, and the Loader DSL router all read these
+    # tables directly — the registries do not keep their own copies. Catalog
+    # references no other constant, so it has no load-order cycle, which is
+    # what removed the previous drift hazard (EventBus held a hard-coded
+    # `RPC_EVENTS` list that could fall out of sync with RpcRegistry's table).
     module Catalog
       # Pub-sub events: 0..N handlers, fire-and-forget, receive `ctx:`.
       PUBSUB = {

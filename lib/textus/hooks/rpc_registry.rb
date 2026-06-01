@@ -3,9 +3,6 @@
 module Textus
   module Hooks
     class RpcRegistry
-      # RPC event table — aliased from the single source (Hooks::Catalog).
-      EVENTS = Catalog::RPC
-
       def initialize
         @table = Hash.new { |h, k| h[k] = {} }
       end
@@ -14,7 +11,7 @@ module Textus
         event_sym = event.to_sym
         raise UsageError.new("#{event_sym} is a pubsub event; register on EventBus") if Catalog::PUBSUB.key?(event_sym)
 
-        required = EVENTS[event_sym] or raise UsageError.new("unknown RPC event: #{event}")
+        required = Catalog::RPC[event_sym] or raise UsageError.new("unknown RPC event: #{event}")
         sig = Signature.new(blk)
         missing = sig.missing(required)
         raise UsageError.new("#{event_sym} RPC must accept kwargs: #{required.join(", ")} (missing: #{missing.join(", ")})") if missing.any?
