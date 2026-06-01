@@ -34,6 +34,13 @@ module Textus
         (proposers - roles_with_capability("author")).first || proposers.first
       end
 
+      # The role textus acts AS for a system-initiated operation requiring
+      # `verb` (no human passed --as). Capability-derived — a role name that
+      # exists in the manifest, or nil. Never a hardcoded literal (ADR 0044).
+      def actor_for(verb)
+        roles_with_capability(verb).first
+      end
+
       # The roles authorized to write `zone_name`: those holding the verb its
       # kind requires. Raises on an undeclared zone.
       def zone_writers(zone_name)
