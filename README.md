@@ -27,20 +27,33 @@ Three actors write to your repo today:
 
 ```mermaid
 flowchart LR
-    human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
-    agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
+    subgraph writers["writers — who can write"]
+        direction TB
+        human(["human"])
+        agent(["agent"])
+        automation(["automation"])
+    end
+
+    human -->|author| knowledge["knowledge<br/>(canon)"]
+    agent -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
-    proposals ==>|human accept| knowledge
-    automation(["automation"]) -->|fetch| feeds["feeds<br/>(quarantine)"]
+    automation -->|fetch| feeds["feeds<br/>(quarantine)"]
     automation -->|build| artifacts["artifacts<br/>(derived)"]
+
+    proposals ==>|human accept| knowledge
     feeds -.->|projection source| artifacts
     knowledge -.->|projection source| artifacts
 
-    classDef anchor fill:#1f6feb,stroke:#1f6feb,color:#fff;
+    classDef actor fill:#238636,stroke:#2ea043,color:#fff;
+    classDef gate fill:#9e6a03,stroke:#bb8009,color:#fff;
+    classDef anchor fill:#1f6feb,stroke:#388bfd,color:#fff;
+    class human,agent,automation actor;
+    class proposals gate;
     class knowledge anchor;
 ```
 
 *Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
+*Colour legend: **green** = writers · **amber** = the review gate (`proposals`) · **blue** = the trust anchor (`knowledge`).*
 
 The point of those lanes is to **build context you can trust**. Place each lane on two axes — how durable it is, and how much you can rely on it without review — and the value shows up as a climb: the high-trust corner (durable *and* authoritative = `knowledge`) is the one place nothing is *written* directly. It's *earned* by crossing the `accept` gate.
 
