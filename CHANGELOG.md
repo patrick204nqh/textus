@@ -11,6 +11,35 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+## 0.39.1 — 2026-06-01 — Feed ergonomics: `feeds.machine` env snapshot + intake cookbook ([ADR 0043](docs/architecture/decisions/0043-feed-ergonomics-without-breaking-core-purity.md))
+
+No `textus/3` wire-format change. `textus init` scaffolds an additional
+`nested` feed entry; core intake still makes no implicit network calls
+(SPEC §5.4).
+
+### Added
+
+- **`textus init` scaffolds `feeds.machines.*` with a local env snapshot
+  (ADR 0043).** Generated stores get a `nested` feed entry capturing ambient
+  machine context (git HEAD/branch/dirty state, `now`, versions) as an explicit,
+  user-owned snapshot — keeping ambient state out of `boot`/`pulse` (which stay
+  side-effect-free per ADR 0037) and out of `quarantine` (which means external
+  bytes pending validation, where the freshness model does not apply).
+
+### Documentation
+
+- **Multi-machine environment-scan cookbook recipe** demonstrating the nested
+  `feeds.machines.*` pattern.
+- **Examples** updated to use the `feeds.machine` env snapshot, matching
+  `textus init` output.
+- **README flow diagram** redesigned to group writers and colour-code roles.
+- **How-to fixes** for zone-rename drift in the agents-mcp guide and the
+  `:publish` event name.
+
+### Internal
+
+- Removed the legacy `ARCHITECTURE.md` redirect stub.
+
 ## 0.39.0 — 2026-06-01 — Native ignore patterns for entry enumeration ([ADR 0042](docs/architecture/decisions/0042-native-ignore-patterns-for-entry-enumeration.md))
 
 No `textus/3` wire-format change. Manifest schema gains one optional, backward-compatible key (`ignore:`); existing manifests are unaffected.
