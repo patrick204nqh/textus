@@ -230,7 +230,7 @@ The agent loop (cadence guide in [`agents-mcp.md`](../how-to/agents-mcp.md)):
 
 Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
 
-## Hooks::EventBus event catalog
+## Hooks event catalog
 
 `Hooks::Signature` is the single home of callable keyword-introspection — both `EventBus` (pub-sub dispatch) and `RpcRegistry` (RPC dispatch) delegate to it for `accepts_keyrest?`, `declared_keys`, `missing`, and `filter` rather than each maintaining a hand-rolled copy (ADR 0027).
 
@@ -253,4 +253,4 @@ Pub-sub (0..N handlers, declare `ctx:`):
 - `fetch_failed(ctx:, key:, error_class:, error_message:)`
 - `fetch_backgrounded(ctx:, key:, started_at:, budget_ms:)`
 
-Authoritative source: `lib/textus/hooks/event_bus.rb` `EVENTS`.
+Authoritative source: `lib/textus/hooks/catalog.rb` (`Catalog::RPC` and `Catalog::PUBSUB`).
