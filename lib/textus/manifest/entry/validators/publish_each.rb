@@ -27,10 +27,10 @@ module Textus
               )
             end
 
-            validate_discriminator(entry, used_vars)
+            validate_discriminator(entry, used_vars, publish_each)
           end
 
-          def self.validate_discriminator(entry, used_vars)
+          def self.validate_discriminator(entry, used_vars, publish_each)
             if entry.index_filename
               forbidden = used_vars & %w[basename ext]
               unless forbidden.empty?
@@ -38,6 +38,14 @@ module Textus
                   "entry '#{entry.key}': publish_each names a directory " \
                   "(index_filename: '#{entry.index_filename}'); {basename}/{ext} are file-only — " \
                   "use {leaf} or {key}.",
+                )
+              end
+              last_segment = publish_each.sub(%r{/\z}, "").split("/").last
+              if last_segment == entry.index_filename
+                raise UsageError.new(
+                  "entry '#{entry.key}': directory-leaf publish_each must name the target DIRECTORY, " \
+                  "not the index file — drop the trailing '/#{entry.index_filename}' " \
+                  "(the whole leaf subtree is copied into the named directory).",
                 )
               end
               return if used_vars.intersect?(%w[leaf key])

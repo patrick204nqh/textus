@@ -78,5 +78,11 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
         described_class.call(entry_with(publish_each: "skills/{leaf}", index_filename: "SKILL.md"))
       end.not_to raise_error
     end
+
+    it "rejects a template that names the index file (the copy-into-SKILL.md footgun)" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}/SKILL.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /must name the target DIRECTORY, not the index file/)
+    end
   end
 end

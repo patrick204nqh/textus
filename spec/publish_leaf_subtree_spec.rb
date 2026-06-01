@@ -117,5 +117,20 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
 
       expect(File.exist?(human_file)).to be true
     end
+
+    it "prunes only within the rebuilt leaf, leaving sibling leaves untouched" do
+      write_file("skills/other-skill/SKILL.md", "---\nname: other-skill\n---\nx\n")
+      write_file("skills/other-skill/refs/keep.md", "keep\n")
+      repo_root = File.dirname(root)
+      store = Textus::Store.new(root)
+      store.as("automation").publish
+      expect(File.exist?(File.join(repo_root, "skills/other-skill/refs/keep.md"))).to be true
+
+      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      store.as("automation").publish
+
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
+      expect(File.exist?(File.join(repo_root, "skills/other-skill/refs/keep.md"))).to be true
+    end
   end
 end
