@@ -1,7 +1,7 @@
 # Writing hooks
 
 > **How-to** · for hook authors · **read when** you want to define, wire, and test Ruby hooks
-> **SSoT for** the hook-authoring procedure (definition surface, fan-out, testing, common patterns) · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the hook-authoring procedure (definition surface, fan-out, testing, common patterns) · **reviewed** 2026-06 (v0.39)
 
 How to extend textus with Ruby hooks: the definition surface, the `ctx:` handle, fan-out with `keys:` globs, testing, and common patterns.
 
@@ -45,7 +45,7 @@ Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the r
 
 All writes via `ctx` route through the use-case dispatch (`store.as(role)` → `RoleScope` → `Dispatcher`) so authorization, schema validation, and audit logging always fire — there are no bypass paths.
 
-RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). Legacy `store:` is rejected by the registry.
+RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). A block that declares legacy `store:` but not `caps:` is rejected at registration time: the required `caps:` kwarg comes back missing from the signature check.
 
 If you don't need `ctx:`, absorb it with `**`:
 
@@ -78,43 +78,48 @@ One `:entry_put` fans out to **every matching handler**, sequentially, each unde
 
 ## Testing hooks
 
-Hooks register against a per-store `Hooks::Registry`. In tests, instantiate a registry and call `reg.on` directly — no thread-local, no global state:
+Hooks register against two per-store objects: a `Hooks::EventBus` (pub-sub) and a `Hooks::RpcRegistry` (RPC). In tests, instantiate whichever you need and register directly — no thread-local, no global state.
+
+For an RPC hook, register on an `RpcRegistry` and call `invoke` (which injects `caps:` only if the block declares it):
 
 ```ruby
 RSpec.describe "my notion hook" do
-  let(:reg) { Textus::Hooks::Registry.new }
+  let(:rpc) { Textus::Hooks::RpcRegistry.new }
 
   it "registers under :notion" do
-    reg.on(:resolve_intake, :notion) { |caps:, config:, args:| { _meta: {}, body: "stub" } }
-    expect(reg.rpc_names(:resolve_intake)).to include(:notion)
+    rpc.register(:resolve_intake, :notion) { |args:, **| { _meta: {}, body: "stub" } }
+    expect(rpc.names(:resolve_intake)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    reg.on(:resolve_intake, :notion) do |caps:, config:, args:|
+    rpc.register(:resolve_intake, :notion) do |args:, **|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
-    handler = reg.rpc_callable(:resolve_intake, :notion)
-    result  = handler.call(caps: nil, config: {}, args: {})
+    result = rpc.invoke(:resolve_intake, :notion, caps: nil, config: {}, args: {})
     expect(result[:body]).to eq("hello")
   end
 end
 ```
 
-For pub-sub handlers, drive the dispatcher directly:
+For a pub-sub hook, register on an `EventBus` and `publish`:
 
 ```ruby
-captured = []
-reg.on(:entry_put, :listener, keys: ["working.*"]) { |ctx:, key:, envelope:, **| captured << key }
+let(:bus) { Textus::Hooks::EventBus.new }
 
-reg.listeners(:entry_put, key: "working.x").first[:callable].call(
-  ctx: nil, key: "working.x", envelope: {}
-)
-expect(captured).to eq(["working.x"])
+it "fires only on a matching key" do
+  fired = []
+  bus.on(:entry_put, :listener, keys: ["working.*"]) { |key:, **| fired << key }
+
+  bus.publish(:entry_put, ctx: nil, key: "working.x", envelope: {})
+  bus.publish(:entry_put, ctx: nil, key: "other.y",   envelope: {})
+
+  expect(fired).to eq(["working.x"])
+end
 ```
 
-To exercise the loader end-to-end (drains `Textus.hook` blocks against your registry), point `Hooks::Loader.new(registry: reg).load_dir(path)` at a fixture directory whose files declare `Textus.hook { |reg| reg.on(...) { ... } }`.
+`publish` returns a `FireReport` listing the `fired` / `errored` / `timed_out` handler names. To exercise the loader end-to-end (drains `Textus.hook` blocks against your bus + rpc), point `Hooks::Loader.new(events: bus, rpc: rpc).load_dir(path)` at a fixture directory whose files declare `Textus.hook { |reg| reg.on(...) { ... } }`.
 
-See `spec/hooks/registry_spec.rb` for the canonical patterns.
+See `spec/hooks/event_bus_spec.rb` and `spec/hooks/rpc_registry_spec.rb` for the canonical patterns.
 
 ---
 
@@ -197,5 +202,5 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 - [`../reference/events.md`](../reference/events.md) — the event catalog, lifecycle timelines, and `ctx:` fields
 - [`./configuring-zones.md`](configuring-zones.md) — the manifest side: declaring which entries trigger which hooks
 - [`../../SPEC.md` §5.4, §5.10](../../SPEC.md#510-hooks) — the normative `:resolve_intake` and event contracts
-- [`../architecture/README.md`](../architecture/README.md) — how `Hooks::Registry` and `Hooks::Dispatcher` are implemented
+- [`../architecture/README.md`](../architecture/README.md) — how `Hooks::EventBus` and `Hooks::RpcRegistry` are implemented
 - [`../../examples/project/.textus/hooks/`](../../examples/project/.textus/hooks/) — a worked `:transform_rows` hook that reshapes projection rows for a template

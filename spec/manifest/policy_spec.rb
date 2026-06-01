@@ -96,6 +96,57 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
+  describe "#actor_for" do
+    it "returns the sole role holding the verb" do
+      expect(policy.actor_for("build")).to eq("automation")
+      expect(policy.actor_for("fetch")).to eq("automation")
+      expect(policy.actor_for("author")).to eq("human")
+    end
+
+    it "returns the first holder when several roles hold the verb" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: alpha, can: [build] }
+          - { name: bravo, can: [build] }
+        zones:
+          - { name: out, kind: derived }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.actor_for("build")).to eq("alpha")
+    end
+
+    it "is rename-safe: resolves a custom-named holder, not a literal" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: importer, can: [fetch] }
+          - { name: compiler, can: [build] }
+        zones:
+          - { name: feeds,  kind: quarantine }
+          - { name: output, kind: derived }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.actor_for("fetch")).to eq("importer")
+      expect(p2.actor_for("build")).to eq("compiler")
+    end
+
+    it "returns nil when no role holds the verb" do
+      raw2 = YAML.safe_load(<<~YAML, aliases: false)
+        version: textus/3
+        roles:
+          - { name: human, can: [author, propose] }
+        zones:
+          - { name: working, kind: canon }
+        entries: []
+      YAML
+      p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
+      expect(p2.actor_for("build")).to be_nil
+    end
+  end
+
   describe "#propose_zone_for" do
     context "when the role writes the declared kind: queue zone" do
       let(:yaml) do

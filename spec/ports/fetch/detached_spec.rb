@@ -1,0 +1,35 @@
+require "spec_helper"
+
+RSpec.describe Textus::Ports::Fetch::Detached do
+  include_context "textus_store_fixture"
+
+  describe ".acting_role" do
+    it "resolves the fetch-holder by capability, even when renamed away from 'automation'" do
+      FileUtils.mkdir_p(File.join(root, "zones/feeds"))
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        roles:
+          - { name: importer, can: [fetch] }
+        zones:
+          - { name: feeds, kind: quarantine }
+        entries: []
+      YAML
+      store = Textus::Store.new(root)
+      expect(described_class.acting_role(store)).to eq("importer")
+    end
+
+    it "returns nil when no role holds fetch" do
+      FileUtils.mkdir_p(File.join(root, "zones/working"))
+      File.write(File.join(root, "manifest.yaml"), <<~YAML)
+        version: textus/3
+        roles:
+          - { name: human, can: [author, propose] }
+        zones:
+          - { name: working, kind: canon }
+        entries: []
+      YAML
+      store = Textus::Store.new(root)
+      expect(described_class.acting_role(store)).to be_nil
+    end
+  end
+end
