@@ -48,6 +48,14 @@ module Textus
                   "(the whole leaf subtree is copied into the named directory).",
                 )
               end
+              ext = File.extname(last_segment)
+              unless ext.empty?
+                raise UsageError.new(
+                  "entry '#{entry.key}': directory-leaf publish_each names a DIRECTORY target, but its " \
+                  "final segment '#{last_segment}' looks like a file (extension '#{ext}') — " \
+                  "drop the extension (the whole leaf subtree is copied into the named directory).",
+                )
+              end
               return if used_vars.intersect?(%w[leaf key])
 
               raise UsageError.new(

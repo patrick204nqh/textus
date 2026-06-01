@@ -84,5 +84,17 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishEach do
         described_class.call(entry_with(publish_each: "skills/{leaf}/SKILL.md", index_filename: "SKILL.md"))
       end.to raise_error(Textus::UsageError, /must name the target DIRECTORY, not the index file/)
     end
+
+    it "rejects a file-looking final segment with {leaf} (the copy-into-skill.md footgun)" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /final segment '\{leaf\}\.md' looks like a file/)
+    end
+
+    it "rejects a literal file segment nested under {leaf}" do
+      expect do
+        described_class.call(entry_with(publish_each: "skills/{leaf}/foo.md", index_filename: "SKILL.md"))
+      end.to raise_error(Textus::UsageError, /looks like a file.*extension '\.md'/m)
+    end
   end
 end
