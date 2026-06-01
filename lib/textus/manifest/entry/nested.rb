@@ -41,7 +41,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
-          pruned = []
+          pruned = [] # populated by the prune step (later task); empty here
           pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
@@ -71,6 +71,7 @@ module Textus
         def publish_subtree(row, target_dir, pctx)
           base = File.join(pctx.root, "zones", path)
           leaf_dir = File.dirname(row[:path])
+          # FNM_DOTMATCH includes dotfiles; File.file? below skips dirs (and symlinks-to-dirs). Leaf trees are authored content, not arbitrary symlink graphs.
           Dir.glob(File.join(leaf_dir, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
             next nil unless File.file?(src)
 
@@ -86,6 +87,7 @@ module Textus
           end
         end
 
+        # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
         private :publish_one, :publish_subtree
 
         KIND = :nested
