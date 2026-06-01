@@ -22,12 +22,25 @@ module Textus
         - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A snapshot of this host, pulled by `textus fetch feeds.machine --as=automation`.
-        # tracked:false → gitignored (machine info can be sensitive/noisy) but still
-        # protocol-readable via `textus get feeds.machine`. Delete to opt out. (ADR 0043)
-        - { key: feeds.machine,      path: feeds/machine.yaml,    zone: feeds,     format: yaml, tracked: false, kind: intake, intake: { handler: machine } }
+        # A per-host snapshot, pulled by `textus fetch feeds.machines.local --as=automation`.
+        # Nested so it grows to a fleet — add feeds.machines.<host> leaves over SSH
+        # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
+        # gitignored (machine info can be sensitive/noisy) but still protocol-readable
+        # via `textus get feeds.machines.local`. Delete to opt out. (ADR 0043)
+        - key: feeds.machines
+          path: feeds/machines
+          zone: feeds
+          format: yaml
+          nested: true
+          tracked: false
+          kind: intake
+          intake:
+            handler: machines
+            config:
+              machines:
+                local: { via: local }
       rules:
-        - match: feeds.machine
+        - match: feeds.machines.**
           fetch: { ttl: 1h, on_stale: warn } # meaningful on a long-running server
     YAML
 
@@ -117,7 +130,11 @@ module Textus
       manifest = Textus::Manifest.load(target_root)
       root = Pathname.new(target_root)
       untracked = manifest.data.entries.reject(&:tracked?).map do |e|
-        Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
+        if e.nested? # a whole subtree of leaf files (feeds.machines.* → zones/feeds/machines/)
+          "#{File.join("zones", e.path)}/"
+        else
+          Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
+        end
       end
       Textus::Layout.gitignore_body(untracked_paths: untracked)
     end

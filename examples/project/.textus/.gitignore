@@ -1,4 +1,4 @@
 # textus runtime artifacts — safe to delete, never commit
 .run/
 # tracked:false entries — protocol-readable, not committed (sensitive)
-zones/feeds/machine.yaml
+zones/feeds/machines/
