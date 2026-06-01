@@ -3,13 +3,8 @@
 module Textus
   module Hooks
     class RpcRegistry
-      EVENTS = {
-        resolve_intake: %i[caps config args],
-        transform_rows: %i[caps rows config],
-        validate: %i[caps],
-      }.freeze
-
-      PUBSUB_EVENTS = EventBus::EVENTS.keys.freeze
+      # RPC event table — aliased from the single source (Hooks::Catalog).
+      EVENTS = Catalog::RPC
 
       def initialize
         @table = Hash.new { |h, k| h[k] = {} }
@@ -17,7 +12,7 @@ module Textus
 
       def register(event, name, &blk)
         event_sym = event.to_sym
-        raise UsageError.new("#{event_sym} is a pubsub event; register on EventBus") if PUBSUB_EVENTS.include?(event_sym)
+        raise UsageError.new("#{event_sym} is a pubsub event; register on EventBus") if Catalog::PUBSUB.key?(event_sym)
 
         required = EVENTS[event_sym] or raise UsageError.new("unknown RPC event: #{event}")
         sig = Signature.new(blk)
@@ -38,7 +33,7 @@ module Textus
 
       # Invoke a registered callable, injecting `caps:` only if the callable
       # declares it (or accepts keyrest). Mis-named kwargs (e.g. the legacy
-      # `caps:`-alternative) are rejected at registration time, not here.
+      # `store:`) are rejected at registration time, not here.
       def invoke(event, name, caps:, **other)
         blk = callable(event, name)
         sig = Signature.new(blk)

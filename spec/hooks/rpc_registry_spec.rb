@@ -25,6 +25,18 @@ RSpec.describe Textus::Hooks::RpcRegistry do
       .to raise_error(Textus::UsageError, /entry_put is a pubsub event/)
   end
 
+  it "aliases EVENTS to the Catalog rpc table (same object, no copy)" do
+    expect(Textus::Hooks::RpcRegistry::EVENTS).to equal(Textus::Hooks::Catalog::RPC)
+  end
+
+  it "rejects every pubsub event in the Catalog (derived, not hard-coded)" do
+    rpc = Textus::Hooks::RpcRegistry.new
+    expect(Textus::Hooks::Catalog::PUBSUB).not_to be_empty
+    Textus::Hooks::Catalog::PUBSUB.each_key do |ev|
+      expect { rpc.register(ev, :_) { |**kwargs| kwargs } }.to raise_error(Textus::UsageError, /is a pubsub event/)
+    end
+  end
+
   it "injects caps under the kwarg name the callable declares" do
     received = nil
     rpc.register(:transform_rows, :pluck) do |caps:, rows:, **|
