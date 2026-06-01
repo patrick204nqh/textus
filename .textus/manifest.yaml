@@ -1,0 +1,36 @@
+version: textus/3
+# textus's own store — used while developing textus itself (ADR 0041).
+# Write authority is derived from capabilities (ADR 0030): canon→author,
+# workspace→keep, queue→propose, derived→build. The human authors canon and
+# accepts proposals; the agent keeps durable notes and proposes; automation
+# builds the projected orientation.
+roles:
+  - { name: human,      can: [author, propose] }
+  - { name: agent,      can: [propose, keep] }
+  - { name: automation, can: [fetch, build] }
+zones:
+  - { name: knowledge, kind: canon,      desc: "the maintained source of truth about the repo (project + runbooks)" }
+  - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes across sessions" }
+  - { name: feeds,     kind: quarantine, desc: "external inputs pulled in" }
+  - { name: proposals, kind: queue,      desc: "changes awaiting a human accept" }
+  - { name: artifacts, kind: derived,    desc: "computed outputs (CLAUDE.md, AGENTS.md)" }
+entries:
+  - { key: knowledge.project,  path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
+  - { key: knowledge.runbooks, path: knowledge/runbooks,   zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+  - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
+  - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
+  - key: artifacts.orientation
+    path: artifacts/orientation.md
+    zone: artifacts
+    template: orientation.mustache
+    inject_boot: true
+    publish_to:
+      - CLAUDE.md
+      - AGENTS.md
+    compute:
+      kind: projection
+      select:
+        - knowledge.project
+        - knowledge.runbooks
+      transform: orientation_reducer
+    kind: derived

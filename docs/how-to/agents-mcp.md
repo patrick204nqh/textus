@@ -214,3 +214,4 @@ For the conceptual framing of the two channels (boot vs pulse — what each is a
 - [`../reference/mcp.md`](../reference/mcp.md) — MCP tool catalog, error codes, transports, plugin wiring
 - [ADR 0015](../architecture/decisions/0015-agent-gate-mcp.md) — the agent-gate decision and roadmap
 - [`../../examples/project/`](../../examples/project/) — worked store: role gate, build/publish, schemas, hook
+- [`../../.mcp.json`](../../.mcp.json) + [`../../.textus/`](../../.textus/) — textus's own self-development wiring: the same setup, but `bundle exec exe/textus` drives the working tree instead of the released gem ([ADR 0041](../architecture/decisions/0041-dogfood-textus-in-its-own-repo.md))
