@@ -15,7 +15,6 @@ the content reads like a real codebase. Replace it with your own.
 project/
   CLAUDE.md                          # ← generated, read by Claude Code on session start
   AGENTS.md                          # ← generated, read by Cursor / other agents
-  incidents.json                     # an external export the ops team drops in (intake source)
   .textus/
     manifest.yaml                    # 4 zones, 5 entries
     schemas/
@@ -26,14 +25,14 @@ project/
       orientation.mustache           # renders CLAUDE.md/AGENTS.md
     hooks/
       orientation_reducer.rb         # reshapes projection rows for the template
-      incidents.rb                   # :resolve_intake — reads incidents.json, delegates parse to :json
+      machine_intake.rb              # :resolve_intake — host snapshot (scaffolded by `textus init`)
     zones/
       knowledge/
         project.md                   # slow-changing project facts (humans only)
         runbooks/
           deploy.md                  # how to ship a release
           oncall.md                  # first response when the service pages
-      feeds/                         # incidents.yaml lands here on fetch — tracked:false, gitignored
+      feeds/                         # machine.yaml lands here on fetch — tracked:false, gitignored
       proposals/decisions/
         0001-switch-to-sidekiq-pro.md  # pre-staged ADR proposal (agent → human)
       artifacts/orientation.md       # ← published to CLAUDE.md and AGENTS.md
@@ -62,11 +61,11 @@ bundle exec ../../exe/textus doctor
 bundle exec ../../exe/textus get proposals.decisions.0001-switch-to-sidekiq-pro
 # bundle exec ../../exe/textus accept proposals.decisions.0001-switch-to-sidekiq-pro --as=human
 
-# Pull the incident export into feeds.incidents. The hook reads incidents.json
-# (you own the I/O) and delegates the parse to the built-in :json handler.
-bundle exec ../../exe/textus fetch feeds.incidents --as=automation
-bundle exec ../../exe/textus get feeds.incidents          # retrievable via the protocol…
-git check-ignore .textus/zones/feeds/incidents.yaml       # …yet gitignored (tracked:false)
+# Pull a snapshot of this host into feeds.machine (the same entry + hook
+# `textus init` scaffolds). machine_intake.rb gathers git/ruby/os facts.
+bundle exec ../../exe/textus fetch feeds.machine --as=automation
+bundle exec ../../exe/textus get feeds.machine            # retrievable via the protocol…
+git check-ignore .textus/zones/feeds/machine.yaml         # …yet gitignored (tracked:false)
 ```
 
 ## Adoption recipe for your project
@@ -94,7 +93,7 @@ git commit -m "Adopt textus context store"
 | Use case | Zone | Writers | Example here |
 |---|---|---|---|
 | Project facts and operational knowledge | `knowledge` | human only | `knowledge.project` — the `ledger` service description; `knowledge.runbooks.*` |
-| External data pulled in on `fetch` | `feeds` | automation (`fetch`) | `feeds.incidents` — host's incident export; `tracked:false` so it's protocol-readable but gitignored |
+| External data pulled in on `fetch` | `feeds` | automation (`fetch`) | `feeds.machine` — host snapshot (git/ruby/os); `tracked:false` so it's protocol-readable but gitignored |
 | Agent suggests a change for human approval | `proposals` | agent → human accept | `proposals.decisions.0001-…` |
 | Build-computed projection of all of the above | `artifacts` | automation only | `artifacts.orientation` → `CLAUDE.md` + `AGENTS.md` |
 
