@@ -31,6 +31,12 @@ module Textus
         def intake?  = false
         def leaf?    = false
 
+        # Whether git should track this entry's file. Default true; an entry
+        # marked `tracked: false` in the manifest stays protocol-readable but is
+        # listed in the generated `.gitignore` (ADR 0043). Cross-cutting, so it
+        # reads from raw here rather than threading through every constructor.
+        def tracked? = @raw["tracked"] != false
+
         # Nil stubs for cross-cutting optional attrs. Subclasses override the
         # ones they own. Validators and serializers can call these directly
         # without `respond_to?` guards.
