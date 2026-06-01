@@ -36,7 +36,7 @@ module Textus
       return false unless NAMES.include?(archetype)
       return true if subject.nil?
 
-      !subject.empty? && PATTERN.match?(subject)
+      PATTERN.match?(subject)
     end
 
     def self.resolve(root:, flag: nil, env: ENV, default: DEFAULT)
