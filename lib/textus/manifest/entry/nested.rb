@@ -41,6 +41,7 @@ module Textus
           return nil if @publish_each.nil?
 
           leaves = []
+          pruned = [] # accumulates orphans removed by prune_orphans below
           pctx.manifest.resolver.enumerate(prefix: @key).each do |row|
             next unless row[:manifest_entry].equal?(self)
             next if prefix && !row[:key].start_with?(prefix) && row[:key] != prefix
@@ -53,17 +54,56 @@ module Textus
               )
             end
 
-            Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
-            pctx.emit(:file_published,
-                      key: row[:key],
-                      envelope: pctx.reader.call(row[:key]),
-                      source: row[:path],
-                      target: target_abs)
-            leaves << { "key" => row[:key], "source" => row[:path], "target" => target_abs }
+            written = @index_filename ? publish_subtree(row, target_abs, pctx) : [publish_one(row, target_abs, pctx)]
+            pruned.concat(prune_orphans(target_abs, written, pctx)) if @index_filename
+            written.each { |w| leaves << { "key" => row[:key], "source" => w["source"], "target" => w["target"] } }
           end
 
-          { kind: :leaves, value: leaves }
+          { kind: :leaves, value: leaves, pruned: pruned }
         end
+
+        def publish_one(row, target_abs, pctx)
+          Textus::Ports::Publisher.publish(source: row[:path], target: target_abs, store_root: pctx.root)
+          pctx.emit(:file_published, key: row[:key], envelope: pctx.reader.call(row[:key]),
+                                     source: row[:path], target: target_abs)
+          { "source" => row[:path], "target" => target_abs }
+        end
+
+        def publish_subtree(row, target_dir, pctx)
+          base = File.join(pctx.root, "zones", path)
+          leaf_dir = File.dirname(row[:path])
+          # FNM_DOTMATCH includes dotfiles; File.file? below skips dirs (and symlinks-to-dirs). Leaf trees are authored content, not arbitrary symlink graphs.
+          Dir.glob(File.join(leaf_dir, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
+            next nil unless File.file?(src)
+
+            rel_to_base = src.sub(%r{\A#{Regexp.escape(base)}/}, "")
+            next nil if ignored?(rel_to_base)
+
+            rel_to_leaf = src.sub(%r{\A#{Regexp.escape(leaf_dir)}/}, "")
+            dst = File.join(target_dir, rel_to_leaf)
+            Textus::Ports::Publisher.publish(source: src, target: dst, store_root: pctx.root)
+            pctx.emit(:file_published, key: row[:key], envelope: pctx.reader.call(row[:key]),
+                                       source: src, target: dst)
+            { "source" => src, "target" => dst }
+          end
+        end
+
+        # Scoped to this leaf's target_dir only. Safe across leaves because ADR 0046
+        # Decision 5 (shallowest-index-wins) keeps leaf dirs non-nesting, so {leaf}-derived
+        # target dirs never nest and targets_under can't reach another leaf's sentinels.
+        def prune_orphans(target_dir, written, pctx)
+          kept = written.map { |w| File.expand_path(w["target"]) }
+          store = Textus::Ports::SentinelStore.new
+          store.targets_under(target_dir, pctx.root).filter_map do |managed|
+            next nil if kept.include?(File.expand_path(managed))
+
+            Textus::Ports::Publisher.unpublish(target: managed, store_root: pctx.root)
+            managed
+          end
+        end
+
+        # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
+        private :publish_one, :publish_subtree, :prune_orphans
 
         KIND = :nested
 

@@ -24,6 +24,7 @@ module Textus
       Check::RuleAmbiguity,
       Check::HandlerAllowlist,
       Check::FetchLocks,
+      Check::OrphanedPublishTargets,
       Check::ProposalTargets,
     ].freeze
 

@@ -1,4 +1,5 @@
 require "spec_helper"
+require "tmpdir"
 
 RSpec.describe Textus::Ports::Publisher do
   let(:tmp) { Dir.mktmpdir }
@@ -63,5 +64,35 @@ RSpec.describe Textus::Ports::Publisher do
     File.symlink(other, dst)
     expect { Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root) }
       .to raise_error(Textus::PublishError, /clobber/)
+  end
+
+  describe ".unpublish" do
+    it "deletes a managed target and its sentinel" do
+      Dir.mktmpdir do |dir|
+        store_root = File.join(dir, ".textus")
+        FileUtils.mkdir_p(store_root)
+        src = File.join(dir, "src.md")
+        target = File.join(dir, "out.md")
+        File.write(src, "hi\n")
+        Textus::Ports::Publisher.publish(source: src, target: target, store_root: store_root)
+        expect(File.exist?(target)).to be true
+
+        Textus::Ports::Publisher.unpublish(target: target, store_root: store_root)
+        expect(File.exist?(target)).to be false
+        expect(File.exist?(Textus::Ports::SentinelStore.new.sentinel_path(target, store_root))).to be false
+      end
+    end
+
+    it "is a no-op for an unmanaged file (no sentinel)" do
+      Dir.mktmpdir do |dir|
+        store_root = File.join(dir, ".textus")
+        FileUtils.mkdir_p(store_root)
+        target = File.join(dir, "human.md")
+        File.write(target, "hand-written\n")
+
+        Textus::Ports::Publisher.unpublish(target: target, store_root: store_root)
+        expect(File.exist?(target)).to be true
+      end
+    end
   end
 end
