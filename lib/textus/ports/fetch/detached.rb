@@ -8,6 +8,10 @@ module Textus
           Process.respond_to?(:fork)
         end
 
+        def acting_role(store)
+          store.manifest.policy.actor_for("fetch")
+        end
+
         def spawn(store_root:, key:)
           return nil unless supported?
 
@@ -21,7 +25,13 @@ module Textus
 
             begin
               store = Textus::Store.new(store_root)
-              store.as("automation").fetch(key)
+              # No fetch-holder configured — exit the child cleanly. In practice
+              # this is unreachable: the background fork only happens after a
+              # foreground fetch was already authorized (so a fetch-holder
+              # exists). Config-time detection is doctor's job (ADR 0044 Q2).
+              role = acting_role(store)
+              exit(0) unless role
+              store.as(role).fetch(key)
             rescue StandardError
               # Already logged via :fetch_failed; exit cleanly.
             ensure
