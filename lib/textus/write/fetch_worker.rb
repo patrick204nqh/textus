@@ -80,18 +80,12 @@ module Textus
       end
 
       def call_intake(key, mentry, remaining)
-        timeout = fetch_timeout_for(key)
-        Timeout.timeout(timeout) do
-          @rpc.invoke(:resolve_intake, mentry.handler,
-                      caps: @container,
-                      config: mentry.config,
-                      args: { trigger_key: key, leaf_segments: remaining || [] })
-        end
-      rescue Timeout::Error
-        @events.publish(:fetch_failed, ctx: hook_context, key: key,
-                                       error_class: "Timeout::Error",
-                                       error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
-        raise UsageError.new("intake '#{mentry.handler}' exceeded #{timeout}s timeout")
+        IntakeFetch.invoke(
+          caps: @container, handler: mentry.handler,
+          config: mentry.config,
+          args: { trigger_key: key, leaf_segments: remaining || [] },
+          label: "intake", timeout: fetch_timeout_for(key),
+        )
       rescue Textus::Error => e
         @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
                                        error_message: e.message)
