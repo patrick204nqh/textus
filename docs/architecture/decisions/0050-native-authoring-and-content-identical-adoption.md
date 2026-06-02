@@ -1,7 +1,7 @@
 # ADR 0050 — Own multi-file artifacts by native in-store authoring; migrate by content-identical adoption
 
 **Date:** 2026-06-02
-**Status:** Accepted
+**Status:** Accepted · native authoring now rides **`publish_tree`** alone — `publish_each` was removed by [ADR 0051](./0051-remove-publish-each.md) (the index-present `publish_each` references below are historical)
 **Touches:** [ADR 0046](./0046-publish-leaf-subtrees.md) (`publish_each` whole-leaf subtree — the publish mechanism native authoring rides on), [ADR 0047](./0047-publish-tree-keyless-subtree-mirror.md) (`publish_tree` mirror), [ADR 0042](./0042-native-ignore-patterns-for-entry-enumeration.md) (the `ignore` seam), and the sentinel/clobber contract (`SPEC.md` §491, `ports/publisher.rb:36`). Resolves the *direction* of issue #132 (textus as a generator for prose-heavy, multi-file artifacts such as Agent Skills).
 
 > **One sentence:** textus already publishes a multi-file artifact authored in its **native shape** (ADR 0046/0047) — the only thing standing between "I have skills on disk" and "textus owns them" is the clobber guard refusing a *byte-identical* first publish, so this ADR picks native authoring over a structured-derive stack and closes the migration gap by letting an identical publish **adopt** instead of refuse.

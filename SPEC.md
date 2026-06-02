@@ -240,41 +240,9 @@ For `nested: true`, the recursive glob matches the format's extension (markdown�
   index_filename: SKILL.md
 ```
 
-A file at `.textus/zones/skills/ask/SKILL.md` enumerates as `skills.ask`; `.textus/zones/skills/ask/references/algorithm.md` is not enumerated. Resolving `skills.ask` returns the `SKILL.md` path. `index_filename:` requires `nested: true`; the value must be a bare basename (no slashes).
+A file at `.textus/zones/skills/ask/SKILL.md` enumerates as `skills.ask`; `.textus/zones/skills/ask/references/algorithm.md` is not enumerated. Resolving `skills.ask` returns the `SKILL.md` path. `index_filename:` requires `nested: true`; the value must be a bare basename (no slashes). `index_filename:` is a pure *enumeration* feature — it selects which file is the addressable row per directory and is independent of publishing (ADR 0051).
 
-**Per-leaf publishing (`publish_each:`).** A nested manifest entry MAY declare `publish_each:` to copy every leaf to a templated repo-relative path. `publish_each:` and `publish_to:` are mutually exclusive on the same entry, and `publish_each:` requires `nested: true`. The template substitutes these variables (using `{name}` syntax):
-
-| Variable     | Value                                                                                  |
-|--------------|----------------------------------------------------------------------------------------|
-| `{leaf}`     | Remaining key segments after the entry prefix, joined with `/`.                        |
-| `{basename}` | Last segment only.                                                                     |
-| `{key}`      | Full dotted key.                                                                       |
-| `{ext}`      | Primary extension for the entry's format, without the leading dot (`md`/`json`/`yaml`/`txt`). |
-
-The publish *unit* is derived from the entry's shape, which `index_filename:` already declares (ADR 0046) — there is no separate tree-vs-file key:
-
-- **Entry *without* `index_filename`** — a leaf is a *file*. `publish_each:` names a file target and one file is byte-copied per leaf.
-- **Entry *with* `index_filename`** — a leaf is a *directory*. `publish_each:` names a directory target, and the **whole leaf subtree** is copied: every file under the leaf directory (the index plus its siblings) is byte-copied to `<target_dir>/<path-relative-to-leaf>`, preserving in-leaf layout. Siblings are opaque payload — they are never enumerated, addressable, or proposable; only the index is a key. The entry's `ignore:` globs (§4, ADR 0042) filter the copied set. Each copied file gets its own sentinel. On rebuild, files under the target that are textus-managed but no longer produced by the current source are **pruned** (file + sentinel); files with no sentinel are never deleted.
-
-Validation at manifest load: any unknown variable raises `UsageError`; a computed target outside the repo root is refused at build time with `PublishError`. The discriminator requirement depends on the leaf shape:
-
-- **File-leaf** templates MUST reference at least one of `{leaf}`, `{basename}`, `{key}` (otherwise every leaf would clobber the same target).
-- **Directory-leaf** templates (entry has `index_filename`) MUST reference `{leaf}` or `{key}`, and MUST NOT use `{basename}` or `{ext}` (file-only). Because the target is a directory, the template's final segment MUST NOT be the `index_filename` (the `.../{leaf}/SKILL.md` footgun — it would copy the subtree into a directory literally named `SKILL.md/`) and MUST NOT carry a file extension (e.g. `.../{leaf}.md`); both are rejected at load with a fix-the-template message.
-
-```yaml
-- key: working.skills
-  path: working/skills
-  zone: working
-  schema: skill
-  nested: true
-  index_filename: SKILL.md
-  publish_each: "skills/{leaf}"
-  ignore: ["*.tmp", ".DS_Store"]
-```
-
-A leaf at `working.skills.voice-writer` (a directory `.textus/zones/working/skills/voice-writer/` containing `SKILL.md`, `commands.md`, and `references/*`) publishes its whole subtree under `skills/voice-writer/`, preserving layout.
-
-**Subtree mirror (`publish_tree:`).** A nested manifest entry MAY declare `publish_tree:` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). Unlike `publish_each:`, it is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). `publish_tree:` is mutually exclusive with `publish_to:` and `publish_each:`, and incompatible with `index_filename:`. When a `publish_tree:` target directory overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
+**Subtree mirror (`publish_tree:`).** A nested manifest entry MAY declare `publish_tree:` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). `publish_tree:` is mutually exclusive with `publish_to:`, and incompatible with `index_filename:`. When a `publish_tree:` target directory overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
 
 ```yaml
 - key: working.skills
@@ -490,9 +458,7 @@ When the entry is recomputed, textus copies the in-store file byte-for-byte to e
 
 A sentinel is written for each published file at `<store_root>/sentinels/<target-relative-to-repo>.textus-managed.json`, recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store rather than beside the consumer file so target directories stay clean. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing, marked as managed, or **byte-identical to the source being published**. An identical destination is *adopted*: its sentinel is written and management proceeds (the copy is a content no-op), so an artifact tree already on disk onboards without a manual delete. An unmanaged destination whose content **differs**, or any unmanaged symlink, is still refused (ADR 0050). Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
 
-**Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The publish unit follows the entry's `index_filename` (ADR 0046): a file-leaf entry byte-copies one file per leaf; a directory-leaf entry (with `index_filename`) byte-copies the leaf's whole subtree — one row and one sentinel **per file** — applying the entry's `ignore:` filter, and prunes textus-managed files under the target that the current source no longer produces (never touching unmanaged files). The build envelope grows a `published_leaves` array — one row per published file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. Targets that would resolve outside the repo root are refused.
-
-**Subtree mirror.** A nested entry MAY declare `publish_tree:` instead of `publish_to:` or `publish_each:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. `publish_tree:` is mutually exclusive with `publish_to:` and `publish_each:`, and incompatible with `index_filename:`. When a `publish_tree:` target overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
+**Subtree mirror.** A nested entry MAY declare `publish_tree:` instead of `publish_to:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The build envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. `publish_tree:` is mutually exclusive with `publish_to:`, and incompatible with `index_filename:`. Targets that would resolve outside the repo root are refused. When a `publish_tree:` target overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
 
 ### 5.4 Intake (declared, fetched via registered intake handler)
 

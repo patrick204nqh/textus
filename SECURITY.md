@@ -24,7 +24,7 @@ textus stores data on the local filesystem and writes a single append-only audit
 - credential or token leakage through actions, hooks, or extensions,
 - audit-log tampering paths,
 - role-gate bypass on `put`, `delete`, `mv`, `accept`, or `build`,
-- path traversal via `publish_to:` or `publish_each:` templates,
+- path traversal via `publish_to:` or `publish_tree:` targets,
 - arbitrary code execution through extension loading or template rendering.
 
 Out of scope: vulnerabilities in user-supplied extension code, actions calling untrusted endpoints, or downstream consumers of the published artifacts.

@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Write::Publish do
   include_context "textus_store_fixture"
 
-  context "with two nested leaves under publish_each" do
+  context "with a nested entry under publish_tree" do
     let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/artifacts/agents"))
       s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
@@ -16,7 +16,7 @@ RSpec.describe Textus::Write::Publish do
             path: artifacts/agents
             zone: artifacts
             owner: human:self
-            publish_each: "agents/{basename}.md"
+            publish_tree: "agents"
       YAML
       File.write(File.join(root, "zones/artifacts/agents/alice.md"),
                  "---\nname: alice\n---\nbody\n")
@@ -25,7 +25,7 @@ RSpec.describe Textus::Write::Publish do
       s
     end
 
-    it "publishes each nested leaf to its publish_each target" do
+    it "mirrors every file in the subtree into published_leaves, keyed by the entry" do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
@@ -33,18 +33,27 @@ RSpec.describe Textus::Write::Publish do
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res["published_leaves"].length).to eq(2)
-      keys = res["published_leaves"].map { |r| r["key"] }
-      expect(keys).to contain_exactly("artifacts.agents.alice", "artifacts.agents.bob")
+      # publish_tree is path-driven: each mirrored file is reported under the
+      # entry key (no per-leaf enumeration).
+      expect(res["published_leaves"].map { |r| r["key"] }).to all(eq("artifacts.agents"))
+      expect(res["published_leaves"].map { |r| File.basename(r["target"]) })
+        .to contain_exactly("alice.md", "bob.md")
       expect(events.length).to eq(2)
     end
 
-    it "filters by prefix" do
-      res = store.as("automation").publish(prefix: "artifacts.agents.alice")
-      expect(res["published_leaves"].map { |r| r["key"] }).to eq(["artifacts.agents.alice"])
+    it "skips the entry when the prefix filter does not match it" do
+      res = store.as("automation").publish(prefix: "something.else")
+      expect(res["published_leaves"]).to be_empty
+    end
+
+    it "includes the entry when the prefix filter matches it" do
+      res = store.as("automation").publish(prefix: "artifacts")
+      expect(res["published_leaves"].map { |r| r["key"] }).to all(eq("artifacts.agents"))
+      expect(res["published_leaves"].length).to eq(2)
     end
   end
 
-  context "with a Derived entry with publish_to and a Nested entry with publish_each" do
+  context "with a Derived entry with publish_to and a Nested entry with publish_tree" do
     let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
       FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
@@ -71,7 +80,7 @@ RSpec.describe Textus::Write::Publish do
             path: knowledge/agents
             zone: knowledge
             owner: human:self
-            publish_each: "agents/{basename}.md"
+            publish_tree: "agents"
       YAML
       File.write(File.join(root, "zones/knowledge/people/alice.md"), "---\nname: alice\norg: x\n---\n")
       File.write(File.join(root, "zones/knowledge/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
@@ -99,7 +108,7 @@ RSpec.describe Textus::Write::Publish do
       expect(built_keys).to include("artifacts.catalogs.people")
 
       leaf_keys = res["published_leaves"].map { |r| r["key"] }
-      expect(leaf_keys).to include("knowledge.agents.claude")
+      expect(leaf_keys).to include("knowledge.agents")
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
@@ -122,7 +131,7 @@ RSpec.describe Textus::Write::Publish do
 
       expect(build_completed).to include("artifacts.catalogs.people")
       expect(file_published).to include("artifacts.catalogs.people")
-      expect(file_published).to include("knowledge.agents.claude")
+      expect(file_published).to include("knowledge.agents")
     end
   end
 
@@ -186,33 +195,6 @@ RSpec.describe Textus::Write::Publish do
       store_no_publish = Textus::Store.new(root)
       res = store_no_publish.as("automation").publish
       expect(res["built"]).to be_empty
-    end
-  end
-
-  context "with a publish_each target that escapes the repo root" do
-    let(:store) do
-      FileUtils.mkdir_p(File.join(root, "zones/artifacts/bad"))
-      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
-        version: textus/3
-        zones:
-          - { name: artifacts, kind: derived }
-        entries:
-          - key: artifacts.bad
-            kind: nested
-            path: artifacts/bad
-            zone: artifacts
-            owner: human:self
-            publish_each: "../../../etc/{basename}.md"
-      YAML
-      File.write(File.join(root, "zones/artifacts/bad/x.md"),
-                 "---\nname: x\n---\nbody\n")
-      s
-    end
-
-    it "rejects publish_each targets that escape repo root" do
-      expect do
-        store.as("automation").publish
-      end.to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end
 end

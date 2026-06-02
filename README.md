@@ -182,7 +182,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 
 ## What's shipped
 
-- **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_each:` byte-copy derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
+- **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; `publish_to:`/`publish_tree:` byte-copy derived files (or a whole subtree) to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
 - **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `quarantine`→`fetch`, `queue`→`propose`, `derived`→`build`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
@@ -203,7 +203,7 @@ Derived entries declare `compute: { kind: projection, select: ..., pluck: ..., s
 
 For externally-generated entries, declare `compute: { kind: external, sources: [...] }` — textus tracks the declared sources for staleness; the build automation produces the file.
 
-`publish_to: [path]` byte-copies a single derived file to one target. `publish_each: "template/{basename}.md"` on a nested entry byte-copies every leaf to its templated target — substitutes `{leaf}`, `{basename}`, `{key}`, `{ext}`. Sentinels for every published file live under `.textus/sentinels/`. See SPEC §5.2, §5.3, §5.12.
+`publish_to: [path]` byte-copies a single derived file to one or more targets. `publish_tree: "dir"` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/sentinels/`. See SPEC §5.2, §5.3, §5.12.
 
 ## Extension points
 

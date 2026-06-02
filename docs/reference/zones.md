@@ -131,7 +131,7 @@ entries:
 | `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
 | `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
 | `publish_to:` | no | List of external paths to byte-copy the built file to. |
-| `publish_each:` | no | For `nested:` entries — pattern publishing each leaf to its own external path. A file-leaf entry uses a file pattern (e.g. `"agents/{basename}.md"`); a directory-leaf entry (with `index_filename:`) names a directory (e.g. `"skills/{leaf}"`) and copies the leaf's whole subtree (ADR 0046). |
+| `publish_tree:` | no | For `nested:` entries — mirror the entry's whole stored subtree to one target directory (e.g. `"skills"`), preserving layout. Path-driven: no keys are enumerated and no template variables are interpreted. Mutually exclusive with `publish_to:` and incompatible with `index_filename:` (ADR 0047). |
 | `ignore:` | no | For `nested:` entries — a list of gitignore-style globs (e.g. `["**/node_modules/**"]`). Matching paths are excluded from enumeration **and** from `doctor`'s key checks. See [Nested entries](#nested-entries). |
 | `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build` event). |
 

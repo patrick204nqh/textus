@@ -252,7 +252,7 @@ For every entry in a build-writable zone:
 2. **Project** — pluck fields, run the reducer if any
 3. **Render** — pass the projected data to the format renderer (markdown/text/json/yaml), using a template if declared
 4. **Write** — save the bytes to the derived path
-5. **Publish** — for each `publish_to:` target (or per-leaf `publish_each:` match), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:file_published` pub-sub event. Listeners can subscribe to `:file_published` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
+5. **Publish** — for each `publish_to:` target (or each file under a `publish_tree:` mirror), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:file_published` pub-sub event. Listeners can subscribe to `:file_published` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
 
 ### The sentinel guard
 

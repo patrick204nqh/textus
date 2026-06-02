@@ -70,8 +70,9 @@ the original reasoning intact. The history is the point.
 | [0043](./0043-feed-ergonomics-without-breaking-core-purity.md) | Feed ergonomics without breaking core purity: intake cookbook + environment as a `feeds.machine` snapshot | Proposed |
 | [0044](./0044-system-actors-resolved-by-capability.md) | System-initiated actors are resolved by capability, never by a hardcoded role name | Proposed |
 | [0045](./0045-close-role-name-set.md) | Close the role-name set to {human, agent, automation}; keep capabilities open | Proposed |
-| [0046](./0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys | Accepted (ships 0.40.0) · "no third key" scoped to index-present case by 0047 |
+| [0046](./0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys | Accepted (ships 0.40.0) · "no third key" scoped to index-present case by 0047 · `publish_each` removed by 0051 |
 | [0047](./0047-publish-tree-keyless-subtree-mirror.md) | `publish_tree`: a key-less subtree mirror for a derived-index leaf | Accepted (ships 0.41.0) |
 | [0048](./0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events | Accepted (ships 0.41.0) |
 | [0049](./0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror | Accepted (ships 0.41.0) |
 | [0050](./0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native authoring; migrate by content-identical adoption (resolves #132 direction) | Accepted (ships 0.41.0) |
+| [0051](./0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes (`publish_to`, `publish_tree`) | Accepted (ships 0.42.0) · supersedes the `publish_each` half of 0046 |

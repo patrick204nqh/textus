@@ -83,7 +83,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
 
 The build automation is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `compute.sources` — same list, recorded twice so a diff proves what was consumed.
 
-Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and per-leaf publishing (`publish_each:`) are also covered there.
+Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and subtree publishing (`publish_tree:`) are also covered there.
 
 ## Intake and freshness
 

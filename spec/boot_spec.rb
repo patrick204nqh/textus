@@ -128,7 +128,7 @@ RSpec.describe Textus::Boot do
 
     expect(by_key["artifacts.report"]["derived"]).to be true
     expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
-    expect(by_key["artifacts.report"]["publish_each"]).to be_nil
+    expect(by_key["artifacts.report"]).not_to have_key("publish_each")
 
     expect(by_key["knowledge.notes"]["nested"]).to be true
   end
