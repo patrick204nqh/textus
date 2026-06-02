@@ -78,3 +78,6 @@ the original reasoning intact. The history is the point.
 | [0051](./0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes (`publish_to`, `publish_tree`) | Accepted (ships 0.42.0) · supersedes the `publish_each` half of 0046 · keys folded into `publish:` by 0052 |
 | [0052](./0052-typed-publish-block.md) | Fold `publish_to`/`publish_tree` into one typed `publish:` block (`to:` xor `tree:`) | Accepted (ships 0.43.0) |
 | [0053](./0053-remove-index-filename.md) | Remove `index_filename`: nested entries enumerate files | Accepted (ships 0.43.0) · orphaned by 0051 |
+| [0054](./0054-entry-level-desc.md) | Entry-level `desc`: the manifest as a navigable index | Proposed |
+| 0055 | A `find`/search verb over `desc` + frontmatter — evidence-triggered by 0054 once a labeled index outgrows one cheap read | Proposed (not drafted) |
+| [0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface derives `read_verbs` from the MCP catalog; recipes reference verbs, not CLI strings | Proposed |

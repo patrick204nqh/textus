@@ -32,7 +32,12 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
 
   it "names the live quarantine zone in the fetch recipe" do
     text = recipes["fetch"]["steps"].join(" ")
-    expect(text).to include("--zone=feeds")
-    expect(text).not_to include("--zone=intake")
+    expect(text).to include("feeds")
+    expect(text).not_to include("intake")
+  end
+
+  it "phrases steps as verbs, not transport CLI strings (ADR 0056)" do
+    steps = recipes.values.flat_map { |r| r.values_at("steps", "agent_steps", "human_steps").compact.flatten }
+    expect(steps).to all(satisfy { |s| !s.start_with?("textus ") && !s.include?("| textus ") })
   end
 end

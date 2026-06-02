@@ -127,7 +127,10 @@ module Textus
       propose_zone = manifest.policy.propose_zone_for(agent_role)
 
       {
-        "read_verbs" => %w[boot get list audit pulse freshness doctor],
+        # Derived from the MCP catalog (ADR 0056): the agent's real read surface,
+        # so the quickstart can neither advertise a verb the agent cannot call
+        # (audit/freshness/doctor are CLI-only) nor omit one it can (schema/rules).
+        "read_verbs" => Textus::MCP::Catalog.read_verbs,
         "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
         "writable_zones" => writable_zones,
         "propose_zone" => propose_zone,
@@ -135,6 +138,10 @@ module Textus
       }
     end
 
+    # Recipes reference verbs, not a transport's CLI strings (ADR 0056): every
+    # step names a verb the agent can call (each transport frames it — CLI as
+    # `textus get KEY`, MCP as the `get` tool) or is a plain build step. This
+    # keeps shell lines out of the surface an MCP agent reads.
     def self.recipes(manifest)
       queue = manifest.policy.queue_zone
       feeds = zone_label(manifest, :quarantine, "the quarantine zone")
@@ -142,32 +149,32 @@ module Textus
         "read" => {
           "purpose" => "find and read an entry",
           "steps" => [
-            "textus list --zone=ZONE --prefix=PREFIX  # discover keys",
-            "textus get KEY                            # returns envelope JSON",
+            "list (zone:, prefix:) — discover keys without reading bodies",
+            "get KEY — returns the entry envelope",
           ],
         },
         "write" => {
           "purpose" => "create or update an entry",
           "steps" => [
-            "textus schema get FAMILY                  # learn the _meta field shape",
-            "build an envelope JSON: {_meta: {...}, body: \"...\"}",
-            "echo ENVELOPE | textus put KEY --as=ROLE --stdin",
+            "schema KEY — learn the _meta field shape (required, optional, field types) before writing",
+            "assemble an envelope: { _meta: {…}, body: \"…\" }",
+            "put KEY — persist it (role-gated); pass if_etag to guard a concurrent edit",
           ],
         },
         "propose" => {
           "purpose" => "agent suggests a change for human review",
           "agent_steps" => [
-            "echo ENVELOPE | textus put #{queue}.KEY --as=agent --stdin",
+            "propose KEY — writes the change into the #{queue} zone for review",
           ],
           "human_steps" => [
-            "textus accept #{queue}.KEY --as=human       # promotes the proposal to its target zone",
+            "accept #{queue}.KEY — promotes the proposal into its target zone",
           ],
         },
         "fetch" => {
-          "purpose" => "rebuild stale quarantine-zone caches from their declared actions",
+          "purpose" => "refresh stale quarantine-zone caches from their declared intake",
           "steps" => [
-            "textus freshness --zone=#{feeds}            # report fresh/stale per entry",
-            "textus fetch stale --zone=#{feeds} --as=automation",
+            "pulse — its `stale` list names entries past their ttl",
+            "fetch_all (zone: #{feeds}) — re-pull the stale entries",
           ],
         },
       }
