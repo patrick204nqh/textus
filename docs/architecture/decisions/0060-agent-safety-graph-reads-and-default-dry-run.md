@@ -7,6 +7,11 @@
 
 > **One sentence:** the MCP agent had the destructive *teeth* (`key_delete_prefix`, `key_mv_prefix`, `zone_mv`, `migrate`) but not the introspection *eyes* to wield them safely (`deps`/`rdeps`/`where` were CLI-only) and its only guardrail was remembering to pass `dry_run: true` — so this ADR surfaces the three graph-reads to MCP **and** flips `dry_run` to default-**true** on the four bulk-destructive verbs, making "look before you leap" the default an agent must override, not a flag it must remember.
 
+> **Amendment (2026-06-03, pre-merge, same 0.44.0 PR).** This ADR shipped the graph-reads-eyes + bulk dry-run-default half of the agent-safety fix but left two related gaps the same review had pre-registered (the single-key write capability gap was row 0060's own scope; the `deps`/`rdeps` shape note proved wrong once the wire shapes were aligned). The amendment completes both:
+>
+> - **(5) Single-key `delete` and `mv` gain `:mcp` contracts** — the precise, lower-blast-radius counterparts to the bulk `*_prefix` ops, so an agent that can delete a *whole prefix* can now also delete *one key*. The tool names are the canonical verbs `delete` and `mv` (the use-case methods, ADR 0039); the CLI's `key` grouping is organizational, not part of the name. **Safety scales with blast radius:** the bulk `*_prefix` ops default to a dry-run Plan (the (2) flip above); single-key `delete` *executes* but is guarded by an optional `if_etag` optimistic-concurrency check; single-key `mv` defaults `dry_run: false` (it applies immediately) but exposes an optional `dry_run`, and its arg description explicitly contrasts that default with the bulk default so an agent calling it is not surprised.
+> - **(6) `deps`/`rdeps` now return a structured `{key, deps}` / `{key, rdeps}` hash on every surface.** This **supersedes this ADR's original statement** (decision §1) that "response shapes are unchanged (bare key array for deps/rdeps)": the shape now matches `where`/`put`/`delete`/`mv`, and the CLI dropped the hand-built wrapper it used to put around the bare array. One verb, one wire shape, all three transports.
+
 ## Context
 
 A senior-architect review of the 0.43.2 surface found a capability/guardrail mismatch. MCP exposes the bulk-destructive maintenance verbs — an agent can `zone_mv` a whole zone or `key_delete_prefix` a subtree — but the reads that reveal blast radius (`deps`, `rdeps`, `where`) were CLI-only. So an agent could delete or relocate a prefix without being able to first ask *what depends on this* (`rdeps`) or *where does this resolve* (`where`). The single guardrail was the optional `dry_run: true` parameter, which the agent had to remember to pass and then eyeball the returned Plan. Destructive power was surfaced without the introspection that makes it safe, and the safe path was opt-in.
@@ -32,6 +37,8 @@ Two independent gaps, one risk:
 - **MCP gains three read tools** (`deps`, `rdeps`, `where`); the catalog grows from 15 to 18, derived not hand-maintained.
 - **Behavioural change for programmatic Ruby callers** of the four bulk verbs that relied on the old `dry_run: false` default: they now dry-run unless they pass `dry_run: false`. This is deliberate (safe-by-default) and caught by the maintenance specs, which pass `dry_run` explicitly.
 - **CLI behaviour is unchanged** — `--dry-run` stays opt-in.
+- **(Amendment) The agent can now delete or move one key, not only a whole prefix.** `delete` and `mv` join the catalog as the single-key, lower-blast-radius counterparts to `key_delete_prefix`/`key_mv_prefix`; the safety story scales with blast radius — bulk plans-first, single-key `delete` executes under an optional `if_etag`, single-key `mv` applies immediately but offers an optional `dry_run`. The catalog grows from 18 to 20 tools (+`delete`, +`mv`).
+- **(Amendment) The graph reads have one wire shape across surfaces.** `deps`/`rdeps` return `{key, deps}`/`{key, rdeps}` everywhere (superseding this ADR's original "bare key array" note), matching `where`/`put`/`delete`/`mv`; the CLI no longer hand-wraps the bare array.
 
 ## Alternatives considered
 

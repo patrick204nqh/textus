@@ -478,7 +478,7 @@ rules:
 
 #### `on_stale:` semantics
 
-`on_stale:` declares what happens when `textus get` (or any read path that annotates freshness) encounters a stale intake entry. The value lives on the matching policy block, not on the entry. Vocabulary: `warn | sync | timed_sync`.
+`on_stale:` declares what happens when `get` encounters a stale intake entry. `get` is **read-through on every surface** (CLI, Ruby, MCP): it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule and degrading to a pure on-disk read for keys with no fetch rule (ADR 0062). The value lives on the matching policy block, not on the entry. Vocabulary: `warn | sync | timed_sync`.
 
 | Value | Behaviour |
 |---|---|
@@ -866,7 +866,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 |---|---|---|
 | `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
-| `get K` | read | any |
+| `get K` | read (read-through: fetch-on-stale per the entry's fetch rule, degrades to a pure read) | any |
 | `schema show K` | read | any |
 | `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
@@ -899,7 +899,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 {
   "agent_quickstart": {
     "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
-    "write_verbs":    ["put KEY --as=agent --stdin"],
+    "write_verbs":    ["delete", "fetch", "fetch_all", "mv", "propose", "put"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
     "latest_seq":     1842
@@ -907,7 +907,9 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 }
 ```
 
-`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI.
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
+
+The agent's MCP write surface includes the single-key `delete` and `mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment); safety scales with blast radius — the bulk `*_prefix` ops default to a dry-run Plan, single-key `delete` executes under an optional `if_etag`, and single-key `mv` applies immediately but exposes an optional `dry_run`.
 
 `latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
 
@@ -936,7 +938,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
   "if_etag": "sha256:8f3c…" }
 ```
 
-`if_etag` is optional on `put`, required on `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted on `put`, the write is unconditional (last-writer-wins).
+`if_etag` is optional on both `put` and `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
 
 **`textus freshness` output shape:**
 
