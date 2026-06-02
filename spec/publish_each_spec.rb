@@ -81,7 +81,7 @@ RSpec.describe "publish_each:" do
     end
   end
 
-  describe "publish_target_for" do
+  describe "publish_mode#target_for (ADR 0049)" do
     it "substitutes {leaf}, {basename}, {key}, {ext} correctly for a deep tree" do
       write_manifest(<<~Y)
         - key: knowledge.skills
@@ -92,7 +92,7 @@ RSpec.describe "publish_each:" do
       Y
       m = Textus::Manifest.load(root)
       entry = m.data.entries.first
-      target = entry.publish_target_for("knowledge.skills.writing.voice-writer")
+      target = entry.publish_mode.target_for("knowledge.skills.writing.voice-writer")
       expect(target).to eq("out/writing/voice-writer/k=knowledge.skills.writing.voice-writer/b=voice-writer.md")
     end
   end

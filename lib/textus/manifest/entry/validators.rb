@@ -4,8 +4,7 @@ module Textus
       module Validators
         REGISTERED = [
           Events,
-          PublishEach,
-          PublishTree,
+          Publish,
           InjectBoot,
           IndexFilename,
           Ignore,
