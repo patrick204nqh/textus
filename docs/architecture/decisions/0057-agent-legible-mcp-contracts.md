@@ -1,7 +1,7 @@
 # ADR 0057 — Agent-legible MCP contracts: arg descriptions, `_meta` wire parity, derived `write_verbs`
 
 **Date:** 2026-06-02
-**Status:** Proposed
+**Status:** Accepted (ships 0.43.2)
 **Refines:** [ADR 0039](./0039-mcp-catalog-derive-or-guard.md) (the MCP catalog is derived from per-verb contracts — the contract is now also where each *argument* is documented), [ADR 0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) (de-CLI'd `read_verbs`/recipes and named full `write_verbs` de-CLI-ing as a follow-up — this is that follow-up).
 **Touches:** [ADR 0036](./0036-transports-as-pure-framings.md) (one vocabulary across transports — the read shape and the write shape must name the same concept identically), [ADR 0040](./0040-mcp-connection-role-and-two-channels.md) (the MCP connection *is* the agent channel; its role is connection-resolved, so `--as`/`--stdin` have no meaning on it).
 
