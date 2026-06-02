@@ -19,8 +19,8 @@ Gem::Specification.new do |s|
     "README.md",
     "SPEC.md",
     "CHANGELOG.md",
-    "ARCHITECTURE.md",
-    "docs/conventions.md",
+    "docs/architecture/README.md",
+    "docs/reference/conventions.md",
   ]
   s.bindir = "exe"
   s.executables = ["textus"]
