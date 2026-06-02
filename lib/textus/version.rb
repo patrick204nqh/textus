@@ -1,4 +1,4 @@
 module Textus
-  VERSION = "0.40.0"
+  VERSION = "0.41.0"
   PROTOCOL = "textus/3"
 end

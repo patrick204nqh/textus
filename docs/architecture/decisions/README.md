@@ -73,5 +73,5 @@ the original reasoning intact. The history is the point.
 | [0046](./0046-publish-leaf-subtrees.md) | `publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys | Accepted (ships 0.40.0) · "no third key" scoped to index-present case by 0047 |
 | [0047](./0047-publish-tree-keyless-subtree-mirror.md) | `publish_tree`: a key-less subtree mirror for a derived-index leaf | Accepted (ships 0.41.0) |
 | [0048](./0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events | Accepted (ships 0.41.0) |
-| [0049](./0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror | Accepted |
-| [0050](./0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native authoring; migrate by content-identical adoption (resolves #132 direction) | Accepted |
+| [0049](./0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror | Accepted (ships 0.41.0) |
+| [0050](./0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native authoring; migrate by content-identical adoption (resolves #132 direction) | Accepted (ships 0.41.0) |
