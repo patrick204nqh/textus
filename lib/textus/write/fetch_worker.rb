@@ -35,7 +35,7 @@ module Textus
         remaining = res.remaining
         raise UsageError.new("no intake declared for '#{key}'") unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
-        before_etag = File.exist?(path) ? Etag.for_file(path) : nil
+        before_etag = @container.file_store.exists?(path) ? @container.file_store.etag(path) : nil
         result = fetch_with_events(key, mentry, remaining)
         persist_and_notify(key, mentry, result, before_etag)
       end
