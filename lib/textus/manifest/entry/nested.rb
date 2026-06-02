@@ -5,12 +5,13 @@ module Textus
         PUBLISH_EACH_VARS   = Validators::PublishEach::KNOWN_VARS
         PUBLISH_EACH_VAR_RE = Validators::PublishEach::VAR_RE
 
-        attr_reader :index_filename, :publish_each, :ignore
+        attr_reader :index_filename, :publish_each, :publish_tree, :ignore
 
-        def initialize(index_filename: nil, publish_each: nil, ignore: nil, **rest)
+        def initialize(index_filename: nil, publish_each: nil, publish_tree: nil, ignore: nil, **rest)
           super(**rest)
           @index_filename = index_filename
           @publish_each = publish_each
+          @publish_tree = publish_tree
           @ignore = Array(ignore)
         end
 
@@ -111,6 +112,7 @@ module Textus
           new(
             index_filename: raw["index_filename"],
             publish_each: raw["publish_each"],
+            publish_tree: raw["publish_tree"],
             ignore: raw["ignore"],
             **common,
           )
