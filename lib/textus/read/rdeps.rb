@@ -14,6 +14,12 @@ module Textus
       end
 
       def call(key)
+        { "key" => key, "rdeps" => dependents_of(key) }
+      end
+
+      private
+
+      def dependents_of(key)
         @manifest.data.entries.each_with_object([]) do |e, acc|
           next unless e.is_a?(Textus::Manifest::Entry::Derived)
 

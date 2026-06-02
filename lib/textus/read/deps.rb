@@ -14,7 +14,13 @@ module Textus
       end
 
       def call(key)
-        entry = @manifest.data.entries.find { |e| e.key == key } or return []
+        { "key" => key, "deps" => sources_for(key) }
+      end
+
+      private
+
+      def sources_for(key)
+        entry = @manifest.data.entries.find { |e| e.key == key }
         return [] unless entry.is_a?(Textus::Manifest::Entry::Derived)
 
         src = entry.source
