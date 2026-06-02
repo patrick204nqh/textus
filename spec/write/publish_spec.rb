@@ -16,7 +16,8 @@ RSpec.describe Textus::Write::Publish do
             path: artifacts/agents
             zone: artifacts
             owner: human:self
-            publish_tree: "agents"
+            publish:
+              tree: "agents"
       YAML
       File.write(File.join(root, "zones/artifacts/agents/alice.md"),
                  "---\nname: alice\n---\nbody\n")
@@ -73,14 +74,16 @@ RSpec.describe Textus::Write::Publish do
             owner: automation:auto
             compute: { kind: projection, select: knowledge.people, pluck: [name, org], sort_by: name }
             template: people.mustache
-            publish_to: [PEOPLE.md]
+            publish:
+              to: [PEOPLE.md]
 
           - key: knowledge.agents
             kind: nested
             path: knowledge/agents
             zone: knowledge
             owner: human:self
-            publish_tree: "agents"
+            publish:
+              tree: "agents"
       YAML
       File.write(File.join(root, "zones/knowledge/people/alice.md"), "---\nname: alice\norg: x\n---\n")
       File.write(File.join(root, "zones/knowledge/people/bob.md"),   "---\nname: bob\norg: y\n---\n")
@@ -149,7 +152,8 @@ RSpec.describe Textus::Write::Publish do
             zone: artifacts
             format: text
             owner: automation:auto
-            publish_to: [CATALOG.txt, docs/catalog.txt]
+            publish:
+              to: [CATALOG.txt, docs/catalog.txt]
             intake:
               handler: catalog_handler
       YAML

@@ -52,7 +52,8 @@ RSpec.describe Textus::Boot do
             select: [knowledge.notes]
             pluck: "*"
           template: report.mustache
-          publish_to: [REPORT.md]
+          publish:
+            to: [REPORT.md]
     YAML
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")

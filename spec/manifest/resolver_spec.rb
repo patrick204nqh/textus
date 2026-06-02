@@ -48,20 +48,19 @@ RSpec.describe Textus::Manifest::Resolver do
               zone: knowledge
               owner: human:self
               kind: nested
-              index_filename: SKILL.md
               ignore:
                 - "**/build/**"
         YAML
         files: {
-          "zones/knowledge/skills/alpha/SKILL.md" => "# alpha\n",
-          "zones/knowledge/skills/alpha/build/generated/SKILL.md" => "# generated\n",
+          "zones/knowledge/skills/alpha/intro.md" => "# alpha\n",
+          "zones/knowledge/skills/alpha/build/generated.md" => "# generated\n",
         },
       )
     end
 
     it "drops paths under an ignored subtree from enumeration" do
       keys = resolver.enumerate.map { |r| r[:key] }
-      expect(keys).to include("skills.alpha")
+      expect(keys).to include("skills.alpha.intro")
       expect(keys).not_to include("skills.alpha.build.generated")
       expect(keys.none? { |k| k.include?("build") }).to be(true)
     end

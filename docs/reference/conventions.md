@@ -65,7 +65,8 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
     pluck:  [name, relationship, org]
     sort_by: name
   template: people.mustache         # under .textus/templates/
-  publish_to: [docs/people.md]      # optional repo-relative byte-copy targets
+  publish:
+    to: [docs/people.md]            # optional repo-relative byte-copy targets
 ```
 
 **`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `textus freshness` can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `build` (default: `automation`).
@@ -83,7 +84,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
 
 The build automation is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `compute.sources` — same list, recorded twice so a diff proves what was consumed.
 
-Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and subtree publishing (`publish_tree:`) are also covered there.
+Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and subtree publishing (`publish: { tree: }`) are also covered there.
 
 ## Intake and freshness
 

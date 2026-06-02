@@ -75,4 +75,6 @@ the original reasoning intact. The history is the point.
 | [0048](./0048-fetch-subsystem-three-concerns.md) | Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events | Accepted (ships 0.41.0) |
 | [0049](./0049-publish-modes-as-sum-type.md) | Publish modes as a resolved sum type + one shared subtree mirror | Accepted (ships 0.41.0) |
 | [0050](./0050-native-authoring-and-content-identical-adoption.md) | Own multi-file artifacts by native authoring; migrate by content-identical adoption (resolves #132 direction) | Accepted (ships 0.41.0) |
-| [0051](./0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes (`publish_to`, `publish_tree`) | Accepted (ships 0.42.0) · supersedes the `publish_each` half of 0046 |
+| [0051](./0051-remove-publish-each.md) | Remove `publish_each`: collapse publish to two modes (`publish_to`, `publish_tree`) | Accepted (ships 0.42.0) · supersedes the `publish_each` half of 0046 · keys folded into `publish:` by 0052 |
+| [0052](./0052-typed-publish-block.md) | Fold `publish_to`/`publish_tree` into one typed `publish:` block (`to:` xor `tree:`) | Accepted (ships 0.43.0) |
+| [0053](./0053-remove-index-filename.md) | Remove `index_filename`: nested entries enumerate files | Accepted (ships 0.43.0) · orphaned by 0051 |

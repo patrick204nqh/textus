@@ -6,12 +6,12 @@ module Textus
           out = []
           manifest.data.entries.each do |entry|
             next unless entry.nested?
+            next if entry.publish_mode.keyless? # publish_tree files are opaque payload, never keys (ADR 0047)
 
             base = File.join(root, "zones", entry.path)
             next unless File.directory?(base)
 
-            index_fn = entry.respond_to?(:index_filename) ? entry.index_filename : nil
-            index_fn ? check_index_paths(entry, index_fn, base, out) : check_all_paths(entry, base, out)
+            check_all_paths(entry, base, out)
           end
           out
         end
@@ -28,24 +28,6 @@ module Textus
             next if stem.match?(Key::Grammar::SEGMENT)
 
             out << issue(abs_path, stem)
-          end
-        end
-
-        # When the entry uses `index_filename:`, only the parent-directory
-        # segments leading to each index file participate in keys. Sibling
-        # files and unrelated subtrees are not enumerated and must not be
-        # flagged. Each illegal segment is reported once per path. Paths under
-        # an ignored subtree (ADR 0042) are excluded before any segment check.
-        def check_index_paths(entry, index_fn, base, out)
-          Dir.glob(File.join(base, "**", index_fn)).each do |fp|
-            rel = fp.sub(%r{\A#{Regexp.escape(base)}/?}, "")
-            next if entry.ignored?(rel)
-
-            File.dirname(rel).split("/").reject { |s| s.empty? || s == "." }.each do |seg|
-              next if seg.match?(Key::Grammar::SEGMENT)
-
-              out << issue(fp, seg)
-            end
           end
         end
 

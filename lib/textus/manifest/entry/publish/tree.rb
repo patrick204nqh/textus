@@ -8,6 +8,9 @@ module Textus
         # (e.g. a SKILL.md written by a separate entry into the same dir)
         # survives the whole-target prune (ADR 0047 D4).
         class Tree < Mode
+          # Mirrored files are opaque payload, never addressable keys (ADR 0047).
+          def keyless? = true
+
           def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
             target_rel = entry.publish_tree
             target_dir = repo_abs(pctx, target_rel)
@@ -30,20 +33,13 @@ module Textus
 
           def validate!
             publish_tree = entry.publish_tree
-            raise UsageError.new("entry '#{entry.key}': publish_tree must be a string") unless publish_tree.is_a?(String)
-
-            unless entry.index_filename.nil?
-              raise UsageError.new(
-                "entry '#{entry.key}': index_filename and publish_tree are mutually exclusive — " \
-                "publish_tree mirrors a whole subtree by path and never enumerates an index.",
-              )
-            end
+            raise UsageError.new("entry '#{entry.key}': publish.tree must be a string") unless publish_tree.is_a?(String)
 
             used_vars = publish_tree.scan(Template::VAR_RE).flatten
             return if used_vars.empty?
 
             raise UsageError.new(
-              "entry '#{entry.key}': publish_tree names a single directory and takes no template variable(s) " \
+              "entry '#{entry.key}': publish.tree names a single directory and takes no template variable(s) " \
               "#{used_vars.map { |v| "{#{v}}" }.join(", ")} — it mirrors the whole subtree to one target dir.",
             )
           end

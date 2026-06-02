@@ -18,7 +18,10 @@ module Textus
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
             format: format,
-            publish_to: raw["publish_to"]
+            # ADR 0052: publish config is one typed block; the internal
+            # publish_to/publish_tree readers (the ADR 0049 modes) are sourced
+            # from it (publish_to <- publish.to, publish_tree <- publish.tree).
+            publish_to: raw.dig("publish", "to")
           }
 
           klass = Entry::REGISTRY[kind] or

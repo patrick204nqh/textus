@@ -130,8 +130,7 @@ entries:
 | `compute:` | no | Declares this is a derived entry (`kind: projection` computes from store entries; `kind: external` tracks an outside build tool). See [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md#wiring-data-out--derived-entries-and-publishing). |
 | `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
 | `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
-| `publish_to:` | no | List of external paths to byte-copy the built file to. |
-| `publish_tree:` | no | For `nested:` entries — mirror the entry's whole stored subtree to one target directory (e.g. `"skills"`), preserving layout. Path-driven: no keys are enumerated and no template variables are interpreted. Mutually exclusive with `publish_to:` and incompatible with `index_filename:` (ADR 0047). |
+| `publish:` | no | Typed publish block with exactly one sub-key (ADR 0052). `publish: { to: [paths] }` byte-copies the built file to one or more external paths. `publish: { tree: "dir" }` (for `nested:` entries) mirrors the entry's whole stored subtree to one target directory, preserving layout — path-driven (no keys or template variables); its files are opaque payload, never keys (ADR 0047). |
 | `ignore:` | no | For `nested:` entries — a list of gitignore-style globs (e.g. `["**/node_modules/**"]`). Matching paths are excluded from enumeration **and** from `doctor`'s key checks. See [Nested entries](#nested-entries). |
 | `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build` event). |
 
@@ -157,7 +156,6 @@ Real source trees often contain vendored or generated subtrees that ship their o
   path: skills
   zone: knowledge
   nested: true
-  index_filename: SKILL.md
   ignore:
     - "**/node_modules/**"
     - "**/dist/**"

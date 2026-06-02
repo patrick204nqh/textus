@@ -6,7 +6,6 @@ module Textus
           Events,
           Publish,
           InjectBoot,
-          IndexFilename,
           Ignore,
           FormatMatrix,
         ].freeze

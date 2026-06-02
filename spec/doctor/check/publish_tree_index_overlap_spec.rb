@@ -28,13 +28,15 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         zone: working
         schema: null
         nested: true
-        publish_tree: "skills"
+        publish:
+          tree: "skills"
       - key: gen.skilldoc
         kind: derived
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
-        publish_to: ["skills/my-skill/SKILL.md"]
+        publish:
+          to: ["skills/my-skill/SKILL.md"]
         compute: { kind: projection, select: ["working.skilldefs"] }
     Y
 
@@ -51,14 +53,16 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         zone: working
         schema: null
         nested: true
-        publish_tree: "skills"
+        publish:
+          tree: "skills"
         ignore: ["**/SKILL.md"]
       - key: gen.skilldoc
         kind: derived
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
-        publish_to: ["skills/my-skill/SKILL.md"]
+        publish:
+          to: ["skills/my-skill/SKILL.md"]
         compute: { kind: projection, select: ["working.skilldefs"] }
     Y
 
@@ -73,14 +77,16 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         zone: working
         schema: null
         nested: true
-        publish_tree: "skills"
+        publish:
+          tree: "skills"
         ignore: ["SKILL.md"]
       - key: gen.skilldoc
         kind: derived
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
-        publish_to: ["skills/my-skill/SKILL.md"]
+        publish:
+          to: ["skills/my-skill/SKILL.md"]
         compute: { kind: projection, select: ["working.skilldefs"] }
     Y
 
@@ -95,13 +101,15 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         zone: working
         schema: null
         nested: true
-        publish_tree: "skills"
+        publish:
+          tree: "skills"
       - key: gen.other
         kind: derived
         path: gen/other.yaml
         zone: gen
         schema: null
-        publish_to: ["docs/other.md"]
+        publish:
+          to: ["docs/other.md"]
         compute: { kind: projection, select: ["working.skilldefs"] }
     Y
 

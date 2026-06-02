@@ -9,6 +9,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.43.0 — 2026-06-02 — Typed `publish:` block + remove `index_filename` ([ADR 0052](docs/architecture/decisions/0052-typed-publish-block.md), [0053](docs/architecture/decisions/0053-remove-index-filename.md))
+
+No `textus/3` wire-format change. Two breaking (pre-1.0) changes on the publish/enumeration surface: the two top-level publish keys become one typed `publish:` block, and the unused `index_filename:` enumeration feature is removed. Both fail at load with a migration-pointing message.
+
+### Changed
+
+- **BREAKING (pre-1.0): `publish_to:`/`publish_tree:` folded into one typed `publish:` block ([ADR 0052](docs/architecture/decisions/0052-typed-publish-block.md)).** Publishing is now configured by `publish: { to: [...] }` (file fan-out) **xor** `publish: { tree: "dir" }` (subtree mirror), mirroring the ADR 0049 internal sum type at the manifest layer and giving a future third mode a namespace instead of a third top-level key. Surface-only — the `Publish::*` modes, `:file_published` event, and build envelope are unchanged. A manifest using the flat `publish_to:`/`publish_tree:` keys **fails at load** with the replacement (`use publish: { to: [...] }` / `{ tree: "..." }`). This is grouping/extensibility, not a new invariant: a block with both `to:` and `tree:` is still caught by the one exclusivity guard in `Publish.resolve`.
+
+### Removed
+
+- **BREAKING (pre-1.0): the `index_filename:` enumeration feature is removed ([ADR 0053](docs/architecture/decisions/0053-remove-index-filename.md)).** `index_filename:` let a nested entry enumerate *directories* as addressable keys via a fixed index file (e.g. `SKILL.md`). It had zero real usage, its only motivating consumer (`EachDir` per-leaf publish) was removed in 0.42.0, and it could not compose with `publish_tree` (mutually exclusive). A nested entry now always enumerates each file under its tree as a key (key segments derived from the path, extension stripped). A manifest declaring `index_filename:` **fails at load** with a migration message; to mirror a directory of files to a consumer path without enumerating them as keys, use `publish: { tree: "..." }`. Native skill authoring (ADR 0050) is unaffected — it rides `publish_tree`, which never enumerated an index. The shallowest-index-wins claiming logic (ADR 0046 D5) and the `index_filename ⊥ publish_tree` guard go with it.
+
+No `textus/3` wire-format change — repo-local publish behaviour only.
+
+### Fixed
+
+- **`publish_tree` files are now opaque in *every* path, not just the Publisher ([ADR 0047](docs/architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md)).** A keyless subtree mirror carrying non-key-legal filenames (uppercase `SKILL.md`, `README`) tripped `doctor`'s `key.illegal` and red-gated commits, even though publish itself mirrored the files correctly — `doctor`'s `IllegalKeys` and `Resolver#enumerate_nested` still key-walked them, contradicting ADR 0047's "no keys" contract. The resolved publish mode now answers `Publish::Mode#keyless?` (true only for `Tree`); both paths consult it and skip enumerating a keyless mirror's files. A `publish_tree` subtree with uppercase filenames stays `doctor`-green and still mirrors; a non-publish nested entry still flags illegal segments as before.
+
 ## 0.42.0 — 2026-06-02 — Remove `publish_each`: collapse publish to two modes ([ADR 0051](docs/architecture/decisions/0051-remove-publish-each.md))
 
 No `textus/3` wire-format change. **Breaking (pre-1.0):** the `publish_each:` manifest key is removed; a manifest declaring it now fails at load. The publish surface collapses to two modes — `publish_to:` (fixed paths) and `publish_tree:` (whole-subtree mirror) — plus `None`.

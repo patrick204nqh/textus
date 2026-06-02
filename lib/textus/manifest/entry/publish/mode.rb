@@ -17,6 +17,12 @@ module Textus
           # No shape rules by default — ToPaths/None publish without templating.
           def validate!; end
 
+          # Whether this entry's subtree files are opaque payload that must
+          # never be enumerated as keys. Only Tree (publish_tree, ADR 0047)
+          # overrides to true; doctor's IllegalKeys and the resolver consult
+          # this so they stop key-walking a keyless mirror's files.
+          def keyless? = false
+
           private
 
           # Expand `rel` under repo_root and confirm it stays inside it.

@@ -89,50 +89,6 @@ RSpec.describe Textus::Doctor do
     expect(issue["fix"]).to match(/lowercase.*hyphen/i)
   end
 
-  context "with index_filename on a nested entry" do
-    before do
-      FileUtils.mkdir_p(File.join(root, "zones/skills/ask/references"))
-      FileUtils.mkdir_p(File.join(root, "zones/skills/Bad_Name"))
-      File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
-        zones:
-          - { name: knowledge, kind: canon }
-          - { name: skills, kind: canon }
-          - { name: artifacts, kind: derived }
-        entries:
-          - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
-
-          - { key: artifacts.summary, path: artifacts/summary.md, zone: artifacts, template: summary.mustache, kind: derived, compute: { kind: projection }}
-
-          - { key: skills, path: skills, zone: skills, index_filename: SKILL.md, kind: nested}
-
-      YAML
-    end
-
-    it "does not flag SKILL.md (uppercase index filename) as illegal" do
-      File.write(File.join(root, "zones/skills/ask/SKILL.md"), "---\nname: ask\n---\nbody")
-      res = doctor
-      illegal = res["issues"].select { |i| i["code"] == "key.illegal" }
-      expect(illegal).to be_empty
-    end
-
-    it "does not flag sibling files under references/ that aren't enumerated" do
-      File.write(File.join(root, "zones/skills/ask/SKILL.md"), "---\nname: ask\n---\n")
-      File.write(File.join(root, "zones/skills/ask/references/Bad_Sibling.md"), "---\n---\n")
-      res = doctor
-      bad = res["issues"].select { |i| i["code"] == "key.illegal" && i["message"].include?("Bad_Sibling") }
-      expect(bad).to be_empty
-    end
-
-    it "still flags a parent directory whose name is an illegal segment" do
-      File.write(File.join(root, "zones/skills/Bad_Name/SKILL.md"), "---\nname: bad\n---\n")
-      res = doctor
-      issue = res["issues"].find { |i| i["code"] == "key.illegal" }
-      expect(issue).not_to be_nil
-      expect(issue["message"]).to include("Bad_Name")
-    end
-  end
-
   it "reports sentinel.orphan when a sentinel's target is missing" do
     FileUtils.mkdir_p(File.join(root, "sentinels"))
     File.write(File.join(root, "sentinels/missing.md.textus-managed.json"), JSON.generate(
