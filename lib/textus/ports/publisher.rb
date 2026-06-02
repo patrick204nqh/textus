@@ -12,7 +12,7 @@ module Textus
     module Publisher
       def self.publish(source:, target:, store_root:)
         FileUtils.mkdir_p(File.dirname(target))
-        refuse_if_unmanaged(target, store_root)
+        guard_clobber(source, target, store_root)
         File.delete(target) if File.symlink?(target)
         FileUtils.cp(source, target)
         Textus::Ports::SentinelStore.new.write!(target: target, source: source, store_root: store_root)
@@ -28,11 +28,23 @@ module Textus
         FileUtils.rm_f(sentinel)
       end
 
-      def self.refuse_if_unmanaged(target, store_root)
+      # Refuse to clobber an unmanaged target — EXCEPT adopt one whose bytes
+      # already equal the source (ADR 0050: a migration copies files into the
+      # store and publishes them back to where they already live, so the target
+      # is byte-identical — nothing is at risk). Adoption writes no sentinel
+      # here; the normal publish path below does, and the cp is a content no-op.
+      # An unmanaged target whose content DIFFERS, or any unmanaged symlink, is
+      # still refused — that is the guard's real job.
+      def self.guard_clobber(source, target, store_root)
         return unless File.exist?(target) || File.symlink?(target)
         return if managed?(target, store_root)
+        return if adoptable?(source, target)
 
         raise PublishError.new("refusing to clobber unmanaged file at #{target}", target: target)
+      end
+
+      def self.adoptable?(source, target)
+        !File.symlink?(target) && File.file?(target) && FileUtils.identical?(source, target)
       end
 
       def self.managed?(target, store_root)

@@ -133,4 +133,35 @@ RSpec.describe "publish_each directory leaves (ADR 0046)" do
       expect(File.exist?(File.join(repo_root, "skills/other-skill/refs/keep.md"))).to be true
     end
   end
+
+  describe "adopting a pre-existing identical tree (ADR 0050)" do
+    before do
+      write_manifest(skills_entry)
+      write_file("skills/my-skill/SKILL.md", "---\nname: my-skill\n---\nbody\n")
+      write_file("skills/my-skill/references/foo.md", "foo reference\n")
+    end
+
+    it "adopts identical pre-existing target files instead of refusing" do
+      repo_root = File.dirname(root)
+      # the skills already live at the publish target on disk, byte-identical —
+      # the real native-authoring migration onboarding (issue #132).
+      FileUtils.mkdir_p(File.join(repo_root, "skills/my-skill/references"))
+      File.write(File.join(repo_root, "skills/my-skill/SKILL.md"), "---\nname: my-skill\n---\nbody\n")
+      File.write(File.join(repo_root, "skills/my-skill/references/foo.md"), "foo reference\n")
+
+      expect { Textus::Store.new(root).as("automation").publish }.not_to raise_error
+
+      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/SKILL.md.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be true
+    end
+
+    it "still refuses when a pre-existing target file diverges" do
+      repo_root = File.dirname(root)
+      FileUtils.mkdir_p(File.join(repo_root, "skills/my-skill"))
+      File.write(File.join(repo_root, "skills/my-skill/SKILL.md"), "hand-edited, differs\n")
+
+      expect { Textus::Store.new(root).as("automation").publish }
+        .to raise_error(Textus::PublishError, /clobber/)
+    end
+  end
 end

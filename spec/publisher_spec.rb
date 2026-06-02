@@ -45,6 +45,21 @@ RSpec.describe Textus::Ports::Publisher do
       .to raise_error(Textus::PublishError, /clobber/)
   end
 
+  it "adopts an unmanaged target whose bytes already equal the source (ADR 0050)" do
+    File.binwrite(dst, "hello\n") # identical to src
+    expect { Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root) }
+      .not_to raise_error
+    expect(File.exist?(sentinel)).to be true
+    expect(File.binread(dst)).to eq("hello\n")
+  end
+
+  it "still refuses an unmanaged target whose bytes differ (ADR 0050)" do
+    File.binwrite(dst, "different\n")
+    expect { Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root) }
+      .to raise_error(Textus::PublishError, /clobber/)
+    expect(File.exist?(sentinel)).to be false
+  end
+
   it "overwrites when the target is already textus-managed (new-location sentinel)" do
     Textus::Ports::Publisher.publish(source: src, target: dst, store_root: store_root)
     File.binwrite(src, "world\n")
