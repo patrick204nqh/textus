@@ -15,7 +15,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   accept reject publish delete mv
   audit blame deps rdeps where uid freshness stale
   doctor policy_explain published retainable
-  get_or_fetch validate_all retention_sweep
+  get_or_fetch validate_all retain
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do

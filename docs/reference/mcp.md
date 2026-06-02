@@ -55,7 +55,7 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, _meta, body?, content?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
-| `schema` | Field shape (schema for an entry's family) | `key: string` |
+| `schema_show` | Field shape (schema for an entry's family) | `key: string` |
 | `rules` | Effective rules for a key | `key: string` |
 
 Maintenance tools (admin / bulk operations):

@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb::Build do
+RSpec.describe Textus::CLI::Verb::Publish do
   include_context "textus_store_fixture"
 
   let(:stdout) { StringIO.new }
@@ -25,7 +25,7 @@ RSpec.describe Textus::CLI::Verb::Build do
     end
 
     it "resolves the build-holder by capability and exits 0" do
-      rc = run(["build"])
+      rc = run(["publish"])
       expect(rc).to eq(0), "stderr: #{stderr.string}"
       expect(stderr.string).to eq("")
     end
@@ -45,7 +45,7 @@ RSpec.describe Textus::CLI::Verb::Build do
     end
 
     it "fails loudly with a clear message instead of acting as a phantom role" do
-      rc = run(["build"])
+      rc = run(["publish"])
       expect(rc).to eq(2)
       expect(stderr.string).to include("no role holds the 'build' capability")
     end

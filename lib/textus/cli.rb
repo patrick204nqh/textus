@@ -91,7 +91,7 @@ module Textus
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus freshness [--prefix=KEY] [--zone=Z]
           textus fetch KEY
-          textus fetch stale [--prefix=KEY] [--zone=Z]
+          textus fetch all [--prefix=KEY] [--zone=Z]
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor

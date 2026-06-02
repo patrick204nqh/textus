@@ -155,7 +155,7 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("boot", "list", "get", "put", "accept", "build", "doctor", "hook")
+    expect(names).to include("boot", "list", "get", "put", "accept", "publish", "doctor", "hook")
   end
 
   describe "agent_protocol block" do

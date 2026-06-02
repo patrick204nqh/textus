@@ -13,8 +13,8 @@ RSpec.describe "textus retain" do
   end
 
   it "registers the retention verbs" do
-    expect(Textus::Dispatcher::VERBS).to include(:retention_sweep, :retainable)
-    expect(Textus::RoleScope.instance_methods).to include(:retention_sweep, :retainable)
+    expect(Textus::Dispatcher::VERBS).to include(:retain, :retainable)
+    expect(Textus::RoleScope.instance_methods).to include(:retain, :retainable)
   end
 
   describe "end-to-end: expires an aged leaf" do

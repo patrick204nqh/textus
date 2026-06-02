@@ -14,7 +14,7 @@ module Textus
       publish: Textus::Write::Publish,
       fetch: Textus::Write::FetchWorker,
       fetch_all: Textus::Write::FetchAll,
-      retention_sweep: Textus::Write::RetentionSweep,
+      retain: Textus::Write::RetentionSweep,
 
       # Read
       get: Textus::Read::Get,
@@ -31,7 +31,7 @@ module Textus
       pulse: Textus::Read::Pulse,
       policy_explain: Textus::Read::PolicyExplain,
       published: Textus::Read::Published,
-      schema: Textus::Read::SchemaEnvelope,
+      schema_show: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,

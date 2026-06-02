@@ -51,7 +51,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 A derived entry declares a `compute:` block with a `kind:` discriminator. Two kinds:
 
-**`compute: { kind: projection }`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
+**`compute: { kind: projection }`** — textus computes the entry on `textus publish` from other store entries. Declarative; nothing shells out.
 
 ```yaml
 - key: artifacts.catalogs.people
@@ -92,7 +92,7 @@ External inputs land via `:resolve_intake` hooks, not shell commands. Each intak
 
 ```sh
 textus fetch feeds.notion.roadmap --as=automation
-textus fetch stale --zone=feeds --as=automation   # everything past its TTL
+textus fetch all --zone=feeds --as=automation   # everything past its TTL
 ```
 
 Freshness budgets live in the top-level `rules:` block, matched by glob:
@@ -103,10 +103,10 @@ rules:
     fetch: { ttl: 6h, on_stale: warn }   # warn | sync | timed_sync
 ```
 
-A typical scheduled-fetch integration shells the `fetch stale` sweep itself:
+A typical scheduled-fetch integration shells the `fetch all` sweep itself:
 
 ```sh
-textus fetch stale --zone=feeds --as=automation   # in cron / CI
+textus fetch all --zone=feeds --as=automation   # in cron / CI
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.

@@ -23,9 +23,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     [code, out.string, err.string]
   end
 
-  it "fetch stale on an empty store returns 0 (was nil → TypeError, #61)" do
+  it "fetch all on an empty store returns 0 (was nil → TypeError, #61)" do
     with_store do |root|
-      code, _stdout, _stderr = run_cli(%w[fetch stale --prefix=knowledge --as=automation], cwd: root)
+      code, _stdout, _stderr = run_cli(%w[fetch all --prefix=knowledge --as=automation], cwd: root)
       expect(code).to be_an(Integer)
       expect(code).to eq(0)
     end
@@ -46,8 +46,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "accept" => Textus::CLI::Verb::Accept,
       "audit" => Textus::CLI::Verb::Audit,
       "blame" => Textus::CLI::Verb::Blame,
-      "build" => Textus::CLI::Verb::Build,
-      "delete" => Textus::CLI::Verb::Delete,
       "deps" => Textus::CLI::Verb::Deps,
       "doctor" => Textus::CLI::Verb::Doctor,
       "freshness" => Textus::CLI::Verb::Freshness,
@@ -61,6 +59,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "published" => Textus::CLI::Verb::Published,
       "pulse" => Textus::CLI::Verb::Pulse,
       "propose" => Textus::CLI::Verb::Propose,
+      "publish" => Textus::CLI::Verb::Publish,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::Rdeps,
       "migrate" => Textus::CLI::Verb::Migrate,

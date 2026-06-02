@@ -108,16 +108,16 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('schema', ...)" do
+  describe ".call('schema_show', ...)" do
     it "raises ToolError when the required key arg is missing" do
       expect do
-        described_class.call("schema", session: session, store: store, args: {})
+        described_class.call("schema_show", session: session, store: store, args: {})
       end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for an unknown key" do
       expect do
-        described_class.call("schema", session: session, store: store, args: { "key" => "no.such.key" })
+        described_class.call("schema_show", session: session, store: store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::MCP::ToolError)
     end
   end

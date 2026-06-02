@@ -9,7 +9,7 @@ module Textus
         option :as_flag, "--as=ROLE"
 
         def call(store)
-          result = session_for(store).retention_sweep(prefix: prefix, zone: zone)
+          result = session_for(store).retain(prefix: prefix, zone: zone)
           emit(result)
           result["ok"] ? 0 : 1
         end

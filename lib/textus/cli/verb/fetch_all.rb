@@ -1,8 +1,8 @@
 module Textus
   class CLI
     class Verb
-      class FetchStale < Verb
-        command_name "stale"
+      class FetchAll < Verb
+        command_name "all"
         parent_group Group::Fetch
 
         option :prefix, "--prefix=KEY"

@@ -278,7 +278,7 @@ RSpec.describe "textus/3 conformance" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
       rc = Textus::CLI.run(
-        ["delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
+        ["key", "delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
       expect(rc).to eq(0)

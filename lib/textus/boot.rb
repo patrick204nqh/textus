@@ -32,7 +32,7 @@ module Textus
       end,
       build: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
-        "'textus build' computes #{derived} entries from projections; " \
+        "'textus publish' computes #{derived} entries from projections; " \
           "#{derived} files are never hand-edited"
       end,
     }.freeze
@@ -81,13 +81,12 @@ module Textus
       { "name" => "list" },
       { "name" => "get" },
       { "name" => "where", "summary" => "resolve a key to its zone and path without reading" },
-      { "name" => "schema" },
+      { "name" => "schema", "summary" => "schema operations: 'schema show KEY', 'schema diff', 'schema init', 'schema migrate'" },
       { "name" => "put" },
       { "name" => "propose" },
       { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
-      { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
-      { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
-      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
+      { "name" => "key",      "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
+      { "name" => "publish",  "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
       { "name" => "fetch" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
@@ -131,7 +130,7 @@ module Textus
         # agent's real read and write surface, named as verbs the agent calls —
         # not CLI strings. read_verbs can neither advertise a verb the agent
         # cannot call (audit/freshness/doctor are CLI-only) nor omit one it can
-        # (schema/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
+        # (schema_show/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
         # framing (role is connection-resolved over MCP; there is no stdin).
         # writable_zones / propose_zone below carry the agent's write authority.
         "read_verbs" => Textus::MCP::Catalog.read_verbs,

@@ -127,10 +127,10 @@ module Textus
     def initialize(holder)
       super(
         "build_in_progress",
-        "textus build already running (#{holder})",
+        "textus publish already running (#{holder})",
         details: { "holder" => holder },
         exit_code: 75,
-        hint: "wait for the running build to finish, or check for a recursive hook trigger"
+        hint: "wait for the running publish to finish, or check for a recursive hook trigger"
       )
     end
   end

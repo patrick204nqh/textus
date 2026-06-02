@@ -32,7 +32,7 @@ flowchart LR
     artifacts -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation pulls external bytes into `feeds` (the `fetch` capability); humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation `build`s `artifacts` from `knowledge`/`feeds` and publishes shipped files.
+*Flow at a glance:* automation pulls external bytes into `feeds` (the `fetch` capability); humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation `publish`es `artifacts` from `knowledge`/`feeds` as shipped files.
 
 Two ideas do all the work:
 
@@ -110,7 +110,7 @@ Key field for agents: **`agent_quickstart`**.
 ```json
 {
   "agent_quickstart": {
-    "read_verbs":     ["get", "list", "pulse", "schema", "boot", "rules"],
+    "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rules"],
     "write_verbs":    ["put KEY --as=agent --stdin"],
     "writable_zones": ["review"],
     "propose_zone":   "review",

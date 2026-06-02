@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe "textus build concurrency" do
+RSpec.describe "textus publish concurrency" do
   include_context "textus_store_fixture"
 
   before do
@@ -31,7 +31,7 @@ RSpec.describe "textus build concurrency" do
                "---\nkey: knowledge.note\n---\nbody\n")
   end
 
-  it "second concurrent build exits 75 with build_in_progress code" do
+  it "second concurrent publish exits 75 with build_in_progress code" do
     lock_path = Textus::Layout.build_lock(root)
     FileUtils.mkdir_p(File.dirname(lock_path))
     # rubocop:disable Style/FileOpen
@@ -43,7 +43,7 @@ RSpec.describe "textus build concurrency" do
 
     stdout = StringIO.new
     stderr = StringIO.new
-    exit_code = Textus::CLI.run(["--root=#{root}", "build"],
+    exit_code = Textus::CLI.run(["--root=#{root}", "publish"],
                                 stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
 
     expect(exit_code).to eq(75)

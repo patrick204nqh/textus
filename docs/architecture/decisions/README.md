@@ -82,3 +82,7 @@ the original reasoning intact. The history is the point.
 | 0055 | A `find`/search verb over `desc` + frontmatter — evidence-triggered by 0054 once a labeled index outgrows one cheap read | Proposed (not drafted) |
 | [0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface derives `read_verbs` from the MCP catalog; recipes reference verbs, not CLI strings | Proposed |
 | [0057](./0057-agent-legible-mcp-contracts.md) | Agent-legible MCP contracts: per-arg descriptions, `_meta` wire parity for `put`/`propose`, and `write_verbs` derived from the catalog | Accepted (ships 0.43.2) |
+| [0058](./0058-one-verb-name-across-surfaces.md) | One verb name across surfaces: `schema`→`schema_show`, `fetch stale`→`fetch all`, `retention_sweep`→`retain`, collapse top-level `delete` into `key delete` | Accepted (ships 0.44.0) |
+| 0059 | Consolidate the `rule` family — `rules` (for-key, MCP-only) is a thin subset of `policy_explain` (`rule explain`); `rule list` is inline with no use-case | Proposed (not drafted) |
+| 0060 | Close the agent capability gap — surface single-key `delete`/`mv` (as `key_delete`/`key_mv`) and `where`/`deps`/`rdeps` to MCP | Proposed (not drafted) |
+| 0061 | Reconcile `build`/`publish` vocabulary — CLI `build` runs the `Write::Publish` verb while the capability, the `derived` zone-kind, and the prose all say "build"; collides with the manifest `publish:` block (ADR 0052) | Proposed (not drafted) |
