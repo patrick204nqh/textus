@@ -79,27 +79,18 @@ module Textus
           end
         end
 
-        # Subclasses override to customize publish behavior.
-        # Default: copy the stored file to each publish_to target.
+        # ADR 0049: an entry resolves, once, to one Publish::* mode that owns its
+        # publish algorithm. A plain entry publishes via ToPaths (publish_to) or
+        # None; Nested resolves among the key/path-driven modes. Derived
+        # overrides publish_via to materialize first.
+        def publish_mode
+          @publish_mode ||= Publish.resolve(self)
+        end
+
         # Returns: { kind: :built|:leaves, value: ... } to be accumulated by
-        # Publish#call, or nil to skip.
-        def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          return nil if Array(publish_to).empty?
-
-          source_path = pctx.manifest.resolver.resolve(@key).path
-          envelope = pctx.reader.call(@key)
-
-          publish_to.each do |rel|
-            target_abs = File.join(pctx.repo_root, rel)
-            Textus::Ports::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
-            pctx.emit(:file_published,
-                      key: @key,
-                      envelope: envelope,
-                      source: source_path,
-                      target: target_abs)
-          end
-
-          { kind: :built, value: { "key" => @key, "path" => source_path, "published_to" => publish_to } }
+        # Write::Publish, or nil to skip.
+        def publish_via(pctx, prefix: nil)
+          publish_mode.publish(pctx, prefix: prefix)
         end
       end
     end

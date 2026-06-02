@@ -1,6 +1,8 @@
 require "spec_helper"
 
-RSpec.describe Textus::Manifest::Entry::Validators::PublishTree do
+# ADR 0049: publish_tree shape rules moved onto Publish::Tree and exclusivity
+# moved into Publish.resolve; both are reached through Validators::Publish.
+RSpec.describe Textus::Manifest::Entry::Validators::Publish do
   def entry(raw)
     common = {
       raw: raw, key: raw["key"], path: raw["path"], zone: raw["zone"],
@@ -20,7 +22,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishTree do
     expect { validate(base.merge("publish_tree" => "skills")) }.not_to raise_error
   end
 
-  it "is a no-op when publish_tree is absent" do
+  it "validates the resolved mode when publish_tree is absent (publish_each here)" do
     expect { validate(base.merge("publish_each" => "skills/{leaf}")) }.not_to raise_error
   end
 
