@@ -37,7 +37,7 @@ RSpec.describe Textus::Entry do
       expect(leaf.template).to be_nil
       expect(leaf.inject_boot).to be(false)
       expect(leaf.events).to eq({})
-      expect(leaf.publish_each).to be_nil
+      expect(leaf.publish_tree).to be_nil
       expect(leaf.index_filename).to be_nil
     end
   end

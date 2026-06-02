@@ -2,6 +2,7 @@ require "spec_helper"
 
 # ADR 0049: publish_tree shape rules moved onto Publish::Tree and exclusivity
 # moved into Publish.resolve; both are reached through Validators::Publish.
+# ADR 0051: publish_each was removed; resolving it raises with the migration.
 RSpec.describe Textus::Manifest::Entry::Validators::Publish do
   def entry(raw)
     common = {
@@ -22,8 +23,13 @@ RSpec.describe Textus::Manifest::Entry::Validators::Publish do
     expect { validate(base.merge("publish_tree" => "skills")) }.not_to raise_error
   end
 
-  it "validates the resolved mode when publish_tree is absent (publish_each here)" do
-    expect { validate(base.merge("publish_each" => "skills/{leaf}")) }.not_to raise_error
+  it "passes when no publish key is set (resolves to None)" do
+    expect { validate(base) }.not_to raise_error
+  end
+
+  it "rejects a removed publish_each key at mode resolution (ADR 0051)" do
+    expect { validate(base.merge("publish_each" => "skills/{leaf}")) }
+      .to raise_error(Textus::UsageError, /publish_each was removed in 0\.42\.0/)
   end
 
   it "rejects publish_tree on a non-nested entry" do
@@ -36,11 +42,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::Publish do
 
   it "rejects publish_tree combined with publish_to" do
     expect { validate(base.merge("publish_tree" => "skills", "publish_to" => ["x"])) }
-      .to raise_error(Textus::UsageError, /mutually exclusive/)
-  end
-
-  it "rejects publish_tree combined with publish_each" do
-    expect { validate(base.merge("publish_tree" => "skills", "publish_each" => "skills/{leaf}")) }
       .to raise_error(Textus::UsageError, /mutually exclusive/)
   end
 

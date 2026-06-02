@@ -9,6 +9,14 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.42.0 — 2026-06-02 — Remove `publish_each`: collapse publish to two modes ([ADR 0051](docs/architecture/decisions/0051-remove-publish-each.md))
+
+No `textus/3` wire-format change. **Breaking (pre-1.0):** the `publish_each:` manifest key is removed; a manifest declaring it now fails at load. The publish surface collapses to two modes — `publish_to:` (fixed paths) and `publish_tree:` (whole-subtree mirror) — plus `None`.
+
+### Removed
+
+- **BREAKING (pre-1.0): the `publish_each:` publish mode is removed ([ADR 0051](docs/architecture/decisions/0051-remove-publish-each.md)).** Both the file-leaf and directory-leaf (`index_filename`-driven) forms of `publish_each` are gone, along with the `Publish::Each` / `EachFile` / `EachDir` modes and their `{leaf}`/`{basename}`/`{key}`/`{ext}` template vocabulary. The mode had zero real-world usage (dogfood, example, and `init` scaffold all publish via `publish_to`), and its one niche — a leaf that is both an addressable key *and* published to a per-leaf templated path — never materialized, including in the native skill-authoring pipeline (ADR 0050), which rides `publish_tree`. A manifest declaring `publish_each:` now **fails at load** with a migration message ("publish_each was removed in 0.42.0 (ADR 0051) — mirror the subtree with publish_tree (and index_filename to keep the index addressable)"). **Migration:** a directory-leaf `publish_each: "skills/{leaf}"` over a `nested` skills entry becomes `publish_tree: "skills"` over the parent entry (layout preserved). `index_filename:` is **kept** — it survives as a pure *enumeration* feature, independent of publish. The ADR 0049 sum type makes re-adding one subtree mode (or lifting `index_filename` ⊥ `publish_tree` so the two compose) a cheap one-arm change if the niche ever appears.
+
 ## 0.41.0 — 2026-06-02 — `publish_tree` subtree mirror + content-identical publish adoption ([ADR 0047](docs/architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md), [0050](docs/architecture/decisions/0050-native-authoring-and-content-identical-adoption.md))
 
 No `textus/3` wire-format change — every change here is repo-local publish behaviour or internal re-layering. Headlines: a key-less `publish_tree:` subtree mirror (ADR 0047), and publish now *adopts* a byte-identical pre-existing target instead of refusing (ADR 0050), so an artifact tree already on disk onboards without a manual delete. Internals were re-cut along the way (fetch subsystem, ADR 0048; publish modes as a sum type, ADR 0049) with no contract change.

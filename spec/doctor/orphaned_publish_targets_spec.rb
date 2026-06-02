@@ -16,8 +16,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
           zone: knowledge
           schema: null
           nested: true
-          index_filename: SKILL.md
-          publish_each: "skills/{leaf}"
+          publish_tree: "skills"
     YAML
   end
 

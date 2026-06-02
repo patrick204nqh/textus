@@ -24,7 +24,7 @@ module Textus
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
-        compute template publish_to publish_each publish_tree
+        compute template publish_to publish_tree
         intake events inject_boot index_filename ignore tracked
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
@@ -73,10 +73,23 @@ module Textus
       def self.validate_entries!(entries)
         Array(entries).each_with_index do |e, i|
           path = "$.entries[#{i}]"
+          reject_removed_publish_each!(e, path)
           walk(e, ENTRY_KEYS, path)
           walk(e["compute"], COMPUTE_KEYS, "#{path}.compute") if e["compute"].is_a?(Hash)
           walk(e["intake"], INTAKE_KEYS, "#{path}.intake") if e["intake"].is_a?(Hash)
         end
+      end
+
+      # publish_each was removed in 0.42.0 (ADR 0051). It is no longer an allowed
+      # entry key, so `walk` would reject it as merely "unknown"; intercept it
+      # first with the migration path so a pre-0.42 manifest gets a useful error.
+      def self.reject_removed_publish_each!(entry, path)
+        return unless entry.is_a?(Hash) && entry.key?("publish_each")
+
+        raise BadManifest.new(
+          "publish_each was removed in 0.42.0 (ADR 0051) at '#{path}' — " \
+          "mirror the subtree with publish_tree (and index_filename to keep the index addressable).",
+        )
       end
 
       def self.validate_rules!(rules)

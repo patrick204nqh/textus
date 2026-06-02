@@ -2,9 +2,9 @@ module Textus
   module Write
     # Single-pass publish use case: dispatches polymorphically to each
     # entry's `publish_via` method. Derived entries materialize their body
-    # via Materializer; Nested entries fan out via publish_each; Leaf and
-    # Intake entries copy their stored body to publish_to targets. The
-    # Publish layer owns wiring (context, accumulation) but not per-kind
+    # via Materializer; Nested entries mirror their subtree via publish_tree;
+    # Leaf and Intake entries copy their stored body to publish_to targets.
+    # The Publish layer owns wiring (context, accumulation) but not per-kind
     # logic.
     #
     # Return shape: { "protocol", "built", "published_leaves" }

@@ -82,6 +82,28 @@ RSpec.describe Textus::Manifest::Schema do
     end.to raise_error(Textus::BadManifest, /unknown key 'policies' at '\$'/)
   end
 
+  describe "publish_each removal (ADR 0051)" do
+    it "rejects publish_each at load with the migration path, not a bare unknown-key error" do
+      expect do
+        validate!(
+          "version" => "textus/3",
+          "zones" => [{ "name" => "knowledge", "kind" => "canon" }],
+          "entries" => [
+            { "key" => "knowledge.skills", "path" => "knowledge/skills", "zone" => "knowledge",
+              "kind" => "nested", "nested" => true, "publish_each" => "skills/{leaf}" },
+          ],
+        )
+      end.to raise_error(
+        Textus::BadManifest,
+        /publish_each was removed in 0\.42\.0 \(ADR 0051\).*publish_tree.*index_filename/m,
+      )
+    end
+
+    it "no longer lists publish_each as an allowed entry key" do
+      expect(described_class::ENTRY_KEYS).not_to include("publish_each")
+    end
+  end
+
   describe "fetch_timeout_seconds" do
     def manifest_with_timeout(value)
       {

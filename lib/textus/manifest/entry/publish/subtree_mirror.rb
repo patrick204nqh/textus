@@ -2,12 +2,12 @@ module Textus
   class Manifest
     class Entry
       module Publish
-        # ADR 0049: the one walk->publish->prune pipeline shared by EachDir
-        # (per-leaf subtree, ADR 0046) and Tree (whole-entry mirror, ADR 0047).
-        # The two used to be near-duplicate methods (publish_subtree +
-        # publish_tree_via, prune_orphans + prune_tree); their only real
-        # difference — whether the prune honors the entry's `ignore` — is now the
-        # explicit `prune_honors_ignore:` parameter.
+        # ADR 0049: the one walk->publish->prune pipeline behind Tree (whole-entry
+        # mirror, ADR 0047). It was once shared with the per-leaf publish_each
+        # mode too; ADR 0051 removed publish_each, leaving Tree the only caller.
+        # The `walk_root`/`prune_honors_ignore:` parameters survive from that
+        # shared shape — Tree always walks at `base` and honors `ignore` in the
+        # prune (ADR 0047 D4, so a derived index in the mirrored dir survives).
         class SubtreeMirror
           def initialize(entry, pctx)
             @entry = entry
@@ -16,8 +16,8 @@ module Textus
 
           # base:       store dir the entry owns — the root `ignored?` globs are
           #             relative to (ADR 0042).
-          # walk_root:  dir the glob is rooted at (a single leaf dir for EachDir,
-          #             == base for Tree). dst paths mirror rel-to-walk_root.
+          # walk_root:  dir the glob is rooted at (== base for Tree). dst paths
+          #             mirror rel-to-walk_root.
           # target_dir: repo-side destination root.
           # key/envelope: emitted per file; envelope is nil for the keyless Tree.
           # prune_honors_ignore: when true a managed file the entry `ignore`s

@@ -87,7 +87,7 @@ module Textus
       { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
       { "name" => "key",      "summary" => "key operations: 'key mv', 'key uid'" },
       { "name" => "delete",   "summary" => "delete an entry; --as=<role>" },
-      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_each fan out copies" },
+      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
       { "name" => "fetch" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
@@ -225,7 +225,6 @@ module Textus
           "derived" => derived,
           "intake" => e.is_a?(Textus::Manifest::Entry::Intake),
           "publish_to" => Array(e.publish_to),
-          "publish_each" => e.publish_each,
         }
       end
     end
