@@ -274,6 +274,18 @@ Validation at manifest load: any unknown variable raises `UsageError`; a compute
 
 A leaf at `working.skills.voice-writer` (a directory `.textus/zones/working/skills/voice-writer/` containing `SKILL.md`, `commands.md`, and `references/*`) publishes its whole subtree under `skills/voice-writer/`, preserving layout.
 
+**Subtree mirror (`publish_tree:`).** A nested manifest entry MAY declare `publish_tree:` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). Unlike `publish_each:`, it is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). `publish_tree:` is mutually exclusive with `publish_to:` and `publish_each:`, and incompatible with `index_filename:`. When a `publish_tree:` target directory overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
+
+```yaml
+- key: working.skills
+  path: working/skills
+  zone: working
+  schema: skill
+  nested: true
+  publish_tree: "skills"
+  ignore: ["*.tmp", ".DS_Store"]
+```
+
 **`inject_boot:`.** A derived entry with a `template:` MAY declare `inject_boot: true`. When `textus build` materializes the entry, it merges the `textus boot` envelope (§9) into the projection data under the key `boot`, so the template can render orientation content (zones, write flows, CLI catalog) alongside its projected rows. The flag is rejected at manifest load on (a) non-derived entries or (b) derived entries without a `template:` — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus boot` exposes.
 
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
@@ -479,6 +491,8 @@ When the entry is recomputed, textus copies the in-store file byte-for-byte to e
 A sentinel is written for each published file at `<store_root>/sentinels/<target-relative-to-repo>.textus-managed.json`, recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store rather than beside the consumer file so target directories stay clean. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing or marked as managed. Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
 
 **Per-leaf publishing.** A nested entry MAY declare `publish_each:` instead of `publish_to:` (see §4). When the build runs, every leaf reachable under the nested entry is copied to the path produced by substituting `{leaf}` / `{basename}` / `{key}` / `{ext}` in the template, with a sentinel written under `<store_root>/sentinels/` at the mirrored target path. The publish unit follows the entry's `index_filename` (ADR 0046): a file-leaf entry byte-copies one file per leaf; a directory-leaf entry (with `index_filename`) byte-copies the leaf's whole subtree — one row and one sentinel **per file** — applying the entry's `ignore:` filter, and prunes textus-managed files under the target that the current source no longer produces (never touching unmanaged files). The build envelope grows a `published_leaves` array — one row per published file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. Targets that would resolve outside the repo root are refused.
+
+**Subtree mirror.** A nested entry MAY declare `publish_tree:` instead of `publish_to:` or `publish_each:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. `publish_tree:` is mutually exclusive with `publish_to:` and `publish_each:`, and incompatible with `index_filename:`. When a `publish_tree:` target overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
 
 ### 5.4 Intake (declared, fetched via registered intake handler)
 
@@ -998,7 +1012,7 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_allowlist`, `fetch_locks`, `proposal_targets`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `hooks`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_allowlist`, `fetch_locks`, `proposal_targets`, `publish.tree_index_overlap`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 
