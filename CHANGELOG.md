@@ -9,7 +9,9 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## Unreleased
+## 0.41.0 — 2026-06-02 — `publish_tree` subtree mirror + content-identical publish adoption ([ADR 0047](docs/architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md), [0050](docs/architecture/decisions/0050-native-authoring-and-content-identical-adoption.md))
+
+No `textus/3` wire-format change — every change here is repo-local publish behaviour or internal re-layering. Headlines: a key-less `publish_tree:` subtree mirror (ADR 0047), and publish now *adopts* a byte-identical pre-existing target instead of refusing (ADR 0050), so an artifact tree already on disk onboards without a manual delete. Internals were re-cut along the way (fetch subsystem, ADR 0048; publish modes as a sum type, ADR 0049) with no contract change.
 
 ### Added
 
