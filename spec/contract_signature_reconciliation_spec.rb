@@ -6,7 +6,10 @@ require "spec_helper"
 
 # Verbs whose #call signature is intentionally a superset of the wire args
 # (extra params with no MCP exposure). Keep empty unless justified.
-CONTRACT_SIGNATURE_EXEMPT = [].freeze
+# `delete` carries an internal-only `suppress_events:` kwarg — the proposal
+# reject path deletes the pending entry silently (`write/reject.rb`), so the
+# event is suppressed there but the flag is never a wire arg (ADR 0060 amendment).
+CONTRACT_SIGNATURE_EXEMPT = %i[delete].freeze
 
 RSpec.describe "Contract args reconcile with use-case #call (ADR 0039)" do
   Textus::Dispatcher::VERBS.each do |verb, klass|

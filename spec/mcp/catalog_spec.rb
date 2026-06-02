@@ -70,9 +70,9 @@ RSpec.describe Textus::MCP::Catalog do
       end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
     end
 
-    it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. delete)" do
+    it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. audit)" do
       expect do
-        described_class.call("delete", session: session, store: store, args: { "key" => "knowledge.project" })
+        described_class.call("audit", session: session, store: store, args: { "key" => "knowledge.project" })
       end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
     end
 
