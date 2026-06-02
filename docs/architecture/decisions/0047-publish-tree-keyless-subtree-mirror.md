@@ -1,7 +1,7 @@
 # ADR 0047 — `publish_tree`: a key-less subtree mirror for a derived-index leaf
 
 **Date:** 2026-06-02
-**Status:** Proposed
+**Status:** Accepted (ships 0.41.0)
 **Touches:** [ADR 0046](./0046-publish-leaf-subtrees.md) (whole-leaf `publish_each`; scopes its "no third key" ruling to the index-*present* case — see Decision 1), [ADR 0042](./0042-native-ignore-patterns-for-entry-enumeration.md) (the shared `ignore` filter seam), [ADR 0007](./0007-envelope-data-class.md) (publish is copy, not parse), [ADR 0044](./0044-system-actors-resolved-by-capability.md) (`build` runs as `actor_for("build")`). Resolves issue #132 item #4.
 
 > **Publish surface after this ADR (SPEC §4, §5.3).** Three keys, pairwise mutually exclusive, split on a real axis:

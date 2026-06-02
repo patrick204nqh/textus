@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::PublishTree do
     common = {
       raw: raw, key: raw["key"], path: raw["path"], zone: raw["zone"],
       schema: nil, owner: nil, format: "markdown",
-      publish_to: raw["publish_to"] || [],
+      publish_to: raw["publish_to"] || []
     }
     Textus::Manifest::Entry::Nested.from_raw(common, raw)
   end
