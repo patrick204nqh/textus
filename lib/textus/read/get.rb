@@ -1,20 +1,12 @@
 module Textus
   module Read
-    # Pure read: returns the on-disk envelope annotated with a freshness
-    # verdict. Never triggers fetch; never invokes the orchestrator.
-    #
-    # For interactive reads that want fetch-on-stale, use
-    # `Read::GetOrFetch`, which composes this with the orchestrator.
+    # Orchestrator-free pure-read primitive: returns the on-disk envelope
+    # annotated with a freshness verdict. Never triggers fetch. NOT a public
+    # verb — the public `get` verb is `Read::GetOrFetch` (read-through, ADR
+    # 0062). Construct this class directly where a read must stay pure:
+    # build/projection, schema tooling, the validator, accept/reject/publish,
+    # `uid`, and the hook context.
     class Get
-      extend Textus::Contract::DSL
-
-      verb     :get
-      summary  "Read one entry. Returns the envelope (uid, etag, _meta, body, freshness)."
-      surfaces :cli, :ruby, :mcp
-      arg :key, String, required: true, positional: true,
-                        description: "dotted entry key to read, e.g. 'knowledge.project'"
-      response(&:to_h_for_wire)
-
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
         @call       = call

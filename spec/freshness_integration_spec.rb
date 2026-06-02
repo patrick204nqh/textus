@@ -20,7 +20,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.join(root, "zones", "feeds", "doc.md"),
       "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
     )
-    envelope = store.as("automation").get_or_fetch("feeds.doc")
+    envelope = store.as("automation").get("feeds.doc")
 
     expect(envelope.stale?).to be(true)
     expect(envelope.freshness.reason).to match(/ttl exceeded/)
@@ -42,7 +42,7 @@ RSpec.describe "Reader honors on_stale policy" do
       File.join(root, "zones", "feeds", "doc.md"),
       "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
     )
-    envelope = store.as("automation").get_or_fetch("feeds.doc")
+    envelope = store.as("automation").get("feeds.doc")
 
     expect(envelope.stale?).to be(false)
     expect(envelope.body || envelope.content).to include("fresh body")
@@ -92,7 +92,7 @@ RSpec.describe "Reader honors on_stale policy" do
 
     store = Textus::Store.new(timed_root)
     t0 = Time.now
-    envelope = store.as("automation").get_or_fetch("feeds.slow")
+    envelope = store.as("automation").get("feeds.slow")
     elapsed = Time.now - t0
 
     expect(elapsed).to be < 0.4

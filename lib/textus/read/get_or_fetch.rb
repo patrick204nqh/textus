@@ -9,6 +9,17 @@ module Textus
     # Pure reads (build, projection, schema tooling) should use
     # `Read::Get` directly; it has no orchestrator dependency.
     class GetOrFetch
+      extend Textus::Contract::DSL
+
+      verb     :get
+      summary  "Read one entry, fetching on stale per the entry's fetch rule " \
+               "(degrades to a pure read when the key has no fetch rule). " \
+               "Returns the envelope (uid, etag, _meta, body, freshness)."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true,
+                        description: "dotted entry key to read, e.g. 'knowledge.project'"
+      response(&:to_h_for_wire)
+
       def initialize(container:, call:, get: nil, orchestrator: nil)
         @container    = container
         @call         = call

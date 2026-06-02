@@ -29,7 +29,10 @@ module Textus
       end
 
       # read
-      def get(key)                = @scope.get(key)
+      # Pure read: a hook must never trigger a fetch (fetch fires events →
+      # hooks → reentrancy). Bypass the read-through `get` verb (ADR 0062)
+      # and read through the orchestrator-free primitive directly.
+      def get(key)                = pure_reader.call(key)
       def list(**)                = @scope.list(**)
       def deps(key)               = @scope.deps(key)
       def freshness(key)          = @scope.freshness(key)
@@ -49,6 +52,19 @@ module Textus
 
       def inspect
         "#<Textus::Hooks::Context role=#{@role} correlation_id=#{@correlation_id}>"
+      end
+
+      private
+
+      def pure_reader
+        @pure_reader ||= Textus::Read::Get.new(
+          container: @scope.container,
+          call: Textus::Call.build(
+            role: @scope.role,
+            correlation_id: @scope.correlation_id,
+            dry_run: @scope.dry_run?,
+          ),
+        )
       end
     end
   end

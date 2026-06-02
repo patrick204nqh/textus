@@ -15,7 +15,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   accept reject publish delete mv
   audit blame uid freshness stale
   doctor rule_list published retainable
-  get_or_fetch validate_all retain
+  validate_all retain
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
@@ -38,5 +38,10 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   it "the omit-list has no stale entries (all still dispatcher verbs)" do
     stale = MCP_CATALOG_INTENTIONALLY_OMITTED - dispatcher
     expect(stale).to be_empty, "omit-list names no longer registered: #{stale.inspect}"
+  end
+
+  it "maps the public `get` verb to the read-through use-case (ADR 0062)" do
+    expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Read::GetOrFetch)
+    expect(Textus::Dispatcher::VERBS).not_to have_key(:get_or_fetch)
   end
 end
