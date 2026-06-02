@@ -13,8 +13,8 @@ MCP_CATALOG_COMPOSED = [].freeze
 # justify each. Edit this list when you add or expose a verb.
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   accept reject publish delete mv
-  audit blame deps rdeps where uid freshness stale
-  doctor policy_explain published retainable
+  audit blame uid freshness stale
+  doctor rule_list published retainable
   get_or_fetch validate_all retain
 ].freeze
 

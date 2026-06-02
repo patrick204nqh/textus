@@ -10,7 +10,7 @@ module Textus
       surfaces :cli, :ruby, :mcp
       arg :from_prefix, String, required: true, description: "dotted prefix whose leaf keys are renamed"
       arg :to_prefix,   String, required: true, description: "dotted prefix the keys are renamed to"
-      arg :dry_run,     :boolean, description: "true returns the Plan without writing; default false applies the rename immediately"
+      arg :dry_run,     :boolean, description: "defaults true: returns the Plan without writing. Pass dry_run: false to apply the rename."
       response(&:to_h)
 
       def initialize(container:, call:)
@@ -18,7 +18,7 @@ module Textus
         @call         = call
       end
 
-      def call(from_prefix:, to_prefix:, dry_run: false)
+      def call(from_prefix:, to_prefix:, dry_run: true)
         raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
         leaves = list_leaves_under(from_prefix)

@@ -35,7 +35,7 @@ RSpec.describe "textus rule group" do
       rc = run(%w[rule list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
-      expect(payload["verb"]).to eq("policy_list")
+      expect(payload["verb"]).to eq("rule_list")
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
       expect(payload["policies"].first["fetch"]["ttl_seconds"]).to eq(3600)
@@ -63,11 +63,20 @@ RSpec.describe "textus rule group" do
   end
 
   describe "textus rule explain KEY" do
-    it "returns matched blocks and effective values for a key" do
+    it "is lean by default: the effective {fetch, guard} winners only" do
       rc = run(%w[rule explain knowledge.doc])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
-      expect(payload["verb"]).to eq("policy_explain")
+      expect(payload["verb"]).to eq("rule_explain")
+      expect(payload.keys - %w[protocol verb fetch guard]).to be_empty
+      expect(payload["fetch"]["ttl_seconds"]).to eq(300)
+    end
+
+    it "with --detail returns matched blocks and effective values for a key" do
+      rc = run(%w[rule explain knowledge.doc --detail])
+      expect(rc).to eq(0)
+      payload = JSON.parse(stdout.string)
+      expect(payload["verb"]).to eq("rule_explain")
       expect(payload["key"]).to eq("knowledge.doc")
       expect(payload["matched_blocks"].length).to eq(2)
       expect(payload["effective"]["fetch"]["ttl_seconds"]).to eq(300)

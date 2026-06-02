@@ -56,17 +56,22 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema_show` | Field shape (schema for an entry's family) | `key: string` |
-| `rules` | Effective rules for a key | `key: string` |
+| `rule_explain` | Effective rules for a key — lean `{fetch, guard}` by default; verbose with `detail` | `key: string, detail?: bool` |
+| `where` | Resolve a key to its zone, owner, and path (no body read) | `key: string` |
+| `deps` | Keys a derived entry depends on (its sources) | `key: string` |
+| `rdeps` | Derived entries that depend on a key (impact set) | `key: string` |
 
-Maintenance tools (admin / bulk operations):
+Maintenance tools (admin / bulk operations). The four bulk-destructive verbs
+default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
+`dry_run: false` to apply. Pair with `deps`/`rdeps`/`where` to see blast radius first.
 
 | Tool | Returns | Args |
 |---|---|---|
-| `key_mv_prefix` | Plan or applied move | `from_prefix, to_prefix, dry_run?` |
-| `key_delete_prefix` | Plan or applied delete | `prefix, dry_run?` |
-| `zone_mv` | Renamed zone (manifest + files) | `from, to, dry_run?` |
+| `key_mv_prefix` | Plan (default) or applied move | `from_prefix, to_prefix, dry_run?=true` |
+| `key_delete_prefix` | Plan (default) or applied delete | `prefix, dry_run?=true` |
+| `zone_mv` | Plan (default) or renamed zone (manifest + files) | `from, to, dry_run?=true` |
 | `rule_lint` | Rule diff vs. live manifest (no writes) | `candidate_yaml` |
-| `migrate` | Result of a YAML migration plan | `plan_yaml, dry_run?` |
+| `migrate` | Plan (default) or result of a YAML migration plan | `plan_yaml, dry_run?=true` |
 
 ### Errors
 

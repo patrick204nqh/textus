@@ -42,7 +42,7 @@ RSpec.describe "boot agent quickstart / recipes — derive-or-guard (ADR 0056)" 
   end
 
   it "advertises the discovery verbs the write/propose flow depends on" do
-    expect(read_verbs).to include("schema_show", "rules")
+    expect(read_verbs).to include("schema_show", "rule_explain", "deps", "rdeps", "where")
   end
 
   it "never advertises CLI-only read verbs as agent verbs" do

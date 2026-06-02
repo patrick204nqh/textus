@@ -719,7 +719,7 @@ than aborting the run.
 
 **Resolution.** For each key textus computes a `RuleSet { fetch, intake_handler_allowlist, guard, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key plus the effective guard predicate names for every write transition.
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{fetch, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
 
 ### 5.12 Storage formats
 
@@ -898,7 +898,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 ```json
 {
   "agent_quickstart": {
-    "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rules"],
+    "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
     "write_verbs":    ["put KEY --as=agent --stdin"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
@@ -907,7 +907,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 }
 ```
 
-`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rules` for its freshness/guard policy) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI.
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI.
 
 `latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
 

@@ -8,7 +8,7 @@ module Textus
       summary  "Bulk-delete every leaf key under prefix."
       surfaces :cli, :ruby, :mcp
       arg :prefix,  String, required: true, description: "every leaf key under this dotted prefix is deleted"
-      arg :dry_run, :boolean, description: "true returns the Plan without writing; default false applies the delete immediately"
+      arg :dry_run, :boolean, description: "defaults true: returns the Plan without writing. Pass dry_run: false to apply the delete."
       response(&:to_h)
 
       def initialize(container:, call:)
@@ -16,7 +16,7 @@ module Textus
         @call         = call
       end
 
-      def call(prefix:, dry_run: false)
+      def call(prefix:, dry_run: true)
         raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
         leaves = Read::List.new(container: @container)

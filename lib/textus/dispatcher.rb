@@ -29,14 +29,14 @@ module Textus
       deps: Textus::Read::Deps,
       rdeps: Textus::Read::Rdeps,
       pulse: Textus::Read::Pulse,
-      policy_explain: Textus::Read::PolicyExplain,
+      rule_explain: Textus::Read::RuleExplain,
+      rule_list: Textus::Read::RuleList,
       published: Textus::Read::Published,
       schema_show: Textus::Read::SchemaEnvelope,
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
       retainable: Textus::Read::Retainable,
-      rules: Textus::Read::Rules,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,

@@ -1,6 +1,14 @@
 module Textus
   module Read
     class Where
+      extend Textus::Contract::DSL
+
+      verb     :where
+      summary  "Resolve a key to its zone, owner, and path without reading the body."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true,
+                        description: "dotted key to locate (returns zone, owner, path; does not read content)"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end

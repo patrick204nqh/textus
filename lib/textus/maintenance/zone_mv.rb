@@ -13,7 +13,7 @@ module Textus
       surfaces :cli, :ruby, :mcp
       arg :from,    String, required: true, description: "current zone name"
       arg :to,      String, required: true, description: "new zone name; refused if a zone by this name already exists"
-      arg :dry_run, :boolean, description: "true returns the plan without writing; default false applies the rename immediately"
+      arg :dry_run, :boolean, description: "defaults true: returns the plan without writing. Pass dry_run: false to apply the rename."
       response(&:to_h)
 
       def initialize(container:, call:)
@@ -23,7 +23,7 @@ module Textus
         @root      = container.root
       end
 
-      def call(from:, to:, dry_run: false)
+      def call(from:, to:, dry_run: true)
         raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
         raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
 

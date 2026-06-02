@@ -54,8 +54,9 @@ RSpec.describe "MCP end-to-end" do
     list_response = responses.find { |r| r["id"] == 2 }
     tool_names = list_response.dig("result", "tools").map { |t| t["name"] }
     expect(tool_names).to include("boot", "pulse", "list", "get", "put",
-                                  "propose", "schema_show", "rules")
-    expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale")
+                                  "propose", "schema_show", "rule_explain",
+                                  "deps", "rdeps", "where")
+    expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     # Self-updating: must equal the catalog's authoritative name list
     expect(tool_names.sort).to eq(Textus::MCP::Catalog.names.sort)
   end

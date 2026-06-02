@@ -1,6 +1,14 @@
 module Textus
   module Read
     class Rdeps
+      extend Textus::Contract::DSL
+
+      verb     :rdeps
+      summary  "List the derived entries that depend on a key (reverse deps / impact set)."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true,
+                        description: "dotted key whose dependents (what would be stranded if it moved) you want"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end
