@@ -18,7 +18,7 @@ module Textus
           payload =
             if fetch_name
               result = Textus::Write::IntakeFetch.invoke(
-                rpc: store.rpc, handler: fetch_name,
+                caps: store.container, handler: fetch_name,
                 config: { "bytes" => raw }, args: {}, label: "fetch"
               )
               basename = key.split(".").last

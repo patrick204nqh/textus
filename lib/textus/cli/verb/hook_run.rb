@@ -26,11 +26,13 @@ module Textus
             end
           end
 
+          # Validate --as resolves to a declared role (raises InvalidRole); hook
+          # run has no role-scoped authority itself, so the result is discarded.
           Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
           begin
             Textus::Write::IntakeFetch.invoke(
-              rpc: store.rpc, handler: name, config: {}, args: args, label: "hook run",
+              caps: store.container, handler: name, config: {}, args: args, label: "hook run",
             )
           rescue Textus::Error
             raise

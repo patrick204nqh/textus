@@ -18,7 +18,6 @@ module Textus
         @call         = call
         @manifest     = container.manifest
         @schemas      = container.schemas
-        @events       = container.events
         @rpc          = container.rpc
       end
 
@@ -35,7 +34,7 @@ module Textus
         remaining = res.remaining
         raise UsageError.new("no intake declared for '#{key}'") unless mentry.is_a?(Textus::Manifest::Entry::Intake)
 
-        before_etag = File.exist?(path) ? Etag.for_file(path) : nil
+        before_etag = @container.file_store.exists?(path) ? @container.file_store.etag(path) : nil
         result = fetch_with_events(key, mentry, remaining)
         persist_and_notify(key, mentry, result, before_etag)
       end
@@ -65,8 +64,8 @@ module Textus
 
       private
 
-      def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      def fetch_events
+        @fetch_events ||= FetchEvents.from(container: @container, call: @call)
       end
 
       def fetch_timeout_for(key)
@@ -75,30 +74,22 @@ module Textus
       end
 
       def fetch_with_events(key, mentry, remaining)
-        @events.publish(:fetch_started, ctx: hook_context, key: key, mode: :sync)
+        fetch_events.started(key)
         call_intake(key, mentry, remaining)
       end
 
       def call_intake(key, mentry, remaining)
-        timeout = fetch_timeout_for(key)
-        Timeout.timeout(timeout) do
-          @rpc.invoke(:resolve_intake, mentry.handler,
-                      caps: @container,
-                      config: mentry.config,
-                      args: { trigger_key: key, leaf_segments: remaining || [] })
-        end
-      rescue Timeout::Error
-        @events.publish(:fetch_failed, ctx: hook_context, key: key,
-                                       error_class: "Timeout::Error",
-                                       error_message: "intake '#{mentry.handler}' exceeded #{timeout}s")
-        raise UsageError.new("intake '#{mentry.handler}' exceeded #{timeout}s timeout")
+        IntakeFetch.invoke(
+          caps: @container, handler: mentry.handler,
+          config: mentry.config,
+          args: { trigger_key: key, leaf_segments: remaining || [] },
+          label: "intake", timeout: fetch_timeout_for(key)
+        )
       rescue Textus::Error => e
-        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                       error_message: e.message)
+        fetch_events.failed(key, e)
         raise
       rescue StandardError => e
-        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                       error_message: e.message)
+        fetch_events.failed(key, e)
         raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
       end
 
@@ -120,7 +111,7 @@ module Textus
           ),
         )
         change = detect_change(before_etag, envelope)
-        @events.publish(:entry_fetched, ctx: hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
+        fetch_events.fetched(key, envelope, change)
         envelope
       end
 
