@@ -11,7 +11,7 @@ module Textus
       # Contracts of every MCP-surfaced verb, in Dispatcher order.
       def specs
         Textus::Dispatcher::VERBS.values
-                                 .select { |k| k.respond_to?(:contract?) && k.contract? && k.contract.mcp? }
+                                 .select { |k| mcp_surfaced?(k) }
                                  .map(&:contract)
       end
 
@@ -25,9 +25,23 @@ module Textus
         specs.map { |s| s.verb.to_s }
       end
 
+      # MCP-surfaced read verbs, by Dispatcher class namespace — the agent's
+      # real read/discovery surface. `boot.agent_quickstart.read_verbs` derives
+      # from this so it can never advertise a verb the agent cannot call, nor
+      # omit one it can (ADR 0056). Excludes Write/Maintenance.
+      def read_verbs
+        Textus::Dispatcher::VERBS
+          .select { |_verb, klass| mcp_surfaced?(klass) && klass.name.start_with?("Textus::Read::") }
+          .keys.map(&:to_s)
+      end
+
+      def mcp_surfaced?(klass)
+        klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
+      end
+
       def call(name, session:, store:, args:)
         klass = Textus::Dispatcher::VERBS[name.to_sym]
-        raise ToolError.new("unknown tool: #{name}") unless klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
+        raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
         spec = klass.contract
         pos, kw = map_args(spec, args || {}, session)

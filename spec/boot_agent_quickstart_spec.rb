@@ -24,7 +24,11 @@ RSpec.describe Textus::Boot do
       out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs).to be_a(Hash)
-      expect(qs["read_verbs"]).to include("boot", "get", "list", "audit", "pulse", "freshness", "doctor")
+      # read_verbs derives from the MCP catalog (ADR 0056): the verbs the agent
+      # can actually call — including schema/rules — and never the CLI-only
+      # audit/freshness/doctor.
+      expect(qs["read_verbs"]).to include("boot", "get", "list", "pulse", "schema", "rules")
+      expect(qs["read_verbs"]).not_to include("audit", "freshness", "doctor")
       expect(qs["write_verbs"]).to include(a_string_matching(/put.*--as=agent/))
       expect(qs["writable_zones"]).to include("proposals")
       expect(qs["propose_zone"]).to eq("proposals")

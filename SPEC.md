@@ -898,7 +898,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 ```json
 {
   "agent_quickstart": {
-    "read_verbs":     ["boot", "get", "list", "audit", "pulse", "freshness", "doctor"],
+    "read_verbs":     ["get", "list", "pulse", "schema", "boot", "rules"],
     "write_verbs":    ["put KEY --as=agent --stdin"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
@@ -906,6 +906,8 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
   }
 }
 ```
+
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema` for an entry's field shape, `rules` for its freshness/guard policy) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema` verb before a `put`/`propose`, not by shelling out to a CLI.
 
 `latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
 

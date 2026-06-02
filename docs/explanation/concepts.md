@@ -110,7 +110,7 @@ Key field for agents: **`agent_quickstart`**.
 ```json
 {
   "agent_quickstart": {
-    "read_verbs":     ["boot", "get", "list", "audit", "pulse", "freshness", "doctor"],
+    "read_verbs":     ["get", "list", "pulse", "schema", "boot", "rules"],
     "write_verbs":    ["put KEY --as=agent --stdin"],
     "writable_zones": ["review"],
     "propose_zone":   "review",
