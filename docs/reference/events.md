@@ -34,7 +34,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 | `:entry_fetched` | pubsub | Like `:entry_put` but specific to fetch-driven writes. Both fire — `:entry_put` first, then `:entry_fetched`. Payload: `{ ctx:, key:, envelope:, change: }`. |
 | `:build_completed` | pubsub | One derived entry just finished materializing. Fires once per derived entry per build. Payload: `{ ctx:, key:, envelope:, sources: }`. |
 | `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ ctx:, key:, target_key: }`. |
-| `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish_to:` and `publish_tree:`. Payload: `{ ctx:, key:, envelope:, source:, target: }`. |
+| `:file_published` | pubsub | A derived file was written to a repo path. Fires once per file for both `publish: { to: }` and `publish: { tree: }`. Payload: `{ ctx:, key:, envelope:, source:, target: }`. |
 | `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ ctx:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
 | `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ ctx:, key:, target_key: }`. |
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
@@ -145,7 +145,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ┃   ┃ merge `boot` if inject_boot:
   ┃   ┃ render via format + template
   ┃   ┃ write derived path
-  ┃   ┃ for each publish_to: / publish_tree: target:
+  ┃   ┃ for each publish.to / publish.tree target:
   ┃   ┃   byte-copy file to repo path
   ┃   ┃   ─────────────────────────────► :file_published   (pubsub) — per file written
   ┃   ┃ append audit row {verb:"compute"}

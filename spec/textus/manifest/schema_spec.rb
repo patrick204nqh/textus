@@ -82,25 +82,34 @@ RSpec.describe Textus::Manifest::Schema do
     end.to raise_error(Textus::BadManifest, /unknown key 'policies' at '\$'/)
   end
 
-  describe "publish_each removal (ADR 0051)" do
-    it "rejects publish_each at load with the migration path, not a bare unknown-key error" do
-      expect do
-        validate!(
-          "version" => "textus/3",
-          "zones" => [{ "name" => "knowledge", "kind" => "canon" }],
-          "entries" => [
-            { "key" => "knowledge.skills", "path" => "knowledge/skills", "zone" => "knowledge",
-              "kind" => "nested", "nested" => true, "publish_each" => "skills/{leaf}" },
-          ],
-        )
-      end.to raise_error(
-        Textus::BadManifest,
-        /publish_each was removed in 0\.42\.0 \(ADR 0051\).*publish_tree.*index_filename/m,
-      )
+  def entry_manifest(extra)
+    {
+      "version" => "textus/3",
+      "zones" => [{ "name" => "knowledge", "kind" => "canon" }],
+      "entries" => [
+        { "key" => "knowledge.skills", "path" => "knowledge/skills", "zone" => "knowledge",
+          "kind" => "nested", "nested" => true }.merge(extra),
+      ],
+    }
+  end
+
+  describe "typed publish: block (ADR 0052)" do
+    it "accepts publish: { to: [...] }" do
+      expect { validate!(entry_manifest("publish" => { "to" => ["A.md"] })) }.not_to raise_error
     end
 
-    it "no longer lists publish_each as an allowed entry key" do
-      expect(described_class::ENTRY_KEYS).not_to include("publish_each")
+    it "accepts publish: { tree: \"...\" }" do
+      expect { validate!(entry_manifest("publish" => { "tree" => "skills" })) }.not_to raise_error
+    end
+
+    it "rejects an unknown sub-key in the publish block" do
+      expect { validate!(entry_manifest("publish" => { "bogus" => 1 })) }
+        .to raise_error(Textus::BadManifest, /unknown key 'bogus' at '\$\.entries\[0\]\.publish'/)
+    end
+
+    it "rejects a non-mapping publish value" do
+      expect { validate!(entry_manifest("publish" => "CLAUDE.md")) }
+        .to raise_error(Textus::BadManifest, /publish: must be a mapping/)
     end
   end
 

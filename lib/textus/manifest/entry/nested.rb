@@ -6,11 +6,10 @@ module Textus
       # Entry::Publish::* — Nested is just the value (attributes + ignore
       # predicate) those modes read.
       class Nested < Base
-        attr_reader :index_filename, :publish_tree, :ignore
+        attr_reader :publish_tree, :ignore
 
-        def initialize(index_filename: nil, publish_tree: nil, ignore: nil, **rest)
+        def initialize(publish_tree: nil, ignore: nil, **rest)
           super(**rest)
-          @index_filename = index_filename
           @publish_tree = publish_tree
           @ignore = Array(ignore)
         end
@@ -26,8 +25,7 @@ module Textus
 
         def self.from_raw(common, raw)
           new(
-            index_filename: raw["index_filename"],
-            publish_tree: raw["publish_tree"],
+            publish_tree: raw.dig("publish", "tree"), # ADR 0052: typed publish block
             ignore: raw["ignore"],
             **common,
           )

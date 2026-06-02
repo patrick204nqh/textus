@@ -24,7 +24,7 @@
   - [5.2 Compute layer (derived entries)](#52-compute-layer-derived-entries)
     - [5.2.1 Projection compute](#521-projection-compute-kind-projection)
     - [5.2.2 External compute](#522-external-compute-kind-external)
-  - [5.3 Publish layer](#53-publish-layer-publish_to)
+  - [5.3 Publish layer](#53-publish-layer-publish)
   - [5.4 Intake](#54-intake-declared-fetched-via-registered-intake-handler)
   - [5.5 Pending / accept workflow](#55-pending--accept-workflow)
   - [5.6 Audit log](#56-audit-log)
@@ -100,7 +100,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
 | L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `fetch`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
-| L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish_to:`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/sentinels/<target-rel-path>.textus-managed.json` records the source, sha256, and `mode: "copy"`. |
+| L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish: { to: [...] }`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/sentinels/<target-rel-path>.textus-managed.json` records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
 
 ## 2. Goals and non-goals
@@ -228,21 +228,11 @@ Zone names are conventional — write authority comes from each zone's declared 
 | `yaml`     | `.yaml` or `.yml` required  | optional (escape hatch) | optional (top-level keys) |
 | `text`     | `.txt` or no extension      | required for derived | MUST be null |
 
-For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema.
+For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema. Each matching file is enumerated as its own key, with the key segments derived from the path relative to the entry (extension stripped). A nested entry that instead mirrors a whole directory of files to a consumer path — without enumerating any of them as keys — uses `publish: { tree: }` (below); its files are opaque payload. (The former `index_filename:` directory-keyed enumeration was removed in 0.43.0 — ADR 0053.)
 
-**Per-entry `index_filename:`.** A nested entry MAY declare `index_filename:` to surface a single fixed basename (e.g. `SKILL.md`) per directory as the row, with the row's key segments derived from the directory path. Sibling files are not enumerated. The basename's extension MUST match the entry's `format:`. This lets entries project spec-mandated filenames whose casing would otherwise be rejected by the key-segment grammar. Example:
+**The `publish:` block (ADR 0052).** Publishing is configured by one typed `publish:` block with exactly one of two sub-keys — `publish: { to: [...] }` (file fan-out, §5.3) **xor** `publish: { tree: "dir" }` (subtree mirror, below). Setting both is an error. The legacy top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message.
 
-```yaml
-- key: skills
-  path: skills
-  zone: skills
-  nested: true
-  index_filename: SKILL.md
-```
-
-A file at `.textus/zones/skills/ask/SKILL.md` enumerates as `skills.ask`; `.textus/zones/skills/ask/references/algorithm.md` is not enumerated. Resolving `skills.ask` returns the `SKILL.md` path. `index_filename:` requires `nested: true`; the value must be a bare basename (no slashes). `index_filename:` is a pure *enumeration* feature — it selects which file is the addressable row per directory and is independent of publishing (ADR 0051).
-
-**Subtree mirror (`publish_tree:`).** A nested manifest entry MAY declare `publish_tree:` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). `publish_tree:` is mutually exclusive with `publish_to:`, and incompatible with `index_filename:`. When a `publish_tree:` target directory overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
+**Subtree mirror (`publish: { tree: }`).** A nested manifest entry MAY declare `publish: { tree: "dir" }` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). When a `publish.tree` target directory overlaps a `derived` entry's `publish.to` (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
 
 ```yaml
 - key: working.skills
@@ -250,7 +240,8 @@ A file at `.textus/zones/skills/ask/SKILL.md` enumerates as `skills.ask`; `.text
   zone: working
   schema: skill
   nested: true
-  publish_tree: "skills"
+  publish:
+    tree: "skills"
   ignore: ["*.tmp", ".DS_Store"]
 ```
 
@@ -444,21 +435,24 @@ generated:
 
 `kind: external` and `kind: projection` are alternatives — exactly one per entry. Templates are not required for `kind: external`: the external automation produces the bytes directly.
 
-### 5.3 Publish layer (`publish_to:`)
+### 5.3 Publish layer (`publish:`)
 
-A derived entry MAY declare `publish_to:` in its frontmatter, listing one or more destination paths relative to the project root:
+Publishing is configured by one typed `publish:` block with exactly one sub-key (ADR 0052): `to:` (file fan-out) **xor** `tree:` (subtree mirror). Setting both is an error; the legacy top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message.
+
+A derived entry MAY declare `publish: { to: [...] }`, listing one or more destination paths relative to the project root:
 
 ```yaml
-publish_to:
-  - CLAUDE.md
-  - .ai/instructions.md
+publish:
+  to:
+    - CLAUDE.md
+    - .ai/instructions.md
 ```
 
 When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/<output-zone>/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
 
 A sentinel is written for each published file at `<store_root>/sentinels/<target-relative-to-repo>.textus-managed.json`, recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store rather than beside the consumer file so target directories stay clean. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing, marked as managed, or **byte-identical to the source being published**. An identical destination is *adopted*: its sentinel is written and management proceeds (the copy is a content no-op), so an artifact tree already on disk onboards without a manual delete. An unmanaged destination whose content **differs**, or any unmanaged symlink, is still refused (ADR 0050). Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
 
-**Subtree mirror.** A nested entry MAY declare `publish_tree:` instead of `publish_to:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The build envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. `publish_tree:` is mutually exclusive with `publish_to:`, and incompatible with `index_filename:`. Targets that would resolve outside the repo root are refused. When a `publish_tree:` target overlaps a `derived` entry's `publish_to:` (e.g. a derived `SKILL.md` written into the mirrored dir), the `publish_tree:` entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
+**Subtree mirror.** A nested entry MAY declare `publish: { tree: "dir" }` instead of `to:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The build envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. Targets that would resolve outside the repo root are refused. When a `publish.tree` target overlaps a `derived` entry's `publish.to` (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
 
 ### 5.4 Intake (declared, fetched via registered intake handler)
 
@@ -1018,7 +1012,7 @@ Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: project
 Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
 
 **Fixture G — Copy publish:**
-Given a manifest entry with `publish_to: <path>`, a successful `textus build` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a sentinel at `.textus/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `build` is idempotent.
+Given a manifest entry with `publish: { to: [<path>] }`, a successful `textus build` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a sentinel at `.textus/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `build` is idempotent.
 
 **Fixture H — Audit log format:**
 Every successful write verb (`put`, `delete`, `build`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.

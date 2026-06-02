@@ -93,7 +93,8 @@ RSpec.describe "Manifest intake:" do
           kind: intake
           path: feeds/news.md
           zone: feeds
-          publish_to: [NEWS.md, docs/news.md]
+          publish:
+            to: [NEWS.md, docs/news.md]
           intake:
             handler: news_handler
     YAML

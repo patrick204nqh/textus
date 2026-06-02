@@ -11,7 +11,7 @@ RSpec.describe "Textus::Manifest::Entry::Nested ignore parsing" do
 
   let(:base_raw) do
     { "key" => "skills", "path" => "skills", "zone" => "knowledge",
-      "kind" => "nested", "nested" => true, "index_filename" => "SKILL.md" }
+      "kind" => "nested", "nested" => true }
   end
 
   it "defaults ignore to an empty list" do

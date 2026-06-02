@@ -26,7 +26,8 @@ RSpec.describe Textus::Read::Published do
             owner: automation:auto
             compute: { kind: projection, select: knowledge.people }
             template: people.mustache
-            publish_to: [PEOPLE.md]
+            publish:
+              to: [PEOPLE.md]
       YAML
     )
   end

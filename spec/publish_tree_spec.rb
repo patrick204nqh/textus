@@ -29,7 +29,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
       Y
 
       m = Textus::Manifest.load(root)
@@ -47,7 +48,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       write_file("skills/my-skill/references/foo.md", "foo reference\n")
@@ -83,7 +85,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
           ignore: ["**/*.tmp"]
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
@@ -104,7 +107,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "../outside"
+          publish:
+            tree: "../outside"
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
 
@@ -122,7 +126,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       write_file("skills/my-skill/references/foo.md", "foo\n")
@@ -172,7 +177,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
           ignore: ["**/SKILL.md"]
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
@@ -193,7 +199,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
           zone: working
           schema: null
           nested: true
-          publish_tree: "skills"
+          publish:
+            tree: "skills"
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       repo_root = File.dirname(root)

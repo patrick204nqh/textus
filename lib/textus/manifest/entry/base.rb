@@ -44,7 +44,6 @@ module Textus
         def inject_boot    = false # rubocop:disable Naming/PredicateMethod
         def events         = {}
         def publish_tree   = nil
-        def index_filename = nil
         def ignore         = []
 
         # Per-entry ignore (ADR 0042). Base entries enumerate no tree, so

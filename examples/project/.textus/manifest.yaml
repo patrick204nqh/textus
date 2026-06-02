@@ -54,9 +54,10 @@ entries:
   zone: artifacts
   template: orientation.mustache
   inject_boot: true
-  publish_to:
-  - CLAUDE.md
-  - AGENTS.md
+  publish:
+    to:
+    - CLAUDE.md
+    - AGENTS.md
   compute:
     kind: projection
     select:

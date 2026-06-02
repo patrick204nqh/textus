@@ -18,20 +18,19 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
             zone: knowledge
             owner: human:self
             kind: nested
-            index_filename: SKILL.md
             ignore:
               - "**/node_modules/**"
       YAML
       files: {
-        "zones/knowledge/skills/alpha/SKILL.md" => "# alpha\n",
-        "zones/knowledge/skills/alpha/node_modules/dep/SKILL.md" => "# vendored\n",
+        "zones/knowledge/skills/alpha/intro.md" => "# alpha\n",
+        "zones/knowledge/skills/alpha/node_modules/dep/intro.md" => "# vendored\n",
       },
     )
   end
 
   it "enumeration excludes the vendored subtree" do
     keys = store.container.manifest.resolver.enumerate.map { |r| r[:key] }
-    expect(keys).to include("skills.alpha")
+    expect(keys).to include("skills.alpha.intro")
     expect(keys.any? { |k| k.include?("node") }).to be(false)
   end
 
@@ -44,7 +43,7 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
   it "the store is green: list is clean AND doctor is clean on the ignored tree" do
     keys = store.container.manifest.resolver.enumerate.map { |r| r[:key] }
     issues = Textus::Doctor::Check::IllegalKeys.new(store.container).call
-    expect(keys).to eq(["skills.alpha"])
+    expect(keys).to eq(["skills.alpha.intro"])
     expect(issues.select { |i| i["code"] == "key.illegal" }).to be_empty
   end
 end

@@ -24,9 +24,12 @@ module Textus
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
-        compute template publish_to publish_tree
-        intake events inject_boot index_filename ignore tracked
+        compute template publish
+        intake events inject_boot ignore tracked
       ].freeze
+      # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
+      # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).
+      PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
       RULE_KEYS    = %w[match fetch intake_handler_allowlist guard retention].freeze
@@ -73,23 +76,60 @@ module Textus
       def self.validate_entries!(entries)
         Array(entries).each_with_index do |e, i|
           path = "$.entries[#{i}]"
-          reject_removed_publish_each!(e, path)
+          reject_retired_publish_keys!(e, path)
           walk(e, ENTRY_KEYS, path)
+          validate_publish_block!(e, path)
           walk(e["compute"], COMPUTE_KEYS, "#{path}.compute") if e["compute"].is_a?(Hash)
           walk(e["intake"], INTAKE_KEYS, "#{path}.intake") if e["intake"].is_a?(Hash)
         end
       end
 
-      # publish_each was removed in 0.42.0 (ADR 0051). It is no longer an allowed
-      # entry key, so `walk` would reject it as merely "unknown"; intercept it
-      # first with the migration path so a pre-0.42 manifest gets a useful error.
-      def self.reject_removed_publish_each!(entry, path)
-        return unless entry.is_a?(Hash) && entry.key?("publish_each")
+      # Retired keys are no longer allowed, so `walk` would reject them as merely
+      # "unknown"; intercept first with the migration path so a pre-0.43 manifest
+      # gets a useful error. `publish_each` was removed (ADR 0051); `publish_to`/
+      # `publish_tree` were folded into the `publish:` block (ADR 0052);
+      # `index_filename` was removed (ADR 0053).
+      def self.reject_retired_publish_keys!(entry, path)
+        return unless entry.is_a?(Hash)
+
+        if entry.key?("publish_each")
+          raise BadManifest.new(
+            "publish_each was removed in 0.42.0 (ADR 0051) at '#{path}' — " \
+            "mirror the subtree with `publish: { tree: \"...\" }`.",
+          )
+        end
+
+        if entry.key?("publish_to")
+          raise BadManifest.new(
+            "publish_to was replaced by the publish: block in 0.43.0 (ADR 0052) at '#{path}' — " \
+            "use `publish: { to: [...] }`.",
+          )
+        end
+
+        if entry.key?("publish_tree")
+          raise BadManifest.new(
+            "publish_tree was replaced by the publish: block in 0.43.0 (ADR 0052) at '#{path}' — " \
+            "use `publish: { tree: \"...\" }`.",
+          )
+        end
+
+        return unless entry.key?("index_filename")
 
         raise BadManifest.new(
-          "publish_each was removed in 0.42.0 (ADR 0051) at '#{path}' — " \
-          "mirror the subtree with publish_tree (and index_filename to keep the index addressable).",
+          "index_filename was removed in 0.43.0 (ADR 0053) at '#{path}' — a nested entry now enumerates " \
+          "each file as a key; to mirror a directory of files to a consumer path use `publish: { tree: \"...\" }`.",
         )
+      end
+
+      # Shape of the ADR 0052 publish block: a Hash whose only keys are to/tree.
+      # Exclusivity (both set) and per-mode rules stay in Publish.resolve (ADR 0049).
+      def self.validate_publish_block!(entry, path)
+        return unless entry.is_a?(Hash) && entry.key?("publish")
+
+        block = entry["publish"]
+        raise BadManifest.new("publish: must be a mapping with `to:` or `tree:` at '#{path}.publish'") unless block.is_a?(Hash)
+
+        walk(block, PUBLISH_KEYS, "#{path}.publish")
       end
 
       def self.validate_rules!(rules)

@@ -8,11 +8,13 @@ module Textus
         # the scattered pairwise "not-both" guards of the old PublishEach +
         # PublishTree validators. Misuse on a non-nested entry is still caught
         # here from raw, since the typed attrs stub nil on Base. (publish_each was
-        # removed in 0.42.0 — ADR 0051; Schema rejects it at load.)
+        # removed in 0.42.0 — ADR 0051; the publish_to/publish_tree keys were folded
+        # into the `publish:` block in 0.43.0 — ADR 0052; Schema rejects the retired
+        # flat keys at load.)
         module Publish
           def self.call(entry, policy: nil) # rubocop:disable Lint/UnusedMethodArgument
             unless entry.nested?
-              raise UsageError.new("entry '#{entry.key}': publish_tree requires nested: true") if entry.raw["publish_tree"]
+              raise UsageError.new("entry '#{entry.key}': publish.tree requires nested: true") if entry.raw.dig("publish", "tree")
 
               return
             end

@@ -2,8 +2,8 @@ module Textus
   class Manifest
     class Entry
       module Publish
-        # publish_to: copy the entry's one stored file to each fixed repo path.
-        # The default behaviour of any entry that declares `publish_to:`.
+        # publish.to: copy the entry's one stored file to each fixed repo path.
+        # The behaviour of any entry that declares `publish: { to: [...] }`.
         class ToPaths < Mode
           def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
             targets = Array(entry.publish_to)
