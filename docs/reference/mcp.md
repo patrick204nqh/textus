@@ -41,7 +41,9 @@ The server blocks on stdin. One JSON message per line. It expects an `initialize
 
 ### Tools
 
-MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports). The catalog is **derived from per-verb contracts** (ADR 0039) — there is no hand-maintained tool list; each verb's `arg` shapes and description are generated from its declared contract.
+MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one vocabulary across all transports). The catalog is **derived from per-verb contracts** (ADR 0039) — there is no hand-maintained tool list; each verb's `arg` shapes, per-argument `description`s, and summary are generated from its declared contract, and ride the wire in every `tools/list` response (ADR 0057).
+
+The `put` and `propose` tools take their frontmatter under the **`_meta`** property — the same key `get` returns and the CLI `--stdin` envelope already speaks — so a read → edit → write round-trip can reuse the field name unchanged (ADR 0057). The `dry_run` flag on the maintenance tools defaults to **false** (the operation applies immediately); pass `true` to get a plan back without writing.
 
 | Tool | Returns | Args |
 |---|---|---|
@@ -49,8 +51,8 @@ MCP tools use the same verb names as the CLI and Ruby API (ADR 0036 — one voca
 | `pulse` | `{cursor, changed, stale, pending_review, doctor}` | `since?: int` |
 | `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
-| `put` | `{uid, etag}` | `key, meta, body?, content?, if_etag?` |
-| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, meta, body?, content?` |
+| `put` | `{uid, etag}` | `key, _meta, body?, content?, if_etag?` |
+| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, _meta, body?, content?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema` | Field shape (schema for an entry's family) | `key: string` |

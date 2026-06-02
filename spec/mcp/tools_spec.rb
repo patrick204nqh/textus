@@ -88,7 +88,7 @@ RSpec.describe Textus::MCP::Tools do
       result = described_class.call(
         "put",
         session: human_session, store: store,
-        args: { "key" => "knowledge.note", "meta" => { "name" => "note" }, "body" => "hi\n" }
+        args: { "key" => "knowledge.note", "_meta" => { "name" => "note" }, "body" => "hi\n" }
       )
       expect(result).to include("uid", "etag")
     end
@@ -101,7 +101,7 @@ RSpec.describe Textus::MCP::Tools do
       result = described_class.call(
         "propose",
         session: session, store: store,
-        args: { "key" => "proposal.x", "meta" => { "name" => "x" }, "body" => "draft\n" }
+        args: { "key" => "proposal.x", "_meta" => { "name" => "x" }, "body" => "draft\n" }
       )
       expect(result.keys).to contain_exactly("uid", "etag", "key")
       expect(result["key"]).to eq("proposals.proposal.x")

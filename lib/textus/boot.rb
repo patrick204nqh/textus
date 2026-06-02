@@ -127,11 +127,15 @@ module Textus
       propose_zone = manifest.policy.propose_zone_for(agent_role)
 
       {
-        # Derived from the MCP catalog (ADR 0056): the agent's real read surface,
-        # so the quickstart can neither advertise a verb the agent cannot call
-        # (audit/freshness/doctor are CLI-only) nor omit one it can (schema/rules).
+        # Both verb lists derive from the MCP catalog (ADR 0056, ADR 0057): the
+        # agent's real read and write surface, named as verbs the agent calls —
+        # not CLI strings. read_verbs can neither advertise a verb the agent
+        # cannot call (audit/freshness/doctor are CLI-only) nor omit one it can
+        # (schema/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
+        # framing (role is connection-resolved over MCP; there is no stdin).
+        # writable_zones / propose_zone below carry the agent's write authority.
         "read_verbs" => Textus::MCP::Catalog.read_verbs,
-        "write_verbs" => agent_role ? ["put KEY --as=#{agent_role} --stdin"] : [],
+        "write_verbs" => agent_role ? Textus::MCP::Catalog.write_verbs : [],
         "writable_zones" => writable_zones,
         "propose_zone" => propose_zone,
         "latest_seq" => audit_log.latest_seq,

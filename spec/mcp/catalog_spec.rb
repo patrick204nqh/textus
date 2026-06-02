@@ -21,7 +21,17 @@ RSpec.describe Textus::MCP::Catalog do
       get = described_class.tool_schemas.find { |t| t[:name] == "get" }
       expect(get[:description]).to match(/Read one entry/)
       expect(get[:inputSchema][:required]).to eq(["key"])
-      expect(get[:inputSchema][:properties]["key"]).to eq("type" => "string")
+      expect(get[:inputSchema][:properties]["key"]["type"]).to eq("string")
+      expect(get[:inputSchema][:properties]["key"]["description"]).to be_a(String).and(satisfy { |s| !s.empty? })
+    end
+
+    # ADR 0057: the `meta:` kwarg exposes `_meta` on the wire so write matches
+    # what `get` returns and what the CLI `--stdin` envelope already speaks.
+    it "exposes put's meta kwarg as the `_meta` wire property" do
+      put = described_class.tool_schemas.find { |t| t[:name] == "put" }
+      expect(put[:inputSchema][:properties]).to have_key("_meta")
+      expect(put[:inputSchema][:properties]).not_to have_key("meta")
+      expect(put[:inputSchema][:required]).to include("_meta")
     end
   end
 
@@ -29,16 +39,23 @@ RSpec.describe Textus::MCP::Catalog do
     it "maps positional + keyword args and applies the response shaper (put)" do
       result = described_class.call(
         "put", session: session, store: store,
-               args: { "key" => "knowledge.project", "meta" => { "name" => "project" }, "body" => "x\n" }
+               args: { "key" => "knowledge.project", "_meta" => { "name" => "project" }, "body" => "x\n" }
       )
       expect(result.keys).to contain_exactly("uid", "etag")
     end
 
     it "round-trips a read via get" do
       described_class.call("put", session: session, store: store,
-                                  args: { "key" => "knowledge.project", "meta" => { "name" => "project" }, "body" => "hi\n" })
+                                  args: { "key" => "knowledge.project", "_meta" => { "name" => "project" }, "body" => "hi\n" })
       env = described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
       expect(env["body"]).to eq("hi\n")
+    end
+
+    it "reports the wire name (`_meta`) when a required arg is missing" do
+      expect do
+        described_class.call("put", session: session, store: store,
+                                    args: { "key" => "knowledge.project" })
+      end.to raise_error(Textus::MCP::ToolError, /missing _meta/)
     end
 
     it "raises ToolError for an unknown tool" do

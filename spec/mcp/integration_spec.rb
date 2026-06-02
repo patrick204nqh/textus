@@ -77,7 +77,7 @@ RSpec.describe "MCP end-to-end" do
                               { id: 2, method: "tools/call",
                                 params: { name: "put",
                                           arguments: { key: "knowledge.note",
-                                                       meta: { "name" => "note" }, body: "cursor-advance-probe\n" } } },
+                                                       "_meta" => { "name" => "note" }, body: "cursor-advance-probe\n" } } },
                               { id: 3, method: "tools/call",
                                 params: { name: "pulse", arguments: {} } },
                               { id: 4, method: "tools/call",
@@ -108,7 +108,7 @@ RSpec.describe "MCP end-to-end" do
                               { id: 2, method: "tools/call",
                                 params: { name: "put",
                                           arguments: { key: "knowledge.note",
-                                                       meta: { "name" => "note" }, body: "round-trip\n" } } },
+                                                       "_meta" => { "name" => "note" }, body: "round-trip\n" } } },
                               { id: 3, method: "tools/call",
                                 params: { name: "get", arguments: { key: "knowledge.note" } } },
                             ])

@@ -8,7 +8,8 @@ module Textus
       verb     :fetch
       summary  "Run a fetch action for one quarantine entry."
       surfaces :cli, :ruby, :mcp
-      arg :key, String, required: true, positional: true
+      arg :key, String, required: true, positional: true,
+                        description: "quarantine-zone entry key to refresh using its declared intake action"
       response { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }
 
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS

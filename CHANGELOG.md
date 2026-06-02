@@ -9,6 +9,19 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.43.2 — 2026-06-02 — Agent-legible MCP contracts ([ADR 0057](docs/architecture/decisions/0057-agent-legible-mcp-contracts.md))
+
+No `textus/3` wire-format change. One breaking (pre-1.0) change on the MCP transport — `put`/`propose` take frontmatter under `_meta` (was `meta`) — plus per-argument descriptions on every MCP tool and a fully catalog-derived agent verb surface.
+
+### Changed
+
+- **BREAKING (pre-1.0): MCP `put`/`propose` take frontmatter under `_meta`, not `meta` ([ADR 0057](docs/architecture/decisions/0057-agent-legible-mcp-contracts.md)).** Every *read* returns the envelope under `_meta` (`get`, SPEC §8), and the CLI `--stdin` envelope already speaks `_meta` — only the MCP `put`/`propose` argument diverged as `meta`, breaking the natural read → edit → write round-trip. The contract gains a `wire_name` primitive so the wire speaks `_meta` while the use-case keeps its `meta:` kwarg (the ADR 0039 signature guard still reconciles). An MCP client that hardcoded the `meta` argument renames one key. The Ruby API (`store.put(meta:)`) and the CLI `--stdin` envelope are unchanged.
+- **`boot.agent_quickstart.write_verbs` derives from the MCP catalog ([ADR 0057](docs/architecture/decisions/0057-agent-legible-mcp-contracts.md)).** It now returns bare verb names (`put propose fetch fetch_all`) like `read_verbs`, instead of the CLI string `"put KEY --as=agent --stdin"` (`--as`/`--stdin` are meaningless on an MCP connection — role is connection-resolved, ADR 0040). Closes the de-CLI follow-up named in ADR 0056; a symmetric guard spec fails the build if a CLI string creeps back.
+
+### Added
+
+- **Per-argument descriptions on every MCP tool ([ADR 0057](docs/architecture/decisions/0057-agent-legible-mcp-contracts.md)).** All MCP-surfaced verb arguments now carry a one-line `description:` in their `tools/list` `inputSchema` (was 2 of ~30) — including `put`'s `body`/`content` mutual-exclusivity and the maintenance `dry_run` "default false applies immediately" gotcha. They ship once in `tools/list` at no per-call cost, so an agent can form a valid call from the schema alone.
+
 ## 0.43.1 — 2026-06-02 — `boot` agent surface derives from the MCP catalog ([ADR 0056](docs/architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md))
 
 No `textus/3` wire-format change — `boot`'s agent-orientation fields are corrected to match the verbs an MCP agent can actually call.

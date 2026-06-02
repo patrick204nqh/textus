@@ -6,8 +6,8 @@ module Textus
       verb     :list
       summary  "List keys filtered by zone and/or prefix."
       surfaces :cli, :ruby, :mcp
-      arg :prefix, String
-      arg :zone,   String
+      arg :prefix, String, description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'"
+      arg :zone,   String, description: "restrict to one zone by name (see `boot` zones); combine with prefix to narrow further"
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest

@@ -29,7 +29,10 @@ RSpec.describe Textus::Boot do
       # audit/freshness/doctor.
       expect(qs["read_verbs"]).to include("boot", "get", "list", "pulse", "schema", "rules")
       expect(qs["read_verbs"]).not_to include("audit", "freshness", "doctor")
-      expect(qs["write_verbs"]).to include(a_string_matching(/put.*--as=agent/))
+      # write_verbs derives from the MCP catalog too (ADR 0057): bare verb names
+      # the agent calls — not the old `put KEY --as=agent --stdin` CLI string.
+      expect(qs["write_verbs"]).to include("put", "propose")
+      expect(qs["write_verbs"]).not_to include(a_string_matching(/--as=|--stdin/))
       expect(qs["writable_zones"]).to include("proposals")
       expect(qs["propose_zone"]).to eq("proposals")
       expect(qs).to have_key("latest_seq")

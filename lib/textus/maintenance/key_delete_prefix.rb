@@ -7,8 +7,8 @@ module Textus
       verb     :key_delete_prefix
       summary  "Bulk-delete every leaf key under prefix."
       surfaces :cli, :ruby, :mcp
-      arg :prefix,  String, required: true
-      arg :dry_run, :boolean
+      arg :prefix,  String, required: true, description: "every leaf key under this dotted prefix is deleted"
+      arg :dry_run, :boolean, description: "true returns the Plan without writing; default false applies the delete immediately"
       response(&:to_h)
 
       def initialize(container:, call:)

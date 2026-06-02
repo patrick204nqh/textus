@@ -6,7 +6,8 @@ module Textus
       verb     :schema
       summary  "Return the schema (field shape) for an entry's family, by key."
       surfaces :ruby, :mcp
-      arg :key, String, required: true, positional: true
+      arg :key, String, required: true, positional: true,
+                        description: "any key in the family whose schema you want; returns required/optional fields and their types"
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest

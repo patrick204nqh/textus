@@ -11,7 +11,8 @@ module Textus
       verb     :get
       summary  "Read one entry. Returns the envelope (uid, etag, _meta, body, freshness)."
       surfaces :cli, :ruby, :mcp
-      arg :key, String, required: true, positional: true
+      arg :key, String, required: true, positional: true,
+                        description: "dotted entry key to read, e.g. 'knowledge.project'"
       response(&:to_h_for_wire)
 
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)

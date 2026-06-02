@@ -31,6 +31,28 @@ RSpec.describe Textus::Contract do
     expect(schema[:required]).to eq(["key"])
   end
 
+  it "exposes wire_name on the schema while keeping the kwarg name (ADR 0057)" do
+    k = Class.new do
+      extend Textus::Contract::DSL
+
+      verb :w
+      surfaces :mcp
+      arg :meta, Hash, required: true, wire_name: :_meta, description: "frontmatter"
+    end
+    schema = k.contract.input_schema
+    expect(schema[:properties]).to have_key("_meta")
+    expect(schema[:properties]).not_to have_key("meta")
+    expect(schema[:required]).to eq(["_meta"])
+    # the kwarg name is unchanged — the use-case still receives `meta:`
+    arg = k.contract.args.first
+    expect(arg.name).to eq(:meta)
+    expect(arg.wire).to eq(:_meta)
+  end
+
+  it "defaults wire_name to the arg name" do
+    expect(klass.contract.args.first.wire).to eq(:key)
+  end
+
   it "carries a response shaper, defaulting to identity" do
     expect(klass.contract.response.call("x")).to eq("echoed" => "x")
     plain = Class.new do

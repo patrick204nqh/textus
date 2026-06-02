@@ -25,10 +25,20 @@ RSpec.describe "boot agent quickstart / recipes — derive-or-guard (ADR 0056)" 
 
   let(:boot) { Textus::Boot.build(container: store.container) }
   let(:read_verbs) { boot["agent_quickstart"]["read_verbs"] }
+  let(:write_verbs) { boot["agent_quickstart"]["write_verbs"] }
   let(:recipes) { boot["agent_protocol"]["recipes"] }
 
   it "advertises only verbs the agent can actually call over MCP" do
     expect(Textus::MCP::Catalog.names).to include(*read_verbs)
+  end
+
+  # ADR 0057: write_verbs derives from the catalog too — bare verb names, never
+  # CLI strings. The guard fails the build if a `--as`/`--stdin` invocation
+  # creeps back into the agent's write surface.
+  it "advertises write_verbs as MCP-callable verbs, never CLI strings" do
+    expect(Textus::MCP::Catalog.names).to include(*write_verbs)
+    expect(write_verbs).to include("put", "propose")
+    expect(write_verbs).to all(match(/\A\w+\z/))
   end
 
   it "advertises the discovery verbs the write/propose flow depends on" do
