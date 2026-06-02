@@ -1,7 +1,7 @@
 # Zones — reference
 
 > **Reference** · for integrators · **read when** you need the exact zone, role, and entry semantics
-> **SSoT for** zone semantics, the role/capability model, entry fields, and doctor enforcement · **reviewed** 2026-05 (v0.38)
+> **SSoT for** zone semantics, the role/capability model, entry fields, and doctor enforcement · **reviewed** 2026-06 (v0.43)
 
 The exact semantics of textus zones: the roles and capabilities that govern who may write, the five default zones, the fields an entry declares, and what `textus doctor` enforces.
 

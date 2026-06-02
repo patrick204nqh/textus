@@ -1,7 +1,7 @@
 # Textus architecture
 
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
-> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-05 (v0.35)
+> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-06 (v0.43)
 
 ```mermaid
 flowchart TD

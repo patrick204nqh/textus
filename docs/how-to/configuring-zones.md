@@ -1,7 +1,7 @@
 # Configuring zones
 
 > **How-to** · for integrators · **read when** you're defining zones, wiring intake, or setting up derived entries
-> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-06 (v0.39)
+> **SSoT for** the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example) · **reviewed** 2026-06 (v0.43)
 
 How to shape your context: define your own zones, wire external data in through intake hooks, wire derived data out through projections and publishing, and a full worked example.
 
@@ -230,7 +230,7 @@ A derived entry says **"compute me from these sources, render me with this templ
   path: artifacts/CLAUDE.md
   zone: artifacts
   format: markdown
-  owner: build:auto
+  owner: automation:build
   compute:
     kind: projection                                    # projection | external
     select: [knowledge.identity.self, knowledge.notes]  # source keys
