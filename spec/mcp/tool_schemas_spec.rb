@@ -42,5 +42,14 @@ RSpec.describe Textus::MCP::ToolSchemas do
       expect(boot[:inputSchema][:properties]).to eq({})
       expect(boot[:inputSchema][:required]).to eq([])
     end
+
+    # The real guard here is the required-array assertions below; presence is belt-and-suspenders
+    # (already covered by the catalog-parity test above).
+    it "exposes single-key delete and mv (ADR 0060 amendment)" do
+      by_name = described_class.all.to_h { |t| [t[:name], t] }
+      expect(by_name).to include("delete", "mv")
+      expect(by_name["delete"][:inputSchema][:required]).to eq(["key"])
+      expect(by_name["mv"][:inputSchema][:required]).to eq(%w[old_key new_key])
+    end
   end
 end

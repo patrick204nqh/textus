@@ -12,7 +12,7 @@ MCP_CATALOG_COMPOSED = [].freeze
 # CLI-only operations an agent should not be steered toward. Reviewer must
 # justify each. Edit this list when you add or expose a verb.
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
-  accept reject publish delete mv
+  accept reject publish
   audit blame uid freshness stale
   doctor rule_list published retainable
   validate_all retain
