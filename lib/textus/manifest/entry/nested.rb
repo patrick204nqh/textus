@@ -39,6 +39,7 @@ module Textus
         end
 
         def publish_via(pctx, prefix: nil)
+          return publish_tree_via(pctx) unless @publish_tree.nil?
           return nil if @publish_each.nil?
 
           leaves = []
@@ -89,6 +90,37 @@ module Textus
           end
         end
 
+        # ADR 0047: mirror this entry's whole subtree to one target dir by real
+        # path. No resolver, no keys — files are opaque payload. Reuses the
+        # ignore seam (ADR 0042), per-file sentinels (Publisher), and the generic
+        # prune_orphans over the whole target dir.
+        def publish_tree_via(pctx)
+          base = File.join(pctx.root, "zones", path)
+          target_dir = File.expand_path(File.join(pctx.repo_root, @publish_tree))
+          unless target_dir == File.expand_path(pctx.repo_root) ||
+                 target_dir.start_with?(File.expand_path(pctx.repo_root) + File::SEPARATOR)
+            raise Textus::PublishError.new(
+              "entry '#{@key}': publish_tree target '#{@publish_tree}' escapes repo root",
+            )
+          end
+          return { kind: :leaves, value: [], pruned: [] } unless File.directory?(base)
+
+          written = Dir.glob(File.join(base, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
+            next nil unless File.file?(src)
+
+            rel = src.sub(%r{\A#{Regexp.escape(base)}/}, "")
+            next nil if ignored?(rel)
+
+            dst = File.join(target_dir, rel)
+            Textus::Ports::Publisher.publish(source: src, target: dst, store_root: pctx.root)
+            pctx.emit(:file_published, key: @key, envelope: nil, source: src, target: dst)
+            { "key" => @key, "source" => src, "target" => dst }
+          end
+
+          pruned = prune_orphans(target_dir, written, pctx)
+          { kind: :leaves, value: written, pruned: pruned }
+        end
+
         # Scoped to this leaf's target_dir only. Safe across leaves because ADR 0046
         # Decision 5 (shallowest-index-wins) keeps leaf dirs non-nesting, so {leaf}-derived
         # target dirs never nest and targets_under can't reach another leaf's sentinels.
@@ -104,7 +136,7 @@ module Textus
         end
 
         # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
-        private :publish_one, :publish_subtree, :prune_orphans
+        private :publish_one, :publish_subtree, :publish_tree_via, :prune_orphans
 
         KIND = :nested
 
