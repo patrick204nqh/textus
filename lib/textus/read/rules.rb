@@ -9,7 +9,8 @@ module Textus
       verb     :rules
       summary  "Return effective rules for a key (fetch, guard, ...)."
       surfaces :ruby, :mcp
-      arg :key, String, required: true, positional: true
+      arg :key, String, required: true, positional: true,
+                        description: "dotted key whose effective rules you want (fetch ttl/action, write guard, ...)"
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest

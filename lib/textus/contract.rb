@@ -8,7 +8,14 @@ module Textus
     # use-case as a positional (e.g. `get(key)`); otherwise as a keyword.
     # `session_default` names a zero-arg method on `Textus::Session` (Symbol)
     # that supplies the value when the wire arg is absent; `nil` means no default.
-    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description)
+    # `wire_name` is the name the arg carries on the wire (MCP JSON property / CLI
+    # envelope key) when it must differ from the use-case kwarg `name` — e.g. `put`
+    # takes the `meta:` kwarg but exposes `_meta` on the wire to match what `get`
+    # returns and what the CLI `--stdin` envelope already speaks (ADR 0057).
+    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description, :wire_name) do
+      # The name used on the wire (defaults to the kwarg name).
+      def wire = wire_name || name
+    end
 
     JSON_TYPES = {
       String => "string", Integer => "integer", Hash => "object",
@@ -31,9 +38,9 @@ module Textus
         props = args.to_h do |a|
           h = { "type" => Contract.json_type(a.type) }
           h["description"] = a.description if a.description
-          [a.name.to_s, h]
+          [a.wire.to_s, h]
         end
-        { type: "object", properties: props, required: required_args.map { |a| a.name.to_s } }
+        { type: "object", properties: props, required: required_args.map { |a| a.wire.to_s } }
       end
     end
 
@@ -70,12 +77,13 @@ module Textus
         end
       end
 
-      def arg(name, type, required: false, positional: false, session_default: nil, description: nil)
+      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil) # rubocop:disable Metrics/ParameterLists
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
-          positional: positional, session_default: session_default, description: description
+          positional: positional, session_default: session_default,
+          description: description, wire_name: wire_name
         )
       end
 

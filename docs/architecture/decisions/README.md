@@ -81,3 +81,4 @@ the original reasoning intact. The history is the point.
 | [0054](./0054-entry-level-desc.md) | Entry-level `desc`: the manifest as a navigable index | Proposed |
 | 0055 | A `find`/search verb over `desc` + frontmatter — evidence-triggered by 0054 once a labeled index outgrows one cheap read | Proposed (not drafted) |
 | [0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) | `boot`'s agent surface derives `read_verbs` from the MCP catalog; recipes reference verbs, not CLI strings | Proposed |
+| [0057](./0057-agent-legible-mcp-contracts.md) | Agent-legible MCP contracts: per-arg descriptions, `_meta` wire parity for `put`/`propose`, and `write_verbs` derived from the catalog | Proposed |

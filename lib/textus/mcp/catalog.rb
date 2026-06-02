@@ -35,6 +35,17 @@ module Textus
           .keys.map(&:to_s)
       end
 
+      # MCP-surfaced write verbs, by Dispatcher class namespace — the mirror of
+      # read_verbs for the write side. `boot.agent_quickstart.write_verbs` derives
+      # from this so it advertises bare verb names the agent can call (no `--as`/
+      # `--stdin` CLI framing), finishing the de-CLI-ing of the agent surface
+      # (ADR 0056, ADR 0057).
+      def write_verbs
+        Textus::Dispatcher::VERBS
+          .select { |_verb, klass| mcp_surfaced?(klass) && klass.name.start_with?("Textus::Write::") }
+          .keys.map(&:to_s)
+      end
+
       def mcp_surfaced?(klass)
         klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
       end
@@ -59,14 +70,14 @@ module Textus
       # the session when absent from the wire; they are never treated as missing.
       # Positional args are emitted in contract declaration order; use-case signatures must match.
       def map_args(spec, raw, session = nil)
-        missing = spec.required_args.map { |a| a.name.to_s } - raw.keys
+        missing = spec.required_args.map { |a| a.wire.to_s } - raw.keys
         raise ToolError.new("#{spec.verb}: missing #{missing.join(", ")}") unless missing.empty?
 
         positional = []
         keyword = {}
         spec.args.each do |a|
-          if raw.key?(a.name.to_s)
-            value = raw[a.name.to_s]
+          if raw.key?(a.wire.to_s)
+            value = raw[a.wire.to_s]
           elsif a.session_default && session
             value = session.public_send(a.session_default)
           else

@@ -10,8 +10,9 @@ module Textus
       verb     :migrate
       summary  "Run a YAML migration plan (multi-op)."
       surfaces :cli, :ruby, :mcp
-      arg :plan_yaml, String, required: true
-      arg :dry_run,   :boolean
+      arg :plan_yaml, String, required: true,
+                              description: "YAML listing the migration ops (zone_mv, key_mv_prefix, key_delete_prefix) run in order"
+      arg :dry_run,   :boolean, description: "true returns the combined plan without writing; default false applies every op immediately"
       response(&:to_h)
 
       def initialize(container:, call:)
