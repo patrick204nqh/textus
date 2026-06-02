@@ -37,7 +37,7 @@ Container        (single record — wired ports + manifest)
 Dispatcher       (static VERBS table: verb → use-case)
 RoleScope        (Store#as(role) — forwards verb calls)
 
-read/{get,get_or_fetch,list,where,uid,schema_envelope,
+read/{get,get_entry,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
       freshness,audit,blame,policy_explain,pulse}.rb
 write/{put,delete,mv,accept,reject,publish,
@@ -171,13 +171,15 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Read path (`store.get(key)`)
 
+`Read::Get` is the single public read verb (ADR 0062). It is read-through: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule.
+
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
 2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`.
-3. `Read::Get#call` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope.
-4. Looks up the fetch policy via `container.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
-5. Otherwise `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`; the envelope is annotated with `stale`, `reason`, `fetching: false`.
+3. `Read::Get#call` delegates the pure freshness-annotation sub-step to `Read::GetEntry` (composed on construction). `Read::GetEntry` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and returns it annotated with a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
+4. If the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator`. The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
+5. The outcome is mapped back to an envelope: `Fetched` → fresh envelope from the write; `Detached` → original envelope with `fetching: true`; `Failed` → original envelope with `fetch_error` set; `Skipped` → original envelope unchanged.
 
-`store.get_or_fetch(key)` composes `Read::Get` with `Write::FetchOrchestrator` to optionally fetch on stale.
+The pure freshness-annotation primitive — `Read::GetEntry` (`lib/textus/read/get_entry.rb`) — has no orchestrator dependency and is not a public verb. Internal callers that must never trigger a fetch (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) construct it directly. The prior separate read-through path `get_or_fetch` was unified into `get` (ADR 0062).
 
 ## Write path (`store.put(key, ...)`)
 

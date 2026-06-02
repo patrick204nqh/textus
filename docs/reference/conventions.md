@@ -113,14 +113,13 @@ See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/wr
 
 ### Read vs. fetch
 
-There are two read operations, and the difference matters in custom code:
+There is one public read operation (ADR 0062):
 
-| Operation | Triggers fetch? | Use for |
-|-----------|-----------------|---------|
-| `ops.get` | No — pure read of on-disk envelope + freshness verdict | build / materialization paths, schema tooling, any context where a side-effecting read would surprise the caller |
-| `ops.get_or_fetch` | Yes — composes `get` with the orchestrator per the rule's `on_stale` policy | interactive reads (`textus get`, dashboards) where the caller wants the freshest envelope obtainable |
+| Operation | Behaviour | Use for |
+|-----------|-----------|---------|
+| `ops.get` | Read-through — fetches on stale per the entry's fetch rule; degrades to a pure on-disk read when the key has no fetch rule | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
 
-Build always uses the pure path; injecting fetch into materialization caused the cascading-staleness incident behind issue #59. Pick `get_or_fetch` only when you genuinely want side effects on read.
+Build pipelines and other internal callers that must never trigger a fetch (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::GetEntry` directly — it is the orchestrator-free pure-read primitive; it is not a public verb and not exposed through `ops`.
 
 ## Body content
 
