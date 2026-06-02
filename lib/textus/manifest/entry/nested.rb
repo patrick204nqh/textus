@@ -5,12 +5,13 @@ module Textus
         PUBLISH_EACH_VARS   = Validators::PublishEach::KNOWN_VARS
         PUBLISH_EACH_VAR_RE = Validators::PublishEach::VAR_RE
 
-        attr_reader :index_filename, :publish_each, :ignore
+        attr_reader :index_filename, :publish_each, :publish_tree, :ignore
 
-        def initialize(index_filename: nil, publish_each: nil, ignore: nil, **rest)
+        def initialize(index_filename: nil, publish_each: nil, publish_tree: nil, ignore: nil, **rest)
           super(**rest)
           @index_filename = index_filename
           @publish_each = publish_each
+          @publish_tree = publish_tree
           @ignore = Array(ignore)
         end
 
@@ -38,6 +39,7 @@ module Textus
         end
 
         def publish_via(pctx, prefix: nil)
+          return publish_tree_via(pctx) unless @publish_tree.nil?
           return nil if @publish_each.nil?
 
           leaves = []
@@ -88,6 +90,57 @@ module Textus
           end
         end
 
+        # ADR 0047: mirror this entry's whole subtree to one target dir by real
+        # path. No resolver, no keys — files are opaque payload. Reuses the
+        # ignore seam (ADR 0042), per-file sentinels (Publisher), and the generic
+        # prune_orphans over the whole target dir.
+        def publish_tree_via(pctx)
+          base = File.join(pctx.root, "zones", path)
+          target_dir = File.expand_path(File.join(pctx.repo_root, @publish_tree))
+          unless target_dir.start_with?(File.expand_path(pctx.repo_root) + File::SEPARATOR)
+            raise Textus::PublishError.new(
+              "entry '#{@key}': publish_tree target '#{@publish_tree}' escapes repo root",
+            )
+          end
+          return { kind: :leaves, value: [], pruned: [] } unless File.directory?(base)
+
+          written = Dir.glob(File.join(base, "**", "*"), File::FNM_DOTMATCH).sort.filter_map do |src|
+            next nil unless File.file?(src)
+
+            rel = src.sub(%r{\A#{Regexp.escape(base)}/}, "")
+            next nil if ignored?(rel)
+
+            dst = File.join(target_dir, rel)
+            Textus::Ports::Publisher.publish(source: src, target: dst, store_root: pctx.root)
+            # files are opaque payload (ADR 0047) — no addressable envelope
+            pctx.emit(:file_published, key: @key, envelope: nil, source: src, target: dst)
+            { "key" => @key, "source" => src, "target" => dst }
+          end
+
+          pruned = prune_tree(target_dir, written, pctx)
+          { kind: :leaves, value: written, pruned: pruned }
+        end
+
+        # ADR 0047 Decision 4: like prune_orphans, but a managed file the entry
+        # is told to `ignore` is NOT the tree's to prune — this is what lets a
+        # derived index (e.g. SKILL.md written by a separate derived entry into
+        # the same dir) survive the whole-target prune. rel-to-target equals the
+        # store-base-relative path the walk used, since the mirror is 1:1.
+        def prune_tree(target_dir, written, pctx)
+          kept = written.map { |w| File.expand_path(w["target"]) }
+          store = Textus::Ports::SentinelStore.new
+          store.targets_under(target_dir, pctx.root).filter_map do |managed|
+            abs = File.expand_path(managed)
+            next nil if kept.include?(abs)
+
+            rel = abs.sub(%r{\A#{Regexp.escape(target_dir)}/}, "")
+            next nil if ignored?(rel)
+
+            Textus::Ports::Publisher.unpublish(target: managed, store_root: pctx.root)
+            managed
+          end
+        end
+
         # Scoped to this leaf's target_dir only. Safe across leaves because ADR 0046
         # Decision 5 (shallowest-index-wins) keeps leaf dirs non-nesting, so {leaf}-derived
         # target dirs never nest and targets_under can't reach another leaf's sentinels.
@@ -103,7 +156,7 @@ module Textus
         end
 
         # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
-        private :publish_one, :publish_subtree, :prune_orphans
+        private :publish_one, :publish_subtree, :publish_tree_via, :prune_tree, :prune_orphans
 
         KIND = :nested
 
@@ -111,6 +164,7 @@ module Textus
           new(
             index_filename: raw["index_filename"],
             publish_each: raw["publish_each"],
+            publish_tree: raw["publish_tree"],
             ignore: raw["ignore"],
             **common,
           )

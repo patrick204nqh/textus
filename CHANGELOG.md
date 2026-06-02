@@ -11,6 +11,10 @@ tracks both additive improvements and breaking protocol bumps independently.
 
 ## Unreleased
 
+### Added
+
+- **`publish_tree:`** — a key-less, path-driven subtree mirror for `nested` entries: copies a whole stored directory to one target dir (layout preserved, per-file sentinels, `ignore`-filtered, whole-target prune). Unblocks publishing the sibling tree of a leaf whose index file is *derived* (issue #132 item #4). Additive; no protocol change. New `doctor` check `publish.tree_index_overlap`. See [ADR 0047](docs/architecture/decisions/0047-publish-tree-keyless-subtree-mirror.md).
+
 ## 0.40.0 — 2026-06-02 — `publish_each` owns multi-file leaf subtrees ([ADR 0046](docs/architecture/decisions/0046-publish-leaf-subtrees.md))
 
 No `textus/3` wire-format change — publish is repo-local materialization. The

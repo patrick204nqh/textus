@@ -24,7 +24,7 @@ module Textus
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
-        compute template publish_to publish_each
+        compute template publish_to publish_each publish_tree
         intake events inject_boot index_filename ignore tracked
       ].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze

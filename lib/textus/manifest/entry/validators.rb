@@ -5,6 +5,7 @@ module Textus
         REGISTERED = [
           Events,
           PublishEach,
+          PublishTree,
           InjectBoot,
           IndexFilename,
           Ignore,
