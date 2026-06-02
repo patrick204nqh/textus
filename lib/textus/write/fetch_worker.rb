@@ -18,7 +18,6 @@ module Textus
         @call         = call
         @manifest     = container.manifest
         @schemas      = container.schemas
-        @events       = container.events
         @rpc          = container.rpc
       end
 
@@ -65,8 +64,8 @@ module Textus
 
       private
 
-      def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      def fetch_events
+        @fetch_events ||= FetchEvents.from(container: @container, call: @call)
       end
 
       def fetch_timeout_for(key)
@@ -75,7 +74,7 @@ module Textus
       end
 
       def fetch_with_events(key, mentry, remaining)
-        @events.publish(:fetch_started, ctx: hook_context, key: key, mode: :sync)
+        fetch_events.started(key)
         call_intake(key, mentry, remaining)
       end
 
@@ -87,12 +86,10 @@ module Textus
           label: "intake", timeout: fetch_timeout_for(key),
         )
       rescue Textus::Error => e
-        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                       error_message: e.message)
+        fetch_events.failed(key, e)
         raise
       rescue StandardError => e
-        @events.publish(:fetch_failed, ctx: hook_context, key: key, error_class: e.class.name,
-                                       error_message: e.message)
+        fetch_events.failed(key, e)
         raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
       end
 
@@ -114,7 +111,7 @@ module Textus
           ),
         )
         change = detect_change(before_etag, envelope)
-        @events.publish(:entry_fetched, ctx: hook_context, key: key, envelope: envelope, change: change) unless change == :unchanged
+        fetch_events.fetched(key, envelope, change)
         envelope
       end
 

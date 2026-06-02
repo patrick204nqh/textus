@@ -10,6 +10,7 @@ module Textus
         @events       = events
         @hook_context = hook_context
         @detached_spawner = detached_spawner || default_spawner
+        @fetch_events = Textus::Write::FetchEvents.new(events: @events, hook_context: @hook_context)
       end
 
       def execute(action, key:)
@@ -82,9 +83,7 @@ module Textus
 
           probe.release
 
-          payload = { key: key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms }
-          payload[:ctx] = @hook_context if @hook_context
-          @events.publish(:fetch_backgrounded, **payload)
+          @fetch_events.backgrounded(key, started_at: Time.now.utc.iso8601, budget_ms: budget_ms)
           @detached_spawner.call(store_root: @store_root, key: key)
           Textus::Domain::Outcome::Detached.new
         elsif result.is_a?(Textus::Error)
