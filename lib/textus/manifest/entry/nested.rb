@@ -113,6 +113,7 @@ module Textus
 
             dst = File.join(target_dir, rel)
             Textus::Ports::Publisher.publish(source: src, target: dst, store_root: pctx.root)
+            # files are opaque payload (ADR 0047) — no addressable envelope
             pctx.emit(:file_published, key: @key, envelope: nil, source: src, target: dst)
             { "key" => @key, "source" => src, "target" => dst }
           end

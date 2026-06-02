@@ -73,4 +73,85 @@ RSpec.describe "publish_tree (ADR 0047)" do
         .to contain_exactly("commands.md", "foo.md", "build.py")
     end
   end
+
+  describe "ignore + safety" do
+    it "excludes files matching the entry's ignore globs" do
+      write_manifest(<<~Y)
+        - key: working.skills
+          kind: nested
+          path: working/skills
+          zone: working
+          schema: null
+          nested: true
+          publish_tree: "skills"
+          ignore: ["**/*.tmp"]
+      Y
+      write_file("skills/my-skill/commands.md", "# commands\n")
+      write_file("skills/my-skill/scratch.tmp", "junk\n")
+
+      repo_root = File.dirname(root)
+      Textus::Store.new(root).as("automation").publish
+
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/commands.md"))).to be true
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/scratch.tmp"))).to be false
+    end
+
+    it "raises when the target escapes repo root" do
+      write_manifest(<<~Y)
+        - key: working.skills
+          kind: nested
+          path: working/skills
+          zone: working
+          schema: null
+          nested: true
+          publish_tree: "../outside"
+      Y
+      write_file("skills/my-skill/commands.md", "# commands\n")
+
+      expect { Textus::Store.new(root).as("automation").publish }
+        .to raise_error(Textus::PublishError, /escapes repo root/)
+    end
+  end
+
+  describe "prune on rebuild" do
+    before do
+      write_manifest(<<~Y)
+        - key: working.skills
+          kind: nested
+          path: working/skills
+          zone: working
+          schema: null
+          nested: true
+          publish_tree: "skills"
+      Y
+      write_file("skills/my-skill/commands.md", "# commands\n")
+      write_file("skills/my-skill/references/foo.md", "foo\n")
+    end
+
+    it "deletes a managed file when its source is removed, and reports it in 'pruned'" do
+      repo_root = File.dirname(root)
+      store = Textus::Store.new(root)
+      store.as("automation").publish
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
+
+      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      envelope = store.as("automation").publish
+
+      expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
+      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
+      expect(envelope["pruned"]).to include(File.join(repo_root, "skills/my-skill/references/foo.md"))
+    end
+
+    it "never deletes an unmanaged file a human placed in the target tree" do
+      repo_root = File.dirname(root)
+      store = Textus::Store.new(root)
+      store.as("automation").publish
+
+      human_file = File.join(repo_root, "skills/my-skill/NOTES.md")
+      File.write(human_file, "hand-written\n")
+      store.as("automation").publish
+
+      expect(File.exist?(human_file)).to be true
+    end
+  end
 end
