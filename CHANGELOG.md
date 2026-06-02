@@ -9,6 +9,22 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.43.1 — 2026-06-02 — `boot` agent surface derives from the MCP catalog ([ADR 0056](docs/architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md))
+
+No `textus/3` wire-format change — `boot`'s agent-orientation fields are corrected to match the verbs an MCP agent can actually call.
+
+### Fixed
+
+- **`boot.agent_quickstart.read_verbs` had drifted from the MCP catalog ([ADR 0056](docs/architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md)).** It was a hand-maintained list that advertised CLI-only read verbs an MCP agent cannot call (`audit`, `freshness`, `doctor`) while omitting the ones it can and needs (`schema`, `rules`). It now **derives** from `MCP::Catalog` (`get list pulse schema boot rules`) and is reconciled by a guard spec, so it can no longer advertise an uncallable verb or omit a callable one. This is what led downstream skills to shell out to a CLI for schema discovery instead of calling the `schema` verb.
+
+### Changed
+
+- **`boot.agent_protocol.recipes` reference verbs, not CLI strings ([ADR 0056](docs/architecture/decisions/0056-boot-quickstart-speaks-the-mcp-catalog.md)).** Each recipe step names a verb (`get KEY`, `schema KEY`, `put KEY`, `propose KEY`, `fetch_all`) or a plain build step, instead of a `textus …` / `echo … | textus …` shell line — each transport frames the verb itself (CLI vs MCP tool). Keeps shell syntax out of the surface an MCP agent reads. `human_steps` still name `accept` (the author-only transition, not an MCP tool, by design).
+
+### Added
+
+- **ADR 0054 (Proposed, no implementation): entry-level `desc`.** Records the decision to add an optional one-line `desc:` to manifest entries — surfaced in `boot.entries`/`list` — turning the manifest into a navigable index so an agent finds the right data without a caller hardcoding the key. Pre-registers ADR 0055 (a `find`/search verb) as the evidence-triggered follow-up. Documentation only in this release.
+
 ## 0.43.0 — 2026-06-02 — Typed `publish:` block + remove `index_filename` ([ADR 0052](docs/architecture/decisions/0052-typed-publish-block.md), [0053](docs/architecture/decisions/0053-remove-index-filename.md))
 
 No `textus/3` wire-format change. Two breaking (pre-1.0) changes on the publish/enumeration surface: the two top-level publish keys become one typed `publish:` block, and the unused `index_filename:` enumeration feature is removed. Both fail at load with a migration-pointing message.
