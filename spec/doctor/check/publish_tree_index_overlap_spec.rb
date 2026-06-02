@@ -52,7 +52,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         nested: true
         publish_tree: "skills"
-        ignore: ["SKILL.md"]
+        ignore: ["**/SKILL.md"]
       - key: gen.skilldoc
         kind: derived
         path: gen/skilldoc.yaml
@@ -63,6 +63,28 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
     Y
 
     expect(issues).to be_empty
+  end
+
+  it "still warns when the ignore pattern is too shallow to match the real path" do
+    write_manifest(<<~Y)
+      - key: working.skills
+        kind: nested
+        path: working/skills
+        zone: working
+        schema: null
+        nested: true
+        publish_tree: "skills"
+        ignore: ["SKILL.md"]
+      - key: gen.skilldoc
+        kind: derived
+        path: gen/skilldoc.yaml
+        zone: gen
+        schema: null
+        publish_to: ["skills/my-skill/SKILL.md"]
+        compute: { kind: projection, select: ["working.skilldefs"] }
+    Y
+
+    expect(issues.map { |i| i["code"] }).to include("publish.tree_index_overlap")
   end
 
   it "is silent when no derived publish_to falls under any publish_tree target" do

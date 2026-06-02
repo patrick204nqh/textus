@@ -20,24 +20,26 @@ module Textus
             derived_targets.filter_map do |(derived, rel)|
               next nil unless rel.start_with?(target_prefix)
 
-              basename = File.basename(rel)
-              next nil if tree.ignored?(basename)
+              rel_to_target = rel.delete_prefix(target_prefix)
+              next nil if tree.ignored?(rel_to_target)
 
-              issue(tree, derived, rel, basename)
+              issue(tree, derived, rel, rel_to_target)
             end
           end
         end
 
         private
 
-        def issue(tree, derived, rel, basename)
+        def issue(tree, derived, rel, rel_to_target)
+          basename = File.basename(rel_to_target)
           {
             "code" => "publish.tree_index_overlap",
             "level" => "warning",
             "subject" => tree.key,
             "message" => "publish_tree '#{tree.publish_tree}' overlaps derived entry " \
                          "'#{derived.key}' publish_to '#{rel}'; the tree's prune will delete it on rebuild",
-            "fix" => "add '#{basename}' to entry '#{tree.key}' ignore: [\"#{basename}\"]",
+            "fix" => "add a glob covering '#{rel_to_target}' to entry '#{tree.key}' ignore " \
+                     "(e.g. ignore: [\"**/#{basename}\"])",
           }
         end
       end

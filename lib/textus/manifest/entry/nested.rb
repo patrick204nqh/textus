@@ -97,8 +97,7 @@ module Textus
         def publish_tree_via(pctx)
           base = File.join(pctx.root, "zones", path)
           target_dir = File.expand_path(File.join(pctx.repo_root, @publish_tree))
-          unless target_dir == File.expand_path(pctx.repo_root) ||
-                 target_dir.start_with?(File.expand_path(pctx.repo_root) + File::SEPARATOR)
+          unless target_dir.start_with?(File.expand_path(pctx.repo_root) + File::SEPARATOR)
             raise Textus::PublishError.new(
               "entry '#{@key}': publish_tree target '#{@publish_tree}' escapes repo root",
             )
@@ -118,8 +117,28 @@ module Textus
             { "key" => @key, "source" => src, "target" => dst }
           end
 
-          pruned = prune_orphans(target_dir, written, pctx)
+          pruned = prune_tree(target_dir, written, pctx)
           { kind: :leaves, value: written, pruned: pruned }
+        end
+
+        # ADR 0047 Decision 4: like prune_orphans, but a managed file the entry
+        # is told to `ignore` is NOT the tree's to prune — this is what lets a
+        # derived index (e.g. SKILL.md written by a separate derived entry into
+        # the same dir) survive the whole-target prune. rel-to-target equals the
+        # store-base-relative path the walk used, since the mirror is 1:1.
+        def prune_tree(target_dir, written, pctx)
+          kept = written.map { |w| File.expand_path(w["target"]) }
+          store = Textus::Ports::SentinelStore.new
+          store.targets_under(target_dir, pctx.root).filter_map do |managed|
+            abs = File.expand_path(managed)
+            next nil if kept.include?(abs)
+
+            rel = abs.sub(%r{\A#{Regexp.escape(target_dir)}/}, "")
+            next nil if ignored?(rel)
+
+            Textus::Ports::Publisher.unpublish(target: managed, store_root: pctx.root)
+            managed
+          end
         end
 
         # Scoped to this leaf's target_dir only. Safe across leaves because ADR 0046
@@ -137,7 +156,7 @@ module Textus
         end
 
         # Helpers are private; KIND / self.from_raw / REGISTRY below are intentionally public.
-        private :publish_one, :publish_subtree, :publish_tree_via, :prune_orphans
+        private :publish_one, :publish_subtree, :publish_tree_via, :prune_tree, :prune_orphans
 
         KIND = :nested
 

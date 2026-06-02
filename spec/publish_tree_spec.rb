@@ -154,4 +154,55 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.exist?(human_file)).to be true
     end
   end
+
+  describe "prune honors ignore for a foreign managed file (ADR 0047 D4)" do
+    def seed_managed_file(repo_root, rel, body)
+      target = File.join(repo_root, rel)
+      FileUtils.mkdir_p(File.dirname(target))
+      File.write(target, body)
+      Textus::Ports::SentinelStore.new.write!(target: target, source: target, store_root: root)
+      target
+    end
+
+    it "does NOT prune a managed file matched by the tree's ignore" do
+      write_manifest(<<~Y)
+        - key: working.skills
+          kind: nested
+          path: working/skills
+          zone: working
+          schema: null
+          nested: true
+          publish_tree: "skills"
+          ignore: ["**/SKILL.md"]
+      Y
+      write_file("skills/my-skill/commands.md", "# commands\n")
+      repo_root = File.dirname(root)
+      index = seed_managed_file(repo_root, "skills/my-skill/SKILL.md", "derived index\n")
+
+      Textus::Store.new(root).as("automation").publish
+
+      expect(File.exist?(index)).to be true
+      expect(File.read(File.join(repo_root, "skills/my-skill/commands.md"))).to eq("# commands\n")
+    end
+
+    it "DOES prune the same managed file when the tree does not ignore it" do
+      write_manifest(<<~Y)
+        - key: working.skills
+          kind: nested
+          path: working/skills
+          zone: working
+          schema: null
+          nested: true
+          publish_tree: "skills"
+      Y
+      write_file("skills/my-skill/commands.md", "# commands\n")
+      repo_root = File.dirname(root)
+      index = seed_managed_file(repo_root, "skills/my-skill/SKILL.md", "derived index\n")
+
+      envelope = Textus::Store.new(root).as("automation").publish
+
+      expect(File.exist?(index)).to be false
+      expect(envelope["pruned"]).to include(index)
+    end
+  end
 end
