@@ -17,7 +17,7 @@ module Textus
       retain: Textus::Write::RetentionSweep,
 
       # Read
-      get: Textus::Read::GetOrFetch,
+      get: Textus::Read::Get,
       list: Textus::Read::List,
       where: Textus::Read::Where,
       uid: Textus::Read::Uid,

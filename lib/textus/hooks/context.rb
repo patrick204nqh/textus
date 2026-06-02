@@ -57,7 +57,7 @@ module Textus
       private
 
       def pure_reader
-        @pure_reader ||= Textus::Read::Get.new(
+        @pure_reader ||= Textus::Read::GetEntry.new(
           container: @scope.container,
           call: Textus::Call.build(
             role: @scope.role,

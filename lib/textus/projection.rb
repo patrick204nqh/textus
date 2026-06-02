@@ -7,7 +7,7 @@ module Textus
     REDUCER_TIMEOUT_SECONDS = 2
 
     # `reader` — a callable `->(key) { envelope_or_nil }`. Caller picks
-    #   semantics: pure read (construct `Read::Get` directly) for materialization paths;
+    #   semantics: pure read (construct `Read::GetEntry` directly) for materialization paths;
     #   `ops.get` if you want fetch-on-stale.
     # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
     # `rpc` — a `Hooks::RpcRegistry` used to dispatch `transform_rows` callables.

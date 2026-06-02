@@ -10,17 +10,23 @@ RSpec.describe Textus::Read::Get do
       end
     RUBY
   end
-
-  def build_store_no_intake
-    minimal_store(root, kind_zone: "quarantine", key: "feeds.doc", path: "feeds/doc.md")
+  let(:fake_orchestrator_returning) do
+    lambda do |outcome|
+      Class.new do
+        define_method(:execute) do |_action, key: nil|
+          _ = key
+          outcome
+        end
+      end.new
+    end
   end
 
-  def build_store_with_intake(ttl:, on_stale: "warn")
-    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale)
+  def build_store_with_intake(ttl:, on_stale:)
+    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale, kind_zone: "canon")
   end
 
-  def write_doc(last_fetched_at: Time.now.utc.iso8601)
-    File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)
+  def write_doc(last_fetched_at:)
+    File.write(File.join(root, "zones", "knowledge", "doc.md"), <<~MD)
       ---
       name: doc
       last_fetched_at: "#{last_fetched_at}"
@@ -29,47 +35,55 @@ RSpec.describe Textus::Read::Get do
     MD
   end
 
-  def build_use_case(store)
-    container = Textus::Container.from_store(store)
-    call = Textus::Call.build(role: "automation")
-    described_class.new(container: container, call: call)
-  end
-
-  it "returns nil when the file does not exist on disk" do
-    store = build_store_no_intake
-    use_case = build_use_case(store)
-    expect(use_case.call("feeds.doc")).to be_nil
-  end
-
-  it "annotates as fresh when no fetch policy applies" do
-    store = build_store_no_intake
-    write_doc
-    env = build_use_case(store).call("feeds.doc")
-    expect(env.freshness.stale).to be(false)
-    expect(env.freshness.fetching).to be(false)
-  end
-
-  it "annotates as fresh when the envelope is within TTL" do
+  it "delegates to GetEntry and skips orchestrator when verdict is fresh" do
     store = build_store_with_intake(ttl: "1h", on_stale: "warn")
     write_doc(last_fetched_at: Time.now.utc.iso8601)
-    env = build_use_case(store).call("feeds.doc")
+    ctx = test_ctx(role: "automation")
+    pure_get = Textus::Read::GetEntry.new(container: store.container, call: ctx)
+    orch = Class.new { def execute(*) = raise("must not call") }.new
+    use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
+                                   orchestrator: orch)
+
+    env = use_case.call("knowledge.doc")
+    expect(env).not_to be_nil
     expect(env.freshness.stale).to be(false)
   end
 
-  it "annotates as stale when the envelope is past TTL — but does NOT fetch" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+  it "runs the orchestrator when the verdict is stale (Skipped outcome)" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "warn")
     write_doc(last_fetched_at: "2020-01-01T00:00:00Z")
-    env = build_use_case(store).call("feeds.doc")
+    ctx = test_ctx(role: "automation")
+    pure_get = Textus::Read::GetEntry.new(container: store.container, call: ctx)
+    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
+    use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
+                                   orchestrator: orch)
+
+    env = use_case.call("knowledge.doc")
     expect(env.freshness.stale).to be(true)
     expect(env.freshness.fetching).to be(false)
   end
 
-  it "does not accept an orchestrator: kwarg (signal of the contract)" do
-    store = build_store_no_intake
-    container = Textus::Container.from_store(store)
-    call = Textus::Call.build(role: "automation")
-    expect do
-      described_class.new(container: container, call: call, orchestrator: Object.new)
-    end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
+  it "annotates fetching=true when orchestrator returns Detached" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    write_doc(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    pure_get = Textus::Read::GetEntry.new(container: store.container, call: ctx)
+    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
+    use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
+                                   orchestrator: orch)
+
+    env = use_case.call("knowledge.doc")
+    expect(env.freshness.fetching).to be(true)
+  end
+
+  it "returns nil when the key has no envelope" do
+    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    ctx = test_ctx(role: "automation")
+    pure_get = Textus::Read::GetEntry.new(container: store.container, call: ctx)
+    orch = Class.new { def execute(*) = raise("must not call") }.new
+    use_case = described_class.new(container: store.container, call: ctx, get: pure_get,
+                                   orchestrator: orch)
+
+    expect(use_case.call("knowledge.doc")).to be_nil
   end
 end

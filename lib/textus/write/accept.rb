@@ -10,7 +10,7 @@ module Textus
       end
 
       def call(pending_key)
-        env = Textus::Read::Get.new(container: @container, call: @call).call(pending_key)
+        env = Textus::Read::GetEntry.new(container: @container, call: @call).call(pending_key)
         proposal = env.meta["proposal"] or raise ProposalError.new("entry has no proposal block: #{pending_key}")
         target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
         action = proposal["action"] || "put"

@@ -2,7 +2,7 @@ module Textus
   module Write
     class FetchOrchestrator
       # Collaborator (not a Dispatcher verb): constructed directly by FetchWorker /
-      # GetOrFetch, which pass their derived hook_context in. That's why this takes
+      # Read::Get, which pass their derived hook_context in. That's why this takes
       # hook_context: explicitly while verb use cases derive their own.
       def initialize(worker:, store_root:, events:, hook_context: nil, detached_spawner: nil)
         @worker       = worker

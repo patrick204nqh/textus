@@ -1,66 +1,79 @@
 module Textus
   module Read
-    # Orchestrator-free pure-read primitive: returns the on-disk envelope
-    # annotated with a freshness verdict. Never triggers fetch. NOT a public
-    # verb — the public `get` verb is `Read::GetOrFetch` (read-through, ADR
-    # 0062). Construct this class directly where a read must stay pure:
-    # build/projection, schema tooling, the validator, accept/reject/publish,
-    # `uid`, and the hook context.
+    # Composes pure `Read::GetEntry` with the fetch orchestrator: runs GetEntry
+    # to obtain the envelope and freshness verdict, then if the verdict
+    # is stale and the rule's `on_stale` policy demands action, hands
+    # off to the orchestrator. Use for interactive reads where the
+    # caller wants the freshest obtainable envelope.
+    #
+    # Pure reads (build, projection, schema tooling) should use
+    # `Read::GetEntry` directly; it has no orchestrator dependency.
     class Get
-      def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
-        @container  = container
-        @call       = call
-        @manifest   = container.manifest
-        @file_store = container.file_store
-        @evaluator  = evaluator
-      end
+      extend Textus::Contract::DSL
 
-      def call(key)
-        envelope = read_raw_envelope(key)
-        return nil if envelope.nil?
+      verb     :get
+      summary  "Read one entry, fetching on stale per the entry's fetch rule " \
+               "(degrades to a pure read when the key has no fetch rule). " \
+               "Returns the envelope (uid, etag, _meta, body, freshness)."
+      surfaces :cli, :ruby, :mcp
+      arg :key, String, required: true, positional: true,
+                        description: "dotted entry key to read, e.g. 'knowledge.project'"
+      response(&:to_h_for_wire)
 
-        policy_set = @manifest.rules.for(key)
-        fetch_policy = policy_set.fetch
-        return annotate_fresh(envelope) if fetch_policy.nil?
-
-        policy = fetch_policy.to_freshness_policy
-        verdict = @evaluator.call(policy, envelope, now: @call.now)
-
-        envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: verdict.stale?,
-          reason: verdict.reason,
-          fetching: false,
-        ))
-      end
-
-      # Strict variant: raises UnknownKey when the entry is missing.
-      # Used by consumers (e.g. Validator) that need to distinguish absence
-      # from emptiness.
-      def get(key)
-        call(key) || raise(UnknownKey.new(key, suggestions: @manifest.resolver.suggestions_for(key)))
+      def initialize(container:, call:, get: nil, orchestrator: nil)
+        @container    = container
+        @call         = call
+        @manifest     = container.manifest
+        @get          = get || Read::GetEntry.new(container: container, call: call)
+        @orchestrator = orchestrator || build_orchestrator
       end
 
       private
 
-      def read_raw_envelope(key)
-        res = @manifest.resolver.resolve(key)
-        mentry = res.entry
-        path = res.path
-        return nil unless @file_store.exists?(path)
+      def hook_context
+        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      end
 
-        raw = @file_store.read(path)
-        parsed = Entry.for_format(mentry.format).parse(raw, path: path)
-        Textus::Envelope.build(
-          key: key, mentry: mentry, path: path,
-          meta: parsed["_meta"], body: parsed["body"],
-          etag: Etag.for_bytes(raw), content: parsed["content"]
+      def build_orchestrator
+        worker = Textus::Write::FetchWorker.new(
+          container: @container, call: @call,
+        )
+        Textus::Write::FetchOrchestrator.new(
+          worker: worker, store_root: @container.root, events: @container.events,
+          hook_context: hook_context
         )
       end
 
-      def annotate_fresh(envelope)
-        envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: false, reason: nil, fetching: false,
-        ))
+      public
+
+      def call(key)
+        envelope = @get.call(key)
+        return nil if envelope.nil?
+        return envelope unless envelope.freshness&.stale
+
+        policy_set = @manifest.rules.for(key)
+        fetch_policy = policy_set.fetch
+        return envelope if fetch_policy.nil?
+
+        policy = fetch_policy.to_freshness_policy
+        verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness.reason)
+        action = policy.decide(verdict)
+        outcome = @orchestrator.execute(action, key: key)
+
+        case outcome
+        when Textus::Domain::Outcome::Skipped
+          envelope
+        when Textus::Domain::Outcome::Fetched
+          outcome.envelope.with(
+            freshness: Textus::Domain::Freshness.build(stale: false, reason: nil, fetching: false),
+          )
+        when Textus::Domain::Outcome::Detached
+          envelope.with(freshness: envelope.freshness.with(fetching: true))
+        when Textus::Domain::Outcome::Failed
+          envelope.with(
+            freshness: envelope.freshness.with(fetch_error: outcome.error.message),
+          )
+        end
       end
     end
   end

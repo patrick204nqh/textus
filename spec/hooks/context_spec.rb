@@ -43,16 +43,16 @@ RSpec.describe Textus::Hooks::Context do
   end
 
   it "ctx.get is a pure read and never builds a fetch orchestrator (ADR 0062)" do
-    # GetOrFetch builds an orchestrator; Read::Get does not. Assert the hook
-    # path constructs the pure primitive, not the read-through verb.
-    allow(Textus::Read::GetOrFetch).to receive(:new).and_call_original
+    # Read::Get (read-through) builds an orchestrator; Read::GetEntry does not.
+    # Assert the hook path constructs the pure primitive, not the read-through verb.
     allow(Textus::Read::Get).to receive(:new).and_call_original
+    allow(Textus::Read::GetEntry).to receive(:new).and_call_original
     begin
       ctx.get("knowledge.anything")
     rescue Textus::Error
       nil
     end
-    expect(Textus::Read::GetOrFetch).not_to have_received(:new)
-    expect(Textus::Read::Get).to have_received(:new)
+    expect(Textus::Read::Get).not_to have_received(:new)
+    expect(Textus::Read::GetEntry).to have_received(:new)
   end
 end
