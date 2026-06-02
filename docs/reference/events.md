@@ -1,7 +1,7 @@
 # Events — reference
 
 > **Reference** · for hook authors · **read when** you need the event catalog, lifecycle timelines, or `ctx:` fields
-> **SSoT for** the friendly event catalog and per-verb lifecycle timelines (the *normative* event table is SPEC §5.10) · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the friendly event catalog and per-verb lifecycle timelines (the *normative* event table is SPEC §5.10) · **reviewed** 2026-06 (v0.43)
 
 The event catalog in plain English, the per-verb lifecycle timelines, and the facts hook authors look up: failure modes, intake `args:`, and built-in parsers.
 

@@ -1,7 +1,7 @@
 # Conventions
 
 > **Reference** · for integrators · **read when** you're shaping a `.textus/` tree and want the idiomatic choices
-> **SSoT for** idiomatic key naming, schema design, and automation integration · **reviewed** 2026-05 (v0.35)
+> **SSoT for** idiomatic key naming, schema design, and automation integration · **reviewed** 2026-06 (v0.43)
 
 Guidelines for shaping a `.textus/` tree, naming keys, organising schemas, and integrating with build automation. The spec ([`../../SPEC.md`](../../SPEC.md)) defines what's enforceable; this document captures what's *idiomatic*.
 
@@ -39,11 +39,11 @@ Inside `knowledge/`, group by **domain** (identity, people, projects, decisions,
 
 ## Owner strings
 
-The `owner:` field in the manifest is **advisory metadata**, not an ACL. Use it to label *who's expected to write here*:
+The `owner:` field in the manifest is **advisory metadata**, not an ACL. Use it to label *who's expected to write here*. The form is `<archetype>` or `<archetype>:<subject>`; the archetype must be one of `human`, `agent`, `automation` (validated at load — ADR 0045), and the subject is free-form:
 
-- `textus:network` — humans curate
+- `human:network` — humans curate
 - `agent:planner` — a specific named agent
-- `build:catalog-skills` — a specific build job
+- `automation:catalog-skills` — a specific build job
 
 Tooling around `git blame` or audit logs may filter on owner; the gem itself only echoes it back in envelopes.
 
@@ -58,7 +58,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
   path: artifacts/catalogs/people.md
   zone: artifacts
   schema: null
-  owner: build:catalog-people
+  owner: automation:catalog-people
   compute:
     kind: projection
     select: knowledge.network.org   # prefix or list of prefixes
@@ -75,7 +75,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
 - key: artifacts.catalogs.skills
   path: artifacts/catalogs/skills.md
   zone: artifacts
-  owner: build:catalog-skills
+  owner: automation:catalog-skills
   compute:
     kind: external
     command: "rake catalog:skills"   # informational; the automation invokes it
@@ -106,7 +106,7 @@ rules:
 A typical scheduled-fetch integration shells the `fetch stale` sweep itself:
 
 ```sh
-textus fetch stale --zone=intake --as=automation   # in cron / CI
+textus fetch stale --zone=feeds --as=automation   # in cron / CI
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
@@ -137,7 +137,7 @@ For multi-writer environments, **always pass `if_etag`** on `put`. The gem treat
 The application layer is organised around three shapes — `Manifest` as a composition record, a single `Container` capability record handed to every use case, and a split envelope reader/writer. See [ADR 0018](../architecture/decisions/0018-manifest-carving.md), [ADR 0017](../architecture/decisions/0017-envelope-io-split.md), [ADR 0022](../architecture/decisions/0022-container-call-dispatcher.md), and [ADR 0023](../architecture/decisions/0023-uniform-use-case-shape.md).
 
 - **`Manifest` is a composition record** (`Data.define(:data, :resolver, :policy, :rules)`). Reach individual concerns through the field accessors: `manifest.data.entries`, `manifest.policy.permission_for(zone)`, `manifest.resolver.resolve(key)`, `manifest.rules.for(key)`.
-- **Use cases are plain `(container:, call:)` classes.** Each is a single class under `lib/textus/{read,write,maintenance}/` with `def initialize(container:, call:)` and a `#call(...)` method; verbs are looked up in the static `Textus::Dispatcher::VERBS` table. `Container` is a `Data.define` record bundling the wired ports + manifest (`manifest`, `file_store`, `schemas`, `root`, `audit_log`, `events`, `rpc`, `authorizer`); `Call` is the immutable per-invocation value (`role`, `correlation_id`, `now`, `dry_run`). A use case that emits events derives its `Hooks::Context` from `(container, call)` — nothing is injected. Use cases pull only what they need into ivars; nobody passes the raw `Store` around the application layer. `store.as(role)` returns a `RoleScope` that forwards verbs to the dispatcher.
+- **Use cases are plain `(container:, call:)` classes.** Each is a single class under `lib/textus/{read,write,maintenance}/` with `def initialize(container:, call:)` and a `#call(...)` method; verbs are looked up in the static `Textus::Dispatcher::VERBS` table. `Container` is a `Data.define` record bundling the wired ports + manifest (`manifest`, `file_store`, `schemas`, `root`, `audit_log`, `events`, `rpc`); `Call` is the immutable per-invocation value (`role`, `correlation_id`, `now`, `dry_run`). A use case that emits events derives its `Hooks::Context` from `(container, call)` — nothing is injected. Use cases pull only what they need into ivars; nobody passes the raw `Store` around the application layer. `store.as(role)` returns a `RoleScope` that forwards verbs to the dispatcher.
 - **Write path is split**: `Envelope::IO::Reader` owns read/parse (existing-uid lookup, raw read, parse), and `Envelope::IO::Writer` owns put/delete/move + the audit-append invariant (every public method's final action is `@audit_log.append(...)`).
 
 The user-facing CLI surface, the wire envelope shape, and the protocol version (`textus/3`) are unchanged.

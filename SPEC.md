@@ -197,14 +197,14 @@ entries:
     path: knowledge/network/org
     zone: knowledge
     schema: person
-    owner: textus:network
+    owner: human:network
     nested: true
 
   - key: artifacts.catalogs.people
     path: artifacts/catalogs/people.md
     zone: artifacts
     schema: null
-    owner: textus:build
+    owner: automation:build
 
 rules:
   - match: feeds.**
@@ -404,7 +404,7 @@ A derived entry that is produced by a build tool *outside* textus — `rake`, `j
 - key: output.catalogs.skills
   path: output/catalogs/skills.md
   zone: output
-  owner: build:catalog-skills
+  owner: automation:catalog-skills
   compute:
     kind: external
     command: "rake catalog:skills"   # informational; external automation invokes it
@@ -800,7 +800,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "protocol": "textus/3",
   "key": "knowledge.network.org.jane",
   "zone": "knowledge",
-  "owner": "textus:network",
+  "owner": "human:network",
   "path": "/absolute/path/to/.textus/zones/knowledge/network/org/jane.md",
   "format": "markdown",
   "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
