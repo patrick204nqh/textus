@@ -4,7 +4,9 @@ RSpec.describe Textus::Write::FetchEvents do
   def recording_events
     Class.new do
       attr_reader :published
+
       def initialize = @published = []
+
       def publish(event, **payload)
         @published << [event, payload]
         Textus::Hooks::FireReport.new(fired: [], errored: [], timed_out: [])
@@ -12,9 +14,10 @@ RSpec.describe Textus::Write::FetchEvents do
     end.new
   end
 
+  subject(:fe) { described_class.new(events: bus, hook_context: ctx) }
+
   let(:bus) { recording_events }
   let(:ctx) { :stub_ctx }
-  subject(:fe) { described_class.new(events: bus, hook_context: ctx) }
 
   it "publishes :fetch_started with the context, key and mode" do
     fe.started("intake.item")
@@ -30,7 +33,7 @@ RSpec.describe Textus::Write::FetchEvents do
   end
 
   it "publishes :entry_fetched only when the change is not :unchanged" do
-    env = double("envelope")
+    env = instance_double(Textus::Envelope)
     fe.fetched("intake.item", env, :unchanged)
     expect(bus.published).to be_empty
 

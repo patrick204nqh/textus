@@ -83,7 +83,7 @@ module Textus
           caps: @container, handler: mentry.handler,
           config: mentry.config,
           args: { trigger_key: key, leaf_segments: remaining || [] },
-          label: "intake", timeout: fetch_timeout_for(key),
+          label: "intake", timeout: fetch_timeout_for(key)
         )
       rescue Textus::Error => e
         fetch_events.failed(key, e)
