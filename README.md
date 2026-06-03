@@ -139,7 +139,7 @@ bundle exec exe/textus --help
 
 ## What `textus init` gives you
 
-You get `.textus/` with all five zone directories, baseline schemas, an empty audit log, and a starter manifest. Roles declare capabilities; each zone declares a `kind:`, and write authority is derived from the role's capabilities crossed with the zone's kind:
+You get `.textus/` with all five zone directories, baseline schemas, a starter manifest, and a gitignored `.run/` for disposable runtime state (the audit log, per-role cursors, fetch/build locks). Roles declare capabilities; each zone declares a `kind:`, and write authority is derived from the role's capabilities crossed with the zone's kind:
 
 ```yaml
 roles:
@@ -157,19 +157,24 @@ zones:
 
 ```
 .textus/
-  manifest.yaml       # role capabilities + zone kinds + key-to-path mapping
-  audit.log           # append-only NDJSON, every write
-  schemas/            # YAML field shapes per entry family
-  templates/          # mustache templates for derived entries
-  hooks/              # one .rb per hook
-  sentinels/          # publish bookkeeping
-  zones/              # one dir per zone; kinds + capabilities are in the manifest above
-    knowledge/        # e.g. identity (knowledge.identity.*), voice, decisions, notes
+  manifest.yaml          # role capabilities + zone kinds + key-to-path mapping
+  schemas/               # YAML field shapes per entry family
+  templates/             # mustache templates for derived entries
+  hooks/                 # one .rb per hook
+  .gitignore             # generated — ignores .run/ and any tracked:false entries
+  zones/                 # one dir per zone; kinds + capabilities are in the manifest above
+    knowledge/           # e.g. identity (knowledge.identity.*), voice, decisions, notes
     notebook/
     feeds/
     proposals/
     artifacts/
+  .run/                  # disposable runtime state — gitignored, safe to delete (ADR 0038)
+    audit/audit.log      # append-only NDJSON event ledger, every write (rotates at ~50 MB)
+    state/cursor.<role>  # per-role pulse cursor — where `pulse --since` resumes
+    locks/  build.lock   # per-key fetch locks + the build mutex
 ```
+
+(`sentinels/` — publish bookkeeping — appears at the top level on first publish.)
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
 
