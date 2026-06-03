@@ -90,6 +90,7 @@ RSpec.describe Textus::CLI::Runner do
         views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
         cli: nil,
         around: nil,
+        cli_stdin: nil,
       )
 
       emitted = nil
@@ -115,6 +116,7 @@ RSpec.describe Textus::CLI::Runner do
         views: { default: ->(v, _i) { { "from_default" => v } } },
         cli: nil,
         around: nil,
+        cli_stdin: nil,
       )
 
       emitted = nil
@@ -139,14 +141,15 @@ RSpec.describe Textus::CLI::Runner do
       views[:cli] = cli if cli
       Textus::Contract::Spec.new(
         verb: :demo, summary: "d", args: args, surfaces: [:cli],
-        views: views, cli: nil, around: nil
+        views: views, cli: nil, around: nil, cli_stdin: nil
       )
     end
 
     def key_arg
       Textus::Contract::Arg.new(
         name: :key, type: String, required: true, positional: true,
-        session_default: nil, description: nil, wire_name: nil, default: nil
+        session_default: nil, description: nil, wire_name: nil, default: nil,
+        source: nil, coerce: nil, cli_default: :__unset
       )
     end
 

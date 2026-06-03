@@ -88,6 +88,31 @@ RSpec.describe Textus::Contract do
     end
   end
 
+  describe "acquisition facets" do
+    let(:klass) do
+      Class.new do
+        extend Textus::Contract::DSL
+
+        verb :demo
+        cli_stdin :json
+        arg :doc, String, positional: true, source: :file
+        arg :since, String, coerce: ->(s) { "T:#{s}" }
+      end
+    end
+
+    it "records the file source on the arg" do
+      expect(klass.contract.args.find { |a| a.name == :doc }.source).to eq(:file)
+    end
+
+    it "records the coerce callable on the arg" do
+      expect(klass.contract.args.find { |a| a.name == :since }.coerce.call("2h")).to eq("T:2h")
+    end
+
+    it "records the verb-level cli_stdin mode" do
+      expect(klass.contract.cli_stdin).to eq(:json)
+    end
+  end
+
   it "reports a class without a contract" do
     expect(Class.new.respond_to?(:contract?)).to be(false)
   end

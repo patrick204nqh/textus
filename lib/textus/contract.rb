@@ -12,7 +12,14 @@ module Textus
     # envelope key) when it must differ from the use-case kwarg `name` — e.g. `put`
     # takes the `meta:` kwarg but exposes `_meta` on the wire to match what `get`
     # returns and what the CLI `--stdin` envelope already speaks (ADR 0057).
-    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description, :wire_name, :default) do
+    # `source: :file` (CLI only) reads the arg's value as a path -> file
+    # contents; `coerce:` is a callable applied to the raw value (CLI only);
+    # `cli_default:` supplies a CLI-specific default that diverges from the
+    # contract `default` the agent surfaces use (`:__unset` sentinel = none).
+    Arg = Data.define(
+      :name, :type, :required, :positional, :session_default,
+      :description, :wire_name, :default, :source, :coerce, :cli_default
+    ) do
       # The name used on the wire (defaults to the kwarg name).
       def wire = wire_name || name
     end
@@ -26,7 +33,7 @@ module Textus
       JSON_TYPES.fetch(type) { raise ArgumentError.new("no JSON type mapping for #{type.inspect}") }
     end
 
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :around) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :around, :cli_stdin) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
 
@@ -100,14 +107,26 @@ module Textus
         end
       end
 
-      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil) # rubocop:disable Metrics/ParameterLists
+      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil, source: nil, coerce: nil, cli_default: :__unset) # rubocop:disable Metrics/ParameterLists,Layout/LineLength
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
           positional: positional, session_default: session_default,
-          description: description, wire_name: wire_name, default: default
+          description: description, wire_name: wire_name, default: default,
+          source: source, coerce: coerce, cli_default: cli_default
         )
+      end
+
+      # Verb-level: the CLI reads its inputs from a stdin envelope of this mode.
+      # `:json` parses stdin as a JSON object and distributes its keys to args
+      # by wire-name. nil means no stdin acquisition.
+      def cli_stdin(mode = :__read)
+        return @__cli_stdin if mode == :__read
+
+        raise "contract already built; declare cli_stdin before reading .contract" if defined?(@__contract) && @__contract
+
+        @__cli_stdin = mode
       end
 
       # Declare an output shaper. `view { ... }` is the default (MCP + Ruby);
@@ -136,6 +155,7 @@ module Textus
           views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
           around: @__around,
+          cli_stdin: @__cli_stdin,
         )
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName
