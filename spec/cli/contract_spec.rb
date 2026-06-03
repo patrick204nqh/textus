@@ -45,7 +45,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     actual = Textus::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
     expected = {
       "accept" => Textus::CLI::Verb::GenAccept,
-      "audit" => Textus::CLI::Verb::Audit,
+      "audit" => Textus::CLI::Verb::GenAudit,
       "blame" => Textus::CLI::Verb::GenBlame,
       "build" => Textus::CLI::Verb::Build,
       "deps" => Textus::CLI::Verb::GenDeps,

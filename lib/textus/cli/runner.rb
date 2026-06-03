@@ -108,12 +108,14 @@ module Textus
         end
       end
 
+      # NB: compare arg.type by equality, not `case`/`===` — `Integer === arg.type`
+      # is false when arg.type is the Integer *class* (it tests instance-of), so a
+      # `when Integer` branch would silently never coerce.
       def coerce(arg, raw)
-        case arg.type
-        when :boolean then effective_default(arg) != true
-        when Integer  then Integer(raw)
-        else raw
-        end
+        return effective_default(arg) != true if arg.type == :boolean
+        return Integer(raw) if arg.type == Integer
+
+        raw
       end
 
       def ensure_group(name)
@@ -139,8 +141,7 @@ module Textus
       # generated verbs via arity-2 `cli_response` (ADR 0065).
       HAND_AUTHORED_VERBS = %i[
         get put build delete mv key_delete_prefix key_mv_prefix
-        zone_mv fetch fetch_all boot doctor
-        audit pulse
+        zone_mv fetch fetch_all boot doctor pulse
       ].freeze
 
       def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)
