@@ -12,7 +12,7 @@ module Textus
       arg :from_prefix, String, required: true, description: "dotted prefix whose leaf keys are renamed"
       arg :to_prefix,   String, required: true, description: "dotted prefix the keys are renamed to"
       arg :dry_run,     :boolean, description: "defaults true: returns the Plan without writing. Pass dry_run: false to apply the rename."
-      response(&:to_h)
+      view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
         @container    = container

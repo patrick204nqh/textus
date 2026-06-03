@@ -11,7 +11,7 @@ RSpec.describe Textus::Contract do
       surfaces :cli, :mcp
       arg :key,  String, required: true, description: "the key"
       arg :flag, :boolean
-      response { |v| { "echoed" => v } }
+      view { |v| { "echoed" => v } }
     end
   end
 
@@ -53,14 +53,39 @@ RSpec.describe Textus::Contract do
     expect(klass.contract.args.first.wire).to eq(:key)
   end
 
-  it "carries a response shaper, defaulting to identity" do
-    expect(klass.contract.response.call("x")).to eq("echoed" => "x")
+  it "carries a default view, defaulting to identity" do
+    expect(klass.contract.view(:default).call("x", {})).to eq("echoed" => "x")
     plain = Class.new do
       extend Textus::Contract::DSL
 
       verb :p
     end
-    expect(plain.contract.response.call(42)).to eq(42)
+    expect(plain.contract.view(:default).call(42, {})).to eq(42)
+  end
+
+  describe "views" do
+    let(:klass) do
+      Class.new do
+        extend Textus::Contract::DSL
+
+        verb :demo
+        view         { |r, _i| { "default" => r } }
+        view(:cli)   { |r, i| { "cli" => r, "key" => i[:key] } }
+        arg :key, String, positional: true
+      end
+    end
+
+    it "exposes the default view" do
+      expect(klass.contract.view(:default).call(7, {})).to eq("default" => 7)
+    end
+
+    it "falls back to the default view for an undeclared surface" do
+      expect(klass.contract.view(:mcp).call(7, {})).to eq("default" => 7)
+    end
+
+    it "exposes a surface-specific view that sees inputs" do
+      expect(klass.contract.view(:cli).call(7, { key: "k" })).to eq("cli" => 7, "key" => "k")
+    end
   end
 
   it "reports a class without a contract" do
@@ -142,20 +167,20 @@ RSpec.describe Textus::Contract do
       expect(spec.cli?).to be false
     end
 
-    it "stores a cli_response block, defaulting to nil" do
+    it "falls the :cli view back to the default when no :cli view is declared" do
       plain = build do
         verb :where
         surfaces :cli, :ruby
         arg :key, String, positional: true
       end
-      expect(plain.cli_response).to be_nil
+      expect(plain.view(:cli).call([1, 2], {})).to eq([1, 2])
 
       wrapped = build do
         verb :list
         surfaces :cli, :ruby
-        cli_response { |rows| { "entries" => rows } }
+        view(:cli) { |rows| { "entries" => rows } }
       end
-      expect(wrapped.cli_response.call([1, 2])).to eq({ "entries" => [1, 2] })
+      expect(wrapped.view(:cli).call([1, 2], {})).to eq({ "entries" => [1, 2] })
     end
   end
 end

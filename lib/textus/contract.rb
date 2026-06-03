@@ -26,9 +26,14 @@ module Textus
       JSON_TYPES.fetch(type) { raise ArgumentError.new("no JSON type mapping for #{type.inspect}") }
     end
 
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :response, :cli, :cli_response) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :around) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
+
+      # The output shaper for a surface; falls back to the default view. Every
+      # view is invoked uniformly as `view.call(result, inputs)` — a view that
+      # declares one parameter ignores `inputs` (procs tolerate extra args).
+      def view(surface = :default) = views[surface] || views.fetch(:default)
 
       # Operator-facing command path. Defaults to the verb token; grouped verbs
       # declare e.g. `cli "schema show"`.
@@ -105,19 +110,14 @@ module Textus
         )
       end
 
-      def response(&blk)
-        @__response = blk if blk
-        @__response || ->(v) { v }
-      end
+      # Declare an output shaper. `view { ... }` is the default (MCP + Ruby);
+      # `view(:cli) { ... }` overrides for the CLI. Both receive (result, inputs).
+      def view(surface = :default, &blk)
+        return (@__views ||= {})[surface] unless blk
 
-      def cli_response(&blk)
-        if blk
-          raise "contract already built; declare cli_response before reading .contract" if defined?(@__contract) && @__contract
+        raise "contract already built; declare view before reading .contract" if defined?(@__contract) && @__contract
 
-          @__cli_response = blk
-        else
-          @__cli_response
-        end
+        (@__views ||= {})[surface] = blk
       end
 
       def contract?
@@ -133,9 +133,9 @@ module Textus
           summary: @__summary,
           args: (@__args || []).freeze,
           surfaces: (@__surfaces || []).freeze,
-          response: response,
+          views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
-          cli_response: @__cli_response,
+          around: @__around,
         )
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName

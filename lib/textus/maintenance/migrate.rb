@@ -14,7 +14,7 @@ module Textus
                               description: "YAML listing the migration ops (zone_mv, key_mv_prefix, key_delete_prefix) run in order"
       arg :dry_run,   :boolean,
           description: "defaults true: returns the combined plan without writing. Pass dry_run: false to apply every op."
-      response(&:to_h)
+      view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
         @container    = container

@@ -10,7 +10,7 @@ module Textus
       cli      "key delete"
       arg :prefix,  String, required: true, description: "every leaf key under this dotted prefix is deleted"
       arg :dry_run, :boolean, description: "defaults true: returns the Plan without writing. Pass dry_run: false to apply the delete."
-      response(&:to_h)
+      view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
         @container    = container

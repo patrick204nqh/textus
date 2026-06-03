@@ -30,7 +30,7 @@ module Textus
                             description: "read-through (fetch on stale per the " \
                                          "entry's fetch rule) when true, the default; " \
                                          "false returns the on-disk envelope without ever fetching"
-      response(&:to_h_for_wire)
+      view { |v, _i| v.to_h_for_wire }
 
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator, orchestrator: nil)
         @container  = container

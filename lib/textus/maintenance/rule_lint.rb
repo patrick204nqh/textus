@@ -14,7 +14,7 @@ module Textus
       cli      "rule lint"
       arg :candidate_yaml, String, required: true,
                                    description: "manifest YAML; its `rules:` block is diffed against the live manifest (no writes)"
-      response(&:to_h)
+      view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
         @container = container

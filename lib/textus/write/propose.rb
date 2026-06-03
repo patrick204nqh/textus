@@ -18,7 +18,7 @@ module Textus
           description: "markdown/text payload for markdown-format entries; omit (use `content`) for json/yaml entries. Do not send both"
       arg :content, Hash,
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
-      response { |env| { "uid" => env.uid, "etag" => env.etag, "key" => env.key } }
+      view { |env| { "uid" => env.uid, "etag" => env.etag, "key" => env.key } }
 
       def initialize(container:, call:)
         @container = container
