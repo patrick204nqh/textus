@@ -96,7 +96,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "list" => Textus::CLI::Verb::GenRuleList,
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(
-      "mv" => Textus::CLI::Verb::ZoneMv,
+      "mv" => Textus::CLI::Verb::GenZoneMv,
     )
     expect(Textus::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::CLI::Verb::SchemaDiff,

@@ -30,7 +30,7 @@ RSpec.describe Textus::Maintenance::ZoneMv do
   end
 
   it "previews zone rename + key relocation + manifest rewrite" do
-    plan = build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: true)
+    plan = build_zone_mv.call("scratch", "sandbox", dry_run: true)
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to include("rename_zone", "mv")
     expect(File.exist?(File.join(root, "zones/scratch/note.md"))).to be(true)
@@ -40,12 +40,12 @@ RSpec.describe Textus::Maintenance::ZoneMv do
     FileUtils.mkdir_p(File.join(root, "zones/sandbox"))
     File.write(File.join(root, "zones/sandbox/.keep"), "")
     expect do
-      build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: true)
+      build_zone_mv.call("scratch", "sandbox", dry_run: true)
     end.to raise_error(Textus::UsageError, /already exists/)
   end
 
   it "applies the rename and rewrites manifest" do
-    build_zone_mv.call(from: "scratch", to: "sandbox", dry_run: false)
+    build_zone_mv.call("scratch", "sandbox", dry_run: false)
     raw = YAML.safe_load_file(File.join(root, "manifest.yaml"))
     zone_names = raw["zones"].map { |z| z["name"] }
     expect(zone_names).to include("sandbox")
