@@ -13,7 +13,7 @@ module Textus
       private
 
       def get
-        @get ||= GetEntry.new(container: @container, call: @call)
+        @get ||= Get.new(container: @container, call: @call)
       end
     end
   end

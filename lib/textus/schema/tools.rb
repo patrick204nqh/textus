@@ -84,7 +84,7 @@ module Textus
       # Orchestrator-free read: schema tooling must never trigger a fetch
       # while inspecting/migrating entries (ADR 0062).
       def self.pure_get(store, role, key)
-        Textus::Read::GetEntry.new(
+        Textus::Read::Get.new(
           container: store.as(role).container,
           call: Textus::Call.build(role: role),
         ).call(key)

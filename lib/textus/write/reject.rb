@@ -22,7 +22,7 @@ module Textus
           raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
         end
 
-        env = Textus::Read::GetEntry.new(
+        env = Textus::Read::Get.new(
           container: @container, call: @call,
         ).call(pending_key)
         proposal = env.meta&.dig("proposal") or
