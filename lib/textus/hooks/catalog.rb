@@ -20,6 +20,7 @@ module Textus
         proposal_rejected: %i[ctx key target_key],
         file_published: %i[ctx key envelope source target],
         store_loaded: %i[ctx],
+        session_opened: %i[ctx role cursor],
         fetch_started: %i[ctx key mode],
         fetch_failed: %i[ctx key error_class error_message],
         fetch_backgrounded: %i[ctx key started_at budget_ms],

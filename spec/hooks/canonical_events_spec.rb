@@ -5,12 +5,13 @@ RSpec.describe "textus/3 canonical hook events" do
   let(:events) { Textus::Hooks::EventBus.new }
   let(:rpc)    { Textus::Hooks::RpcRegistry.new }
 
-  it "accepts canonical textus/3 event names" do
+  it "accepts canonical textus/3 event names" do # rubocop:disable RSpec/ExampleLength
     rpc.register(:resolve_intake,    :handler_a)         { |**| { _meta: {}, body: "x" } }
     rpc.register(:transform_rows,    :reducer_a)         { |rows:, **| rows }
     rpc.register(:validate,          :checker_a)         { |**| [] }
     events.on(:entry_put,         :listener_a)        { |**| }
     events.on(:store_loaded,      :loaded_listener)   { |**| }
+    events.on(:session_opened,    :opened_listener)   { |**| }
     events.on(:build_completed,   :built_listener)    { |**| }
     events.on(:proposal_accepted, :accepted_listener) { |**| }
     events.on(:proposal_rejected, :rejected_listener) { |**| }
@@ -31,6 +32,7 @@ RSpec.describe "textus/3 canonical hook events" do
     # Pubsub events should not be accessible on RpcRegistry
     pubsub_events = %i[entry_put entry_deleted entry_fetched entry_renamed build_completed
                        proposal_accepted proposal_rejected file_published store_loaded
+                       session_opened
                        fetch_started fetch_failed fetch_backgrounded]
     pubsub_events.each do |ev|
       expect { rpc.register(ev, :_) { |**| } }.to raise_error(Textus::UsageError)
