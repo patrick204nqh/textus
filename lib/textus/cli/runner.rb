@@ -139,7 +139,7 @@ module Textus
       # generated verbs via arity-2 `cli_response` (ADR 0065).
       HAND_AUTHORED_VERBS = %i[
         get put build delete mv key_delete_prefix key_mv_prefix
-        rule_lint zone_mv fetch fetch_all boot doctor
+        zone_mv fetch fetch_all boot doctor
         audit pulse
       ].freeze
 

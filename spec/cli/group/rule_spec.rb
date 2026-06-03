@@ -91,6 +91,25 @@ RSpec.describe "textus rule group" do
     end
   end
 
+  describe "textus rule lint --against=FILE (generated, ADR 0068)" do
+    it "reads the candidate YAML from --against and diffs its rules" do
+      cand = File.join(tmp, "cand.yaml")
+      File.write(cand, <<~YAML)
+        rules:
+          - match: knowledge.doc
+            fetch: { ttl: 5m, on_stale: sync }
+            intake_handler_allowlist: [src_a]
+          - match: knowledge.new
+            fetch: { ttl: 2h, on_stale: warn }
+      YAML
+      rc = run(["rule", "lint", "--against=#{cand}"])
+      expect(rc).to eq(0), "stderr: #{stderr.string}"
+      payload = JSON.parse(stdout.string)
+      ops = payload["steps"].map { |s| [s["op"], s["match"]] }
+      expect(ops).to include(["add_rule", "knowledge.new"], ["remove_rule", "knowledge.*"])
+    end
+  end
+
   describe "textus rule (no subcommand)" do
     it "lists valid subcommands" do
       run(["rule"])

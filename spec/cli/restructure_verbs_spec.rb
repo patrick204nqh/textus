@@ -10,9 +10,9 @@ RSpec.describe "restructure CLI verbs" do
     expect(Textus::CLI::Verb::ZoneMv.parent_group).to eq(Textus::CLI::Group::Zone)
   end
 
-  it "registers Verb::RuleLint under rule group" do
-    expect(Textus::CLI::Verb::RuleLint.command_name).to eq("lint")
-    expect(Textus::CLI::Verb::RuleLint.parent_group).to eq(Textus::CLI::Group::Rule)
+  it "registers the generated rule lint verb under the rule group" do
+    expect(Textus::CLI::Verb::GenRuleLint.command_name).to eq("lint")
+    expect(Textus::CLI::Verb::GenRuleLint.parent_group).to eq(Textus::CLI::Group::Rule)
   end
 
   it "registers Verb::KeyDelete under key group" do

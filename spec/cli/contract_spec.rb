@@ -92,7 +92,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
       "explain" => Textus::CLI::Verb::GenRuleExplain,
-      "lint" => Textus::CLI::Verb::RuleLint,
+      "lint" => Textus::CLI::Verb::GenRuleLint,
       "list" => Textus::CLI::Verb::GenRuleList,
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(

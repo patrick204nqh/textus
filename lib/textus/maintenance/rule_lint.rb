@@ -12,8 +12,8 @@ module Textus
       summary  "Diff candidate manifest YAML's rules against the live manifest. No writes."
       surfaces :cli, :ruby, :mcp
       cli      "rule lint"
-      arg :candidate_yaml, String, required: true,
-                                   description: "manifest YAML; its `rules:` block is diffed against the live manifest (no writes)"
+      arg :candidate_yaml, String, required: true, wire_name: :against, source: :file,
+                                   description: "path to candidate manifest YAML; its `rules:` block is diffed against the live manifest"
       view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
