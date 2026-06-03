@@ -56,6 +56,8 @@ module Textus
         inputs = Textus::Contract::Binder.inputs_from_ordered(
           spec, verb_instance.positional, verb_instance.flag_values(spec)
         )
+        inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
+        inputs = Textus::Contract::Sources.acquire(spec, inputs)
         scope = verb_instance.session_for(store)
         begin
           result = scope.dispatch_bound(spec.verb, inputs, validate: true)
@@ -145,6 +147,7 @@ module Textus
         klass.command_name leaf
         klass.parent_group group if group
         klass.option :as_flag, "--as=ROLE"
+        klass.option :use_stdin, "--stdin" if spec.cli_stdin
         non_positional.each { |a| klass.option a.name, Runner.flagspec_for(a) }
 
         # Anchor the anonymous class to a constant so descendants discovery is

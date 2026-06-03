@@ -108,6 +108,9 @@ module Textus
       def session_for(store)
         store.as(resolved_role(store))
       end
+
+      # The input stream — the source for a `cli_stdin` envelope (ADR 0068).
+      attr_reader :stdin
     end
   end
 end
