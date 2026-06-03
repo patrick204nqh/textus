@@ -207,13 +207,27 @@ Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...]
 
 ## Extension points
 
-textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). Events:
+textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). There are two kinds:
 
-- `:resolve_intake` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
-- `:transform_rows` — transform rows during projection (returns rows)
-- `:validate` — custom doctor check (returns issues)
-- `:entry_put`, `:entry_deleted`, `:entry_fetched`, `:build_completed`, `:proposal_accepted`, `:file_published`, `:entry_renamed`, `:proposal_rejected`, `:store_loaded` — react to lifecycle events
-- `:fetch_started`, `:fetch_failed`, `:fetch_backgrounded` — background-fetch lifecycle
+**RPC hooks** — one handler, the framework uses what you return:
+
+| Event | Fires when | You return |
+|---|---|---|
+| `:resolve_intake` | a fetch needs bytes | `{_meta:, body:}` |
+| `:transform_rows` | a projection builds | the reshaped rows |
+| `:validate` | `textus doctor` runs | doctor issues (or none) |
+
+**Pub-sub hooks** — 0..N handlers, fire-and-react (no return value):
+
+| Event(s) | Fires when |
+|---|---|
+| `:entry_put` · `:entry_deleted` · `:entry_renamed` | a write lands |
+| `:entry_fetched` | a fetch-driven write lands |
+| `:build_completed` | a derived entry materializes |
+| `:file_published` | a derived file is copied to its target |
+| `:proposal_accepted` · `:proposal_rejected` | a proposal is resolved |
+| `:fetch_started` · `:fetch_failed` · `:fetch_backgrounded` | background-fetch lifecycle |
+| `:store_loaded` | the store finishes loading |
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
