@@ -5,6 +5,13 @@ module Textus
     # from the CLI verb so the rule family is fully use-case-backed (ADR 0059);
     # CLI-only (no MCP contract) — an agent reasons per-key via rule_explain.
     class RuleList
+      extend Textus::Contract::DSL
+
+      verb     :rule_list
+      summary  "List every rule block in the manifest."
+      surfaces :cli, :ruby
+      cli      "rule list"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end
