@@ -7,7 +7,7 @@ module Textus
 
       verb     :fetch
       summary  "Run a fetch action for one quarantine entry."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "quarantine-zone entry key to refresh using its declared intake action"
       view { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }

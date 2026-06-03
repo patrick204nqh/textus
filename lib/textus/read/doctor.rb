@@ -10,7 +10,7 @@ module Textus
 
       verb     :doctor
       summary  "Run health checks on the textus store and report any issues."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "doctor"
       arg :checks, Array, required: false, description: "subset of check names to run (default: all)"
 

@@ -5,7 +5,7 @@ module Textus
 
       verb     :list
       summary  "List keys filtered by zone and/or prefix."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :prefix, String, description: "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'"
       arg :zone,   String, description: "restrict to one zone by name (see `boot` zones); combine with prefix to narrow further"
       view(:cli) { |rows| { "entries" => rows } }

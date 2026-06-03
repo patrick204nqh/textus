@@ -5,7 +5,7 @@ module Textus
 
       verb :accept
       summary "apply a queued proposal to its target zone; requires the author capability"
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli "accept"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 

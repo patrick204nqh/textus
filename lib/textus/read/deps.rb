@@ -5,7 +5,7 @@ module Textus
 
       verb     :deps
       summary  "List the keys a derived entry depends on (its projection/external sources)."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted key of the derived entry whose source keys you want"
 

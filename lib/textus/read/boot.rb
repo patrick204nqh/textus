@@ -9,7 +9,7 @@ module Textus
 
       verb     :boot
       summary  "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
 
       def initialize(container:, call:)
         @container = container

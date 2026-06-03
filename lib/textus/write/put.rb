@@ -5,7 +5,7 @@ module Textus
 
       verb     :put
       summary  "Create or update an entry. Schema-validated. Returns {uid, etag}."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key,     String, required: true, positional: true,
                             description: "dotted entry key, e.g. 'knowledge.project'; must resolve to a zone the role may write"
       arg :meta,    Hash, required: false, wire_name: :_meta,

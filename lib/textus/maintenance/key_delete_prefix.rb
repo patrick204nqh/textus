@@ -6,7 +6,7 @@ module Textus
 
       verb     :key_delete_prefix
       summary  "Bulk-delete every leaf key under prefix."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli      "key delete-prefix"
       arg :prefix,  String, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"
       arg :dry_run, :boolean, default: false,

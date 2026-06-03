@@ -5,7 +5,7 @@ module Textus
 
       verb     :uid
       summary  "Return the stable UID of an entry without reading its body."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "key uid"
       arg :key, String, required: true, positional: true, description: "entry key"
       view(:cli) { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }

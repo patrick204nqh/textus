@@ -7,7 +7,7 @@ module Textus
 
       verb     :key_mv_prefix
       summary  "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli      "key mv-prefix"
       arg :from_prefix, String, required: true, positional: true, description: "dotted prefix whose leaf keys are renamed"
       arg :to_prefix,   String, required: true, positional: true, description: "dotted prefix the keys are renamed to"

@@ -5,7 +5,7 @@ module Textus
 
       verb     :mv
       summary  "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli      "key mv"
       arg :old_key, String, required: true, positional: true,
                             description: "current dotted key"

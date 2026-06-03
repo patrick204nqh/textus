@@ -23,7 +23,7 @@ module Textus
                "the entry's fetch rule, degrading to a pure read when the key " \
                "has no rule. Pass fetch:false for a guaranteed pure on-disk " \
                "read. Returns the envelope (uid, etag, _meta, body, freshness)."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       arg :fetch, :boolean, default: true,

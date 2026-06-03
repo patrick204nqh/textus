@@ -11,7 +11,7 @@ module Textus
 
       verb     :retain
       summary  "Apply each entry's retention policy; prune expired versions."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "retain"
       arg :prefix, String, description: "restrict to keys starting with this dotted prefix"
       arg :zone,   String, description: "restrict to entries in this zone"

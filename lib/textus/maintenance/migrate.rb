@@ -9,7 +9,7 @@ module Textus
 
       verb     :migrate
       summary  "Run a YAML migration plan (multi-op)."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :plan_yaml, String, required: true, positional: true, source: :file,
                               description: "path to the YAML migration plan (zone_mv, key_mv_prefix, key_delete_prefix ops run in order)"
       arg :dry_run, :boolean, default: false,

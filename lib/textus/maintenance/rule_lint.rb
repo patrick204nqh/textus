@@ -10,7 +10,7 @@ module Textus
 
       verb     :rule_lint
       summary  "Diff candidate manifest YAML's rules against the live manifest. No writes."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli      "rule lint"
       arg :candidate_yaml, String, required: true, wire_name: :against, source: :file,
                                    description: "path to candidate manifest YAML; its `rules:` block is diffed against the live manifest"
