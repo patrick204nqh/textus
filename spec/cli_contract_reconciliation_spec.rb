@@ -51,4 +51,15 @@ RSpec.describe "CLI reconciles with the contract (ADR 0063)" do
     end
     expect(offenders.map { |k| [k.name, path_of(k), k.spec.verb] }).to be_empty
   end
+
+  it "every invokable Runner::Base command declares its contract via self.spec" do
+    # A Runner::Base subclass derives its name/dispatch from `spec`; one that
+    # forgot `self.spec = …` would silently escape the dispatch check above.
+    # Fail loudly instead — drift must be unrepresentable, not merely unchecked.
+    nil_spec = Textus::CLI::Verb.descendants.select do |k|
+      k.command_name && k < Textus::CLI::Runner::Base && k.spec.nil?
+    end
+    expect(nil_spec.map(&:name)).to be_empty,
+                                    "Runner::Base commands missing self.spec: #{nil_spec.map(&:name).join(", ")}"
+  end
 end
