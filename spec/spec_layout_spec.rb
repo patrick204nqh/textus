@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-# Unit examples for the pure SpecLayout helper. The directory sweep that uses
-# it lives in the second describe block (added in Task 2).
+require "pathname"
+
+# Unit examples for the pure SpecLayout helper, plus the live guard that uses it
+# to assert every constant-described spec mirrors lib/textus/. This file's own
+# top-level group is `SpecLayout` (not a Textus:: constant), so the sweep below
+# treats it as exempt.
 RSpec.describe SpecLayout do
   describe ".described_constant" do
     it "extracts a Textus constant from a class-described spec" do
@@ -54,6 +58,42 @@ RSpec.describe SpecLayout do
       const = "Textus::Doctor::Check::OrphanedPublishTargets"
       expect(described_class.placement_error(const, ["doctor"])).not_to be_nil
       expect(described_class.placement_error(const, %w[doctor check])).to be_nil
+    end
+  end
+
+  # The live guard: no resurrected spec/textus/ prefix dir, and every
+  # constant-described spec sits in its mirror directory.
+  describe "the live spec tree" do
+    let(:spec_root) { __dir__ }
+    let(:spec_files) { Dir.glob(File.join(spec_root, "**", "*_spec.rb")) }
+
+    it "finds spec files (guard against a silent empty glob)" do
+      expect(spec_files).not_to be_empty
+    end
+
+    it "has no spec/textus/ duplicate-prefix directory" do
+      expect(Dir.exist?(File.join(spec_root, "textus"))).to(
+        be(false),
+        "spec/textus/ is a duplicate of the no-prefix mirror; specs for " \
+        "Textus::Foo belong in spec/foo/, not spec/textus/foo/",
+      )
+    end
+
+    it "places every constant-described spec in its mirror directory" do
+      violations = spec_files.each_with_object([]) do |path, acc|
+        constant = SpecLayout.described_constant(File.read(path))
+        next unless constant # string-described (integration) specs are exempt
+
+        rel = Pathname.new(path).relative_path_from(Pathname.new(spec_root))
+        dir = rel.dirname.to_s == "." ? [] : rel.dirname.to_s.split("/")
+
+        error = SpecLayout.placement_error(constant, dir)
+        acc << "#{rel}: #{error}" if error
+      end
+
+      expect(violations).to be_empty,
+                            "Spec layout drifted from the lib/textus/ mirror:\n\n" \
+                            "#{violations.join("\n")}"
     end
   end
 end
