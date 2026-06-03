@@ -15,9 +15,11 @@ RSpec.describe "restructure CLI verbs" do
     expect(Textus::CLI::Verb::GenRuleLint.parent_group).to eq(Textus::CLI::Group::Rule)
   end
 
-  it "registers Verb::KeyDelete under key group" do
-    expect(Textus::CLI::Verb::KeyDelete.command_name).to eq("delete")
-    expect(Textus::CLI::Verb::KeyDelete.parent_group).to eq(Textus::CLI::Group::Key)
+  it "registers the generated key delete + delete-prefix verbs under the key group" do
+    expect(Textus::CLI::Verb::GenDelete.command_name).to eq("delete")
+    expect(Textus::CLI::Verb::GenDelete.parent_group).to eq(Textus::CLI::Group::Key)
+    expect(Textus::CLI::Verb::GenKeyDeletePrefix.command_name).to eq("delete-prefix")
+    expect(Textus::CLI::Verb::GenKeyDeletePrefix.parent_group).to eq(Textus::CLI::Group::Key)
   end
 
   it "registers the generated migrate verb as a top-level verb" do
