@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Pulse manifest_etag" do
+RSpec.describe "Pulse contract_etag" do
   include_context "textus_store_fixture"
 
   before do
@@ -17,10 +17,15 @@ RSpec.describe "Pulse manifest_etag" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:expected_etag) { Textus::Etag.for_file(File.join(root, "manifest.yaml")) }
+  let(:expected_etag) { Textus::Etag.for_contract(store.root) }
 
-  it "includes manifest_etag in the pulse envelope" do
+  it "includes contract_etag in the pulse envelope" do
     result = store.as("human").pulse(since: 0)
-    expect(result["manifest_etag"]).to eq(expected_etag)
+    expect(result["contract_etag"]).to eq(expected_etag)
+  end
+
+  it "no longer emits the old manifest_etag key" do
+    result = store.as("human").pulse(since: 0)
+    expect(result).not_to have_key("manifest_etag")
   end
 end

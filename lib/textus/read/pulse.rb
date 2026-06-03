@@ -33,7 +33,7 @@ module Textus
           "stale" => freshness_rows.select { |r| r[:status] == :stale }.map { |r| r[:key] },
           "pending_review" => review_keys,
           "doctor" => doctor_summary,
-          "manifest_etag" => manifest_etag,
+          "contract_etag" => contract_etag,
           "next_due_at" => soonest_due(freshness_rows),
           "hook_errors" => hook_errors_since(since),
         }
@@ -76,8 +76,8 @@ module Textus
         }
       end
 
-      def manifest_etag
-        @file_store.etag(File.join(@root, "manifest.yaml"))
+      def contract_etag
+        Textus::Etag.for_contract(@root)
       end
 
       def hook_errors_since(seq)
