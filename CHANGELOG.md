@@ -9,6 +9,15 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.44.1 — 2026-06-03 — Finish the CLI contract projection ([ADR 0065](docs/architecture/decisions/0065-finish-cli-response-shrink-escape-hatches.md))
+
+No `textus/3` wire-format change. The `cli_response` facet can now receive the call's resolved inputs, so the two output-only escape hatches become generated verbs. No operator-visible change to CLI commands, flags, or output.
+
+### Changed
+
+- **`cli_response` may see the call inputs; `uid` and `blame` are now generated ([ADR 0065](docs/architecture/decisions/0065-finish-cli-response-shrink-escape-hatches.md)).** An arity-2 `cli_response` lambda receives `(result, inputs)` (inputs keyed by arg name), letting an envelope echo an input such as the key. `Read::Uid` and `Read::Blame` declare their CLI envelopes in their contracts and drop their hand-authored `Runner::Base` subclasses — the escape-hatch population shrinks from 13 to 11. `zone_mv` (CLI applies by default, agents plan by default — ADR 0060) and `audit` (a one-off `since` coercion) deliberately stay hand-authored.
+- **BREAKING (pre-1.0): `Read::Blame#call` takes the key positionally.** `store.as(role).blame(key:)` becomes `store.as(role).blame(key)` to match the CLI's positional `blame KEY` and the generated arg-mapping. The CLI command and the MCP surface (blame is not MCP-surfaced) are unchanged.
+
 ## 0.44.0 — 2026-06-03 — One verb name across surfaces; the CLI is a contract projection ([ADRs 0058–0064](docs/architecture/decisions/))
 
 No `textus/3` wire-format change. This release makes a verb's *name* singular across the MCP tool, the CLI command, and the use-case method; widens and hardens the agent surface; unifies `get` on read-through; and makes the CLI a derived projection of the per-verb contract so a command can no longer dispatch a differently-named verb. Several breaking (pre-1.0) renames on the MCP/CLI surfaces; no operator-visible change to CLI commands, flags, or output.

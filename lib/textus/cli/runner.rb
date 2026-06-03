@@ -77,8 +77,21 @@ module Textus
         pos, kw = call_args(spec, verb_instance.positional, verb_instance.flag_values(spec))
         result = verb_instance.session_for(store).public_send(spec.verb, *pos, **kw)
         result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
-        shaper = spec.cli_response || spec.response
-        verb_instance.emit(shaper.call(result))
+        verb_instance.emit(shape(spec, result, pos, kw))
+      end
+
+      # Shape the use-case result for the CLI wire. `cli_response` may take the
+      # result alone (arity 1) or the result plus a hash of the call's resolved
+      # inputs keyed by arg name (arity 2) — the latter lets an envelope echo an
+      # input such as the key (ADR 0065). Falls back to the agent `response`.
+      def shape(spec, result, pos, kwargs)
+        clr = spec.cli_response
+        return spec.response.call(result) unless clr
+        return clr.call(result) unless clr.arity == 2
+
+        positional_names = spec.args.select(&:positional).map(&:name)
+        inputs = positional_names.zip(pos).to_h.merge(kwargs)
+        clr.call(result, inputs)
       end
 
       def flagspec_for(arg)
@@ -108,21 +121,21 @@ module Textus
       end
 
       # Verbs that keep a hand-authored CLI class and must NOT be generated:
-      # escape hatches (behavior the generic runner can't express), the
-      # custom-parse `fetch` family, the bulk *_prefix cousins (handled by the
-      # single-key multi-dispatch classes), and category-C commands with custom
-      # output (boot/doctor).
-      #
-      # The second row are verbs whose CLI surface emits a presentation envelope
-      # the contract `response` does not (and must not — MCP would inherit it):
-      # `{ "verb" => …, "rows"/"policies" => … }` (audit, freshness, rule_list,
-      # rule_explain), `{ "entries" => … }` (list), `{ "key" =>, "uid" => }`
-      # (uid), and pulse's session-cursor read/write. These stay hand-authored
-      # until the contract grows a CLI-specific response facet (ADR 0063 follow-up).
+      # genuine escape hatches the generic runner cannot express — stdin
+      # (put/propose), file reads (migrate/rule_lint), stateful resources
+      # (build/BuildLock, pulse/CursorStore), one-command-two-verbs multi-dispatch
+      # (key delete/mv via --prefix), domain behavior (get's UnknownKey +
+      # suggestions), and the bulk-destructive verbs whose CLI default differs
+      # from their Ruby/MCP default (zone_mv applies by default on the CLI but
+      # plans by default for agents, ADR 0060 — generating it would flip that).
+      # `audit` stays for its `since` String→Time coercion and `**filters`
+      # keyrest #call (ADR 0065 left it: converting one verb is not worth a
+      # one-off `coerce:` primitive). Output-only hatches (uid, blame) became
+      # generated verbs via arity-2 `cli_response` (ADR 0065).
       HAND_AUTHORED_VERBS = %i[
         get put propose build delete mv key_delete_prefix key_mv_prefix
-        migrate rule_lint blame zone_mv fetch fetch_all boot doctor
-        audit pulse uid
+        migrate rule_lint zone_mv fetch fetch_all boot doctor
+        audit pulse
       ].freeze
 
       def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)

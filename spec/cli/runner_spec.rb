@@ -132,4 +132,63 @@ RSpec.describe Textus::CLI::Runner do
     end
     # rubocop:enable RSpec/VerifiedDoubles
   end
+
+  describe ".shape (ADR 0065 — cli_response may see call inputs)" do
+    def spec_with(cli_response:, args: [])
+      Textus::Contract::Spec.new(
+        verb: :demo, summary: "d", args: args, surfaces: [:cli],
+        response: ->(v) { v }, cli: nil, cli_response: cli_response
+      )
+    end
+
+    def key_arg
+      Textus::Contract::Arg.new(
+        name: :key, type: String, required: true, positional: true,
+        session_default: nil, description: nil, wire_name: nil, default: nil
+      )
+    end
+
+    it "passes the result only to an arity-1 cli_response" do
+      spec = spec_with(cli_response: ->(r) { { "wrapped" => r } })
+      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("wrapped" => "X")
+    end
+
+    it "passes (result, inputs) to an arity-2 cli_response, keyed by arg name" do
+      spec = spec_with(cli_response: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
+      expect(Textus::CLI::Runner.shape(spec, "uidval", ["k1"], {})).to eq("key" => "k1", "v" => "uidval")
+    end
+
+    it "falls back to response when there is no cli_response" do
+      spec = spec_with(cli_response: nil)
+      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("X")
+    end
+  end
+
+  describe "key uid (generated, ADR 0065)" do
+    it "dispatches `key uid KEY` and emits {key, uid}" do
+      rc = run(["key", "uid", "knowledge.note"])
+      expect(rc).to eq(0)
+      expect(JSON.parse(stdout.string)).to include("key" => "knowledge.note", "uid" => "abc123")
+      expect(stderr.string).to be_empty
+    end
+
+    it "no longer keeps a hand-authored uid class" do
+      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
+    end
+  end
+
+  describe "blame (generated, ADR 0065)" do
+    it "dispatches `blame KEY` and emits {verb, key, rows}" do
+      rc = run(["blame", "knowledge.note"])
+      expect(rc).to eq(0)
+      expect(JSON.parse(stdout.string)).to include(
+        "verb" => "blame", "key" => "knowledge.note", "rows" => [],
+      )
+      expect(stderr.string).to be_empty
+    end
+
+    it "no longer keeps a hand-authored blame class" do
+      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
+    end
+  end
 end

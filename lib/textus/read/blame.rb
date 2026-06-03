@@ -13,8 +13,9 @@ module Textus
       summary  "Annotate audit rows for a key with the git commit that introduced each file state."
       surfaces :cli, :ruby
       cli      "blame"
-      arg :key,   String,  required: true,  description: "entry key to blame"
+      arg :key,   String,  required: true, positional: true, description: "entry key to blame"
       arg :limit, Integer, required: false, description: "maximum number of audit rows to return"
+      cli_response { |rows, inputs| { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @container = container
@@ -22,7 +23,7 @@ module Textus
         @root      = container.root
       end
 
-      def call(key:, limit: nil)
+      def call(key, limit: nil)
         audit_rows = Textus::Read::Audit.new(container: @container).call(key: key, limit: limit)
         path = resolve_path(key)
         return audit_rows.map { |r| r.merge("git" => nil) } unless git_tracked?(path)

@@ -57,7 +57,7 @@ RSpec.describe Textus::Read::Blame do
                          "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "knowledge.doc")
+    result = ops.blame("knowledge.doc")
     expect(result.length).to eq(1)
     row = result.first
     expect(row["git"]).to be_a(Hash)
@@ -76,7 +76,7 @@ RSpec.describe Textus::Read::Blame do
                          "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "knowledge.doc")
+    result = ops.blame("knowledge.doc")
     expect(result.length).to eq(1)
     expect(result.first["git"]).to be_nil
   end
@@ -94,7 +94,7 @@ RSpec.describe Textus::Read::Blame do
                          "verb" => "put", "key" => "knowledge.doc" })
 
     ops = store.as("human")
-    result = ops.blame(key: "knowledge.doc")
+    result = ops.blame("knowledge.doc")
     expect(result.first["git"]).to be_nil
   end
 end

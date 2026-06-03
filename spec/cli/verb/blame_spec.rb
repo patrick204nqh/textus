@@ -1,7 +1,10 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb::Blame do
+# `blame` is a generated verb (ADR 0065): the CLI command is projected from the
+# contract via an arity-2 `cli_response`, no longer a hand-authored class. These
+# behavioral specs still exercise the projected command end-to-end.
+RSpec.describe "blame CLI (generated, ADR 0065)" do
   include_context "textus_store_fixture"
 
   let(:stdin)  { StringIO.new }
