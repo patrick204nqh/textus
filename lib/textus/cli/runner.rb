@@ -126,24 +126,24 @@ module Textus
         g
       end
 
-      # Behavioral escape hatches only — verbs whose CLI behavior is NOT a
-      # projection of the contract (ADR 0068). Acquisition (stdin/file/coerce),
-      # surface-divergent defaults (cli_default:), stateful wrappers (around:),
-      # and multi-dispatch splits are all declarative now and generate. What
-      # remains is genuine behavior:
-      #   put       — IntakeFetch read-through orchestration
-      #   get       — raises UnknownKey with resolver suggestions, a CLI-only
-      #               affordance the agent surface deliberately omits (returns nil)
-      #   build     — CLI auto-resolves the build-capability actor role (not the
-      #               --as role) and serializes under BuildLock; the role
-      #               resolution is policy, not a projection (around: covers only
-      #               the lock, so build stays whole — ADR 0068)
-      #   fetch/fetch_all — worker verbs (background intake), not request/response
-      #   boot/doctor     — composite reports assembled outside the contract
-      HAND_AUTHORED_VERBS = %i[
-        get put build
-        fetch fetch_all boot doctor
-      ].freeze
+      # Contract verbs whose CLI behavior is a genuine `< Runner::Base` override
+      # — behavior the generic projection cannot express (ADR 0068/0069):
+      #   get   — raises UnknownKey with resolver suggestions (a CLI-only
+      #           affordance; the agent surface deliberately returns nil)
+      #   put   — IntakeFetch read-through orchestration on --fetch
+      #   build — auto-resolves the build-capability actor role (not --as) and
+      #           serializes under BuildLock; the role resolution is policy, not
+      #           a projection (around: covers only the lock)
+      BEHAVIORAL_HATCHES = %i[get put build].freeze
+
+      # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
+      # all — worker verbs and composite reports assembled outside the contract:
+      #   fetch, fetch_all — background intake workers (not request/response)
+      #   boot, doctor     — composite reports
+      NON_PROJECTED_CLI = %i[fetch fetch_all boot doctor].freeze
+
+      # The installer skips generation for either category.
+      HAND_AUTHORED_VERBS = (BEHAVIORAL_HATCHES + NON_PROJECTED_CLI).freeze
 
       def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)
 
