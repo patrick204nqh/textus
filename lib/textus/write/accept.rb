@@ -1,6 +1,14 @@
 module Textus
   module Write
     class Accept
+      extend Textus::Contract::DSL
+
+      verb :accept
+      summary "apply a queued proposal to its target zone; requires the author capability"
+      surfaces :cli, :ruby
+      cli "accept"
+      arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
+
       def initialize(container:, call:)
         @container = container
         @call      = call
