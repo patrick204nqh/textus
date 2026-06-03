@@ -36,6 +36,7 @@ module Textus
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
       retainable: Textus::Read::Retainable,
+      capabilities: Textus::Read::Capabilities,
 
       # Maintenance
       migrate: Textus::Maintenance::Migrate,

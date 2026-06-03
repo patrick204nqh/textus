@@ -95,6 +95,7 @@ module Textus
       { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
       { "name" => "hook",     "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
       { "name" => "pulse" },
+      { "name" => "capabilities" },
     ].freeze
 
     # Build the CLI verb catalog by deriving each summary from the corresponding
