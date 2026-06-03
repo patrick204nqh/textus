@@ -100,4 +100,30 @@ RSpec.describe Textus::Contract do
     flag = klass.contract.args.find { |a| a.name == :flag }
     expect(flag.default).to be(true)
   end
+
+  describe "cli facet" do
+    def build(&blk)
+      Class.new { extend Textus::Contract::DSL; class_eval(&blk) }.contract
+    end
+
+    it "defaults the cli path to the verb token when :cli is surfaced and no path is declared" do
+      spec = build { verb :where; surfaces :cli, :ruby, :mcp; arg :key, String, required: true, positional: true }
+      expect(spec.cli?).to be true
+      expect(spec.cli_path).to eq("where")
+      expect(spec.cli_group).to be_nil
+      expect(spec.cli_leaf).to eq("where")
+    end
+
+    it "honors an explicit grouped cli path and splits group/leaf" do
+      spec = build { verb :schema_show; surfaces :cli, :ruby, :mcp; cli "schema show"; arg :key, String, required: true, positional: true }
+      expect(spec.cli_path).to eq("schema show")
+      expect(spec.cli_group).to eq("schema")
+      expect(spec.cli_leaf).to eq("show")
+    end
+
+    it "reports cli? false when :cli is not a surface" do
+      spec = build { verb :secret; surfaces :ruby, :mcp }
+      expect(spec.cli?).to be false
+    end
+  end
 end

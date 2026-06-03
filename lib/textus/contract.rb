@@ -26,8 +26,16 @@ module Textus
       JSON_TYPES.fetch(type) { raise ArgumentError.new("no JSON type mapping for #{type.inspect}") }
     end
 
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :response) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :response, :cli) do
       def mcp? = surfaces.include?(:mcp)
+      def cli? = surfaces.include?(:cli)
+
+      # Operator-facing command path. Defaults to the verb token; grouped verbs
+      # declare e.g. `cli "schema show"`.
+      def cli_path = cli || verb.to_s
+      def cli_words = cli_path.split
+      def cli_group = cli_words.size > 1 ? cli_words.first : nil
+      def cli_leaf  = cli_words.last
 
       def required_args = args.select(&:required)
 
@@ -77,6 +85,16 @@ module Textus
         end
       end
 
+      def cli(path = nil)
+        if path
+          raise "contract already built; declare cli before reading .contract" if defined?(@__contract) && @__contract
+
+          @__cli = path.to_s
+        else
+          @__cli
+        end
+      end
+
       def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil) # rubocop:disable Metrics/ParameterLists
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
@@ -106,6 +124,7 @@ module Textus
           args: (@__args || []).freeze,
           surfaces: (@__surfaces || []).freeze,
           response: response,
+          cli: @__cli,
         )
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName
