@@ -178,6 +178,19 @@ Textus.hook do |reg|
 end
 ```
 
+### Connection marker — log each MCP session as it opens
+
+`:session_opened` fires once per MCP connection at `initialize`, carrying the connection's resolved `role:` and boot `cursor:` (ADR 0075). Unlike `:store_loaded` (once per process, default role), it observes a client attaching.
+
+```ruby
+Textus.hook do |reg|
+  # fires once per MCP connection at initialize, with the resolved role
+  reg.on(:session_opened, :log_connection) do |role:, cursor:, **|
+    # e.g. append a connection marker to a workspace log
+  end
+end
+```
+
 ### Custom doctor check — enforce a project rule
 
 ```ruby

@@ -94,7 +94,7 @@ module Textus
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
               :entry_put, :entry_deleted, :entry_fetched, :entry_renamed,
               :build_completed, :proposal_accepted, :proposal_rejected,
-              :file_published, :store_loaded,
+              :file_published, :store_loaded, :session_opened,
               :fetch_started, :fetch_failed, :fetch_backgrounded (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
