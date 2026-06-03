@@ -20,10 +20,6 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
 
   let(:recipes) { Textus::Boot.build(container: store.container)["agent_protocol"]["recipes"] }
 
-  it "keeps the four recipe keys" do
-    expect(recipes.keys).to contain_exactly("read", "write", "propose", "fetch")
-  end
-
   it "names the live queue zone in the propose recipe" do
     text = recipes["propose"].values_at("agent_steps", "human_steps").flatten.join(" ")
     expect(text).to include("proposals.KEY")

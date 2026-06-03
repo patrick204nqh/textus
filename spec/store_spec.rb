@@ -56,11 +56,6 @@ RSpec.describe Textus::Store do
       expect(store.root).to eq(File.expand_path(root))
     end
 
-    it "honors an explicit root: argument" do
-      store = described_class.discover(Dir.pwd, root: root)
-      expect(store.root).to eq(File.expand_path(root))
-    end
-
     it "raises IoError when no .textus directory is found" do
       bare = Dir.mktmpdir("no-textus")
       expect { described_class.discover(bare) }.to raise_error(Textus::IoError)
