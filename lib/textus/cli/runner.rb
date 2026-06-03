@@ -65,7 +65,6 @@ module Textus
         rescue Textus::Contract::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
-        result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
         verb_instance.emit(shape(spec, result, inputs))
       end
 

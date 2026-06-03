@@ -63,6 +63,16 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     expect(File.exist?(File.join(root, "zones/#{propose_zone}/notes/oncall.md"))).to be(true)
   end
 
+  it "emits the full wire envelope (uid, etag, key) from a single self-shaping view" do
+    rc = run(
+      ["--root=#{root}", "propose", "notes.oncall", "--as=agent", "--stdin"],
+      stdin_body: payload,
+    )
+    expect(rc).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
+    parsed = JSON.parse(stdout.string)
+    expect(parsed).to include("uid", "etag", "key")
+  end
+
   it "accepts a propose with no piped envelope (ADR 0069: _meta is optional)" do
     # ADR 0069: `_meta` is no longer a pre-dispatch required arg — its real
     # requiredness lives in schema validation downstream. With nothing piped the
