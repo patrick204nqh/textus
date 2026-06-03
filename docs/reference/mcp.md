@@ -1,7 +1,7 @@
 # MCP transport — reference
 
 > **Reference** · for agent authors · **read when** you need the MCP tool catalog, error codes, transports, or plugin wiring
-> **SSoT for** the MCP tool catalog, error mapping, transports, and Claude-plugin wiring · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the MCP tool catalog, error mapping, transports, and Claude-plugin wiring · **reviewed** 2026-06 (v0.45)
 
 The exact facts of how an agent talks to a textus store over MCP: the three transports, the stdio JSON-RPC server, its tool catalog, error codes, plugin wiring, and audit-log retention.
 
@@ -52,7 +52,7 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
 | `put` | `{uid, etag}` | `key, _meta, body?, content?, if_etag?` |
-| `propose` | `{uid, etag, key}` (prefixed with propose_zone) | `key, _meta, body?, content?` |
+| `propose` | Full wire envelope (`uid, etag, key, zone, owner, path, ...`; `key` prefixed with propose_zone) | `key, _meta, body?, content?` |
 | `fetch` | `{outcome}` | `key: string` |
 | `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema_show` | Field shape (schema for an entry's family) | `key: string` |
