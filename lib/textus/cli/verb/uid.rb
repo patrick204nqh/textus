@@ -1,11 +1,12 @@
 module Textus
   class CLI
     class Verb
-      class Uid < Verb
+      class Uid < Runner::Base
+        self.spec = Textus::Read::Uid.contract
         command_name "uid"
         parent_group Group::Key
 
-        def call(store)
+        def invoke(store)
           key = positional.shift or raise UsageError.new("uid requires a key")
           emit({ "key" => key, "uid" => session_for(store).uid(key) })
         end

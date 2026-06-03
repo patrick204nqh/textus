@@ -15,6 +15,7 @@ module Textus
       cli      "freshness"
       arg :prefix, String, required: false, description: "filter to keys with this prefix"
       arg :zone,   String, required: false, description: "filter to entries in this zone"
+      cli_response { |rows| { "verb" => "freshness", "rows" => rows } }
 
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container

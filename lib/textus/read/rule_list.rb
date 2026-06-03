@@ -11,6 +11,7 @@ module Textus
       summary  "List every rule block in the manifest."
       surfaces :cli, :ruby
       cli      "rule list"
+      cli_response { |policies| { "verb" => "rule_list", "policies" => policies } }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest

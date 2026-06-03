@@ -50,13 +50,13 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "build" => Textus::CLI::Verb::Build,
       "deps" => Textus::CLI::Verb::GenDeps,
       "doctor" => Textus::CLI::Verb::Doctor,
-      "freshness" => Textus::CLI::Verb::Freshness,
+      "freshness" => Textus::CLI::Verb::GenFreshness,
       "get" => Textus::CLI::Verb::Get,
       "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,
       "boot" => Textus::CLI::Verb::Boot,
       "key" => Textus::CLI::Group::Key,
-      "list" => Textus::CLI::Verb::List,
+      "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
       "published" => Textus::CLI::Verb::GenPublished,
       "pulse" => Textus::CLI::Verb::Pulse,
@@ -91,9 +91,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "uid" => Textus::CLI::Verb::Uid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
-      "explain" => Textus::CLI::Verb::RuleExplain,
+      "explain" => Textus::CLI::Verb::GenRuleExplain,
       "lint" => Textus::CLI::Verb::RuleLint,
-      "list" => Textus::CLI::Verb::RuleList,
+      "list" => Textus::CLI::Verb::GenRuleList,
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(
       "mv" => Textus::CLI::Verb::ZoneMv,
@@ -102,7 +102,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "diff" => Textus::CLI::Verb::SchemaDiff,
       "init" => Textus::CLI::Verb::SchemaInit,
       "migrate" => Textus::CLI::Verb::SchemaMigrate,
-      "show" => Textus::CLI::Verb::Schema,
+      "show" => Textus::CLI::Verb::GenSchemaShow,
     )
   end
 end

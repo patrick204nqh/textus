@@ -112,7 +112,7 @@ module Textus
       HAND_AUTHORED_VERBS = %i[
         get put propose build delete mv key_delete_prefix key_mv_prefix
         migrate rule_lint blame zone_mv fetch fetch_all boot doctor
-        list audit freshness pulse uid rule_list rule_explain
+        audit pulse uid
       ].freeze
 
       def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)
