@@ -97,13 +97,15 @@ RSpec.describe Textus::MCP::Tools do
   # ── First-class verbs promoted in Phase C (ADR 0039) ────────────────────────
 
   describe ".call('propose', ...)" do
-    it "writes to the queue zone and returns uid, etag, key" do
+    it "writes to the queue zone and returns the full wire envelope (incl. uid, etag, key)" do
       result = described_class.call(
         "propose",
         session: session, store: store,
         args: { "key" => "proposal.x", "_meta" => { "name" => "x" }, "body" => "draft\n" }
       )
-      expect(result.keys).to contain_exactly("uid", "etag", "key")
+      # ADR 0069: propose self-shapes to the full wire envelope on every surface
+      # (superset of the old {uid, etag, key}).
+      expect(result.keys).to include("uid", "etag", "key")
       expect(result["key"]).to eq("proposals.proposal.x")
     end
   end

@@ -8,7 +8,7 @@ module Textus
       surfaces :cli, :ruby, :mcp
       arg :key,     String, required: true, positional: true,
                             description: "dotted entry key, e.g. 'knowledge.project'; must resolve to a zone the role may write"
-      arg :meta,    Hash, required: true, wire_name: :_meta,
+      arg :meta,    Hash, required: false, wire_name: :_meta,
                           description: "frontmatter; reads back as `_meta` from `get`. Schema-validated — call `schema KEY` first"
       arg :body,    String,
           description: "markdown/text payload for markdown-format entries; omit (use `content`) for json/yaml entries. Do not send both"

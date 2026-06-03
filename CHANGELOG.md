@@ -9,6 +9,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.45.1 — 2026-06-03 — Single-path lifecycle: kill the last dual-paths ([ADR 0069](docs/architecture/decisions/0069-single-path-lifecycle.md))
+
+No `textus/3` wire-format change. Finishes the 0.45.0 lifecycle (ADRs 0066–0068): the request path was single-path in shape but still carried four residual dual-paths. This removes all four so the lifecycle — `normalize → bind (always validate) → dispatch (+around) → view (self-shaping)` — is single-path in fact on every surface. Three breaking (pre-1.0) changes, all accepted.
+
+### Changed
+
+- **Views self-shape on every surface.** The CLI runner's `result.to_h_for_wire` pre-wire is deleted, so every `view` receives the raw use-case result on every surface (the pattern `get`/`zone_mv`/`migrate` already used). `propose` collapses its two views into one `view { |env, _i| env.to_h_for_wire }`.
+- **One normalizer home.** MCP's inline by-wire-name normalizer is lifted into `Contract::Binder.inputs_from_wire`, beside `inputs_from_ordered`; the binder now owns both. `MCP::Catalog#call` calls it.
+- **Validation is unconditional; `required:` is an honest invariant.** The `validate:` keyword is dropped from `Binder.bind`, `RoleScope#dispatch_bound`, and `Maintenance::Migrate`. Bind always validates — no opt-out, so the `validate: false`-by-default footgun cannot exist. `required:` now means "required on every surface," not an agent-wire policy (retiring the [ADR 0066](docs/architecture/decisions/0066-one-binder-required-is-a-surface-policy.md) `validate:` fork).
+- **The hand-authored CLI taxonomy is named and guarded.** `HAND_AUTHORED_VERBS` splits into `BEHAVIORAL_HATCHES` (`get`, `put`, `build` — genuine `< Runner::Base` overrides) and `NON_PROJECTED_CLI` (`fetch`, `fetch_all`, `boot`, `doctor` — plain `< Verb` commands), with the union derived. A new guard spec asserts each member's CLI class matches its category.
+
+### Breaking (pre-1.0)
+
+- **`Binder.bind` / `RoleScope#dispatch_bound` drop the `validate:` keyword.** Callers passing it must remove it; validation is always on.
+- **`put`/`propose` `meta` is now `required: false`.** A missing `_meta` no longer returns a pre-dispatch `missing _meta` error — it binds with `meta` absent and flows to schema validation downstream (where an *invalid* `_meta` fails, and an absent-but-schema-permitted `_meta` succeeds). `meta`'s real requiredness lives in schema validation.
+- **MCP/Ruby `propose` returns the full wire envelope.** The single self-shaping view emits `env.to_h_for_wire` on every surface — a superset of the old `{uid, etag, key}`.
+
 ## 0.45.0 — 2026-06-03 — The contract owns the request lifecycle ([ADRs 0066–0068](docs/architecture/decisions/))
 
 No `textus/3` wire-format change. The `Contract` now owns the entire request lifecycle — `acquire → bind → invoke → render` — so the three surfaces (MCP, CLI, Ruby) project from it with no re-implemented argument-mapping, no dual response/cli_response shaping, and no behavioral escape-hatch classes that exist only because the contract couldn't express I/O acquisition, a stateful wrapper, or a coercion. The escape-hatch population shrinks from 18 to the irreducible behavioral floor of 7. Several breaking (pre-1.0) DSL and signature changes; one operator-visible CLI change (`key delete-prefix` / `key mv-prefix`).

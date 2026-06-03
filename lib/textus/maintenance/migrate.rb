@@ -47,7 +47,7 @@ module Textus
         # Each op now carries positional args (from/to, from_prefix/to_prefix,
         # prefix); split the YAML fields into (positional, keyword) via the op's
         # own contract so we call its #call signature correctly (ADR 0066/0068).
-        args, kwargs = Textus::Contract::Binder.bind(klass.contract, inputs, validate: false)
+        args, kwargs = Textus::Contract::Binder.bind(klass.contract, inputs)
         klass.new(container: @container, call: @call).call(*args, **kwargs)
       end
 

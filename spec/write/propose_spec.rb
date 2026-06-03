@@ -24,12 +24,12 @@ RSpec.describe Textus::Write::Propose do
     end.to raise_error(Textus::Error, /propose/)
   end
 
-  it "declares an MCP contract returning {uid, etag, key}" do
+  it "declares an MCP contract whose single view emits the full wire envelope (ADR 0069)" do
     expect(described_class.contract.verb).to eq(:propose)
     expect(described_class.contract.mcp?).to be(true)
-    shaped = described_class.contract.view(:default).call(
-      Struct.new(:uid, :etag, :key).new("u", "e", "proposals.x"), {}
-    )
-    expect(shaped).to eq("uid" => "u", "etag" => "e", "key" => "proposals.x")
+    wire = { "uid" => "u", "etag" => "e", "key" => "proposals.x", "zone" => "proposals" }
+    env = instance_double(Textus::Envelope, to_h_for_wire: wire)
+    shaped = described_class.contract.view(:default).call(env, {})
+    expect(shaped).to eq(wire)
   end
 end

@@ -33,19 +33,15 @@ module Textus
     module Binder
       module_function
 
-      # `validate:` is a surface policy, not a contract invariant. The agent
-      # surfaces (MCP, CLI) require declared args to be present so an agent gets
-      # a crisp error instead of a downstream failure. The Ruby API trusts the
-      # use-case's own keyword defaults (e.g. `put`'s `meta:` defaults to nil in
-      # #call though it is `required: true` on the wire), so it binds leniently —
-      # this is the spike's finding: `required:` means "required on the agent
-      # wire," and the unified binder makes that distinction explicit rather than
-      # accidental (it was previously masked by RoleScope skipping validation).
-      def bind(spec, inputs, session: nil, validate: true)
-        if validate
-          missing = spec.required_args.reject { |a| inputs.key?(a.name) }
-          raise MissingArgs.new(spec, missing) unless missing.empty?
-        end
+      # Validation is unconditional: a `required:` arg absent from `inputs` is a
+      # contract violation on every surface (ADR 0069). `required:` is now an
+      # honest contract invariant, not a surface policy — args the use-case
+      # treats as optional (e.g. `meta`, whose real requiredness lives in schema
+      # validation downstream) are declared `required: false`, so this check
+      # never fires spuriously and never needs an opt-out.
+      def bind(spec, inputs, session: nil)
+        missing = spec.required_args.reject { |a| inputs.key?(a.name) }
+        raise MissingArgs.new(spec, missing) unless missing.empty?
 
         pos = []
         kw  = {}
@@ -76,6 +72,16 @@ module Textus
       def inputs_from_ordered(spec, ordered_positionals, by_name_keywords)
         names = spec.args.select(&:positional).map(&:name)
         names.zip(ordered_positionals).to_h.compact.merge(by_name_keywords)
+      end
+
+      # Normalize a raw transport hash keyed by WIRE name (the shape MCP JSON
+      # arrives in) into the uniform by-name `inputs` hash bind expects. Keys
+      # not declared on the contract are ignored.
+      def inputs_from_wire(spec, raw)
+        raw ||= {}
+        spec.args.each_with_object({}) do |a, h|
+          h[a.name] = raw[a.wire.to_s] if raw.key?(a.wire.to_s)
+        end
       end
     end
   end

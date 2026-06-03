@@ -13,16 +13,17 @@ module Textus
       cli_stdin :json
       arg :key,     String, required: true, positional: true,
                             description: "key relative to propose_zone, e.g. 'decisions.feature-x'"
-      arg :meta,    Hash,   required: true, wire_name: :_meta,
+      arg :meta,    Hash,   required: false, wire_name: :_meta,
                             description: "frontmatter; reads back as `_meta` from `get`. Include a 'proposal:' block naming the target_key"
       arg :body,    String,
           description: "markdown/text payload for markdown-format entries; omit (use `content`) for json/yaml entries. Do not send both"
       arg :content, Hash,
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
-      view { |env| { "uid" => env.uid, "etag" => env.etag, "key" => env.key } }
-      # CLI dispatch hands the view the to_h_for_wire'd result; emit the full
-      # wire envelope as the hand-authored CLI verb did before (ADR 0068).
-      view(:cli) { |wire, _i| wire }
+      # ADR 0069: every surface receives the raw Envelope and self-shapes — no
+      # surface pre-wires the result. Emitting the full wire envelope on every
+      # surface is a superset of the old `{uid, etag, key}` (the accepted
+      # breaking change; MCP/Ruby now get the full envelope too).
+      view { |env, _i| env.to_h_for_wire }
 
       def initialize(container:, call:)
         @container = container
