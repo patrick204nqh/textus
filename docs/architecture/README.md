@@ -245,31 +245,12 @@ The agent loop (cadence guide in [`agents-mcp.md`](../how-to/agents-mcp.md)):
 
 1. **Session start:** `boot()` → contract envelope (zones, entries, schemas, write_flows, agent_quickstart with `latest_seq`).
 2. **Per turn:** `pulse(since=cursor)` → `{cursor, changed, stale, pending_review, doctor}`.
-3. **On demand:** `get`, `put`, `propose`, `fetch`, `schema`, `rules`.
+3. **On demand:** `get`, `put`, `propose`, `fetch`, `schema_show`, `rule_explain`.
 
 Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
 
 ## Hooks event catalog
 
-`Hooks::Signature` is the single home of callable keyword-introspection — both `EventBus` (pub-sub dispatch) and `RpcRegistry` (RPC dispatch) delegate to it for `accepts_keyrest?`, `declared_keys`, `missing`, and `filter` rather than each maintaining a hand-rolled copy (ADR 0027).
+`Hooks::Signature` is the single home of callable keyword-introspection — both `EventBus` (pub-sub dispatch) and `RpcRegistry` (RPC dispatch) delegate to it for `accepts_keyrest?`, `declared_keys`, `missing`, and `filter` rather than each maintaining a hand-rolled copy (ADR 0027). RPC handlers declare `caps:` (single handler); pub-sub handlers declare `ctx:` (0..N handlers).
 
-RPC (single handler, declares `caps:`):
-- `resolve_intake(caps:, config:, args:)` — intake fetch handler.
-- `transform_rows(caps:, rows:, config:)` — row transform for intakes.
-- `validate(caps:)` — custom doctor validator.
-
-Pub-sub (0..N handlers, declare `ctx:`):
-- `entry_put(ctx:, key:, envelope:)`
-- `entry_deleted(ctx:, key:)`
-- `entry_fetched(ctx:, key:, envelope:, change:)`
-- `entry_renamed(ctx:, key:, from_key:, to_key:, envelope:)`
-- `build_completed(ctx:, key:, envelope:, sources:)`
-- `proposal_accepted(ctx:, key:, target_key:)`
-- `proposal_rejected(ctx:, key:, target_key:)`
-- `file_published(ctx:, key:, envelope:, source:, target:)`
-- `store_loaded(ctx:)`
-- `fetch_started(ctx:, key:, mode:)`
-- `fetch_failed(ctx:, key:, error_class:, error_message:)`
-- `fetch_backgrounded(ctx:, key:, started_at:, budget_ms:)`
-
-Authoritative source: `lib/textus/hooks/catalog.rb` (`Catalog::RPC` and `Catalog::PUBSUB`).
+The event names, payloads, and per-verb firing order are documented once in [`reference/events.md`](../reference/events.md) (the friendly SSoT); the authoritative source is `lib/textus/hooks/catalog.rb` (`Catalog::RPC` and `Catalog::PUBSUB`).
