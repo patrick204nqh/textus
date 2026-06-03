@@ -91,7 +91,7 @@ RSpec.describe Textus::Read::Get do
   it "annotates as fresh when no fetch policy applies (fetch:false)" do
     store = build_store_no_intake
     write_doc_in_feeds
-    container = Textus::Container.from_store(store)
+    container = store.container
     call = Textus::Call.build(role: "automation")
     env = described_class.new(container: container, call: call).call("feeds.doc")
     expect(env.freshness.stale).to be(false)

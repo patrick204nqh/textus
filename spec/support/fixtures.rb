@@ -132,11 +132,9 @@ module TextusSpecHelpers
     )
   end
 
-  # Builds a fresh Container from the Store. Tests sometimes mutate
-  # @events/@rpc on the Store after construction (e.g. to install a probe
-  # event bus); using fresh containers ensures we see those mutations.
+  # The Store builds its Container once at construction; this returns it.
   def fresh_container(store)
-    Textus::Container.from_store(store)
+    store.container
   end
 
   # ── Use-case invocation idiom ───────────────────────────────────────────
@@ -144,17 +142,17 @@ module TextusSpecHelpers
   #
   #   store.as(role, correlation_id:, dry_run:).put("working.foo", meta:, body:)
   #
-  # `store.as` reuses the Store's memoized container, whose EventBus is the
-  # *same* object as `store.events` — so in-place `store.events.register(...)`
-  # probes are visible through it.
+  # `store.as` reuses the Store's container, whose EventBus is the *same*
+  # object as `store.events` — so in-place `store.events.register(...)` probes
+  # are visible through it.
   #
-  # `build_worker` (below) builds a FRESH container each call. It exists for
-  # specs that swap the bus wholesale (`store.instance_variable_set(:@events,
-  # probe)`) or drive an internal use-case class the façade does not expose
-  # (Write::FetchWorker). For those the memoized container would be stale, so a
-  # fresh one is required.
-  def build_worker(store, ctx)
-    Textus::Write::FetchWorker.new(container: fresh_container(store), call: ctx)
+  # `build_worker` (below) drives an internal use-case class the façade does
+  # not expose (Write::FetchWorker). Pass `events:` to swap the bus wholesale
+  # (e.g. a recording probe) via the immutable Container's #with.
+  def build_worker(store, ctx, events: nil)
+    container = store.container
+    container = container.with(events: events) if events
+    Textus::Write::FetchWorker.new(container: container, call: ctx)
   end
 end
 

@@ -27,7 +27,7 @@ RSpec.describe Textus::Write::RetentionSweep do
 
   def sweep(store)
     described_class.new(
-      container: Textus::Container.from_store(store),
+      container: store.container,
       call: test_ctx(role: "human"),
     ).call
   end
