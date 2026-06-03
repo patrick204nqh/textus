@@ -69,10 +69,17 @@ The proposal floated adding `Plan#to_h_for_wire`. It is **unnecessary**: `zone_m
 
 ## Consequences
 
-- Escape hatches shrink from 13 toward ~10–12 (Tier 1 alone: 12). The verbs that remain are hand-authored for *real* reasons (I/O, state, multi-dispatch, domain behavior) — the population becomes "behavioral escape hatches only," which is the honest end state.
+- Behavioral escape-hatch classes (`< Runner::Base` overriding `#invoke`) shrink **13 → 11** as shipped (removed `uid`, `blame`). The verbs that remain are hand-authored for *real* reasons (I/O, state, multi-dispatch, domain behavior, surface-divergent safety defaults) — the population becomes "behavioral escape hatches only," which is the honest end state. (Note: `HAND_AUTHORED_VERBS`, a broader exclusion list that also names the `fetch` family, the `*_prefix` cousins, and `boot`/`doctor`, is a different and larger count — 19 → 17.)
 - No operator-visible change at any tier: identical commands, flags, and JSON output (the reconciliation specs are the proof).
 - `cli_response` becomes able to express any envelope derivable from `(result, inputs)`, closing the gap 0063 named — without putting imperative CLI code in the contract (the line Option D would have crossed).
-- The contract gains no new concept at Tier 1 (only a wider lambda arity); Tier 3 would add a `coerce:` primitive, which is why it's deferred.
+- The contract gains no new concept (only a wider lambda arity). The two excluded verbs each remain because folding them would require a **single-use** contract primitive, which is a net loss in DSL surface area for one caller — and for `zone_mv` would additionally *hide* a safety-relevant default divergence (ADR 0060) that the hand class currently makes legible.
+
+### Revisit when — the second-caller trigger
+
+This ADR is the deliberate floor, not a way-station. Do **not** re-open it to convert `zone_mv`/`audit` for their own sake — the reconciliation guards (ADR 0063/0064) already make the remaining hand classes incapable of drifting, so the only benefit of folding is a smaller count. Revisit only when a *second* verb independently needs the same primitive, at which point the excluded verb folds in for free:
+
+- A second verb needs a **surface-divergent default** (CLI default ≠ agent default) → introduce `cli_default:` → `zone_mv` converts (also align `from`/`to` to positional, opportunistically, whenever it is next touched).
+- A second verb needs **String→Time/duration coercion** (relatives like `1h`/`30m` that a generic `:time` type can't express) → introduce `coerce:` → `audit` converts (its `#call(**filters)` keyrest already survives generic dispatch; the `since` coercion is the sole blocker).
 
 ## Alternatives considered
 
