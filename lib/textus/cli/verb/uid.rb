@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Uid < Runner::Base
         self.spec = Textus::Read::Uid.contract
-        command_name "uid"
         parent_group Group::Key
 
         def invoke(store)

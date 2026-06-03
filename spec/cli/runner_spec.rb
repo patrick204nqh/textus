@@ -58,6 +58,27 @@ RSpec.describe Textus::CLI::Runner do
     expect(rc).not_to eq(0)
   end
 
+  describe "command_name derivation (ADR 0064)" do
+    it "derives command_name from the contract cli_leaf when not set explicitly" do
+      klass = Class.new(Textus::CLI::Runner::Base)
+      klass.spec = Textus::Read::Get.contract        # cli_path "get"
+      expect(klass.command_name).to eq("get")
+    end
+
+    it "derives the leaf for a grouped verb" do
+      klass = Class.new(Textus::CLI::Runner::Base)
+      klass.spec = Textus::Read::Uid.contract         # cli "key uid"
+      expect(klass.command_name).to eq("uid")
+    end
+
+    it "still honors an explicit command_name" do
+      klass = Class.new(Textus::CLI::Runner::Base)
+      klass.spec = Textus::Read::Get.contract
+      klass.command_name "custom"
+      expect(klass.command_name).to eq("custom")
+    end
+  end
+
   describe "Runner.dispatch shaper selection" do
     # rubocop:disable RSpec/VerifiedDoubles
     it "uses cli_response instead of response when cli_response is set" do

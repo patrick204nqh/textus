@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Blame < Runner::Base
         self.spec = Textus::Read::Blame.contract
-        command_name "blame"
 
         option :limit, "--limit=N"
 

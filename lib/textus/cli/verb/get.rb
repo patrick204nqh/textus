@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Get < Runner::Base
         self.spec = Textus::Read::Get.contract
-        command_name "get"
         option :as_flag, "--as=ROLE"
         option :no_fetch, "--no-fetch"
 

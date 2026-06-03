@@ -3,7 +3,6 @@ module Textus
     class Verb
       class ZoneMv < Runner::Base
         self.spec = Textus::Maintenance::ZoneMv.contract
-        command_name "mv"
         parent_group Group::Zone
 
         option :as_flag, "--as=ROLE"

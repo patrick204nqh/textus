@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Build < Runner::Base
         self.spec = Textus::Write::Build.contract
-        command_name "build"
 
         option :prefix, "--prefix=K"
 

@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Migrate < Runner::Base
         self.spec = Textus::Maintenance::Migrate.contract
-        command_name "migrate"
 
         option :as_flag, "--as=ROLE"
         option :dry_run, "--dry-run"

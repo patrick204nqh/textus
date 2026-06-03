@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Audit < Runner::Base
         self.spec = Textus::Read::Audit.contract
-        command_name "audit"
 
         option :key_filter, "--key=KEY"
         option :zone, "--zone=Z"

@@ -6,7 +6,6 @@ module Textus
       # need to know the queue zone's name. ADR 0036.
       class Propose < Runner::Base
         self.spec = Textus::Write::Propose.contract
-        command_name "propose"
 
         option :as_flag, "--as=ROLE"
         option :use_stdin, "--stdin"

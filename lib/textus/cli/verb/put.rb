@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Put < Runner::Base
         self.spec = Textus::Write::Put.contract
-        command_name "put"
 
         option :as_flag, "--as=ROLE"
         option :use_stdin, "--stdin"

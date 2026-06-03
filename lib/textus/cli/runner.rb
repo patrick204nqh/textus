@@ -13,6 +13,16 @@ module Textus
       class Base < Verb
         class << self
           attr_accessor :spec
+
+          # ADR 0064: derive the CLI command name from the contract's cli_leaf
+          # when not set explicitly, so an escape-hatch class never restates its
+          # own name. The reconciliation spec proves command_name == cli_leaf for
+          # every such class, so this is an equivalence, not a behavior change.
+          def command_name(name = nil)
+            return super if name
+
+            super() || spec&.cli_leaf
+          end
         end
 
         def spec = self.class.spec

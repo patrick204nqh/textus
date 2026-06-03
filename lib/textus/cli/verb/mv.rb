@@ -3,7 +3,6 @@ module Textus
     class Verb
       class Mv < Runner::Base
         self.spec = Textus::Write::Mv.contract
-        command_name "mv"
         parent_group Group::Key
 
         option :as_flag, "--as=ROLE"

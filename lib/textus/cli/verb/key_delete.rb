@@ -3,7 +3,6 @@ module Textus
     class Verb
       class KeyDelete < Runner::Base
         self.spec = Textus::Write::Delete.contract
-        command_name "delete"
         parent_group Group::Key
 
         option :as_flag, "--as=ROLE"

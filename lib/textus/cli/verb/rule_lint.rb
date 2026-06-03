@@ -3,7 +3,6 @@ module Textus
     class Verb
       class RuleLint < Runner::Base
         self.spec = Textus::Maintenance::RuleLint.contract
-        command_name "lint"
         parent_group Group::Rule
 
         option :against, "--against=FILE"
