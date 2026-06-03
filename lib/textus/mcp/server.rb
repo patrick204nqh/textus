@@ -59,7 +59,17 @@ module Textus
           role: @role,
           cursor: @store.audit_log.latest_seq,
           propose_zone: propose_zone,
-          manifest_etag: manifest_etag,
+          contract_etag: contract_etag,
+        )
+
+        # ADR 0075: announce the connection to connect-time hooks with the
+        # resolved role. Distinct from :store_loaded (fired at Store.new under
+        # the default role, before any connection's role is known).
+        @store.events.publish(
+          :session_opened,
+          ctx: Hooks::Context.new(scope: @store.as(@role)),
+          role: @role,
+          cursor: @session.cursor,
         )
 
         emit_result(rid, {
@@ -79,7 +89,7 @@ module Textus
           return
         end
 
-        @session.check_etag!(manifest_etag)
+        @session.check_etag!(contract_etag)
 
         name = params["name"]
         args = params["arguments"] || {}
@@ -100,8 +110,8 @@ module Textus
         emit_error(rid, -32_603, "internal: #{e.class}: #{e.message}")
       end
 
-      def manifest_etag
-        @store.file_store.etag(File.join(@store.root, "manifest.yaml"))
+      def contract_etag
+        Textus::Etag.for_contract(@store.root)
       end
 
       def emit_result(rid, result)

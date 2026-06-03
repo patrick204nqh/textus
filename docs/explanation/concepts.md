@@ -141,7 +141,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
   "stale":           [ "artifacts.marketplace" ],
   "pending_review":  [ "proposals.proposal.123" ],
   "doctor":          { "ok": true, "warn": 0, "fail": 0 },
-  "manifest_etag":   "sha256:abc123...",
+  "contract_etag":   "sha256:abc123...",
   "next_due_at":     "2026-05-28T12:34:56Z",
   "hook_errors":     [ { "seq": 1844, "event": "entry_put", "hook": "audit_extra", "key": "knowledge.notes.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
 }
@@ -151,7 +151,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
 
 #### Drift, scheduling, and hook-error signals
 
-- **`manifest_etag`** — sha256 of `manifest.yaml`. If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
+- **`contract_etag`** — composite sha256 of the contract: `manifest.yaml` plus the hooks and schemas (ADR 0074). If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
 - **`next_due_at`** — earliest `next_due_at` across all entries with a fetch policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
 - **`hook_errors`** — list of recent hook failures since cursor: `{seq, event, hook, key, error_class, error_message, at}`. Bounded in-memory ring (256 most recent); older entries are evicted.
 

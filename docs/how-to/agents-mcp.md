@@ -122,6 +122,10 @@ the boot/pulse protocol.
   them in `CLAUDE.md`.
 - **`pulse` per turn:** the agent sees what files changed since its
   last turn — no full re-read of the project.
+- **Contract drift covers the whole contract:** a mid-session edit to the
+  manifest, **any hook, or any schema** makes the next tool call return
+  `contract_drift`; re-run `boot` to re-orient (ADR 0074). The pulse envelope's
+  fingerprint key is `contract_etag` (was `manifest_etag`).
 - **Role-gated writes:** the agent keeps its own `notebook/`, but
   cannot write to `knowledge/` directly; to change canon it proposes
   to `proposals/`. You

@@ -55,7 +55,7 @@ module Textus
         role: role,
         cursor: audit_log.latest_seq,
         propose_zone: manifest.policy.propose_zone_for(role),
-        manifest_etag: file_store.etag(File.join(root, "manifest.yaml")),
+        contract_etag: Textus::Etag.for_contract(root),
       )
     end
 

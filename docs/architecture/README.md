@@ -237,7 +237,7 @@ soul (skill/agent)  ──▶  gate (CLI | MCP)  ──▶  Store  ──▶  me
 Two transports, one façade:
 
 - **CLI** — human/script surface. `textus boot`, `textus pulse --since=N`, `textus get/put/...`.
-- **MCP** — agent surface. `textus mcp serve` runs a stdio JSON-RPC 2.0 server speaking MCP draft 2024-11-05. Tools are auto-derived from the manifest. Session state (cursor, role, manifest_etag) is server-side.
+- **MCP** — agent surface. `textus mcp serve` runs a stdio JSON-RPC 2.0 server speaking MCP draft 2024-11-05. Tools are auto-derived from the manifest. Session state (cursor, role, contract_etag) is server-side.
 
 Both transports call `store.<verb>(..., role:)` (or `store.as(role).<verb>(...)`). No duplicate logic.
 
@@ -247,7 +247,7 @@ The agent loop (cadence guide in [`agents-mcp.md`](../how-to/agents-mcp.md)):
 2. **Per turn:** `pulse(since=cursor)` → `{cursor, changed, stale, pending_review, doctor}`.
 3. **On demand:** `get`, `put`, `propose`, `fetch`, `schema_show`, `rule_explain`.
 
-Manifest drift surfaces as `ContractDrift` (manifest_etag mismatch); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
+Contract drift surfaces as `ContractDrift` (contract_etag mismatch — a change to the manifest, hooks, or schemas; ADR 0074); audit cursor falls off the keep window as `CursorExpired`. Both signal "call `boot` again."
 
 ## Hooks event catalog
 

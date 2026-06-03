@@ -9,6 +9,20 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## Unreleased
+
+Connection-lifecycle hardening: the drift guard now fingerprints the whole contract, and a new connect-time hook event carries the resolved role.
+
+### Changed (breaking)
+
+- **Drift guard now fingerprints the whole contract.** `Session#manifest_etag` is renamed `contract_etag` and now digests `manifest.yaml` + `hooks/**/*.rb` + `schemas/**/*` ([ADR 0074](docs/architecture/decisions/0074-contract-etag-drift-guard.md)). A mid-session edit to any hook or schema raises `contract_drift` on the next MCP `tools/call`, where previously only a manifest edit did. The composite digest lives as `Etag.for_contract`.
+  - **Wire:** the `pulse` envelope key `manifest_etag` is renamed `contract_etag`.
+  - **Ruby:** `Textus::Session#manifest_etag` / `Textus::MCP::Session#manifest_etag` is renamed `contract_etag`. Embedders constructing a `Session` must pass `contract_etag:`.
+
+### Added
+
+- **`:session_opened` hook event** ([ADR 0075](docs/architecture/decisions/0075-session-opened-connect-event.md)) — fires once per MCP connection at `initialize` with `ctx:, role:, cursor:` (the resolved connection role). Use it for connect-time, role-keyed behavior (session logging, context priming). Distinct from `:store_loaded` (process-time, default role).
+
 ## 0.46.0 — 2026-06-03 — Container is the single source of truth
 
 No `textus/3` wire-format change. Internal refactor of the composition root. The 7-field capability set (`manifest, file_store, schemas, root, audit_log, events, rpc`) was previously spelled out four times — `Container`'s `Data.define`, `Store`'s ivar assignments, `Store`'s `attr_reader`s, and `Container.from_store`. It now lives in exactly one place.

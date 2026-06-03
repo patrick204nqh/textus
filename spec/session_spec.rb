@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Session do
   subject(:session) do
     described_class.new(role: :agent, cursor: 10, propose_zone: "proposals",
-                        manifest_etag: "sha256:aaaa")
+                        contract_etag: "sha256:aaaa")
   end
 
   it "advances the cursor immutably" do
@@ -12,8 +12,9 @@ RSpec.describe Textus::Session do
     expect(session.cursor).to eq(10)
   end
 
-  it "raises on manifest drift when the etag changed" do
-    expect { session.check_etag!("sha256:bbbb") }.to raise_error(/re-run boot/)
+  it "raises on contract drift when the etag changed" do
+    expect { session.check_etag!("sha256:bbbb") }
+      .to raise_error(%r{manifest/hooks/schemas})
   end
 
   it "is a no-op when the etag matches" do

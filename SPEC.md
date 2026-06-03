@@ -653,6 +653,7 @@ end
 | `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
 | `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
 | `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
+| `:session_opened`       | pubsub  | ctx:, role:, cursor:                                     | (discarded)           | logged        |
 | `:fetch_started`        | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
 | `:fetch_failed`         | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
 | `:fetch_backgrounded`   | pubsub  | ctx:, key:, started_at:, budget_ms:                       | (discarded)           | logged        |
@@ -672,7 +673,7 @@ The three `:fetch_*` lifecycle events report the progress and failures of backgr
 
 Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
 
-The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry.
+The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry. For `:session_opened`, no key — it fires once per MCP connection at `initialize` with the connection's resolved `role:` and boot `cursor:` (ADR 0075); distinct from `:store_loaded`, which fires once per process at `Store#initialize` under the default role.
 
 **RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `compute.transform: NAME`). Failure or timeout aborts the calling operation.
 
@@ -922,13 +923,13 @@ The agent's MCP write surface includes the single-key `delete` and `mv` tools al
   "stale":          [ "artifacts.marketplace" ],
   "pending_review": [ "proposals.proposal.123" ],
   "doctor":         { "ok": true, "warn": 0, "fail": 0 },
-  "manifest_etag":  "sha256:1f3a…",
+  "contract_etag":  "sha256:1f3a…",
   "next_due_at":    "2026-06-01T09:00:00Z",
   "hook_errors":    [ { "seq": 1844, "event": "after_put", "hook": "notify", "key": "knowledge.notes.x", "error_class": "Timeout::Error", "error_message": "…", "at": "..." } ]
 }
 ```
 
-`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. `manifest_etag` is the `sha256:`-prefixed content hash of the manifest (ADR 0025), for cheap change-detection. `next_due_at` is the soonest upcoming freshness deadline across entries (ISO-8601, or `null` if none). `hook_errors` lists hook failures recorded since the cursor. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. `contract_etag` is the `sha256:`-prefixed composite content hash of the contract — the manifest plus hooks and schemas (ADR 0074, via ADR 0025) — for cheap change-detection. `next_due_at` is the soonest upcoming freshness deadline across entries (ISO-8601, or `null` if none). `hook_errors` lists hook failures recorded since the cursor. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
