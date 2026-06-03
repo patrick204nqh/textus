@@ -67,7 +67,9 @@ RSpec.describe "Textus::Init with_agent profile" do
     dir, root, result = init(with_agent: true)
     mcp = File.join(File.dirname(root), ".mcp.json")
     expect(File.exist?(mcp)).to be true
-    expect(File.read(mcp)).to include("\"textus\"").and include("mcp")
+    config = JSON.parse(File.read(mcp))
+    expect(config.dig("mcpServers", "textus", "command")).to eq("textus")
+    expect(config.dig("mcpServers", "textus", "args")).to include("serve")
     expect(result["mcp_config"]).to eq("written")
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)

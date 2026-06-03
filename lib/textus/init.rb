@@ -39,6 +39,7 @@ module Textus
             config:
               machines:
                 local: { via: local }
+      # load-bearing: --with-agent inserts AGENT_ENTRIES immediately before this block
       rules:
         - match: feeds.machines.**
           fetch: { ttl: 1h, on_stale: warn } # meaningful on a long-running server
