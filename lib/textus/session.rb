@@ -1,16 +1,17 @@
 module Textus
   # The agent session: per-connection (MCP), per-process (CLI), or per-loop
-  # (Ruby) orientation state — the audit cursor plus the manifest etag and
+  # (Ruby) orientation state — the audit cursor plus the contract etag and
   # propose_zone captured at boot. Immutable Data value; advance_cursor
-  # returns a new instance. ADR 0036.
-  Session = Data.define(:role, :cursor, :propose_zone, :manifest_etag) do
+  # returns a new instance. ADR 0036; contract_etag widened in ADR 0074.
+  Session = Data.define(:role, :cursor, :propose_zone, :contract_etag) do
     def advance_cursor(new_cursor) = with(cursor: new_cursor)
 
     def check_etag!(observed_etag)
-      return if observed_etag == manifest_etag
+      return if observed_etag == contract_etag
 
       raise Textus::MCP::ContractDrift.new(
-        "manifest changed (was #{short_etag(manifest_etag)}, now #{short_etag(observed_etag)}); re-run boot",
+        "contract changed (manifest/hooks/schemas were #{short_etag(contract_etag)}, " \
+        "now #{short_etag(observed_etag)}); re-run boot",
       )
     end
 
