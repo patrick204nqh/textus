@@ -33,13 +33,21 @@ module Textus
     end
 
     def run(argv)
+      # `--root` is a global, position-agnostic option: pull it out of argv
+      # wherever it appears so it works uniformly before OR after any verb or
+      # group (e.g. both `textus --root=X hook list` and
+      # `textus hook list --root=X`). Without this, `order!` below only sees
+      # options before the first verb token, so a trailing `--root` reached the
+      # verb's own parser and raised InvalidOption (#161 F5). TEXTUS_ROOT already
+      # works everywhere via Store.discover, so this brings the flag to parity.
+      @root_arg = extract_root!(argv)
+
       # Define --version/--help ourselves so OptionParser doesn't intercept them
       # with its built-in handlers (which print "version unknown" and a bare usage
       # line, then exit before we ever reach the verb dispatch below).
       show_version = false
       show_help = false
       OptionParser.new do |o|
-        o.on("--root=PATH") { |v| @root_arg = v }
         o.on("--version", "-v") { show_version = true }
         o.on("--help", "-h") { show_help = true }
       end.order!(argv)
@@ -57,6 +65,26 @@ module Textus
     end
 
     private
+
+    # Remove the first `--root=PATH` or `--root PATH` token from argv (anywhere)
+    # and return its value, or nil if absent. Mutates argv in place.
+    def extract_root!(argv)
+      i = argv.index { |a| a == "--root" || a.start_with?("--root=") }
+      return nil unless i
+
+      tok = argv[i]
+      if tok.start_with?("--root=")
+        argv.delete_at(i)
+        tok.delete_prefix("--root=")
+      else
+        val = argv[i + 1]
+        raise UsageError.new("--root requires a PATH") if val.nil? || val.start_with?("-")
+
+        argv.delete_at(i + 1)
+        argv.delete_at(i)
+        val
+      end
+    end
 
     def coerce_exit_code(value)
       case value
