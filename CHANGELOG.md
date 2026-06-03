@@ -9,6 +9,23 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.45.0 — 2026-06-03 — The contract owns the request lifecycle ([ADRs 0066–0068](docs/architecture/decisions/))
+
+No `textus/3` wire-format change. The `Contract` now owns the entire request lifecycle — `acquire → bind → invoke → render` — so the three surfaces (MCP, CLI, Ruby) project from it with no re-implemented argument-mapping, no dual response/cli_response shaping, and no behavioral escape-hatch classes that exist only because the contract couldn't express I/O acquisition, a stateful wrapper, or a coercion. The escape-hatch population shrinks from 18 to the irreducible behavioral floor of 7. Several breaking (pre-1.0) DSL and signature changes; one operator-visible CLI change (`key delete-prefix` / `key mv-prefix`).
+
+### Changed
+
+- **One argument binder; `required:` is a surface policy ([ADR 0066](docs/architecture/decisions/0066-one-binder-required-is-a-surface-policy.md)).** `MCP::Catalog.map_args`, `CLI::Runner.call_args`, and `RoleScope`'s default-injection loop collapse into one `Contract::Binder.bind` over a uniform by-name `inputs` hash. Every surface dispatches through one site, `RoleScope#dispatch_bound`, so bind fires exactly once. The agent surfaces validate required args (`validate: true`); the Ruby API binds leniently and trusts the use-case's own keyword defaults — `required:` is an agent-wire policy, not a contract invariant.
+- **BREAKING (pre-1.0): per-surface `view`s replace `response`/`cli_response` ([ADR 0067](docs/architecture/decisions/0067-per-surface-views.md)).** One `views` map keyed by surface: `view { … }` (MCP/Ruby) and `view(:cli) { … }`. Every view is called uniformly as `(result, inputs)`, retiring the `Proc#arity == 2` sniff. `Contract::View.render` is the single shaping entry point.
+- **Declarative facets dissolve the acquisition & wrapper hatches ([ADR 0068](docs/architecture/decisions/0068-declarative-facets-dissolve-escape-hatches.md)).** `arg … source: :file` (read a path → contents), `arg … coerce: callable`, `cli_stdin :json` (stdin envelope), `around :name` (stateful wrappers via `Contract::Around`), and `arg … cli_default:` (a CLI default diverging from the agent default, driving both the value and boolean flag polarity). `propose`, `migrate`, `rule_lint`, `audit`, `zone_mv`, `pulse`, `key_delete`, and `mv` lose their hand-authored CLI classes and generate. `HAND_AUTHORED_VERBS` shrinks 18 → 7 (`get`, `put`, `build`, `fetch`, `fetch_all`, `boot`, `doctor`) — the behavioral floor. `zone_mv`/`migrate`/`key_*_prefix` apply by default on the CLI and plan by default for agents (ADR 0060), now legible in the contract rather than hidden in a hand class.
+- **BREAKING (pre-1.0): `key delete --prefix P` → `key delete-prefix P`; `key mv --prefix F T` → `key mv-prefix F T`.** The two `--prefix` overloads split into first-class generated commands, each dispatching the verb its own contract names.
+- **BREAKING (pre-1.0): positional `#call` signatures.** `zone_mv` (`from`/`to`), `migrate` (`plan_yaml`), `key_mv_prefix` (`from_prefix`/`to_prefix`), and `key_delete_prefix` (`prefix`) take their declared-positional args positionally, matching the CLI and the binder.
+
+### Fixed
+
+- **`Runner.coerce` now coerces `Integer`-typed flags.** A `case … when Integer` used `===` (instance-of), so `Integer`-typed flags (`audit --limit`/`--seq-since`) silently stayed strings; now compared by equality.
+- **The CLI reconciliation guards are seed-independent.** `CLI.verbs` and the contract-reconciliation check ignore anonymous (`name.nil?`) test-fixture `Verb` subclasses that previously leaked into the registry under some RSpec seeds.
+
 ## 0.44.1 — 2026-06-03 — Finish the CLI contract projection ([ADR 0065](docs/architecture/decisions/0065-finish-cli-response-shrink-escape-hatches.md))
 
 No `textus/3` wire-format change. The `cli_response` facet can now receive the call's resolved inputs, so the two output-only escape hatches become generated verbs. No operator-visible change to CLI commands, flags, or output.
