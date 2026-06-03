@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "textus": {
+      "command": "textus",
+      "args": ["--root", ".textus", "mcp", "serve"]
+    }
+  }
+}

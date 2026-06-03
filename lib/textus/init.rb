@@ -139,12 +139,18 @@ module Textus
       File.write(File.join(target_root, "hooks", "machine_intake.rb"),
                  File.read(File.join(scaffold_dir, "machine_intake.rb")))
       File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
-      scaffold_agent_profile(target_root, scaffold_dir) if with_agent
+      mcp_status = nil
+      if with_agent
+        scaffold_agent_profile(target_root, scaffold_dir)
+        mcp_status = write_mcp_config(target_root, scaffold_dir)
+      end
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
       File.write(File.join(target_root, ".gitignore"), derived_gitignore(target_root))
-      { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => with_agent ? "agent" : "default" }
+      result = { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => with_agent ? "agent" : "default" }
+      result["mcp_config"] = mcp_status if with_agent
+      result
     end
 
     # The default manifest, plus the agent-profile entries inserted just
@@ -165,6 +171,18 @@ module Textus
       }.each do |src, dest|
         File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
       end
+    end
+
+    # The one file init writes outside .textus/: a starter .mcp.json at the
+    # project root. Write-once — never clobber a hand-authored config. The
+    # command form assumes a gem-installed `textus` on PATH; the user owns
+    # the file after this first write.
+    def self.write_mcp_config(target_root, scaffold_dir)
+      dest = File.join(File.dirname(target_root), ".mcp.json")
+      return "skipped" if File.exist?(dest)
+
+      File.write(dest, File.read(File.join(scaffold_dir, "mcp.json")))
+      "written"
     end
 
     # The store's `.gitignore` is generated, never hand-kept (ADR 0038), and now

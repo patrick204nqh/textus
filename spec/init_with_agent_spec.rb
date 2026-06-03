@@ -62,4 +62,33 @@ RSpec.describe "Textus::Init with_agent profile" do
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
+
+  it "writes .mcp.json at the project root and reports it" do
+    dir, root, result = init(with_agent: true)
+    mcp = File.join(File.dirname(root), ".mcp.json")
+    expect(File.exist?(mcp)).to be true
+    expect(File.read(mcp)).to include("\"textus\"").and include("mcp")
+    expect(result["mcp_config"]).to eq("written")
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
+
+  it "never clobbers an existing .mcp.json" do
+    dir = Dir.mktmpdir
+    File.write(File.join(dir, ".mcp.json"), "{\"keep\":true}\n")
+    root = File.join(dir, ".textus")
+    result = Textus::Init.run(root, with_agent: true)
+    expect(File.read(File.join(dir, ".mcp.json"))).to eq("{\"keep\":true}\n")
+    expect(result["mcp_config"]).to eq("skipped")
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
+
+  it "does not write .mcp.json in the default profile" do
+    dir, root, result = init(with_agent: false)
+    expect(File.exist?(File.join(File.dirname(root), ".mcp.json"))).to be false
+    expect(result).not_to have_key("mcp_config")
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
 end
