@@ -9,9 +9,9 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## Unreleased
+## 0.47.0 — 2026-06-04 — Close the agent loop over MCP
 
-Connection-lifecycle hardening: the drift guard now fingerprints the whole contract, and a new connect-time hook event carries the resolved role.
+The edit→accept→rebuild loop now closes over a single MCP transport: `build` is surfaced to MCP, `init --with-agent` scaffolds a connectable agent setup, and connection-lifecycle hardening (whole-contract drift fingerprint + a connect-time event carrying the resolved role) underpins it.
 
 ### Changed (breaking)
 
@@ -21,6 +21,8 @@ Connection-lifecycle hardening: the drift guard now fingerprints the whole contr
 
 ### Added
 
+- **`build` is surfaced to MCP** ([ADR 0076](docs/architecture/decisions/0076-build-gates-by-capability-actor-surface-to-mcp.md)) — previously CLI-only. `build` is transport-uniform, caller-agnostic, and self-elevating: it always runs as the manifest's `build`-capable actor (not the caller) and grants no authority over content, since it only recomputes the deterministic, content-addressed projection of already-accepted canon. Actor-resolution and the `BuildLock` moved out of the CLI verb into the shared `Write::Build` use-case (an `around :build_lock` resource), so single-writer serialization now spans **every** transport — closing a latent gap where the Ruby API path skipped the lock. The MCP catalog derives the new tool; `boot` auto-advertises it.
+- **`textus init --with-agent`** ([ADR 0077](docs/architecture/decisions/0077-init-with-agent-profile.md)) — an opt-in profile that scaffolds a connectable agent setup on top of the neutral store: `knowledge.project` + `knowledge.runbooks` entries (with their schemas), an `artifacts.orientation` derived entry that projects them to `CLAUDE.md`/`AGENTS.md`, and a write-once starter `.mcp.json` at the project root. The default `init` (no flag) is unchanged and stays vendor-neutral; under the flag, `init` writes exactly one file outside `.textus/` (`.mcp.json`, never clobbered if present). Paired with `build` over MCP, an agent can edit `knowledge.*` and rebuild its own orientation without leaving the conversation.
 - **`:session_opened` hook event** ([ADR 0075](docs/architecture/decisions/0075-session-opened-connect-event.md)) — fires once per MCP connection at `initialize` with `ctx:, role:, cursor:` (the resolved connection role). Use it for connect-time, role-keyed behavior (session logging, context priming). Distinct from `:store_loaded` (process-time, default role).
 
 ## 0.46.0 — 2026-06-03 — Container is the single source of truth
