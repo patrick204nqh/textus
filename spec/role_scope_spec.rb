@@ -50,4 +50,20 @@ RSpec.describe Textus::RoleScope do
     env = store.get("knowledge.foo")
     expect(env.body.strip).to eq("default")
   end
+
+  it "injects contract literal-defaults for absent kwargs so the get verb is read-through (ADR 0062 amendment)" do
+    # store.as(role).get(key) must pass fetch: true (read-through) even though
+    # the method default is fetch: false (the safe default for direct callers).
+    captured = nil
+    allow(Textus::Read::Get).to receive(:new).and_wrap_original do |orig, **kw|
+      inst = orig.call(**kw)
+      allow(inst).to receive(:call).and_wrap_original do |m, *a, **k|
+        captured = k
+        m.call(*a, **k)
+      end
+      inst
+    end
+    store.as("human").get("knowledge.foo")
+    expect(captured).to eq({ fetch: true })
+  end
 end

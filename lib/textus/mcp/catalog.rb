@@ -80,6 +80,8 @@ module Textus
             value = raw[a.wire.to_s]
           elsif a.session_default && session
             value = session.public_send(a.session_default)
+          elsif !a.default.nil?
+            value = a.default
           else
             next
           end

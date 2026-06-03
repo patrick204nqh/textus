@@ -88,4 +88,16 @@ RSpec.describe Textus::Contract do
     a = klass.contract.args.find { |arg| arg.name == :key }
     expect(a.session_default).to be_nil
   end
+
+  it "an arg can declare a literal default (ADR 0062 amendment)" do
+    klass = Class.new do
+      extend Textus::Contract::DSL
+
+      verb :demo
+      arg :key, String, required: true, positional: true
+      arg :flag, :boolean, default: true
+    end
+    flag = klass.contract.args.find { |a| a.name == :flag }
+    expect(flag.default).to be(true)
+  end
 end

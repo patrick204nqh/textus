@@ -12,7 +12,7 @@ module Textus
     # envelope key) when it must differ from the use-case kwarg `name` — e.g. `put`
     # takes the `meta:` kwarg but exposes `_meta` on the wire to match what `get`
     # returns and what the CLI `--stdin` envelope already speaks (ADR 0057).
-    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description, :wire_name) do
+    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description, :wire_name, :default) do
       # The name used on the wire (defaults to the kwarg name).
       def wire = wire_name || name
     end
@@ -77,13 +77,13 @@ module Textus
         end
       end
 
-      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil) # rubocop:disable Metrics/ParameterLists
+      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil) # rubocop:disable Metrics/ParameterLists
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
           positional: positional, session_default: session_default,
-          description: description, wire_name: wire_name
+          description: description, wire_name: wire_name, default: default
         )
       end
 

@@ -38,6 +38,14 @@ module Textus
 
     Textus::Dispatcher::VERBS.each_key do |verb|
       define_method(verb) do |*args, **kwargs|
+        klass = Textus::Dispatcher::VERBS[verb]
+        if klass.respond_to?(:contract?) && klass.contract?
+          klass.contract.args.each do |a|
+            next if a.positional || a.default.nil? || kwargs.key?(a.name)
+
+            kwargs[a.name] = a.default
+          end
+        end
         call_value = Textus::Call.build(
           role: @role, correlation_id: @correlation_id, dry_run: @dry_run,
         )

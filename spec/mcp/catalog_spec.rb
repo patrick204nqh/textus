@@ -84,6 +84,14 @@ RSpec.describe Textus::MCP::Catalog do
     end
   end
 
+  describe "literal-default injection" do
+    it "injects an arg's literal default when the wire omits it (ADR 0062 amendment)" do
+      spec = Textus::Dispatcher::VERBS[:get].contract
+      _pos, kw = Textus::MCP::Catalog.map_args(spec, { "key" => "knowledge.project" })
+      expect(kw[:fetch]).to be(true)
+    end
+  end
+
   describe "pulse session_default cursor injection" do
     # Advance the audit log with a put, then build a session oriented at the
     # new cursor so session.cursor > 0.
