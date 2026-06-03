@@ -24,6 +24,15 @@ module Textus
         raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
         leaves = list_leaves_under(from_prefix)
+
+        # When from_prefix is itself a leaf, `delete_prefix("#{from_prefix}.")`
+        # finds no trailing dot to strip, so the tail keeps the whole key and the
+        # move silently targets "to_prefix.<full-from_prefix>". Refuse it — a
+        # single-key rename is `mv`'s job, not the bulk prefix verb's.
+        if leaves.include?(from_prefix)
+          raise UsageError.new("from_prefix '#{from_prefix}' is itself a leaf — use `mv` to rename a single key")
+        end
+
         warnings = []
         warnings << "no keys under #{from_prefix}" if leaves.empty?
 
