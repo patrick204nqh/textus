@@ -12,6 +12,7 @@ module Textus
       verb     :rule_explain
       summary  "Effective rules for a key. Lean {fetch, guard} by default; detail: true adds matched blocks + guard predicates."
       surfaces :cli, :ruby, :mcp
+      cli      "rule explain"
       arg :key,    String, required: true, positional: true,
                            description: "dotted key whose effective rules you want (fetch ttl/action, write guard, ...)"
       arg :detail, :boolean,

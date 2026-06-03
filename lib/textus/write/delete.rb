@@ -7,6 +7,7 @@ module Textus
       summary  "Delete one entry by key. Single-key, lower blast radius than " \
                "key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}."
       surfaces :cli, :ruby, :mcp
+      cli      "key delete"
       arg :key, String, required: true, positional: true,
                         description: "dotted entry key to delete"
       arg :if_etag, String,

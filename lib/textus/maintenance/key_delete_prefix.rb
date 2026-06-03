@@ -7,6 +7,7 @@ module Textus
       verb     :key_delete_prefix
       summary  "Bulk-delete every leaf key under prefix."
       surfaces :cli, :ruby, :mcp
+      cli      "key delete"
       arg :prefix,  String, required: true, description: "every leaf key under this dotted prefix is deleted"
       arg :dry_run, :boolean, description: "defaults true: returns the Plan without writing. Pass dry_run: false to apply the delete."
       response(&:to_h)

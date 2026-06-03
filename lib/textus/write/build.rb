@@ -10,6 +10,14 @@ module Textus
     #
     # Return shape: { "protocol", "built", "published_leaves" }
     class Build
+      extend Textus::Contract::DSL
+
+      verb     :build
+      summary  "materialize derived entries; publish_to and publish_tree fan out copies"
+      surfaces :cli, :ruby
+      cli      "build"
+      arg :prefix, String, required: false, description: "limit the build to keys under this prefix"
+
       def initialize(container:, call:)
         @container = container
         @call      = call
