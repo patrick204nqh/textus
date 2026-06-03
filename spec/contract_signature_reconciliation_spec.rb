@@ -18,6 +18,12 @@ RSpec.describe "Contract args reconcile with use-case #call (ADR 0039)" do
   Textus::Dispatcher::VERBS.each do |verb, klass|
     next unless klass.respond_to?(:contract?) && klass.contract?
 
+    it "#{verb}: dispatcher key matches the contract's own verb" do
+      expect(klass.contract.verb).to eq(verb),
+                                     "Dispatcher registers #{klass} under :#{verb} " \
+                                     "but its contract declares verb :#{klass.contract.verb}"
+    end
+
     it "#{verb}: declared args == #call parameters" do
       params = klass.instance_method(:call).parameters
       call_names = params.map { |_kind, name| name }.compact.sort
