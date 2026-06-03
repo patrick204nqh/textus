@@ -73,6 +73,16 @@ module Textus
         names = spec.args.select(&:positional).map(&:name)
         names.zip(ordered_positionals).to_h.compact.merge(by_name_keywords)
       end
+
+      # Normalize a raw transport hash keyed by WIRE name (the shape MCP JSON
+      # arrives in) into the uniform by-name `inputs` hash bind expects. Keys
+      # not declared on the contract are ignored.
+      def inputs_from_wire(spec, raw)
+        raw ||= {}
+        spec.args.each_with_object({}) do |a, h|
+          h[a.name] = raw[a.wire.to_s] if raw.key?(a.wire.to_s)
+        end
+      end
     end
   end
 end
