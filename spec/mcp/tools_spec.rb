@@ -24,7 +24,7 @@ RSpec.describe Textus::MCP::Tools do
   let(:store) { Textus::Store.new(root) }
   let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
   let(:session) do
-    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "proposals", manifest_etag: etag)
+    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "proposals", contract_etag: etag)
   end
 
   before do
@@ -83,7 +83,7 @@ RSpec.describe Textus::MCP::Tools do
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
       human_session = Textus::MCP::Session.new(
-        role: "human", cursor: 0, propose_zone: "proposals", manifest_etag: etag,
+        role: "human", cursor: 0, propose_zone: "proposals", contract_etag: etag,
       )
       result = described_class.call(
         "put",
@@ -114,7 +114,7 @@ RSpec.describe Textus::MCP::Tools do
 
   describe ".call('accept' / 'reject', ...) — capability-gated on MCP (ADR 0072 F7)" do
     let(:human_session) do
-      Textus::MCP::Session.new(role: "human", cursor: 0, propose_zone: "proposals", manifest_etag: etag)
+      Textus::MCP::Session.new(role: "human", cursor: 0, propose_zone: "proposals", contract_etag: etag)
     end
 
     # Queue a proposal as the agent, returning its full key (proposals.proposal.<leaf>).
