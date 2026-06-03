@@ -163,4 +163,17 @@ RSpec.describe Textus::CLI::Runner do
       expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("X")
     end
   end
+
+  describe "key uid (generated, ADR 0065)" do
+    it "dispatches `key uid KEY` and emits {key, uid}" do
+      rc = run(["key", "uid", "knowledge.note"])
+      expect(rc).to eq(0)
+      expect(JSON.parse(stdout.string)).to include("key" => "knowledge.note", "uid" => "abc123")
+      expect(stderr.string).to be_empty
+    end
+
+    it "no longer keeps a hand-authored uid class" do
+      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
+    end
+  end
 end
