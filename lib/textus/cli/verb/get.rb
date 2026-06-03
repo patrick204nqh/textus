@@ -1,13 +1,13 @@
 module Textus
   class CLI
     class Verb
-      class Get < Verb
+      class Get < Runner::Base
+        self.spec = Textus::Read::Get.contract
         command_name "get"
-
         option :as_flag, "--as=ROLE"
         option :no_fetch, "--no-fetch"
 
-        def call(store)
+        def invoke(store)
           key = positional.shift or raise UsageError.new("get requires a key")
           kw = no_fetch.nil? ? {} : { fetch: false }
           result = session_for(store).get(key, **kw)

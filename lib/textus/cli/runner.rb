@@ -4,6 +4,38 @@ module Textus
     # so the CLI surface is a projection of the contract — the operator-facing
     # mirror of MCP::Catalog (ADR 0063).
     module Runner
+      # Subclassable base for contract-projected verbs. Carries the verb's
+      # contract (class attr `spec`) and the generic dispatch, exposing one
+      # overridable seam, #invoke, that defaults to the generic projection.
+      # Escape-hatch verbs subclass this and override #invoke to add behavior
+      # (suggestions, --stdin, BuildLock, multi-dispatch) WITHOUT restating the
+      # verb name — `spec.verb` remains the single source of dispatch.
+      class Base < Verb
+        class << self
+          attr_accessor :spec
+        end
+
+        def spec = self.class.spec
+
+        def call(store)
+          invoke(store)
+        end
+
+        # Default: pure contract projection. Override in subclasses for behavior.
+        def invoke(store)
+          Runner.dispatch(self, store, spec)
+        end
+
+        def flag_values(s = spec)
+          s.args.reject(&:positional).each_with_object({}) do |a, h|
+            raw = respond_to?(a.name) ? public_send(a.name) : nil
+            next if raw.nil?
+
+            h[a.name] = Runner.coerce(a, raw)
+          end
+        end
+      end
+
       module_function
 
       # Map parsed CLI input -> (positional, keyword) for a spec. Positionals
@@ -91,23 +123,12 @@ module Textus
         leaf  = spec.cli_leaf
         non_positional = spec.args.reject(&:positional)
 
-        klass = Class.new(Verb) do
-          command_name leaf
-          parent_group group if group
-          option :as_flag, "--as=ROLE"
-          non_positional.each { |a| option a.name, Runner.flagspec_for(a) }
-
-          define_method(:flag_values) do |s|
-            s.args.reject(&:positional).each_with_object({}) do |a, h|
-              raw = respond_to?(a.name) ? public_send(a.name) : nil
-              next if raw.nil?
-
-              h[a.name] = Runner.coerce(a, raw)
-            end
-          end
-
-          define_method(:call) { |store| Runner.dispatch(self, store, spec) }
-        end
+        klass = Class.new(Base)
+        klass.spec = spec
+        klass.command_name leaf
+        klass.parent_group group if group
+        klass.option :as_flag, "--as=ROLE"
+        non_positional.each { |a| klass.option a.name, Runner.flagspec_for(a) }
 
         # Anchor the anonymous class to a constant so descendants discovery is
         # stable. Name it after the verb under a Generated namespace.
