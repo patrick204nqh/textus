@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::Publish do
+RSpec.describe Textus::Write::Build do
   include_context "textus_store_fixture"
 
   context "with a nested entry under publish_tree" do
@@ -30,7 +30,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      res = store.as("automation").publish
+      res = store.as("automation").build
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res["published_leaves"].length).to eq(2)
@@ -43,12 +43,12 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "skips the entry when the prefix filter does not match it" do
-      res = store.as("automation").publish(prefix: "something.else")
+      res = store.as("automation").build(prefix: "something.else")
       expect(res["published_leaves"]).to be_empty
     end
 
     it "includes the entry when the prefix filter matches it" do
-      res = store.as("automation").publish(prefix: "artifacts")
+      res = store.as("automation").build(prefix: "artifacts")
       expect(res["published_leaves"].map { |r| r["key"] }).to all(eq("artifacts.agents"))
       expect(res["published_leaves"].length).to eq(2)
     end
@@ -95,13 +95,13 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "includes a 'pruned' array in the build envelope" do
-      res = store.as("automation").publish
+      res = store.as("automation").build
       expect(res).to have_key("pruned")
       expect(res["pruned"]).to be_an(Array)
     end
 
     it "returns the combined {protocol, built, published_leaves} shape" do
-      res = store.as("automation").publish
+      res = store.as("automation").build
 
       expect(res["protocol"]).to eq(Textus::PROTOCOL)
       expect(res).to have_key("built")
@@ -115,7 +115,7 @@ RSpec.describe Textus::Write::Publish do
     end
 
     it "materializes the Derived entry and writes it to the publish_to target" do
-      store.as("automation").publish
+      store.as("automation").build
 
       repo_root = File.dirname(root)
       published_path = File.join(repo_root, "PEOPLE.md")
@@ -130,7 +130,7 @@ RSpec.describe Textus::Write::Publish do
       store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
       store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
 
-      store.as("automation").publish
+      store.as("automation").build
 
       expect(build_completed).to include("artifacts.catalogs.people")
       expect(file_published).to include("artifacts.catalogs.people")
@@ -166,7 +166,7 @@ RSpec.describe Textus::Write::Publish do
       events = []
       store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
 
-      res = store.as("automation").publish
+      res = store.as("automation").build
 
       built = res["built"]
       catalog = built.find { |r| r["key"] == "artifacts.catalog" }
@@ -197,7 +197,7 @@ RSpec.describe Textus::Write::Publish do
               handler: catalog_handler
       YAML
       store_no_publish = Textus::Store.new(root)
-      res = store_no_publish.as("automation").publish
+      res = store_no_publish.as("automation").build
       expect(res["built"]).to be_empty
     end
   end

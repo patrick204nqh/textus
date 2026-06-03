@@ -40,7 +40,7 @@ RoleScope        (Store#as(role) — forwards verb calls)
 read/{get,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
       freshness,audit,blame,policy_explain,pulse}.rb
-write/{put,delete,mv,accept,reject,publish,
+write/{put,delete,mv,accept,reject,build,
        materializer,intake_fetch,retention_sweep,
        fetch_worker,fetch_orchestrator,fetch_all}
 maintenance/{migrate,key_mv_prefix,key_delete_prefix,

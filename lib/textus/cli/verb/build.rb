@@ -14,7 +14,7 @@ module Textus
             )
           Textus::Ports::BuildLock.with(root: store.root) do
             ops = store.as(role)
-            result = ops.publish(prefix: prefix)
+            result = ops.build(prefix: prefix)
             emit(result)
           end
         end

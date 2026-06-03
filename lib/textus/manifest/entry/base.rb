@@ -86,7 +86,7 @@ module Textus
         end
 
         # Returns: { kind: :built|:leaves, value: ... } to be accumulated by
-        # Write::Publish, or nil to skip.
+        # Write::Build, or nil to skip.
         def publish_via(pctx, prefix: nil)
           publish_mode.publish(pctx, prefix: prefix)
         end

@@ -11,7 +11,7 @@ module Textus
       mv: Textus::Write::Mv,
       accept: Textus::Write::Accept,
       reject: Textus::Write::Reject,
-      publish: Textus::Write::Publish,
+      build: Textus::Write::Build,
       fetch: Textus::Write::FetchWorker,
       fetch_all: Textus::Write::FetchAll,
       retain: Textus::Write::RetentionSweep,

@@ -164,7 +164,7 @@ RSpec.describe "Reader honors on_stale policy" do
     end
 
     store = Textus::Store.new(build_root)
-    store.as("automation").publish
+    store.as("automation").build
 
     expect(orchestrator_calls).to be_empty
   end

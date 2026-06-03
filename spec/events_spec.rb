@@ -182,7 +182,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :build_completed after Builder materializes an artifacts entry" do
       store = Textus::Store.new(root)
-      store.as("automation").publish
+      store.as("automation").build
       expect($log).to include([:build_completed, "artifacts.summary", ["knowledge"]])
     end
   end
