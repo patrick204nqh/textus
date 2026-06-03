@@ -1,7 +1,8 @@
 module Textus
   class CLI
     class Verb
-      class KeyDelete < Verb
+      class KeyDelete < Runner::Base
+        self.spec = Textus::Write::Delete.contract
         command_name "delete"
         parent_group Group::Key
 
@@ -10,7 +11,7 @@ module Textus
         option :prefix, "--prefix"
         option :if_etag, "--if-etag=E"
 
-        def call(store)
+        def invoke(store)
           if prefix
             p = positional.shift or raise UsageError.new("key delete --prefix requires <prefix>")
             emit(session_for(store).key_delete_prefix(prefix: p, dry_run: dry_run || false).to_h)

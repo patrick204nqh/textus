@@ -1,14 +1,15 @@
 module Textus
   class CLI
     class Verb
-      class Put < Verb
+      class Put < Runner::Base
+        self.spec = Textus::Write::Put.contract
         command_name "put"
 
         option :as_flag, "--as=ROLE"
         option :use_stdin, "--stdin"
         option :fetch_name, "--fetch=NAME"
 
-        def call(store)
+        def invoke(store)
           key = positional.shift or raise UsageError.new("put requires a key")
           raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
