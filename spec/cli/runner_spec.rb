@@ -93,7 +93,7 @@ RSpec.describe Textus::CLI::Runner do
       )
 
       emitted = nil
-      session_obj = double("session", where: "raw_value")
+      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
                              positional: [],
                              flag_values: {},
@@ -118,7 +118,7 @@ RSpec.describe Textus::CLI::Runner do
       )
 
       emitted = nil
-      session_obj = double("session", where: "raw_value")
+      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
                              positional: [],
                              flag_values: {},
@@ -150,17 +150,17 @@ RSpec.describe Textus::CLI::Runner do
 
     it "passes the result only to an arity-1 cli_response" do
       spec = spec_with(cli_response: ->(r) { { "wrapped" => r } })
-      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("wrapped" => "X")
+      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("wrapped" => "X")
     end
 
     it "passes (result, inputs) to an arity-2 cli_response, keyed by arg name" do
       spec = spec_with(cli_response: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
-      expect(Textus::CLI::Runner.shape(spec, "uidval", ["k1"], {})).to eq("key" => "k1", "v" => "uidval")
+      expect(Textus::CLI::Runner.shape(spec, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
     end
 
     it "falls back to response when there is no cli_response" do
       spec = spec_with(cli_response: nil)
-      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("X")
+      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("X")
     end
   end
 

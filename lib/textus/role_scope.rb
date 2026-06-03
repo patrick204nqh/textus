@@ -36,20 +36,32 @@ module Textus
       self.class.new(container: @container, role: @role, dry_run: true, correlation_id: @correlation_id)
     end
 
+    # Single bind + invoke site for every surface. `inputs` is the uniform
+    # by-name hash (the binder's currency). MCP/CLI build it from their raw
+    # transport shape and call this directly; the per-verb Ruby methods below
+    # normalize positional+keyword Ruby args into `inputs` and delegate here.
+    def dispatch_bound(verb, inputs, session: nil, validate: false)
+      klass = Textus::Dispatcher::VERBS[verb]
+      args, kwargs =
+        if klass.respond_to?(:contract?) && klass.contract?
+          Textus::Contract::Binder.bind(klass.contract, inputs, session: session, validate: validate)
+        else
+          [[], inputs]
+        end
+      call_value = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
+      Textus::Dispatcher.invoke(verb, container: @container, call: call_value, args: args, kwargs: kwargs)
+    end
+
     Textus::Dispatcher::VERBS.each_key do |verb|
       define_method(verb) do |*args, **kwargs|
         klass = Textus::Dispatcher::VERBS[verb]
-        if klass.respond_to?(:contract?) && klass.contract?
-          spec = klass.contract
-          inputs = Textus::Contract::Binder.inputs_from_ordered(spec, args, kwargs)
-          args, kwargs = Textus::Contract::Binder.bind(spec, inputs, validate: false)
-        end
-        call_value = Textus::Call.build(
-          role: @role, correlation_id: @correlation_id, dry_run: @dry_run,
-        )
-        Textus::Dispatcher.invoke(
-          verb, container: @container, call: call_value, args: args, kwargs: kwargs
-        )
+        inputs =
+          if klass.respond_to?(:contract?) && klass.contract?
+            Textus::Contract::Binder.inputs_from_ordered(klass.contract, args, kwargs)
+          else
+            kwargs
+          end
+        dispatch_bound(verb, inputs)
       end
     end
   end

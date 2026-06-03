@@ -55,27 +55,17 @@ module Textus
         raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
         spec = klass.contract
-        pos, kw = map_args(spec, args || {}, session)
-        result = store.as(session.role).public_send(spec.verb, *pos, **kw)
-        spec.response.call(result)
+        inputs = spec.args.each_with_object({}) do |a, h|
+          h[a.name] = (args || {})[a.wire.to_s] if (args || {}).key?(a.wire.to_s)
+        end
+        result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session, validate: true)
+        spec.response.call(result) # TEMP until Task 7 (View.render)
+      rescue Textus::Contract::MissingArgs => e
+        raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
       rescue ContractDrift, CursorExpired
         raise
       rescue Textus::Error => e
         raise ToolError.new("#{name}: #{e.message}")
-      end
-
-      # Normalizes the raw JSON arg hash (keyed by wire-name) into the uniform
-      # by-name inputs hash, then delegates the split-and-default algorithm to
-      # the shared Contract::Binder. Session-default args are injected from the
-      # session when absent; the missing-arg error is translated to ToolError
-      # with the same wording the MCP wire has always spoken.
-      def map_args(spec, raw, session = nil)
-        inputs = spec.args.each_with_object({}) do |a, h|
-          h[a.name] = raw[a.wire.to_s] if raw.key?(a.wire.to_s)
-        end
-        Textus::Contract::Binder.bind(spec, inputs, session: session)
-      rescue Textus::Contract::MissingArgs => e
-        raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
       end
     end
   end

@@ -51,6 +51,13 @@ RSpec.describe Textus::RoleScope do
     expect(env.body.strip).to eq("default")
   end
 
+  describe "#dispatch_bound" do
+    it "binds a by-name inputs hash once and invokes the verb" do
+      env = store.as("human").dispatch_bound(:put, { key: "knowledge.foo", body: "hi" })
+      expect(env.etag).to match(/\Asha256:/)
+    end
+  end
+
   it "injects contract literal-defaults for absent kwargs so the get verb is read-through (ADR 0062 amendment)" do
     # store.as(role).get(key) must pass fetch: true (read-through) even though
     # the method default is fetch: false (the safe default for direct callers).

@@ -48,37 +48,33 @@ module Textus
 
       module_function
 
-      # Map parsed CLI input -> (positional, keyword) for a spec. Positionals
-      # arrive in contract declaration order from leftover argv; keyword args
-      # (already coerced by flag_values) come from declared flags. Both are
-      # normalized into the uniform by-name inputs hash and handed to the shared
-      # Contract::Binder; a missing required arg becomes a UsageError phrased in
-      # the operator's command path (parity with the hand-written verbs).
-      def call_args(spec, positional_argv, flags)
-        inputs = Textus::Contract::Binder.inputs_from_ordered(spec, positional_argv, flags)
-        Textus::Contract::Binder.bind(spec, inputs)
-      rescue Textus::Contract::MissingArgs => e
-        raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
-      end
-
+      # Normalize parsed CLI input into the uniform by-name inputs hash and
+      # dispatch through RoleScope's single bind+invoke site. A missing required
+      # arg becomes a UsageError phrased in the operator's command path (parity
+      # with the hand-written verbs).
       def dispatch(verb_instance, store, spec)
-        pos, kw = call_args(spec, verb_instance.positional, verb_instance.flag_values(spec))
-        result = verb_instance.session_for(store).public_send(spec.verb, *pos, **kw)
+        inputs = Textus::Contract::Binder.inputs_from_ordered(
+          spec, verb_instance.positional, verb_instance.flag_values(spec)
+        )
+        scope = verb_instance.session_for(store)
+        begin
+          result = scope.dispatch_bound(spec.verb, inputs, validate: true)
+        rescue Textus::Contract::MissingArgs => e
+          raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
+        end
         result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
-        verb_instance.emit(shape(spec, result, pos, kw))
+        verb_instance.emit(shape(spec, result, inputs))
       end
 
       # Shape the use-case result for the CLI wire. `cli_response` may take the
-      # result alone (arity 1) or the result plus a hash of the call's resolved
-      # inputs keyed by arg name (arity 2) — the latter lets an envelope echo an
-      # input such as the key (ADR 0065). Falls back to the agent `response`.
-      def shape(spec, result, pos, kwargs)
+      # result alone (arity 1) or the result plus the resolved by-name inputs
+      # (arity 2) — the latter lets an envelope echo an input such as the key
+      # (ADR 0065). Falls back to the agent `response`.
+      def shape(spec, result, inputs)
         clr = spec.cli_response
         return spec.response.call(result) unless clr
         return clr.call(result) unless clr.arity == 2
 
-        positional_names = spec.args.select(&:positional).map(&:name)
-        inputs = positional_names.zip(pos).to_h.merge(kwargs)
         clr.call(result, inputs)
       end
 
