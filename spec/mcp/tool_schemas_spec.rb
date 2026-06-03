@@ -21,8 +21,8 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "exposes the current core read/write verbs (not retired ADR 0036 aliases)" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("boot", "pulse", "list", "get", "put",
-                               "fetch", "fetch_all", "propose", "schema_show",
-                               "rule_explain", "deps", "rdeps", "where")
+                               "fetch", "fetch_all", "propose", "accept", "reject",
+                               "schema_show", "rule_explain", "deps", "rdeps", "where")
       expect(names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     end
 
