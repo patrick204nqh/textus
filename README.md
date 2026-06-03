@@ -199,7 +199,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 
 ## CLI and zones
 
-All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md). Write verbs require `--as=<role>` (role resolution: `--as` → `TEXTUS_ROLE` env → `.textus/role` file → default `human`). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block).
+Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` ([SPEC §3.1](SPEC.md)). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` ([SPEC §5.1](SPEC.md)). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md).
 
 - Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
 - Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
