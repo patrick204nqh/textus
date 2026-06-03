@@ -176,7 +176,7 @@ textus rule list                     # show every rule block
 textus audit --limit=20              # query the audit log
 ```
 
-(All verbs return JSON envelopes by default; pass `--output=json` explicitly if you prefer.)
+(All verbs return JSON envelopes; `--output=json` is the default and the only format in v1.)
 
 For a worked store — knowledge entries, a staged proposal, schemas, a template, and a build that publishes `CLAUDE.md` / `AGENTS.md` — see [`examples/project/`](examples/project/).
 
@@ -273,4 +273,4 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE)
