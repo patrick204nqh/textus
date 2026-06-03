@@ -46,4 +46,10 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
     )
     expect(Dir.glob(File.join(root, "zones/working/notes/*.md"))).to be_empty
   end
+
+  it "prunes the now-empty parent directory after the last leaf is deleted (F3)" do
+    build_key_delete_prefix.call("working.notes", dry_run: false)
+    expect(File.directory?(File.join(root, "zones/working/notes"))).to be(false)
+    expect(File.directory?(File.join(root, "zones/working"))).to be(true)
+  end
 end

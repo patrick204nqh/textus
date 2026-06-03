@@ -1,6 +1,5 @@
 ---
 generated:
-  at: '2026-05-31T14:55:47Z'
   from:
   - knowledge.project
   - knowledge.runbooks
@@ -22,15 +21,15 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 
 → Agent protocol (from `textus boot`):
    • **read** — find and read an entry
-     `textus list --zone=ZONE --prefix=PREFIX  # discover keys`
-     `textus get KEY                            # returns envelope JSON`
+     `list (zone:, prefix:) — discover keys without reading bodies`
+     `get KEY — returns the entry envelope`
    • **write** — create or update an entry
-     `textus schema get FAMILY                  # learn the _meta field shape`
-     `build an envelope JSON: {_meta: {...}, body: "..."}`
-     `echo ENVELOPE | textus put KEY --as=ROLE --stdin`
+     `schema KEY — learn the _meta field shape (required, optional, field types) before writing`
+     `assemble an envelope: { _meta: {…}, body: "…" }`
+     `put KEY — persist it (role-gated); pass if_etag to guard a concurrent edit`
    • **propose** — agent suggests a change for human review
-     agent: `echo ENVELOPE | textus put proposals.KEY --as=agent --stdin`
-     human: `textus accept proposals.KEY --as=human       # promotes the proposal to its target zone`
+     agent: `propose KEY — writes the change into the proposals zone for review`
+     human: `accept proposals.KEY — promotes the proposal into its target zone`
 -->
 
 

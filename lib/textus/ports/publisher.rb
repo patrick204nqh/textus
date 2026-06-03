@@ -7,8 +7,9 @@ module Textus
     # artifact; no parsing or stripping.
     #
     # Sentinel I/O is delegated to Textus::Ports::SentinelStore. Sentinels live
-    # under `<store_root>/sentinels/` and mirror the target's repo-relative layout
-    # so consumer directories aren't polluted with `.textus-managed.json` siblings.
+    # under `<store_root>/.run/sentinels/` (runtime, git-ignored — ADR 0070) and
+    # mirror the target's repo-relative layout so consumer directories aren't
+    # polluted with `.textus-managed.json` siblings.
     module Publisher
       def self.publish(source:, target:, store_root:)
         FileUtils.mkdir_p(File.dirname(target))

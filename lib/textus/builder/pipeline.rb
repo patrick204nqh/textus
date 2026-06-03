@@ -5,8 +5,12 @@ module Textus
   module Builder
     module InjectMeta
       # Returns a new hash with _meta as the first key, per SPEC §6 ordering.
+      # Carries only deterministic provenance (`from`/`reduce`/`template`) — the
+      # volatile `generated_at` is deliberately NOT stamped, so the built
+      # artifact is content-addressed and a rebuild is a byte-for-byte no-op
+      # (ADR 0070). Build time lives out of the tracked artifact.
       def self.call(content_hash, mentry)
-        meta = { "generated_at" => Time.now.utc.iso8601 }
+        meta = {}
         if mentry.is_a?(Textus::Manifest::Entry::Derived)
           src = mentry.source
           if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
@@ -20,35 +24,6 @@ module Textus
         out = { "_meta" => meta }
         content_hash.each { |k, v| out[k] = v unless k == "_meta" }
         out
-      end
-    end
-
-    # Replaces the freshly-stamped timestamp inside `new_bytes` with the
-    # timestamp pulled from `old_bytes` (same format). Returns the rewritten
-    # bytes, or nil if either side lacks a parseable timestamp.
-    module IdempotentWrite
-      def self.rewrite_with_prior_timestamp(new_bytes:, old_bytes:, format:)
-        prior = extract_timestamp(old_bytes, format)
-        fresh = extract_timestamp(new_bytes, format)
-        return nil unless prior && fresh
-        return new_bytes if prior == fresh
-
-        new_bytes.sub(fresh, prior)
-      end
-
-      def self.extract_timestamp(bytes, format)
-        case format
-        when "markdown"
-          parsed = Entry.for_format("markdown").parse(bytes)
-          parsed.dig("_meta", "generated", "at")
-        when "json", "yaml"
-          parsed = Entry.for_format(format).parse(bytes)
-          parsed.dig("_meta", "generated_at")
-        else # rubocop:disable Style/EmptyElse
-          nil
-        end
-      rescue Textus::BadFrontmatter
-        nil
       end
     end
 
@@ -95,18 +70,12 @@ module Textus
         target_path
       end
 
-      def self.write_if_changed(target_path, bytes, format)
-        if File.exist?(target_path)
-          old_bytes = File.binread(target_path)
-          if format == "text"
-            return if old_bytes == bytes
-          else
-            rewritten = IdempotentWrite.rewrite_with_prior_timestamp(
-              new_bytes: bytes, old_bytes: old_bytes, format: format,
-            )
-            return if rewritten && rewritten == old_bytes
-          end
-        end
+      # Built artifacts are content-addressed (no volatile timestamp, ADR 0070),
+      # so identity is plain byte-equality: skip the write when nothing changed.
+      # `format` is retained for signature stability across renderers.
+      def self.write_if_changed(target_path, bytes, _format)
+        return if File.exist?(target_path) && File.binread(target_path) == bytes
+
         File.binwrite(target_path, bytes)
       end
     end

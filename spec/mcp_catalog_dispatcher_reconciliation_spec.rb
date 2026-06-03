@@ -8,11 +8,18 @@ require "spec_helper"
 # Phase C shrinks this to empty; any entry here needs a stated reason.
 MCP_CATALOG_COMPOSED = [].freeze
 
-# Dispatcher verbs deliberately NOT exposed over MCP: internal/maintenance/
-# CLI-only operations an agent should not be steered toward. Reviewer must
-# justify each. Edit this list when you add or expose a verb.
+# Dispatcher verbs deliberately NOT exposed over MCP. Each omission has its own
+# reason — do not conflate them (ADR 0072):
+#   * build — role-fit/steering, NOT authority: it carries no author_held floor;
+#     its gate is the `build` capability (automation's), and it is a heavy,
+#     schedule-driven materialization an interactive agent should not be steered
+#     toward. Whether to surface it to automation-role connections is open.
+#   * audit/blame/uid/freshness/stale/doctor/rule_list/published/retainable/
+#     validate_all/retain — internal/maintenance/CLI-only operations.
+# accept/reject are NO LONGER here: they are surfaced to MCP and gated by the
+# author_held capability floor, not by transport absence (ADR 0072).
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
-  accept reject build
+  build
   audit blame uid freshness stale
   doctor rule_list published retainable
   validate_all retain

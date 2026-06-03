@@ -32,7 +32,10 @@ RSpec.describe Textus::Boot do
       expect(qs["read_verbs"]).not_to include("audit", "freshness", "doctor")
       # write_verbs derives from the MCP catalog too (ADR 0057): bare verb names
       # the agent calls — not the old `put KEY --as=agent --stdin` CLI string.
-      expect(qs["write_verbs"]).to include("put", "propose")
+      # accept/reject are advertised even though this agent lacks `author`
+      # (ADR 0072): the verbs are reachable; the author_held guard refuses them
+      # at call time — the boundary is self-documenting, not hidden by absence.
+      expect(qs["write_verbs"]).to include("put", "propose", "accept", "reject")
       expect(qs["write_verbs"]).not_to include(a_string_matching(/--as=|--stdin/))
       expect(qs["writable_zones"]).to include("proposals")
       expect(qs["propose_zone"]).to eq("proposals")

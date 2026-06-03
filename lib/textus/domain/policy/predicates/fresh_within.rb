@@ -35,13 +35,14 @@ module Textus
           private
 
           # Domain-pure: reads the stored write timestamp from the envelope's
-          # freshness (checked_at) or meta (last_fetched_at/generated_at) and
-          # parses the stored ISO-8601 string. Parsing a stored string is not
-          # I/O (allowed in domain, ADR 0024).
+          # freshness (checked_at) or meta (last_fetched_at) and parses the
+          # stored ISO-8601 string. Parsing a stored string is not I/O (allowed
+          # in domain, ADR 0024). `generated_at` is intentionally NOT consulted:
+          # build-generation time is no longer carried in the artifact (ADR
+          # 0070), and fetch-freshness is a fetch concept, not a build one.
           def written_at(envelope)
             raw = envelope.freshness&.checked_at ||
-                  envelope.meta&.dig("last_fetched_at") ||
-                  envelope.meta&.dig("generated_at")
+                  envelope.meta&.dig("last_fetched_at")
             return raw if raw.is_a?(Time)
             return nil if raw.nil?
 

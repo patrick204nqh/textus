@@ -14,8 +14,9 @@ module Textus
       cli      "zone mv"
       arg :from,    String, required: true, positional: true, description: "current zone name"
       arg :to,      String, required: true, positional: true, description: "new zone name; refused if a zone by this name already exists"
-      arg :dry_run, :boolean, default: true, cli_default: false,
-                              description: "agents plan by default; the CLI applies by default (pass --dry-run to plan only)"
+      arg :dry_run, :boolean, default: false,
+                              description: "when true, returns the planned zone move without applying it; " \
+                                           "defaults to false, so omitting it applies the move immediately"
       view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
@@ -25,7 +26,7 @@ module Textus
         @root      = container.root
       end
 
-      def call(from, to, dry_run: true)
+      def call(from, to, dry_run: false)
         raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
         raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
 

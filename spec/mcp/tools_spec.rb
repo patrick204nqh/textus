@@ -110,6 +110,67 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
+  # ── accept/reject over MCP — gated by author_held, not by transport (ADR 0072) ──
+
+  describe ".call('accept' / 'reject', ...) — capability-gated on MCP (ADR 0072 F7)" do
+    let(:human_session) do
+      Textus::MCP::Session.new(role: "human", cursor: 0, propose_zone: "proposals", manifest_etag: etag)
+    end
+
+    # Queue a proposal as the agent, returning its full key (proposals.proposal.<leaf>).
+    def queue_proposal(leaf)
+      described_class.call(
+        "propose",
+        session: session, store: store,
+        args: {
+          "key" => "proposal.#{leaf}",
+          "_meta" => {
+            "name" => leaf,
+            "proposal" => { "target_key" => "knowledge.note", "action" => "put" },
+            "frontmatter" => { "name" => "note" },
+          },
+          "body" => "draft\n",
+        }
+      )
+      "proposals.proposal.#{leaf}"
+    end
+
+    it "accept is exposed in the derived catalog" do
+      expect(Textus::MCP::Catalog.names).to include("accept", "reject")
+    end
+
+    it "refuses accept for a default agent connection (lacks author)" do
+      pending_key = queue_proposal("a1")
+      expect do
+        described_class.call("accept", session: session, store: store,
+                                       args: { "pending_key" => pending_key })
+      end.to raise_error(Textus::MCP::ToolError, /author/)
+    end
+
+    it "allows accept for a human-role connection" do
+      pending_key = queue_proposal("a2")
+      result = described_class.call("accept", session: human_session, store: store,
+                                              args: { "pending_key" => pending_key })
+      expect(result["accepted"]).to eq(pending_key)
+      expect(result["target_key"]).to eq("knowledge.note")
+    end
+
+    it "refuses reject for a default agent connection (lacks author)" do
+      pending_key = queue_proposal("r1")
+      expect do
+        described_class.call("reject", session: session, store: store,
+                                       args: { "pending_key" => pending_key })
+      end.to raise_error(Textus::MCP::ToolError, /author/)
+    end
+
+    it "allows reject for a human-role connection" do
+      pending_key = queue_proposal("r2")
+      result = described_class.call("reject", session: human_session, store: store,
+                                              args: { "pending_key" => pending_key })
+      expect(result["rejected"]).to eq(pending_key)
+    end
+  end
+
   describe ".call('schema_show', ...)" do
     it "raises ToolError when the required key arg is missing" do
       expect do
@@ -138,11 +199,26 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('zone_mv', ...) — default-dry-run gate (ADR 0060)" do
-    it "returns a Plan without mutating when dry_run is omitted" do
+  describe ".call('zone_mv', ...) — applies by default (#161 F6, reverses ADR 0060)" do
+    it "applies the zone move when dry_run is omitted" do
       result = described_class.call("zone_mv", session: session, store: store,
                                                args: { "from" => "knowledge", "to" => "renamed" })
       expect(result).to include("steps", "warnings")
+      # F6: omitting dry_run now mutates — the manifest reflects the renamed zone.
+      manifest = YAML.safe_load_file(File.join(root, "manifest.yaml"))
+      zone_names = manifest.fetch("zones").map { |z| z["name"] }
+      expect(zone_names).to include("renamed")
+      expect(zone_names).not_to include("knowledge")
+    end
+
+    it "returns a Plan without mutating when dry_run: true is passed" do
+      result = described_class.call("zone_mv", session: session, store: store,
+                                               args: { "from" => "knowledge", "to" => "renamed", "dry_run" => true })
+      expect(result).to include("steps", "warnings")
+      zone_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
+                       .fetch("zones").map { |z| z["name"] }
+      expect(zone_names).to include("knowledge")
+      expect(zone_names).not_to include("renamed")
     end
   end
 

@@ -172,9 +172,8 @@ zones:
     audit/audit.log      # append-only NDJSON event ledger, every write (rotates at ~50 MB)
     state/cursor.<role>  # per-role pulse cursor — where `pulse --since` resumes
     locks/  build.lock   # per-key fetch locks + the build mutex
+    sentinels/           # publish bookkeeping (target sha) — regenerated on build (ADR 0070)
 ```
-
-(`sentinels/` — publish bookkeeping — appears at the top level on first publish.)
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
 
@@ -217,7 +216,7 @@ Derived entries declare `compute: { kind: projection, select: ..., pluck: ..., s
 
 For externally-generated entries, declare `compute: { kind: external, sources: [...] }` — textus tracks the declared sources for staleness; the build automation produces the file.
 
-Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...] }` byte-copies a single derived file to one or more targets. `publish: { tree: "dir" }` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/sentinels/`. See SPEC §5.2, §5.3, §5.12.
+Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...] }` byte-copies a single derived file to one or more targets. `publish: { tree: "dir" }` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/.run/sentinels/` (git-ignored runtime state, regenerated on build — ADR 0070). See SPEC §5.2, §5.3, §5.12.
 
 ## Extension points
 

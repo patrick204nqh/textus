@@ -9,8 +9,9 @@ module Textus
       surfaces :cli, :ruby, :mcp
       cli      "key delete-prefix"
       arg :prefix,  String, required: true, positional: true, description: "every leaf key under this dotted prefix is deleted"
-      arg :dry_run, :boolean, default: true, cli_default: false,
-                              description: "agents plan by default; the CLI applies by default (pass --dry-run to plan only)"
+      arg :dry_run, :boolean, default: false,
+                              description: "when true, returns the keys that would be deleted without deleting them; " \
+                                           "defaults to false, so omitting it deletes immediately"
       view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
@@ -18,7 +19,7 @@ module Textus
         @call         = call
       end
 
-      def call(prefix, dry_run: true)
+      def call(prefix, dry_run: false)
         raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
         leaves = Read::List.new(container: @container)

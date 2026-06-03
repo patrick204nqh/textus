@@ -5,12 +5,12 @@ require "fileutils"
 module Textus
   module Ports
     # Persistence adapter for sentinel files. Owns the on-disk JSON shape, the
-    # path layout (<store_root>/sentinels/<target-rel-to-repo>.textus-managed.json),
-    # and all File/FileUtils I/O. Domain::Sentinel is a pure value object that
-    # depends on this port for reads and writes.
+    # path layout (<store_root>/.run/sentinels/<target-rel-to-repo>.textus-managed.json
+    # — runtime, git-ignored, ADR 0070), and all File/FileUtils I/O.
+    # Domain::Sentinel is a pure value object that depends on this port for
+    # reads and writes.
     class SentinelStore
       SUFFIX = ".textus-managed.json".freeze
-      DIR    = "sentinels".freeze
 
       def write!(target:, source:, store_root:)
         path = sentinel_path(target, store_root)
@@ -39,17 +39,18 @@ module Textus
       def sentinel_path(target, store_root)
         repo_root = File.dirname(store_root)
         rel = relative_to(target, repo_root) || File.basename(target)
-        File.join(store_root, DIR, rel + SUFFIX)
+        File.join(Textus::Layout.sentinels(store_root), rel + SUFFIX)
       end
 
       # Absolute target paths of every sentinel recorded under `target_dir`.
       def targets_under(target_dir, store_root)
         repo_root = File.dirname(store_root)
         rel = relative_to(target_dir, repo_root) or return []
-        sdir = File.join(store_root, DIR, rel)
+        root = Textus::Layout.sentinels(store_root)
+        sdir = File.join(root, rel)
         return [] unless File.directory?(sdir)
 
-        prefix = File.join(store_root, DIR) + "/"
+        prefix = root + "/"
         Dir.glob(File.join(sdir, "**", "*#{SUFFIX}")).map do |spath|
           # strip the sentinel-store prefix and the .textus-managed.json suffix to recover the repo-relative target path
           trel = spath.delete_prefix(prefix).delete_suffix(SUFFIX)
