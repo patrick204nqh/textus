@@ -56,6 +56,26 @@ RSpec.describe Textus::RoleScope do
       env = store.as("human").dispatch_bound(:put, { key: "knowledge.foo", body: "hi" })
       expect(env.etag).to match(/\Asha256:/)
     end
+
+    it "applies a declared around resource around dispatch_bound" do
+      events = []
+      resource_class = Class.new do
+        def initialize(sink) = (@sink = sink)
+
+        def wrap(scope:, inputs:) # rubocop:disable Lint/UnusedMethodArgument
+          @sink << :before
+          result = yield(inputs)
+          @sink << :after
+          result
+        end
+      end
+      Textus::Contract::Around.register(:spy_get, resource_class.new(events))
+      allow(Textus::Dispatcher::VERBS[:get]).to receive(:contract).and_wrap_original do |m|
+        m.call.with(around: :spy_get)
+      end
+      store.as("human").dispatch_bound(:get, { key: "knowledge.foo" })
+      expect(events).to eq(%i[before after])
+    end
   end
 
   it "injects contract literal-defaults for absent kwargs so the get verb is read-through (ADR 0062 amendment)" do

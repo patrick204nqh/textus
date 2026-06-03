@@ -42,14 +42,24 @@ module Textus
     # normalize positional+keyword Ruby args into `inputs` and delegate here.
     def dispatch_bound(verb, inputs, session: nil, validate: false)
       klass = Textus::Dispatcher::VERBS[verb]
-      args, kwargs =
-        if klass.respond_to?(:contract?) && klass.contract?
-          Textus::Contract::Binder.bind(klass.contract, inputs, session: session, validate: validate)
-        else
-          [[], inputs]
-        end
-      call_value = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
-      Textus::Dispatcher.invoke(verb, container: @container, call: call_value, args: args, kwargs: kwargs)
+      spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
+
+      invoke = lambda do |effective_inputs|
+        args, kwargs =
+          if spec
+            Textus::Contract::Binder.bind(spec, effective_inputs, session: session, validate: validate)
+          else
+            [[], effective_inputs]
+          end
+        call_value = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
+        Textus::Dispatcher.invoke(verb, container: @container, call: call_value, args: args, kwargs: kwargs)
+      end
+
+      if spec&.around
+        Textus::Contract::Around.with(spec.around, scope: self, inputs: inputs, &invoke)
+      else
+        invoke.call(inputs)
+      end
     end
 
     Textus::Dispatcher::VERBS.each_key do |verb|
