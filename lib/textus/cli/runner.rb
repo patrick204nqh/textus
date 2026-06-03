@@ -77,8 +77,21 @@ module Textus
         pos, kw = call_args(spec, verb_instance.positional, verb_instance.flag_values(spec))
         result = verb_instance.session_for(store).public_send(spec.verb, *pos, **kw)
         result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
-        shaper = spec.cli_response || spec.response
-        verb_instance.emit(shaper.call(result))
+        verb_instance.emit(shape(spec, result, pos, kw))
+      end
+
+      # Shape the use-case result for the CLI wire. `cli_response` may take the
+      # result alone (arity 1) or the result plus a hash of the call's resolved
+      # inputs keyed by arg name (arity 2) — the latter lets an envelope echo an
+      # input such as the key (ADR 0065). Falls back to the agent `response`.
+      def shape(spec, result, pos, kw)
+        clr = spec.cli_response
+        return spec.response.call(result) unless clr
+        return clr.call(result) unless clr.arity == 2
+
+        positional_names = spec.args.select(&:positional).map(&:name)
+        inputs = positional_names.zip(pos).to_h.merge(kw)
+        clr.call(result, inputs)
       end
 
       def flagspec_for(arg)
