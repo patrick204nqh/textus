@@ -37,7 +37,7 @@ Container        (single record — wired ports + manifest)
 Dispatcher       (static VERBS table: verb → use-case)
 RoleScope        (Store#as(role) — forwards verb calls)
 
-read/{get,get_entry,list,where,uid,schema_envelope,
+read/{get,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
       freshness,audit,blame,policy_explain,pulse}.rb
 write/{put,delete,mv,accept,reject,publish,
@@ -171,15 +171,15 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Read path (`store.get(key)`)
 
-`Read::Get` is the single public read verb (ADR 0062). It is read-through: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule.
+`Read::Get` is the single public read verb (ADR 0062). It is read-through by default: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule. An optional `fetch: false` flag (CLI `--no-fetch`, MCP `{fetch:false}`) forces a pure on-disk read.
 
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
-2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`.
-3. `Read::Get#call` delegates the pure freshness-annotation sub-step to `Read::GetEntry` (composed on construction). `Read::GetEntry` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and returns it annotated with a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
-4. If the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator`. The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
+2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The contract declares `arg :fetch, default: true`, injected by `RoleScope` and `MCP::Catalog.map_args` at every verb-dispatch chokepoint — so the public verb is always read-through unless the caller explicitly passes `fetch: false`.
+3. `Read::Get#call(key, fetch: false)` runs the pure read sub-step inline: resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
+4. If `fetch: true` and the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator` (built lazily — a pure `fetch: false` call never touches the orchestrator). The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
 5. The outcome is mapped back to an envelope: `Fetched` → fresh envelope from the write; `Detached` → original envelope with `fetching: true`; `Failed` → original envelope with `fetch_error` set; `Skipped` → original envelope unchanged.
 
-The pure freshness-annotation primitive — `Read::GetEntry` (`lib/textus/read/get_entry.rb`) — has no orchestrator dependency and is not a public verb. Internal callers that must never trigger a fetch (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) construct it directly. The prior separate read-through path `get_or_fetch` was unified into `get` (ADR 0062).
+The pure read is `Read::Get#call(key, fetch: false)` — it is the safe default for direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) that must never trigger a fetch. They construct `Read::Get` directly, bypassing the dispatch injection that sets `fetch: true`. The prior separate read-through path `get_or_fetch` and the separate pure class `Read::GetEntry` were both unified into the one `Read::Get` class (ADR 0062 amendment).
 
 ## Write path (`store.put(key, ...)`)
 

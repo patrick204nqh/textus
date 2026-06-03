@@ -866,7 +866,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 |---|---|---|
 | `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
-| `get K` | read (read-through: fetch-on-stale per the entry's fetch rule, degrades to a pure read) | any |
+| `get K [--no-fetch]` | read (read-through by default: fetch-on-stale per the entry's fetch rule, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
 | `schema show K` | read | any |
 | `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |

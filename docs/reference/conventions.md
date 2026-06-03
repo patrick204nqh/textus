@@ -117,9 +117,9 @@ There is one public read operation (ADR 0062):
 
 | Operation | Behaviour | Use for |
 |-----------|-----------|---------|
-| `ops.get` | Read-through — fetches on stale per the entry's fetch rule; degrades to a pure on-disk read when the key has no fetch rule | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
+| `ops.get` | Read-through by default — fetches on stale per the entry's fetch rule; degrades to a pure on-disk read when the key has no fetch rule. Pass `fetch: false` (CLI `--no-fetch`, MCP `{fetch:false}`) for an explicit pure read | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
 
-Build pipelines and other internal callers that must never trigger a fetch (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::GetEntry` directly — it is the orchestrator-free pure-read primitive; it is not a public verb and not exposed through `ops`.
+Build pipelines and other internal callers that must never trigger a fetch (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::Get` directly with the method default `fetch: false` — a pure, orchestrator-free read. They bypass the verb-dispatch injection that sets `fetch: true`, so they always get pure reads without any extra argument.
 
 ## Body content
 

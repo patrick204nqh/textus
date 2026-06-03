@@ -7,6 +7,26 @@
 
 > **One sentence:** the public `get` verb meant two different things — a pure on-disk read on MCP and Ruby, but a secret read-through on the CLI (which dispatched a separate `get_or_fetch` verb) — so this unifies `get` on **read-through everywhere** (return the freshest obtainable envelope, fetching on stale per the entry's fetch rule, degrading to a pure read when the key has no fetch rule), drops the now-redundant `get_or_fetch` verb, and keeps the orchestrator-free pure read as an **unexposed** primitive (`Read::GetEntry`) for the ~9 internal callers that must never trigger a fetch mid-write or mid-hook.
 
+> **Amendment (2026-06-03, same 0.44.0 PR):** the two-class split this ADR
+> introduced (`Read::Get` read-through + `Read::GetEntry` pure) is collapsed
+> into **one** `Read::Get#call(key, fetch: false)`. The fetch behavior is a
+> single flag, not a class fork: the **method** default is `fetch: false` (the
+> safe default for the ~9 in-process callers that must read persisted truth and
+> never fetch — they construct `Read::Get` directly), while the **public verb**
+> is read-through because the contract declares `arg :fetch, default: true`,
+> injected on every verb surface by both `RoleScope` and `MCP::Catalog.map_args`
+> (a new contract literal-default feature). `Read::GetEntry` is removed; the
+> orchestrator is built lazily, so a pure call still never touches threads/
+> forks/locks. `get` also gains an optional wire `fetch` flag (CLI `--no-fetch`,
+> MCP `{fetch:false}`) for an explicit cheap pure read. Rationale: one read
+> path with centralized fetch control, safe-by-default for machinery — the
+> single-path model the two classes were only approximating.
+
+**Amendment consequences:**
+- **One read class.** `Read::Get#call(key, fetch: false)` is the single read path. `Read::GetEntry` is removed.
+- **`fetch` flag on the wire.** The MCP `get` tool now advertises an optional `fetch` property (default `true`); `required` stays `["key"]`. The CLI gains `--no-fetch` for an explicit pure read.
+- **Contract literal-defaults are a reusable protocol feature.** `Arg#default` is honored identically by `RoleScope` (Ruby/CLI path) and `MCP::Catalog.map_args` (MCP path) — the two verb-dispatch chokepoints inject the contract's declared default for any absent kwarg.
+
 ## Context
 
 `get` is the single thing every caller — human, agent, automation — calls "read." But under one name it carried two behaviours:
