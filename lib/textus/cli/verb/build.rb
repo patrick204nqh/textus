@@ -7,16 +7,7 @@ module Textus
         option :prefix, "--prefix=K"
 
         def invoke(store)
-          role = store.manifest.policy.actor_for("build") or
-            raise UsageError.new(
-              "no role holds the 'build' capability",
-              hint: "declare a role with `can: [build]` in .textus/manifest.yaml",
-            )
-          Textus::Ports::BuildLock.with(root: store.root) do
-            ops = store.as(role)
-            result = ops.build(prefix: prefix)
-            emit(result)
-          end
+          emit(store.as(resolved_role(store)).build(prefix: prefix))
         end
       end
     end

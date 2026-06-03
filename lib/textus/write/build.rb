@@ -14,8 +14,9 @@ module Textus
 
       verb     :build
       summary  "materialize derived entries; publish_to and publish_tree fan out copies"
-      surfaces :cli
+      surfaces :cli, :mcp
       cli      "build"
+      around   :build_lock
       arg :prefix, String, required: false, description: "limit the build to keys under this prefix"
 
       def initialize(container:, call:)
@@ -25,10 +26,21 @@ module Textus
       end
 
       def call(prefix: nil)
+        build_role = @manifest.policy.actor_for("build") or
+          raise Textus::UsageError.new(
+            "no role holds the 'build' capability",
+            hint: "declare a role with `can: [build]` in .textus/manifest.yaml",
+          )
+        build_call = Textus::Call.build(
+          role: build_role,
+          correlation_id: @call.correlation_id,
+          dry_run: @call.dry_run,
+        )
+
         built  = []
         leaves = []
         pruned = []
-        context = build_context
+        context = build_context(build_call)
 
         @manifest.data.entries.each do |mentry|
           next if prefix && !entry_matches_prefix?(mentry, prefix)
@@ -49,11 +61,11 @@ module Textus
 
       private
 
-      def build_context
+      def build_context(call)
         Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container,
-          call: @call,
-          reader: reader,
+          call: call,
+          reader: reader(call),
         )
       end
 
@@ -70,8 +82,8 @@ module Textus
         end
       end
 
-      def reader
-        @reader ||= Textus::Read::Get.new(container: @container, call: @call)
+      def reader(call)
+        Textus::Read::Get.new(container: @container, call: call)
       end
     end
   end
