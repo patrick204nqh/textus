@@ -72,6 +72,8 @@ TRANSIENT     │  feeds                   │  proposals  (queue)           │
                 raw material ──── propose ────► a human accept lifts it to canon
 ```
 
+*(The fifth lane, `artifacts`, isn't on this grid — it's a derived **output**, computed from the lanes rather than an input climbing toward trust.)*
+
 Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
 
 ```
@@ -91,9 +93,16 @@ That's the load-bearing claim: **coordination is a protocol invariant, not a lib
 ```sh
 gem install textus
 textus init                          # creates .textus/ with zones + schemas
-# agent proposes a change to proposals/
-printf '%s' '{"_meta":{"name":"oncall","proposal":{"target_key":"knowledge.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
-  | textus put proposals.notes.oncall --as=agent --stdin
+
+# an agent proposes a change — it targets a knowledge entry, but lands in proposals/
+textus propose notes.oncall --as=agent --stdin <<'JSON'
+{
+  "_meta": { "name": "oncall",
+             "proposal": { "target_key": "knowledge.notes.oncall", "action": "put" } },
+  "body": "Patrick on call.\n"
+}
+JSON
+
 # you accept it — textus promotes to knowledge/ and audits the move
 textus accept proposals.notes.oncall --as=human
 ```
@@ -154,12 +163,12 @@ zones:
   templates/          # mustache templates for derived entries
   hooks/              # one .rb per hook
   sentinels/          # publish bookkeeping
-  zones/
-    knowledge/        # author — identity (knowledge.identity.*), voice, decisions, notes
-    notebook/         # keep — agent's own durable lane (agents keep theirs)
-    feeds/            # fetch — declared external inputs (actions)
-    proposals/        # propose (agent + human) — proposals awaiting accept
-    artifacts/        # build — computed outputs
+  zones/              # one dir per zone; kinds + capabilities are in the manifest above
+    knowledge/        # e.g. identity (knowledge.identity.*), voice, decisions, notes
+    notebook/
+    feeds/
+    proposals/
+    artifacts/
 ```
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
@@ -207,13 +216,27 @@ Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...]
 
 ## Extension points
 
-textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). Events:
+textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). There are two kinds:
 
-- `:resolve_intake` — bring bytes in from elsewhere (returns `{_meta:, body:}`)
-- `:transform_rows` — transform rows during projection (returns rows)
-- `:validate` — custom doctor check (returns issues)
-- `:entry_put`, `:entry_deleted`, `:entry_fetched`, `:build_completed`, `:proposal_accepted`, `:file_published`, `:entry_renamed`, `:proposal_rejected`, `:store_loaded` — react to lifecycle events
-- `:fetch_started`, `:fetch_failed`, `:fetch_backgrounded` — background-fetch lifecycle
+**RPC hooks** — one handler, the framework uses what you return:
+
+| Event | Fires when | You return |
+|---|---|---|
+| `:resolve_intake` | a fetch needs bytes | `{_meta:, body:}` |
+| `:transform_rows` | a projection builds | the reshaped rows |
+| `:validate` | `textus doctor` runs | doctor issues (or none) |
+
+**Pub-sub hooks** — 0..N handlers, fire-and-react (no return value):
+
+| Event(s) | Fires when |
+|---|---|
+| `:entry_put` · `:entry_deleted` · `:entry_renamed` | a write lands |
+| `:entry_fetched` | a fetch-driven write lands |
+| `:build_completed` | a derived entry materializes |
+| `:file_published` | a derived file is copied to its target |
+| `:proposal_accepted` · `:proposal_rejected` | a proposal is resolved |
+| `:fetch_started` · `:fetch_failed` · `:fetch_backgrounded` | background-fetch lifecycle |
+| `:store_loaded` | the store finishes loading |
 
 ```ruby
 # Inside .textus/hooks/local_file.rb
