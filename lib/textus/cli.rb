@@ -8,6 +8,7 @@ module Textus
     # verb. Sorted alphabetically for stable help output. Adding a new
     # verb requires only a new file declaring its `command_name`.
     def self.verbs
+      Runner.install!
       Verb.descendants
           .select { |k| k.command_name && k.parent_group.nil? }
           .sort_by(&:command_name)

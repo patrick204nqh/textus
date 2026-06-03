@@ -1,0 +1,60 @@
+require "spec_helper"
+require "stringio"
+
+RSpec.describe Textus::CLI::Runner do
+  include_context "textus_store_fixture"
+
+  let(:stdin)  { StringIO.new }
+  let(:stdout) { StringIO.new }
+  let(:stderr) { StringIO.new }
+
+  def run(argv)
+    Textus::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: tmp)
+  end
+
+  before do
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: knowledge, kind: canon }
+      entries:
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
+    YAML
+    File.write(File.join(root, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
+  end
+
+  it "generates a top-level Verb subclass for the where contract" do
+    klass = Textus::CLI.verbs["where"]
+    expect(klass).to be < Textus::CLI::Verb
+    expect(klass.command_name).to eq("where")
+    expect(klass.parent_group).to be_nil
+  end
+
+  it "is idempotent — repeated CLI.verbs calls do not create duplicate where commands" do
+    Textus::CLI.verbs
+    Textus::CLI.verbs
+    wheres = Textus::CLI::Verb.descendants.select do |k|
+      k.command_name == "where" && k.parent_group.nil?
+    end
+    expect(wheres.size).to eq(1)
+  end
+
+  it "dispatches `where KEY` and emits the resolved location" do
+    rc = run(["where", "knowledge.note"])
+    expect(rc).to eq(0)
+    payload = JSON.parse(stdout.string)
+    expect(payload).to include(
+      "key" => "knowledge.note",
+      "zone" => "knowledge",
+    )
+    expect(payload["path"]).to end_with("zones/knowledge/note.md")
+    expect(payload).to have_key("owner")
+    expect(stderr.string).to be_empty
+  end
+
+  it "errors when the positional key is missing" do
+    rc = run(["where"])
+    expect(rc).not_to eq(0)
+  end
+end

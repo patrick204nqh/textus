@@ -42,6 +42,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   end
 
   it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
+    actual = Textus::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
     expected = {
       "accept" => Textus::CLI::Verb::Accept,
       "audit" => Textus::CLI::Verb::Audit,
@@ -68,10 +69,10 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "retain" => Textus::CLI::Verb::Retain,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
-      "where" => Textus::CLI::Verb::Where,
+      "where" => Textus::CLI::Verb::GenWhere,
       "zone" => Textus::CLI::Group::Zone,
     }
-    expect(Textus::CLI.verbs).to eq(expected)
+    expect(actual).to eq(expected)
   end
 
   it "verb ordering is stable (alphabetical by command_name)" do
