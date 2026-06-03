@@ -64,8 +64,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.read(File.join(repo_root, "skills/my-skill/references/foo.md"))).to eq("foo reference\n")
       expect(File.read(File.join(repo_root, "skills/my-skill/scripts/build.py"))).to eq("print('hi')\n")
 
-      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/commands.md.textus-managed.json"))).to be true
-      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/scripts/build.py.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(root, ".run/sentinels/skills/my-skill/commands.md.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(root, ".run/sentinels/skills/my-skill/scripts/build.py.textus-managed.json"))).to be true
     end
 
     it "reports every mirrored file in published_leaves under the entry key" do
@@ -143,7 +143,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       envelope = store.as("automation").build
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
-      expect(File.exist?(File.join(root, "sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
+      expect(File.exist?(File.join(root, ".run/sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
       expect(envelope["pruned"]).to include(File.join(repo_root, "skills/my-skill/references/foo.md"))
     end
 

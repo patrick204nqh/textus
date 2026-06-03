@@ -1,7 +1,7 @@
 # ADR 0038 — Runtime artifacts live under `.run/`; one `Layout` owns the map
 
 **Date:** 2026-05-31
-**Status:** Accepted
+**Status:** Accepted · the `sentinels/` → `:config` classification (Decision §1) is **superseded by [ADR 0070](./0070-content-addressed-build-artifacts.md)** — sentinels are machine-generated runtime state and move under `.run/sentinels/`; the `.run/` layout and `Layout`-as-map decisions stand
 **Refines:** [ADR 0036](./0036-transports-as-pure-framings.md) (per-role cursor cache under `.state/`), [ADR 0025](./0025-boot-doctor-as-verbs-and-etag-via-port.md) (doctor as a verb that inspects the store on disk)
 
 ## Context

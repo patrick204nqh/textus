@@ -7,7 +7,7 @@ RSpec.describe Textus::Domain::Sentinel do
   let(:src_abs)    { File.join(store_root, "zones", "output", "out.md") }
   let(:dst_abs)    { File.join(tmp, "dst.md") }
   let(:sentinel_path) do
-    File.join(store_root, "sentinels", "dst.md.textus-managed.json")
+    File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json")
   end
   let(:store)     { Textus::Ports::SentinelStore.new }
   let(:file_stat) { Textus::Ports::Storage::FileStat.new }

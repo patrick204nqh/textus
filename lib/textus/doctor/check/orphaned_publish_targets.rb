@@ -8,7 +8,7 @@ module Textus
       # that drift without making `build` scan globally.
       class OrphanedPublishTargets < Check
         def call
-          sdir = File.join(root, Textus::Ports::SentinelStore::DIR)
+          sdir = Textus::Layout.sentinels(root)
           return [] unless File.directory?(sdir)
 
           repo_root = File.dirname(root)
