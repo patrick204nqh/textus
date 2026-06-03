@@ -11,8 +11,9 @@ module Textus
       cli      "key mv-prefix"
       arg :from_prefix, String, required: true, positional: true, description: "dotted prefix whose leaf keys are renamed"
       arg :to_prefix,   String, required: true, positional: true, description: "dotted prefix the keys are renamed to"
-      arg :dry_run,     :boolean, default: true, cli_default: false,
-                                  description: "agents plan by default; the CLI applies by default (pass --dry-run to plan only)"
+      arg :dry_run,     :boolean, default: false,
+                                  description: "when true, returns the planned moves without applying them; " \
+                                               "defaults to false, so omitting it applies the rename immediately"
       view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
@@ -20,7 +21,7 @@ module Textus
         @call         = call
       end
 
-      def call(from_prefix, to_prefix, dry_run: true)
+      def call(from_prefix, to_prefix, dry_run: false)
         raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
         leaves = list_leaves_under(from_prefix)

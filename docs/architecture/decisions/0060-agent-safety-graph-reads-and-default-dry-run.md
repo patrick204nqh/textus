@@ -1,7 +1,7 @@
 # ADR 0060 — Close the agent safety asymmetry: graph-reads on MCP + default-dry-run on bulk-destructive verbs
 
 **Date:** 2026-06-02
-**Status:** Accepted (ships 0.44.0)
+**Status:** Accepted (ships 0.44.0) · the default-dry-run half (decision §2) is **reversed by [ADR 0071](./0071-dry-run-is-opt-in.md)** — verbs apply by default again; the graph-reads-on-MCP half stands
 **Refines:** [ADR 0039](./0039-mcp-catalog-derive-or-guard.md) (the MCP surface is derived from per-verb contracts — this ADR adds three read contracts and tightens four write defaults, no catalog code changes), [ADR 0036](./0036-transports-as-pure-framings.md) (one verb vocabulary; this only changes *which* verbs carry `:mcp` and a default value, not the vocabulary).
 **Touches:** [ADR 0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) (`boot.read_verbs` is derived from the catalog, so surfacing `deps`/`rdeps`/`where` auto-advertises them — the guard spec moves with it), [ADR 0058](./0058-one-verb-name-across-surfaces.md) (shipped in the same 0.44.0 release).
 

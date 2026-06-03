@@ -24,11 +24,13 @@ RSpec.describe Textus::Read::Capabilities do
     expect(where["cli"]).to eq("where")
   end
 
-  it "surfaces the dry_run default asymmetry so it is self-documenting (F6)" do
+  it "surfaces the dry_run default so it is self-documenting (F6)" do
     dry_run = result["verbs"]
               .find { |v| v["verb"] == "key_mv_prefix" }["args"]
               .find { |a| a["name"] == "dry_run" }
-    expect(dry_run).to include("default" => true, "cli_default" => false)
+    # After F6 the bulk verbs apply by default; dry_run is an opt-in preview.
+    expect(dry_run["default"]).to be(false)
+    expect(dry_run).not_to have_key("cli_default")
   end
 
   it "carries the full arg schema (name, type, required, positional)" do

@@ -12,8 +12,9 @@ module Textus
       surfaces :cli, :ruby, :mcp
       arg :plan_yaml, String, required: true, positional: true, source: :file,
                               description: "path to the YAML migration plan (zone_mv, key_mv_prefix, key_delete_prefix ops run in order)"
-      arg :dry_run, :boolean, default: true, cli_default: false,
-                              description: "agents plan by default; the CLI applies by default (pass --dry-run to plan only)"
+      arg :dry_run, :boolean, default: false,
+                              description: "when true, returns the planned ops without applying them; " \
+                                           "defaults to false, so omitting it runs the migration immediately"
       view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
@@ -21,7 +22,7 @@ module Textus
         @call         = call
       end
 
-      def call(plan_yaml, dry_run: true)
+      def call(plan_yaml, dry_run: false)
         raw = YAML.safe_load(plan_yaml, permitted_classes: [Symbol], aliases: false)
         raise UsageError.new("migration plan must be a YAML mapping") unless raw.is_a?(Hash)
 

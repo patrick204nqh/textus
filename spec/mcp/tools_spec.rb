@@ -138,11 +138,26 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('zone_mv', ...) — default-dry-run gate (ADR 0060)" do
-    it "returns a Plan without mutating when dry_run is omitted" do
+  describe ".call('zone_mv', ...) — applies by default (#161 F6, reverses ADR 0060)" do
+    it "applies the zone move when dry_run is omitted" do
       result = described_class.call("zone_mv", session: session, store: store,
                                                args: { "from" => "knowledge", "to" => "renamed" })
       expect(result).to include("steps", "warnings")
+      # F6: omitting dry_run now mutates — the manifest reflects the renamed zone.
+      manifest = YAML.safe_load_file(File.join(root, "manifest.yaml"))
+      zone_names = manifest.fetch("zones").map { |z| z["name"] }
+      expect(zone_names).to include("renamed")
+      expect(zone_names).not_to include("knowledge")
+    end
+
+    it "returns a Plan without mutating when dry_run: true is passed" do
+      result = described_class.call("zone_mv", session: session, store: store,
+                                               args: { "from" => "knowledge", "to" => "renamed", "dry_run" => true })
+      expect(result).to include("steps", "warnings")
+      zone_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
+                       .fetch("zones").map { |z| z["name"] }
+      expect(zone_names).to include("knowledge")
+      expect(zone_names).not_to include("renamed")
     end
   end
 
