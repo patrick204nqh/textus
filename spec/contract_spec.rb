@@ -134,6 +134,18 @@ RSpec.describe Textus::Contract do
     end.to raise_error(ArgumentError, /:ruby/)
   end
 
+  it "treats empty surfaces as a Ruby-only internal verb — off both wires (ADR 0073)" do
+    spec = Class.new do
+      extend Textus::Contract::DSL
+
+      verb :internal_only
+    end.contract
+
+    expect(spec.surfaces).to eq([])
+    expect(spec.cli?).to be false
+    expect(spec.mcp?).to be false
+  end
+
   it "carries session_default on an arg when declared" do
     k = Class.new do
       extend Textus::Contract::DSL

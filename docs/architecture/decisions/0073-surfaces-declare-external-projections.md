@@ -1,7 +1,7 @@
 # ADR 0073 — `surfaces` declares external projections; Ruby is the implicit base
 
 **Date:** 2026-06-03
-**Status:** Proposed
+**Status:** Accepted
 **Refines:** [ADR 0036](./0036-transports-as-pure-framings.md) (three transports — CLI, Ruby, MCP — are pure framings of one contract; this ADR sharpens *how* the framings are declared: the two operator/agent projections are named, the in-process base is not), [ADR 0066](./0066-one-binder-required-is-a-surface-policy.md) (collapsed three bind paths into one `RoleScope#dispatch_bound`; this removes the last asymmetry it left — a surface token with no site), [ADR 0069](./0069-single-path-lifecycle.md) (made validation unconditional and dropped the `validate:` fork — the one place `:ruby` ever carried behavioral weight, so after 0069 the token is inert).
 **Touches:** [ADR 0039](./0039-mcp-catalog-derive-or-guard.md) (`mcp?`/catalog derivation unchanged), [ADR 0063](./0063-cli-is-a-projection-of-the-contract.md) (`cli?`/runner filter unchanged), [ADR 0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) (boot derives from the catalog — unaffected). Surfaced by the #161 integration review while reading `surfaces :cli, :ruby, :mcp`.
 
