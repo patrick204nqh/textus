@@ -46,7 +46,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     expected = {
       "accept" => Textus::CLI::Verb::GenAccept,
       "audit" => Textus::CLI::Verb::Audit,
-      "blame" => Textus::CLI::Verb::Blame,
+      "blame" => Textus::CLI::Verb::GenBlame,
       "build" => Textus::CLI::Verb::Build,
       "deps" => Textus::CLI::Verb::GenDeps,
       "doctor" => Textus::CLI::Verb::Doctor,
@@ -88,7 +88,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     expect(Textus::CLI::Group::Key.subcommands).to eq(
       "delete" => Textus::CLI::Verb::KeyDelete,
       "mv" => Textus::CLI::Verb::Mv,
-      "uid" => Textus::CLI::Verb::Uid,
+      "uid" => Textus::CLI::Verb::GenUid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
       "explain" => Textus::CLI::Verb::GenRuleExplain,

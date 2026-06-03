@@ -176,4 +176,19 @@ RSpec.describe Textus::CLI::Runner do
       expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
     end
   end
+
+  describe "blame (generated, ADR 0065)" do
+    it "dispatches `blame KEY` and emits {verb, key, rows}" do
+      rc = run(["blame", "knowledge.note"])
+      expect(rc).to eq(0)
+      expect(JSON.parse(stdout.string)).to include(
+        "verb" => "blame", "key" => "knowledge.note", "rows" => [],
+      )
+      expect(stderr.string).to be_empty
+    end
+
+    it "no longer keeps a hand-authored blame class" do
+      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
+    end
+  end
 end
