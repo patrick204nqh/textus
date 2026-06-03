@@ -63,7 +63,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "propose" => Textus::CLI::Verb::GenPropose,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::GenRdeps,
-      "migrate" => Textus::CLI::Verb::Migrate,
+      "migrate" => Textus::CLI::Verb::GenMigrate,
       "fetch" => Textus::CLI::Group::Fetch,
       "reject" => Textus::CLI::Verb::GenReject,
       "retain" => Textus::CLI::Verb::GenRetain,

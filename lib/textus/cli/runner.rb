@@ -58,6 +58,7 @@ module Textus
         )
         inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
         inputs = Textus::Contract::Sources.acquire(spec, inputs)
+        inputs = apply_cli_defaults(spec, inputs)
         scope = verb_instance.session_for(store)
         begin
           result = scope.dispatch_bound(spec.verb, inputs, validate: true)
@@ -68,6 +69,19 @@ module Textus
         verb_instance.emit(shape(spec, result, inputs))
       end
 
+      # Fill CLI-specific defaults (cli_default:) for args the operator did not
+      # pass, where the CLI default diverges from the contract default the agent
+      # surfaces use — e.g. migrate/zone_mv apply by default on the CLI but plan
+      # by default for agents (ADR 0068). The divergence is legible in the
+      # contract, not hidden in a hand class.
+      def apply_cli_defaults(spec, inputs)
+        spec.args.each_with_object(inputs.dup) do |a, h|
+          next if a.cli_default == :__unset || h.key?(a.name)
+
+          h[a.name] = a.cli_default
+        end
+      end
+
       # Shape the use-case result for the CLI wire via the verb's :cli view
       # (falling back to the default view). The view is called uniformly as
       # (result, inputs); an inputs-aware view echoes an input such as the key
@@ -76,10 +90,19 @@ module Textus
         Textus::Contract::View.render(spec, :cli, result, inputs)
       end
 
+      # The default the CLI flag is generated against — `cli_default:` when the
+      # operator-facing default diverges from the contract default the agent
+      # surfaces use, else the contract `default`. This drives boolean flag
+      # polarity so a verb that applies-by-default on the CLI but plans-by-default
+      # for agents (migrate, zone_mv) gets a `--dry-run` flag, not `--no-dry-run`.
+      def effective_default(arg)
+        arg.cli_default == :__unset ? arg.default : arg.cli_default
+      end
+
       def flagspec_for(arg)
         wire = arg.wire.to_s.tr("_", "-")
         if arg.type == :boolean
-          arg.default == true ? "--no-#{wire}" : "--#{wire}"
+          effective_default(arg) == true ? "--no-#{wire}" : "--#{wire}"
         else
           "--#{wire}=VALUE"
         end
@@ -87,7 +110,7 @@ module Textus
 
       def coerce(arg, raw)
         case arg.type
-        when :boolean then arg.default != true
+        when :boolean then effective_default(arg) != true
         when Integer  then Integer(raw)
         else raw
         end
@@ -116,7 +139,7 @@ module Textus
       # generated verbs via arity-2 `cli_response` (ADR 0065).
       HAND_AUTHORED_VERBS = %i[
         get put build delete mv key_delete_prefix key_mv_prefix
-        migrate rule_lint zone_mv fetch fetch_all boot doctor
+        rule_lint zone_mv fetch fetch_all boot doctor
         audit pulse
       ].freeze
 

@@ -20,9 +20,9 @@ RSpec.describe "restructure CLI verbs" do
     expect(Textus::CLI::Verb::KeyDelete.parent_group).to eq(Textus::CLI::Group::Key)
   end
 
-  it "registers Verb::Migrate as a top-level verb" do
-    expect(Textus::CLI::Verb::Migrate.command_name).to eq("migrate")
-    expect(Textus::CLI::Verb::Migrate.parent_group).to be_nil
+  it "registers the generated migrate verb as a top-level verb" do
+    expect(Textus::CLI::Verb::GenMigrate.command_name).to eq("migrate")
+    expect(Textus::CLI::Verb::GenMigrate.parent_group).to be_nil
   end
 
   it "Verb::Mv exposes a --prefix flag" do
