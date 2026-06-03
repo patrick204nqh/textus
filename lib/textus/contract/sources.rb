@@ -26,7 +26,10 @@ module Textus
       def from_stdin(spec, stream)
         return {} unless spec.cli_stdin == :json
 
-        envelope = JSON.parse(stream.read)
+        raw = stream.read.to_s
+        return {} if raw.strip.empty? # no envelope piped -> required args surface as missing
+
+        envelope = JSON.parse(raw)
         spec.args.each_with_object({}) do |a, h|
           h[a.name] = envelope[a.wire.to_s] if envelope.key?(a.wire.to_s)
         end

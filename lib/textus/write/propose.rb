@@ -10,6 +10,7 @@ module Textus
       verb     :propose
       summary  "Write a proposal to the role's propose_zone. Auto-prefixes the key."
       surfaces :cli, :ruby, :mcp
+      cli_stdin :json
       arg :key,     String, required: true, positional: true,
                             description: "key relative to propose_zone, e.g. 'decisions.feature-x'"
       arg :meta,    Hash,   required: true, wire_name: :_meta,
@@ -19,6 +20,9 @@ module Textus
       arg :content, Hash,
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
       view { |env| { "uid" => env.uid, "etag" => env.etag, "key" => env.key } }
+      # CLI dispatch hands the view the to_h_for_wire'd result; emit the full
+      # wire envelope as the hand-authored CLI verb did before (ADR 0068).
+      view(:cli) { |wire, _i| wire }
 
       def initialize(container:, call:)
         @container = container

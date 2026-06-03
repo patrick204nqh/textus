@@ -60,7 +60,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "mcp" => Textus::CLI::Group::MCP,
       "published" => Textus::CLI::Verb::GenPublished,
       "pulse" => Textus::CLI::Verb::Pulse,
-      "propose" => Textus::CLI::Verb::Propose,
+      "propose" => Textus::CLI::Verb::GenPropose,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::GenRdeps,
       "migrate" => Textus::CLI::Verb::Migrate,
