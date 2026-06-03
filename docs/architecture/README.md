@@ -39,7 +39,7 @@ RoleScope        (Store#as(role) — forwards verb calls)
 
 read/{get,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
-      freshness,audit,blame,policy_explain,pulse}.rb
+      freshness,audit,blame,rule_explain,rule_list,pulse}.rb
 write/{put,delete,mv,accept,reject,build,
        materializer,intake_fetch,retention_sweep,
        fetch_worker,fetch_orchestrator,fetch_all}
@@ -188,7 +188,7 @@ The pure read is `Read::Get#call(key, fetch: false)` — it is the safe default 
 3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
 4. Publishes `:entry_put` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
-`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Write::{Delete,Mv,Accept,Reject,Build}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
 `Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
