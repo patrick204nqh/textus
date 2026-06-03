@@ -66,16 +66,12 @@ module Textus
         verb_instance.emit(shape(spec, result, inputs))
       end
 
-      # Shape the use-case result for the CLI wire. `cli_response` may take the
-      # result alone (arity 1) or the result plus the resolved by-name inputs
-      # (arity 2) — the latter lets an envelope echo an input such as the key
-      # (ADR 0065). Falls back to the agent `response`.
+      # Shape the use-case result for the CLI wire via the verb's :cli view
+      # (falling back to the default view). The view is called uniformly as
+      # (result, inputs); an inputs-aware view echoes an input such as the key
+      # (ADR 0067).
       def shape(spec, result, inputs)
-        clr = spec.cli_response
-        return spec.response.call(result) unless clr
-        return clr.call(result) unless clr.arity == 2
-
-        clr.call(result, inputs)
+        Textus::Contract::View.render(spec, :cli, result, inputs)
       end
 
       def flagspec_for(arg)
