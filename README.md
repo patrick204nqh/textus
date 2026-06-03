@@ -72,6 +72,8 @@ TRANSIENT     │  feeds                   │  proposals  (queue)           │
                 raw material ──── propose ────► a human accept lifts it to canon
 ```
 
+*(The fifth lane, `artifacts`, isn't on this grid — it's a derived **output**, computed from the lanes rather than an input climbing toward trust.)*
+
 Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
 
 ```
@@ -91,9 +93,16 @@ That's the load-bearing claim: **coordination is a protocol invariant, not a lib
 ```sh
 gem install textus
 textus init                          # creates .textus/ with zones + schemas
-# agent proposes a change to proposals/
-printf '%s' '{"_meta":{"name":"oncall","proposal":{"target_key":"knowledge.notes.oncall","action":"put"}},"body":"Patrick on call.\n"}' \
-  | textus put proposals.notes.oncall --as=agent --stdin
+
+# an agent proposes a change — it targets a knowledge entry, but lands in proposals/
+textus propose notes.oncall --as=agent --stdin <<'JSON'
+{
+  "_meta": { "name": "oncall",
+             "proposal": { "target_key": "knowledge.notes.oncall", "action": "put" } },
+  "body": "Patrick on call.\n"
+}
+JSON
+
 # you accept it — textus promotes to knowledge/ and audits the move
 textus accept proposals.notes.oncall --as=human
 ```
@@ -154,12 +163,12 @@ zones:
   templates/          # mustache templates for derived entries
   hooks/              # one .rb per hook
   sentinels/          # publish bookkeeping
-  zones/
-    knowledge/        # author — identity (knowledge.identity.*), voice, decisions, notes
-    notebook/         # keep — agent's own durable lane (agents keep theirs)
-    feeds/            # fetch — declared external inputs (actions)
-    proposals/        # propose (agent + human) — proposals awaiting accept
-    artifacts/        # build — computed outputs
+  zones/              # one dir per zone; kinds + capabilities are in the manifest above
+    knowledge/        # e.g. identity (knowledge.identity.*), voice, decisions, notes
+    notebook/
+    feeds/
+    proposals/
+    artifacts/
 ```
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
