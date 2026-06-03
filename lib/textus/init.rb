@@ -139,6 +139,7 @@ module Textus
       File.write(File.join(target_root, "hooks", "machine_intake.rb"),
                  File.read(File.join(scaffold_dir, "machine_intake.rb")))
       File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
+      scaffold_agent_profile(target_root, scaffold_dir) if with_agent
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
@@ -152,6 +153,16 @@ module Textus
       return DEFAULT_MANIFEST unless with_agent
 
       DEFAULT_MANIFEST.sub(/^rules:/, "#{AGENT_ENTRIES}rules:")
+    end
+
+    # Copies the proven orientation bundle into a freshly-init'd store.
+    def self.scaffold_agent_profile(target_root, scaffold_dir)
+      {
+        "project.schema.yaml" => File.join("schemas", "project.yaml"),
+        "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
+      }.each do |src, dest|
+        File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
+      end
     end
 
     # The store's `.gitignore` is generated, never hand-kept (ADR 0038), and now

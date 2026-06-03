@@ -39,4 +39,19 @@ RSpec.describe "Textus::Init with_agent profile" do
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
+
+  it "scaffolds project + runbook schemas only under --with-agent" do
+    dir, root, = init(with_agent: true)
+    expect(File.read(File.join(root, "schemas", "project.yaml"))).to include("name:")
+    expect(File.exist?(File.join(root, "schemas", "runbook.yaml"))).to be true
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
+
+  it "does NOT scaffold those schemas in the default profile" do
+    dir, root, = init(with_agent: false)
+    expect(File.exist?(File.join(root, "schemas", "project.yaml"))).to be false
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
 end
