@@ -81,19 +81,20 @@ RSpec.describe Textus::CLI::Runner do
 
   describe "Runner.dispatch shaper selection" do
     # rubocop:disable RSpec/VerifiedDoubles
-    it "uses cli_response instead of response when cli_response is set" do
+    it "uses the :cli view instead of the default when a :cli view is set" do
       spec = Textus::Contract::Spec.new(
         verb: :where,
         summary: nil,
         args: [],
         surfaces: %i[cli],
-        response: ->(_v) { "from_response" },
+        views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
         cli: nil,
-        cli_response: ->(v) { { "cli_shaped" => v } },
+        around: nil,
+        cli_stdin: nil,
       )
 
       emitted = nil
-      session_obj = double("session", where: "raw_value")
+      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
                              positional: [],
                              flag_values: {},
@@ -106,19 +107,20 @@ RSpec.describe Textus::CLI::Runner do
       expect(emitted).to eq({ "cli_shaped" => "raw_value" })
     end
 
-    it "falls back to response when cli_response is nil" do
+    it "falls back to the default view when no :cli view is declared" do
       spec = Textus::Contract::Spec.new(
         verb: :where,
         summary: nil,
         args: [],
         surfaces: %i[cli],
-        response: ->(v) { { "from_response" => v } },
+        views: { default: ->(v, _i) { { "from_default" => v } } },
         cli: nil,
-        cli_response: nil,
+        around: nil,
+        cli_stdin: nil,
       )
 
       emitted = nil
-      session_obj = double("session", where: "raw_value")
+      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
                              positional: [],
                              flag_values: {},
@@ -128,39 +130,42 @@ RSpec.describe Textus::CLI::Runner do
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
       Textus::CLI::Runner.dispatch(verb_instance, nil, spec)
-      expect(emitted).to eq({ "from_response" => "raw_value" })
+      expect(emitted).to eq({ "from_default" => "raw_value" })
     end
     # rubocop:enable RSpec/VerifiedDoubles
   end
 
-  describe ".shape (ADR 0065 — cli_response may see call inputs)" do
-    def spec_with(cli_response:, args: [])
+  describe ".shape (ADR 0067 — the :cli view may see call inputs)" do
+    def spec_with(cli:, args: [])
+      views = { default: ->(v, _i) { v } }
+      views[:cli] = cli if cli
       Textus::Contract::Spec.new(
         verb: :demo, summary: "d", args: args, surfaces: [:cli],
-        response: ->(v) { v }, cli: nil, cli_response: cli_response
+        views: views, cli: nil, around: nil, cli_stdin: nil
       )
     end
 
     def key_arg
       Textus::Contract::Arg.new(
         name: :key, type: String, required: true, positional: true,
-        session_default: nil, description: nil, wire_name: nil, default: nil
+        session_default: nil, description: nil, wire_name: nil, default: nil,
+        source: nil, coerce: nil, cli_default: :__unset
       )
     end
 
-    it "passes the result only to an arity-1 cli_response" do
-      spec = spec_with(cli_response: ->(r) { { "wrapped" => r } })
-      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("wrapped" => "X")
+    it "passes the result to a one-parameter :cli view (inputs ignored)" do
+      spec = spec_with(cli: ->(r, _i) { { "wrapped" => r } })
+      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("wrapped" => "X")
     end
 
-    it "passes (result, inputs) to an arity-2 cli_response, keyed by arg name" do
-      spec = spec_with(cli_response: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
-      expect(Textus::CLI::Runner.shape(spec, "uidval", ["k1"], {})).to eq("key" => "k1", "v" => "uidval")
+    it "passes (result, inputs) to a two-parameter :cli view, keyed by arg name" do
+      spec = spec_with(cli: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
+      expect(Textus::CLI::Runner.shape(spec, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
     end
 
-    it "falls back to response when there is no cli_response" do
-      spec = spec_with(cli_response: nil)
-      expect(Textus::CLI::Runner.shape(spec, "X", [], {})).to eq("X")
+    it "falls back to the default view when there is no :cli view" do
+      spec = spec_with(cli: nil)
+      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("X")
     end
   end
 

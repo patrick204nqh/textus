@@ -38,7 +38,7 @@ RSpec.describe Textus::Maintenance::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    plan = build_migrate.call(plan_yaml: plan_yaml, dry_run: false)
+    plan = build_migrate.call(plan_yaml, dry_run: false)
     expect(plan.steps.map { |s| s["op"] }).to include("mv")
     expect(File.exist?(File.join(root, "zones/working/new/a.md"))).to be(true)
   end
@@ -49,14 +49,14 @@ RSpec.describe Textus::Maintenance::Migrate do
       operations:
         - { op: key_mv_prefix, from_prefix: working.old, to_prefix: working.new }
     YAML
-    build_migrate.call(plan_yaml: plan_yaml, dry_run: true)
+    build_migrate.call(plan_yaml, dry_run: true)
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(true)
   end
 
   it "raises on unknown op" do
     expect do
       build_migrate.call(
-        plan_yaml: "version: 1\noperations:\n  - { op: bogus }\n", dry_run: true,
+        "version: 1\noperations:\n  - { op: bogus }\n", dry_run: true
       )
     end.to raise_error(Textus::Error, /unknown op/)
   end

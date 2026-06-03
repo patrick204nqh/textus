@@ -48,67 +48,74 @@ module Textus
 
       module_function
 
-      # Map parsed CLI input -> (positional, keyword) for a spec. Positionals
-      # are taken in contract declaration order from leftover argv; keyword args
-      # come from declared flags. RoleScope fills contract literal defaults, so
-      # absent optionals are omitted here. Required positionals that are absent
-      # raise UsageError (parity with the hand-written verbs).
-      def call_args(spec, positional_argv, flags)
-        pos = []
-        rest = positional_argv.dup
-        kw = {}
-        spec.args.each do |a|
-          if a.positional
-            val = rest.shift
-            if val.nil?
-              raise UsageError.new("#{spec.cli_path} requires #{a.wire}") if a.required
-
-              next
-            end
-            pos << val
-          elsif flags.key?(a.name)
-            kw[a.name] = flags[a.name]
-          end
-        end
-        [pos, kw]
-      end
-
+      # Normalize parsed CLI input into the uniform by-name inputs hash and
+      # dispatch through RoleScope's single bind+invoke site. A missing required
+      # arg becomes a UsageError phrased in the operator's command path (parity
+      # with the hand-written verbs).
       def dispatch(verb_instance, store, spec)
-        pos, kw = call_args(spec, verb_instance.positional, verb_instance.flag_values(spec))
-        result = verb_instance.session_for(store).public_send(spec.verb, *pos, **kw)
+        inputs = Textus::Contract::Binder.inputs_from_ordered(
+          spec, verb_instance.positional, verb_instance.flag_values(spec)
+        )
+        inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
+        inputs = Textus::Contract::Sources.acquire(spec, inputs)
+        inputs = apply_cli_defaults(spec, inputs)
+        scope = verb_instance.session_for(store)
+        begin
+          result = scope.dispatch_bound(spec.verb, inputs, validate: true)
+        rescue Textus::Contract::MissingArgs => e
+          raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
+        end
         result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
-        verb_instance.emit(shape(spec, result, pos, kw))
+        verb_instance.emit(shape(spec, result, inputs))
       end
 
-      # Shape the use-case result for the CLI wire. `cli_response` may take the
-      # result alone (arity 1) or the result plus a hash of the call's resolved
-      # inputs keyed by arg name (arity 2) — the latter lets an envelope echo an
-      # input such as the key (ADR 0065). Falls back to the agent `response`.
-      def shape(spec, result, pos, kwargs)
-        clr = spec.cli_response
-        return spec.response.call(result) unless clr
-        return clr.call(result) unless clr.arity == 2
+      # Fill CLI-specific defaults (cli_default:) for args the operator did not
+      # pass, where the CLI default diverges from the contract default the agent
+      # surfaces use — e.g. migrate/zone_mv apply by default on the CLI but plan
+      # by default for agents (ADR 0068). The divergence is legible in the
+      # contract, not hidden in a hand class.
+      def apply_cli_defaults(spec, inputs)
+        spec.args.each_with_object(inputs.dup) do |a, h|
+          next if a.cli_default == :__unset || h.key?(a.name)
 
-        positional_names = spec.args.select(&:positional).map(&:name)
-        inputs = positional_names.zip(pos).to_h.merge(kwargs)
-        clr.call(result, inputs)
+          h[a.name] = a.cli_default
+        end
+      end
+
+      # Shape the use-case result for the CLI wire via the verb's :cli view
+      # (falling back to the default view). The view is called uniformly as
+      # (result, inputs); an inputs-aware view echoes an input such as the key
+      # (ADR 0067).
+      def shape(spec, result, inputs)
+        Textus::Contract::View.render(spec, :cli, result, inputs)
+      end
+
+      # The default the CLI flag is generated against — `cli_default:` when the
+      # operator-facing default diverges from the contract default the agent
+      # surfaces use, else the contract `default`. This drives boolean flag
+      # polarity so a verb that applies-by-default on the CLI but plans-by-default
+      # for agents (migrate, zone_mv) gets a `--dry-run` flag, not `--no-dry-run`.
+      def effective_default(arg)
+        arg.cli_default == :__unset ? arg.default : arg.cli_default
       end
 
       def flagspec_for(arg)
         wire = arg.wire.to_s.tr("_", "-")
         if arg.type == :boolean
-          arg.default == true ? "--no-#{wire}" : "--#{wire}"
+          effective_default(arg) == true ? "--no-#{wire}" : "--#{wire}"
         else
           "--#{wire}=VALUE"
         end
       end
 
+      # NB: compare arg.type by equality, not `case`/`===` — `Integer === arg.type`
+      # is false when arg.type is the Integer *class* (it tests instance-of), so a
+      # `when Integer` branch would silently never coerce.
       def coerce(arg, raw)
-        case arg.type
-        when :boolean then arg.default != true
-        when Integer  then Integer(raw)
-        else raw
-        end
+        return effective_default(arg) != true if arg.type == :boolean
+        return Integer(raw) if arg.type == Integer
+
+        raw
       end
 
       def ensure_group(name)
@@ -120,22 +127,23 @@ module Textus
         g
       end
 
-      # Verbs that keep a hand-authored CLI class and must NOT be generated:
-      # genuine escape hatches the generic runner cannot express — stdin
-      # (put/propose), file reads (migrate/rule_lint), stateful resources
-      # (build/BuildLock, pulse/CursorStore), one-command-two-verbs multi-dispatch
-      # (key delete/mv via --prefix), domain behavior (get's UnknownKey +
-      # suggestions), and the bulk-destructive verbs whose CLI default differs
-      # from their Ruby/MCP default (zone_mv applies by default on the CLI but
-      # plans by default for agents, ADR 0060 — generating it would flip that).
-      # `audit` stays for its `since` String→Time coercion and `**filters`
-      # keyrest #call (ADR 0065 left it: converting one verb is not worth a
-      # one-off `coerce:` primitive). Output-only hatches (uid, blame) became
-      # generated verbs via arity-2 `cli_response` (ADR 0065).
+      # Behavioral escape hatches only — verbs whose CLI behavior is NOT a
+      # projection of the contract (ADR 0068). Acquisition (stdin/file/coerce),
+      # surface-divergent defaults (cli_default:), stateful wrappers (around:),
+      # and multi-dispatch splits are all declarative now and generate. What
+      # remains is genuine behavior:
+      #   put       — IntakeFetch read-through orchestration
+      #   get       — raises UnknownKey with resolver suggestions, a CLI-only
+      #               affordance the agent surface deliberately omits (returns nil)
+      #   build     — CLI auto-resolves the build-capability actor role (not the
+      #               --as role) and serializes under BuildLock; the role
+      #               resolution is policy, not a projection (around: covers only
+      #               the lock, so build stays whole — ADR 0068)
+      #   fetch/fetch_all — worker verbs (background intake), not request/response
+      #   boot/doctor     — composite reports assembled outside the contract
       HAND_AUTHORED_VERBS = %i[
-        get put propose build delete mv key_delete_prefix key_mv_prefix
-        migrate rule_lint zone_mv fetch fetch_all boot doctor
-        audit pulse
+        get put build
+        fetch fetch_all boot doctor
       ].freeze
 
       def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)
@@ -165,6 +173,7 @@ module Textus
         klass.command_name leaf
         klass.parent_group group if group
         klass.option :as_flag, "--as=ROLE"
+        klass.option :use_stdin, "--stdin" if spec.cli_stdin
         non_positional.each { |a| klass.option a.name, Runner.flagspec_for(a) }
 
         # Anchor the anonymous class to a constant so descendants discovery is

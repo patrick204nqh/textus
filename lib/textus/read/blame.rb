@@ -15,7 +15,7 @@ module Textus
       cli      "blame"
       arg :key,   String,  required: true, positional: true, description: "entry key to blame"
       arg :limit, Integer, required: false, description: "maximum number of audit rows to return"
-      cli_response { |rows, inputs| { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }
+      view(:cli) { |rows, inputs| { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @container = container

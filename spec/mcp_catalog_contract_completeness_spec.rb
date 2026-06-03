@@ -2,7 +2,7 @@ require "spec_helper"
 
 # Guard (ADR 0039): the floor for the residue derivation can't cover. A verb
 # marked surfaces(:mcp) must declare a contract; if its raw return value is not
-# already JSON-encodable it must declare a `response` shaper. A verb added to
+# already JSON-encodable it must declare a default `view` shaper. A verb added to
 # the dispatcher with no contract cannot be reached by MCP, but this guard also
 # stops a half-declared contract (surfaces :mcp but unusable) from shipping.
 RSpec.describe "MCP-surfaced verbs are completely declared (ADR 0039)" do
@@ -26,7 +26,7 @@ RSpec.describe "MCP-surfaced verbs are completely declared (ADR 0039)" do
     end
   end
 
-  it "every MCP spec carries a callable response shaper" do
-    expect(mcp_specs.map(&:response)).to all(respond_to(:call))
+  it "every MCP spec carries a callable default view shaper" do
+    expect(mcp_specs.map { |s| s.view(:default) }).to all(respond_to(:call))
   end
 end

@@ -7,10 +7,15 @@ module Textus
     # declares `command_name "X"` and has no `parent_group` is a top-level
     # verb. Sorted alphabetically for stable help output. Adding a new
     # verb requires only a new file declaring its `command_name`.
+    #
+    # `k.name` gates out anonymous (Class.new) subclasses: real verbs are always
+    # named constants (generated Gen* or hand-authored classes), so this is a
+    # no-op in production but keeps throwaway test fixtures from leaking into the
+    # registry (and tripping the reconciliation guards order-dependently).
     def self.verbs
       Runner.install!
       Verb.descendants
-          .select { |k| k.command_name && k.parent_group.nil? }
+          .select { |k| k.name && k.command_name && k.parent_group.nil? }
           .sort_by(&:command_name)
           .to_h { |k| [k.command_name, k] }
     end

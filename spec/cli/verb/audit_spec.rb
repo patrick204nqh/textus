@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb::Audit do
+RSpec.describe "textus audit (generated via coerce:since + cli view, ADR 0068)" do
   include_context "textus_store_fixture"
 
   let(:stdin)  { StringIO.new }

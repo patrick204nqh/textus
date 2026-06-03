@@ -36,7 +36,7 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
 
   it "previews a bulk rename without touching files when dry_run" do
     plan = build_key_mv_prefix.call(
-      from_prefix: "working.old", to_prefix: "working.new", dry_run: true,
+      "working.old", "working.new", dry_run: true
     )
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to all(eq("mv"))
@@ -49,7 +49,7 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
 
   it "applies the rename when dry_run: false" do
     build_key_mv_prefix.call(
-      from_prefix: "working.old", to_prefix: "working.new", dry_run: false,
+      "working.old", "working.new", dry_run: false
     )
     expect(File.exist?(File.join(root, "zones/working/old/a.md"))).to be(false)
     expect(File.exist?(File.join(root, "zones/working/new/a.md"))).to be(true)

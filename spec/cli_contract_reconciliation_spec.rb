@@ -43,7 +43,10 @@ RSpec.describe "CLI reconciles with the contract (ADR 0063)" do
 
   it "every contract-projected/escape-hatch command dispatches the verb its own contract names" do
     offenders = Textus::CLI::Verb.descendants.select do |k|
-      k.command_name && k.respond_to?(:spec) && k.spec
+      # Anonymous (name.nil?) subclasses are throwaway fixtures other specs
+      # build with Class.new(Verb); they leak into .descendants and would
+      # offend this seed-sensitively. Real commands are always named constants.
+      k.name && k.command_name && k.respond_to?(:spec) && k.spec
     end.reject do |k|
       # The command sits at its own contract's declared cli_path, and its
       # contract verb is a real dispatcher verb.

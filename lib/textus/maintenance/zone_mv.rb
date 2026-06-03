@@ -12,10 +12,11 @@ module Textus
       summary  "Rename a zone — manifest + files. Refuses if destination exists."
       surfaces :cli, :ruby, :mcp
       cli      "zone mv"
-      arg :from,    String, required: true, description: "current zone name"
-      arg :to,      String, required: true, description: "new zone name; refused if a zone by this name already exists"
-      arg :dry_run, :boolean, description: "defaults true: returns the plan without writing. Pass dry_run: false to apply the rename."
-      response(&:to_h)
+      arg :from,    String, required: true, positional: true, description: "current zone name"
+      arg :to,      String, required: true, positional: true, description: "new zone name; refused if a zone by this name already exists"
+      arg :dry_run, :boolean, default: true, cli_default: false,
+                              description: "agents plan by default; the CLI applies by default (pass --dry-run to plan only)"
+      view { |v, _i| v.to_h }
 
       def initialize(container:, call:)
         @container = container
@@ -24,7 +25,7 @@ module Textus
         @root      = container.root
       end
 
-      def call(from:, to:, dry_run: true)
+      def call(from, to, dry_run: true)
         raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
         raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
 

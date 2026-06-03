@@ -12,7 +12,14 @@ module Textus
     # envelope key) when it must differ from the use-case kwarg `name` — e.g. `put`
     # takes the `meta:` kwarg but exposes `_meta` on the wire to match what `get`
     # returns and what the CLI `--stdin` envelope already speaks (ADR 0057).
-    Arg = Data.define(:name, :type, :required, :positional, :session_default, :description, :wire_name, :default) do
+    # `source: :file` (CLI only) reads the arg's value as a path -> file
+    # contents; `coerce:` is a callable applied to the raw value (CLI only);
+    # `cli_default:` supplies a CLI-specific default that diverges from the
+    # contract `default` the agent surfaces use (`:__unset` sentinel = none).
+    Arg = Data.define(
+      :name, :type, :required, :positional, :session_default,
+      :description, :wire_name, :default, :source, :coerce, :cli_default
+    ) do
       # The name used on the wire (defaults to the kwarg name).
       def wire = wire_name || name
     end
@@ -26,9 +33,14 @@ module Textus
       JSON_TYPES.fetch(type) { raise ArgumentError.new("no JSON type mapping for #{type.inspect}") }
     end
 
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :response, :cli, :cli_response) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :around, :cli_stdin) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
+
+      # The output shaper for a surface; falls back to the default view. Every
+      # view is invoked uniformly as `view.call(result, inputs)` — a view that
+      # declares one parameter ignores `inputs` (procs tolerate extra args).
+      def view(surface = :default) = views[surface] || views.fetch(:default)
 
       # Operator-facing command path. Defaults to the verb token; grouped verbs
       # declare e.g. `cli "schema show"`.
@@ -95,29 +107,46 @@ module Textus
         end
       end
 
-      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil) # rubocop:disable Metrics/ParameterLists
+      # Declare a stateful wrapper resource (Contract::Around) to run around
+      # dispatch — e.g. `around :cursor` (pulse) or `around :build_lock` (build).
+      def around(name = nil)
+        return @__around unless name
+
+        raise "contract already built; declare around before reading .contract" if defined?(@__contract) && @__contract
+
+        @__around = name
+      end
+
+      def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil, source: nil, coerce: nil, cli_default: :__unset) # rubocop:disable Metrics/ParameterLists,Layout/LineLength
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
           positional: positional, session_default: session_default,
-          description: description, wire_name: wire_name, default: default
+          description: description, wire_name: wire_name, default: default,
+          source: source, coerce: coerce, cli_default: cli_default
         )
       end
 
-      def response(&blk)
-        @__response = blk if blk
-        @__response || ->(v) { v }
+      # Verb-level: the CLI reads its inputs from a stdin envelope of this mode.
+      # `:json` parses stdin as a JSON object and distributes its keys to args
+      # by wire-name. nil means no stdin acquisition.
+      def cli_stdin(mode = :__read)
+        return @__cli_stdin if mode == :__read
+
+        raise "contract already built; declare cli_stdin before reading .contract" if defined?(@__contract) && @__contract
+
+        @__cli_stdin = mode
       end
 
-      def cli_response(&blk)
-        if blk
-          raise "contract already built; declare cli_response before reading .contract" if defined?(@__contract) && @__contract
+      # Declare an output shaper. `view { ... }` is the default (MCP + Ruby);
+      # `view(:cli) { ... }` overrides for the CLI. Both receive (result, inputs).
+      def view(surface = :default, &blk)
+        return (@__views ||= {})[surface] unless blk
 
-          @__cli_response = blk
-        else
-          @__cli_response
-        end
+        raise "contract already built; declare view before reading .contract" if defined?(@__contract) && @__contract
+
+        (@__views ||= {})[surface] = blk
       end
 
       def contract?
@@ -133,9 +162,10 @@ module Textus
           summary: @__summary,
           args: (@__args || []).freeze,
           surfaces: (@__surfaces || []).freeze,
-          response: response,
+          views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
-          cli_response: @__cli_response,
+          around: @__around,
+          cli_stdin: @__cli_stdin,
         )
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName

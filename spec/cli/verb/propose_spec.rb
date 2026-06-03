@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb::Propose do
+RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   include_context "textus_store_fixture"
 
   let(:stdin) { StringIO.new }
@@ -63,11 +63,13 @@ RSpec.describe Textus::CLI::Verb::Propose do
     expect(File.exist?(File.join(root, "zones/#{propose_zone}/notes/oncall.md"))).to be(true)
   end
 
-  it "raises UsageError mentioning stdin when --stdin is omitted" do
+  it "errors when no envelope is piped (required _meta missing)" do
+    # The envelope is read from stdin; with nothing piped the required _meta
+    # arg surfaces as missing (the --stdin flag is now a vestigial no-op).
     rc = run(["--root=#{root}", "propose", "notes.x", "--as=agent"])
     expect(rc).not_to eq(0)
     output = JSON.parse(stdout.string)
-    expect(output["message"]).to match(/stdin/)
+    expect(output["message"]).to match(/_meta/)
   end
 
   it "raises UsageError mentioning propose_zone when the acting role cannot write the queue" do

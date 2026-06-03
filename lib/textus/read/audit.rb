@@ -41,10 +41,13 @@ module Textus
       arg :zone,           String,  required: false, description: "filter to keys in this zone"
       arg :role,           String,  required: false, description: "filter to rows written under this role"
       arg :verb,           String,  required: false, description: "filter to rows for this verb"
-      arg :since,          String,  required: false, description: "ISO-8601 timestamp or relative offset (e.g. 1h, 30m)"
+      arg :since,          String,  required: false,
+                                    coerce: ->(s) { Textus::Read::Audit.parse_since(s, now: Time.now) },
+                                    description: "ISO-8601 timestamp or relative offset (e.g. 1h, 30m)"
       arg :seq_since,      Integer, required: false, description: "return rows with seq > this cursor value"
       arg :correlation_id, String,  required: false, description: "filter to rows with this correlation_id"
       arg :limit,          Integer, required: false, description: "maximum number of rows to return"
+      view(:cli) { |rows, _i| { "verb" => "audit", "rows" => rows } }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest  = container.manifest

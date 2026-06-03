@@ -8,7 +8,7 @@ module Textus
       surfaces :cli, :ruby
       cli      "key uid"
       arg :key, String, required: true, positional: true, description: "entry key"
-      cli_response { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }
+      view(:cli) { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }
 
       def initialize(container:, call:)
         @container = container

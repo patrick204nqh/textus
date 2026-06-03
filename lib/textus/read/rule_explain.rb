@@ -17,7 +17,7 @@ module Textus
                            description: "dotted key whose effective rules you want (fetch ttl/action, write guard, ...)"
       arg :detail, :boolean,
           description: "defaults false: lean {fetch, guard}. detail: true adds matched blocks + guard predicates per transition."
-      cli_response { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
+      view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest

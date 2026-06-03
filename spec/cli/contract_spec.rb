@@ -45,7 +45,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     actual = Textus::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
     expected = {
       "accept" => Textus::CLI::Verb::GenAccept,
-      "audit" => Textus::CLI::Verb::Audit,
+      "audit" => Textus::CLI::Verb::GenAudit,
       "blame" => Textus::CLI::Verb::GenBlame,
       "build" => Textus::CLI::Verb::Build,
       "deps" => Textus::CLI::Verb::GenDeps,
@@ -59,11 +59,11 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
       "published" => Textus::CLI::Verb::GenPublished,
-      "pulse" => Textus::CLI::Verb::Pulse,
-      "propose" => Textus::CLI::Verb::Propose,
+      "pulse" => Textus::CLI::Verb::GenPulse,
+      "propose" => Textus::CLI::Verb::GenPropose,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::GenRdeps,
-      "migrate" => Textus::CLI::Verb::Migrate,
+      "migrate" => Textus::CLI::Verb::GenMigrate,
       "fetch" => Textus::CLI::Group::Fetch,
       "reject" => Textus::CLI::Verb::GenReject,
       "retain" => Textus::CLI::Verb::GenRetain,
@@ -86,17 +86,19 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "run" => Textus::CLI::Verb::HookRun,
     )
     expect(Textus::CLI::Group::Key.subcommands).to eq(
-      "delete" => Textus::CLI::Verb::KeyDelete,
-      "mv" => Textus::CLI::Verb::Mv,
+      "delete" => Textus::CLI::Verb::GenDelete,
+      "delete-prefix" => Textus::CLI::Verb::GenKeyDeletePrefix,
+      "mv" => Textus::CLI::Verb::GenMv,
+      "mv-prefix" => Textus::CLI::Verb::GenKeyMvPrefix,
       "uid" => Textus::CLI::Verb::GenUid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
       "explain" => Textus::CLI::Verb::GenRuleExplain,
-      "lint" => Textus::CLI::Verb::RuleLint,
+      "lint" => Textus::CLI::Verb::GenRuleLint,
       "list" => Textus::CLI::Verb::GenRuleList,
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(
-      "mv" => Textus::CLI::Verb::ZoneMv,
+      "mv" => Textus::CLI::Verb::GenZoneMv,
     )
     expect(Textus::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::CLI::Verb::SchemaDiff,

@@ -34,7 +34,7 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
 
   it "previews keys to delete without touching files" do
     plan = build_key_delete_prefix.call(
-      prefix: "working.notes", dry_run: true,
+      "working.notes", dry_run: true
     )
     expect(plan.steps.map { |s| s["key"] }).to contain_exactly("working.notes.a", "working.notes.b")
     expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(true)
@@ -42,7 +42,7 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
 
   it "deletes when dry_run: false" do
     build_key_delete_prefix.call(
-      prefix: "working.notes", dry_run: false,
+      "working.notes", dry_run: false
     )
     expect(Dir.glob(File.join(root, "zones/working/notes/*.md"))).to be_empty
   end

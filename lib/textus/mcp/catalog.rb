@@ -4,7 +4,7 @@ module Textus
     # (ADR 0039). `tool_schemas` feeds tools/list; `call` is the generic
     # tools/call dispatch: map JSON args -> (positional, keyword) per the
     # contract, invoke the verb through the role scope, then shape the
-    # return value with the contract's response block. No per-tool code.
+    # return value with the contract's default view. No per-tool code.
     module Catalog
       module_function
 
@@ -55,44 +55,17 @@ module Textus
         raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
         spec = klass.contract
-        pos, kw = map_args(spec, args || {}, session)
-        result = store.as(session.role).public_send(spec.verb, *pos, **kw)
-        spec.response.call(result)
+        inputs = spec.args.each_with_object({}) do |a, h|
+          h[a.name] = (args || {})[a.wire.to_s] if (args || {}).key?(a.wire.to_s)
+        end
+        result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session, validate: true)
+        Textus::Contract::View.render(spec, :default, result, inputs)
+      rescue Textus::Contract::MissingArgs => e
+        raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
       rescue ContractDrift, CursorExpired
         raise
       rescue Textus::Error => e
         raise ToolError.new("#{name}: #{e.message}")
-      end
-
-      # Splits the raw JSON arg hash into the positional list and keyword hash
-      # the use-case expects, validating required presence first.
-      # Session-default args (session_default: :method_name) are injected from
-      # the session when absent from the wire; they are never treated as missing.
-      # Positional args are emitted in contract declaration order; use-case signatures must match.
-      def map_args(spec, raw, session = nil)
-        missing = spec.required_args.map { |a| a.wire.to_s } - raw.keys
-        raise ToolError.new("#{spec.verb}: missing #{missing.join(", ")}") unless missing.empty?
-
-        positional = []
-        keyword = {}
-        spec.args.each do |a|
-          if raw.key?(a.wire.to_s)
-            value = raw[a.wire.to_s]
-          elsif a.session_default && session
-            value = session.public_send(a.session_default)
-          elsif !a.default.nil?
-            value = a.default
-          else
-            next
-          end
-
-          if a.positional
-            positional << value
-          else
-            keyword[a.name] = value
-          end
-        end
-        [positional, keyword]
       end
     end
   end

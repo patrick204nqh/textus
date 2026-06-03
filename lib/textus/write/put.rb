@@ -16,7 +16,7 @@ module Textus
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
       arg :if_etag, String,
           description: "optimistic-concurrency guard: the etag you last read; the write is rejected if the entry changed since"
-      response { |env| { "uid" => env.uid, "etag" => env.etag } }
+      view { |env| { "uid" => env.uid, "etag" => env.etag } }
 
       def initialize(container:, call:)
         @container    = container

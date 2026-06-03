@@ -29,14 +29,21 @@ MCP gate:   textus mcp serve — same use cases, JSON-RPC.
 ```
 
 The CLI is a **projection of the per-verb `Contract`** (ADR 0063), the operator
-mirror of `MCP::Catalog`: `CLI::Runner` generates a command per `:cli` contract
-from its `cli` path and (where the operator envelope differs from the agent
-return) its `cli_response` shaper, dispatching `contract.verb` by construction.
-Verbs with genuine behavior subclass `Runner::Base` and override `#invoke` only
-— the name stays contract-derived. Only commands with no dispatcher verb
-(`init`, `hook`, `mcp serve`, `schema diff/init`) and the custom-output/parse
-`boot`/`doctor`/`fetch` stay hand-authored. A total reconciliation spec makes
-name/dispatch drift unrepresentable.
+mirror of `MCP::Catalog`. The contract now owns the whole request lifecycle —
+`acquire → bind → invoke → render` (ADRs 0066–0068): one `Contract::Binder.bind`
+splits the uniform by-name `inputs` hash into the use-case's positional/keyword
+args for every surface; per-surface `view`s shape the output (`view` for
+MCP/Ruby, `view(:cli)` for the operator envelope); declarative `source:`/
+`coerce:`/`cli_stdin` populate inputs from files and stdin; `around:` resources
+wrap the single dispatch site (`RoleScope#dispatch_bound`) for stateful verbs;
+and `cli_default:` declares a CLI default that diverges from the agent default.
+`CLI::Runner` generates a command per `:cli` contract, dispatching `contract.verb`
+by construction. Only verbs with genuine *behavior* — `put` (fetch
+orchestration), `get` (UnknownKey + resolver suggestions, CLI-only), `build`
+(actor-role resolution + BuildLock), the `fetch`/`fetch_all` workers, and the
+`boot`/`doctor` composite reports — stay hand-authored, plus commands with no
+dispatcher verb (`init`, `hook`, `mcp serve`, `schema diff/init`). Total
+reconciliation specs make name/dispatch/facet drift unrepresentable.
 
 **Application**
 
@@ -184,7 +191,7 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 `Read::Get` is the single public read verb (ADR 0062). It is read-through by default: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule. An optional `fetch: false` flag (CLI `--no-fetch`, MCP `{fetch:false}`) forces a pure on-disk read.
 
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
-2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The contract declares `arg :fetch, default: true`, injected by `RoleScope` and `MCP::Catalog.map_args` at every verb-dispatch chokepoint — so the public verb is always read-through unless the caller explicitly passes `fetch: false`.
+2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The contract declares `arg :fetch, default: true`, injected by `Contract::Binder.bind` at the single verb-dispatch chokepoint (`RoleScope#dispatch_bound`) for every surface — so the public verb is always read-through unless the caller explicitly passes `fetch: false`.
 3. `Read::Get#call(key, fetch: false)` runs the pure read sub-step inline: resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
 4. If `fetch: true` and the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator` (built lazily — a pure `fetch: false` call never touches the orchestrator). The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
 5. The outcome is mapped back to an envelope: `Fetched` → fresh envelope from the write; `Detached` → original envelope with `fetching: true`; `Failed` → original envelope with `fetch_error` set; `Skipped` → original envelope unchanged.
