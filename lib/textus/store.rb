@@ -8,24 +8,31 @@ module Textus
       explicit = root || ENV.fetch("TEXTUS_ROOT", nil)
       return discover_explicit(explicit) if explicit
 
-      dir = File.expand_path(start_dir)
+      ascend_for_store(File.expand_path(start_dir)) ||
+        raise(IoError.new("no .textus directory found from #{start_dir}"))
+    end
+
+    private_class_method def self.ascend_for_store(dir)
       loop do
         candidate = File.join(dir, ".textus")
-        return new(candidate) if File.directory?(candidate) && File.exist?(File.join(candidate, "manifest.yaml"))
+        return new(candidate) if store_dir?(candidate)
 
         parent = File.dirname(dir)
-        break if parent == dir
+        return nil if parent == dir
 
         dir = parent
       end
-      raise IoError.new("no .textus directory found from #{start_dir}")
     end
 
     private_class_method def self.discover_explicit(root_arg)
       abs = File.expand_path(root_arg)
-      raise IoError.new("no textus store at #{abs}") unless File.directory?(abs) && File.exist?(File.join(abs, "manifest.yaml"))
+      raise IoError.new("no textus store at #{abs}") unless store_dir?(abs)
 
       new(abs)
+    end
+
+    private_class_method def self.store_dir?(dir)
+      File.directory?(dir) && File.exist?(File.join(dir, "manifest.yaml"))
     end
 
     def initialize(root)
