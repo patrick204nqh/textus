@@ -1,5 +1,7 @@
 require "spec_helper"
 
+Textus::CLI.verbs # trigger Runner.install! so the Gen* verb classes exist
+
 RSpec.describe "restructure CLI verbs" do
   it "registers Group::Zone with command_name 'zone'" do
     expect(Textus::CLI::Group::Zone.command_name).to eq("zone")
@@ -27,7 +29,10 @@ RSpec.describe "restructure CLI verbs" do
     expect(Textus::CLI::Verb::GenMigrate.parent_group).to be_nil
   end
 
-  it "Verb::Mv exposes a --prefix flag" do
-    expect(Textus::CLI::Verb::Mv.options.map(&:first)).to include(:prefix)
+  it "registers the generated key mv + mv-prefix verbs under the key group" do
+    expect(Textus::CLI::Verb::GenMv.command_name).to eq("mv")
+    expect(Textus::CLI::Verb::GenMv.parent_group).to eq(Textus::CLI::Group::Key)
+    expect(Textus::CLI::Verb::GenKeyMvPrefix.command_name).to eq("mv-prefix")
+    expect(Textus::CLI::Verb::GenKeyMvPrefix.parent_group).to eq(Textus::CLI::Group::Key)
   end
 end

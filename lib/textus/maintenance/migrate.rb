@@ -42,11 +42,13 @@ module Textus
       private
 
       def invoke_op(op_name, op_hash, dry_run:)
-        kwargs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
         klass = op_class(op_name)
-        klass.new(
-          container: @container, call: @call,
-        ).call(**kwargs)
+        inputs = op_hash.except("op").transform_keys(&:to_sym).merge(dry_run: dry_run)
+        # Each op now carries positional args (from/to, from_prefix/to_prefix,
+        # prefix); split the YAML fields into (positional, keyword) via the op's
+        # own contract so we call its #call signature correctly (ADR 0066/0068).
+        args, kwargs = Textus::Contract::Binder.bind(klass.contract, inputs, validate: false)
+        klass.new(container: @container, call: @call).call(*args, **kwargs)
       end
 
       def op_class(op_name)

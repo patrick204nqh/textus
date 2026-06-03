@@ -88,7 +88,8 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     expect(Textus::CLI::Group::Key.subcommands).to eq(
       "delete" => Textus::CLI::Verb::GenDelete,
       "delete-prefix" => Textus::CLI::Verb::GenKeyDeletePrefix,
-      "mv" => Textus::CLI::Verb::Mv,
+      "mv" => Textus::CLI::Verb::GenMv,
+      "mv-prefix" => Textus::CLI::Verb::GenKeyMvPrefix,
       "uid" => Textus::CLI::Verb::GenUid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
