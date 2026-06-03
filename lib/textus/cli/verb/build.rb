@@ -1,12 +1,12 @@
 module Textus
   class CLI
     class Verb
-      class Build < Verb
-        command_name "build"
+      class Build < Runner::Base
+        self.spec = Textus::Write::Build.contract
 
         option :prefix, "--prefix=K"
 
-        def call(store)
+        def invoke(store)
           role = store.manifest.policy.actor_for("build") or
             raise UsageError.new(
               "no role holds the 'build' capability",
@@ -14,7 +14,7 @@ module Textus
             )
           Textus::Ports::BuildLock.with(root: store.root) do
             ops = store.as(role)
-            result = ops.publish(prefix: prefix)
+            result = ops.build(prefix: prefix)
             emit(result)
           end
         end

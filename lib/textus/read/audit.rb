@@ -30,6 +30,22 @@ module Textus
         end
       end
 
+      extend Textus::Contract::DSL
+
+      verb     :audit
+      summary  "Query the audit log with optional filters."
+      surfaces :cli, :ruby
+      cli      "audit"
+      # #call(**filters) — args map to Query.build keyword params (ADR 0063)
+      arg :key,            String,  required: false, description: "filter to rows for this key"
+      arg :zone,           String,  required: false, description: "filter to keys in this zone"
+      arg :role,           String,  required: false, description: "filter to rows written under this role"
+      arg :verb,           String,  required: false, description: "filter to rows for this verb"
+      arg :since,          String,  required: false, description: "ISO-8601 timestamp or relative offset (e.g. 1h, 30m)"
+      arg :seq_since,      Integer, required: false, description: "return rows with seq > this cursor value"
+      arg :correlation_id, String,  required: false, description: "filter to rows with this correlation_id"
+      arg :limit,          Integer, required: false, description: "maximum number of rows to return"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest  = container.manifest
         @root      = container.root

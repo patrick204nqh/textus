@@ -6,7 +6,7 @@ module Textus
     module Tools
       # textus schema init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
       def self.init(store, name:, from:)
-        env = store.as(Textus::Role::DEFAULT).get(from)
+        env = pure_get(store, Textus::Role::DEFAULT, from)
         meta = env.meta
         schema = {
           "name" => name,
@@ -25,7 +25,7 @@ module Textus
         schema = load_schema(store, name)
         drift = []
         store.manifest.resolver.enumerate.each do |row|
-          env = store.as(Textus::Role::DEFAULT).get(row[:key])
+          env = pure_get(store, Textus::Role::DEFAULT, row[:key])
           begin
             schema.validate!(env.meta)
           rescue SchemaViolation => e
@@ -53,7 +53,7 @@ module Textus
         ops = store.as(authority)
         touched = []
         store.manifest.resolver.enumerate.each do |row|
-          env = ops.get(row[:key])
+          env = pure_get(store, authority, row[:key])
           meta = env.meta.dup
           changed = false
           renames.each do |old, new|
@@ -79,6 +79,15 @@ module Textus
         when Hash    then "object"
         else "string"
         end
+      end
+
+      # Orchestrator-free read: schema tooling must never trigger a fetch
+      # while inspecting/migrating entries (ADR 0062).
+      def self.pure_get(store, role, key)
+        Textus::Read::Get.new(
+          container: store.as(role).container,
+          call: Textus::Call.build(role: role),
+        ).call(key)
       end
 
       def self.load_schema(store, name)

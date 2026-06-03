@@ -92,7 +92,7 @@ External inputs land via `:resolve_intake` hooks, not shell commands. Each intak
 
 ```sh
 textus fetch feeds.notion.roadmap --as=automation
-textus fetch stale --zone=feeds --as=automation   # everything past its TTL
+textus fetch all --zone=feeds --as=automation   # everything past its TTL
 ```
 
 Freshness budgets live in the top-level `rules:` block, matched by glob:
@@ -103,24 +103,23 @@ rules:
     fetch: { ttl: 6h, on_stale: warn }   # warn | sync | timed_sync
 ```
 
-A typical scheduled-fetch integration shells the `fetch stale` sweep itself:
+A typical scheduled-fetch integration shells the `fetch all` sweep itself:
 
 ```sh
-textus fetch stale --zone=feeds --as=automation   # in cron / CI
+textus fetch all --zone=feeds --as=automation   # in cron / CI
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
 
 ### Read vs. fetch
 
-There are two read operations, and the difference matters in custom code:
+There is one public read operation (ADR 0062):
 
-| Operation | Triggers fetch? | Use for |
-|-----------|-----------------|---------|
-| `ops.get` | No — pure read of on-disk envelope + freshness verdict | build / materialization paths, schema tooling, any context where a side-effecting read would surprise the caller |
-| `ops.get_or_fetch` | Yes — composes `get` with the orchestrator per the rule's `on_stale` policy | interactive reads (`textus get`, dashboards) where the caller wants the freshest envelope obtainable |
+| Operation | Behaviour | Use for |
+|-----------|-----------|---------|
+| `ops.get` | Read-through by default — fetches on stale per the entry's fetch rule; degrades to a pure on-disk read when the key has no fetch rule. Pass `fetch: false` (CLI `--no-fetch`, MCP `{fetch:false}`) for an explicit pure read | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
 
-Build always uses the pure path; injecting fetch into materialization caused the cascading-staleness incident behind issue #59. Pick `get_or_fetch` only when you genuinely want side effects on read.
+Build pipelines and other internal callers that must never trigger a fetch (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::Get` directly with the method default `fetch: false` — a pure, orchestrator-free read. They bypass the verb-dispatch injection that sets `fetch: true`, so they always get pure reads without any extra argument.
 
 ## Body content
 

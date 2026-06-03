@@ -1,6 +1,19 @@
 module Textus
   module Write
     class Delete
+      extend Textus::Contract::DSL
+
+      verb     :delete
+      summary  "Delete one entry by key. Single-key, lower blast radius than " \
+               "key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}."
+      surfaces :cli, :ruby, :mcp
+      cli      "key delete"
+      arg :key, String, required: true, positional: true,
+                        description: "dotted entry key to delete"
+      arg :if_etag, String,
+          description: "optimistic-concurrency guard: the etag you last read; the delete is rejected if the entry changed since"
+      # `call` already returns a wire hash {protocol, ok, key, deleted}; identity response.
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

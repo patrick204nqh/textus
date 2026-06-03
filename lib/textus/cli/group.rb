@@ -6,6 +6,7 @@ module Textus
         # `parent_group` is this group counts as a subcommand. Sorted
         # alphabetically by command_name for stable help output.
         def subcommands
+          Textus::CLI::Runner.install!
           Verb.descendants
               .select { |k| k.parent_group == self && k.command_name }
               .sort_by(&:command_name)

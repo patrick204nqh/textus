@@ -6,6 +6,7 @@ module Textus
       verb     :fetch_all
       summary  "Fetch all stale quarantine entries, optionally scoped by zone/prefix."
       surfaces :cli, :ruby, :mcp
+      cli      "fetch all"
       arg :prefix, String, description: "only refresh stale entries whose key starts with this dotted prefix"
       arg :zone,   String, description: "only refresh stale entries in this quarantine zone (see `pulse` stale list)"
 

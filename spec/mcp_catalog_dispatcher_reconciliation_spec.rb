@@ -12,10 +12,10 @@ MCP_CATALOG_COMPOSED = [].freeze
 # CLI-only operations an agent should not be steered toward. Reviewer must
 # justify each. Edit this list when you add or expose a verb.
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
-  accept reject publish delete mv
-  audit blame deps rdeps where uid freshness stale
-  doctor policy_explain published retainable
-  get_or_fetch validate_all retention_sweep
+  accept reject build
+  audit blame uid freshness stale
+  doctor rule_list published retainable
+  validate_all retain
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
@@ -38,5 +38,10 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   it "the omit-list has no stale entries (all still dispatcher verbs)" do
     stale = MCP_CATALOG_INTENTIONALLY_OMITTED - dispatcher
     expect(stale).to be_empty, "omit-list names no longer registered: #{stale.inspect}"
+  end
+
+  it "maps the public `get` verb to the read-through use-case (ADR 0062)" do
+    expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Read::Get)
+    expect(Textus::Dispatcher::VERBS).not_to have_key(:get_or_fetch)
   end
 end

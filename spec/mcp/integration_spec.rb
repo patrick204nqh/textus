@@ -54,8 +54,9 @@ RSpec.describe "MCP end-to-end" do
     list_response = responses.find { |r| r["id"] == 2 }
     tool_names = list_response.dig("result", "tools").map { |t| t["name"] }
     expect(tool_names).to include("boot", "pulse", "list", "get", "put",
-                                  "propose", "schema", "rules")
-    expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale")
+                                  "propose", "schema_show", "rule_explain",
+                                  "deps", "rdeps", "where")
+    expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     # Self-updating: must equal the catalog's authoritative name list
     expect(tool_names.sort).to eq(Textus::MCP::Catalog.names.sort)
   end
@@ -99,6 +100,52 @@ RSpec.describe "MCP end-to-end" do
     expect(pulse2["changed"]).to be_empty
     # Cursor is stable — no new writes since the first pulse advanced it
     expect(pulse2["cursor"]).to eq(cursor_after_first_pulse)
+  end
+
+  it "deletes one key through the MCP catalog (ADR 0060 amendment)" do
+    responses = run_session([
+                              { id: 1, method: "initialize",
+                                params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
+                              { id: 2, method: "tools/call",
+                                params: { name: "put",
+                                          arguments: { key: "knowledge.note",
+                                                       "_meta" => { "name" => "note" }, body: "to-be-deleted\n" } } },
+                              { id: 3, method: "tools/call",
+                                params: { name: "delete", arguments: { "key" => "knowledge.note" } } },
+                            ])
+    expect(responses.map { |r| r["id"] }).to eq([1, 2, 3])
+    expect(responses.all? { |r| r["error"].nil? }).to be(true)
+    delete_result = JSON.parse(responses.find { |r| r["id"] == 3 }.dig("result", "content", 0, "text"))
+    expect(delete_result).to include("deleted" => true, "key" => "knowledge.note")
+  end
+
+  it "renames one key through the MCP catalog (single-key mv, ADR 0060 amendment)" do
+    # Extend the manifest with a second entry so mv has a valid manifest target
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: identity, kind: canon }
+        - { name: knowledge,  kind: canon }
+        - { name: proposals,   kind: queue }
+      entries:
+        - { key: knowledge.note,    path: knowledge/note.md,    zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.renamed, path: knowledge/renamed.md, zone: knowledge, owner: human:self, kind: leaf }
+    YAML
+
+    responses = run_session([
+                              { id: 1, method: "initialize",
+                                params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "e2e", version: "0" } } },
+                              { id: 2, method: "tools/call",
+                                params: { name: "put",
+                                          arguments: { key: "knowledge.note",
+                                                       "_meta" => { "name" => "note" }, body: "to-be-renamed\n" } } },
+                              { id: 3, method: "tools/call",
+                                params: { name: "mv", arguments: { "old_key" => "knowledge.note", "new_key" => "knowledge.renamed" } } },
+                            ])
+    expect(responses.map { |r| r["id"] }).to eq([1, 2, 3])
+    expect(responses.all? { |r| r["error"].nil? }).to be(true)
+    mv_result = JSON.parse(responses.find { |r| r["id"] == 3 }.dig("result", "content", 0, "text"))
+    expect(mv_result).to include("ok" => true, "from_key" => "knowledge.note", "to_key" => "knowledge.renamed")
   end
 
   it "put → get round-trip succeeds via JSON-RPC tools/call" do

@@ -456,7 +456,7 @@ A sentinel is written for each published file at `<store_root>/sentinels/<target
 
 ### 5.4 Intake (declared, fetched via registered intake handler)
 
-Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus fetch KEY --as=automation` (or by `textus fetch stale`). The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus fetch KEY --as=automation` (or by `textus fetch all`). The declaration is data only:
 
 ```yaml
 - key: feeds.calendar.events
@@ -478,7 +478,7 @@ rules:
 
 #### `on_stale:` semantics
 
-`on_stale:` declares what happens when `textus get` (or any read path that annotates freshness) encounters a stale intake entry. The value lives on the matching policy block, not on the entry. Vocabulary: `warn | sync | timed_sync`.
+`on_stale:` declares what happens when `get` encounters a stale intake entry. `get` is **read-through on every surface** (CLI, Ruby, MCP): it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule and degrading to a pure on-disk read for keys with no fetch rule (ADR 0062). The value lives on the matching policy block, not on the entry. Vocabulary: `warn | sync | timed_sync`.
 
 | Value | Behaviour |
 |---|---|
@@ -499,7 +499,7 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 **Fetch paths.** Two are supported:
 
 1. **In-process** — `textus fetch KEY --as=automation` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `fetch` (`automation` by default).
-2. **External automation** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`. The CLI verb `textus fetch stale [--prefix=K] [--zone=Z]` drives this loop in one shot.
+2. **External automation** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`. The CLI verb `textus fetch all [--prefix=K] [--zone=Z]` drives this loop in one shot.
 
 Both paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
@@ -719,7 +719,7 @@ than aborting the run.
 
 **Resolution.** For each key textus computes a `RuleSet { fetch, intake_handler_allowlist, guard, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key plus the effective guard predicate names for every write transition.
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{fetch, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
 
 ### 5.12 Storage formats
 
@@ -866,7 +866,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 |---|---|---|
 | `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
-| `get K` | read | any |
+| `get K [--no-fetch]` | read (read-through by default: fetch-on-stale per the entry's fetch rule, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
 | `schema show K` | read | any |
 | `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
@@ -881,9 +881,9 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `pulse [--since=N]` | read | any |
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `propose K --stdin --as=R` | write | `propose`-holder (auto-prefixes propose_zone) |
-| `delete K --if-etag=E --as=R` | write | per zone |
+| `key delete K --if-etag=E --as=R` | write | per zone |
 | `fetch KEY --as=automation` | write | `fetch`-holder (typically `automation`) |
-| `fetch stale [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |
+| `fetch all [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |
 | `build [--prefix=K] [--dry-run]` | write | `build`-holder (typically `automation`) |
 | `retain [--prefix=K] [--zone=Z] --as=ROLE` | write | per zone (role must write the matched zone) |
 | `accept K --as=human` | write | `author`-holder (typically `human`) |
@@ -898,8 +898,8 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 ```json
 {
   "agent_quickstart": {
-    "read_verbs":     ["get", "list", "pulse", "schema", "boot", "rules"],
-    "write_verbs":    ["put KEY --as=agent --stdin"],
+    "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
+    "write_verbs":    ["delete", "fetch", "fetch_all", "mv", "propose", "put"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
     "latest_seq":     1842
@@ -907,7 +907,9 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 }
 ```
 
-`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema` for an entry's field shape, `rules` for its freshness/guard policy) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema` verb before a `put`/`propose`, not by shelling out to a CLI.
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
+
+The agent's MCP write surface includes the single-key `delete` and `mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment); safety scales with blast radius — the bulk `*_prefix` ops default to a dry-run Plan, single-key `delete` executes under an optional `if_etag`, and single-key `mv` applies immediately but exposes an optional `dry_run`.
 
 `latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
 
@@ -936,7 +938,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
   "if_etag": "sha256:8f3c…" }
 ```
 
-`if_etag` is optional on `put`, required on `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted on `put`, the write is unconditional (last-writer-wins).
+`if_etag` is optional on both `put` and `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
 
 **`textus freshness` output shape:**
 
@@ -1109,7 +1111,7 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | Compute field | `projection.reduce:` | `compute.transform:` |
 | `_meta` key | `reducer` | `transform` |
 | CLI flag | `--format=json` (envelope) | `--output=json` |
-| CLI verb | `refresh-stale` | `fetch stale` |
+| CLI verb | `refresh-stale` | `fetch all` |
 | CLI verb | `policy list/explain` | `rule list/explain` |
 
 **Hook migration.** Legacy event names / DSL methods must be renamed to the textus/3 forms above before a hook will load; see `CHANGELOG.md` §0.11.0 for the full event-rename detail.
@@ -1124,7 +1126,7 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | `roles[*].kind:` (`accept_authority`/`generator`/`proposer`/`runner`) | `roles[*].can:` (subset of `propose`, `author`, `fetch`, `build`) |
 | Actors `runner`, `builder` | `automation` (`can: [fetch, build]`) by default |
 | `rules[*].refresh:` slot | `rules[*].fetch:` slot |
-| CLI `textus refresh` / `refresh stale` | `textus fetch` / `fetch stale` |
+| CLI `textus refresh` / `refresh stale` | `textus fetch` / `fetch all` |
 | `_meta.last_refreshed_at` | `_meta.last_fetched_at` |
 | Promotion predicate `:human_accept` / `:accept_authority_signed` | `:author_signed` |
 | Envelope `refreshing` | `fetching` |

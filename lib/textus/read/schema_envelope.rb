@@ -3,9 +3,10 @@ module Textus
     class SchemaEnvelope
       extend Textus::Contract::DSL
 
-      verb     :schema
+      verb     :schema_show
       summary  "Return the schema (field shape) for an entry's family, by key."
-      surfaces :ruby, :mcp
+      surfaces :cli, :ruby, :mcp
+      cli      "schema show"
       arg :key, String, required: true, positional: true,
                         description: "any key in the family whose schema you want; returns required/optional fields and their types"
 

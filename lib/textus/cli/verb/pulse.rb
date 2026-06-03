@@ -1,13 +1,13 @@
 module Textus
   class CLI
     class Verb
-      class Pulse < Verb
-        command_name "pulse"
+      class Pulse < Runner::Base
+        self.spec = Textus::Read::Pulse.contract
 
         option :as_flag, "--as=ROLE"
         option :since, "--since=N"
 
-        def call(store)
+        def invoke(store)
           role = resolved_role(store)
           ops = store.as(role)
 

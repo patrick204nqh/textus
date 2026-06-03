@@ -1,15 +1,15 @@
 module Textus
   class CLI
     class Verb
-      class Mv < Verb
-        command_name "mv"
+      class Mv < Runner::Base
+        self.spec = Textus::Write::Mv.contract
         parent_group Group::Key
 
         option :as_flag, "--as=ROLE"
         option :dry_run, "--dry-run"
         option :prefix, "--prefix"
 
-        def call(store)
+        def invoke(store)
           if prefix
             from_p = positional.shift or raise UsageError.new("mv --prefix requires <from-prefix> <to-prefix>")
             to_p   = positional.shift or raise UsageError.new("mv --prefix requires <from-prefix> <to-prefix>")

@@ -30,9 +30,10 @@ RSpec.describe Textus::Read::Deps do
     )
   end
 
-  it "returns the keys that artifacts.catalogs.people depends on" do
+  it "returns the structured deps for a derived entry (ADR 0060 amendment)" do
     ops = store.as("human")
     result = ops.deps("artifacts.catalogs.people")
-    expect(result).to include("knowledge.people")
+    expect(result["key"]).to eq("artifacts.catalogs.people")
+    expect(result["deps"]).to include("knowledge.people")
   end
 end

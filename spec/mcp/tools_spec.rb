@@ -108,25 +108,46 @@ RSpec.describe Textus::MCP::Tools do
     end
   end
 
-  describe ".call('schema', ...)" do
+  describe ".call('schema_show', ...)" do
     it "raises ToolError when the required key arg is missing" do
       expect do
-        described_class.call("schema", session: session, store: store, args: {})
+        described_class.call("schema_show", session: session, store: store, args: {})
       end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for an unknown key" do
       expect do
-        described_class.call("schema", session: session, store: store, args: { "key" => "no.such.key" })
+        described_class.call("schema_show", session: session, store: store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::MCP::ToolError)
     end
   end
 
-  describe ".call('rules', ...)" do
-    it "returns a Hash with at most fetch/guard keys" do
-      result = described_class.call("rules", session: session, store: store, args: { "key" => "knowledge.note" })
+  describe ".call('rule_explain', ...)" do
+    it "is lean by default: a Hash with at most fetch/guard keys" do
+      result = described_class.call("rule_explain", session: session, store: store, args: { "key" => "knowledge.note" })
       expect(result).to be_a(Hash)
       expect(result.keys - %w[fetch guard]).to be_empty
+    end
+
+    it "with detail: true returns the verbose explanation" do
+      result = described_class.call("rule_explain", session: session, store: store,
+                                                    args: { "key" => "knowledge.note", "detail" => true })
+      expect(result).to include(:key, :matched_blocks, :effective, :guards)
+    end
+  end
+
+  describe ".call('zone_mv', ...) — default-dry-run gate (ADR 0060)" do
+    it "returns a Plan without mutating when dry_run is omitted" do
+      result = described_class.call("zone_mv", session: session, store: store,
+                                               args: { "from" => "knowledge", "to" => "renamed" })
+      expect(result).to include("steps", "warnings")
+    end
+  end
+
+  describe ".call('where', ...) — graph-read now on MCP (ADR 0060)" do
+    it "resolves a key's zone and path" do
+      result = described_class.call("where", session: session, store: store, args: { "key" => "knowledge.note" })
+      expect(result["zone"]).to eq("knowledge")
     end
   end
 

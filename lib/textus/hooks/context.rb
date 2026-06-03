@@ -28,8 +28,17 @@ module Textus
         @scope
       end
 
-      # read
-      def get(key)                = @scope.get(key)
+      # read — a deliberately pure-observation surface: NOTHING here fetches
+      # (`list`/`deps`/`freshness` don't either). The invariant is that a hook
+      # observes current state and never triggers an I/O cascade. `get` bypasses
+      # the read-through behavior (ADR 0062) and reads with fetch:false directly,
+      # because read-through inside a hook would: (1) fire fetch events → hooks →
+      # unbounded reentrancy; (2) spawn the orchestrator's threads/fork from
+      # inside a hook callback; (3) probe the single-flight fetch lock its own
+      # enclosing fetch may hold (deadlock); (4) inject network latency into
+      # every hook read. With the merged Read::Get class, `fetch:false` (the
+      # method default) guarantees no orchestrator is built.
+      def get(key)                = pure_reader.call(key)
       def list(**)                = @scope.list(**)
       def deps(key)               = @scope.deps(key)
       def freshness(key)          = @scope.freshness(key)
@@ -49,6 +58,19 @@ module Textus
 
       def inspect
         "#<Textus::Hooks::Context role=#{@role} correlation_id=#{@correlation_id}>"
+      end
+
+      private
+
+      def pure_reader
+        @pure_reader ||= Textus::Read::Get.new(
+          container: @scope.container,
+          call: Textus::Call.build(
+            role: @scope.role,
+            correlation_id: @scope.correlation_id,
+            dry_run: @scope.dry_run?,
+          ),
+        )
       end
     end
   end

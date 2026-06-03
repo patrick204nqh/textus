@@ -2,7 +2,9 @@ require "spec_helper"
 require "stringio"
 require "time"
 
-RSpec.describe Textus::CLI::Verb::Freshness do
+Textus::CLI.verbs # triggers Runner.install! so Verb::GenFreshness exists
+
+RSpec.describe Textus::CLI::Verb::GenFreshness do
   include_context "textus_store_fixture"
 
   let(:stdin)  { StringIO.new }

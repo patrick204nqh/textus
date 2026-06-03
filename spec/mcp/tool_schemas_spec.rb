@@ -21,8 +21,9 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "exposes the current core read/write verbs (not retired ADR 0036 aliases)" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("boot", "pulse", "list", "get", "put",
-                               "fetch", "fetch_all", "propose", "schema", "rules")
-      expect(names).not_to include("tick", "find", "read", "write", "fetch_stale")
+                               "fetch", "fetch_all", "propose", "schema_show",
+                               "rule_explain", "deps", "rdeps", "where")
+      expect(names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     end
 
     it "exposes the maintenance tools" do
@@ -36,10 +37,25 @@ RSpec.describe Textus::MCP::ToolSchemas do
       expect(get[:inputSchema][:required]).to eq(["key"])
     end
 
+    it "get advertises an optional fetch flag (ADR 0062 amendment)" do
+      get = described_class.all.find { |t| t[:name] == "get" }
+      expect(get[:inputSchema][:properties]).to include("fetch")
+      expect(get[:inputSchema][:required]).to eq(["key"])
+    end
+
     it "boot tool takes no arguments" do
       boot = described_class.all.find { |t| t[:name] == "boot" }
       expect(boot[:inputSchema][:properties]).to eq({})
       expect(boot[:inputSchema][:required]).to eq([])
+    end
+
+    # The real guard here is the required-array assertions below; presence is belt-and-suspenders
+    # (already covered by the catalog-parity test above).
+    it "exposes single-key delete and mv (ADR 0060 amendment)" do
+      by_name = described_class.all.to_h { |t| [t[:name], t] }
+      expect(by_name).to include("delete", "mv")
+      expect(by_name["delete"][:inputSchema][:required]).to eq(["key"])
+      expect(by_name["mv"][:inputSchema][:required]).to eq(%w[old_key new_key])
     end
   end
 end

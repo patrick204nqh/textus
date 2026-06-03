@@ -30,9 +30,10 @@ RSpec.describe Textus::Read::Rdeps do
     )
   end
 
-  it "returns the keys that depend on knowledge.people" do
+  it "returns the structured dependents of a key (ADR 0060 amendment)" do
     ops = store.as("human")
     result = ops.rdeps("knowledge.people")
-    expect(result).to include("artifacts.catalogs.people")
+    expect(result["key"]).to eq("knowledge.people")
+    expect(result["rdeps"]).to include("artifacts.catalogs.people")
   end
 end

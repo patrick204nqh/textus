@@ -7,6 +7,15 @@ module Textus
     # <root>/archive/<relative-path> first, then deletes. Rows whose zone the
     # caller's role cannot write surface in `failed` rather than aborting.
     class RetentionSweep
+      extend Textus::Contract::DSL
+
+      verb     :retain
+      summary  "Apply each entry's retention policy; prune expired versions."
+      surfaces :cli, :ruby
+      cli      "retain"
+      arg :prefix, String, description: "restrict to keys starting with this dotted prefix"
+      arg :zone,   String, description: "restrict to entries in this zone"
+
       def initialize(container:, call:)
         @container = container
         @call      = call

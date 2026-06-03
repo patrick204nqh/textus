@@ -239,9 +239,9 @@ end
 To keep a batch of stale intake entries current in one shot:
 
 ```sh
-textus fetch stale --prefix=feeds --zone=feeds --as=automation
-# or just fetch everything stale in the feeds zone:
-textus fetch stale --zone=feeds --as=automation
+textus fetch all --prefix=feeds --zone=feeds --as=automation
+# or just fetch everything past its TTL in the feeds zone:
+textus fetch all --zone=feeds --as=automation
 ```
 
 See SPEC.md §5.10 for the full hook contract.

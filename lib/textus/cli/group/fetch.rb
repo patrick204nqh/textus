@@ -5,9 +5,9 @@ module Textus
         command_name "fetch"
 
         def parse(argv)
-          if argv.first == "stale"
+          if argv.first == "all"
             argv.shift
-            @sub_klass = Verb::FetchStale
+            @sub_klass = Verb::FetchAll
           else
             @sub_klass = Verb::Fetch
           end

@@ -28,6 +28,16 @@ CLI verbs:  store.<verb>(..., role:)
 MCP gate:   textus mcp serve — same use cases, JSON-RPC.
 ```
 
+The CLI is a **projection of the per-verb `Contract`** (ADR 0063), the operator
+mirror of `MCP::Catalog`: `CLI::Runner` generates a command per `:cli` contract
+from its `cli` path and (where the operator envelope differs from the agent
+return) its `cli_response` shaper, dispatching `contract.verb` by construction.
+Verbs with genuine behavior subclass `Runner::Base` and override `#invoke` only
+— the name stays contract-derived. Only commands with no dispatcher verb
+(`init`, `hook`, `mcp serve`, `schema diff/init`) and the custom-output/parse
+`boot`/`doctor`/`fetch` stay hand-authored. A total reconciliation spec makes
+name/dispatch drift unrepresentable.
+
 **Application**
 
 ```
@@ -37,10 +47,10 @@ Container        (single record — wired ports + manifest)
 Dispatcher       (static VERBS table: verb → use-case)
 RoleScope        (Store#as(role) — forwards verb calls)
 
-read/{get,get_or_fetch,list,where,uid,schema_envelope,
+read/{get,list,where,uid,schema_envelope,
       deps,rdeps,published,stale,validate_all,boot,doctor,
-      freshness,audit,blame,policy_explain,pulse}.rb
-write/{put,delete,mv,accept,reject,publish,
+      freshness,audit,blame,rule_explain,rule_list,pulse}.rb
+write/{put,delete,mv,accept,reject,build,
        materializer,intake_fetch,retention_sweep,
        fetch_worker,fetch_orchestrator,fetch_all}
 maintenance/{migrate,key_mv_prefix,key_delete_prefix,
@@ -171,13 +181,15 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Read path (`store.get(key)`)
 
-1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
-2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`.
-3. `Read::Get#call` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope.
-4. Looks up the fetch policy via `container.manifest.rules.for(key)`. If absent, returns the envelope annotated fresh.
-5. Otherwise `Domain::Freshness::Evaluator.call(policy, envelope, now:)` returns a `Verdict`; the envelope is annotated with `stale`, `reason`, `fetching: false`.
+`Read::Get` is the single public read verb (ADR 0062). It is read-through by default: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule. An optional `fetch: false` flag (CLI `--no-fetch`, MCP `{fetch:false}`) forces a pure on-disk read.
 
-`store.get_or_fetch(key)` composes `Read::Get` with `Write::FetchOrchestrator` to optionally fetch on stale.
+1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
+2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The contract declares `arg :fetch, default: true`, injected by `RoleScope` and `MCP::Catalog.map_args` at every verb-dispatch chokepoint — so the public verb is always read-through unless the caller explicitly passes `fetch: false`.
+3. `Read::Get#call(key, fetch: false)` runs the pure read sub-step inline: resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
+4. If `fetch: true` and the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator` (built lazily — a pure `fetch: false` call never touches the orchestrator). The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
+5. The outcome is mapped back to an envelope: `Fetched` → fresh envelope from the write; `Detached` → original envelope with `fetching: true`; `Failed` → original envelope with `fetch_error` set; `Skipped` → original envelope unchanged.
+
+The pure read is `Read::Get#call(key, fetch: false)` — it is the safe default for direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) that must never trigger a fetch. They construct `Read::Get` directly, bypassing the dispatch injection that sets `fetch: true`. The prior separate read-through path `get_or_fetch` and the separate pure class `Read::GetEntry` were both unified into the one `Read::Get` class (ADR 0062 amendment).
 
 ## Write path (`store.put(key, ...)`)
 
@@ -186,7 +198,7 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
 4. Publishes `:entry_put` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
-`Write::{Delete,Mv,Accept,Reject,Publish}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Write::{Delete,Mv,Accept,Reject,Build}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
 `Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 

@@ -58,7 +58,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
 
     it "mirrors every file by real path, including non-markdown, with per-file sentinels" do
       repo_root = File.dirname(root)
-      Textus::Store.new(root).as("automation").publish
+      Textus::Store.new(root).as("automation").build
 
       expect(File.read(File.join(repo_root, "skills/my-skill/commands.md"))).to eq("# commands\n")
       expect(File.read(File.join(repo_root, "skills/my-skill/references/foo.md"))).to eq("foo reference\n")
@@ -69,7 +69,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
     end
 
     it "reports every mirrored file in published_leaves under the entry key" do
-      envelope = Textus::Store.new(root).as("automation").publish
+      envelope = Textus::Store.new(root).as("automation").build
       rows = envelope["published_leaves"].select { |r| r["key"] == "working.skills" }
       expect(rows.map { |r| File.basename(r["target"]) })
         .to contain_exactly("commands.md", "foo.md", "build.py")
@@ -93,7 +93,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       write_file("skills/my-skill/scratch.tmp", "junk\n")
 
       repo_root = File.dirname(root)
-      Textus::Store.new(root).as("automation").publish
+      Textus::Store.new(root).as("automation").build
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/commands.md"))).to be true
       expect(File.exist?(File.join(repo_root, "skills/my-skill/scratch.tmp"))).to be false
@@ -112,7 +112,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
 
-      expect { Textus::Store.new(root).as("automation").publish }
+      expect { Textus::Store.new(root).as("automation").build }
         .to raise_error(Textus::PublishError, /escapes repo root/)
     end
   end
@@ -136,11 +136,11 @@ RSpec.describe "publish_tree (ADR 0047)" do
     it "deletes a managed file when its source is removed, and reports it in 'pruned'" do
       repo_root = File.dirname(root)
       store = Textus::Store.new(root)
-      store.as("automation").publish
+      store.as("automation").build
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
 
       File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
-      envelope = store.as("automation").publish
+      envelope = store.as("automation").build
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
       expect(File.exist?(File.join(root, "sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
@@ -150,11 +150,11 @@ RSpec.describe "publish_tree (ADR 0047)" do
     it "never deletes an unmanaged file a human placed in the target tree" do
       repo_root = File.dirname(root)
       store = Textus::Store.new(root)
-      store.as("automation").publish
+      store.as("automation").build
 
       human_file = File.join(repo_root, "skills/my-skill/NOTES.md")
       File.write(human_file, "hand-written\n")
-      store.as("automation").publish
+      store.as("automation").build
 
       expect(File.exist?(human_file)).to be true
     end
@@ -185,7 +185,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       repo_root = File.dirname(root)
       index = seed_managed_file(repo_root, "skills/my-skill/SKILL.md", "derived index\n")
 
-      Textus::Store.new(root).as("automation").publish
+      Textus::Store.new(root).as("automation").build
 
       expect(File.exist?(index)).to be true
       expect(File.read(File.join(repo_root, "skills/my-skill/commands.md"))).to eq("# commands\n")
@@ -206,7 +206,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       repo_root = File.dirname(root)
       index = seed_managed_file(repo_root, "skills/my-skill/SKILL.md", "derived index\n")
 
-      envelope = Textus::Store.new(root).as("automation").publish
+      envelope = Textus::Store.new(root).as("automation").build
 
       expect(File.exist?(index)).to be false
       expect(envelope["pruned"]).to include(index)

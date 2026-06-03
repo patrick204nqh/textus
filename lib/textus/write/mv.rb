@@ -1,6 +1,22 @@
 module Textus
   module Write
     class Mv
+      extend Textus::Contract::DSL
+
+      verb     :mv
+      summary  "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix."
+      surfaces :cli, :ruby, :mcp
+      cli      "key mv"
+      arg :old_key, String, required: true, positional: true,
+                            description: "current dotted key"
+      arg :new_key, String, required: true, positional: true,
+                            description: "new dotted key (must be the same zone and format as old_key)"
+      arg :dry_run, :boolean,
+          description: "when true, returns the planned move (from/to paths, uid) without applying it; " \
+                       "defaults to false, so omitting it applies the move immediately " \
+                       "(unlike the bulk key_mv_prefix, which defaults to a dry-run plan)"
+      # `call` already returns a wire hash; identity response.
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

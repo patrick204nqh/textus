@@ -70,9 +70,9 @@ RSpec.describe Textus::MCP::Catalog do
       end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
     end
 
-    it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. delete)" do
+    it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. audit)" do
       expect do
-        described_class.call("delete", session: session, store: store, args: { "key" => "knowledge.project" })
+        described_class.call("audit", session: session, store: store, args: { "key" => "knowledge.project" })
       end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
     end
 
@@ -81,6 +81,14 @@ RSpec.describe Textus::MCP::Catalog do
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
       end.to raise_error(Textus::MCP::ContractDrift, /boom/)
+    end
+  end
+
+  describe "literal-default injection" do
+    it "injects an arg's literal default when the wire omits it (ADR 0062 amendment)" do
+      spec = Textus::Dispatcher::VERBS[:get].contract
+      _pos, kw = Textus::MCP::Catalog.map_args(spec, { "key" => "knowledge.project" })
+      expect(kw[:fetch]).to be(true)
     end
   end
 

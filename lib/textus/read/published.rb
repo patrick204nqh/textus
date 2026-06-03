@@ -1,6 +1,13 @@
 module Textus
   module Read
     class Published
+      extend Textus::Contract::DSL
+
+      verb     :published
+      summary  "List all entries that declare a publish_to target."
+      surfaces :cli, :ruby
+      cli      "published"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
       end

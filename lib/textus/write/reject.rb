@@ -1,6 +1,14 @@
 module Textus
   module Write
     class Reject
+      extend Textus::Contract::DSL
+
+      verb :reject
+      summary "discard a queued proposal without applying it"
+      surfaces :cli, :ruby
+      cli "reject"
+      arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
+
       def initialize(container:, call:)
         @container    = container
         @call         = call

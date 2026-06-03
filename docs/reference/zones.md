@@ -149,7 +149,7 @@ A single entry can host an unbounded subtree:
 
 That declaration covers `knowledge.notes.daily.2026-05-21`, `knowledge.notes.meetings.kickoff`, etc. — textus resolves the suffix as `/`-joined subdirectories under `knowledge/notes/`.
 
-Real source trees often contain vendored or generated subtrees that ship their own index files — a `node_modules/` whose dependencies bundle `SKILL.md` files, or a `dist/` of generated output. Use `ignore:` to keep them out of the store entirely. The patterns are honoured consistently by enumeration (`list`, `build`) and by `textus doctor`, so the store cannot `list` cleanly while `doctor` is red on the same paths:
+Real source trees often contain vendored or generated subtrees that ship their own index files — a `node_modules/` whose dependencies bundle `SKILL.md` files, or a `dist/` of generated output. Use `ignore:` to keep them out of the store entirely. The patterns are honoured consistently by enumeration (`list`, `publish`) and by `textus doctor`, so the store cannot `list` cleanly while `doctor` is red on the same paths:
 
 ```yaml
 - key: skills

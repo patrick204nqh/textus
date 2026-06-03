@@ -10,16 +10,52 @@ RSpec.describe Textus::Read::Get do
       end
     RUBY
   end
+  let(:fake_orchestrator_returning_fetched) do
+    fetched_env = nil
+    lambda do |env|
+      fetched_env = env
+      Class.new do
+        define_singleton_method(:fetched_env) { fetched_env }
+        define_method(:execute) do |_action, key: nil|
+          _ = key
+          fe = self.class.fetched_env.with(freshness: Textus::Domain::Freshness.build(
+            stale: false, reason: nil, fetching: false,
+          ))
+          Textus::Domain::Outcome::Fetched.new(envelope: fe)
+        end
+      end.new
+    end
+  end
+  let(:fake_orchestrator_returning) do
+    lambda do |outcome|
+      Class.new do
+        define_method(:execute) do |_action, key: nil|
+          _ = key
+          outcome
+        end
+      end.new
+    end
+  end
+
+  def build_store_with_intake(ttl:, on_stale:)
+    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale, kind_zone: "canon")
+  end
 
   def build_store_no_intake
     minimal_store(root, kind_zone: "quarantine", key: "feeds.doc", path: "feeds/doc.md")
   end
 
-  def build_store_with_intake(ttl:, on_stale: "warn")
-    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale)
+  def write_doc_in_knowledge(last_fetched_at:)
+    File.write(File.join(root, "zones", "knowledge", "doc.md"), <<~MD)
+      ---
+      name: doc
+      last_fetched_at: "#{last_fetched_at}"
+      ---
+      stored body
+    MD
   end
 
-  def write_doc(last_fetched_at: Time.now.utc.iso8601)
+  def write_doc_in_feeds(last_fetched_at: Time.now.utc.iso8601)
     File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)
       ---
       name: doc
@@ -29,47 +65,114 @@ RSpec.describe Textus::Read::Get do
     MD
   end
 
-  def build_use_case(store)
+  # ── Pure read branch (fetch: false, the default) ─────────────────────────
+
+  it "pure by default: fetch:false returns the on-disk envelope and never builds an orchestrator" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    allow(Textus::Write::FetchOrchestrator).to receive(:new).and_call_original
+    use_case = described_class.new(container: store.container, call: ctx)
+
+    env = use_case.call("knowledge.doc")
+    expect(env).not_to be_nil
+    expect(env.freshness.stale).to be(true) # observed stale, NOT fetched
+    expect(Textus::Write::FetchOrchestrator).not_to have_received(:new)
+  end
+
+  it "returns nil when the key has no envelope (fetch:false)" do
+    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    ctx = test_ctx(role: "automation")
+    use_case = described_class.new(container: store.container, call: ctx)
+
+    expect(use_case.call("knowledge.doc")).to be_nil
+  end
+
+  it "annotates as fresh when no fetch policy applies (fetch:false)" do
+    store = build_store_no_intake
+    write_doc_in_feeds
     container = Textus::Container.from_store(store)
     call = Textus::Call.build(role: "automation")
-    described_class.new(container: container, call: call)
-  end
-
-  it "returns nil when the file does not exist on disk" do
-    store = build_store_no_intake
-    use_case = build_use_case(store)
-    expect(use_case.call("feeds.doc")).to be_nil
-  end
-
-  it "annotates as fresh when no fetch policy applies" do
-    store = build_store_no_intake
-    write_doc
-    env = build_use_case(store).call("feeds.doc")
+    env = described_class.new(container: container, call: call).call("feeds.doc")
     expect(env.freshness.stale).to be(false)
     expect(env.freshness.fetching).to be(false)
   end
 
-  it "annotates as fresh when the envelope is within TTL" do
+  it "annotates as fresh when the envelope is within TTL (fetch:false)" do
     store = build_store_with_intake(ttl: "1h", on_stale: "warn")
-    write_doc(last_fetched_at: Time.now.utc.iso8601)
-    env = build_use_case(store).call("feeds.doc")
+    write_doc_in_knowledge(last_fetched_at: Time.now.utc.iso8601)
+    ctx = test_ctx(role: "automation")
+    env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
     expect(env.freshness.stale).to be(false)
   end
 
-  it "annotates as stale when the envelope is past TTL — but does NOT fetch" do
+  it "annotates as stale when the envelope is past TTL (fetch:false — does NOT fetch)" do
     store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
-    write_doc(last_fetched_at: "2020-01-01T00:00:00Z")
-    env = build_use_case(store).call("feeds.doc")
+    write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
     expect(env.freshness.stale).to be(true)
     expect(env.freshness.fetching).to be(false)
   end
 
-  it "does not accept an orchestrator: kwarg (signal of the contract)" do
-    store = build_store_no_intake
-    container = Textus::Container.from_store(store)
-    call = Textus::Call.build(role: "automation")
-    expect do
-      described_class.new(container: container, call: call, orchestrator: Object.new)
-    end.to raise_error(ArgumentError, /unknown keyword: :orchestrator/)
+  # ── Read-through branch (fetch: true) ────────────────────────────────────
+
+  it "skips orchestrator when verdict is fresh (fetch:true)" do
+    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    write_doc_in_knowledge(last_fetched_at: Time.now.utc.iso8601)
+    ctx = test_ctx(role: "automation")
+    orch = Class.new { def execute(*) = raise("must not call") }.new
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+
+    env = use_case.call("knowledge.doc", fetch: true)
+    expect(env).not_to be_nil
+    expect(env.freshness.stale).to be(false)
+  end
+
+  it "read-through: fetch:true + stale runs the orchestrator (Skipped outcome)" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "warn")
+    write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+
+    env = use_case.call("knowledge.doc", fetch: true)
+    expect(env.freshness.stale).to be(true)
+    expect(env.freshness.fetching).to be(false)
+  end
+
+  it "read-through: fetch:true + stale + Fetched outcome returns a fresh envelope" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    # Read the stale envelope first so we can pass it to the fake orchestrator
+    stale_env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
+    orch = fake_orchestrator_returning_fetched.call(stale_env)
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+
+    env = use_case.call("knowledge.doc", fetch: true)
+    expect(env.freshness.stale).to be(false)
+    expect(env.freshness.fetching).to be(false)
+    expect(env.body).to eq(stale_env.body)
+  end
+
+  it "annotates fetching=true when orchestrator returns Detached (fetch:true)" do
+    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
+    ctx = test_ctx(role: "automation")
+    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+
+    env = use_case.call("knowledge.doc", fetch: true)
+    expect(env.freshness.fetching).to be(true)
+  end
+
+  it "returns nil when the key has no envelope (fetch:true)" do
+    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    ctx = test_ctx(role: "automation")
+    orch = Class.new { def execute(*) = raise("must not call") }.new
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+
+    expect(use_case.call("knowledge.doc", fetch: true)).to be_nil
   end
 end

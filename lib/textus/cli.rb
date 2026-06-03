@@ -8,6 +8,7 @@ module Textus
     # verb. Sorted alphabetically for stable help output. Adding a new
     # verb requires only a new file declaring its `command_name`.
     def self.verbs
+      Runner.install!
       Verb.descendants
           .select { |k| k.command_name && k.parent_group.nil? }
           .sort_by(&:command_name)
@@ -91,7 +92,7 @@ module Textus
           textus put KEY --stdin [--fetch=NAME] --as=ROLE
           textus freshness [--prefix=KEY] [--zone=Z]
           textus fetch KEY
-          textus fetch stale [--prefix=KEY] [--zone=Z]
+          textus fetch all [--prefix=KEY] [--zone=Z]
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor

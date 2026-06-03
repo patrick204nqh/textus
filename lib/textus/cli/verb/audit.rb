@@ -1,8 +1,8 @@
 module Textus
   class CLI
     class Verb
-      class Audit < Verb
-        command_name "audit"
+      class Audit < Runner::Base
+        self.spec = Textus::Read::Audit.contract
 
         option :key_filter, "--key=KEY"
         option :zone, "--zone=Z"
@@ -13,7 +13,7 @@ module Textus
         option :correlation_id, "--correlation-id=ID"
         option :limit, "--limit=N"
 
-        def call(store)
+        def invoke(store)
           ops = session_for(store)
           since_time = since && Textus::Read::Audit.parse_since(since, now: Time.now)
           rows = ops.audit(

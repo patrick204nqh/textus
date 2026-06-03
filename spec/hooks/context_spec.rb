@@ -41,4 +41,14 @@ RSpec.describe Textus::Hooks::Context do
     ctx.publish_followup(:entry_put, key: "proposals.notes", envelope: nil)
     expect(seen).to eq("proposals.notes")
   end
+
+  it "ctx.get is a pure read and never builds a fetch orchestrator (ADR 0062 amendment)" do
+    allow(Textus::Write::FetchOrchestrator).to receive(:new).and_call_original
+    begin
+      ctx.get("knowledge.anything")
+    rescue Textus::Error
+      nil
+    end
+    expect(Textus::Write::FetchOrchestrator).not_to have_received(:new)
+  end
 end

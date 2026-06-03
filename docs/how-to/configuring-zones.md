@@ -90,7 +90,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
-- **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `build` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
+- **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `publish` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
 - **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
 - **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
@@ -319,7 +319,7 @@ $ git diff CLAUDE.md                                                   # review 
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus fetch KEY --as=automation` (one-shot) or `textus fetch stale` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus fetch KEY --as=automation` (one-shot) or `textus fetch all` (sweep TTL-expired entries) keeps it current.
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 

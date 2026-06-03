@@ -23,9 +23,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     [code, out.string, err.string]
   end
 
-  it "fetch stale on an empty store returns 0 (was nil → TypeError, #61)" do
+  it "fetch all on an empty store returns 0 (was nil → TypeError, #61)" do
     with_store do |root|
-      code, _stdout, _stderr = run_cli(%w[fetch stale --prefix=knowledge --as=automation], cwd: root)
+      code, _stdout, _stderr = run_cli(%w[fetch all --prefix=knowledge --as=automation], cwd: root)
       expect(code).to be_an(Integer)
       expect(code).to eq(0)
     end
@@ -42,37 +42,37 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   end
 
   it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
+    actual = Textus::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
     expected = {
-      "accept" => Textus::CLI::Verb::Accept,
+      "accept" => Textus::CLI::Verb::GenAccept,
       "audit" => Textus::CLI::Verb::Audit,
       "blame" => Textus::CLI::Verb::Blame,
       "build" => Textus::CLI::Verb::Build,
-      "delete" => Textus::CLI::Verb::Delete,
-      "deps" => Textus::CLI::Verb::Deps,
+      "deps" => Textus::CLI::Verb::GenDeps,
       "doctor" => Textus::CLI::Verb::Doctor,
-      "freshness" => Textus::CLI::Verb::Freshness,
+      "freshness" => Textus::CLI::Verb::GenFreshness,
       "get" => Textus::CLI::Verb::Get,
       "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,
       "boot" => Textus::CLI::Verb::Boot,
       "key" => Textus::CLI::Group::Key,
-      "list" => Textus::CLI::Verb::List,
+      "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
-      "published" => Textus::CLI::Verb::Published,
+      "published" => Textus::CLI::Verb::GenPublished,
       "pulse" => Textus::CLI::Verb::Pulse,
       "propose" => Textus::CLI::Verb::Propose,
       "put" => Textus::CLI::Verb::Put,
-      "rdeps" => Textus::CLI::Verb::Rdeps,
+      "rdeps" => Textus::CLI::Verb::GenRdeps,
       "migrate" => Textus::CLI::Verb::Migrate,
       "fetch" => Textus::CLI::Group::Fetch,
-      "reject" => Textus::CLI::Verb::Reject,
-      "retain" => Textus::CLI::Verb::Retain,
+      "reject" => Textus::CLI::Verb::GenReject,
+      "retain" => Textus::CLI::Verb::GenRetain,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
-      "where" => Textus::CLI::Verb::Where,
+      "where" => Textus::CLI::Verb::GenWhere,
       "zone" => Textus::CLI::Group::Zone,
     }
-    expect(Textus::CLI.verbs).to eq(expected)
+    expect(actual).to eq(expected)
   end
 
   it "verb ordering is stable (alphabetical by command_name)" do
@@ -91,9 +91,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "uid" => Textus::CLI::Verb::Uid,
     )
     expect(Textus::CLI::Group::Rule.subcommands).to eq(
-      "explain" => Textus::CLI::Verb::RuleExplain,
+      "explain" => Textus::CLI::Verb::GenRuleExplain,
       "lint" => Textus::CLI::Verb::RuleLint,
-      "list" => Textus::CLI::Verb::RuleList,
+      "list" => Textus::CLI::Verb::GenRuleList,
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(
       "mv" => Textus::CLI::Verb::ZoneMv,
@@ -102,7 +102,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "diff" => Textus::CLI::Verb::SchemaDiff,
       "init" => Textus::CLI::Verb::SchemaInit,
       "migrate" => Textus::CLI::Verb::SchemaMigrate,
-      "show" => Textus::CLI::Verb::Schema,
+      "show" => Textus::CLI::Verb::GenSchemaShow,
     )
   end
 end

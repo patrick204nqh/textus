@@ -30,7 +30,7 @@ RSpec.describe Textus::Read::SchemaEnvelope do
 
   it "returns a hash with key, schema_ref, and schema as a Hash for a declared schema" do
     ops = store.as("human")
-    result = ops.schema("knowledge.person")
+    result = ops.schema_show("knowledge.person")
 
     expect(result).to include(
       "key" => "knowledge.person",
