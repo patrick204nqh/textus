@@ -63,13 +63,14 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     expect(File.exist?(File.join(root, "zones/#{propose_zone}/notes/oncall.md"))).to be(true)
   end
 
-  it "errors when no envelope is piped (required _meta missing)" do
-    # The envelope is read from stdin; with nothing piped the required _meta
-    # arg surfaces as missing (the --stdin flag is now a vestigial no-op).
+  it "accepts a propose with no piped envelope (ADR 0069: _meta is optional)" do
+    # ADR 0069: `_meta` is no longer a pre-dispatch required arg — its real
+    # requiredness lives in schema validation downstream. With nothing piped the
+    # proposal lands with empty meta rather than erroring on a missing _meta.
     rc = run(["--root=#{root}", "propose", "notes.x", "--as=agent"])
-    expect(rc).not_to eq(0)
-    output = JSON.parse(stdout.string)
-    expect(output["message"]).to match(/_meta/)
+    expect(rc).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
+    result = JSON.parse(stdout.string)
+    expect(result["key"]).to eq("#{propose_zone}.notes.x")
   end
 
   it "raises UsageError mentioning propose_zone when the acting role cannot write the queue" do

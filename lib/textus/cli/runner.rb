@@ -61,7 +61,7 @@ module Textus
         inputs = apply_cli_defaults(spec, inputs)
         scope = verb_instance.session_for(store)
         begin
-          result = scope.dispatch_bound(spec.verb, inputs, validate: true)
+          result = scope.dispatch_bound(spec.verb, inputs)
         rescue Textus::Contract::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end

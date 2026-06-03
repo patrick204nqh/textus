@@ -13,7 +13,7 @@ module Textus
       cli_stdin :json
       arg :key,     String, required: true, positional: true,
                             description: "key relative to propose_zone, e.g. 'decisions.feature-x'"
-      arg :meta,    Hash,   required: true, wire_name: :_meta,
+      arg :meta,    Hash,   required: false, wire_name: :_meta,
                             description: "frontmatter; reads back as `_meta` from `get`. Include a 'proposal:' block naming the target_key"
       arg :body,    String,
           description: "markdown/text payload for markdown-format entries; omit (use `content`) for json/yaml entries. Do not send both"

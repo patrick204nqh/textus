@@ -40,14 +40,14 @@ module Textus
     # by-name hash (the binder's currency). MCP/CLI build it from their raw
     # transport shape and call this directly; the per-verb Ruby methods below
     # normalize positional+keyword Ruby args into `inputs` and delegate here.
-    def dispatch_bound(verb, inputs, session: nil, validate: false)
+    def dispatch_bound(verb, inputs, session: nil)
       klass = Textus::Dispatcher::VERBS[verb]
       spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
 
       invoke = lambda do |effective_inputs|
         args, kwargs =
           if spec
-            Textus::Contract::Binder.bind(spec, effective_inputs, session: session, validate: validate)
+            Textus::Contract::Binder.bind(spec, effective_inputs, session: session)
           else
             [[], effective_inputs]
           end

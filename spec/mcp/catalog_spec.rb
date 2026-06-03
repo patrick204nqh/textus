@@ -31,7 +31,10 @@ RSpec.describe Textus::MCP::Catalog do
       put = described_class.tool_schemas.find { |t| t[:name] == "put" }
       expect(put[:inputSchema][:properties]).to have_key("_meta")
       expect(put[:inputSchema][:properties]).not_to have_key("meta")
-      expect(put[:inputSchema][:required]).to include("_meta")
+      # ADR 0069: `_meta` is `required: false` on the contract — its real
+      # requiredness lives in schema validation downstream, not on the wire — so
+      # it is advertised as a property but not in the input schema's `required`.
+      expect(put[:inputSchema][:required]).not_to include("_meta")
     end
   end
 
@@ -51,11 +54,23 @@ RSpec.describe Textus::MCP::Catalog do
       expect(env["body"]).to eq("hi\n")
     end
 
-    it "reports the wire name (`_meta`) when a required arg is missing" do
+    # ADR 0069: `_meta` is no longer a pre-dispatch required arg — its real
+    # requiredness lives in schema validation downstream. A missing `_meta` is
+    # accepted at the binder and flows to the write pipeline; an invalid `_meta`
+    # is what surfaces an error (from schema validation), not its absence.
+    it "accepts a missing `_meta` (its requiredness lives in schema validation)" do
+      result = described_class.call("put", session: session, store: store,
+                                           args: { "key" => "knowledge.project", "body" => "x\n" })
+      expect(result.keys).to contain_exactly("uid", "etag")
+    end
+
+    it "surfaces a schema-validation ToolError for an invalid `_meta`" do
       expect do
-        described_class.call("put", session: session, store: store,
-                                    args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::MCP::ToolError, /missing _meta/)
+        described_class.call(
+          "put", session: session, store: store,
+                 args: { "key" => "knowledge.project", "_meta" => { "name" => 123, "description" => "d" }, "body" => "x\n" }
+        )
+      end.to raise_error(Textus::MCP::ToolError, /name/)
     end
 
     it "raises ToolError for an unknown tool" do

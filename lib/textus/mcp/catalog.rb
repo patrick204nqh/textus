@@ -58,7 +58,7 @@ module Textus
         inputs = spec.args.each_with_object({}) do |a, h|
           h[a.name] = (args || {})[a.wire.to_s] if (args || {}).key?(a.wire.to_s)
         end
-        result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session, validate: true)
+        result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session)
         Textus::Contract::View.render(spec, :default, result, inputs)
       rescue Textus::Contract::MissingArgs => e
         raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
