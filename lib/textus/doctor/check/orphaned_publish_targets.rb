@@ -4,8 +4,8 @@ module Textus
       # Flags published files whose recorded source no longer exists in the
       # store. Per-leaf prune (ADR 0046) reconciles within a still-present
       # leaf; a renamed or removed *whole* leaf orphans its entire target
-      # directory, which a per-entry publish won't revisit. This check catches
-      # that drift without making `publish` scan globally.
+      # directory, which a per-entry build won't revisit. This check catches
+      # that drift without making `build` scan globally.
       class OrphanedPublishTargets < Check
         def call
           sdir = File.join(root, Textus::Ports::SentinelStore::DIR)

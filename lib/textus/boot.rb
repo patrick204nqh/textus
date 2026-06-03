@@ -32,7 +32,7 @@ module Textus
       end,
       build: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
-        "'textus publish' computes #{derived} entries from projections; " \
+        "'textus build' computes #{derived} entries from projections; " \
           "#{derived} files are never hand-edited"
       end,
     }.freeze
@@ -86,7 +86,7 @@ module Textus
       { "name" => "propose" },
       { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
       { "name" => "key",      "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "publish",  "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
+      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
       { "name" => "fetch" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
       { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },

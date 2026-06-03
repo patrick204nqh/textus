@@ -1,8 +1,8 @@
 module Textus
   class CLI
     class Verb
-      class Publish < Verb
-        command_name "publish"
+      class Build < Verb
+        command_name "build"
 
         option :prefix, "--prefix=K"
 

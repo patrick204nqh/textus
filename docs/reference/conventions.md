@@ -51,7 +51,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 A derived entry declares a `compute:` block with a `kind:` discriminator. Two kinds:
 
-**`compute: { kind: projection }`** — textus computes the entry on `textus publish` from other store entries. Declarative; nothing shells out.
+**`compute: { kind: projection }`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
 
 ```yaml
 - key: artifacts.catalogs.people

@@ -252,7 +252,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 
 ## Examples
 
-[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `publish` that materializes the `artifacts/orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
+[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `build` that publishes the `artifacts/orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
 
 ## Tests
 

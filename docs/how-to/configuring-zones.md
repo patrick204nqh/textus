@@ -245,7 +245,7 @@ A derived entry says **"compute me from these sources, render me with this templ
 
 Hooks live in Ruby files under `.textus/hooks/`. See [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [intake wiring](#wiring-data-in--intake-and-resolve_intake-hooks) and [derived entries](#wiring-data-out--derived-entries-and-publishing) above.
 
-### What `textus publish` does
+### What `textus build` does
 
 For every entry in a build-writable zone:
 
@@ -313,7 +313,7 @@ Day-to-day flow:
 ```
 $ textus put knowledge.identity.self --as=human  < new-identity.md   # edit identity
 $ textus put knowledge.notes.kickoff --as=human  < kickoff.md         # add a note
-$ textus publish                                                       # rebuild CLAUDE.md
+$ textus build                                                         # rebuild CLAUDE.md
 $ git diff CLAUDE.md                                                   # review and commit
 ```
 

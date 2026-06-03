@@ -27,7 +27,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 | Event | Mode | What it's for |
 |-------|------|---------------|
 | `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus fetch` or `textus fetch all`. |
-| `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus publish`. |
+| `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_put` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
 | `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ ctx:, key: }`. |
@@ -134,7 +134,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ store ready for use
 ```
 
-### `textus publish`
+### `textus build`
 
 ```
   ┃ for each entry in a build-writable zone:
