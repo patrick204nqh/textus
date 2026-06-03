@@ -735,10 +735,10 @@ An entry's `format:` selects a storage strategy. All strategies expose the same 
 **`_meta` convention.** Derived structured entries (json, yaml) embed a `_meta` hash as the first top-level key. Builder-injected keys appear in a fixed order for etag stability:
 
 ```
-generated_at, from, template, transform
+from, template, transform
 ```
 
-Keys with `nil` values are omitted. User-shaped content (or the reducer's hash) follows `_meta`. The etag (§10) is the sha256 of the on-disk bytes regardless of format; key ordering MUST therefore be deterministic, which Ruby's `Hash` and `JSON.generate` / `YAML.dump` honor via insertion order.
+Keys with `nil` values are omitted. The builder injects only **deterministic** provenance: it does **not** stamp a `generated_at` build timestamp into the artifact (ADR 0070). A built artifact is content-addressed — rebuilding unchanged sources reproduces it byte-for-byte, so a rebuild is a no-op and a `git` revert never drifts. (The `generated.at` of §5.2 is a separate convention written by *external* build tools, not by textus's own builder.) User-shaped content (or the reducer's hash) follows `_meta`. The etag (§10) is the sha256 of the on-disk bytes regardless of format; key ordering MUST therefore be deterministic, which Ruby's `Hash` and `JSON.generate` / `YAML.dump` honor via insertion order.
 
 ## 6. Schemas
 
@@ -1010,7 +1010,7 @@ Given the `person` schema and a `put` whose frontmatter omits `relationship`, th
 Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, fetch: { ttl: 1h } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus freshness --output=json` includes a row for `intake.notes` with `status: "stale"`. Calling `textus freshness` does NOT trigger a fetch.
 
 **Fixture E — Projection build:**
-Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape, and updates `generated.at` to the build timestamp.
+Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so rebuilding with unchanged sources reproduces it byte-for-byte and writes nothing.
 
 **Fixture F — Mustache render:**
 Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus build` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).

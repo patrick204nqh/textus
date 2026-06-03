@@ -33,15 +33,16 @@ module Textus
       reduced = apply_reducer(rows)
       # Reducers may return either an Array of rows (legacy / templated builds)
       # or a Hash that becomes the structured-format payload base. In the Hash
-      # case, downstream sort/limit/position markers don't apply, and the
-      # builder owns `_meta.generated_at` so we don't stamp it here.
+      # case, downstream sort/limit/position markers don't apply.
       return reduced if reduced.is_a?(Hash)
 
       rows = reduced
       rows = sort(rows)
       rows = rows.first(@limit)
       mark_positions(rows)
-      { "entries" => rows, "count" => rows.length, "generated_at" => Time.now.utc.iso8601 }
+      # No `generated_at` in the payload — the built artifact is content-addressed
+      # (ADR 0070); volatile build time is kept out of the tracked output.
+      { "entries" => rows, "count" => rows.length }
     end
 
     private

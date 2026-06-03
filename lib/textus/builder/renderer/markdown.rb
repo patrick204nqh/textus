@@ -1,5 +1,3 @@
-require "time"
-
 module Textus
   module Builder
     class Renderer
@@ -14,12 +12,10 @@ module Textus
                  else
                    []
                  end
-          frontmatter = {
-            "generated" => {
-              "at" => Time.now.utc.iso8601,
-              "from" => from,
-            },
-          }
+          # Deterministic frontmatter only — `from` (the source keys), never a
+          # volatile `generated.at` (ADR 0070): the artifact is content-addressed
+          # so a rebuild is a byte-for-byte no-op and a revert never drifts.
+          frontmatter = { "generated" => { "from" => from } }
           Entry.for_format("markdown").serialize(meta: frontmatter, body: body)
         end
       end
