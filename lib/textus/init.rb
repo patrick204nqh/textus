@@ -100,7 +100,30 @@ module Textus
       See SPEC.md §5.10 for the full table.
     MD
 
-    def self.run(target_root)
+    AGENT_ENTRIES = <<~YAML
+      # --with-agent profile: project facts + runbooks feed the orientation
+      # projection below, which `textus build` renders to CLAUDE.md/AGENTS.md.
+      - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
+      - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+      - key: artifacts.orientation
+        path: artifacts/orientation.md
+        zone: artifacts
+        template: orientation.mustache
+        inject_boot: true
+        publish:
+          to:
+          - CLAUDE.md
+          - AGENTS.md
+        compute:
+          kind: projection
+          select:
+          - knowledge.project
+          - knowledge.runbooks
+          transform: orientation_reducer
+        kind: derived
+    YAML
+
+    def self.run(target_root, with_agent: false)
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
 
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
@@ -115,12 +138,20 @@ module Textus
       scaffold_dir = File.expand_path("init/templates", __dir__)
       File.write(File.join(target_root, "hooks", "machine_intake.rb"),
                  File.read(File.join(scaffold_dir, "machine_intake.rb")))
-      File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
+      File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
       File.write(File.join(target_root, ".gitignore"), derived_gitignore(target_root))
-      { "protocol" => PROTOCOL, "initialized" => target_root }
+      { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => with_agent ? "agent" : "default" }
+    end
+
+    # The default manifest, plus the agent-profile entries inserted just
+    # before the top-level `rules:` block when --with-agent is set.
+    def self.manifest_yaml(with_agent:)
+      return DEFAULT_MANIFEST unless with_agent
+
+      DEFAULT_MANIFEST.sub(/^rules:/, "#{AGENT_ENTRIES}rules:")
     end
 
     # The store's `.gitignore` is generated, never hand-kept (ADR 0038), and now
