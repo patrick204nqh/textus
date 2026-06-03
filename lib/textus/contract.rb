@@ -26,7 +26,7 @@ module Textus
       JSON_TYPES.fetch(type) { raise ArgumentError.new("no JSON type mapping for #{type.inspect}") }
     end
 
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :response, :cli) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :response, :cli, :cli_response) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
 
@@ -110,6 +110,16 @@ module Textus
         @__response || ->(v) { v }
       end
 
+      def cli_response(&blk)
+        if blk
+          raise "contract already built; declare cli_response before reading .contract" if defined?(@__contract) && @__contract
+
+          @__cli_response = blk
+        else
+          @__cli_response
+        end
+      end
+
       def contract?
         !@__verb.nil?
       end
@@ -125,6 +135,7 @@ module Textus
           surfaces: (@__surfaces || []).freeze,
           response: response,
           cli: @__cli,
+          cli_response: @__cli_response,
         )
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName

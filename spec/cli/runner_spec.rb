@@ -57,4 +57,58 @@ RSpec.describe Textus::CLI::Runner do
     rc = run(["where"])
     expect(rc).not_to eq(0)
   end
+
+  describe "Runner.dispatch shaper selection" do
+    # rubocop:disable RSpec/VerifiedDoubles
+    it "uses cli_response instead of response when cli_response is set" do
+      spec = Textus::Contract::Spec.new(
+        verb: :where,
+        summary: nil,
+        args: [],
+        surfaces: %i[cli],
+        response: ->(_v) { "from_response" },
+        cli: nil,
+        cli_response: ->(v) { { "cli_shaped" => v } },
+      )
+
+      emitted = nil
+      session_obj = double("session", where: "raw_value")
+      verb_instance = double("verb_instance",
+                             positional: [],
+                             flag_values: {},
+                             session_for: session_obj,
+                             emit: nil)
+      allow(verb_instance).to receive(:flag_values).and_return({})
+      allow(verb_instance).to receive(:emit) { |v| emitted = v }
+
+      Textus::CLI::Runner.dispatch(verb_instance, nil, spec)
+      expect(emitted).to eq({ "cli_shaped" => "raw_value" })
+    end
+
+    it "falls back to response when cli_response is nil" do
+      spec = Textus::Contract::Spec.new(
+        verb: :where,
+        summary: nil,
+        args: [],
+        surfaces: %i[cli],
+        response: ->(v) { { "from_response" => v } },
+        cli: nil,
+        cli_response: nil,
+      )
+
+      emitted = nil
+      session_obj = double("session", where: "raw_value")
+      verb_instance = double("verb_instance",
+                             positional: [],
+                             flag_values: {},
+                             session_for: session_obj,
+                             emit: nil)
+      allow(verb_instance).to receive(:flag_values).and_return({})
+      allow(verb_instance).to receive(:emit) { |v| emitted = v }
+
+      Textus::CLI::Runner.dispatch(verb_instance, nil, spec)
+      expect(emitted).to eq({ "from_response" => "raw_value" })
+    end
+    # rubocop:enable RSpec/VerifiedDoubles
+  end
 end

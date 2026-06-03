@@ -67,7 +67,8 @@ module Textus
         pos, kw = call_args(spec, verb_instance.positional, verb_instance.flag_values(spec))
         result = verb_instance.session_for(store).public_send(spec.verb, *pos, **kw)
         result = result.to_h_for_wire if result.respond_to?(:to_h_for_wire)
-        verb_instance.emit(spec.response.call(result))
+        shaper = spec.cli_response || spec.response
+        verb_instance.emit(shaper.call(result))
       end
 
       def flagspec_for(arg)

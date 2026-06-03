@@ -125,5 +125,21 @@ RSpec.describe Textus::Contract do
       spec = build { verb :secret; surfaces :ruby, :mcp }
       expect(spec.cli?).to be false
     end
+
+    it "stores a cli_response block, defaulting to nil" do
+      plain = build do
+        verb :where
+        surfaces :cli, :ruby
+        arg :key, String, positional: true
+      end
+      expect(plain.cli_response).to be_nil
+
+      wrapped = build do
+        verb :list
+        surfaces :cli, :ruby
+        cli_response { |rows| { "entries" => rows } }
+      end
+      expect(wrapped.cli_response.call([1, 2])).to eq({ "entries" => [1, 2] })
+    end
   end
 end
