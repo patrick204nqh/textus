@@ -100,7 +100,7 @@ module Textus
       See SPEC.md §5.10 for the full table.
     MD
 
-    AGENT_ENTRIES = <<~YAML
+    AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
       # --with-agent profile: project facts + runbooks feed the orientation
       # projection below, which `textus build` renders to CLAUDE.md/AGENTS.md.
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
