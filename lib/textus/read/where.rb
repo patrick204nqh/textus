@@ -5,7 +5,7 @@ module Textus
 
       verb     :where
       summary  "Resolve a key to its zone, owner, and path without reading the body."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted key to locate (returns zone, owner, path; does not read content)"
 

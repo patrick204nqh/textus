@@ -14,7 +14,7 @@ module Textus
 
       verb     :build
       summary  "materialize derived entries; publish_to and publish_tree fan out copies"
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "build"
       arg :prefix, String, required: false, description: "limit the build to keys under this prefix"
 

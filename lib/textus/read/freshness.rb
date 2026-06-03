@@ -11,7 +11,7 @@ module Textus
 
       verb     :freshness
       summary  "Report the fetch-freshness status of every entry with a fetch policy."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "freshness"
       arg :prefix, String, required: false, description: "filter to keys with this prefix"
       arg :zone,   String, required: false, description: "filter to entries in this zone"

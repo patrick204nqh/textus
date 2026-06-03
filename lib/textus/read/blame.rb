@@ -11,7 +11,7 @@ module Textus
 
       verb     :blame
       summary  "Annotate audit rows for a key with the git commit that introduced each file state."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "blame"
       arg :key,   String,  required: true, positional: true, description: "entry key to blame"
       arg :limit, Integer, required: false, description: "maximum number of audit rows to return"

@@ -5,7 +5,7 @@ module Textus
 
       verb :reject
       summary "discard a queued proposal without applying it"
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli "reject"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 

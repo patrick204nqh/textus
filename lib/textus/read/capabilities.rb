@@ -17,7 +17,7 @@ module Textus
 
       verb     :capabilities
       summary  "Machine-readable contract surface: every verb, its transports, and arg schema."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :verb, String, required: false, description: "filter to a single verb by name"
       view { |result, _i| result }
 
@@ -40,7 +40,7 @@ module Textus
         {
           "verb" => spec.verb.to_s,
           "summary" => spec.summary,
-          "surfaces" => spec.surfaces.map(&:to_s),
+          "surfaces" => spec.surfaces.map(&:to_s) + ["ruby"],
           "cli" => spec.cli? ? spec.cli_path : nil,
           "args" => spec.args.map { |a| project_arg(a) },
         }

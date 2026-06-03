@@ -16,23 +16,24 @@ RSpec.describe Textus::Container do
     expect(container).to be_frozen
   end
 
-  it "exposes a build helper that constructs a container from the store" do
+  it "is built once per Store and backs the Store's delegated readers" do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(
         ["--root=#{tmp}/.textus", "init"],
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      container = Textus::Container.from_store(store)
+      container = store.container
 
       expect(container).to be_a(Textus::Container)
-      expect(container.manifest).to be(store.manifest)
-      expect(container.file_store).to be(store.file_store)
-      expect(container.schemas).to be(store.schemas)
-      expect(container.root).to eq(store.root)
-      expect(container.audit_log).to be(store.audit_log)
-      expect(container.events).to be(store.events)
-      expect(container.rpc).to be(store.rpc)
+      expect(store.container).to be(container) # one Container per Store
+      expect(store.manifest).to be(container.manifest)
+      expect(store.file_store).to be(container.file_store)
+      expect(store.schemas).to be(container.schemas)
+      expect(store.root).to eq(container.root)
+      expect(store.audit_log).to be(container.audit_log)
+      expect(store.events).to be(container.events)
+      expect(store.rpc).to be(container.rpc)
     end
   end
 end

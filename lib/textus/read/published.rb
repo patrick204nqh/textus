@@ -5,7 +5,7 @@ module Textus
 
       verb     :published
       summary  "List all entries that declare a publish_to target."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "published"
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument

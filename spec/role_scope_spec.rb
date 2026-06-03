@@ -11,6 +11,18 @@ RSpec.describe Textus::RoleScope do
     expect(scope.role).to eq("human")
   end
 
+  it "wires every Dispatcher verb as a Ruby method regardless of surfaces (ADR 0073)" do
+    # Ruby is the implicit base API: RoleScope exposes every verb in-process,
+    # independent of the contract's `surfaces` list (which only declares the
+    # external CLI/MCP projections). A verb with empty surfaces is still
+    # Ruby-callable — this is the property that lets `surfaces []` mean
+    # "Ruby-only internal verb."
+    scope = store.as("human")
+    Textus::Dispatcher::VERBS.each_key do |verb|
+      expect(scope).to respond_to(verb)
+    end
+  end
+
   it "Store#as(role).put writes and Store#as(role).get reads back" do
     result = store.as("human").put(
       "knowledge.foo",

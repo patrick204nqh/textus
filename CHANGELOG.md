@@ -9,6 +9,19 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.46.0 — 2026-06-03 — Container is the single source of truth
+
+No `textus/3` wire-format change. Internal refactor of the composition root. The 7-field capability set (`manifest, file_store, schemas, root, audit_log, events, rpc`) was previously spelled out four times — `Container`'s `Data.define`, `Store`'s ivar assignments, `Store`'s `attr_reader`s, and `Container.from_store`. It now lives in exactly one place.
+
+### Changed
+
+- **`Store` builds its `Container` once and derives its readers from it.** `Store#initialize` constructs the `Container` directly (`build_container`); the public accessors (`store.manifest`, `store.root`, …) are generated from `Container.members`, so adding a capability to the `Data.define` auto-exposes it on `Store`. Hook wiring is extracted into `bootstrap_hooks`.
+- **`Store.discover` decomposed.** The upward directory walk is extracted into `ascend_for_store`, and the duplicated `.textus`/`manifest.yaml` existence check into a shared `store_dir?` predicate.
+
+### Breaking (pre-1.0)
+
+- **`Container.from_store` is removed.** It built a fresh `Container` by copying the seven accessors off a `Store`. Use `store.container` instead (built once, memoized). Specs that swapped the event bus post-construction via `store.instance_variable_set(:@events, …)` now inject explicitly through the immutable `Container`'s `#with` (e.g. `container.with(events: probe)`). Retires the `from_store` idiom described in [ADR 0016](docs/architecture/decisions/0016-application-ports-value.md) and [ADR 0020](docs/architecture/decisions/0020-capability-records.md).
+
 ## 0.45.1 — 2026-06-03 — Single-path lifecycle: kill the last dual-paths ([ADR 0069](docs/architecture/decisions/0069-single-path-lifecycle.md))
 
 No `textus/3` wire-format change. Finishes the 0.45.0 lifecycle (ADRs 0066–0068): the request path was single-path in shape but still carried four residual dual-paths. This removes all four so the lifecycle — `normalize → bind (always validate) → dispatch (+around) → view (self-shaping)` — is single-path in fact on every surface. Three breaking (pre-1.0) changes, all accepted.

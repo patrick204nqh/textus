@@ -34,7 +34,7 @@ module Textus
 
       verb     :audit
       summary  "Query the audit log with optional filters."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "audit"
       # #call(**filters) — args map to Query.build keyword params (ADR 0063)
       arg :key,            String,  required: false, description: "filter to rows for this key"

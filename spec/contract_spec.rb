@@ -123,6 +123,18 @@ RSpec.describe Textus::Contract do
     expect { klass.verb(:other) }.to raise_error(RuntimeError, /contract already built/)
   end
 
+  it "treats empty surfaces as a Ruby-only internal verb — off both wires (ADR 0073)" do
+    spec = Class.new do
+      extend Textus::Contract::DSL
+
+      verb :internal_only
+    end.contract
+
+    expect(spec.surfaces).to eq([])
+    expect(spec.cli?).to be false
+    expect(spec.mcp?).to be false
+  end
+
   it "carries session_default on an arg when declared" do
     k = Class.new do
       extend Textus::Contract::DSL
@@ -163,7 +175,7 @@ RSpec.describe Textus::Contract do
     it "defaults the cli path to the verb token when :cli is surfaced and no path is declared" do
       spec = build do
         verb :where
-        surfaces :cli, :ruby, :mcp
+        surfaces :cli, :mcp
         arg :key, String, required: true, positional: true
       end
       expect(spec.cli?).to be true
@@ -175,7 +187,7 @@ RSpec.describe Textus::Contract do
     it "honors an explicit grouped cli path and splits group/leaf" do
       spec = build do
         verb :schema_show
-        surfaces :cli, :ruby, :mcp
+        surfaces :cli, :mcp
         cli "schema show"
         arg :key, String, required: true, positional: true
       end
@@ -187,7 +199,7 @@ RSpec.describe Textus::Contract do
     it "reports cli? false when :cli is not a surface" do
       spec = build do
         verb :secret
-        surfaces :ruby, :mcp
+        surfaces :mcp
       end
       expect(spec.cli?).to be false
     end
@@ -195,14 +207,14 @@ RSpec.describe Textus::Contract do
     it "falls the :cli view back to the default when no :cli view is declared" do
       plain = build do
         verb :where
-        surfaces :cli, :ruby
+        surfaces :cli
         arg :key, String, positional: true
       end
       expect(plain.view(:cli).call([1, 2], {})).to eq([1, 2])
 
       wrapped = build do
         verb :list
-        surfaces :cli, :ruby
+        surfaces :cli
         view(:cli) { |rows| { "entries" => rows } }
       end
       expect(wrapped.view(:cli).call([1, 2], {})).to eq({ "entries" => [1, 2] })

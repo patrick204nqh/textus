@@ -5,7 +5,7 @@ module Textus
 
       verb     :rdeps
       summary  "List the derived entries that depend on a key (reverse deps / impact set)."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted key whose dependents (what would be stranded if it moved) you want"
 

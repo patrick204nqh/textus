@@ -9,7 +9,7 @@ module Textus
 
       verb     :propose
       summary  "Write a proposal to the role's propose_zone. Auto-prefixes the key."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli_stdin :json
       arg :key,     String, required: true, positional: true,
                             description: "key relative to propose_zone, e.g. 'decisions.feature-x'"

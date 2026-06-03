@@ -53,9 +53,8 @@ RSpec.describe Textus::Write::FetchWorker do
 
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
-      store.instance_variable_set(:@events, test_events)
       ctx = test_ctx(role: "automation")
-      worker = build_worker(store, ctx)
+      worker = build_worker(store, ctx, events: test_events)
 
       envelope = worker.run("intake.item")
 
@@ -82,9 +81,8 @@ RSpec.describe Textus::Write::FetchWorker do
 
       store = build_store(root, intake_body: hook_body)
       test_events = make_test_events
-      store.instance_variable_set(:@events, test_events)
       ctx = test_ctx(role: "automation")
-      worker = build_worker(store, ctx)
+      worker = build_worker(store, ctx, events: test_events)
 
       expect do
         worker.run("intake.item")

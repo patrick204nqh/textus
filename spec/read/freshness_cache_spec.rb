@@ -44,7 +44,7 @@ RSpec.describe Textus::Read::Freshness, "verdict cache" do # rubocop:disable RSp
       end
     end.new
 
-    container = Textus::Container.from_store(store)
+    container = store.container
     fr = described_class.new(container: container, call: ctx, evaluator: counter)
     fr.call
     fr.call

@@ -9,7 +9,7 @@ module Textus
 
       verb     :rule_list
       summary  "List every rule block in the manifest."
-      surfaces :cli, :ruby
+      surfaces :cli
       cli      "rule list"
       view(:cli) { |policies| { "verb" => "rule_list", "policies" => policies } }
 

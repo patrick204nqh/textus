@@ -10,7 +10,7 @@ module Textus
 
       verb     :zone_mv
       summary  "Rename a zone — manifest + files. Refuses if destination exists."
-      surfaces :cli, :ruby, :mcp
+      surfaces :cli, :mcp
       cli      "zone mv"
       arg :from,    String, required: true, positional: true, description: "current zone name"
       arg :to,      String, required: true, positional: true, description: "new zone name; refused if a zone by this name already exists"
