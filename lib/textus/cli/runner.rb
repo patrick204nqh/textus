@@ -96,12 +96,25 @@ module Textus
         g
       end
 
-      # Verbs that keep a hand-authored class (escape hatches / category-C).
-      # During THIS spike, everything except `where` is hand-authored, so the
-      # runner only generates `where`. (Later tasks expand the generated set.)
-      def generated_verbs
-        %i[where]
-      end
+      # Verbs that keep a hand-authored CLI class and must NOT be generated:
+      # escape hatches (behavior the generic runner can't express), the
+      # custom-parse `fetch` family, the bulk *_prefix cousins (handled by the
+      # single-key multi-dispatch classes), and category-C commands with custom
+      # output (boot/doctor).
+      #
+      # The second row are verbs whose CLI surface emits a presentation envelope
+      # the contract `response` does not (and must not — MCP would inherit it):
+      # `{ "verb" => …, "rows"/"policies" => … }` (audit, freshness, rule_list,
+      # rule_explain), `{ "entries" => … }` (list), `{ "key" =>, "uid" => }`
+      # (uid), and pulse's session-cursor read/write. These stay hand-authored
+      # until the contract grows a CLI-specific response facet (ADR 0063 follow-up).
+      HAND_AUTHORED_VERBS = %i[
+        get put propose build delete mv key_delete_prefix key_mv_prefix
+        migrate rule_lint blame zone_mv fetch fetch_all boot doctor
+        list audit freshness pulse uid rule_list rule_explain
+      ].freeze
+
+      def hand_authored?(verb) = HAND_AUTHORED_VERBS.include?(verb)
 
       def install!
         @installed ||= {}
@@ -110,7 +123,7 @@ module Textus
 
           spec = klass.contract
           next unless spec.cli?
-          next unless generated_verbs.include?(spec.verb)
+          next if hand_authored?(spec.verb)
           next if @installed[spec.verb]
 
           install_for(spec)
