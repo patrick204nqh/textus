@@ -91,4 +91,29 @@ RSpec.describe "Textus::Init with_agent profile" do
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
+
+  it "drives the agent profile from the CLI --with-agent flag" do
+    Dir.mktmpdir do |dir|
+      out = StringIO.new
+      verb = Textus::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
+      verb.parse(["--with-agent"])
+      exit_code = verb.call(nil)
+      expect(exit_code).to eq(0)
+      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.mustache"))).to be true
+      expect(File.exist?(File.join(dir, ".mcp.json"))).to be true
+      payload = JSON.parse(out.string)
+      expect(payload["profile"]).to eq("agent")
+    end
+  end
+
+  it "defaults to the neutral profile without the flag" do
+    Dir.mktmpdir do |dir|
+      out = StringIO.new
+      verb = Textus::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
+      verb.parse([])
+      verb.call(nil)
+      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.mustache"))).to be false
+      expect(JSON.parse(out.string)["profile"]).to eq("default")
+    end
+  end
 end
