@@ -40,11 +40,9 @@ module Textus
       define_method(verb) do |*args, **kwargs|
         klass = Textus::Dispatcher::VERBS[verb]
         if klass.respond_to?(:contract?) && klass.contract?
-          klass.contract.args.each do |a|
-            next if a.positional || a.default.nil? || kwargs.key?(a.name)
-
-            kwargs[a.name] = a.default
-          end
+          spec = klass.contract
+          inputs = Textus::Contract::Binder.inputs_from_ordered(spec, args, kwargs)
+          args, kwargs = Textus::Contract::Binder.bind(spec, inputs, validate: false)
         end
         call_value = Textus::Call.build(
           role: @role, correlation_id: @correlation_id, dry_run: @dry_run,

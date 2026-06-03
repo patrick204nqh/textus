@@ -49,28 +49,16 @@ module Textus
       module_function
 
       # Map parsed CLI input -> (positional, keyword) for a spec. Positionals
-      # are taken in contract declaration order from leftover argv; keyword args
-      # come from declared flags. RoleScope fills contract literal defaults, so
-      # absent optionals are omitted here. Required positionals that are absent
-      # raise UsageError (parity with the hand-written verbs).
+      # arrive in contract declaration order from leftover argv; keyword args
+      # (already coerced by flag_values) come from declared flags. Both are
+      # normalized into the uniform by-name inputs hash and handed to the shared
+      # Contract::Binder; a missing required arg becomes a UsageError phrased in
+      # the operator's command path (parity with the hand-written verbs).
       def call_args(spec, positional_argv, flags)
-        pos = []
-        rest = positional_argv.dup
-        kw = {}
-        spec.args.each do |a|
-          if a.positional
-            val = rest.shift
-            if val.nil?
-              raise UsageError.new("#{spec.cli_path} requires #{a.wire}") if a.required
-
-              next
-            end
-            pos << val
-          elsif flags.key?(a.name)
-            kw[a.name] = flags[a.name]
-          end
-        end
-        [pos, kw]
+        inputs = Textus::Contract::Binder.inputs_from_ordered(spec, positional_argv, flags)
+        Textus::Contract::Binder.bind(spec, inputs)
+      rescue Textus::Contract::MissingArgs => e
+        raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
       end
 
       def dispatch(verb_instance, store, spec)

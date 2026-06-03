@@ -64,35 +64,18 @@ module Textus
         raise ToolError.new("#{name}: #{e.message}")
       end
 
-      # Splits the raw JSON arg hash into the positional list and keyword hash
-      # the use-case expects, validating required presence first.
-      # Session-default args (session_default: :method_name) are injected from
-      # the session when absent from the wire; they are never treated as missing.
-      # Positional args are emitted in contract declaration order; use-case signatures must match.
+      # Normalizes the raw JSON arg hash (keyed by wire-name) into the uniform
+      # by-name inputs hash, then delegates the split-and-default algorithm to
+      # the shared Contract::Binder. Session-default args are injected from the
+      # session when absent; the missing-arg error is translated to ToolError
+      # with the same wording the MCP wire has always spoken.
       def map_args(spec, raw, session = nil)
-        missing = spec.required_args.map { |a| a.wire.to_s } - raw.keys
-        raise ToolError.new("#{spec.verb}: missing #{missing.join(", ")}") unless missing.empty?
-
-        positional = []
-        keyword = {}
-        spec.args.each do |a|
-          if raw.key?(a.wire.to_s)
-            value = raw[a.wire.to_s]
-          elsif a.session_default && session
-            value = session.public_send(a.session_default)
-          elsif !a.default.nil?
-            value = a.default
-          else
-            next
-          end
-
-          if a.positional
-            positional << value
-          else
-            keyword[a.name] = value
-          end
+        inputs = spec.args.each_with_object({}) do |a, h|
+          h[a.name] = raw[a.wire.to_s] if raw.key?(a.wire.to_s)
         end
-        [positional, keyword]
+        Textus::Contract::Binder.bind(spec, inputs, session: session)
+      rescue Textus::Contract::MissingArgs => e
+        raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
       end
     end
   end
