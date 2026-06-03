@@ -82,6 +82,7 @@ module Textus
           raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && if_etag != etag_before
 
           @file_store.delete(path)
+          prune_empty_parents(path)
           @audit_log.append(
             role: @call.role, verb: "delete", key: key,
             etag_before: etag_before, etag_after: nil,
@@ -99,6 +100,7 @@ module Textus
 
           FileUtils.mkdir_p(File.dirname(to_path))
           FileUtils.mv(from_path, to_path)
+          prune_empty_parents(from_path)
           basename = to_key.split(".").last
           Entry.for_format(new_mentry.format).rewrite_name(to_path, basename)
           etag_after = Etag.for_file(to_path)
@@ -128,6 +130,38 @@ module Textus
         end
 
         private
+
+        # After a file leaves a directory (delete or move-source), remove any
+        # now-empty parent dirs so bulk move/delete doesn't accrue orphan dirs
+        # (F3 of #161). Floored at the entry's *zone directory* — a zone is a
+        # declared, first-class container, so its own dir is preserved even when
+        # momentarily empty; only the sub-dirs the bulk op carved out are
+        # pruned. Stops at the first non-empty ancestor, so a dir holding a
+        # `.gitkeep` or sibling entries survives. Best-effort: a lost race or a
+        # non-empty dir is silently fine, never fatal to the write.
+        def prune_empty_parents(path)
+          floor = zone_floor(path)
+          return unless floor
+
+          dir = File.dirname(path)
+          while dir.start_with?("#{floor}/") && Dir.empty?(dir)
+            Dir.rmdir(dir)
+            dir = File.dirname(dir)
+          end
+        rescue SystemCallError
+          nil
+        end
+
+        # The zone directory under which `path` lives (`<root>/zones/<zone>`),
+        # or nil if `path` is not under the store's zones tree.
+        def zone_floor(path)
+          zones_root = File.join(@manifest.data.root, "zones")
+          prefix = "#{zones_root}/"
+          return nil unless path.start_with?(prefix)
+
+          zone_seg = path.delete_prefix(prefix).split("/").first
+          zone_seg && File.join(zones_root, zone_seg)
+        end
 
         def ensure_uid(format, meta, content, existing_uid)
           Textus::Entry.for_format(format).inject_uid(meta, content, existing_uid)

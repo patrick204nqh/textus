@@ -55,6 +55,12 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
     expect(File.exist?(File.join(root, "zones/working/new/a.md"))).to be(true)
   end
 
+  it "prunes the now-empty source directory after moving every leaf out (F3)" do
+    build_key_mv_prefix.call("working.old", "working.new", dry_run: false)
+    expect(File.directory?(File.join(root, "zones/working/old"))).to be(false)
+    expect(File.directory?(File.join(root, "zones/working"))).to be(true)
+  end
+
   it "refuses when from_prefix is itself a leaf rather than building a malformed key" do
     expect do
       build_key_mv_prefix.call("working.old.a", "working.new.a", dry_run: true)
