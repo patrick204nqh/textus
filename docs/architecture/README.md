@@ -28,6 +28,16 @@ CLI verbs:  store.<verb>(..., role:)
 MCP gate:   textus mcp serve — same use cases, JSON-RPC.
 ```
 
+The CLI is a **projection of the per-verb `Contract`** (ADR 0063), the operator
+mirror of `MCP::Catalog`: `CLI::Runner` generates a command per `:cli` contract
+from its `cli` path and (where the operator envelope differs from the agent
+return) its `cli_response` shaper, dispatching `contract.verb` by construction.
+Verbs with genuine behavior subclass `Runner::Base` and override `#invoke` only
+— the name stays contract-derived. Only commands with no dispatcher verb
+(`init`, `hook`, `mcp serve`, `schema diff/init`) and the custom-output/parse
+`boot`/`doctor`/`fetch` stay hand-authored. A total reconciliation spec makes
+name/dispatch drift unrepresentable.
+
 **Application**
 
 ```
