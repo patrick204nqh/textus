@@ -28,10 +28,22 @@ module Textus
         @scope
       end
 
-      # read
-      # Pure read: a hook must never trigger a fetch (fetch fires events →
-      # hooks → reentrancy). Bypass the read-through `get` verb (ADR 0062)
-      # and read through the orchestrator-free primitive directly.
+      # read — a deliberately pure-observation surface: NOTHING here fetches
+      # (`list`/`deps`/`freshness` don't either). The invariant is that a hook
+      # observes current state and never triggers an I/O cascade. `get` bypasses
+      # the read-through `get` verb (ADR 0062) and reads through the
+      # orchestrator-free primitive directly, because read-through inside a hook
+      # would: (1) fire fetch events → hooks → unbounded reentrancy; (2) spawn
+      # the orchestrator's threads/fork from inside a hook callback; (3) probe
+      # the single-flight fetch lock its own enclosing fetch may hold (deadlock);
+      # (4) inject network latency into every hook read.
+      #
+      # KNOWN INCONSISTENCY (flagged for a future redesign, not fixed here):
+      # this method is named `get` but has `Read::GetEntry` (pure) semantics,
+      # while the public `get` verb is read-through — the same name/behavior
+      # split ADR 0062 removed one layer up. The honest fix is to rename this to
+      # `get_entry` (mirroring `Read::GetEntry`) so `get` means read-through
+      # everywhere it exists; deferred to avoid churning the hook author API now.
       def get(key)                = pure_reader.call(key)
       def list(**)                = @scope.list(**)
       def deps(key)               = @scope.deps(key)
