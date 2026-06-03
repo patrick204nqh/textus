@@ -25,10 +25,11 @@ directly under the audit/build path where silence is most expensive.
 
 The session fingerprint is a **composite digest over every orientation-bearing
 file**: `manifest.yaml` + `hooks/**/*.rb` + `schemas/**/*`. Each file's etag is
-taken through the `FileStore` port (ADR 0025); the composite is one
-`Etag.for_bytes` digest over the sorted `path:etag` listing, so it is order-stable
-and reuses the single sanctioned digest home (guarded by
-`no_handrolled_manifest_etag_spec`).
+taken via `Etag.for_file` (the digest home behind the `FileStore` port, ADR 0025);
+the composite is one `Etag.for_bytes` digest over the sorted `path:etag` listing,
+so it is order-stable and reuses the single sanctioned digest home (guarded by
+`no_handrolled_manifest_etag_spec`). It lives as `Etag.for_contract` — inside the
+`Etag` module, not the unrelated verb-interface-contract DSL `Textus::Contract`.
 
 The `Session` field `manifest_etag` is renamed `contract_etag` — in Ruby and in
 the agent-facing `pulse` envelope key — because the name now lies if left as
@@ -48,7 +49,7 @@ ADR 0040 binding role for the connection's lifetime.
 - `pulse`'s `manifest_etag` key is renamed `contract_etag` (breaking, wire).
 - `Textus::Session#manifest_etag` / `MCP::Session#manifest_etag` is renamed
   `contract_etag` (breaking, Ruby embedders).
-- `Etag.for_bytes` remains the only digest home; `Contract.etag` composes it.
+- `Etag.for_bytes` remains the only digest home; `Etag.for_contract` composes it.
 
 ## Alternatives considered
 
