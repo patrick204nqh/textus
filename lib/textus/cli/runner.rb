@@ -127,18 +127,20 @@ module Textus
         g
       end
 
-      # Verbs that keep a hand-authored CLI class and must NOT be generated:
-      # genuine escape hatches the generic runner cannot express — stdin
-      # (put/propose), file reads (migrate/rule_lint), stateful resources
-      # (build/BuildLock, pulse/CursorStore), one-command-two-verbs multi-dispatch
-      # (key delete/mv via --prefix), domain behavior (get's UnknownKey +
-      # suggestions), and the bulk-destructive verbs whose CLI default differs
-      # from their Ruby/MCP default (zone_mv applies by default on the CLI but
-      # plans by default for agents, ADR 0060 — generating it would flip that).
-      # `audit` stays for its `since` String→Time coercion and `**filters`
-      # keyrest #call (ADR 0065 left it: converting one verb is not worth a
-      # one-off `coerce:` primitive). Output-only hatches (uid, blame) became
-      # generated verbs via arity-2 `cli_response` (ADR 0065).
+      # Behavioral escape hatches only — verbs whose CLI behavior is NOT a
+      # projection of the contract (ADR 0068). Acquisition (stdin/file/coerce),
+      # surface-divergent defaults (cli_default:), stateful wrappers (around:),
+      # and multi-dispatch splits are all declarative now and generate. What
+      # remains is genuine behavior:
+      #   put       — IntakeFetch read-through orchestration
+      #   get       — raises UnknownKey with resolver suggestions, a CLI-only
+      #               affordance the agent surface deliberately omits (returns nil)
+      #   build     — CLI auto-resolves the build-capability actor role (not the
+      #               --as role) and serializes under BuildLock; the role
+      #               resolution is policy, not a projection (around: covers only
+      #               the lock, so build stays whole — ADR 0068)
+      #   fetch/fetch_all — worker verbs (background intake), not request/response
+      #   boot/doctor     — composite reports assembled outside the contract
       HAND_AUTHORED_VERBS = %i[
         get put build
         fetch fetch_all boot doctor
