@@ -56,7 +56,7 @@ module Textus
       end
 
       if spec&.around
-        Textus::Contract::Around.with(spec.around, scope: self, inputs: inputs, &invoke)
+        Textus::Contract::Around.with(spec.around, scope: self, inputs: inputs, session: session, &invoke)
       else
         invoke.call(inputs)
       end

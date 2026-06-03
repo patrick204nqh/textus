@@ -107,6 +107,16 @@ module Textus
         end
       end
 
+      # Declare a stateful wrapper resource (Contract::Around) to run around
+      # dispatch — e.g. `around :cursor` (pulse) or `around :build_lock` (build).
+      def around(name = nil)
+        return @__around unless name
+
+        raise "contract already built; declare around before reading .contract" if defined?(@__contract) && @__contract
+
+        @__around = name
+      end
+
       def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil, source: nil, coerce: nil, cli_default: :__unset) # rubocop:disable Metrics/ParameterLists,Layout/LineLength
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 

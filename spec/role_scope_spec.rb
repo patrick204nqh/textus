@@ -62,7 +62,7 @@ RSpec.describe Textus::RoleScope do
       resource_class = Class.new do
         def initialize(sink) = (@sink = sink)
 
-        def wrap(scope:, inputs:) # rubocop:disable Lint/UnusedMethodArgument
+        def wrap(scope:, inputs:, session:) # rubocop:disable Lint/UnusedMethodArgument
           @sink << :before
           result = yield(inputs)
           @sink << :after
