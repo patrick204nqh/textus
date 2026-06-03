@@ -93,13 +93,6 @@ module Textus
         else
           raise "contract already built; declare surfaces before reading .contract" if defined?(@__contract) && @__contract
 
-          if list.include?(:ruby)
-            raise ArgumentError.new(
-              "surfaces no longer accepts :ruby — Ruby is the implicit base API; " \
-              "declare external projections only (:cli, :mcp). See ADR 0073.",
-            )
-          end
-
           @__surfaces = list
         end
       end

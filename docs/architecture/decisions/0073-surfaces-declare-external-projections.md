@@ -83,7 +83,7 @@ The result is an asymmetry a reader cannot derive from the code: **MCP** is quer
 
 4. **Empty `surfaces` = Ruby-only internal verb.** With `:ruby` gone, `surfaces []` (or no declaration — `@__surfaces ||= []`) becomes the honest, usable state for an internal operation reachable from code but absent from both operator and agent wires. Today no verb uses it; the model now *has a name* for it.
 
-5. **Guard against regression.** Add a single assertion (contract build-time raise, or a reconciliation spec) that `:ruby` is no longer an accepted surface token, so the retired vocabulary cannot creep back. `cli?`/`mcp?` and all catalog/runner derivation are **unchanged** — this is a vocabulary subtraction, not a mechanism change.
+5. **No regression guard — deliberately.** An earlier draft added a build-time raise rejecting `:ruby` in `surfaces`. We dropped it: it serves no consumer, and a re-introduced `:ruby` is *inert* (it gates nothing — the very property that motivated this ADR). Enforcing the absence of a token that does nothing is machinery without a job. The retirement is carried by the ADR and by the token's absence from every declaration, not by a tripwire. (Known residual: because `capabilities` appends `"ruby"` unconditionally, a re-added `:ruby` would produce a duplicate in that one payload — accepted as a low-severity, easily-spotted risk rather than paid down with a guard or a `.uniq`.) `cli?`/`mcp?` and all catalog/runner derivation are **unchanged** — this is a pure vocabulary subtraction.
 
 This is the minimal, honest move. Two larger redesigns were considered and deferred (see Alternatives): unifying the query mechanism behind one `Surface` registry, and modeling each surface as a framing value object that owns its own ingest/view. Both *subsume* this ADR; neither is justified yet.
 
@@ -97,7 +97,7 @@ This is the minimal, honest move. Two larger redesigns were considered and defer
 
 - **A new capability is named, not added:** `surfaces []` for internal Ruby-only verbs. Nothing uses it yet — but the next internal operation has a correct home instead of a misleading `:ruby`-only declaration.
 
-- **DSL vocabulary change.** Anyone authoring a contract learns two tokens instead of three, and learns that Ruby is implicit. This is the cost: a one-time mental-model update, mitigated by the build-time guard that fails loudly on stale `:ruby`.
+- **DSL vocabulary change.** Anyone authoring a contract learns two tokens instead of three, and learns that Ruby is implicit. This is the cost: a one-time mental-model update. There is no guard against typing the retired `:ruby` (see Decision §5) — a stray token is inert, and the absence of any in-tree example is the guidance.
 
 ## Alternatives considered
 

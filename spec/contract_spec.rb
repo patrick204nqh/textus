@@ -123,17 +123,6 @@ RSpec.describe Textus::Contract do
     expect { klass.verb(:other) }.to raise_error(RuntimeError, /contract already built/)
   end
 
-  it "rejects the retired :ruby surface token (ADR 0073)" do
-    expect do
-      Class.new do
-        extend Textus::Contract::DSL
-
-        verb :legacy
-        surfaces :cli, :ruby, :mcp
-      end
-    end.to raise_error(ArgumentError, /:ruby/)
-  end
-
   it "treats empty surfaces as a Ruby-only internal verb — off both wires (ADR 0073)" do
     spec = Class.new do
       extend Textus::Contract::DSL
