@@ -100,7 +100,30 @@ module Textus
       See SPEC.md §5.10 for the full table.
     MD
 
-    def self.run(target_root)
+    AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
+      # --with-agent profile: project facts + runbooks feed the orientation
+      # projection below, which `textus build` renders to CLAUDE.md/AGENTS.md.
+      - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
+      - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+      - key: artifacts.orientation
+        path: artifacts/orientation.md
+        zone: artifacts
+        template: orientation.mustache
+        inject_boot: true
+        publish:
+          to:
+          - CLAUDE.md
+          - AGENTS.md
+        compute:
+          kind: projection
+          select:
+          - knowledge.project
+          - knowledge.runbooks
+          transform: orientation_reducer
+        kind: derived
+    YAML
+
+    def self.run(target_root, with_agent: false)
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
 
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
@@ -115,12 +138,52 @@ module Textus
       scaffold_dir = File.expand_path("init/templates", __dir__)
       File.write(File.join(target_root, "hooks", "machine_intake.rb"),
                  File.read(File.join(scaffold_dir, "machine_intake.rb")))
-      File.write(File.join(target_root, "manifest.yaml"), DEFAULT_MANIFEST)
+      File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
+      mcp_status = nil
+      if with_agent
+        scaffold_agent_profile(target_root, scaffold_dir)
+        mcp_status = write_mcp_config(target_root, scaffold_dir)
+      end
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
       File.write(File.join(target_root, ".gitignore"), derived_gitignore(target_root))
-      { "protocol" => PROTOCOL, "initialized" => target_root }
+      result = { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => with_agent ? "agent" : "default" }
+      result["mcp_config"] = mcp_status if with_agent
+      result
+    end
+
+    # Composes the agent profile by inserting AGENT_ENTRIES immediately before the
+    # top-level `rules:` block of DEFAULT_MANIFEST — that block is load-bearing for
+    # this `.sub`; removing it from DEFAULT_MANIFEST would silently drop the entries.
+    def self.manifest_yaml(with_agent:)
+      return DEFAULT_MANIFEST unless with_agent
+
+      DEFAULT_MANIFEST.sub(/^rules:/, "#{AGENT_ENTRIES}rules:")
+    end
+
+    # Copies the proven orientation bundle into a freshly-init'd store.
+    def self.scaffold_agent_profile(target_root, scaffold_dir)
+      {
+        "project.schema.yaml" => File.join("schemas", "project.yaml"),
+        "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
+        "orientation.mustache" => File.join("templates", "orientation.mustache"),
+        "orientation_reducer.rb" => File.join("hooks", "orientation_reducer.rb"),
+      }.each do |src, dest|
+        File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
+      end
+    end
+
+    # The one file init writes outside .textus/: a starter .mcp.json at the
+    # project root. Write-once — never clobber a hand-authored config. The
+    # command form assumes a gem-installed `textus` on PATH; the user owns
+    # the file after this first write.
+    def self.write_mcp_config(target_root, scaffold_dir)
+      dest = File.join(File.dirname(target_root), ".mcp.json")
+      return "skipped" if File.exist?(dest)
+
+      File.write(dest, File.read(File.join(scaffold_dir, "mcp.json")))
+      "written"
     end
 
     # The store's `.gitignore` is generated, never hand-kept (ADR 0038), and now
