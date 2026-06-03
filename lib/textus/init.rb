@@ -160,6 +160,8 @@ module Textus
       {
         "project.schema.yaml" => File.join("schemas", "project.yaml"),
         "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
+        "orientation.mustache" => File.join("templates", "orientation.mustache"),
+        "orientation_reducer.rb" => File.join("hooks", "orientation_reducer.rb"),
       }.each do |src, dest|
         File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
       end

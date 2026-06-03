@@ -54,4 +54,12 @@ RSpec.describe "Textus::Init with_agent profile" do
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
+
+  it "scaffolds the orientation template + reducer hook under --with-agent" do
+    dir, root, = init(with_agent: true)
+    expect(File.read(File.join(root, "templates", "orientation.mustache"))).to include("{{project.name}}")
+    expect(File.read(File.join(root, "hooks", "orientation_reducer.rb"))).to include(":transform_rows, :orientation_reducer")
+  ensure
+    FileUtils.remove_entry(dir) if dir && File.directory?(dir)
+  end
 end
