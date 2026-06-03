@@ -4,7 +4,7 @@ module Textus
     # (ADR 0039). `tool_schemas` feeds tools/list; `call` is the generic
     # tools/call dispatch: map JSON args -> (positional, keyword) per the
     # contract, invoke the verb through the role scope, then shape the
-    # return value with the contract's response block. No per-tool code.
+    # return value with the contract's default view. No per-tool code.
     module Catalog
       module_function
 
@@ -59,7 +59,7 @@ module Textus
           h[a.name] = (args || {})[a.wire.to_s] if (args || {}).key?(a.wire.to_s)
         end
         result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session, validate: true)
-        spec.response.call(result) # TEMP until Task 7 (View.render)
+        Textus::Contract::View.render(spec, :default, result, inputs)
       rescue Textus::Contract::MissingArgs => e
         raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
       rescue ContractDrift, CursorExpired
