@@ -1,6 +1,14 @@
 module Textus
   module Read
     class Uid
+      extend Textus::Contract::DSL
+
+      verb     :uid
+      summary  "Return the stable UID of an entry without reading its body."
+      surfaces :cli, :ruby
+      cli      "key uid"
+      arg :key, String, required: true, positional: true, description: "entry key"
+
       def initialize(container:, call:)
         @container = container
         @call      = call

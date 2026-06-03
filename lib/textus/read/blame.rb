@@ -7,6 +7,15 @@ module Textus
     # row. Falls back to `git => nil` when not in a git repo or when the
     # file is untracked.
     class Blame
+      extend Textus::Contract::DSL
+
+      verb     :blame
+      summary  "Annotate audit rows for a key with the git commit that introduced each file state."
+      surfaces :cli, :ruby
+      cli      "blame"
+      arg :key,   String,  required: true,  description: "entry key to blame"
+      arg :limit, Integer, required: false, description: "maximum number of audit rows to return"
+
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @container = container
         @manifest  = container.manifest

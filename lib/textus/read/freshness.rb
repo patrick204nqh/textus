@@ -7,6 +7,15 @@ module Textus
     # current status. Status is one of :fresh, :stale, :never_fetched, or
     # :no_policy.
     class Freshness
+      extend Textus::Contract::DSL
+
+      verb     :freshness
+      summary  "Report the fetch-freshness status of every entry with a fetch policy."
+      surfaces :cli, :ruby
+      cli      "freshness"
+      arg :prefix, String, required: false, description: "filter to keys with this prefix"
+      arg :zone,   String, required: false, description: "filter to entries in this zone"
+
       def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
         @container  = container
         @call       = call
