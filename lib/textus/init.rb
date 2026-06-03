@@ -39,7 +39,6 @@ module Textus
             config:
               machines:
                 local: { via: local }
-      # load-bearing: --with-agent inserts AGENT_ENTRIES immediately before this block
       rules:
         - match: feeds.machines.**
           fetch: { ttl: 1h, on_stale: warn } # meaningful on a long-running server
@@ -154,8 +153,9 @@ module Textus
       result
     end
 
-    # The default manifest, plus the agent-profile entries inserted just
-    # before the top-level `rules:` block when --with-agent is set.
+    # Composes the agent profile by inserting AGENT_ENTRIES immediately before the
+    # top-level `rules:` block of DEFAULT_MANIFEST — that block is load-bearing for
+    # this `.sub`; removing it from DEFAULT_MANIFEST would silently drop the entries.
     def self.manifest_yaml(with_agent:)
       return DEFAULT_MANIFEST unless with_agent
 
