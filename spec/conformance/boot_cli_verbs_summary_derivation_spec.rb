@@ -1,13 +1,13 @@
 require "spec_helper"
 
-# Guard (ADR 0039): where a boot catalog verb has a Dispatcher contract, its
-# summary is DERIVED from that contract — not a second hand-typed copy.
+# Guard (ADR 0039): a verb's summary is a fact derived from its contract, not
+# editorial presentation. Where a boot catalog verb has a Dispatcher contract,
+# its surfaced summary must equal that contract's — and the curated source must
+# not carry a second hand-typed copy that could silently drift.
 RSpec.describe "Boot::CLI_VERBS summaries derive from contracts (ADR 0039)" do
-  it "matches the contract summary for every catalog verb that has one" do
-    by_name = Textus::Dispatcher::VERBS.values
-                                       .select { |k| k.respond_to?(:contract?) && k.contract? }
-                                       .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+  let(:by_name) { Textus::Boot.contract_summaries }
 
+  it "matches the contract summary for every catalog verb that has one" do
     drift = Textus::Boot::CLI_VERBS.filter_map do |v|
       want = by_name[v["name"]]
       next if want.nil? || want == v["summary"]
@@ -15,5 +15,13 @@ RSpec.describe "Boot::CLI_VERBS summaries derive from contracts (ADR 0039)" do
       "#{v["name"]}: catalog=#{v["summary"].inspect} contract=#{want.inspect}"
     end
     expect(drift).to be_empty, "CLI_VERBS summary drift:\n#{drift.join("\n")}"
+  end
+
+  it "carries no literal summary in the curated source for a verb that has a contract" do
+    redundant = Textus::Boot::CURATED_CLI_VERBS.filter_map do |v|
+      "#{v["name"]}: #{v["summary"].inspect}" if by_name.key?(v["name"]) && v.key?("summary")
+    end
+    expect(redundant).to be_empty,
+                         "These curated verbs hand-type a summary their contract already owns:\n#{redundant.join("\n")}"
   end
 end

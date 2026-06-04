@@ -398,7 +398,7 @@ No partials. No lambdas. No HTML escaping (output is raw text, intended for Mark
 
 #### 5.2.2 External compute (`kind: external`)
 
-A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `compute: { kind: external, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `textus freshness` can compare source mtimes against the derived file's `_meta.generated.at` and report staleness.
+A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `compute: { kind: external, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the derived file's `_meta.generated.at` and report staleness. (Generator/build drift is dependency-based, not age-based; ADR 0079 keeps it out of the `lifecycle:` unification and ADR 0085 keeps it out of the internal `freshness` scan — it is a `doctor` health check.)
 
 ```yaml
 - key: output.catalogs.skills
@@ -415,9 +415,9 @@ A derived entry that is produced by a build tool *outside* textus — `rake`, `j
 
 **`sources:`** is a list. Each element is either a dotted key prefix (matched against manifest entries) or a filesystem path (relative to the repo root, or absolute). For each key prefix, every matching entry's file mtime is checked. For each path, file or directory mtime is checked.
 
-**`command:`** is recorded in the staleness row's `generator` field but never executed. It exists so `textus freshness` output can carry a hint about how to fetch.
+**`command:`** is recorded in the staleness row's `generator` field but never executed. It exists so `doctor`'s `generator_drift` output can carry a hint about how to regenerate.
 
-**Freshness contract.** An entry with `compute: { kind: external }` is reported by `textus freshness` as `stale` when:
+**Generator-drift contract.** An entry with `compute: { kind: external }` is reported by `doctor`'s `generator_drift` check as drifted when:
 - The derived file does not exist, OR
 - `_meta.generated.at` is missing or unparseable, OR
 - Any `sources:` element has been modified after `_meta.generated.at`.
@@ -498,7 +498,7 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 **Refresh paths.** Two are supported:
 
 1. **In-process** — a read-through `textus get KEY --as=automation` on a stale entry whose rule says `on_expire: refresh` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `fetch` (`automation` by default).
-2. **External automation** — a cron job or agent harness reads `textus freshness --zone=intake --output=json`, fetches sources reported `expired` out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`.
+2. **External automation** — a cron job or agent harness reads the `stale` list from `textus pulse` (the soonest deadline is `next_due_at`), fetches the sources of the keys reported stale out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`. (`pulse` derives `stale`/`next_due_at` from the internal lifecycle scan; ADR 0085 removed the standalone `freshness` verb. For per-entry detail — ttl, age, on_expire action — read `textus get KEY` and `textus rule_explain KEY`.)
 
 Both paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
@@ -668,7 +668,7 @@ The three `:fetch_*` lifecycle events report the progress and failures of backgr
 **Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
 
 - **RPC hooks** (`rpc` mode) receive `caps:` — a `Textus::Container`. Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
-- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
+- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads — `freshness` is the Ruby-only internal lifecycle scan, ADR 0085, not a public verb), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
 
 Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
 
@@ -865,7 +865,6 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `where K` | read | any |
 | `get K [--no-fetch]` | read (read-through by default: refresh-on-stale per the entry's `lifecycle` rule when `on_expire: refresh`, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
 | `schema show K` | read | any |
-| `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
 | `blame KEY` | read | any |
 | `rule list` / `rule explain KEY` | read | any |
@@ -902,7 +901,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 }
 ```
 
-`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its lifecycle/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`doctor`, nor `freshness` (the Ruby-only internal lifecycle scan, ADR 0085) (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
 
 The agent's MCP write surface includes the single-key `key_delete` and `key_mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment; the single-key tools were renamed from `delete`/`mv` to share the `key_` family stem in ADR 0082, which also removed the `migrate` YAML-plan orchestrator — its `zone_mv`/`key_mv_prefix`/`key_delete_prefix` ops remain individually callable). All of these apply by default; `dry_run: true` is a uniform opt-in preview that returns a Plan without mutating (ADR 0071 — verbs are actions, dry-run is opt-in on every surface). Single-key `key_delete` additionally accepts an optional `if_etag` optimistic-concurrency check. The blast-radius reads (`where`/`deps`/`rdeps`) remain on MCP so an agent can look before it leaps. The promotion verbs `accept` and `reject` are also on MCP (ADR 0072): they are gated by the `author_held` capability floor, not by transport absence — a default-`agent` connection is refused, while a connection launched as a role holding `author` (`--as`/`TEXTUS_ROLE`/`.textus/role`, resolved once at launch per ADR 0040) can promote, closing the propose→accept loop over one transport. `build` is also on MCP (ADR 0076): it is caller-agnostic and self-elevating — it always runs as the manifest's `build`-capable actor regardless of the calling role, grants no authority over content (build is a pure, idempotent function of already-accepted canon, ADR 0070), and is serialized by a shared single-writer lock across all transports so a concurrent CLI or background build cannot collide with an MCP-triggered one.
 
@@ -923,7 +922,7 @@ The agent's MCP write surface includes the single-key `key_delete` and `key_mv` 
 }
 ```
 
-`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is sourced from `freshness`. `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. `contract_etag` is the `sha256:`-prefixed composite content hash of the contract — the manifest plus hooks and schemas (ADR 0074, via ADR 0025) — for cheap change-detection. `next_due_at` is the soonest upcoming freshness deadline across entries (ISO-8601, or `null` if none). `hook_errors` lists hook failures recorded since the cursor. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `stale` is computed by the internal lifecycle scan (the former `freshness` verb, now Ruby-only — ADR 0085 folded its agent-facing output into `pulse`). `pending_review` lists all keys in the queue zone. `doctor` is an `{ok, warn, fail}` count summary. `contract_etag` is the `sha256:`-prefixed composite content hash of the contract — the manifest plus hooks and schemas (ADR 0074, via ADR 0025) — for cheap change-detection. `next_due_at` is the soonest upcoming lifecycle deadline across entries (ISO-8601, or `null` if none). `hook_errors` lists hook failures recorded since the cursor. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -935,25 +934,7 @@ The agent's MCP write surface includes the single-key `key_delete` and `key_mv` 
 
 `if_etag` is optional on both `put` and `key_delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
 
-**`textus freshness` output shape:**
-
-```json
-{
-  "verb": "freshness",
-  "rows": [
-    { "key": "feeds.upstream.notes",
-      "zone": "feeds",
-      "last_fetched_at": "2026-05-21T13:21:17Z",
-      "age_seconds": 65000,
-      "ttl_seconds": 43200,
-      "on_expire": "warn",
-      "status": "expired",
-      "next_due_at": "2026-05-22T01:21:17Z" }
-  ]
-}
-```
-
-Each row reports one entry's verdict (`fresh`, `expired`, or `no_policy`) plus the matched rule's `on_expire` action, against its matched `lifecycle:` rule. `textus build` consumes its own staleness signal and executes derived entries' projections under a `build`-holding role (`automation` by default); `--dry-run` prints the plan without executing.
+The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, one verdict (`fresh`, `expired`, or `no_policy`) plus the matched rule's `on_expire` action, against its matched `lifecycle:` rule. ADR 0085 removed the standalone `freshness` verb that used to render these rows; the scan is now Ruby-only (consumed by `pulse` and the hook context), and human drill-down into a single entry's verdict is `textus get KEY` (carries `stale`/`stale_reason`) plus `textus rule_explain KEY` (the `lifecycle:` ttl + `on_expire`). `textus build` consumes its own staleness signal and executes derived entries' projections under a `build`-holding role (`automation` by default); `--dry-run` prints the plan without executing.
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
 
@@ -1002,7 +983,7 @@ Given a manifest entry where `key: identity.self` lives in the `identity` zone (
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, lifecycle: { ttl: 1h, on_expire: warn } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus freshness --output=json` includes a row for `intake.notes` with `status: "expired"`. Calling `textus freshness` does NOT trigger a refresh.
+Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, lifecycle: { ttl: 1h, on_expire: warn } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a refresh.
 
 **Fixture E — Projection build:**
 Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so rebuilding with unchanged sources reproduces it byte-for-byte and writes nothing.
@@ -1060,7 +1041,7 @@ A `textus/3` implementation MUST:
 - [ ] Refuse writes whose resolved role lacks the capability the target zone-kind requires with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|expired|no_policy` (plus the `on_expire` action) without invoking any refresh.
+- [ ] Implement the lifecycle scan behind `pulse` (`stale`/`next_due_at`) and the hook context per §5.11 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|expired|no_policy` (plus the `on_expire` action) without invoking any refresh. (ADR 0085: a Ruby-only internal scan — there is no public `freshness` verb.)
 - [ ] Pass the conformance fixtures A–I in §12.
 
 A `textus/3` implementation MAY:

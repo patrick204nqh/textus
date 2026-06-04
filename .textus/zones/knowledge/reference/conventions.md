@@ -69,7 +69,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
     to: [docs/people.md]            # optional repo-relative byte-copy targets
 ```
 
-**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `textus freshness` can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `build` (default: `automation`).
+**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `build` (default: `automation`).
 
 ```yaml
 - key: artifacts.catalogs.skills
@@ -92,7 +92,7 @@ External inputs land via `:resolve_intake` hooks, not shell commands. Each intak
 
 ```sh
 textus get feeds.notion.roadmap --as=automation        # refreshes if stale
-textus freshness --zone=feeds --output=json            # which entries are expired
+textus pulse --output=json                             # `stale` lists expired entries; `next_due_at` is the soonest deadline
 ```
 
 Lifecycle budgets live in the top-level `rules:` block, matched by glob:
@@ -146,4 +146,4 @@ The user-facing CLI surface, the wire envelope shape, and the protocol version (
 
 - **MCP servers**: a thin server that exposes `textus get` and `textus put` as tools is the recommended way to give Claude/agents access. Don't bake MCP into this gem.
 - **Vector stores**: index `body` content into a vector store if you want fuzzy retrieval. `frontmatter` stays in textus as the source of truth for deterministic facts.
-- **CI**: run `textus freshness` (or `textus list` + schema validation) in CI to catch drift between derived entries and their sources.
+- **CI**: run `textus doctor` (the `generator_drift` check) or `textus pulse` (the `stale` list) in CI to catch drift between derived entries and their sources.
