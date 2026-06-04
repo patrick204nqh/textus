@@ -239,4 +239,15 @@ RSpec.describe Textus::Boot do
     expect(parsed["zones"].length).to eq(5)
     expect(parsed["cli_verbs"]).to be_an(Array)
   end
+
+  it "the CLI --lean flag yields the lean envelope" do
+    out = StringIO.new
+    err = StringIO.new
+    code = Textus::CLI.run(["boot", "--lean", "--output=json"],
+                           stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
+    expect(code).to eq(0)
+    parsed = JSON.parse(out.string)
+    expect(parsed).to include("agent_quickstart", "contract_etag")
+    expect(parsed).not_to have_key("entries")
+  end
 end

@@ -10,14 +10,16 @@ module Textus
       verb     :boot
       summary  "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart."
       surfaces :cli, :mcp
+      arg :lean, :boolean,
+          description: "return only orientation essentials (zones, agent_quickstart, contract_etag) for cheap session-start injection"
 
       def initialize(container:, call:)
         @container = container
         @call      = call
       end
 
-      def call
-        Textus::Boot.build(container: @container)
+      def call(lean: false)
+        Textus::Boot.build(container: @container, lean: lean)
       end
     end
   end
