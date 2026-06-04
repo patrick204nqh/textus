@@ -28,6 +28,7 @@ module Textus
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
       Check::LifecycleActionInvalid,
+      Check::LegacyLifecycleSlot,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze
