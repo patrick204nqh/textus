@@ -62,6 +62,15 @@ entries:
     kind: nested
     publish:
       tree: docs/tutorials
+  - key: knowledge.decisions
+    path: knowledge/decisions
+    zone: knowledge
+    schema: null
+    owner: human:self
+    nested: true
+    kind: nested
+    publish:
+      tree: docs/architecture/decisions
   - key: knowledge.docs-index
     path: knowledge/docs-readme.md
     zone: knowledge
