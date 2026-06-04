@@ -1,6 +1,5 @@
 .env
 .envrc
-.claude/settings.json
 .claude/settings.local.json
 
 # Ruby
