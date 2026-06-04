@@ -9,12 +9,13 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## 0.48.0 — 2026-06-04 — Unified `lifecycle` policy (ADR 0079)
+## 0.48.0 — 2026-06-04 — Unified `lifecycle` policy + docs become canon (ADR 0079, 0081)
 
 Staleness and retention collapse into one age policy, and the upkeep verb surface shrinks 8→3.
 
 ### Changed
 
+- **`docs/` is now textus canon (ADR 0081).** Every committed doc is authored under `.textus/zones/knowledge/` and published back to `docs/` by `textus build` (the same projection mechanism as `CLAUDE.md`/`AGENTS.md`); `docs/` is now a committed, sentinel-managed mirror. Adopt-in-place (ADR 0050) made the migration a zero-diff republish. `docs/assets/` (branding binaries) moved to repo-root `assets/`; `docs/plans/` (gitignored) is unchanged.
 - **One `lifecycle: { ttl, on_expire }` rule slot** replaces the separate `fetch:` (intake freshness) and `retention:` (leaf pruning) slots. `on_expire` is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy aside then delete). An action's *destructiveness* decides where it runs: non-destructive `refresh`/`warn` are applied lazily on `get`; destructive `drop`/`archive` run only on the `tend` sweep. A read never deletes.
 - **`tend` is now the destructive-only sweep** — it drops/archives expired entries and refreshes cold intake, superseding the composite body of ADR 0078. Result keys are `dropped`/`archived`/`refreshed`/`failed` (apply) and `would_drop`/`would_archive`/`would_refresh` (`--dry-run`).
 - **`freshness` reports the unified verdict** (`fresh`/`expired`/`no_policy`) and the matched `on_expire` action; `pulse`'s `stale` list now reflects expired entries.
