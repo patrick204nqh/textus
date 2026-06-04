@@ -92,11 +92,12 @@ module Textus
         name = params["name"]
         args = params["arguments"] || {}
 
-        # ADR 0083: the contract-drift guard gates write verbs only. boot and
-        # pure reads bypass it (a stale read returns on-disk truth; boot's whole
-        # job is to re-orient). A boot call re-arms the session's captured etag
-        # so "re-run boot" actually recovers a mid-session contract edit.
-        @session.check_etag!(contract_etag) if Catalog.write_verbs.include?(name)
+        # ADR 0083: the contract-drift guard gates mutating verbs — every MCP
+        # verb that is NOT a pure read (Write:: + the destructive Maintenance::
+        # verbs tend/zone_mv/key_*_prefix). Reads and boot bypass it (a stale
+        # read returns on-disk truth; boot re-orients). Keying on read_verbs
+        # (not write_verbs) keeps the destructive Maintenance:: verbs gated.
+        @session.check_etag!(contract_etag) unless Catalog.read_verbs.include?(name)
 
         result = Catalog.call(name, session: @session, store: @store, args: args)
         @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "pulse"

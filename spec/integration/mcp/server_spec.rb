@@ -167,6 +167,14 @@ RSpec.describe Textus::MCP::Server do
     expect(write_resp["result"]["isError"]).to be(false)
   end
 
+  # ADR 0083 — destructive Maintenance:: verbs must also be drift-gated
+  it "refuses a destructive maintenance verb (tend) after contract drift with ContractDrift error" do
+    lines = run_with_drift(name: "tend", arguments: {})
+    resp = lines.find { |r| r["id"] == 2 }
+    expect(resp["error"]).not_to be_nil
+    expect(resp["error"]["message"]).to match(/contract changed/)
+  end
+
   it "returns method-not-found error for unknown methods" do
     responses = run_requests(
       { "jsonrpc" => "2.0", "id" => 1, "method" => "nope/whatever", "params" => {} },
