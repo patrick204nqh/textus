@@ -26,6 +26,15 @@ entries:
     kind: nested
     publish:
       tree: docs/reference
+  - key: knowledge.how-to
+    path: knowledge/how-to
+    zone: knowledge
+    schema: null
+    owner: human:self
+    nested: true
+    kind: nested
+    publish:
+      tree: docs/how-to
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.orientation
