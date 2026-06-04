@@ -30,7 +30,7 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "exposes the maintenance tools" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("key_mv_prefix", "key_delete_prefix",
-                               "zone_mv", "rule_lint", "migrate", "tend")
+                               "zone_mv", "rule_lint", "tend")
     end
 
     it "marks key-required tools' inputSchema with required: ['key']" do
@@ -52,11 +52,11 @@ RSpec.describe Textus::MCP::ToolSchemas do
 
     # The real guard here is the required-array assertions below; presence is belt-and-suspenders
     # (already covered by the catalog-parity test above).
-    it "exposes single-key delete and mv (ADR 0060 amendment)" do
+    it "exposes single-key key_delete and key_mv (ADR 0060 amendment; renamed in ADR 0082)" do
       by_name = described_class.all.to_h { |t| [t[:name], t] }
-      expect(by_name).to include("delete", "mv")
-      expect(by_name["delete"][:inputSchema][:required]).to eq(["key"])
-      expect(by_name["mv"][:inputSchema][:required]).to eq(%w[old_key new_key])
+      expect(by_name).to include("key_delete", "key_mv")
+      expect(by_name["key_delete"][:inputSchema][:required]).to eq(["key"])
+      expect(by_name["key_mv"][:inputSchema][:required]).to eq(%w[old_key new_key])
     end
   end
 end

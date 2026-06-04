@@ -39,7 +39,7 @@ RSpec.describe ":entry_renamed event" do
     store = Textus::Store.new(root)
     store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("knowledge.a", "knowledge.b")
+    store.as("human").key_mv("knowledge.a", "knowledge.b")
     mv_events = $textus_event_log.select { |e| e[0] == :entry_renamed }
     expect(mv_events.length).to eq(1)
     expect(mv_events.first[1]).to eq("knowledge.a")
@@ -51,7 +51,7 @@ RSpec.describe ":entry_renamed event" do
     store = Textus::Store.new(root)
     store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("knowledge.a", "knowledge.b")
+    store.as("human").key_mv("knowledge.a", "knowledge.b")
     expect($textus_event_log.map(&:first)).not_to include(:entry_put, :entry_deleted)
   end
 
@@ -59,7 +59,7 @@ RSpec.describe ":entry_renamed event" do
     store = Textus::Store.new(root)
     store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
     $textus_event_log.clear
-    store.as("human").mv("knowledge.a", "knowledge.b", dry_run: true)
+    store.as("human").key_mv("knowledge.a", "knowledge.b", dry_run: true)
     expect($textus_event_log).to be_empty
   end
 
@@ -74,7 +74,7 @@ RSpec.describe ":entry_renamed event" do
     $textus_scoped_log = []
     store = Textus::Store.new(root)
     store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
-    store.as("human").mv("knowledge.a", "knowledge.b")
+    store.as("human").key_mv("knowledge.a", "knowledge.b")
     expect($textus_scoped_log.map(&:first)).to eq([:match])
   ensure
     $textus_scoped_log = nil

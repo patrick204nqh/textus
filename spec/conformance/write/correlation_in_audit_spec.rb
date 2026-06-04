@@ -14,7 +14,7 @@ RSpec.describe "correlation_id in audit rows" do
   it "delete is audit-logged with the request's correlation_id" do
     ops = store.as("human", correlation_id: "test-corr-del")
     ops.put("knowledge.foo", meta: { "name" => "foo" }, body: "hello")
-    ops.delete("knowledge.foo")
-    expect(store).to have_audit_verb("delete").with_correlation("test-corr-del")
+    ops.key_delete("knowledge.foo")
+    expect(store).to have_audit_verb("key_delete").with_correlation("test-corr-del")
   end
 end

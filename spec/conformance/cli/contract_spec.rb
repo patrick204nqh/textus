@@ -56,7 +56,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "propose" => Textus::CLI::Verb::GenPropose,
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::GenRdeps,
-      "migrate" => Textus::CLI::Verb::GenMigrate,
       "reject" => Textus::CLI::Verb::GenReject,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
@@ -78,9 +77,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "run" => Textus::CLI::Verb::HookRun,
     )
     expect(Textus::CLI::Group::Key.subcommands).to eq(
-      "delete" => Textus::CLI::Verb::GenDelete,
+      "delete" => Textus::CLI::Verb::GenKeyDelete,
       "delete-prefix" => Textus::CLI::Verb::GenKeyDeletePrefix,
-      "mv" => Textus::CLI::Verb::GenMv,
+      "mv" => Textus::CLI::Verb::GenKeyMv,
       "mv-prefix" => Textus::CLI::Verb::GenKeyMvPrefix,
       "uid" => Textus::CLI::Verb::GenUid,
     )

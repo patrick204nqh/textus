@@ -1,9 +1,9 @@
 module Textus
   module Write
-    class Delete
+    class KeyDelete
       extend Textus::Contract::DSL
 
-      verb     :delete
+      verb     :key_delete
       summary  "Delete one entry by key. Single-key, lower blast radius than " \
                "key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}."
       surfaces :cli, :mcp
@@ -25,7 +25,7 @@ module Textus
         Textus::Manifest::Data.validate_key!(key)
         mentry = @manifest.resolver.resolve(key).entry
 
-        guard_for(:delete, key, if_etag: if_etag).check!(eval_for(:delete, target_key: key))
+        guard_for(:key_delete, key, if_etag: if_etag).check!(eval_for(:key_delete, target_key: key))
 
         writer.delete(key, mentry: mentry, if_etag: if_etag)
 

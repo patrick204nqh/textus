@@ -56,7 +56,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
       expect(File.exist?(path)).to be(false)
 
       last = File.read(audit_log_path(root)).lines.last
-      expect(last).to include("\"verb\":\"delete\"")
+      expect(last).to include("\"verb\":\"key_delete\"")
       expect(last).to include("\"etag_after\":null")
     end
 
@@ -93,7 +93,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
       expect(env.uid).to eq(before.uid)
 
       row = last_audit_row(store)
-      expect(row["verb"]).to eq("mv")
+      expect(row["verb"]).to eq("key_mv")
       expect(row["from_key"]).to eq("knowledge.foo")
       expect(row["to_key"]).to eq("knowledge.bar")
       expect(row["uid"]).to eq(env.uid)

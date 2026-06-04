@@ -84,7 +84,7 @@ module Textus
           @file_store.delete(path)
           prune_empty_parents(path)
           @audit_log.append(
-            role: @call.role, verb: "delete", key: key,
+            role: @call.role, verb: "key_delete", key: key,
             etag_before: etag_before, etag_after: nil,
             extras: @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
           )
@@ -121,7 +121,7 @@ module Textus
           extras["correlation_id"] = @call.correlation_id if @call.correlation_id
 
           @audit_log.append(
-            role: @call.role, verb: "mv", key: to_key,
+            role: @call.role, verb: "key_mv", key: to_key,
             etag_before: etag_before, etag_after: etag_after,
             extras: extras
           )

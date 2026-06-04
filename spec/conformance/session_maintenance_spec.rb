@@ -19,8 +19,8 @@ RSpec.describe "Textus::RoleScope maintenance surface" do
   let(:store) { Textus::Store.new(root) }
   let(:sess)  { store.as("human") }
 
-  it "exposes key_mv_prefix, key_delete_prefix, zone_mv, rule_lint, migrate" do
-    %i[key_mv_prefix key_delete_prefix zone_mv rule_lint migrate].each do |m|
+  it "exposes key_mv_prefix, key_delete_prefix, zone_mv, rule_lint" do
+    %i[key_mv_prefix key_delete_prefix zone_mv rule_lint].each do |m|
       expect(sess).to respond_to(m)
     end
   end

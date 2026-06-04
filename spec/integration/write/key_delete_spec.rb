@@ -1,20 +1,20 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::Delete do
+RSpec.describe Textus::Write::KeyDelete do
   include_context "textus_store_fixture"
 
   let!(:store) { quarantine_store(root) }
   # Contract for the cross-cutting write behaviours (spec/support/examples).
-  let(:perform) { -> { store.as("automation").delete("feeds.foo") } }
-  let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").delete("feeds.foo") } }
+  let(:perform) { -> { store.as("automation").key_delete("feeds.foo") } }
+  let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").key_delete("feeds.foo") } }
   let(:emit)      { perform_with_correlation }
   let(:event_key) { "feeds.foo" }
 
   # The entry must exist on disk before it can be deleted.
   before { File.write(File.join(root, "zones", "feeds", "foo.md"), "---\nkey: feeds.foo\n---\nbody\n") }
 
-  it_behaves_like "an audited write", "delete"
-  it_behaves_like "a correlated write", "delete"
+  it_behaves_like "an audited write", "key_delete"
+  it_behaves_like "a correlated write", "key_delete"
   it_behaves_like "an event-emitting action", :entry_deleted
 
   it "removes the entry file from disk" do
@@ -27,7 +27,7 @@ RSpec.describe Textus::Write::Delete do
     # knowledge is a canon zone (needs the 'author' capability); automation
     # holds only [fetch, build], so the delete is genuinely refused.
     expect do
-      store.as("automation").delete("knowledge.bar")
+      store.as("automation").key_delete("knowledge.bar")
     end.to raise_error(
       Textus::WriteForbidden,
       /writing 'knowledge.bar' \(zone 'knowledge'\) needs capability 'author'/,

@@ -9,7 +9,7 @@ require "spec_helper"
 # Top-level commands deliberately NOT surfaced in the agent-facing catalog:
 # internal/maintenance/transport verbs an agent should not be steered toward.
 BOOT_GUARD_INTENTIONALLY_OMITTED =
-  %w[deps rdeps init mcp migrate published reject zone].freeze
+  %w[deps rdeps init mcp published reject zone].freeze
 
 RSpec.describe "Boot::CLI_VERBS reconciles with the CLI registry (ADR 0037)" do
   let(:registry_names) { Textus::CLI.verbs.keys.sort }

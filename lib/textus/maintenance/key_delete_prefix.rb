@@ -41,7 +41,7 @@ module Textus
       private
 
       def delete
-        Write::Delete.new(container: @container, call: @call)
+        Write::KeyDelete.new(container: @container, call: @call)
       end
     end
   end

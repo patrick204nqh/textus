@@ -4,7 +4,7 @@ module Textus
   module Maintenance
     # The destructive-only lifecycle sweep (ADR 0079, supersedes the composite
     # 0078 body). Drives off the unified Domain::Lifecycle reporter: it applies
-    # destructive actions a read never performs (drop = delete via Write::Delete;
+    # destructive actions a read never performs (drop = delete via Write::KeyDelete;
     # archive = copy to <store>/archive/ then delete) and refreshes cold expired
     # intake entries (on_expire: refresh) via Write::FetchWorker. Non-destructive
     # annotation (warn) is left to the lazy `get`/`freshness` path. Adds no new
@@ -70,7 +70,7 @@ module Textus
 
       def apply(rows)
         out = { dropped: [], archived: [], refreshed: [], failed: [] }
-        delete  = Write::Delete.new(container: @container, call: @call)
+        delete  = Write::KeyDelete.new(container: @container, call: @call)
         refresh = Write::FetchWorker.new(container: @container, call: @call)
 
         rows.each do |row|

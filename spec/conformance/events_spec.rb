@@ -37,7 +37,7 @@ RSpec.describe "Lifecycle events" do
       store = Textus::Store.new(root)
       ops = store.as("human")
       ops.put("knowledge.x", meta: { "name" => "x" }, body: "hi")
-      ops.delete("knowledge.x")
+      ops.key_delete("knowledge.x")
       expect($textus_event_log).to include([:entry_deleted, "knowledge.x"])
     end
 

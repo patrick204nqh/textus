@@ -7,8 +7,8 @@ module Textus
       # Write
       put: Textus::Write::Put,
       propose: Textus::Write::Propose,
-      delete: Textus::Write::Delete,
-      mv: Textus::Write::Mv,
+      key_delete: Textus::Write::KeyDelete,
+      key_mv: Textus::Write::KeyMv,
       accept: Textus::Write::Accept,
       reject: Textus::Write::Reject,
       build: Textus::Write::Build,
@@ -34,7 +34,6 @@ module Textus
       capabilities: Textus::Read::Capabilities,
 
       # Maintenance
-      migrate: Textus::Maintenance::Migrate,
       zone_mv: Textus::Maintenance::ZoneMv,
       key_mv_prefix: Textus::Maintenance::KeyMvPrefix,
       key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,

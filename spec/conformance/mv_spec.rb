@@ -29,7 +29,7 @@ RSpec.describe "textus mv" do
   it "moves an entry within the same zone, preserving uid" do
     env = put_md("knowledge.notes.alpha")
     uid = env.uid
-    res = store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    res = store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
     expect(res["ok"]).to be true
     expect(res["uid"]).to eq(uid)
     expect(File.exist?(File.join(root, "zones/knowledge/notes/alpha.md"))).to be false
@@ -39,8 +39,8 @@ RSpec.describe "textus mv" do
 
   it "writes an audit row with verb=mv and top-level structural fields" do
     put_md("knowledge.notes.alpha")
-    store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.beta")
-    expect(store).to have_audit_verb("mv")
+    store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    expect(store).to have_audit_verb("key_mv")
     parsed = last_audit_row(store)
     expect(parsed["key"]).to eq("knowledge.notes.beta")
     expect(parsed["from_key"]).to eq("knowledge.notes.alpha")
@@ -53,7 +53,7 @@ RSpec.describe "textus mv" do
   it "refuses cross-zone moves" do
     put_md("knowledge.notes.alpha")
     expect do
-      store.as("human").mv("knowledge.notes.alpha", "identity.notes.alpha")
+      store.as("human").key_mv("knowledge.notes.alpha", "identity.notes.alpha")
     end.to raise_error(Textus::UsageError, /cross-zone/)
   end
 
@@ -61,14 +61,14 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.alpha")
     put_md("knowledge.notes.beta")
     expect do
-      store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.beta")
+      store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
     end.to raise_error(Textus::UsageError, /already exists/)
   end
 
   it "refuses when the new key fails grammar" do
     put_md("knowledge.notes.alpha")
     expect do
-      store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.Bad_Name")
+      store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.Bad_Name")
     end.to raise_error(Textus::UsageError, /invalid key segment/)
   end
 
@@ -77,7 +77,7 @@ RSpec.describe "textus mv" do
     File.write(src, "---\nname: alpha\n---\nbody\n")
     expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.alpha").uid).to be_nil
 
-    res = store.as("human").mv("knowledge.notes.alpha", "knowledge.notes.beta")
+    res = store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
     expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(res["uid"])
 

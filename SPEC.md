@@ -148,7 +148,7 @@ Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `hooks/`) live dire
 
 Zone directories under `zones/` are conventional; their write semantics are derived from the zone's declared `kind:` (and the capabilities roles hold), not the directory name.
 
-`.textus/audit.log` is an append-only NDJSON file written under a file lock by every successful `put`, `delete`, `accept`, and `build`. `.textus/role` (one line containing a role name) is optional and participates in the role-resolution order (§5).
+`.textus/audit.log` is an append-only NDJSON file written under a file lock by every successful `put`, `key_delete`, `accept`, and `build`. `.textus/role` (one line containing a role name) is optional and participates in the role-resolution order (§5).
 
 ### 3.1 Store location precedence
 
@@ -535,9 +535,9 @@ Schema (one JSON object per line, no interior whitespace):
 
 `seq` is a monotonic integer counter, auto-incremented on each append. It is the foundation for cursor-based queries: `textus audit --seq-since=N` returns only rows with `seq > N`, and `textus pulse --since=N` builds its `changed` array from the same cursor. When an agent's cursor falls below the oldest available seq (due to log rotation), the operation raises `CursorExpired`.
 
-`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `delete`, `accept`, `compute`, `mv`, ...). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag).
+`ts` is the wall-clock timestamp in UTC with second precision. `role` is the resolved role for the invocation. `verb` is the audit-log payload string identifying the operation (`put`, `key_delete`, `accept`, `compute`, `key_mv`, ...; rows written before ADR 0082 used `delete`/`mv` — readers must accept both). `key` is the affected entry key. `etag_before` and `etag_after` are the entry etags before and after the write, or JSON `null` when not applicable (e.g. create has no before-etag, delete has no after-etag).
 
-For `mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
+For `key_mv`, the structural fields `from_key`, `to_key`, and `uid` appear at the top level of the JSON object. Remaining verb-specific data (e.g. `from_path`, `to_path`) is nested under an `extras` key. The `extras` key is omitted entirely when empty.
 
 **Rotation.** After every successful append the implementation checks whether `audit.log` exceeds `max_size` bytes (checked inside the held `flock`, so the check sees the post-write size). If it does, the active log is rotated:
 
@@ -704,7 +704,7 @@ rules:
 |---|---|---|
 | `lifecycle` | `{ ttl, on_expire, budget_ms? }` | Unified age policy (ADR 0079). `on_expire` is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy to `<store>/archive/<relative-path>` then delete). Non-destructive actions (`refresh`/`warn`) are applied lazily on `get`; destructive actions (`drop`/`archive`) only on the `tend` sweep. `refresh` is valid only for intake entries; `drop`/`archive` only for stored entries (`doctor` `lifecycle.action_invalid` enforces). Age is measured from `_meta.last_fetched_at` (intake) when present, else the leaf file's modification time. `budget_ms` (optional) bounds a `refresh` to a deadline, returning the stale envelope and refreshing in the background when exceeded. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
-| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `delete`, `mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
+| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `key_delete`, `key_mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
 
 The `lifecycle:` slot unifies the former `fetch:` (intake freshness) and
 `retention:` (leaf pruning) slots into one age policy (ADR 0079). Generator/build
@@ -894,7 +894,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 {
   "agent_quickstart": {
     "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
-    "write_verbs":    ["accept", "delete", "mv", "propose", "put", "reject"],
+    "write_verbs":    ["accept", "key_delete", "key_mv", "propose", "put", "reject"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
     "latest_seq":     1842
@@ -904,7 +904,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 
 `read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its freshness/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`freshness`/`doctor` (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
 
-The agent's MCP write surface includes the single-key `delete` and `mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment). All of these apply by default; `dry_run: true` is a uniform opt-in preview that returns a Plan without mutating (ADR 0071 — verbs are actions, dry-run is opt-in on every surface). Single-key `delete` additionally accepts an optional `if_etag` optimistic-concurrency check. The blast-radius reads (`where`/`deps`/`rdeps`) remain on MCP so an agent can look before it leaps. The promotion verbs `accept` and `reject` are also on MCP (ADR 0072): they are gated by the `author_held` capability floor, not by transport absence — a default-`agent` connection is refused, while a connection launched as a role holding `author` (`--as`/`TEXTUS_ROLE`/`.textus/role`, resolved once at launch per ADR 0040) can promote, closing the propose→accept loop over one transport. `build` is also on MCP (ADR 0076): it is caller-agnostic and self-elevating — it always runs as the manifest's `build`-capable actor regardless of the calling role, grants no authority over content (build is a pure, idempotent function of already-accepted canon, ADR 0070), and is serialized by a shared single-writer lock across all transports so a concurrent CLI or background build cannot collide with an MCP-triggered one.
+The agent's MCP write surface includes the single-key `key_delete` and `key_mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment; the single-key tools were renamed from `delete`/`mv` to share the `key_` family stem in ADR 0082, which also removed the `migrate` YAML-plan orchestrator — its `zone_mv`/`key_mv_prefix`/`key_delete_prefix` ops remain individually callable). All of these apply by default; `dry_run: true` is a uniform opt-in preview that returns a Plan without mutating (ADR 0071 — verbs are actions, dry-run is opt-in on every surface). Single-key `key_delete` additionally accepts an optional `if_etag` optimistic-concurrency check. The blast-radius reads (`where`/`deps`/`rdeps`) remain on MCP so an agent can look before it leaps. The promotion verbs `accept` and `reject` are also on MCP (ADR 0072): they are gated by the `author_held` capability floor, not by transport absence — a default-`agent` connection is refused, while a connection launched as a role holding `author` (`--as`/`TEXTUS_ROLE`/`.textus/role`, resolved once at launch per ADR 0040) can promote, closing the propose→accept loop over one transport. `build` is also on MCP (ADR 0076): it is caller-agnostic and self-elevating — it always runs as the manifest's `build`-capable actor regardless of the calling role, grants no authority over content (build is a pure, idempotent function of already-accepted canon, ADR 0070), and is serialized by a shared single-writer lock across all transports so a concurrent CLI or background build cannot collide with an MCP-triggered one.
 
 `latest_seq` is the current high-water mark of the audit log; agents should use it as the starting cursor for `pulse`.
 
@@ -933,7 +933,7 @@ The agent's MCP write surface includes the single-key `delete` and `mv` tools al
   "if_etag": "sha256:8f3c…" }
 ```
 
-`if_etag` is optional on both `put` and `delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
+`if_etag` is optional on both `put` and `key_delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
 
 **`textus freshness` output shape:**
 
@@ -1014,7 +1014,7 @@ Given a derived entry with a `template` clause referencing a `.mustache` file an
 Given a manifest entry with `publish: { to: [<path>] }`, a successful `textus build` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a sentinel at `.textus/.run/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `build` is idempotent.
 
 **Fixture H — Audit log format:**
-Every successful write verb (`put`, `delete`, `build`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
+Every successful write verb (`put`, `key_delete`, `build`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
 
 **Fixture I — Pending → accept:**
 Given a proposal entry `proposals.knowledge.self.patch` proposing a change to `knowledge.identity.self`, `textus accept proposals.knowledge.self.patch --as=human` copies the patch body into the target key, deletes the proposal entry, and appends two audit lines (one for the target write, one for the proposals delete) in that order.

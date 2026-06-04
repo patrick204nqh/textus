@@ -59,7 +59,7 @@ module Textus
       end
 
       def delete_op
-        @delete_op ||= Textus::Write::Delete.new(
+        @delete_op ||= Textus::Write::KeyDelete.new(
           container: @container, call: @call,
         )
       end
