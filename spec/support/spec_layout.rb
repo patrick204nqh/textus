@@ -49,4 +49,27 @@ module SpecLayout
     actual    = dir.empty? ? "the spec root" : "spec/#{dir.join("/")}/"
     "#{constant} should live under #{expected} (or spec/#{full.join("/")}/), not #{actual}"
   end
+
+  # ── Category-aware mirror (the post-Phase-1 rule) ─────────────────────────
+  #
+  # The restructure moves every spec under one of these top-level category
+  # dirs; the lib/-mirror then applies BELOW the category segment. This logic
+  # is written ahead of the move (with its own unit examples) and only becomes
+  # the live sweep rule once the files have moved.
+  CATEGORIES = %w[unit integration conformance].freeze
+
+  # Like `placement_error`, but for the categorized tree: the first dir segment
+  # must be a known category, and the mirror rule applies to the remainder.
+  # `dir_segments` are relative to spec/ (e.g. ["integration", "read"]).
+  def categorized_placement_error(constant, dir_segments)
+    category, *rest = dir_segments
+    return "#{constant} must live under one of #{CATEGORIES.join("/")}/, not the spec root" if category.nil?
+    return "#{constant}: #{category.inspect} is not a category (expected #{CATEGORIES.join("/")})" unless CATEGORIES.include?(category)
+
+    inner = placement_error(constant, rest)
+    return nil if inner.nil?
+
+    # Re-anchor the inner message under the category for a legible hint.
+    inner.sub("spec/", "spec/#{category}/").sub("the spec root", "spec/#{category}/")
+  end
 end

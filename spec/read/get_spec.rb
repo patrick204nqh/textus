@@ -10,32 +10,10 @@ RSpec.describe Textus::Read::Get do
       end
     RUBY
   end
-  let(:fake_orchestrator_returning_fetched) do
-    fetched_env = nil
-    lambda do |env|
-      fetched_env = env
-      Class.new do
-        define_singleton_method(:fetched_env) { fetched_env }
-        define_method(:execute) do |_action, key: nil|
-          _ = key
-          fe = self.class.fetched_env.with(freshness: Textus::Domain::Freshness.build(
-            stale: false, reason: nil, fetching: false,
-          ))
-          Textus::Domain::Outcome::Fetched.new(envelope: fe)
-        end
-      end.new
-    end
-  end
-  let(:fake_orchestrator_returning) do
-    lambda do |outcome|
-      Class.new do
-        define_method(:execute) do |_action, key: nil|
-          _ = key
-          outcome
-        end
-      end.new
-    end
-  end
+
+  # An orchestrator that must never run: a verifying double with no #execute
+  # stubbed raises if the read path calls it (replaces a hand-rolled raise).
+  let(:unused_orchestrator) { instance_double(Textus::Write::FetchOrchestrator) }
 
   def build_store_with_intake(ttl:, on_expire:)
     intake_store(root, intake_body: intake_body, ttl: ttl, on_expire: on_expire, kind_zone: "canon")
@@ -121,8 +99,7 @@ RSpec.describe Textus::Read::Get do
     store = build_store_with_intake(ttl: "1h", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: Time.now.utc.iso8601)
     ctx = test_ctx(role: "automation")
-    orch = Class.new { def execute(*) = raise("must not call") }.new
-    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: unused_orchestrator)
 
     env = use_case.call("knowledge.doc", fetch: true)
     expect(env).not_to be_nil
@@ -133,7 +110,7 @@ RSpec.describe Textus::Read::Get do
     store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
-    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
+    orch = stub_orchestrator(Textus::Domain::Outcome::Skipped.new)
     use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
 
     env = use_case.call("knowledge.doc", fetch: true)
@@ -145,9 +122,10 @@ RSpec.describe Textus::Read::Get do
     store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
-    # Read the stale envelope first so we can pass it to the fake orchestrator
+    # Read the stale envelope first, then hand the orchestrator a fresh one.
     stale_env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
-    orch = fake_orchestrator_returning_fetched.call(stale_env)
+    fresh_env = stale_env.with(freshness: Textus::Domain::Freshness.build(stale: false, reason: nil, fetching: false))
+    orch = stub_orchestrator(Textus::Domain::Outcome::Fetched.new(envelope: fresh_env))
     use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
 
     env = use_case.call("knowledge.doc", fetch: true)
@@ -160,7 +138,7 @@ RSpec.describe Textus::Read::Get do
     store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
-    orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
+    orch = stub_orchestrator(Textus::Domain::Outcome::Detached.new)
     use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
 
     env = use_case.call("knowledge.doc", fetch: true)
@@ -170,8 +148,7 @@ RSpec.describe Textus::Read::Get do
   it "returns nil when the key has no envelope (fetch:true)" do
     store = build_store_with_intake(ttl: "1h", on_expire: "warn")
     ctx = test_ctx(role: "automation")
-    orch = Class.new { def execute(*) = raise("must not call") }.new
-    use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)
+    use_case = described_class.new(container: store.container, call: ctx, orchestrator: unused_orchestrator)
 
     expect(use_case.call("knowledge.doc", fetch: true)).to be_nil
   end

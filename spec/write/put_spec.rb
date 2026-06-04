@@ -5,6 +5,15 @@ RSpec.describe Textus::Write::Put do
 
   let(:store) { quarantine_store(root) }
 
+  # Contract for the cross-cutting write behaviours (audit row, correlation
+  # propagation, event) shared from spec/support/examples/write_behaviours.rb.
+  let(:perform) { -> { store.as("automation").put("feeds.foo", meta: {}, body: "x") } }
+  let(:perform_with_correlation) do
+    -> { store.as("automation", correlation_id: "corr-1").put("feeds.foo", meta: {}, body: "x") }
+  end
+  let(:emit)      { perform_with_correlation }
+  let(:event_key) { "feeds.foo" }
+
   it "writes the envelope when role has permission" do
     envelope = store.as("automation").put(
       "feeds.foo", meta: { "key" => "feeds.foo" }, body: "hello"
@@ -28,12 +37,7 @@ RSpec.describe Textus::Write::Put do
       .to raise_error(Textus::WriteForbidden) { |e| expect(e.code).to eq("write_forbidden") }
   end
 
-  it "fires :entry_put event with key, envelope, and correlation_id (via ctx)" do
-    events = []
-    store.events.register(:entry_put, :capture) { |ctx:, key:, **| events << [:entry_put, key, ctx.correlation_id] }
-
-    store.as("automation", correlation_id: "corr-1").put("feeds.foo", meta: {}, body: "x")
-
-    expect(events).to include([:entry_put, "feeds.foo", "corr-1"])
-  end
+  it_behaves_like "an audited write", "put"
+  it_behaves_like "a correlated write", "put"
+  it_behaves_like "an event-emitting action", :entry_put
 end

@@ -61,6 +61,32 @@ RSpec.describe SpecLayout do
     end
   end
 
+  # The post-Phase-1 rule: a category segment (unit/integration/conformance)
+  # wraps the existing lib/-mirror. Written ahead of the file move; the live
+  # sweep below still uses the flat `.placement_error` until the move lands.
+  describe ".categorized_placement_error" do
+    it "passes a unit spec mirrored below its category" do
+      expect(described_class.categorized_placement_error("Textus::Ports::BuildLock", %w[unit ports])).to be_nil
+    end
+
+    it "passes an integration spec mirrored below its category" do
+      expect(described_class.categorized_placement_error("Textus::Read::Get", %w[integration read])).to be_nil
+    end
+
+    it "flags a spec sitting at the spec root (no category)" do
+      expect(described_class.categorized_placement_error("Textus::Read::Get", [])).not_to be_nil
+    end
+
+    it "flags an unknown leading segment that is not a category" do
+      err = described_class.categorized_placement_error("Textus::Read::Get", %w[read])
+      expect(err).to match(/not a category/)
+    end
+
+    it "flags a misfiled spec under the wrong mirror dir within a category" do
+      expect(described_class.categorized_placement_error("Textus::Ports::BuildLock", %w[unit read])).not_to be_nil
+    end
+  end
+
   # The live guard: no resurrected spec/textus/ prefix dir, and every
   # constant-described spec sits in its mirror directory.
   describe "the live spec tree" do
