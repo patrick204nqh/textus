@@ -1,7 +1,7 @@
 # ADR 0078 — `tend`: a composite upkeep pass so the cleanup lifecycle can run unattended
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted
 **Refines:** [ADR 0069](./0069-single-path-lifecycle.md) (the single-path content lifecycle — `tend` adds no new transition; it composes existing ones into one schedulable pass).
 **Touches:** [ADR 0076](./0076-build-gates-by-capability-actor-surface-to-mcp.md) (`build` self-elevates because it only projects canon; this ADR deliberately does **not** self-elevate, because `tend` performs authority-bearing writes — the contrast is the whole authority decision here), [ADR 0071](./0071-dry-run-is-opt-in.md) (`tend` honours the opt-in `--dry-run` so an operator can preview a pass before it deletes or fetches), [ADR 0060](./0060-agent-safety-graph-reads-and-default-dry-run.md) (the safety framing for bulk, write-bearing operations).
 
