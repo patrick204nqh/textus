@@ -89,12 +89,18 @@ module Textus
           return
         end
 
-        @session.check_etag!(contract_etag)
-
         name = params["name"]
         args = params["arguments"] || {}
+
+        # ADR 0083: the contract-drift guard gates write verbs only. boot and
+        # pure reads bypass it (a stale read returns on-disk truth; boot's whole
+        # job is to re-orient). A boot call re-arms the session's captured etag
+        # so "re-run boot" actually recovers a mid-session contract edit.
+        @session.check_etag!(contract_etag) if Catalog.write_verbs.include?(name)
+
         result = Catalog.call(name, session: @session, store: @store, args: args)
         @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "pulse"
+        @session = @session.with(contract_etag: contract_etag) if name == "boot"
 
         emit_result(rid, {
                       "content" => [{ "type" => "text", "text" => JSON.dump(result) }],

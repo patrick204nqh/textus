@@ -67,7 +67,7 @@ RSpec.describe Textus::MCP::Server do
     expect(body).to include("zones", "agent_quickstart")
   end
 
-  it "returns ContractDrift JSON-RPC error when manifest changes between calls" do
+  it "returns ContractDrift JSON-RPC error for a write verb when manifest changes between calls" do
     input1 = JSON.dump({ "jsonrpc" => "2.0", "id" => 1, "method" => "initialize",
                          "params" => { "protocolVersion" => "2024-11-05", "capabilities" => {},
                                        "clientInfo" => { "name" => "t", "version" => "0" } } })
@@ -82,7 +82,10 @@ RSpec.describe Textus::MCP::Server do
     File.write(File.join(root, "manifest.yaml"), File.read(File.join(root, "manifest.yaml")) + "# touched\n")
 
     stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 2, "method" => "tools/call",
-                                  "params" => { "name" => "boot", "arguments" => {} } }))
+                                  "params" => { "name" => "put",
+                                                "arguments" => { "key" => "knowledge.note",
+                                                                 "body" => "hello",
+                                                                 "meta" => { "owner" => "human:self" } } } }))
     sleep 0.2
     stdin_pipe_w.close
     thread.join(2)
@@ -91,6 +94,77 @@ RSpec.describe Textus::MCP::Server do
     drift = lines.find { |r| r["id"] == 2 && r["error"] }
     expect(drift).not_to be_nil
     expect(drift["error"]["code"]).to eq(Textus::MCP::ContractDrift::JSONRPC_CODE)
+  end
+
+  # ADR 0083 — contract-drift guard gates write verbs only
+
+  # Helper: run an initialize + optional pre-drift setup, write a schema file
+  # to simulate drift, then send one more tools/call. Returns [lines, drift_file].
+  def run_with_drift(name:, arguments: {})
+    input1 = JSON.dump({ "jsonrpc" => "2.0", "id" => 1, "method" => "initialize",
+                         "params" => { "protocolVersion" => "2024-11-05", "capabilities" => {},
+                                       "clientInfo" => { "name" => "t", "version" => "0" } } })
+
+    stdin_pipe_r, stdin_pipe_w = IO.pipe
+    output = StringIO.new
+    thread = Thread.new { described_class.new(store: store, stdin: stdin_pipe_r, stdout: output).run }
+
+    stdin_pipe_w.puts(input1)
+    sleep 0.2
+
+    # Simulate contract drift by adding a new schema file
+    File.write(File.join(root, "schemas", "drift_test.yaml"), "fields: {}\n")
+
+    stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 2, "method" => "tools/call",
+                                  "params" => { "name" => name, "arguments" => arguments } }))
+    sleep 0.2
+    stdin_pipe_w.close
+    thread.join(2)
+
+    output.string.lines.map { |l| JSON.parse(l) }
+  end
+
+  it "refuses a write verb (put) after contract drift with ContractDrift error" do
+    lines = run_with_drift(name: "put",
+                           arguments: { "key" => "knowledge.note", "body" => "hello",
+                                        "meta" => { "owner" => "human:self" } })
+    resp = lines.find { |r| r["id"] == 2 }
+    expect(resp["error"]).not_to be_nil
+    expect(resp["error"]["message"]).to match(/contract changed/)
+  end
+
+  it "allows a read verb (list) after contract drift without error" do
+    lines = run_with_drift(name: "list", arguments: {})
+    resp = lines.find { |r| r["id"] == 2 }
+    expect(resp["error"]).to be_nil
+    expect(resp["result"]["isError"]).to be(false)
+  end
+
+  it "allows boot after contract drift and re-arms the session so a subsequent write succeeds" do
+    put_args = { "key" => "knowledge.note", "body" => "hello", "meta" => { "owner" => "human:self" } }
+    stdin_pipe_r, stdin_pipe_w = IO.pipe
+    output = StringIO.new
+    thread = Thread.new { described_class.new(store: store, stdin: stdin_pipe_r, stdout: output).run }
+    stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 1, "method" => "initialize",
+                                  "params" => { "protocolVersion" => "2024-11-05", "capabilities" => {},
+                                                "clientInfo" => { "name" => "t", "version" => "0" } } }))
+    sleep 0.2
+    File.write(File.join(root, "schemas", "drift_rearm.yaml"), "fields: {}\n")
+    stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 2, "method" => "tools/call",
+                                  "params" => { "name" => "boot", "arguments" => {} } }))
+    sleep 0.2
+    stdin_pipe_w.puts(JSON.dump({ "jsonrpc" => "2.0", "id" => 3, "method" => "tools/call",
+                                  "params" => { "name" => "put", "arguments" => put_args } }))
+    sleep 0.2
+    stdin_pipe_w.close
+    thread.join(2)
+    lines = output.string.lines.map { |l| JSON.parse(l) }
+    boot_resp  = lines.find { |r| r["id"] == 2 }
+    write_resp = lines.find { |r| r["id"] == 3 }
+    expect(boot_resp["error"]).to be_nil
+    expect(boot_resp["result"]["isError"]).to be(false)
+    expect(write_resp["error"]).to be_nil
+    expect(write_resp["result"]["isError"]).to be(false)
   end
 
   it "returns method-not-found error for unknown methods" do
