@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/branding/wordmark-dark.png">
-    <img src="docs/assets/branding/wordmark.png" alt="textus" width="360">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">
+    <img src="assets/branding/wordmark.png" alt="textus" width="360">
   </picture>
 </p>
 

@@ -7,9 +7,9 @@
 /.bundle/
 /pkg/
 /tmp/
+/coverage/
 *.gem
 .ruby-lsp/
-/coverage/
 docs/plans/
 .worktrees/
 **/.textus/.run/
