@@ -25,8 +25,8 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil, dry_run: false)
-        fetch  = apply_fetch(prefix, zone)
-        retain = apply_retain(prefix, zone)
+        fetch  = dry_run ? preview_fetch(prefix, zone)  : apply_fetch(prefix, zone)
+        retain = dry_run ? preview_retain(prefix, zone) : apply_retain(prefix, zone)
         health = Read::Doctor.new(container: @container, call: @call).call
 
         {
@@ -49,6 +49,25 @@ module Textus
       def apply_retain(prefix, zone)
         Write::RetentionSweep.new(container: @container, call: @call)
                              .call(prefix: prefix, zone: zone)
+      end
+
+      # Preview = the read side of each pass, with zero writes. Mirrors FetchAll's
+      # own filter: only ttl-exceeded / never-fetched rows would actually fetch.
+      def preview_fetch(prefix, zone)
+        rows = Read::Stale.new(container: @container, call: @call)
+                          .call(prefix: prefix, zone: zone)
+        would = rows.select { |r| (r["reason"] || r[:reason]).to_s.match?(/ttl exceeded|never fetched/) }
+                    .map { |r| r["key"] || r[:key] }
+        { "ok" => true, "would_fetch" => would }
+      end
+
+      # Read::Retainable returns exactly the rows RetentionSweep would consume.
+      def preview_retain(prefix, zone)
+        rows = Read::Retainable.new(container: @container, call: @call)
+                               .call(prefix: prefix, zone: zone)
+        { "ok" => true,
+          "would_expire" => rows.reject { |r| r["action"] == "archive" }.map { |r| r["key"] },
+          "would_archive" => rows.select { |r| r["action"] == "archive" }.map { |r| r["key"] } }
       end
     end
   end

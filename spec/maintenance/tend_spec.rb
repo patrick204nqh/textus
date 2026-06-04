@@ -62,5 +62,17 @@ RSpec.describe Textus::Maintenance::Tend do
       expect(result).to have_key("health")
       expect(File.exist?(leaf)).to be(false)
     end
+
+    it "previews retention without deleting when dry_run: true" do
+      leaf = File.join(root, "zones/review/oncall.md")
+      result = build_tend.call(dry_run: true)
+
+      expect(result["ok"]).to be(true)
+      expect(result["dry_run"]).to be(true)
+      expect(result["retain"]["would_expire"]).to include("review.oncall")
+      expect(result["retain"]).not_to have_key("expired")
+      expect(result["fetch"]).to have_key("would_fetch")
+      expect(File.exist?(leaf)).to be(true)
+    end
   end
 end
