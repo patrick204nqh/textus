@@ -58,6 +58,23 @@ module SpecLayout
   # the live sweep rule once the files have moved.
   CATEGORIES = %w[unit integration conformance].freeze
 
+  # A spec is "store-backed" (integration, not a pure unit) when it stands up a
+  # Store / tmpdir via the fixture or a preset helper. This is the same signal
+  # the move used to classify specs, reused here so the unit/ category stays
+  # pure: a store-backed spec under spec/unit/ is a misfile.
+  STORE_BACKED = /
+    include_context\s+["']textus_store_fixture | Dir\.mktmpdir | Textus::Store\.new |
+    store_from_manifest | \b(?:minimal|quarantine|intake)_store\(
+  /x
+
+  def store_backed?(source) = source.match?(STORE_BACKED)
+
+  # True when the top-level group describes a string literal (a cross-surface
+  # conformance spec). Distinct from `described_constant` returning nil: that is
+  # also nil for a non-Textus constant (e.g. `RSpec.describe SpecLayout`), which
+  # is exempt from both the mirror rule AND the conformance rule.
+  def string_described?(source) = source.match?(/^\s*RSpec\.describe\s+["']/)
+
   # Like `placement_error`, but for the categorized tree: the first dir segment
   # must be a known category, and the mirror rule applies to the remainder.
   # `dir_segments` are relative to spec/ (e.g. ["integration", "read"]).
