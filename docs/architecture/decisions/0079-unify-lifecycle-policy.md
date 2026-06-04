@@ -66,15 +66,23 @@ rules:
 This is the load-bearing simplification: **an action's destructiveness determines where it runs**, dissolving the "lazy vs scheduled" question into the policy itself.
 
 ```
- non-destructive  (refresh, warn)  ──► run LAZILY on get / list
+ non-destructive  (refresh, warn)  ──► run LAZILY on get (the read path)
  destructive      (drop, archive)  ──► run ONLY on the tend sweep
                                         — never as a side effect of a read
 ```
 
-- `get`/`list` apply `refresh` (re-pull) and `warn` (flag) inline for the entries they touch — generalizing ADR 0062's read-through from intake-only to all non-destructive lifecycle actions. A read **never** deletes.
+- `get` applies `refresh` (re-pull) and `warn` (flag) inline for the entry it reads — generalizing ADR 0062's read-through from intake-only to all non-destructive lifecycle actions. A read **never** deletes.
 - `tend` becomes the **destructive-only sweep**: it applies `drop`/`archive` for aged entries, and `refresh`es *cold* entries (those no read has touched). It is the exception, run on a schedule (host-owned, per ADR 0078); the common case is handled lazily on access.
 
-The age basis unifies too: age is measured from `_meta.lifecycle_at` (set on every write and every refresh), falling back to file mtime — so `refresh` and `drop`/`archive` measure age identically instead of `last_fetched_at` vs mtime.
+The age basis is `_meta.last_fetched_at` (intake, written by the intake result) when present, else file mtime (stored) — one decision (`Domain::Lifecycle.verdict`) shared by `get`, `freshness`, and the sweep.
+
+### 3a. Implementation refinements (recorded while grounding the plans)
+
+Three points were refined against the reference implementation; they sharpen §3 without changing the thesis:
+
+- **Lazy execution is `get`-only, not `get`/`list`.** `list` enumerates keys without reading bytes; applying lifecycle there would force a file read per row and defeat its cheapness. Lifecycle actions ride the one path that already reads the envelope — `get`. `list` stays a pure key enumeration.
+- **No `_meta.lifecycle_at` write-stamping.** An earlier draft stamped a unified `lifecycle_at` on every write. Rejected: stamping on every write breaks `build`'s byte-equal idempotence (ADR 0070) — a rebuild would change the stamp and stop being a no-op. The `last_fetched_at`→mtime basis above needs no new write and carries no idempotence hazard.
+- **A transitional `fetch:` compat shim** translates a legacy `fetch:` slot into an equivalent lifecycle policy (`on_stale: sync/timed_sync → refresh`, `warn → warn`) so the suite stays green through the collapse; the shim and the legacy slots are removed together in the final implementation step.
 
 ### 4. Collapse the verb surface (8 → 3 + `doctor`)
 
