@@ -2,16 +2,10 @@ require "timeout"
 
 module Textus
   module Write
+    # Internal fetch executor for one quarantine/intake entry. No longer a
+    # public verb (ADR 0079 collapsed the `fetch` surface): used by `get`'s
+    # orchestrator (read-through refresh) and by the `tend` sweep.
     class FetchWorker
-      extend Textus::Contract::DSL
-
-      verb     :fetch
-      summary  "Run a fetch action for one quarantine entry."
-      surfaces :cli, :mcp
-      arg :key, String, required: true, positional: true,
-                        description: "quarantine-zone entry key to refresh using its declared intake action"
-      view { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }
-
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)

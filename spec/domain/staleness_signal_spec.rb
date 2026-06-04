@@ -1,11 +1,18 @@
 require "spec_helper"
 
-# Regression test for Staleness: it must detect generator-kind zones via the
-# kind: derived signal (the zone-kind that requires the `build` capability),
-# not via the literal zone name "derived". Prior to signal-based detection,
-# post-0.9.2 default `artifacts` zones were skipped entirely.
-RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection" do
+# Regression test for generator-drift detection (ADR 0079: surfaced via the
+# doctor `generator_drift` check, formerly the `stale` verb): it must detect
+# generator-kind zones via the kind: derived signal (the zone-kind that
+# requires the `build` capability), not via the literal zone name "derived".
+# Prior to signal-based detection, post-0.9.2 default `artifacts` zones were
+# skipped entirely.
+RSpec.describe "generator-drift signal-based generator-zone detection" do
   include_context "textus_store_fixture"
+
+  def generator_drift(store)
+    store.as(Textus::Role::DEFAULT).doctor["issues"]
+         .select { |i| i["code"] == "generator_drift" }
+  end
 
   def build_output_zone_fixture!
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
@@ -46,10 +53,10 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
   it "flags a generator entry in a zone literally named 'artifacts' (post-0.9.2 default)" do
     build_output_zone_fixture!
     store = Textus::Store.new(root)
-    rows = store.as(Textus::Role::DEFAULT).stale
+    rows = generator_drift(store)
     expect(rows.length).to eq(1)
-    expect(rows.first["key"]).to eq("artifacts.catalog")
-    expect(rows.first["reason"]).to match(/knowledge\.src/)
+    expect(rows.first["subject"]).to eq("artifacts.catalog")
+    expect(rows.first["message"]).to match(/knowledge\.src/)
   end
 
   # Closes Known-risk: the file? helper skips directories under a glob so that
@@ -92,11 +99,11 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
   it "filesystem-source directory: skips subdirs under glob, flags staleness from a regular file" do
     build_dir_source_fixture!
     store = Textus::Store.new(root)
-    rows = store.as(Textus::Role::DEFAULT).stale
+    rows = generator_drift(store)
 
     expect(rows.length).to eq(1)
-    expect(rows.first["key"]).to eq("artifacts.report")
-    expect(rows.first["reason"]).to match(/modified after generated\.at/)
+    expect(rows.first["subject"]).to eq("artifacts.report")
+    expect(rows.first["message"]).to match(/modified after generated\.at/)
   end
 
   it "negative-signal: a zone literally named 'derived' but with kind: canon is NOT generator-kind" do
@@ -129,7 +136,6 @@ RSpec.describe "Textus::Domain::Staleness signal-based generator-zone detection"
     # generator pass.
 
     store = Textus::Store.new(root)
-    rows = store.as(Textus::Role::DEFAULT).stale
-    expect(rows).to eq([])
+    expect(generator_drift(store)).to eq([])
   end
 end

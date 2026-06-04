@@ -10,12 +10,20 @@ RSpec.describe "feeds.machines end-to-end" do
 
   let(:store) { Textus::Store.new(File.join(Dir.pwd, ".textus")) }
 
+  # FetchWorker is the internal executor since the `fetch` verb was collapsed
+  # (ADR 0079).
+  def fetch_machine(key)
+    Textus::Write::FetchWorker.new(
+      container: store.container, call: Textus::Call.build(role: "automation"),
+    ).run(key)
+  end
+
   # One fetch, all assertions — the scan shells out (brew/runtimes), so we don't
   # repeat it. Guards the allowlist on the ACTUAL scaffolded hook init copies
   # into stores, that the nested `local` leaf is protocol-readable, the tree is
   # gitignored, and nothing leaks secrets.
   it "fetches the local leaf: allowlisted, protocol-readable, AND gitignored" do
-    store.as("automation").fetch("feeds.machines.local") # explicit fetch — never per-turn
+    fetch_machine("feeds.machines.local") # explicit fetch — never per-turn
     content = store.as("automation").get("feeds.machines.local").content
 
     expect(content.keys).to contain_exactly(
@@ -35,7 +43,7 @@ RSpec.describe "feeds.machines end-to-end" do
   end
 
   it "rejects an unknown machine leaf with a clear error" do
-    expect { store.as("automation").fetch("feeds.machines.nope") }
+    expect { fetch_machine("feeds.machines.nope") }
       .to raise_error(/unknown machine: nope/)
   end
 end

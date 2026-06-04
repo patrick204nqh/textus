@@ -21,8 +21,7 @@ RSpec.describe "boot CLI verb catalog avoids retired zone names (ADR 0034)" do
     expect(verbs["accept"]).to include("proposal")
   end
 
-  it "describes fetch and build without retired zone names" do
-    expect(verbs["fetch"]).not_to include("intake")
+  it "describes build without retired zone names" do
     expect(verbs["build"]).not_to include("output")
   end
 

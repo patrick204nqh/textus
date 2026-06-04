@@ -29,6 +29,7 @@ module Textus
       Check::ProposalTargets,
       Check::LifecycleActionInvalid,
       Check::LegacyLifecycleSlot,
+      Check::GeneratorDrift,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

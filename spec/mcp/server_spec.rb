@@ -52,7 +52,7 @@ RSpec.describe Textus::MCP::Server do
     list = responses.find { |r| r["id"] == 2 }
     names = list["result"]["tools"].map { |t| t["name"] }
     # propose/schema/rules are composed tools promoted in Phase C (ADR 0039)
-    expect(names).to include("boot", "pulse", "list", "get", "put", "fetch", "fetch_all")
+    expect(names).to include("boot", "pulse", "list", "get", "put", "tend")
   end
 
   it "executes tools/call('boot') and returns content" do

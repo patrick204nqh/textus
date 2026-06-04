@@ -31,7 +31,11 @@ module Textus
               # exists). Config-time detection is doctor's job (ADR 0044 Q2).
               role = acting_role(store)
               exit(0) unless role
-              store.as(role).fetch(key)
+              # FetchWorker is the internal executor since the public `fetch`
+              # verb was collapsed (ADR 0079); drive it directly.
+              Textus::Write::FetchWorker.new(
+                container: store.container, call: Textus::Call.build(role: role),
+              ).run(key)
             rescue StandardError
               # Already logged via :fetch_failed; exit cleanly.
             ensure

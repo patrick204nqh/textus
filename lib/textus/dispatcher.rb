@@ -12,9 +12,6 @@ module Textus
       accept: Textus::Write::Accept,
       reject: Textus::Write::Reject,
       build: Textus::Write::Build,
-      fetch: Textus::Write::FetchWorker,
-      fetch_all: Textus::Write::FetchAll,
-      retain: Textus::Write::RetentionSweep,
 
       # Read
       get: Textus::Read::Get,
@@ -24,7 +21,6 @@ module Textus
       blame: Textus::Read::Blame,
       audit: Textus::Read::Audit,
       freshness: Textus::Read::Freshness,
-      stale: Textus::Read::Stale,
       deps: Textus::Read::Deps,
       rdeps: Textus::Read::Rdeps,
       pulse: Textus::Read::Pulse,
@@ -35,7 +31,6 @@ module Textus
       validate_all: Textus::Read::ValidateAll,
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
-      retainable: Textus::Read::Retainable,
       capabilities: Textus::Read::Capabilities,
 
       # Maintenance
