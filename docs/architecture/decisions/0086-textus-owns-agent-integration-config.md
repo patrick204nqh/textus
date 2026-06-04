@@ -1,7 +1,7 @@
 # ADR 0086 — textus owns agent-integration config: consolidate the plugin manifest, fold MCP + hook into it, keep `init` as the no-plugin fallback
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted (ships 0.50.0)
 **Refines:** [ADR 0077](./0077-init-with-agent-profile.md) (`init --with-agent` scaffolds a write-once `.mcp.json` — this ADR positions that as the no-plugin fallback and adds the plugin as the primary, fuller delivery).
 **Touches:** [ADR 0084](./0084-boot-injected-at-session-start.md) (ships the plugin with an inline SessionStart hook — this ADR generalizes "fold setup into the manifest" to the MCP server too), [ADR 0070](./0070-content-addressed-build-artifacts.md) (content-addressed build artifacts — `.mcp.json`/`plugin.json` join that class for the self-shipped repo), [ADR 0081](./0081-docs-become-canon-published-out.md) (canon-published-out — the same projection mechanism), [ADR 0050](./0050-native-authoring-and-content-identical-adoption.md) (content-identical adoption — the zero-diff migration path).
 
@@ -18,9 +18,9 @@ Two structural facts shape the decision:
 
 3. **Bootstrapping forces write-once downstream.** A fresh consumer store must be wired the moment `init --with-agent` runs — before any `build`, before any canon exists to project from. So downstream `.mcp.json` *must* be an immediate write-once scaffold; it cannot be a build artifact. Only a repo where textus is already present and owns its config (textus itself) can manage these via `build`.
 
-## Decision (proposed)
+## Decision
 
-1. **One canon definition of "the textus agent integration."** A single canon source describes the integration: the MCP-server launch command, and the `SessionStart` hook config. It is the source of truth both projections derive from.
+1. **The integration is projected from canon + the gem version.** Two derived entries (`artifacts.mcp-config`, `artifacts.claude-plugin`) compute the config via `transform_rows` reducers: identity (`name`/`homepage`/`repository`) is read from the `knowledge.project` row, `version` is stamped from `Textus::VERSION`, and the launch command + `SessionStart` hook + `mcpServers` stanza live in the reducers. (A future refinement may lift the static command/hook into a dedicated `knowledge` entry; the reducers are the source today.)
 
 2. **`textus build` projects it into both files as content-addressed build artifacts — for the textus repo itself.** A derived entry computes and `publish`es:
    - `.claude-plugin/plugin.json` — inline `hooks` (ADR 0084) + inline `mcpServers`, `version` stamped from `Textus::VERSION` at build time.
@@ -41,7 +41,12 @@ Two structural facts shape the decision:
 - **Drift can't happen.** Version is stamped from `Textus::VERSION`; no hand-maintenance, no check needed.
 - **Downstream is unaffected.** Consumers still get an immediate, customizable, write-once `.mcp.json` from `init`; their files are never clobbered by a textus build.
 - **`.mcp.json` + plugin manifest join the sentinel-managed published set** (like `CLAUDE.md`) — they show in `published`, are pruned/repaired by the build, and must not be hand-edited in this repo.
-- **Scope to settle before accepting:** the exact canon shape (a `knowledge` entry vs. a manifest block) for the integration definition; whether a JSON build artifact needs a templateless computed-publish path (orientation uses mustache→markdown; JSON is better produced by a reducer returning the structure); and whether the dogfood repo also consumes its own plugin or keeps the tracked `.claude/settings.json` hook.
+**Implementation (0.50.0).** The open questions from drafting resolved as:
+- *JSON build artifacts:* a new `provenance: false` derived-entry flag makes the JSON renderer skip the `_meta` block (`builder/renderer/json.rb`); the reducer returns the structure directly (the renderer's `default_shape` passes a transform's hash through), so no mustache→JSON templating is needed.
+- *Adoption:* `.mcp.json` regenerated semantically-identical (only the `args` array reflowed to `pretty_generate` shape); `.claude-plugin/plugin.json` additionally *gained* the inline `mcpServers` stanza (the intended ADR enhancement, so not a pure zero-diff).
+- *Canon shape:* identity from `knowledge.project`; the command/hook/mcpServers are static in the reducers for now (see Decision §1).
+- *Dogfood:* this repo keeps **both** — the tracked `.claude/settings.json` hook (working-tree `bundle exec exe/textus`, ADR 0084 §4) *and* the shipped plugin (installed `textus`); they target different binaries/audiences.
+- *Deferred:* a `doctor` check that inline-hook/command verbs exist in the contract (§4) — optional, not built here.
 
 ## Alternatives considered
 
