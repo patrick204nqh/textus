@@ -107,3 +107,16 @@ entries:
         - knowledge.runbooks
       transform: orientation_reducer
     kind: derived
+  - key: artifacts.mcp-config
+    path: artifacts/mcp.json
+    zone: artifacts
+    provenance: false
+    publish:
+      to:
+        - .mcp.json
+    compute:
+      kind: projection
+      select:
+        - knowledge.project
+      transform: mcp_config_reducer
+    kind: derived
