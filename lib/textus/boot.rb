@@ -90,6 +90,7 @@ module Textus
       { "name" => "fetch" },
       { "name" => "tend" },
       { "name" => "freshness", "summary" => "per-entry freshness report (status, age, ttl, on_stale)" },
+      { "name" => "lifecycle", "summary" => "lifecycle operations: 'lifecycle migrate' rewrites fetch:/retention: to lifecycle:" },
       { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame",    "summary" => "audit rows for one key joined with git commit metadata" },
       { "name" => "rule",     "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },

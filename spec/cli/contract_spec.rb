@@ -57,6 +57,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "init" => Textus::CLI::Verb::Init,
       "boot" => Textus::CLI::Verb::Boot,
       "key" => Textus::CLI::Group::Key,
+      "lifecycle" => Textus::CLI::Group::Lifecycle,
       "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
       "published" => Textus::CLI::Verb::GenPublished,
@@ -82,7 +83,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     expect(keys).to eq(keys.sort)
   end
 
-  it "group subcommand tables are auto-derived from parent_group" do
+  it "group subcommand tables are auto-derived from parent_group" do # rubocop:disable RSpec/ExampleLength
     expect(Textus::CLI::Group::Hook.subcommands).to eq(
       "list" => Textus::CLI::Verb::Hooks,
       "run" => Textus::CLI::Verb::HookRun,
@@ -101,6 +102,9 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     )
     expect(Textus::CLI::Group::Zone.subcommands).to eq(
       "mv" => Textus::CLI::Verb::GenZoneMv,
+    )
+    expect(Textus::CLI::Group::Lifecycle.subcommands).to eq(
+      "migrate" => Textus::CLI::Verb::GenLifecycleMigrate,
     )
     expect(Textus::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::CLI::Verb::SchemaDiff,
