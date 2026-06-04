@@ -32,10 +32,11 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      RULE_KEYS    = %w[match fetch intake_handler_allowlist guard retention].freeze
+      RULE_KEYS    = %w[match fetch intake_handler_allowlist guard retention lifecycle].freeze
       FETCH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
       FETCH_TIMEOUT_SECONDS_CEILING = 3600
       RETENTION_KEYS = %w[expire_after archive_after].freeze
+      LIFECYCLE_KEYS = %w[ttl on_expire budget_ms].freeze
       AUDIT_KEYS = %w[max_size keep].freeze
 
       # Syntactic shape of an `owner:` subject token (the `patrick` in
@@ -141,6 +142,7 @@ module Textus
             validate_fetch_timeout!(r["fetch"]["fetch_timeout_seconds"], "#{path}.fetch.fetch_timeout_seconds")
           end
           walk(r["retention"], RETENTION_KEYS, "#{path}.retention") if r["retention"].is_a?(Hash)
+          walk(r["lifecycle"], LIFECYCLE_KEYS, "#{path}.lifecycle") if r["lifecycle"].is_a?(Hash)
         end
       end
 
