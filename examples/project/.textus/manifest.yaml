@@ -85,6 +85,6 @@ entries:
         local: { via: local }
 rules:
 - match: feeds.machines.**
-  fetch:
+  lifecycle:
     ttl: 1h
-    on_stale: warn
+    on_expire: warn

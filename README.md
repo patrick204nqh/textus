@@ -184,7 +184,7 @@ textus get knowledge.notes.org.jane
 textus list --zone=knowledge
 printf '%s' '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
   | textus put knowledge.notes.bob --as=human --stdin
-textus freshness --zone=artifacts    # per-entry fresh/stale/never_fetched/no_policy
+textus freshness --zone=artifacts    # per-entry fresh/expired/no_policy + on_expire action
 textus rule list                     # show every rule block
 textus audit --limit=20              # query the audit log
 ```
@@ -263,12 +263,14 @@ Textus.hook do |reg|
 end
 ```
 
-To keep a batch of stale intake entries current in one shot:
+Stale intake entries refresh lazily on read: a `textus get KEY` whose matched
+`lifecycle` rule says `on_expire: refresh` re-pulls the source in-process before
+returning. To find what is due, list the expired entries:
 
 ```sh
-textus fetch all --prefix=feeds --zone=feeds --as=automation
-# or just fetch everything past its TTL in the feeds zone:
-textus fetch all --zone=feeds --as=automation
+textus freshness --zone=feeds --output=json   # rows with status: "expired"
+# then read each one (read-through refresh per its lifecycle rule):
+textus get feeds.calendar.events --as=automation
 ```
 
 See SPEC.md §5.10 for the full hook contract.

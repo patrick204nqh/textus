@@ -26,7 +26,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus fetch` or `textus fetch all`. |
+| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by a read-through `textus get` that refreshes a stale entry (per its `on_expire: refresh` lifecycle rule). |
 | `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_put` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
@@ -45,9 +45,9 @@ Three additional pub-sub events observe the progress of in-process and backgroun
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked. `mode:` is `"sync"` or `"timed_sync"`. Payload: `{ ctx:, key:, mode: }`. |
-| `:fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing fetch is already aborted; this is observational only. |
-| `:fetch_backgrounded` | pubsub | Fires when a `timed_sync` fetch exceeds its `sync_budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
+| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked for an `on_expire: refresh` read-through. `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
+| `:fetch_backgrounded` | pubsub | Fires when an `on_expire: refresh` exceeds its `budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -77,23 +77,25 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ done
 ```
 
-### `textus fetch KEY --as=script`
+### `textus get KEY --as=script` (read-through refresh, `on_expire: refresh`)
 
 ```
+  ┃ resolve KEY → manifest entry
+  ┃ stale per lifecycle rule + on_expire: refresh?  ── else pure read, return
   ┃ require entry.intake.handler           ── ABORT if missing
-  ┃ ─────────────────────────────────────► :fetch_started  (pubsub, mode: "sync"|"timed_sync")
+  ┃ ─────────────────────────────────────► :fetch_started  (pubsub, mode: "refresh")
   ┃ ─────────────────────────────────────► :resolve_intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
   ┃   if handler raises:
   ┃ ─────────────────────────────────────► :fetch_failed  (pubsub)
-  ┃   if timed_sync and budget exceeded:
-  ┃ ─────────────────────────────────────► :fetch_backgrounded  (pubsub) — then continues in bg
+  ┃   if budget_ms exceeded:
+  ┃ ─────────────────────────────────────► :fetch_backgrounded  (pubsub) — return stale, continue in bg
   ┃ normalize result by entry.format
   ┃ role gate, etag check, write           (same path as put)
-  ┃ append audit row {verb:"fetch"}
+  ┃ append audit row {verb:"put"}
   ┃ ─────────────────────────────────────► :entry_put         (pubsub) — every write fires :entry_put
-  ┃ ─────────────────────────────────────► :entry_fetched     (pubsub) — plus the fetch-specific event
-  ✔ done
+  ┃ ─────────────────────────────────────► :entry_fetched     (pubsub) — plus the refresh-specific event
+  ✔ return fresh envelope
 ```
 
 ### `textus mv OLD_KEY NEW_KEY --as=<role>`

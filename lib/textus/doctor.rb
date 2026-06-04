@@ -27,6 +27,8 @@ module Textus
       Check::OrphanedPublishTargets,
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
+      Check::LifecycleActionInvalid,
+      Check::GeneratorDrift,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

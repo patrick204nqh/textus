@@ -32,10 +32,8 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      RULE_KEYS    = %w[match fetch intake_handler_allowlist guard retention].freeze
-      FETCH_KEYS = %w[ttl on_stale sync_budget_ms fetch_timeout_seconds].freeze
-      FETCH_TIMEOUT_SECONDS_CEILING = 3600
-      RETENTION_KEYS = %w[expire_after archive_after].freeze
+      RULE_KEYS    = %w[match intake_handler_allowlist guard lifecycle].freeze
+      LIFECYCLE_KEYS = %w[ttl on_expire budget_ms].freeze
       AUDIT_KEYS = %w[max_size keep].freeze
 
       # Syntactic shape of an `owner:` subject token (the `patrick` in
@@ -136,11 +134,7 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
-          if r["fetch"].is_a?(Hash)
-            walk(r["fetch"], FETCH_KEYS, "#{path}.fetch")
-            validate_fetch_timeout!(r["fetch"]["fetch_timeout_seconds"], "#{path}.fetch.fetch_timeout_seconds")
-          end
-          walk(r["retention"], RETENTION_KEYS, "#{path}.retention") if r["retention"].is_a?(Hash)
+          walk(r["lifecycle"], LIFECYCLE_KEYS, "#{path}.lifecycle") if r["lifecycle"].is_a?(Hash)
         end
       end
 
@@ -215,15 +209,6 @@ module Textus
         return true if subject.nil?
 
         OWNER_SUBJECT_PATTERN.match?(subject)
-      end
-
-      def self.validate_fetch_timeout!(value, path)
-        return if value.nil?
-        return if value.is_a?(Integer) && value.positive? && value <= FETCH_TIMEOUT_SECONDS_CEILING
-
-        raise BadManifest.new(
-          "fetch_timeout_seconds at '#{path}' must be a positive integer ≤ #{FETCH_TIMEOUT_SECONDS_CEILING} (got #{value.inspect})",
-        )
       end
 
       def self.walk(hash, allowed, path)

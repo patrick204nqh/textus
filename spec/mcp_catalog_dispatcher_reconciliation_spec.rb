@@ -10,17 +10,17 @@ MCP_CATALOG_COMPOSED = [].freeze
 
 # Dispatcher verbs deliberately NOT exposed over MCP. Each omission has its own
 # reason — do not conflate them (ADR 0072):
-#   * audit/blame/uid/freshness/stale/doctor/rule_list/published/retainable/
-#     validate_all/retain — internal/maintenance/CLI-only operations.
+#   * audit/blame/uid/freshness/doctor/rule_list/published/
+#     validate_all — internal/maintenance/CLI-only operations.
 # accept/reject are NO LONGER here: they are surfaced to MCP and gated by the
 # author_held capability floor, not by transport absence (ADR 0072).
 # build is NO LONGER here: it is surfaced to MCP per ADR 0076 — it runs as the
 # manifest's build actor (caller-agnostic, self-elevating) and is serialized by
 # a shared around :build_lock resource across all transports.
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
-  audit blame uid freshness stale
-  doctor rule_list published retainable
-  validate_all retain
+  audit blame uid freshness
+  doctor rule_list published
+  validate_all
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do

@@ -47,12 +47,15 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
                 prod-web: { via: ssh, host: "user@10.0.0.5" }
       rules:
         - match: feeds.machines.**
-          fetch: { ttl: 1h, on_stale: warn }
+          lifecycle: { ttl: 1h, on_expire: warn }
     YAML
   end
 
   it "fans out per machine: fetching a leaf yields that host's parsed snapshot" do
-    store.as("automation").fetch("feeds.machines.prod-web")
+    # FetchWorker is the internal executor since the `fetch` verb was collapsed (ADR 0079).
+    Textus::Write::FetchWorker.new(
+      container: store.container, call: Textus::Call.build(role: "automation"),
+    ).run("feeds.machines.prod-web")
     env = store.as("automation").get("feeds.machines.prod-web")
 
     expect(env.content["os"]).to eq("darwin24")

@@ -23,9 +23,9 @@ RSpec.describe Textus::Read::Freshness do
 
         rules:
           - match: knowledge.doc
-            fetch: { ttl: 1h, on_stale: warn }
+            lifecycle: { ttl: 1h, on_expire: warn }
           - match: knowledge.stale
-            fetch: { ttl: 1s, on_stale: warn }
+            lifecycle: { ttl: 1s, on_expire: warn }
       YAML
     )
   end
@@ -55,7 +55,7 @@ RSpec.describe Textus::Read::Freshness do
 
     by_key = rows.to_h { |r| [r[:key], r] }
     expect(by_key["knowledge.doc"][:status]).to eq(:fresh)
-    expect(by_key["knowledge.stale"][:status]).to eq(:stale)
+    expect(by_key["knowledge.stale"][:status]).to eq(:expired)
     expect(by_key["identity.note"][:status]).to eq(:no_policy)
   end
 
@@ -73,10 +73,10 @@ RSpec.describe Textus::Read::Freshness do
     expect(rows.map { |r| r[:key] }).to contain_exactly("knowledge.doc", "knowledge.stale")
   end
 
-  it "reports :never_fetched when policy exists but envelope is absent" do
+  it "reports :expired when policy exists but envelope is absent (never recorded)" do
     ops = store.as("human")
     rows = ops.freshness(prefix: "knowledge.doc")
-    expect(rows.first[:status]).to eq(:never_fetched)
+    expect(rows.first[:status]).to eq(:expired)
     expect(rows.first[:next_due_at]).to be_nil
   end
 

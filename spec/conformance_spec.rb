@@ -40,9 +40,9 @@ RSpec.describe "textus/3 conformance" do
             config: { url: "https://example.com/calendar.ics" }
       rules:
         - match: feeds.calendar.events
-          fetch:
+          lifecycle:
             ttl: 300s
-            on_stale: warn
+            on_expire: warn
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)
@@ -128,7 +128,7 @@ RSpec.describe "textus/3 conformance" do
     end
   end
 
-  describe "Fixture D — staleness detection" do
+  describe "Fixture D — generator drift detection (via doctor)" do
     it "flags artifacts entries with sources newer than generated.at without executing" do
       artifacts_path = File.join(root, "zones/artifacts/catalogs/skills.md")
       File.write(artifacts_path, <<~MD)
@@ -146,12 +146,12 @@ RSpec.describe "textus/3 conformance" do
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "artifacts")
-      expect(rows.length).to eq(1)
-      row = rows.first
-      expect(row["key"]).to eq("artifacts.catalogs.skills")
-      expect(row["generator"]["command"]).to eq("rake catalog:skills")
-      expect(row["reason"]).to match(/knowledge\.projects/)
+      drift = store.as(Textus::Role::DEFAULT).doctor["issues"]
+                   .select { |i| i["code"] == "generator_drift" }
+      expect(drift.length).to eq(1)
+      row = drift.first
+      expect(row["subject"]).to eq("artifacts.catalogs.skills")
+      expect(row["message"]).to match(/knowledge\.projects/)
     end
   end
 
@@ -172,15 +172,19 @@ RSpec.describe "textus/3 conformance" do
     end
   end
 
-  describe "feeds staleness via TTL" do
-    it "flags feeds entries that were never fetched" do
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
-      expect(rows.length).to eq(1)
-      expect(rows.first["key"]).to eq("feeds.calendar.events")
-      expect(rows.first["reason"]).to match(/never fetched/)
+  describe "feeds lifecycle via TTL (freshness)" do
+    def feeds_row
+      store.as(Textus::Role::DEFAULT).freshness(zone: "feeds")
+           .find { |r| r[:key] == "feeds.calendar.events" }
     end
 
-    it "flags feeds entries past their TTL" do
+    it "marks a never-recorded feeds entry expired" do
+      row = feeds_row
+      expect(row[:status]).to eq(:expired)
+      expect(row[:reason]).to match(/never recorded/)
+    end
+
+    it "marks a feeds entry past its TTL expired" do
       feeds_path = File.join(root, "zones/feeds/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
       # iso8601 second-truncation in last_fetched_at.
@@ -192,12 +196,12 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
-      expect(rows.length).to eq(1)
-      expect(rows.first["reason"]).to match(/ttl exceeded/i)
+      row = feeds_row
+      expect(row[:status]).to eq(:expired)
+      expect(row[:reason]).to match(/ttl exceeded/i)
     end
 
-    it "does not flag feeds entries within their TTL" do
+    it "marks a feeds entry within its TTL fresh" do
       feeds_path = File.join(root, "zones/feeds/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
       File.write(feeds_path, <<~MD)
@@ -207,8 +211,7 @@ RSpec.describe "textus/3 conformance" do
         ---
         body
       MD
-      rows = store.as(Textus::Role::DEFAULT).stale(zone: "feeds")
-      expect(rows).to be_empty
+      expect(feeds_row[:status]).to eq(:fresh)
     end
   end
 

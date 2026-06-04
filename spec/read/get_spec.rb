@@ -37,8 +37,8 @@ RSpec.describe Textus::Read::Get do
     end
   end
 
-  def build_store_with_intake(ttl:, on_stale:)
-    intake_store(root, intake_body: intake_body, ttl: ttl, on_stale: on_stale, kind_zone: "canon")
+  def build_store_with_intake(ttl:, on_expire:)
+    intake_store(root, intake_body: intake_body, ttl: ttl, on_expire: on_expire, kind_zone: "canon")
   end
 
   def build_store_no_intake
@@ -68,7 +68,7 @@ RSpec.describe Textus::Read::Get do
   # ── Pure read branch (fetch: false, the default) ─────────────────────────
 
   it "pure by default: fetch:false returns the on-disk envelope and never builds an orchestrator" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
     allow(Textus::Write::FetchOrchestrator).to receive(:new).and_call_original
@@ -81,7 +81,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "returns nil when the key has no envelope (fetch:false)" do
-    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    store = build_store_with_intake(ttl: "1h", on_expire: "warn")
     ctx = test_ctx(role: "automation")
     use_case = described_class.new(container: store.container, call: ctx)
 
@@ -99,7 +99,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "annotates as fresh when the envelope is within TTL (fetch:false)" do
-    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    store = build_store_with_intake(ttl: "1h", on_expire: "warn")
     write_doc_in_knowledge(last_fetched_at: Time.now.utc.iso8601)
     ctx = test_ctx(role: "automation")
     env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
@@ -107,7 +107,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "annotates as stale when the envelope is past TTL (fetch:false — does NOT fetch)" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
     env = described_class.new(container: store.container, call: ctx).call("knowledge.doc")
@@ -118,7 +118,7 @@ RSpec.describe Textus::Read::Get do
   # ── Read-through branch (fetch: true) ────────────────────────────────────
 
   it "skips orchestrator when verdict is fresh (fetch:true)" do
-    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    store = build_store_with_intake(ttl: "1h", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: Time.now.utc.iso8601)
     ctx = test_ctx(role: "automation")
     orch = Class.new { def execute(*) = raise("must not call") }.new
@@ -130,7 +130,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "read-through: fetch:true + stale runs the orchestrator (Skipped outcome)" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "warn")
+    store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
     orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Skipped.new)
@@ -142,7 +142,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "read-through: fetch:true + stale + Fetched outcome returns a fresh envelope" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
     # Read the stale envelope first so we can pass it to the fake orchestrator
@@ -157,7 +157,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "annotates fetching=true when orchestrator returns Detached (fetch:true)" do
-    store = build_store_with_intake(ttl: "1s", on_stale: "timed_sync")
+    store = build_store_with_intake(ttl: "1s", on_expire: "refresh")
     write_doc_in_knowledge(last_fetched_at: "2020-01-01T00:00:00Z")
     ctx = test_ctx(role: "automation")
     orch = fake_orchestrator_returning.call(Textus::Domain::Outcome::Detached.new)
@@ -168,7 +168,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   it "returns nil when the key has no envelope (fetch:true)" do
-    store = build_store_with_intake(ttl: "1h", on_stale: "warn")
+    store = build_store_with_intake(ttl: "1h", on_expire: "warn")
     ctx = test_ctx(role: "automation")
     orch = Class.new { def execute(*) = raise("must not call") }.new
     use_case = described_class.new(container: store.container, call: ctx, orchestrator: orch)

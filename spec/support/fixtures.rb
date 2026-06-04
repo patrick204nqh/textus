@@ -78,11 +78,12 @@ module TextusSpecHelpers
   end
 
   # Preset: a quarantine "feeds" zone with one intake entry (key feeds.doc) wired
-  # to a `test_intake` handler, plus a fetch rule. Pass the handler's hook body
-  # and the rule's ttl / on_stale. Writes the hook into the store's hooks/ dir.
-  # Defaults to quarantine; pass `kind_zone: "canon"` for owned-intake — the zone
-  # name (and key prefix) follow the kind via LANE_ZONE.
-  def intake_store(root, intake_body:, ttl: "1h", on_stale: "warn", kind_zone: "quarantine")
+  # to a `test_intake` handler, plus a lifecycle rule. Pass the handler's hook
+  # body and the rule's ttl / on_expire (refresh|warn for intake; ADR 0079).
+  # Writes the hook into the store's hooks/ dir. Defaults to quarantine; pass
+  # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
+  # follow the kind via LANE_ZONE.
+  def intake_store(root, intake_body:, ttl: "1h", on_expire: "refresh", kind_zone: "quarantine")
     zone = LANE_ZONE.fetch(kind_zone)
     store_from_manifest(
       root,
@@ -100,7 +101,7 @@ module TextusSpecHelpers
             intake: { handler: test_intake }
         rules:
           - match: #{zone}.doc
-            fetch: { ttl: #{ttl}, on_stale: #{on_stale} }
+            lifecycle: { ttl: #{ttl}, on_expire: #{on_expire} }
       YAML
     )
   end

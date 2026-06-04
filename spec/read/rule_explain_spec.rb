@@ -13,15 +13,13 @@ RSpec.describe Textus::Read::RuleExplain do
 
       rules:
         - match: "knowledge.*"
-          fetch: { ttl: 1h, on_stale: warn }
+          lifecycle: { ttl: 1h, on_expire: refresh }
         - match: knowledge.doc
-          fetch: { ttl: 5m, on_stale: sync }
+          lifecycle: { ttl: 5m, on_expire: refresh }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
           guard:
             accept: [schema_valid]
-        - match: knowledge.doc
-          retention: { expire_after: 30d }
     YAML
   end
 
@@ -34,11 +32,11 @@ RSpec.describe Textus::Read::RuleExplain do
   end
 
   describe "lean (default) — the agent-cheap effective read" do
-    it "returns only the effective {fetch, guard} winners" do
+    it "returns only the effective {lifecycle, guard} winners" do
       result = store.as("human").rule_explain("knowledge.doc")
       expect(result).to be_a(Hash)
-      expect(result.keys - %w[fetch guard]).to be_empty
-      expect(result["fetch"]["ttl_seconds"]).to eq(300)
+      expect(result.keys - %w[lifecycle guard]).to be_empty
+      expect(result["lifecycle"]["ttl_seconds"]).to eq(300)
     end
   end
 
@@ -47,16 +45,16 @@ RSpec.describe Textus::Read::RuleExplain do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
 
       expect(result[:key]).to eq("knowledge.doc")
-      expect(result[:matched_blocks].length).to eq(4)
+      expect(result[:matched_blocks].length).to eq(3)
       matches = result[:matched_blocks].map { |b| b[:match] }
-      expect(matches).to contain_exactly("knowledge.*", "knowledge.doc", "**", "knowledge.doc")
+      expect(matches).to contain_exactly("knowledge.*", "knowledge.doc", "**")
     end
 
     it "surfaces the per-slot effective winner (most-specific match)" do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
 
-      expect(result[:effective][:fetch][:ttl_seconds]).to eq(300)
-      expect(result[:effective][:fetch][:on_stale]).to eq(:sync)
+      expect(result[:effective][:lifecycle][:ttl_seconds]).to eq(300)
+      expect(result[:effective][:lifecycle][:on_expire]).to eq(:refresh)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
     end
 
@@ -64,12 +62,6 @@ RSpec.describe Textus::Read::RuleExplain do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:guards][:put]).to eq(["zone_writable_by"])
       expect(result[:guards][:accept]).to include("author_held", "schema_valid")
-    end
-
-    it "reports retention windows in the matched blocks and effective output" do
-      result = store.as("human").rule_explain("knowledge.doc", detail: true)
-      expect(result[:effective][:retention]).to eq(expire_after: 2_592_000, archive_after: nil)
-      expect(result[:matched_blocks].any? { |b| b[:retention] }).to be(true)
     end
 
     it "returns nil-valued effective slots when no policy matches" do
@@ -83,7 +75,7 @@ RSpec.describe Textus::Read::RuleExplain do
       YAML
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
-      expect(result[:effective][:fetch]).to be_nil
+      expect(result[:effective][:lifecycle]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
       expect(result[:guards][:put]).to eq(["zone_writable_by"])
     end

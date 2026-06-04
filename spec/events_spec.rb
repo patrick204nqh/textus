@@ -82,15 +82,23 @@ RSpec.describe "Lifecycle events" do
 
     after { $log = nil }
 
+    # FetchWorker is the internal executor since the `fetch` verb was collapsed
+    # (ADR 0079); it fires the same :entry_fetched/:entry_put events.
+    def fetch_via(store, key = "intake.x")
+      Textus::Write::FetchWorker.new(
+        container: store.container, call: Textus::Call.build(role: "automation"),
+      ).run(key)
+    end
+
     it "fires :entry_fetched with change=:created on first fetch" do
       store = Textus::Store.new(root)
-      store.as("automation").fetch("intake.x")
+      fetch_via(store)
       expect($log).to eq([["intake.x", :created]])
     end
 
     it "fires :entry_fetched with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
-      store.as("automation").fetch("intake.x")
+      fetch_via(store)
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
@@ -100,13 +108,13 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
       store2 = Textus::Store.new(root)
-      store2.as("automation").fetch("intake.x")
+      fetch_via(store2)
       expect($log.last).to eq(["intake.x", :updated])
     end
 
     it "does NOT fire :entry_fetched when the intake bytes are identical to the previous bytes" do
       store = Textus::Store.new(root)
-      store.as("automation").fetch("intake.x")
+      fetch_via(store)
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
@@ -118,7 +126,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       # Re-instantiate to reload hook file from disk
       store2 = Textus::Store.new(root)
-      store2.as("automation").fetch("intake.x")
+      fetch_via(store2)
       # Two fetches with identical action body (both "v1") — only the first
       # should fire :entry_fetched (with :created). The second matches, so no fire.
       expect($log).to eq([["intake.x", :created]])
@@ -135,7 +143,7 @@ RSpec.describe "Lifecycle events" do
       RUBY
       $log = []
       store = Textus::Store.new(root)
-      store.as("automation").fetch("intake.x")
+      fetch_via(store)
       expect($log.count { |e| e[0] == :entry_put }).to eq(0)
       expect($log.count { |e| e[0] == :entry_fetched }).to eq(1)
     end

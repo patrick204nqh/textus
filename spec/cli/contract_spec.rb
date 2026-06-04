@@ -23,14 +23,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
     [code, out.string, err.string]
   end
 
-  it "fetch all on an empty store returns 0 (was nil → TypeError, #61)" do
-    with_store do |root|
-      code, _stdout, _stderr = run_cli(%w[fetch all --prefix=knowledge --as=automation], cwd: root)
-      expect(code).to be_an(Integer)
-      expect(code).to eq(0)
-    end
-  end
-
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
       Textus::CLI.verbs.each_key do |verb|
@@ -65,11 +57,10 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "put" => Textus::CLI::Verb::Put,
       "rdeps" => Textus::CLI::Verb::GenRdeps,
       "migrate" => Textus::CLI::Verb::GenMigrate,
-      "fetch" => Textus::CLI::Group::Fetch,
       "reject" => Textus::CLI::Verb::GenReject,
-      "retain" => Textus::CLI::Verb::GenRetain,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
+      "tend" => Textus::CLI::Verb::GenTend,
       "where" => Textus::CLI::Verb::GenWhere,
       "zone" => Textus::CLI::Group::Zone,
     }

@@ -2,16 +2,10 @@ require "timeout"
 
 module Textus
   module Write
+    # Internal fetch executor for one quarantine/intake entry. No longer a
+    # public verb (ADR 0079 collapsed the `fetch` surface): used by `get`'s
+    # orchestrator (read-through refresh) and by the `tend` sweep.
     class FetchWorker
-      extend Textus::Contract::DSL
-
-      verb     :fetch
-      summary  "Run a fetch action for one quarantine entry."
-      surfaces :cli, :mcp
-      arg :key, String, required: true, positional: true,
-                        description: "quarantine-zone entry key to refresh using its declared intake action"
-      view { |outcome| { "outcome" => outcome.class.name.split("::").last.downcase } }
-
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)
@@ -69,9 +63,11 @@ module Textus
         @fetch_events ||= FetchEvents.from(container: @container, call: @call)
       end
 
-      def fetch_timeout_for(key)
-        rule = @manifest.rules.for(key)
-        rule&.fetch&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
+      # ADR 0079: a per-rule fetch_timeout_seconds override was an accepted loss
+      # in the fetch:/retention: → lifecycle: collapse; the constant ceiling
+      # applies to every intake.
+      def fetch_timeout_for(_key)
+        FETCH_TIMEOUT_SECONDS
       end
 
       def fetch_with_events(key, mentry, remaining)

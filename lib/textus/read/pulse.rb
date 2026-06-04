@@ -30,7 +30,7 @@ module Textus
         {
           "cursor" => @audit_log.latest_seq,
           "changed" => audit_changes_since(since),
-          "stale" => freshness_rows.select { |r| r[:status] == :stale }.map { |r| r[:key] },
+          "stale" => freshness_rows.select { |r| r[:status] == :expired }.map { |r| r[:key] },
           "pending_review" => review_keys,
           "doctor" => doctor_summary,
           "contract_etag" => contract_etag,

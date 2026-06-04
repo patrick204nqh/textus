@@ -23,9 +23,9 @@ RSpec.describe "textus rule group" do
 
       rules:
         - match: "knowledge.*"
-          fetch: { ttl: 1h, on_stale: warn }
+          lifecycle: { ttl: 1h, on_expire: refresh }
         - match: knowledge.doc
-          fetch: { ttl: 5m, on_stale: sync }
+          lifecycle: { ttl: 5m, on_expire: refresh }
           intake_handler_allowlist: [src_a]
     YAML
   end
@@ -38,10 +38,10 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_list")
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
-      expect(payload["policies"].first["fetch"]["ttl_seconds"]).to eq(3600)
+      expect(payload["policies"].first["lifecycle"]["ttl_seconds"]).to eq(3600)
     end
 
-    it "serializes retention as a plain hash with integer seconds" do
+    it "serializes lifecycle as a plain hash with integer seconds" do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -52,24 +52,24 @@ RSpec.describe "textus rule group" do
 
         rules:
           - match: knowledge.doc
-            retention: { expire_after: 30d }
+            lifecycle: { ttl: 30d, on_expire: drop }
       YAML
       rc = run(%w[rule list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       block = payload["policies"].find { |b| b["match"] == "knowledge.doc" }
-      expect(block["retention"]).to eq("expire_after" => 2_592_000, "archive_after" => nil)
+      expect(block["lifecycle"]).to eq("ttl_seconds" => 2_592_000, "on_expire" => "drop", "budget_ms" => nil)
     end
   end
 
   describe "textus rule explain KEY" do
-    it "is lean by default: the effective {fetch, guard} winners only" do
+    it "is lean by default: the effective {lifecycle, guard} winners only" do
       rc = run(%w[rule explain knowledge.doc])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("rule_explain")
-      expect(payload.keys - %w[protocol verb fetch guard]).to be_empty
-      expect(payload["fetch"]["ttl_seconds"]).to eq(300)
+      expect(payload.keys - %w[protocol verb lifecycle guard]).to be_empty
+      expect(payload["lifecycle"]["ttl_seconds"]).to eq(300)
     end
 
     it "with --detail returns matched blocks and effective values for a key" do
@@ -79,7 +79,7 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_explain")
       expect(payload["key"]).to eq("knowledge.doc")
       expect(payload["matched_blocks"].length).to eq(2)
-      expect(payload["effective"]["fetch"]["ttl_seconds"]).to eq(300)
+      expect(payload["effective"]["lifecycle"]["ttl_seconds"]).to eq(300)
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])
     end
 
@@ -97,10 +97,10 @@ RSpec.describe "textus rule group" do
       File.write(cand, <<~YAML)
         rules:
           - match: knowledge.doc
-            fetch: { ttl: 5m, on_stale: sync }
+            lifecycle: { ttl: 5m, on_expire: refresh }
             intake_handler_allowlist: [src_a]
           - match: knowledge.new
-            fetch: { ttl: 2h, on_stale: warn }
+            lifecycle: { ttl: 2h, on_expire: warn }
       YAML
       rc = run(["rule", "lint", "--against=#{cand}"])
       expect(rc).to eq(0), "stderr: #{stderr.string}"

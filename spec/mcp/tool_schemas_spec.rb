@@ -21,15 +21,16 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "exposes the current core read/write verbs (not retired ADR 0036 aliases)" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("boot", "pulse", "list", "get", "put",
-                               "fetch", "fetch_all", "propose", "accept", "reject",
+                               "propose", "accept", "reject",
                                "schema_show", "rule_explain", "deps", "rdeps", "where")
-      expect(names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
+      expect(names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules",
+                                   "fetch", "fetch_all", "stale", "retainable", "retain")
     end
 
     it "exposes the maintenance tools" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("key_mv_prefix", "key_delete_prefix",
-                               "zone_mv", "rule_lint", "migrate")
+                               "zone_mv", "rule_lint", "migrate", "tend")
     end
 
     it "marks key-required tools' inputSchema with required: ['key']" do

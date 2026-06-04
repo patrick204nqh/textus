@@ -16,8 +16,8 @@ feeds.machines.db-1       → { os, packages, runtimes }   (via: ssh user@…)
 ```
 
 This keeps SPEC §5.4 intact — core makes no network calls; the SSH and the
-shell-outs all live in your hook. The scan runs **only on explicit
-`textus fetch`** (never `boot`/`pulse`, per ADR 0037).
+shell-outs all live in your hook. The scan runs **only on a read-through
+`textus get`** of a stale entry (never `boot`/`pulse`, per ADR 0037).
 
 ## 1. Manifest — one nested intake, one config block
 
@@ -44,7 +44,7 @@ entries:
           db-1:     { via: ssh, host: "user@db.internal" }
 rules:
   - match: feeds.machines.**
-    fetch: { ttl: 1h, on_stale: warn, fetch_timeout_seconds: 20 }   # cap a hung SSH
+    lifecycle: { ttl: 1h, on_expire: refresh, budget_ms: 20000 }   # refresh on read; cap a hung SSH
 ```
 
 ## 2. `.gitignore` — ignore the whole nested tree
@@ -115,7 +115,7 @@ Textus.hook do |reg|
 
   reg.on(:resolve_intake, :machines) do |caps:, config:, args:|
     machine = args[:leaf_segments].first or
-      raise "fetch a specific machine, e.g. `textus fetch feeds.machines.laptop`"
+      raise "read a specific machine, e.g. `textus get feeds.machines.laptop`"
     spec = config.fetch("machines").fetch(machine) { raise "unknown machine: #{machine}" }
 
     raw =
@@ -136,19 +136,20 @@ Textus.hook do |reg|
 end
 ```
 
-## 5. Fetch it
+## 5. Read it (refreshes on stale)
 
 ```bash
-textus fetch feeds.machines.laptop   --as=automation     # one host
-textus fetch feeds.machines.prod-web --as=automation
-textus fetch_all --zone=feeds        --as=automation     # refresh every stale machine
+textus get feeds.machines.laptop   --as=automation     # one host (refreshes if stale)
+textus get feeds.machines.prod-web --as=automation
 
-textus get  feeds.machines.prod-web                      # protocol-readable…
+textus freshness --zone=feeds --output=json            # which hosts are expired
 git check-ignore .textus/zones/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 
-`fetch_all` honours the `ttl` rule, so on a long-running control node the fleet
-re-scans at most hourly; `fetch_timeout_seconds` bounds a wedged SSH.
+Each read-through `get` honours the `ttl` rule, so on a long-running control node
+the fleet re-scans at most hourly; `budget_ms` bounds a wedged SSH (the refresh
+detaches to the background and the stale snapshot is returned when the budget is
+exceeded).
 
 ## Guardrails (why this stays safe)
 
@@ -160,8 +161,9 @@ re-scans at most hourly; `fetch_timeout_seconds` bounds a wedged SSH.
   allowlist of versions/counts, not a dump — redact host paths/usernames too.
 - **Bounded + degrading.** Counts and versions, never package manifests; every
   probe guards with `command -v` and degrades to `null` cross-platform.
-- **Pull only on `fetch`.** The scan is an intake — it runs on explicit
-  `textus fetch`, never the per-turn `pulse`/`boot` path (ADR 0037).
+- **Pull only on read-through `get`.** The scan is an intake — it runs on a
+  read-through `textus get` of a stale entry, never the per-turn `pulse`/`boot`
+  path (ADR 0037).
 
 > **Scaling past a handful of hosts?** Flip to a *push* model: each machine runs
 > the probe on a cron and drops its JSON to a shared sink (object store, a git

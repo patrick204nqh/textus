@@ -36,10 +36,10 @@ entries:
     kind: intake
     intake: { handler: http_json, config: { url: "https://api.example.com/users" } }
 rules:
-  - { match: feeds.api.**, fetch: { ttl: 15m, on_stale: timed_sync } }
+  - { match: feeds.api.**, lifecycle: { ttl: 15m, on_expire: refresh } }
 ```
 
-Run: `textus fetch feeds.api.users --as=automation`
+Run: `textus get feeds.api.users --as=automation` (a read-through on a stale entry refreshes it in-process)
 
 > **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
 > top level must be a **mapping** (an object). If your source is a top-level
@@ -48,7 +48,7 @@ Run: `textus fetch feeds.api.users --as=automation`
 > markdown` (the default), which stores the parsed YAML as the body.
 
 > The recipes below show only the hook — pair each with an `intake:` entry naming
-> the handler plus a `rules:` fetch block, exactly like the HTTP JSON example above.
+> the handler plus a `rules:` lifecycle block, exactly like the HTTP JSON example above.
 
 ## RSS feed
 

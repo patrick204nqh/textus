@@ -58,7 +58,7 @@ Three ideas make this a *trust* path, not just a copy:
 
 - **Two capabilities, never one.** `propose` lets an agent write into the queue zone (`textus propose` auto-prefixes the key with whatever zone declares `kind: queue`). `author` — the single trust anchor, held by at most one role — is what `accept` requires. An agent has no path to `canon` of its own.
 - **`accept` is a transition, not a capability.** It is gated by two floor predicates — **`author_held`** (you hold the anchor) and **`target_is_canon`** (you may only promote *into* a canon zone). A proposal whose `target_key` points elsewhere is refused as `guard_failed`, and `textus doctor`'s `proposal_targets` check flags it ahead of time. The exact predicate set is the SSoT of [`../reference/zones.md`](../reference/zones.md).
-- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` retention rule swept by `textus retain` ages out whatever is never resolved.
+- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` lifecycle rule (`on_expire: drop`) swept by `textus tend` ages out whatever is never resolved.
 
 ## Hooks: RPC vs pub-sub
 
@@ -152,7 +152,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
 #### Drift, scheduling, and hook-error signals
 
 - **`contract_etag`** — composite sha256 of the contract: `manifest.yaml` plus the hooks and schemas (ADR 0074). If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
-- **`next_due_at`** — earliest `next_due_at` across all entries with a fetch policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
+- **`next_due_at`** — earliest `next_due_at` across all entries with a lifecycle policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
 - **`hook_errors`** — list of recent hook failures since cursor: `{seq, event, hook, key, error_class, error_message, at}`. Bounded in-memory ring (256 most recent); older entries are evicted.
 
 Every audit row carries a `seq` integer — a monotonic counter stamped on each write. The `cursor` in pulse is always the `latest_seq` from the audit log; passing it back to the next `pulse --since=<cursor>` produces only rows written after that point.

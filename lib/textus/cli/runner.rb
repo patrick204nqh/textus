@@ -137,10 +137,11 @@ module Textus
       BEHAVIORAL_HATCHES = %i[get put build].freeze
 
       # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
-      # all — worker verbs and composite reports assembled outside the contract:
-      #   fetch, fetch_all — background intake workers (not request/response)
-      #   boot, doctor     — composite reports
-      NON_PROJECTED_CLI = %i[fetch fetch_all boot doctor].freeze
+      # all — composite reports assembled outside the contract:
+      #   boot, doctor — composite reports
+      # (fetch/fetch_all were removed in ADR 0079: FetchWorker is now internal,
+      # driven by get's read-through orchestrator and the tend sweep.)
+      NON_PROJECTED_CLI = %i[boot doctor].freeze
 
       # The installer skips generation for either category.
       HAND_AUTHORED_VERBS = (BEHAVIORAL_HATCHES + NON_PROJECTED_CLI).freeze

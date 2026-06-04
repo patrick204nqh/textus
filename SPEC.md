@@ -208,7 +208,7 @@ entries:
 
 rules:
   - match: feeds.**
-    fetch: { ttl: 6h, on_stale: warn }
+    lifecycle: { ttl: 6h, on_expire: warn }
 
 audit:
   max_size: 10485760   # bytes before rotating (default: 10 485 760 = 10 MiB)
@@ -454,9 +454,9 @@ A sentinel is written for each published file at `<store_root>/.run/sentinels/<t
 
 **Subtree mirror.** A nested entry MAY declare `publish: { tree: "dir" }` instead of `to:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/.run/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The build envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. Targets that would resolve outside the repo root are refused. When a `publish.tree` target overlaps a `derived` entry's `publish.to` (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
 
-### 5.4 Intake (declared, fetched via registered intake handler)
+### 5.4 Intake (declared, refreshed via registered intake handler)
 
-Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when explicitly invoked by `textus fetch KEY --as=automation` (or by `textus fetch all`). The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when a read-through `textus get KEY` encounters a stale entry whose `lifecycle` rule says `on_expire: refresh`. The declaration is data only:
 
 ```yaml
 - key: feeds.calendar.events
@@ -468,23 +468,22 @@ Intake entries declare an external source by naming an **intake handler** — a 
 
 rules:
   - match: feeds.calendar.**
-    fetch:
+    lifecycle:
       ttl: 6h
-      on_stale: warn            # warn | sync | timed_sync (default: warn)
-      sync_budget_ms: 500       # only used when on_stale: timed_sync (default: 500)
+      on_expire: refresh        # refresh | warn | drop | archive
+      budget_ms: 500            # bound the in-process refresh (default: 500)
 ```
 
-`handler` names a registered `:resolve_intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_stale`, `sync_budget_ms`) lives in a top-level **`rules:`** block matched by key glob (§5.11).
+`handler` names a registered `:resolve_intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_expire`, `budget_ms`) lives in a top-level **`rules:`** block matched by key glob (§5.11).
 
-#### `on_stale:` semantics
+#### `on_expire:` semantics
 
-`on_stale:` declares what happens when `get` encounters a stale intake entry. `get` is **read-through on every surface** (CLI, Ruby, MCP): it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule and degrading to a pure on-disk read for keys with no fetch rule (ADR 0062). The value lives on the matching policy block, not on the entry. Vocabulary: `warn | sync | timed_sync`.
+`on_expire:` declares what happens when `get` encounters an expired (past-TTL) intake entry. `get` is **read-through on every surface** (CLI, Ruby, MCP): it returns the freshest obtainable envelope, refreshing on an expired verdict per the entry's `lifecycle` rule and degrading to a pure on-disk read for keys with no lifecycle rule (ADR 0062). The value lives on the matching policy block, not on the entry. For intake entries the only valid actions are `refresh` and `warn` (`drop`/`archive` apply to stored entries and are enforced by `doctor` via `lifecycle.action_invalid`).
 
 | Value | Behaviour |
 |---|---|
 | `warn` (default) | Return the entry immediately with `stale: true`, `stale_reason:` populated, and `fetching: false`. No blocking. |
-| `sync` | Block the `get` call, run the intake handler in-process, write the fetched result, then return the fresh envelope. The caller waits. |
-| `timed_sync` | Like `sync`, but with a `sync_budget_ms` deadline (default 500 ms). If the handler finishes within the budget the fresh envelope is returned. If it does not finish in time, return the stale envelope (with `stale: true`, `fetching: true`) and let the fetch complete in the background. Fires `:fetch_backgrounded` when the deadline is exceeded. |
+| `refresh` | Block the `get` call, run the intake handler in-process under a `budget_ms` deadline (default 500 ms), write the result, and return the fresh envelope. If the handler does not finish in time, return the stale envelope (with `stale: true`, `fetching: true`) and let the refresh complete in the background. Fires `:fetch_backgrounded` when the deadline is exceeded. |
 
 > **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does.
 
@@ -496,10 +495,10 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Built-in intake handlers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
 
-**Fetch paths.** Two are supported:
+**Refresh paths.** Two are supported:
 
-1. **In-process** — `textus fetch KEY --as=automation` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `fetch` (`automation` by default).
-2. **External automation** — a cron job or agent harness reads `textus list --zone=intake --stale --output=json`, fetches the source out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`. The CLI verb `textus fetch all [--prefix=K] [--zone=Z]` drives this loop in one shot.
+1. **In-process** — a read-through `textus get KEY --as=automation` on a stale entry whose rule says `on_expire: refresh` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `fetch` (`automation` by default).
+2. **External automation** — a cron job or agent harness reads `textus freshness --zone=intake --output=json`, fetches sources reported `expired` out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`.
 
 Both paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
@@ -688,10 +687,10 @@ A manifest MAY declare a top-level `rules:` block — a list of rule blocks matc
 ```yaml
 rules:
   - match: feeds.**
-    fetch: { ttl: 6h, on_stale: warn }
+    lifecycle: { ttl: 6h, on_expire: warn }
 
   - match: feeds.calendar.**
-    fetch: { ttl: 30m, on_stale: timed_sync, sync_budget_ms: 800 }
+    lifecycle: { ttl: 30m, on_expire: refresh, budget_ms: 800 }
     intake_handler_allowlist: [ical-events]
 
   - match: proposals.**
@@ -703,24 +702,21 @@ rules:
 
 | Slot | Type | Meaning |
 |---|---|---|
-| `fetch` | `{ ttl, on_stale, sync_budget_ms, fetch_timeout_seconds }` | Freshness budget for intake entries. `on_stale` is `warn` (default), `sync`, or `timed_sync`. |
+| `lifecycle` | `{ ttl, on_expire, budget_ms? }` | Unified age policy (ADR 0079). `on_expire` is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy to `<store>/archive/<relative-path>` then delete). Non-destructive actions (`refresh`/`warn`) are applied lazily on `get`; destructive actions (`drop`/`archive`) only on the `tend` sweep. `refresh` is valid only for intake entries; `drop`/`archive` only for stored entries (`doctor` `lifecycle.action_invalid` enforces). Age is measured from `_meta.last_fetched_at` (intake) when present, else the leaf file's modification time. `budget_ms` (optional) bounds a `refresh` to a deadline, returning the stale envelope and refreshing in the background when exceeded. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
 | `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `delete`, `mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
-| `retention` | `{ expire_after:, archive_after: }` | Pruning policy for matched leaves. Duration strings: `30s`, `90m`, `12h`, `30d`, or bare integer seconds. `textus retain --as=ROLE` sweeps matched leaves: `expire_after` is checked first, so a leaf older than `expire_after` is deleted (and audited); otherwise a leaf older than `archive_after` is copied to `<store>/archive/<relative-path>` and then deleted. Age is measured from the leaf file's modification time. The `--as` role must be allowed to write the matched zone. |
 
-Both retention windows are optional, and `expire_after` is evaluated before
-`archive_after` — so when both apply, a leaf past the (longer) `expire_after`
-window is deleted rather than archived. The usual configuration is therefore
-`archive_after < expire_after` (archive a leaf, then delete it once older).
-`textus retain --as=ROLE` runs the sweep; `--prefix` and `--zone` narrow it, and
-any leaf whose zone the `--as` role cannot write is reported as a failure rather
-than aborting the run.
+The `lifecycle:` slot unifies the former `fetch:` (intake freshness) and
+`retention:` (leaf pruning) slots into one age policy (ADR 0079). Generator/build
+drift — a derived entry whose sources changed since its `generated.at` — is
+dependency-based, not age-based, and is reported by the `textus doctor`
+`generator_drift` check rather than this slot.
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 
-**Resolution.** For each key textus computes a `RuleSet { fetch, intake_handler_allowlist, guard, retention }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
+**Resolution.** For each key textus computes a `RuleSet { handler_allowlist, guard, lifecycle }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{fetch, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{lifecycle, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
 
 ### 5.12 Storage formats
 
@@ -826,9 +822,9 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been fetched; `false` otherwise. Only populated for entries matched by a `fetch:` rule slot (typically `feeds` / quarantine zone); always `false` elsewhere.
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by a `lifecycle:` rule slot (typically `feeds` / quarantine zone); always `false` elsewhere.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
-- `fetching` is `true` when a `timed_sync` background fetch is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
+- `fetching` is `true` when an `on_expire: refresh` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
 
 > **Note:** `list`/`where` envelopes do **not** include `stale`, `stale_reason`, or `fetching` — freshness annotation is only provided by `get`.
 
@@ -867,7 +863,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 |---|---|---|
 | `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
-| `get K [--no-fetch]` | read (read-through by default: fetch-on-stale per the entry's fetch rule, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
+| `get K [--no-fetch]` | read (read-through by default: refresh-on-stale per the entry's `lifecycle` rule when `on_expire: refresh`, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
 | `schema show K` | read | any |
 | `freshness [--prefix=K] [--zone=Z]` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
@@ -883,10 +879,8 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
 | `propose K --stdin --as=R` | write | `propose`-holder (auto-prefixes propose_zone) |
 | `key delete K --if-etag=E --as=R` | write | per zone |
-| `fetch KEY --as=automation` | write | `fetch`-holder (typically `automation`) |
-| `fetch all [--prefix=K] [--zone=Z] [--as=automation]` | write | `fetch`-holder (typically `automation`) |
 | `build [--prefix=K] [--dry-run]` | write | `build`-holder (typically `automation`) |
-| `retain [--prefix=K] [--zone=Z] --as=ROLE` | write | per zone (role must write the matched zone) |
+| `tend [--prefix=K] [--zone=Z] [--dry-run] --as=ROLE` | write | per zone (role must write the matched zone) |
 | `accept K --as=human` | write | `author`-holder (typically `human`) |
 | `reject K --as=human` | write | `author`-holder (typically `human`) |
 | `init` | write | `human` |
@@ -900,7 +894,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 {
   "agent_quickstart": {
     "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
-    "write_verbs":    ["accept", "delete", "fetch", "fetch_all", "mv", "propose", "put", "reject"],
+    "write_verbs":    ["accept", "delete", "mv", "propose", "put", "reject"],
     "writable_zones": ["proposals"],
     "propose_zone":   "proposals",
     "latest_seq":     1842
@@ -952,14 +946,14 @@ The agent's MCP write surface includes the single-key `delete` and `mv` tools al
       "last_fetched_at": "2026-05-21T13:21:17Z",
       "age_seconds": 65000,
       "ttl_seconds": 43200,
-      "on_stale": "warn",
-      "status": "stale",
+      "on_expire": "warn",
+      "status": "expired",
       "next_due_at": "2026-05-22T01:21:17Z" }
   ]
 }
 ```
 
-Each row reports one entry's verdict (`fresh`, `stale`, `never_fetched`, or `no_policy`) against its matched `fetch:` rule. `textus build` consumes its own staleness signal and executes derived entries' projections under a `build`-holding role (`automation` by default); `--dry-run` prints the plan without executing.
+Each row reports one entry's verdict (`fresh`, `expired`, or `no_policy`) plus the matched rule's `on_expire` action, against its matched `lifecycle:` rule. `textus build` consumes its own staleness signal and executes derived entries' projections under a `build`-holding role (`automation` by default); `--dry-run` prints the plan without executing.
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
 
@@ -1008,7 +1002,7 @@ Given a manifest entry where `key: identity.self` lives in the `identity` zone (
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, fetch: { ttl: 1h } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus freshness --output=json` includes a row for `intake.notes` with `status: "stale"`. Calling `textus freshness` does NOT trigger a fetch.
+Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, lifecycle: { ttl: 1h, on_expire: warn } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus freshness --output=json` includes a row for `intake.notes` with `status: "expired"`. Calling `textus freshness` does NOT trigger a refresh.
 
 **Fixture E — Projection build:**
 Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus build derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so rebuilding with unchanged sources reproduces it byte-for-byte and writes nothing.
@@ -1066,7 +1060,7 @@ A `textus/3` implementation MUST:
 - [ ] Refuse writes whose resolved role lacks the capability the target zone-kind requires with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|stale|never_fetched|no_policy` without invoking any fetch.
+- [ ] Implement `textus freshness` per §5.1 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|expired|no_policy` (plus the `on_expire` action) without invoking any refresh.
 - [ ] Pass the conformance fixtures A–I in §12.
 
 A `textus/3` implementation MAY:
