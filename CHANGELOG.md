@@ -9,6 +9,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.50.0 — 2026-06-04 — Observability on two axes + boot lifecycle (ADR 0083, 0084, 0085)
+
+`freshness` collapses into `pulse`, the contract-drift guard stops deadlocking, and `boot` gains a lean session-start projection shipped via a plugin.
+
+### Added
+
+- **`boot --lean`** (ADR 0084) — a compact orientation projection (`protocol`, `store_root`, `zones`, `agent_quickstart`, `contract_etag`) for cheap session-start injection. The full `boot` envelope now also carries `contract_etag`. `--lean` is a contract arg, so it threads to every surface (CLI flag, MCP `lean` tool arg, Ruby kwarg).
+- **textus ships as a Claude Code plugin** (ADR 0084) — `.claude-plugin/plugin.json` + `hooks/hooks.json` register a `SessionStart` hook (`startup`/`clear`/`compact`) that runs `boot --lean`, so enabling the plugin auto-orients each session. The agent-invokable `boot` tool is unchanged; the hook is additive. (This repo git-ignores `.claude/settings.json`, so the dogfood hook is local-only — the plugin is the shareable delivery.)
+
+### Changed
+
+- **The contract-drift guard applies to mutating verbs only; `boot` self-heals** (ADR 0083). A mid-session manifest/hook/schema edit no longer deadlocks every MCP verb behind "re-run boot": pure reads and `boot` bypass the guard, `boot` re-arms the session's cached `contract_etag`, and only mutating verbs (the `Write::` family + the destructive `Maintenance::` verbs `tend`/`zone_mv`/`key_mv_prefix`/`key_delete_prefix`) enforce it. "Re-run boot" now actually recovers instead of looping. Refines ADR 0074.
+- **`tend` returns a health summary, not full `issues[]`** (ADR 0085) — matching `pulse`; `doctor` stays the sole owner of detailed health output.
+
+### Removed (breaking)
+
+- **The public `freshness` verb** (ADR 0085). Observability is now two verbs on orthogonal axes — `pulse` (transient/temporal: `changed` + `stale` + `next_due_at`) and `doctor` (structural correctness). The lifecycle scan that backed `freshness` becomes a Ruby-only internal (empty `surfaces`, ADR 0073) consumed by `pulse` and the hook context; per-entry detail is reconstructable from `get` (carries `stale`/`last_fetched_at`) + `rule_explain` (the `lifecycle:` ttl + `on_expire`). **Migration:** replace `textus freshness` with `textus pulse` (for the `stale` list / `next_due_at`) or `get` + `rule_explain` (for one entry's verdict). SPEC's generator-drift attribution is corrected to `doctor`'s `generator_drift` check.
+
 ## 0.49.0 — 2026-06-04 — Normalize the key-verb family + remove `migrate` (ADR 0082)
 
 The single-key mutation verbs gain the `key_` family stem, and the `migrate` orchestrator is removed.
