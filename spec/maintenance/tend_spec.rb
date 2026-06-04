@@ -14,7 +14,7 @@ RSpec.describe Textus::Maintenance::Tend do
     expect(spec.mcp?).to be(true)
   end
 
-  describe "#call apply path" do
+  describe "#call lifecycle sweep" do
     include_context "textus_store_fixture"
 
     before do
@@ -25,61 +25,45 @@ RSpec.describe Textus::Maintenance::Tend do
           - { name: review, kind: canon }
         entries:
           - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
-
         rules:
           - match: "review.*"
-            retention: { expire_after: 30d }
+            lifecycle: { ttl: 30d, on_expire: drop }
       YAML
-
       leaf = File.join(root, "zones/review/oncall.md")
-      File.write(leaf, "# oncall notes\n")
+      File.write(leaf, "---\n_meta: {name: oncall, uid: aaaaaaaaaaaaaaaa}\n---\nbody\n")
       aged = Time.now - (40 * 86_400)
       File.utime(aged, aged, leaf)
-
       FileUtils.mkdir_p(audit_dir_path(root))
       File.write(audit_log_path(root), "")
     end
 
     let(:store) { Textus::Store.new(root) }
-    let(:ctx)   { test_ctx(role: "human") }
 
     def build_tend
-      call_value = Textus::Call.new(
-        role: ctx.role, correlation_id: ctx.correlation_id,
-        now: ctx.now, dry_run: ctx.dry_run
-      )
-      described_class.new(container: store.container, call: call_value)
+      cv = Textus::Call.new(role: "human", correlation_id: "t", now: Time.now, dry_run: false)
+      described_class.new(container: store.container, call: cv)
     end
 
-    it "expires the aged leaf, reports health, and aggregates sub-results" do
+    it "drops an aged drop-policy entry and reports it" do
       leaf = File.join(root, "zones/review/oncall.md")
       result = build_tend.call
-
       expect(result["ok"]).to be(true)
-      expect(result["dry_run"]).to be(false)
-      expect(result["retain"]["expired"]).to include("review.oncall")
-      expect(result).to have_key("fetch")
-      expect(result).to have_key("health")
+      expect(result["dropped"]).to include("review.oncall")
       expect(File.exist?(leaf)).to be(false)
     end
 
-    it "threads prefix scoping through to the sub-passes (non-matching prefix is a no-op)" do
+    it "dry-run previews would_drop without deleting" do
       leaf = File.join(root, "zones/review/oncall.md")
-      result = build_tend.call(prefix: "nonexistent")
-
-      expect(result["retain"]["expired"]).to be_empty
+      result = build_tend.call(dry_run: true)
+      expect(result["dry_run"]).to be(true)
+      expect(result["would_drop"]).to include("review.oncall")
       expect(File.exist?(leaf)).to be(true)
     end
 
-    it "previews retention without deleting when dry_run: true" do
+    it "scopes by prefix (non-matching prefix is a no-op)" do
       leaf = File.join(root, "zones/review/oncall.md")
-      result = build_tend.call(dry_run: true)
-
-      expect(result["ok"]).to be(true)
-      expect(result["dry_run"]).to be(true)
-      expect(result["retain"]["would_expire"]).to include("review.oncall")
-      expect(result["retain"]).not_to have_key("expired")
-      expect(result["fetch"]).to have_key("would_fetch")
+      result = build_tend.call(prefix: "nonexistent")
+      expect(result["dropped"]).to be_empty
       expect(File.exist?(leaf)).to be(true)
     end
   end

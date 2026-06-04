@@ -23,7 +23,7 @@ RSpec.describe "textus tend" do
 
       rules:
         - match: "review.*"
-          retention: { expire_after: 30d }
+          lifecycle: { ttl: 30d, on_expire: drop }
     YAML
 
     leaf = File.join(root, "zones/review/oncall.md")
@@ -32,7 +32,7 @@ RSpec.describe "textus tend" do
     File.utime(aged, aged, leaf)
   end
 
-  it "runs the upkeep pass and expires the aged leaf" do
+  it "runs the sweep and drops the aged leaf" do
     leaf = File.join(root, "zones/review/oncall.md")
 
     rc = run(%w[tend --as=human])
@@ -40,11 +40,11 @@ RSpec.describe "textus tend" do
 
     payload = JSON.parse(stdout.string)
     expect(payload["ok"]).to be(true)
-    expect(payload["retain"]["expired"]).to include("review.oncall")
+    expect(payload["dropped"]).to include("review.oncall")
     expect(File.exist?(leaf)).to be(false)
   end
 
-  it "with --dry-run reports the pass without deleting" do
+  it "with --dry-run reports the sweep without deleting" do
     leaf = File.join(root, "zones/review/oncall.md")
 
     rc = run(%w[tend --dry-run --as=human])
@@ -52,7 +52,7 @@ RSpec.describe "textus tend" do
 
     payload = JSON.parse(stdout.string)
     expect(payload["dry_run"]).to be(true)
-    expect(payload["retain"]["would_expire"]).to include("review.oncall")
+    expect(payload["would_drop"]).to include("review.oncall")
     expect(File.exist?(leaf)).to be(true)
   end
 end

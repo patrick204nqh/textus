@@ -1,23 +1,27 @@
+require "fileutils"
+
 module Textus
   module Maintenance
-    # Composite upkeep pass (ADR 0078): refresh stale intake, apply retention,
-    # then report residual health — in that order. Adds no new storage semantics
-    # and no authority: it constructs and invokes the existing FetchAll /
-    # RetentionSweep / Doctor use-cases with the CALLER's own `call` (role), so
-    # each sub-op stays gated exactly as it is on its own. Deliberately NOT
-    # self-elevating — the contrast with `build` (ADR 0076).
+    # The destructive-only lifecycle sweep (ADR 0079, supersedes the composite
+    # 0078 body). Drives off the unified Domain::Lifecycle reporter: it applies
+    # destructive actions a read never performs (drop = delete via Write::Delete;
+    # archive = copy to <store>/archive/ then delete) and refreshes cold expired
+    # intake entries (on_expire: refresh) via Write::FetchWorker. Non-destructive
+    # annotation (warn) is left to the lazy `get`/`freshness` path. Adds no new
+    # authority — every sub-op runs with the CALLER's own `call` (role), and is
+    # gated exactly as on its own.
     class Tend
       extend Textus::Contract::DSL
 
       verb     :tend
-      summary  "Run upkeep: refresh stale intake, apply retention, report health."
+      summary  "Run the destructive lifecycle sweep: drop/archive expired entries, refresh cold intake, report health."
       surfaces :cli, :mcp
       cli      "tend"
-      arg :prefix,  String, description: "restrict every pass to keys under this dotted prefix"
-      arg :zone,    String, description: "restrict every pass to entries in this zone"
+      arg :prefix,  String, description: "restrict the sweep to keys under this dotted prefix"
+      arg :zone,    String, description: "restrict the sweep to entries in this zone"
       arg :dry_run, :boolean, default: false,
-                              description: "when true, report what each pass WOULD do without applying; " \
-                                           "defaults to false, so omitting it refreshes and expires immediately"
+                              description: "when true, report what the sweep WOULD do without applying; " \
+                                           "defaults to false, so omitting it drops/archives/refreshes immediately"
 
       def initialize(container:, call:)
         @container = container
@@ -25,50 +29,81 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil, dry_run: false)
-        fetch  = dry_run ? preview_fetch(prefix, zone)  : apply_fetch(prefix, zone)
-        retain = dry_run ? preview_retain(prefix, zone) : apply_retain(prefix, zone)
-        health = Read::Doctor.new(container: @container, call: @call).call
+        rows = Textus::Domain::Lifecycle.new(
+          manifest: @container.manifest,
+          file_stat: Textus::Ports::Storage::FileStat.new,
+          clock: Textus::Ports::Clock,
+        ).call(prefix: prefix, zone: zone)
 
-        {
-          "protocol" => Textus::PROTOCOL,
-          "ok" => fetch["ok"] && retain["ok"],
-          "dry_run" => dry_run,
-          "fetch" => fetch,
-          "retain" => retain,
-          "health" => health,
-        }
+        health = Read::Doctor.new(container: @container, call: @call).call
+        return dry_run_result(rows, health) if dry_run
+
+        apply_result(apply(rows), health)
       end
 
       private
 
-      def apply_fetch(prefix, zone)
-        Write::FetchAll.new(container: @container, call: @call)
-                       .call(prefix: prefix, zone: zone)
+      def dry_run_result(rows, health)
+        {
+          "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
+          "would_drop" => action_keys(rows, "drop"),
+          "would_archive" => action_keys(rows, "archive"),
+          "would_refresh" => action_keys(rows, "refresh"),
+          "health" => health
+        }
       end
 
-      def apply_retain(prefix, zone)
-        Write::RetentionSweep.new(container: @container, call: @call)
-                             .call(prefix: prefix, zone: zone)
+      def apply_result(result, health)
+        {
+          "protocol" => Textus::PROTOCOL,
+          "ok" => result[:failed].empty?,
+          "dry_run" => false,
+          "dropped" => result[:dropped], "archived" => result[:archived],
+          "refreshed" => result[:refreshed], "failed" => result[:failed],
+          "health" => health
+        }
       end
 
-      # Preview = the read side of each pass, with zero writes. Uses
-      # Write::FetchAll::ACTIONABLE_REASON (shared constant) so the filter
-      # stays in sync with the real apply path.
-      def preview_fetch(prefix, zone)
-        rows = Read::Stale.new(container: @container, call: @call)
-                          .call(prefix: prefix, zone: zone)
-        would = rows.select { |r| (r["reason"] || r[:reason]).to_s.match?(Write::FetchAll::ACTIONABLE_REASON) }
-                    .map { |r| r["key"] || r[:key] }
-        { "ok" => true, "would_fetch" => would }
+      def action_keys(rows, action)
+        rows.select { |r| r["action"] == action }.map { |r| r["key"] }
       end
 
-      # Read::Retainable returns exactly the rows RetentionSweep would consume.
-      def preview_retain(prefix, zone)
-        rows = Read::Retainable.new(container: @container, call: @call)
-                               .call(prefix: prefix, zone: zone)
-        { "ok" => true,
-          "would_expire" => rows.reject { |r| r["action"] == "archive" }.map { |r| r["key"] },
-          "would_archive" => rows.select { |r| r["action"] == "archive" }.map { |r| r["key"] } }
+      def apply(rows)
+        out = { dropped: [], archived: [], refreshed: [], failed: [] }
+        delete  = Write::Delete.new(container: @container, call: @call)
+        refresh = Write::FetchWorker.new(container: @container, call: @call)
+
+        rows.each do |row|
+          key = row["key"]
+          begin
+            case row["action"]
+            when "drop"
+              delete.call(key)
+              out[:dropped] << key
+            when "archive"
+              archive_leaf(row)
+              delete.call(key)
+              out[:archived] << key
+            when "refresh"
+              refresh.run(key)
+              out[:refreshed] << key
+            end
+          rescue Textus::Error => e
+            out[:failed] << { "key" => key, "error" => e.message }
+          end
+        end
+        out
+      end
+
+      # Copy the leaf into <store>/archive/<relative-path> before deletion.
+      # (Lifted from the retired RetentionSweep#archive_leaf.)
+      def archive_leaf(row)
+        src  = row["path"]
+        root = @container.root.to_s
+        rel  = src.delete_prefix("#{root}/")
+        dest = File.join(root, "archive", rel)
+        FileUtils.mkdir_p(File.dirname(dest))
+        FileUtils.cp(src, dest)
       end
     end
   end
