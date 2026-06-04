@@ -72,7 +72,7 @@ module Textus
         end
       end
 
-      # Reads _meta.last_fetched_at the same way Staleness::IntakeCheck does.
+      # Reads _meta.last_fetched_at from the on-disk envelope (intake basis).
       def last_fetched_at_of(mentry, path)
         Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]["last_fetched_at"]
       rescue StandardError
