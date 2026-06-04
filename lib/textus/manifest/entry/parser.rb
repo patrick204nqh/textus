@@ -47,7 +47,7 @@ module Textus
               transform: compute["transform"],
             )
           else
-            Entry::Derived::External.new(sources: compute["sources"], runner: compute["runner"])
+            Entry::Derived::External.new(sources: compute["sources"], command: compute["command"])
           end
         end
 

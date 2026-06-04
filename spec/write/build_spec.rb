@@ -138,6 +138,48 @@ RSpec.describe Textus::Write::Build do
     end
   end
 
+  context "with an External (out-of-band) derived entry" do
+    let(:store) do
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
+      s = store_from_manifest(root, zones: %w[knowledge artifacts], manifest: <<~YAML)
+        version: textus/3
+        zones:
+          - { name: knowledge, kind: canon }
+          - { name: artifacts, kind: derived }
+        entries:
+          - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
+
+          - key: artifacts.catalogs.big
+            kind: derived
+            path: artifacts/catalogs/big.md
+            zone: artifacts
+            owner: automation:auto
+            compute: { kind: external, sources: [knowledge.people], command: "rake build:big" }
+      YAML
+      File.write(File.join(root, "zones/knowledge/people/alice.md"), "---\nname: alice\n---\n")
+      # The runner's artifact already exists on disk (textus does not generate it).
+      File.write(File.join(root, "zones/artifacts/catalogs/big.md"),
+                 "---\n_meta:\n  generated:\n    at: 2030-01-01T00:00:00Z\n---\nRUNNER OUTPUT\n")
+      s
+    end
+
+    it "does not materialize the External entry (leaves the runner's artifact untouched)" do
+      store # trigger lazy fixture setup so the runner's artifact exists on disk
+      before = File.read(File.join(root, "zones/artifacts/catalogs/big.md"))
+      store.as("automation").build
+      after = File.read(File.join(root, "zones/artifacts/catalogs/big.md"))
+      expect(after).to eq(before)
+      expect(after).to include("RUNNER OUTPUT")
+    end
+
+    it "omits the External entry from the built list" do
+      res = store.as("automation").build
+      built_keys = res["built"].map { |b| b["key"] }
+      expect(built_keys).not_to include("artifacts.catalogs.big")
+    end
+  end
+
   context "with an Intake entry that has publish_to" do
     let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
