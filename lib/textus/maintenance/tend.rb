@@ -24,8 +24,31 @@ module Textus
         @call      = call
       end
 
-      def call(prefix: nil, zone: nil, dry_run: false) # rubocop:disable Lint/UnusedMethodArgument
-        { "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => dry_run }
+      def call(prefix: nil, zone: nil, dry_run: false)
+        fetch  = apply_fetch(prefix, zone)
+        retain = apply_retain(prefix, zone)
+        health = Read::Doctor.new(container: @container, call: @call).call
+
+        {
+          "protocol" => Textus::PROTOCOL,
+          "ok" => fetch.fetch("ok", true) && retain.fetch("ok", true),
+          "dry_run" => dry_run,
+          "fetch" => fetch,
+          "retain" => retain,
+          "health" => health,
+        }
+      end
+
+      private
+
+      def apply_fetch(prefix, zone)
+        Write::FetchAll.new(container: @container, call: @call)
+                       .call(prefix: prefix, zone: zone)
+      end
+
+      def apply_retain(prefix, zone)
+        Write::RetentionSweep.new(container: @container, call: @call)
+                             .call(prefix: prefix, zone: zone)
       end
     end
   end
