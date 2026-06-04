@@ -1,8 +1,10 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:fetch, :handler_allowlist, :guard, :retention)
-      EMPTY_SET = RuleSet.new(fetch: nil, handler_allowlist: nil, guard: nil, retention: nil)
+      RuleSet = ::Data.define(:fetch, :handler_allowlist, :guard, :retention, :lifecycle)
+      EMPTY_SET = RuleSet.new(
+        fetch: nil, handler_allowlist: nil, guard: nil, retention: nil, lifecycle: nil,
+      )
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -15,7 +17,7 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { fetch: [], handler_allowlist: [], guard: [], retention: [] }
+        slots = { fetch: [], handler_allowlist: [], guard: [], retention: [], lifecycle: [] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
@@ -26,6 +28,7 @@ module Textus
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           guard: pick(slots[:guard], :guard, key),
           retention: pick(slots[:retention], :retention, key),
+          lifecycle: pick(slots[:lifecycle], :lifecycle, key),
         )
       end
 
@@ -44,7 +47,7 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :fetch, :handler_allowlist, :guard, :retention
+        attr_reader :match, :fetch, :handler_allowlist, :guard, :retention, :lifecycle
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
@@ -52,6 +55,7 @@ module Textus
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @guard = parse_guard(raw["guard"])
           @retention = parse_retention(raw["retention"])
+          @lifecycle = parse_lifecycle(raw["lifecycle"])
         end
 
         private
@@ -89,6 +93,16 @@ module Textus
           Textus::Domain::Policy::Retention.new(
             expire_after: h["expire_after"],
             archive_after: h["archive_after"],
+          )
+        end
+
+        def parse_lifecycle(h)
+          return nil if h.nil?
+
+          Textus::Domain::Policy::Lifecycle.new(
+            ttl: h["ttl"],
+            on_expire: h["on_expire"],
+            budget_ms: h["budget_ms"],
           )
         end
       end
