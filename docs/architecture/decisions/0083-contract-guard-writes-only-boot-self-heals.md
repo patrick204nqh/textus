@@ -1,7 +1,7 @@
 # ADR 0083 — The contract-drift guard applies to writes only; `boot` and reads bypass it
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted (ships 0.50.0)
 **Refines:** [ADR 0074](./0074-contract-etag-drift-guard.md) (the contract-etag drift guard — this ADR narrows *which* verbs the guard gates and fixes the self-referential recovery path it left).
 **Touches:** [ADR 0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) (`boot` is the orientation handshake — this ADR makes it the verb that *establishes* the contract etag), [ADR 0040](./0040-mcp-connection-role-and-two-channels.md) (the MCP connection is long-lived — the guard's failure mode bites mid-session), [ADR 0062](./0062-one-get-read-through.md) (reads are read-through; this ADR keeps reads ungated so a stale-contract read still returns on-disk truth).
 
@@ -26,9 +26,11 @@ Two observations sharpen the fix:
 
 ## Decision
 
-### 1. The guard gates write verbs only
+### 1. The guard gates mutating verbs only
 
-The `ContractDrift` check runs for the write/mutating verbs (`put`, `propose`, `accept`, `reject`, `key_mv`, `key_mv_prefix`, `key_delete`, `key_delete_prefix`, `build`, `tend`, `zone_mv`). Read and orientation verbs are never gated.
+The `ContractDrift` check runs for every MCP verb that is **not a pure read** — the `Write::` family (`put`, `propose`, `accept`, `reject`, `build`, `key_mv`, `key_delete`) plus the destructive `Maintenance::` verbs (`tend`, `zone_mv`, `key_mv_prefix`, `key_delete_prefix`). Pure reads and `boot` are never gated.
+
+Implementation derives the set as the complement of the MCP read catalog (`unless Catalog.read_verbs.include?(name)`) rather than the `Write::`-only `write_verbs` — keying on `write_verbs` would silently leave the destructive `Maintenance::` verbs un-gated. The lone read-only `Maintenance::` verb, `rule_lint` (a candidate-manifest diff that performs no store write), is therefore also gated; that is harmless and arguably correct — linting against a drifted live manifest should re-orient first — and it keeps the predicate a clean "reads bypass, everything else enforces" with no per-verb hardcoding.
 
 ```
  verb class           contract-drift guard
@@ -38,7 +40,11 @@ The `ContractDrift` check runs for the write/mutating verbs (`put`, `propose`, `
    where, pulse,
    deps, rdeps, …)
  writes (put, build,  ENFORCE — refuse on drift; the writer must re-orient first
-   tend, key_*, …)
+   key_*, …) +
+   destructive
+   Maintenance::
+   (tend, zone_mv,
+   key_*_prefix)
 ```
 
 ### 2. `boot` establishes — and re-arms — the contract etag
