@@ -16,7 +16,7 @@ tracks both additive improvements and breaking protocol bumps independently.
 ### Added
 
 - **`boot --lean`** (ADR 0084) — a compact orientation projection (`protocol`, `store_root`, `zones`, `agent_quickstart`, `contract_etag`) for cheap session-start injection. The full `boot` envelope now also carries `contract_etag`. `--lean` is a contract arg, so it threads to every surface (CLI flag, MCP `lean` tool arg, Ruby kwarg).
-- **textus ships as a Claude Code plugin** (ADR 0084) — `.claude-plugin/plugin.json` + `hooks/hooks.json` register a `SessionStart` hook (`startup`/`clear`/`compact`) that runs `boot --lean`, so enabling the plugin auto-orients each session. The agent-invokable `boot` tool is unchanged; the hook is additive. (This repo git-ignores `.claude/settings.json`, so the dogfood hook is local-only — the plugin is the shareable delivery.)
+- **textus ships as a Claude Code plugin** (ADR 0084) — a single self-contained `.claude-plugin/plugin.json` with an **inline** `SessionStart` hook (`startup`/`clear`/`compact`) that runs `boot --lean`, so enabling the plugin auto-orients each session. The agent-invokable `boot` tool is unchanged; the hook is additive. Plugin data is kept inside `.claude-plugin/` (a separate concern from the gem), not a top-level `hooks/` dir. (This repo git-ignores `.claude/settings.json`, so the dogfood hook is local-only — the plugin is the shareable delivery.)
 
 ### Changed
 
