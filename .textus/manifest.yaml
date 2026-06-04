@@ -53,6 +53,15 @@ entries:
     kind: nested
     publish:
       tree: docs/cookbook
+  - key: knowledge.tutorials
+    path: knowledge/tutorials
+    zone: knowledge
+    schema: null
+    owner: human:self
+    nested: true
+    kind: nested
+    publish:
+      tree: docs/tutorials
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.orientation
