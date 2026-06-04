@@ -46,7 +46,8 @@ RSpec.describe Textus::Manifest::Entry do
     e = mf.data.entries.first
     expect(e).to be_a(Textus::Manifest::Entry::Derived)
     expect(e).to be_external
-    expect(e.source.runner).to be_nil
+    expect(e.source.command).to eq("rake build:big-index")
+    expect(e.source.sources).to eq(["working.docs"])
   end
 
   it "rejects unknown compute.kind" do

@@ -1,5 +1,4 @@
 require "fileutils"
-require "time"
 
 module Textus
   module Builder
@@ -42,19 +41,25 @@ module Textus
       end
 
       def self.run(mentry:, deps:)
-        # 1. Load sources + project + reduce
+        # 1. Load sources + project + reduce. Only projection-derived entries are
+        # buildable in-process; External entries are generated out-of-band and are
+        # filtered out upstream (Derived#publish_via), so reaching here with a
+        # non-projection source is a wiring bug — fail loudly rather than emit an
+        # empty payload (and never re-stamp the volatile generated_at, ADR 0070).
+        unless mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
+          raise UsageError.new(
+            "builder: '#{mentry.key}' is not a projection-derived entry; only projections are buildable",
+          )
+        end
+
         data =
-          if mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
-            Textus::Projection.new(
-              reader: deps.reader,
-              spec: mentry.source.to_h.transform_keys(&:to_s),
-              lister: deps.lister,
-              rpc: deps.rpc,
-              transform_context: deps.transform_context,
-            ).run
-          else
-            { "entries" => [], "count" => 0, "generated_at" => Time.now.utc.iso8601 }
-          end
+          Textus::Projection.new(
+            reader: deps.reader,
+            spec: mentry.source.to_h.transform_keys(&:to_s),
+            lister: deps.lister,
+            rpc: deps.rpc,
+            transform_context: deps.transform_context,
+          ).run
         data = data.merge("boot" => deps.inject_boot.call) if mentry.inject_boot && deps.inject_boot
 
         # 2. Render

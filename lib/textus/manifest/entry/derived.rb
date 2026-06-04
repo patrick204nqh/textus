@@ -3,7 +3,7 @@ module Textus
     class Entry
       class Derived < Base
         Projection = ::Data.define(:select, :pluck, :sort_by, :transform)
-        External   = ::Data.define(:sources, :runner)
+        External   = ::Data.define(:sources, :command)
 
         attr_reader :source, :template, :inject_boot, :events
 
@@ -21,6 +21,11 @@ module Textus
 
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
           return nil unless in_generator_zone?(pctx.manifest.policy)
+          # External entries are produced by an out-of-band runner — textus has
+          # no in-process runner. The build path only tracks their staleness
+          # (Domain::Staleness::GeneratorCheck); materializing here would clobber
+          # the runner's artifact with an empty render. Skip the build entirely.
+          return nil if external?
 
           target_path = Textus::Write::Materializer.new(
             container: pctx.container, call: pctx.call,
