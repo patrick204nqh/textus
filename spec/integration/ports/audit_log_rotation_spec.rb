@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe Textus::Ports::AuditLog do
-  context "rotation" do
+  context "when the audit log rotates" do
     # Small max_size to force rotation. Each row is ~150 bytes so ~5 rows fits per file.
     let(:root) { Dir.mktmpdir("textus-audit-rotation-") }
     let(:log) { described_class.new(root, max_size: 600, keep: 3) }

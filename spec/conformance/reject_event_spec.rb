@@ -71,7 +71,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       .to raise_error(Textus::ProposalError, /no proposal/)
   end
 
-  context "CLI: textus reject" do
+  context "when invoked via the CLI (textus reject)" do
     # A second store with its own cwd, nested under the shared-context `tmp` so
     # the context's `after` cleans it up (the CLI discovers `.textus` from cwd).
     let(:cli_dir) { File.join(tmp, "cli") }

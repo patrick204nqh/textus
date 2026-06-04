@@ -73,7 +73,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
   end
 
   describe "#move" do
-    it "renames file, returns envelope with new key/uid, and appends a 'mv' audit row with from_key/to_key/uid" do
+    it "renames file, returns envelope with new key/uid, and appends a 'mv' audit row with from_key/to_key/uid", :aggregate_failures do
       ctx = test_ctx(role: "automation", correlation_id: "corr-mv")
       writer = build_envelope_writer(store, ctx)
       old_mentry = store.manifest.resolver.resolve("knowledge.foo").entry

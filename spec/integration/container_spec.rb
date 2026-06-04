@@ -16,7 +16,7 @@ RSpec.describe Textus::Container do
     expect(container).to be_frozen
   end
 
-  it "is built once per Store and backs the Store's delegated readers" do
+  it "is built once per Store and backs the Store's delegated readers", :aggregate_failures do
     Dir.mktmpdir do |tmp|
       Textus::CLI.run(
         ["--root=#{tmp}/.textus", "init"],

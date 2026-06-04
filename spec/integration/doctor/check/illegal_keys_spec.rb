@@ -9,7 +9,7 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
     described_class.new(store.container).call
   end
 
-  context "nested entry with an ignore pattern" do
+  context "with a nested entry and an ignore pattern" do
     let(:manifest) do
       <<~YAML
         version: textus/3

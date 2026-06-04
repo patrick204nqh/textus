@@ -88,18 +88,24 @@ Gemspec/DevelopmentDependencies:
   EnforcedStyle: gemspec   # we keep dev deps in the gemspec, not the Gemfile
 
 # --- RSpec ---
+# Numeric maxes are ratchets at the suite's current ceiling (ADR 0080 Phase 3):
+# they prevent regression past today's worst case. ExampleLength stays at 25 —
+# tightening costs 25+ rewrites of green examples for no clear benefit, and the
+# style guide accepts aggregate_failures as the alternative to splitting.
 RSpec/ExampleLength:
   Max: 25
 RSpec/MultipleExpectations:
-  Max: 10
+  Max: 8 # examples needing more tag :aggregate_failures (the style-guide path)
 RSpec/NestedGroups:
   Max: 4
 RSpec/DescribeClass:
   Enabled: false
 RSpec/MultipleMemoizedHelpers:
-  Max: 12
+  Max: 8
 RSpec/ContextWording:
-  Enabled: false
+  # shared_context names are noun phrases by RSpec convention, not when/with/without
+  Exclude:
+    - "spec/support/**/*"
 RSpec/DescribedClass:
   Enabled: false   # spec style uses full constant path for clarity
 RSpec/SpecFilePathFormat:

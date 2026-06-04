@@ -20,7 +20,7 @@ RSpec.describe Textus::Boot do
   end
 
   describe ".run / agent_quickstart" do
-    it "exposes agent_quickstart with read_verbs, write_verbs, writable_zones, propose_zone, latest_seq" do
+    it "exposes agent_quickstart with read_verbs, write_verbs, writable_zones, propose_zone, latest_seq", :aggregate_failures do
       out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs).to be_a(Hash)
