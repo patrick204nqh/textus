@@ -2,10 +2,11 @@ require "time"
 
 module Textus
   module Read
-    # Per-entry freshness report. Walks every entry declared in the manifest,
-    # consults `rules_for(key)` for a fetch rule, and reports the
-    # current status. Status is one of :fresh, :stale, :never_fetched, or
-    # :no_policy.
+    # Per-entry lifecycle report (ADR 0079). Walks every entry declared in the
+    # manifest, consults `rules.for(key)` for a `lifecycle:` policy (legacy
+    # `fetch:` is translated by the compat shim), and reports the unified
+    # verdict. Status is one of :fresh, :expired, or :no_policy; the row also
+    # carries the policy's :action (on_expire).
     class Freshness
       extend Textus::Contract::DSL
 
@@ -17,13 +18,11 @@ module Textus
       arg :zone,   String, required: false, description: "filter to entries in this zone"
       view(:cli) { |rows| { "verb" => "freshness", "rows" => rows } }
 
-      def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator)
+      def initialize(container:, call:)
         @container  = container
         @call       = call
         @manifest   = container.manifest
         @file_store = container.file_store
-        @evaluator  = evaluator
-        @cache      = {}
       end
 
       # Returns the soonest `next_due_at` across all entries with a fetch
@@ -52,27 +51,46 @@ module Textus
       private
 
       def row_for(mentry)
-        set = @manifest.rules.for(mentry.key)
-        fetch = set.fetch
+        policy = lifecycle_for(mentry.key)
         envelope = safe_get(mentry.key)
         last = envelope&.meta&.dig("last_fetched_at")
 
-        return base_row(mentry, last).merge(status: :no_policy) if fetch.nil?
+        return base_row(mentry, last).merge(status: :no_policy) if policy.nil?
 
-        fp = fetch.to_freshness_policy
-        cache_key = [mentry.key, last]
-        verdict = (@cache[cache_key] ||= @evaluator.call(fp, envelope, now: @call.now))
-        status = if verdict.fresh? then :fresh
-                 elsif last.nil?   then :never_fetched
-                 else                   :stale
-                 end
-
-        base_row(mentry, last).merge(
-          ttl_seconds: fp.ttl_seconds,
-          on_stale: fp.on_stale,
-          status: status,
-          next_due_at: next_due(last, fp.ttl_seconds),
+        expired, reason = Textus::Domain::Lifecycle.verdict(
+          policy: policy,
+          last_fetched_at: last,
+          mtime: mtime_for(mentry.key),
+          now: @call.now,
         )
+        base_row(mentry, last).merge(
+          ttl_seconds: policy.ttl_seconds,
+          action: policy.on_expire,
+          status: expired ? :expired : :fresh,
+          reason: reason,
+          next_due_at: next_due(last, policy.ttl_seconds),
+        )
+      end
+
+      # The unified policy, or a legacy fetch: slot translated to lifecycle.
+      # COMPAT SHIM (removed in Plan 2 final task).
+      def lifecycle_for(key)
+        set = @manifest.rules.for(key)
+        return set.lifecycle if set.lifecycle
+        return nil if set.fetch.nil?
+
+        Textus::Domain::Policy::Lifecycle.new(
+          ttl: set.fetch.ttl,
+          on_expire: %i[sync timed_sync].include?(set.fetch.on_stale) ? :refresh : :warn,
+          budget_ms: set.fetch.sync_budget_ms,
+        )
+      end
+
+      def mtime_for(key)
+        path = @manifest.resolver.resolve(key).path
+        @file_store.exists?(path) ? Textus::Ports::Storage::FileStat.new.mtime(path) : nil
+      rescue Textus::Error
+        nil
       end
 
       def base_row(mentry, last)
