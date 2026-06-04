@@ -62,6 +62,24 @@ entries:
     kind: nested
     publish:
       tree: docs/tutorials
+  - key: knowledge.docs-index
+    path: knowledge/docs-readme.md
+    zone: knowledge
+    schema: null
+    owner: human:self
+    kind: leaf
+    publish:
+      to:
+        - docs/README.md
+  - key: knowledge.architecture-index
+    path: knowledge/architecture-readme.md
+    zone: knowledge
+    schema: null
+    owner: human:self
+    kind: leaf
+    publish:
+      to:
+        - docs/architecture/README.md
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.orientation
