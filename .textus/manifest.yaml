@@ -17,6 +17,15 @@ zones:
 entries:
   - { key: knowledge.project,  path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
   - { key: knowledge.runbooks, path: knowledge/runbooks,   zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+  - key: knowledge.reference
+    path: knowledge/reference
+    zone: knowledge
+    schema: null
+    owner: human:self
+    nested: true
+    kind: nested
+    publish:
+      tree: docs/reference
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.orientation
