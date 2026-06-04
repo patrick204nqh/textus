@@ -177,7 +177,7 @@ Sans for readability in long-form docs.
 ## Asset matrix (to generate from this spec)
 
 ```
-docs/assets/branding/
+assets/branding/
   logo.svg              # master, light mode (ink lanes + teal thread)
   logo-dark.svg         # dark mode (paper lanes + teal thread)
   logo-mono.svg         # single-color
