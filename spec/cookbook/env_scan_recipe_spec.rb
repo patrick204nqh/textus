@@ -47,7 +47,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
                 prod-web: { via: ssh, host: "user@10.0.0.5" }
       rules:
         - match: feeds.machines.**
-          fetch: { ttl: 1h, on_stale: warn }
+          lifecycle: { ttl: 1h, on_expire: warn }
     YAML
   end
 

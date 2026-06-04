@@ -89,7 +89,6 @@ module Textus
       { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
       { "name" => "tend" },
       { "name" => "freshness", "summary" => "per-entry lifecycle report (status, age, ttl, on_expire action)" },
-      { "name" => "lifecycle", "summary" => "lifecycle operations: 'lifecycle migrate' rewrites fetch:/retention: to lifecycle:" },
       { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
       { "name" => "blame",    "summary" => "audit rows for one key joined with git commit metadata" },
       { "name" => "rule",     "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },

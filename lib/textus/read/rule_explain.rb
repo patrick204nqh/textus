@@ -1,7 +1,7 @@
 module Textus
   module Read
     # Effective rules for a key, at two depths (ADR 0059). Lean by default —
-    # `{ fetch, guard }`, the agent-cheap read that was the `rules` verb. With
+    # `{ lifecycle, guard }`, the agent-cheap read that was the `rules` verb. With
     # `detail: true` it returns the verbose explanation — every matching policy
     # block plus the per-transition guard predicate names — that was
     # `policy_explain`. One verb, one name across CLI/MCP/method; the audience
@@ -10,7 +10,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :rule_explain
-      summary  "Effective rules for a key. Lean {fetch, guard} by default; detail: true adds matched blocks + guard predicates."
+      summary  "Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates."
       surfaces :cli, :mcp
       cli      "rule explain"
       arg :key,    String, required: true, positional: true,
@@ -34,11 +34,10 @@ module Textus
       def effective(key)
         set = @manifest.rules.for(key)
         {
-          "fetch" => set.fetch && {
-            "ttl_seconds" => set.fetch.ttl_seconds,
-            "on_stale" => set.fetch.on_stale,
-            "sync_budget_ms" => set.fetch.sync_budget_ms,
-            "fetch_timeout_seconds" => set.fetch.fetch_timeout_seconds,
+          "lifecycle" => set.lifecycle && {
+            "ttl_seconds" => set.lifecycle.ttl_seconds,
+            "on_expire" => set.lifecycle.on_expire,
+            "budget_ms" => set.lifecycle.budget_ms,
           },
           "guard" => set.guard,
         }.compact
@@ -57,22 +56,17 @@ module Textus
           matched_blocks: matching.map do |b|
             {
               match: b.match,
-              fetch: !b.fetch.nil?,
+              lifecycle: !b.lifecycle.nil?,
               handler_allowlist: !b.handler_allowlist.nil?,
               guard: !b.guard.nil?,
-              retention: !b.retention.nil?,
             }
           end,
           effective: {
-            fetch: winners.fetch && {
-              ttl_seconds: winners.fetch.ttl_seconds,
-              on_stale: winners.fetch.on_stale,
+            lifecycle: winners.lifecycle && {
+              ttl_seconds: winners.lifecycle.ttl_seconds,
+              on_expire: winners.lifecycle.on_expire,
             },
             handler_allowlist: winners.handler_allowlist&.handlers,
-            retention: winners.retention && {
-              expire_after: winners.retention.expire_after,
-              archive_after: winners.retention.archive_after,
-            },
           },
           guards: Textus::Domain::Policy::BaseGuards::BASE.keys.to_h do |transition|
             [transition, factory.for(transition, key).predicates.map(&:name)]

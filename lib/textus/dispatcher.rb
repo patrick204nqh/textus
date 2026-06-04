@@ -40,7 +40,6 @@ module Textus
       key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,
       tend: Textus::Maintenance::Tend,
       rule_lint: Textus::Maintenance::RuleLint,
-      lifecycle_migrate: Textus::Maintenance::LifecycleMigrate,
     }.freeze
 
     def self.fetch(verb)

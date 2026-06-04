@@ -20,7 +20,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.foo
-          fetch: { ttl: 10m }
+          lifecycle: { ttl: 10m, on_expire: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -39,9 +39,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          fetch: { ttl: 10m }
+          lifecycle: { ttl: 10m, on_expire: warn }
         - match: "*.foo"
-          fetch: { ttl: 1h }
+          lifecycle: { ttl: 1h, on_expire: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -50,7 +50,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       expect(ambig).not_to be_nil
       expect(ambig["subject"]).to eq("knowledge.foo")
       expect(ambig["level"]).to eq("warning")
-      expect(ambig["message"]).to include("fetch")
+      expect(ambig["message"]).to include("lifecycle")
     end
   end
 
@@ -64,9 +64,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          fetch: { ttl: 10m }
+          lifecycle: { ttl: 10m, on_expire: warn }
         - match: knowledge.foo
-          fetch: { ttl: 1h }
+          lifecycle: { ttl: 1h, on_expire: warn }
     YAML
 
     with_store(manifest) do |store|

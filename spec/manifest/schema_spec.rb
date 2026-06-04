@@ -113,36 +113,6 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
-  describe "fetch_timeout_seconds" do
-    def manifest_with_timeout(value)
-      {
-        "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
-        "entries" => [],
-        "rules" => [{ "match" => "intake.**", "fetch" => { "ttl" => "1h", "on_stale" => "warn", "fetch_timeout_seconds" => value } }],
-      }
-    end
-
-    it "accepts a positive integer within the ceiling" do
-      expect { validate!(manifest_with_timeout(600)) }.not_to raise_error
-    end
-
-    it "rejects values above the ceiling" do
-      expect { validate!(manifest_with_timeout(60_000)) }
-        .to raise_error(Textus::BadManifest, /fetch_timeout_seconds.*≤ 3600/)
-    end
-
-    it "rejects non-integer values" do
-      expect { validate!(manifest_with_timeout("600")) }
-        .to raise_error(Textus::BadManifest, /fetch_timeout_seconds.*positive integer/)
-    end
-
-    it "rejects zero or negative values" do
-      expect { validate!(manifest_with_timeout(0)) }
-        .to raise_error(Textus::BadManifest, /fetch_timeout_seconds.*positive integer/)
-    end
-  end
-
   it "accepts 'inbox' zone structurally (schema validates keys not values)" do
     # The schema walker validates KEYS, not values. The 'inbox' rename is gone
     # too — there is no special handling. An 'inbox' zone is structurally legal here;

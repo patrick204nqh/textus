@@ -3,10 +3,9 @@ require "time"
 module Textus
   module Read
     # Per-entry lifecycle report (ADR 0079). Walks every entry declared in the
-    # manifest, consults `rules.for(key)` for a `lifecycle:` policy (legacy
-    # `fetch:` is translated by the compat shim), and reports the unified
-    # verdict. Status is one of :fresh, :expired, or :no_policy; the row also
-    # carries the policy's :action (on_expire).
+    # manifest, consults `rules.for(key)` for a `lifecycle:` policy, and reports
+    # the unified verdict. Status is one of :fresh, :expired, or :no_policy; the
+    # row also carries the policy's :action (on_expire).
     class Freshness
       extend Textus::Contract::DSL
 
@@ -72,18 +71,8 @@ module Textus
         )
       end
 
-      # The unified policy, or a legacy fetch: slot translated to lifecycle.
-      # COMPAT SHIM (removed in Plan 2 final task).
       def lifecycle_for(key)
-        set = @manifest.rules.for(key)
-        return set.lifecycle if set.lifecycle
-        return nil if set.fetch.nil?
-
-        Textus::Domain::Policy::Lifecycle.new(
-          ttl: set.fetch.ttl,
-          on_expire: %i[sync timed_sync].include?(set.fetch.on_stale) ? :refresh : :warn,
-          budget_ms: set.fetch.sync_budget_ms,
-        )
+        @manifest.rules.for(key).lifecycle
       end
 
       def mtime_for(key)

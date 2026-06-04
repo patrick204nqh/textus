@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Reader honors on_stale policy" do
+RSpec.describe "Reader honors lifecycle policy" do
   include_context "textus_store_fixture"
 
   it "warn: returns stale envelope with flag, does NOT fetch" do
@@ -15,7 +15,7 @@ RSpec.describe "Reader honors on_stale policy" do
     RUBY
 
     Thread.current[:fetch_count] = 0
-    store = intake_store(root, intake_body: hook_body, ttl: "1s", on_stale: "warn")
+    store = intake_store(root, intake_body: hook_body, ttl: "1s", on_expire: "warn")
     File.write(
       File.join(root, "zones", "feeds", "doc.md"),
       "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
@@ -37,7 +37,7 @@ RSpec.describe "Reader honors on_stale policy" do
       end
     RUBY
 
-    store = intake_store(root, intake_body: hook_body, ttl: "1s", on_stale: "sync")
+    store = intake_store(root, intake_body: hook_body, ttl: "1s", on_expire: "refresh")
     File.write(
       File.join(root, "zones", "feeds", "doc.md"),
       "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
@@ -67,10 +67,10 @@ RSpec.describe "Reader honors on_stale policy" do
             handler: slow_intake
       rules:
         - match: feeds.slow
-          fetch:
+          lifecycle:
             ttl: 1s
-            on_stale: timed_sync
-            sync_budget_ms: 50
+            on_expire: refresh
+            budget_ms: 50
     YAML
 
     File.write(File.join(timed_root, "zones", "feeds", "slow.md"), <<~MD)
@@ -132,10 +132,10 @@ RSpec.describe "Reader honors on_stale policy" do
           template: echo.mustache
       rules:
         - match: feeds.foo
-          fetch:
+          lifecycle:
             ttl: 1s
-            on_stale: timed_sync
-            sync_budget_ms: 1
+            on_expire: refresh
+            budget_ms: 1
     YAML
 
     File.write(File.join(build_root, "templates", "echo.mustache"), "built {{count}}\n")

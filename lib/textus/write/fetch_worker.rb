@@ -63,9 +63,11 @@ module Textus
         @fetch_events ||= FetchEvents.from(container: @container, call: @call)
       end
 
-      def fetch_timeout_for(key)
-        rule = @manifest.rules.for(key)
-        rule&.fetch&.fetch_timeout_seconds || FETCH_TIMEOUT_SECONDS
+      # ADR 0079: a per-rule fetch_timeout_seconds override was an accepted loss
+      # in the fetch:/retention: → lifecycle: collapse; the constant ceiling
+      # applies to every intake.
+      def fetch_timeout_for(_key)
+        FETCH_TIMEOUT_SECONDS
       end
 
       def fetch_with_events(key, mentry, remaining)

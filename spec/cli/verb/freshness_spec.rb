@@ -26,7 +26,7 @@ RSpec.describe Textus::CLI::Verb::GenFreshness do
 
       rules:
         - match: knowledge.doc
-          fetch: { ttl: 1h, on_stale: warn }
+          lifecycle: { ttl: 1h, on_expire: warn }
     YAML
     File.write(File.join(root, "zones/knowledge/doc.md"), <<~MD)
       ---

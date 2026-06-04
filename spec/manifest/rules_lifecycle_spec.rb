@@ -32,7 +32,7 @@ RSpec.describe Textus::Manifest::Rules do
     set = rules_for(<<~YAML, "x.y")
       rules:
         - match: "x.*"
-          retention: { expire_after: 30d }
+          guard: { put: [zone_writable_by] }
     YAML
     expect(set.lifecycle).to be_nil
   end

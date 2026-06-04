@@ -28,7 +28,6 @@ module Textus
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
       Check::LifecycleActionInvalid,
-      Check::LegacyLifecycleSlot,
       Check::GeneratorDrift,
     ].freeze
 

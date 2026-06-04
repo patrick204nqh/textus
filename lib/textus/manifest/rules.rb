@@ -1,10 +1,8 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:fetch, :handler_allowlist, :guard, :retention, :lifecycle)
-      EMPTY_SET = RuleSet.new(
-        fetch: nil, handler_allowlist: nil, guard: nil, retention: nil, lifecycle: nil,
-      )
+      RuleSet = ::Data.define(:handler_allowlist, :guard, :lifecycle)
+      EMPTY_SET = RuleSet.new(handler_allowlist: nil, guard: nil, lifecycle: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -17,17 +15,15 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { fetch: [], handler_allowlist: [], guard: [], retention: [], lifecycle: [] }
+        slots = { handler_allowlist: [], guard: [], lifecycle: [] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
         RuleSet.new(
-          fetch: pick(slots[:fetch], :fetch, key),
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           guard: pick(slots[:guard], :guard, key),
-          retention: pick(slots[:retention], :retention, key),
           lifecycle: pick(slots[:lifecycle], :lifecycle, key),
         )
       end
@@ -47,29 +43,16 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :fetch, :handler_allowlist, :guard, :retention, :lifecycle
+        attr_reader :match, :handler_allowlist, :guard, :lifecycle
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
-          @fetch = parse_fetch(raw["fetch"])
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @guard = parse_guard(raw["guard"])
-          @retention = parse_retention(raw["retention"])
           @lifecycle = parse_lifecycle(raw["lifecycle"])
         end
 
         private
-
-        def parse_fetch(h)
-          return nil if h.nil?
-
-          Textus::Domain::Policy::Fetch.new(
-            ttl: h["ttl"],
-            on_stale: h["on_stale"] || "warn",
-            sync_budget_ms: h["sync_budget_ms"],
-            fetch_timeout_seconds: h["fetch_timeout_seconds"],
-          )
-        end
 
         def parse_handler_allowlist(arr)
           return nil if arr.nil?
@@ -85,15 +68,6 @@ module Textus
           raise Textus::BadManifest.new("guard: must be a map of transition => [predicates]") unless h.is_a?(Hash)
 
           h
-        end
-
-        def parse_retention(h)
-          return nil if h.nil?
-
-          Textus::Domain::Policy::Retention.new(
-            expire_after: h["expire_after"],
-            archive_after: h["archive_after"],
-          )
         end
 
         def parse_lifecycle(h)

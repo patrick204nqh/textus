@@ -36,7 +36,7 @@ RSpec.describe "Manifest intake:" do
     expect(e.config).to eq({ "url" => "https://example.com/feed" })
   end
 
-  it "exposes fetch rule via Manifest#rules_for(key)" do
+  it "exposes lifecycle rule via Manifest#rules_for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: feeds, kind: quarantine }]
@@ -49,19 +49,19 @@ RSpec.describe "Manifest intake:" do
             handler: news_handler
       rules:
         - match: feeds.news
-          fetch:
+          lifecycle:
             ttl: 10m
-            on_stale: timed_sync
-            sync_budget_ms: 800
+            on_expire: refresh
+            budget_ms: 800
     YAML
     set = m.rules.for("feeds.news")
-    expect(set.fetch).to be_a(Textus::Domain::Policy::Fetch)
-    expect(set.fetch.ttl_seconds).to eq(600)
-    expect(set.fetch.on_stale).to eq(:timed_sync)
-    expect(set.fetch.sync_budget_ms).to eq(800)
+    expect(set.lifecycle).to be_a(Textus::Domain::Policy::Lifecycle)
+    expect(set.lifecycle.ttl_seconds).to eq(600)
+    expect(set.lifecycle.on_expire).to eq(:refresh)
+    expect(set.lifecycle.budget_ms).to eq(800)
   end
 
-  it "returns an empty RuleSet for keys with no matching fetch rule" do
+  it "returns an empty RuleSet for keys with no matching lifecycle rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
@@ -69,7 +69,7 @@ RSpec.describe "Manifest intake:" do
         - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
-    expect(m.rules.for("knowledge.x").fetch).to be_nil
+    expect(m.rules.for("knowledge.x").lifecycle).to be_nil
   end
 
   it "defaults to a Leaf entry when no intake block is present" do

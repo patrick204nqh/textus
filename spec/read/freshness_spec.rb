@@ -23,9 +23,9 @@ RSpec.describe Textus::Read::Freshness do
 
         rules:
           - match: knowledge.doc
-            fetch: { ttl: 1h, on_stale: warn }
+            lifecycle: { ttl: 1h, on_expire: warn }
           - match: knowledge.stale
-            fetch: { ttl: 1s, on_stale: warn }
+            lifecycle: { ttl: 1s, on_expire: warn }
       YAML
     )
   end

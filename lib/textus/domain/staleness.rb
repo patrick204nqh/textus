@@ -1,16 +1,19 @@
 module Textus
   module Domain
     class Staleness
-      def initialize(manifest:, file_stat:, clock:)
+      # ADR 0079: intake (age-based) staleness moved to the unified lifecycle
+      # path (Domain::Lifecycle / freshness); only generator/build drift —
+      # dependency-based, surfaced by the doctor `generator_drift` check —
+      # remains here.
+      def initialize(manifest:, file_stat:, clock: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = manifest
         @generator_check = GeneratorCheck.new(manifest: manifest, file_stat: file_stat)
-        @intake_check    = IntakeCheck.new(manifest: manifest, file_stat: file_stat, clock: clock)
       end
 
       def call(prefix: nil, zone: nil)
         @manifest.data.entries
                  .select { |m| entry_matches?(m, prefix: prefix, zone: zone) }
-                 .flat_map { |m| @generator_check.rows_for(m) + @intake_check.rows_for(m) }
+                 .flat_map { |m| @generator_check.rows_for(m) }
       end
 
       private

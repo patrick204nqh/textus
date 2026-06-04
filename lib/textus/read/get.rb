@@ -10,9 +10,7 @@ module Textus
     #     destructive action (drop/archive) — those belong to the `tend` sweep
     #     (ADR 0079).
     #
-    # Lifecycle policy comes from the unified `lifecycle:` rule slot; a legacy
-    # `fetch:` slot is translated on the fly (compat shim, removed in Plan 2's
-    # final task).
+    # Lifecycle policy comes from the unified `lifecycle:` rule slot (ADR 0079).
     class Get
       extend Textus::Contract::DSL
 
@@ -81,22 +79,8 @@ module Textus
         ))
       end
 
-      # The unified policy, or a legacy fetch: slot translated to lifecycle.
       def lifecycle_for(key)
-        set = @manifest.rules.for(key)
-        set.lifecycle || fetch_compat(set.fetch)
-      end
-
-      # COMPAT SHIM (removed in Plan 2 final task): a legacy fetch: slot behaves
-      # as on_expire: refresh (when it would have synced) or warn (on_stale: warn).
-      def fetch_compat(fetch)
-        return nil if fetch.nil?
-
-        Textus::Domain::Policy::Lifecycle.new(
-          ttl: fetch.ttl,
-          on_expire: %i[sync timed_sync].include?(fetch.on_stale) ? :refresh : :warn,
-          budget_ms: fetch.sync_budget_ms,
-        )
+        @manifest.rules.for(key).lifecycle
       end
 
       def refresh_policy(policy)
