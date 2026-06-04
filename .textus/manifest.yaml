@@ -120,3 +120,16 @@ entries:
         - knowledge.project
       transform: mcp_config_reducer
     kind: derived
+  - key: artifacts.claude-plugin
+    path: artifacts/plugin.json
+    zone: artifacts
+    provenance: false
+    publish:
+      to:
+        - .claude-plugin/plugin.json
+    compute:
+      kind: projection
+      select:
+        - knowledge.project
+      transform: plugin_manifest_reducer
+    kind: derived
