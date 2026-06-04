@@ -11,7 +11,8 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 `textus build`.
 
 → Context store: `.textus/` (textus, protocol textus/3).
-→ Run `textus boot` for the full catalog shape and write flows.
+→ Talk to it over MCP (`.mcp.json` wires the `textus` server; tools are `mcp__textus__*`) or the `textus` CLI.
+→ Run `textus boot` for the catalog + write flows; `textus capabilities` for the full machine-readable verb contract.
 → Write authority by zone:
     - **knowledge** (human ) — the maintained source of truth about the repo (project + runbooks)
     - **notebook** (agent ) — the agent's own durable working notes across sessions
@@ -45,3 +46,7 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 
 - **release** — Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR.
 
+
+## Docs
+
+Full documentation is canon — authored under `.textus/zones/knowledge/` and published to `docs/`. Read the map with `textus get knowledge.docs-index`; the ADR log index is `textus get knowledge.architecture-index`. Sections: how-to · reference · explanation · tutorials · cookbook · decisions.
