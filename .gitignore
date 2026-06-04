@@ -9,6 +9,7 @@
 /tmp/
 *.gem
 .ruby-lsp/
+/coverage/
 docs/plans/
 .worktrees/
 **/.textus/.run/
