@@ -1,9 +1,9 @@
 module Textus
   module Write
-    class Mv
+    class KeyMv
       extend Textus::Contract::DSL
 
-      verb     :mv
+      verb     :key_mv
       summary  "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix."
       surfaces :cli, :mcp
       cli      "key mv"
@@ -53,8 +53,8 @@ module Textus
         raise UnknownKey.new(old_key) unless reader.exists?(old_key)
 
         validate_zone_and_format!(old_res.entry, new_res.entry)
-        guard_for(:mv, old_key).check!(eval_for(:mv, target_key: old_key))
-        guard_for(:mv, new_key).check!(eval_for(:mv, target_key: new_key))
+        guard_for(:key_mv, old_key).check!(eval_for(:key_mv, target_key: old_key))
+        guard_for(:key_mv, new_key).check!(eval_for(:key_mv, target_key: new_key))
         raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if reader.exists?(new_key)
 
         [old_res, new_res]

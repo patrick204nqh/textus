@@ -111,7 +111,7 @@ RSpec.describe "MCP end-to-end" do
                                           arguments: { key: "knowledge.note",
                                                        "_meta" => { "name" => "note" }, body: "to-be-deleted\n" } } },
                               { id: 3, method: "tools/call",
-                                params: { name: "delete", arguments: { "key" => "knowledge.note" } } },
+                                params: { name: "key_delete", arguments: { "key" => "knowledge.note" } } },
                             ])
     expect(responses.map { |r| r["id"] }).to eq([1, 2, 3])
     expect(responses.all? { |r| r["error"].nil? }).to be(true)
@@ -140,7 +140,8 @@ RSpec.describe "MCP end-to-end" do
                                           arguments: { key: "knowledge.note",
                                                        "_meta" => { "name" => "note" }, body: "to-be-renamed\n" } } },
                               { id: 3, method: "tools/call",
-                                params: { name: "mv", arguments: { "old_key" => "knowledge.note", "new_key" => "knowledge.renamed" } } },
+                                params: { name: "key_mv",
+                                          arguments: { "old_key" => "knowledge.note", "new_key" => "knowledge.renamed" } } },
                             ])
     expect(responses.map { |r| r["id"] }).to eq([1, 2, 3])
     expect(responses.all? { |r| r["error"].nil? }).to be(true)

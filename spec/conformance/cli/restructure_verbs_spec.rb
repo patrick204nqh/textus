@@ -18,20 +18,15 @@ RSpec.describe "restructure CLI verbs" do
   end
 
   it "registers the generated key delete + delete-prefix verbs under the key group" do
-    expect(Textus::CLI::Verb::GenDelete.command_name).to eq("delete")
-    expect(Textus::CLI::Verb::GenDelete.parent_group).to eq(Textus::CLI::Group::Key)
+    expect(Textus::CLI::Verb::GenKeyDelete.command_name).to eq("delete")
+    expect(Textus::CLI::Verb::GenKeyDelete.parent_group).to eq(Textus::CLI::Group::Key)
     expect(Textus::CLI::Verb::GenKeyDeletePrefix.command_name).to eq("delete-prefix")
     expect(Textus::CLI::Verb::GenKeyDeletePrefix.parent_group).to eq(Textus::CLI::Group::Key)
   end
 
-  it "registers the generated migrate verb as a top-level verb" do
-    expect(Textus::CLI::Verb::GenMigrate.command_name).to eq("migrate")
-    expect(Textus::CLI::Verb::GenMigrate.parent_group).to be_nil
-  end
-
   it "registers the generated key mv + mv-prefix verbs under the key group" do
-    expect(Textus::CLI::Verb::GenMv.command_name).to eq("mv")
-    expect(Textus::CLI::Verb::GenMv.parent_group).to eq(Textus::CLI::Group::Key)
+    expect(Textus::CLI::Verb::GenKeyMv.command_name).to eq("mv")
+    expect(Textus::CLI::Verb::GenKeyMv.parent_group).to eq(Textus::CLI::Group::Key)
     expect(Textus::CLI::Verb::GenKeyMvPrefix.command_name).to eq("mv-prefix")
     expect(Textus::CLI::Verb::GenKeyMvPrefix.parent_group).to eq(Textus::CLI::Group::Key)
   end

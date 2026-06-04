@@ -6,13 +6,14 @@ require "spec_helper"
 
 # Verbs whose #call signature is intentionally a superset of the wire args
 # (extra params with no MCP exposure). Keep empty unless justified.
-# `delete` carries an internal-only `suppress_events:` kwarg — the proposal
+# `key_delete` carries an internal-only `suppress_events:` kwarg — the proposal
 # reject path deletes the pending entry silently (`write/reject.rb`), so the
-# event is suppressed there but the flag is never a wire arg (ADR 0060 amendment).
+# event is suppressed there but the flag is never a wire arg (ADR 0060 amendment;
+# verb renamed from `delete` in ADR 0082).
 # `audit` uses **filters (keyrest) in #call, so declared arg names cannot match
 # the single :filters param name — the contract expresses the meaningful filter
 # kwargs that Query.build accepts (ADR 0063).
-CONTRACT_SIGNATURE_EXEMPT = %i[delete audit].freeze
+CONTRACT_SIGNATURE_EXEMPT = %i[key_delete audit].freeze
 
 RSpec.describe "Contract args reconcile with use-case #call (ADR 0039)" do
   Textus::Dispatcher::VERBS.each do |verb, klass|

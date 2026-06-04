@@ -23,7 +23,7 @@ module Textus
           parsed = parse_row(line.chomp)
           next unless parsed
           next unless parsed["key"] == key
-          next unless %w[put delete].include?(parsed["verb"])
+          next unless %w[put delete key_delete].include?(parsed["verb"])
 
           last_role = parsed["role"]
         end

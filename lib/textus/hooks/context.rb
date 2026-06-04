@@ -45,7 +45,7 @@ module Textus
 
       # write (authorized + audited)
       def put(key, **)          = @scope.put(key, **)
-      def delete(key, **)       = @scope.delete(key, **)
+      def delete(key, **)       = @scope.key_delete(key, **)
 
       def audit(verb, key:, **)
         @scope.container.audit_log.append(role: @role, verb: verb, key: key, **)

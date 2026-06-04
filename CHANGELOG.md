@@ -9,6 +9,18 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.49.0 — 2026-06-04 — Normalize the key-verb family + remove `migrate` (ADR 0082)
+
+The single-key mutation verbs gain the `key_` family stem, and the `migrate` orchestrator is removed.
+
+### Changed (breaking)
+
+- **`mv` → `key_mv` and `delete` → `key_delete`**, renamed everywhere the token is load-bearing: the verb / MCP-tool id, the guard transition symbol, the manifest `guard:` transition key, and the audit-log verb string. The single-key verbs now share the `key_` stem with their bulk cousins `key_mv_prefix`/`key_delete_prefix`; `zone_mv` is unchanged. **The CLI is unchanged** — `key mv`, `key delete`, `key mv-prefix`, `key delete-prefix` keep their spelling. **Migration:** manifests with `guard: { mv: … }` / `guard: { delete: … }` blocks must rename those keys to `key_mv` / `key_delete`; MCP clients pinned to the `mv`/`delete` tool ids must update; audit rows written before this release keep their `mv`/`delete` verb strings (readers must accept both).
+
+### Removed (breaking)
+
+- **The `migrate` verb (YAML-plan orchestrator).** It was non-transactional and added a second input format for no capability the primitives lack — its `zone_mv`/`key_mv_prefix`/`key_delete_prefix` ops remain individually callable, each with `--dry-run`. Removed from the CLI and the MCP catalog.
+
 ## 0.48.0 — 2026-06-04 — Unified `lifecycle` policy + docs become canon (ADR 0079, 0081)
 
 Staleness and retention collapse into one age policy, and the upkeep verb surface shrinks 8→3.

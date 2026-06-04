@@ -52,7 +52,7 @@ module Textus
 
       def hook_context = @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
       def put_op       = @put_op ||= Textus::Write::Put.new(container: @container, call: @call)
-      def delete_op    = @delete_op ||= Textus::Write::Delete.new(container: @container, call: @call)
+      def delete_op    = @delete_op ||= Textus::Write::KeyDelete.new(container: @container, call: @call)
     end
   end
 end
