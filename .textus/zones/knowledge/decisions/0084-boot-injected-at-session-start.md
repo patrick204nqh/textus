@@ -1,7 +1,7 @@
 # ADR 0084 — `boot` is delivered at session start via a SessionStart hook; textus ships the hook as a plugin
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted (ships 0.50.0)
 **Touches:** [ADR 0056](./0056-boot-quickstart-speaks-the-mcp-catalog.md) and [ADR 0057](./0057-agent-legible-mcp-contracts.md) (the orientation payload this delivers), [ADR 0075](./0075-session-opened-connect-event.md) (the connect-time seam — that is textus's *internal* event; this is the *host's* session-start seam), [ADR 0077](./0077-init-with-agent-profile.md) (`init --with-agent` scaffolds the agent setup — the SessionStart hook is the natural next thing it could scaffold), [ADR 0083](./0083-contract-guard-writes-only-boot-self-heals.md) (delivery-at-start and mid-session recovery are complementary, not substitutes).
 
 > **One sentence:** `boot` is the orientation a fresh agent needs (zones, schemas, write-flows, quickstart, contract etag), but today the agent only gets it if it *chooses* to call the tool — so orientation is best-effort; this ADR delivers `boot` deterministically at session start through a Claude Code **SessionStart hook** (`type: command`, shelling the CLI `boot` whose stdout becomes `additionalContext`), keeps the manifest as the *definition* of orientation and the hook as its *transport*, and proposes textus ship the hook from a plugin so installation auto-registers it — while leaving the agent-invokable `boot` tool in place for mid-session re-orientation.
@@ -53,12 +53,14 @@ SessionStart fires on `compact` and `resume`, not only `startup`. Injecting the 
 
 Two distribution channels exist, and the recommendation differs:
 
-| Channel | Audience | Where the hook lives |
-|---|---|---|
-| This repo (dogfooding) | textus developers | `.claude/settings.json` `hooks.SessionStart` → `bundle exec exe/textus boot --lean` |
-| Shipped plugin | end users | the plugin's `hooks/hooks.json`, auto-registered on install, invoking the `${CLAUDE_PLUGIN_ROOT}` binary |
+| Channel | Audience | Where the hook lives | Committed? |
+|---|---|---|---|
+| This repo (dogfooding) | textus developers | local `.claude/settings.json` `hooks.SessionStart` → `bundle exec exe/textus boot --lean` | **No** — `.claude/settings.json` is git-ignored in this repo (all Claude settings are kept local); each developer opts in locally |
+| Shipped plugin | end users *and* this repo | the plugin's `hooks/hooks.json` (`textus boot --lean`), auto-discovered on install/enable | **Yes** — the only shareable delivery |
 
-The repo currently ships textus *only* as an `.mcp.json` MCP-server entry — there is no plugin manifest. The proposal: add a plugin (`.claude-plugin/plugin.json` + `hooks/hooks.json`) so installing textus auto-registers the SessionStart hook for users, and add the `.claude/settings.json` hook now for the dogfooding repo. The agent-invokable `boot` tool stays regardless — the hook is additive, not a replacement.
+A wrinkle surfaced at implementation: this repo git-ignores `.claude/settings.json` (and `.claude/settings.local.json`) — Claude settings are deliberately local-only — so the dogfood hook **cannot** be a committed artifact. The committed, shareable mechanism is therefore the **plugin**, not a tracked settings file. The repo previously shipped textus *only* as an `.mcp.json` MCP-server entry; 0.50.0 adds a plugin (`.claude-plugin/plugin.json` + `hooks/hooks.json`) so enabling textus auto-registers the SessionStart hook. The `.mcp.json` analogy in earlier drafts was imperfect: `.mcp.json` is tracked, `.claude/settings.json` is not. The agent-invokable `boot` tool stays regardless — the hook is additive, not a replacement.
+
+**SessionStart schema (verified):** `SessionStart` is an array of matcher-groups; each declares a `matcher` (`startup`/`resume`/`clear`/`compact`) and a nested `hooks` array. We register `startup`, `clear`, and `compact` (the cases where context is fresh or was lost); `resume` is skipped (context is preserved). Plain stdout from the command is injected as `additionalContext` — no JSON wrapper needed. `hooks/hooks.json` is auto-discovered at the plugin root (no `plugin.json` reference required).
 
 ### 5. Delivery and recovery are complementary (relation to ADR 0083)
 
