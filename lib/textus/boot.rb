@@ -198,8 +198,20 @@ module Textus
       )
     end
 
-    def self.build(container:)
+    def self.build(container:, lean: false)
       manifest = container.manifest
+      etag = Textus::Etag.for_contract(container.root)
+
+      if lean
+        return {
+          "protocol" => PROTOCOL_ID,
+          "store_root" => container.root,
+          "zones" => zones_for(manifest),
+          "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
+          "contract_etag" => etag,
+        }
+      end
+
       {
         "protocol" => PROTOCOL_ID,
         "store_root" => container.root,
@@ -210,6 +222,7 @@ module Textus
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
+        "contract_etag" => etag,
         "docs" => { "spec" => "SPEC.md", "example" => "examples/project/" },
       }
     end
