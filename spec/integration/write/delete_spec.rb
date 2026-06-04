@@ -4,19 +4,21 @@ RSpec.describe Textus::Write::Delete do
   include_context "textus_store_fixture"
 
   let!(:store) { quarantine_store(root) }
+  # Contract for the cross-cutting write behaviours (spec/support/examples).
+  let(:perform) { -> { store.as("automation").delete("feeds.foo") } }
+  let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").delete("feeds.foo") } }
+  let(:emit)      { perform_with_correlation }
+  let(:event_key) { "feeds.foo" }
 
-  it "removes the entry file and fires :deleted with correlation_id" do
-    File.write(File.join(root, "zones", "feeds", "foo.md"), "---\nkey: feeds.foo\n---\nbody\n")
+  # The entry must exist on disk before it can be deleted.
+  before { File.write(File.join(root, "zones", "feeds", "foo.md"), "---\nkey: feeds.foo\n---\nbody\n") }
 
-    events = []
-    store.events.register(:entry_deleted, :capture) do |ctx:, key:, **|
-      events << [:entry_deleted, key, ctx.correlation_id]
-    end
+  it_behaves_like "an audited write", "delete"
+  it_behaves_like "a correlated write", "delete"
+  it_behaves_like "an event-emitting action", :entry_deleted
 
-    store.as("automation", correlation_id: "del-1").delete("feeds.foo")
-
-    expect(File.exist?(File.join(root, "zones", "feeds", "foo.md"))).to be(false)
-    expect(events).to include([:entry_deleted, "feeds.foo", "del-1"])
+  it "removes the entry file from disk" do
+    expect { perform.call }.to change { File.exist?(File.join(root, "zones", "feeds", "foo.md")) }.from(true).to(false)
   end
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do

@@ -1,19 +1,11 @@
 require "spec_helper"
-require "stringio"
 
 # `blame` is a generated verb (ADR 0065): the CLI command is projected from the
 # contract via an arity-2 `cli_response`, no longer a hand-authored class. These
 # behavioral specs still exercise the projected command end-to-end.
 RSpec.describe "blame CLI (generated, ADR 0065)" do
   include_context "textus_store_fixture"
-
-  let(:stdin)  { StringIO.new }
-  let(:stdout) { StringIO.new }
-  let(:stderr) { StringIO.new }
-
-  def run(argv)
-    Textus::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: tmp)
-  end
+  include_context "cli invocation"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))

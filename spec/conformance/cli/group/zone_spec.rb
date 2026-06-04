@@ -1,5 +1,4 @@
 require "spec_helper"
-require "stringio"
 
 # Generated zone mv verb (ADR 0068): from/to are positional, and dry_run carries
 # cli_default: false so the CLI APPLIES by default while agents (MCP/Ruby) PLAN
@@ -7,13 +6,7 @@ require "stringio"
 # legible in the contract.
 RSpec.describe "textus zone mv (generated, ADR 0068)" do
   include_context "textus_store_fixture"
-
-  let(:stdout) { StringIO.new }
-  let(:stderr) { StringIO.new }
-
-  def run(argv)
-    Textus::CLI.run(argv, stdin: StringIO.new, stdout: stdout, stderr: stderr, cwd: tmp)
-  end
+  include_context "cli invocation"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/scratch"))

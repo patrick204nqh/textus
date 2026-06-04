@@ -2,14 +2,7 @@ require "spec_helper"
 
 RSpec.describe Textus::Read::Get do
   include_context "textus_store_fixture"
-
-  let(:intake_body) do
-    <<~RUBY
-      Textus.hook do |reg|
-        reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
-      end
-    RUBY
-  end
+  include_context "intake doc" # provides `intake_body`; ttl/on_expire vary per example below
 
   # An orchestrator that must never run: a verifying double with no #execute
   # stubbed raises if the read path calls it (replaces a hand-rolled raise).

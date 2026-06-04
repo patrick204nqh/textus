@@ -14,8 +14,10 @@ RSpec.shared_context "cli invocation" do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
-  def run(argv, **opts)
-    Textus::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, **opts)
+  # `cwd` defaults to the store fixture's `tmp` (the dominant pattern); pass
+  # `cwd:` to override, or any other CLI.run kwarg through `**opts`.
+  def run(argv, cwd: tmp, **opts)
+    Textus::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd, **opts)
   end
 
   def json_out = JSON.parse(stdout.string)

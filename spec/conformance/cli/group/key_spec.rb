@@ -1,18 +1,11 @@
 require "spec_helper"
-require "stringio"
 
 # The `key delete` overload split into two first-class generated commands
 # (ADR 0068): `key delete KEY` dispatches :delete, `key delete-prefix PREFIX`
 # dispatches :key_delete_prefix. BREAKING: `key delete --prefix P` is gone.
 RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
   include_context "textus_store_fixture"
-
-  let(:stdout) { StringIO.new }
-  let(:stderr) { StringIO.new }
-
-  def run(argv)
-    Textus::CLI.run(argv, stdin: StringIO.new, stdout: stdout, stderr: stderr, cwd: tmp)
-  end
+  include_context "cli invocation"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/working/notes"))

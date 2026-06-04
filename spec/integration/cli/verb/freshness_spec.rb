@@ -1,19 +1,11 @@
 require "spec_helper"
-require "stringio"
 require "time"
 
 Textus::CLI.verbs # triggers Runner.install! so Verb::GenFreshness exists
 
 RSpec.describe Textus::CLI::Verb::GenFreshness do
   include_context "textus_store_fixture"
-
-  let(:stdin)  { StringIO.new }
-  let(:stdout) { StringIO.new }
-  let(:stderr) { StringIO.new }
-
-  def run(argv)
-    Textus::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: tmp)
-  end
+  include_context "cli invocation"
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
