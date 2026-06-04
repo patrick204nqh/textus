@@ -70,6 +70,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "retain" => Textus::CLI::Verb::GenRetain,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
+      "tend" => Textus::CLI::Verb::GenTend,
       "where" => Textus::CLI::Verb::GenWhere,
       "zone" => Textus::CLI::Group::Zone,
     }
