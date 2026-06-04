@@ -1,7 +1,7 @@
 # ADR 0079 — Unify staleness + retention into one `lifecycle` policy; collapse the upkeep verbs; lazy by default
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted
 **Refines:** [ADR 0048](./0048-fetch-subsystem-three-concerns.md) (the `fetch:` rule slot and its intake invocation / deadline / events split — this ADR keeps those *mechanisms* but folds the `fetch:` slot's freshness budget into the unified `lifecycle:` slot), the retention policy (`rules[*].retention:`, SPEC §5.11).
 **Touches:** [ADR 0062](./0062-one-get-read-through.md) (`get` is read-through — this ADR makes that read-through path the *default* execution site for non-destructive lifecycle actions), [ADR 0078](./0078-tend-composite-upkeep-pass.md) (`tend` survives but is reshaped: from a composite of `fetch_all`+`retain`+`doctor` into the **destructive-only sweep** — see its status note), [ADR 0058](./0058-one-verb-name-across-surfaces.md) (the verb-naming discipline this collapse continues), [ADR 0039](./0039-mcp-catalog-derive-or-guard.md) (removing verbs shrinks the derived catalog; the reconciliation guards enforce it), [ADR 0008](./0008-freshness-and-resolution-types.md) (the `Freshness` value object the unified read verb returns).
 

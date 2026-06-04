@@ -88,38 +88,39 @@ Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../
 
 ## Intake and freshness
 
-External inputs land via `:resolve_intake` hooks, not shell commands. Each intake entry names a registered handler; fetch is on demand:
+External inputs land via `:resolve_intake` hooks, not shell commands. Each intake entry names a registered handler; refresh is on demand via a read-through `get`:
 
 ```sh
-textus fetch feeds.notion.roadmap --as=automation
-textus fetch all --zone=feeds --as=automation   # everything past its TTL
+textus get feeds.notion.roadmap --as=automation        # refreshes if stale
+textus freshness --zone=feeds --output=json            # which entries are expired
 ```
 
-Freshness budgets live in the top-level `rules:` block, matched by glob:
+Lifecycle budgets live in the top-level `rules:` block, matched by glob:
 
 ```yaml
 rules:
   - match: feeds.notion.**
-    fetch: { ttl: 6h, on_stale: warn }   # warn | sync | timed_sync
+    lifecycle: { ttl: 6h, on_expire: refresh }   # refresh | warn | drop | archive
 ```
 
-A typical scheduled-fetch integration shells the `fetch all` sweep itself:
+A typical scheduled integration reads each expired feed (a read-through `get`
+refreshes it in-process):
 
 ```sh
-textus fetch all --zone=feeds --as=automation   # in cron / CI
+textus get feeds.notion.roadmap --as=automation   # in cron / CI
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
 
-### Read vs. fetch
+### Read vs. refresh
 
 There is one public read operation (ADR 0062):
 
 | Operation | Behaviour | Use for |
 |-----------|-----------|---------|
-| `ops.get` | Read-through by default — fetches on stale per the entry's fetch rule; degrades to a pure on-disk read when the key has no fetch rule. Pass `fetch: false` (CLI `--no-fetch`, MCP `{fetch:false}`) for an explicit pure read | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
+| `ops.get` | Read-through by default — refreshes on stale per the entry's `lifecycle` rule when `on_expire: refresh`; degrades to a pure on-disk read when the key has no lifecycle rule. Pass `fetch: false` (CLI `--no-fetch`, MCP `{fetch:false}`) for an explicit pure read | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
 
-Build pipelines and other internal callers that must never trigger a fetch (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::Get` directly with the method default `fetch: false` — a pure, orchestrator-free read. They bypass the verb-dispatch injection that sets `fetch: true`, so they always get pure reads without any extra argument.
+Build pipelines and other internal callers that must never trigger a refresh (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::Get` directly with the method default `fetch: false` — a pure, orchestrator-free read. They bypass the verb-dispatch injection that sets `fetch: true`, so they always get pure reads without any extra argument.
 
 ## Body content
 

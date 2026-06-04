@@ -1,10 +1,14 @@
 # Scheduling `tend` — unattended upkeep
 
-`tend` runs the recurring upkeep passes in one shot:
+`tend` runs the recurring destructive upkeep in one shot:
 
-1. `fetch_all` — refresh stale `quarantine` intake entries past their TTL.
-2. `retain`    — apply each entry's retention policy (expire / archive).
-3. `doctor`    — report residual health (missing schemas, sentinel drift, …).
+1. **lifecycle sweep** — apply each entry's destructive `lifecycle` action
+   (`on_expire: drop` deletes; `on_expire: archive` moves the leaf to
+   `.textus/archive/` then deletes the original) to entries past their TTL.
+2. `doctor` — report residual health (missing schemas, sentinel drift, …).
+
+(Intake refresh is **not** a `tend` pass — stale intake entries refresh lazily on
+a read-through `textus get` per their `on_expire: refresh` rule.)
 
 textus schedules **nothing** itself — it has no in-process runner by design
 (ADR 0078). The host owns the timer; `tend` is the verb it calls.
@@ -15,8 +19,8 @@ textus schedules **nothing** itself — it has no in-process runner by design
 textus tend --dry-run --as=automation
 ```
 
-Reports `would_fetch` / `would_expire` / `would_archive` and the health report
-without writing anything.
+Reports `would_drop` / `would_archive` and the health report without writing
+anything.
 
 ## Apply
 
@@ -36,7 +40,8 @@ textus tend --zone feeds --as=automation
 deliberate contrast with `build`, ADR 0076). Each sub-op stays gated: rows whose
 zone the scheduled role cannot write surface in the result's `failed` lists
 rather than aborting the pass. Schedule it as `automation` and it can do exactly
-what `automation` could already do by hand (fetch + retain in `quarantine`).
+what `automation` could already do by hand (the destructive lifecycle sweep in
+`quarantine`).
 
 ## Wiring examples
 

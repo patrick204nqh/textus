@@ -53,10 +53,8 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
 | `put` | `{uid, etag}` | `key, _meta, body?, content?, if_etag?` |
 | `propose` | Full wire envelope (`uid, etag, key, zone, owner, path, ...`; `key` prefixed with propose_zone) | `key, _meta, body?, content?` |
-| `fetch` | `{outcome}` | `key: string` |
-| `fetch_all` | `{fetched, failed, skipped}` | `zone?, prefix?` |
 | `schema_show` | Field shape (schema for an entry's family) | `key: string` |
-| `rule_explain` | Effective rules for a key — lean `{fetch, guard}` by default; verbose with `detail` | `key: string, detail?: bool` |
+| `rule_explain` | Effective rules for a key — lean `{lifecycle, guard}` by default; verbose with `detail` | `key: string, detail?: bool` |
 | `where` | Resolve a key to its zone, owner, and path (no body read) | `key: string` |
 | `deps` | Keys a derived entry depends on (its sources) | `key: string` |
 | `rdeps` | Derived entries that depend on a key (impact set) | `key: string` |
@@ -70,6 +68,7 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 | `key_mv_prefix` | Plan (default) or applied move | `from_prefix, to_prefix, dry_run?=true` |
 | `key_delete_prefix` | Plan (default) or applied delete | `prefix, dry_run?=true` |
 | `zone_mv` | Plan (default) or renamed zone (manifest + files) | `from, to, dry_run?=true` |
+| `tend` | Plan (default) or applied lifecycle sweep (`drop`/`archive` expired entries) + health | `zone?, prefix?, dry_run?=true` |
 | `rule_lint` | Rule diff vs. live manifest (no writes) | `candidate_yaml` |
 | `migrate` | Plan (default) or result of a YAML migration plan | `plan_yaml, dry_run?=true` |
 

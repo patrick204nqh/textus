@@ -98,7 +98,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 ## Wiring data in — intake and `:resolve_intake` hooks
 
-`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; `textus fetch KEY --as=automation` (or `ops.fetch(key)` in Ruby) invokes the handler and writes the result. Freshness budgets live in a top-level `rules:` block, matched by glob.
+`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; a read-through `textus get KEY --as=automation` (or `ops.get(key)` in Ruby) on a stale entry whose rule says `on_expire: refresh` invokes the handler and writes the result. Lifecycle budgets live in a top-level `rules:` block, matched by glob.
 
 ```yaml
 entries:
@@ -111,17 +111,19 @@ entries:
 
 rules:
   - match: feeds.upstream.**
-    fetch:
+    lifecycle:
       ttl: 1h
+      on_expire: refresh
 ```
 
-#### `on_stale:` options
+#### `on_expire:` options (intake)
+
+For intake entries, `on_expire:` may be `refresh` or `warn` (`drop`/`archive` apply only to stored entries; `doctor` rejects the mismatch via `lifecycle.action_invalid`).
 
 | Value | Behaviour |
 |---|---|
 | `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
-| `sync` | Block the `get` call and fetch in-process before returning. |
-| `timed_sync` | Try to fetch within `sync_budget_ms`. Return stale data with `fetching: true` if the budget is exceeded; the fetch continues in the background. `sync_budget_ms` has no default — set it explicitly alongside `timed_sync`. |
+| `refresh` | Block the `get` call and refresh in-process before returning, bounded by `budget_ms` (default 500). If the budget is exceeded, return the stale envelope with `fetching: true` and let the refresh continue in the background. |
 
 ### Built-in `:resolve_intake` handlers
 
@@ -164,10 +166,10 @@ entries:
 
 rules:
   - match: feeds.notion.**
-    fetch: { ttl: 6h, on_stale: warn }
+    lifecycle: { ttl: 6h, on_expire: refresh }
 ```
 
-`textus fetch feeds.notion.roadmap --as=automation` invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
+A read-through `textus get feeds.notion.roadmap --as=automation` on a stale entry invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_intake` args)](../reference/events.md#resolve_intake-args).
 
@@ -175,7 +177,8 @@ The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the 
 
 `textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a **nested**
 `feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
-`textus fetch feeds.machines.local --as=automation` pulls a snapshot of this
+A read-through `textus get feeds.machines.local --as=automation` (when the entry
+is stale and its rule says `on_expire: refresh`) pulls a snapshot of this
 host into the `feeds` zone:
 
 - **git** — short HEAD, branch, dirty flag, repo root (the *control* host's repo; only meaningful for `local`)
@@ -186,10 +189,10 @@ host into the `feeds` zone:
 It is **retrievable via the protocol** (`textus get feeds.machines.local`) but
 **gitignored and never published**, because machine info can be sensitive or
 noisy — the entry's `tracked: false` flag drives the generated `.gitignore`
-(the whole `zones/feeds/machines/` subtree). The scan runs **only on `fetch`**
-(never the `boot`/`pulse` read path), and a `feeds.machines.**` freshness rule
-(`ttl: 1h`) amortizes the cost (a `brew list` count is ~1–3 s) on a long-running
-server. The hook is a deliberate **allowlist** — versions and counts, no raw
+(the whole `zones/feeds/machines/` subtree). The scan runs **only on a
+read-through refresh** (never the bare `boot`/`pulse` read path), and a
+`feeds.machines.**` lifecycle rule (`ttl: 1h, on_expire: refresh`) amortizes the
+cost (a `brew list` count is ~1–3 s) on a long-running server. The hook is a deliberate **allowlist** — versions and counts, no raw
 `env`, no secrets.
 
 Because it's **nested**, it grows to a fleet without renaming: add
@@ -197,27 +200,29 @@ Because it's **nested**, it grows to a fleet without renaming: add
 machines* cookbook recipe shows the fan-out). Don't want it? Delete the entry +
 hook to opt out.
 
-### Aging entries out — `retention`
+### Aging entries out — `lifecycle` with a destructive action
 
-Queue and quarantine zones accumulate; `retention` lets them self-prune. Declare
-it in a `rules:` block, matched by glob:
+Queue and quarantine zones accumulate; a `lifecycle` rule with a destructive
+`on_expire` action lets them self-prune. Declare it in a `rules:` block, matched
+by glob:
 
 ```yaml
 rules:
   - match: proposals.**
-    retention: { expire_after: 30d }   # delete accepted/abandoned proposals
+    lifecycle: { ttl: 30d, on_expire: drop }      # delete accepted/abandoned proposals
   - match: feeds.**
-    retention: { archive_after: 90d }  # move stale external bytes aside
+    lifecycle: { ttl: 90d, on_expire: archive }   # move stale external bytes aside
 ```
 
-Then `textus retain --as=ROLE` performs the sweep (the role must be allowed to
-write the matched zone). `expire_after` deletes the leaf; `archive_after` moves
-it to `.textus/archive/` and then deletes the original. If a rule sets both,
-`expire_after` is checked first, so a leaf wins deletion once it passes that
-window. Age is measured from the
-leaf's file modification time. Narrow a sweep with `--prefix` or `--zone`, and
-inspect what a key is subject to with `textus rule explain KEY` — retention
-appears in the effective output.
+Then `textus tend --as=ROLE` performs the destructive sweep (the role must be
+allowed to write the matched zone). `on_expire: drop` deletes the leaf;
+`on_expire: archive` moves it to `.textus/archive/` and then deletes the
+original. `drop`/`archive` apply only to stored entries — `doctor` rejects a
+`refresh` action on a stored entry (and a `drop`/`archive` on an intake entry)
+via `lifecycle.action_invalid`. Age is measured from the leaf's file
+modification time. Preview with `--dry-run`, narrow a sweep with `--prefix` or
+`--zone`, and inspect what a key is subject to with `textus rule explain KEY` —
+the resolved `lifecycle` appears in the effective output.
 
 ---
 
@@ -319,7 +324,7 @@ $ git diff CLAUDE.md                                                   # review 
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block matching the entry. `textus fetch KEY --as=automation` (one-shot) or `textus fetch all` (sweep TTL-expired entries) keeps it current.
+To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with a `lifecycle: { ttl, on_expire: refresh }` matching the entry. A read-through `textus get KEY --as=automation` then refreshes any stale entry in-process and keeps it current.
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 

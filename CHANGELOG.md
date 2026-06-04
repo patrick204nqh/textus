@@ -9,6 +9,25 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.48.0 — 2026-06-04 — Unified `lifecycle` policy (ADR 0079)
+
+Staleness and retention collapse into one age policy, and the upkeep verb surface shrinks 8→3.
+
+### Changed
+
+- **One `lifecycle: { ttl, on_expire }` rule slot** replaces the separate `fetch:` (intake freshness) and `retention:` (leaf pruning) slots. `on_expire` is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy aside then delete). An action's *destructiveness* decides where it runs: non-destructive `refresh`/`warn` are applied lazily on `get`; destructive `drop`/`archive` run only on the `tend` sweep. A read never deletes.
+- **`tend` is now the destructive-only sweep** — it drops/archives expired entries and refreshes cold intake, superseding the composite body of ADR 0078. Result keys are `dropped`/`archived`/`refreshed`/`failed` (apply) and `would_drop`/`would_archive`/`would_refresh` (`--dry-run`).
+- **`freshness` reports the unified verdict** (`fresh`/`expired`/`no_policy`) and the matched `on_expire` action; `pulse`'s `stale` list now reflects expired entries.
+
+### Removed
+
+- **The `stale`, `retainable`, `fetch`, `fetch_all`, and `retain` verbs.** Read-through refresh is `get` (lazy); destructive pruning is `tend`; `FetchWorker` remains as the internal executor for `get`/`tend`. Generator/build drift (dependency-based, not age-based) is now the `textus doctor` `generator_drift` check.
+- **The `fetch:`/`retention:` rule slots and the per-rule `fetch_timeout_seconds` override** (accepted loss; the constant ceiling applies to every intake).
+
+### Added
+
+- **`doctor` checks `lifecycle.action_invalid`** (`refresh` only on intake; `drop`/`archive` only on stored entries) and **`generator_drift`** (the surviving home for build-drift detection).
+
 ## 0.47.1 — 2026-06-04 — External entries are a non-build path
 
 ### Fixed
