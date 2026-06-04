@@ -63,6 +63,14 @@ RSpec.describe Textus::Maintenance::Tend do
       expect(File.exist?(leaf)).to be(false)
     end
 
+    it "threads prefix scoping through to the sub-passes (non-matching prefix is a no-op)" do
+      leaf = File.join(root, "zones/review/oncall.md")
+      result = build_tend.call(prefix: "nonexistent")
+
+      expect(result["retain"]["expired"]).to be_empty
+      expect(File.exist?(leaf)).to be(true)
+    end
+
     it "previews retention without deleting when dry_run: true" do
       leaf = File.join(root, "zones/review/oncall.md")
       result = build_tend.call(dry_run: true)

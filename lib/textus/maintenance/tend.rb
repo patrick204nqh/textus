@@ -31,7 +31,7 @@ module Textus
 
         {
           "protocol" => Textus::PROTOCOL,
-          "ok" => fetch.fetch("ok", true) && retain.fetch("ok", true),
+          "ok" => fetch["ok"] && retain["ok"],
           "dry_run" => dry_run,
           "fetch" => fetch,
           "retain" => retain,
@@ -51,12 +51,13 @@ module Textus
                              .call(prefix: prefix, zone: zone)
       end
 
-      # Preview = the read side of each pass, with zero writes. Mirrors FetchAll's
-      # own filter: only ttl-exceeded / never-fetched rows would actually fetch.
+      # Preview = the read side of each pass, with zero writes. Uses
+      # Write::FetchAll::ACTIONABLE_REASON (shared constant) so the filter
+      # stays in sync with the real apply path.
       def preview_fetch(prefix, zone)
         rows = Read::Stale.new(container: @container, call: @call)
                           .call(prefix: prefix, zone: zone)
-        would = rows.select { |r| (r["reason"] || r[:reason]).to_s.match?(/ttl exceeded|never fetched/) }
+        would = rows.select { |r| (r["reason"] || r[:reason]).to_s.match?(Write::FetchAll::ACTIONABLE_REASON) }
                     .map { |r| r["key"] || r[:key] }
         { "ok" => true, "would_fetch" => would }
       end

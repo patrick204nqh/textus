@@ -3,6 +3,10 @@ module Textus
     class FetchAll
       extend Textus::Contract::DSL
 
+      # A stale row is actionable (worth fetching) only when its reason says the
+      # cached bytes are missing or expired — not for other staleness signals.
+      ACTIONABLE_REASON = /ttl exceeded|never fetched/
+
       verb     :fetch_all
       summary  "Fetch all stale quarantine entries, optionally scoped by zone/prefix."
       surfaces :cli, :mcp
@@ -28,7 +32,7 @@ module Textus
         stale_rows.each do |row|
           key = row["key"] || row[:key]
           reason = row["reason"] || row[:reason]
-          if reason.to_s.match?(/ttl exceeded|never fetched/)
+          if reason.to_s.match?(ACTIONABLE_REASON)
             begin
               worker.run(key)
               fetched << key
