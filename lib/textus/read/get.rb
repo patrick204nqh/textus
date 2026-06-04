@@ -2,42 +2,41 @@ module Textus
   module Read
     # The one read path. `fetch:` controls behavior:
     #   fetch: false (default) — pure read: the on-disk envelope annotated with
-    #     a freshness verdict. NEVER builds the orchestrator (no threads/forks/
-    #     locks/events). This is the safe default for direct (in-process)
-    #     callers — accept/reject/publish, materializer, uid, validate_all/
-    #     validator, schema tooling, and the hook context — that must read
-    #     persisted truth without triggering a fetch.
-    #   fetch: true — read-through: after a stale verdict, hands off to the
-    #     fetch orchestrator per the entry's fetch rule (degrades to the pure
-    #     result when the key has no rule).
+    #     a lifecycle freshness verdict. NEVER builds the orchestrator and NEVER
+    #     mutates. Safe for direct callers (accept/reject/publish, materializer,
+    #     uid, validators, hooks).
+    #   fetch: true — read-through: after a stale verdict on a `refresh` policy,
+    #     hands off to the fetch orchestrator. A read NEVER performs a
+    #     destructive action (drop/archive) — those belong to the `tend` sweep
+    #     (ADR 0079).
     #
-    # The public `get` verb is read-through because the contract declares
-    # `arg :fetch, default: true`, injected on every verb surface (RoleScope +
-    # MCP map_args, ADR 0062 amendment). Direct construction bypasses that
-    # injection and so gets the safe `fetch: false` method default.
+    # Lifecycle policy comes from the unified `lifecycle:` rule slot; a legacy
+    # `fetch:` slot is translated on the fly (compat shim, removed in Plan 2's
+    # final task).
     class Get
       extend Textus::Contract::DSL
 
       verb     :get
-      summary  "Read one entry. Read-through by default — fetches on stale per " \
-               "the entry's fetch rule, degrading to a pure read when the key " \
-               "has no rule. Pass fetch:false for a guaranteed pure on-disk " \
-               "read. Returns the envelope (uid, etag, _meta, body, freshness)."
+      summary  "Read one entry. Read-through by default — refreshes on stale per " \
+               "the entry's lifecycle rule (on_expire: refresh), degrading to a " \
+               "pure read when the key has no rule. Pass fetch:false for a " \
+               "guaranteed pure on-disk read. Returns the envelope (uid, etag, " \
+               "_meta, body, freshness)."
       surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       arg :fetch, :boolean, default: true,
-                            description: "read-through (fetch on stale per the " \
-                                         "entry's fetch rule) when true, the default; " \
+                            description: "read-through (refresh on stale per the " \
+                                         "entry's lifecycle rule) when true, the default; " \
                                          "false returns the on-disk envelope without ever fetching"
       view { |v, _i| v.to_h_for_wire }
 
-      def initialize(container:, call:, evaluator: Textus::Domain::Freshness::Evaluator, orchestrator: nil)
+      def initialize(container:, call:, orchestrator: nil, file_stat: Textus::Ports::Storage::FileStat.new)
         @container  = container
         @call       = call
         @manifest   = container.manifest
         @file_store = container.file_store
-        @evaluator  = evaluator
+        @file_stat  = file_stat
         @orchestrator = orchestrator # nil → built lazily on first fetch only
       end
 
@@ -46,12 +45,11 @@ module Textus
         return envelope if envelope.nil?
         return envelope unless fetch && envelope.freshness&.stale
 
-        fetch_policy = fetch_policy_for(key)
-        return envelope if fetch_policy.nil?
+        policy = lifecycle_for(key)
+        return envelope unless policy&.on_expire == :refresh # only refresh acts on a read
 
-        policy  = fetch_policy.to_freshness_policy
         verdict = Textus::Domain::Freshness::Verdict.stale(envelope.freshness.reason)
-        outcome = orchestrator.execute(policy.decide(verdict), key: key)
+        outcome = orchestrator.execute(refresh_policy(policy).decide(verdict), key: key)
         resolve(outcome, envelope)
       end
 
@@ -64,23 +62,56 @@ module Textus
 
       private
 
-      # Pure read + freshness verdict; no orchestrator dependency.
+      # Pure read + unified lifecycle verdict; no orchestrator dependency.
       def annotated_envelope(key)
         envelope = read_raw_envelope(key)
         return nil if envelope.nil?
 
-        fetch_policy = fetch_policy_for(key)
-        return annotate_fresh(envelope) if fetch_policy.nil?
+        policy = lifecycle_for(key)
+        return annotate_fresh(envelope) if policy.nil?
 
-        policy  = fetch_policy.to_freshness_policy
-        verdict = @evaluator.call(policy, envelope, now: @call.now)
+        expired, reason = Textus::Domain::Lifecycle.verdict(
+          policy: policy,
+          last_fetched_at: envelope.meta&.dig("last_fetched_at"),
+          mtime: mtime_for(key),
+          now: @call.now,
+        )
         envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: verdict.stale?, reason: verdict.reason, fetching: false,
+          stale: expired, reason: reason, fetching: false,
         ))
       end
 
-      def fetch_policy_for(key)
-        @manifest.rules.for(key).fetch
+      # The unified policy, or a legacy fetch: slot translated to lifecycle.
+      def lifecycle_for(key)
+        set = @manifest.rules.for(key)
+        set.lifecycle || fetch_compat(set.fetch)
+      end
+
+      # COMPAT SHIM (removed in Plan 2 final task): a legacy fetch: slot behaves
+      # as on_expire: refresh (when it would have synced) or warn (on_stale: warn).
+      def fetch_compat(fetch)
+        return nil if fetch.nil?
+
+        Textus::Domain::Policy::Lifecycle.new(
+          ttl: fetch.ttl,
+          on_expire: %i[sync timed_sync].include?(fetch.on_stale) ? :refresh : :warn,
+          budget_ms: fetch.sync_budget_ms,
+        )
+      end
+
+      def refresh_policy(policy)
+        Textus::Domain::Freshness::Policy.new(
+          ttl_seconds: policy.ttl_seconds,
+          on_stale: policy.budget_ms ? :timed_sync : :sync,
+          sync_budget_ms: policy.budget_ms,
+        )
+      end
+
+      def mtime_for(key)
+        path = @manifest.resolver.resolve(key).path
+        @file_stat.exists?(path) ? @file_stat.mtime(path) : nil
+      rescue Textus::Error
+        nil
       end
 
       def resolve(outcome, envelope)
