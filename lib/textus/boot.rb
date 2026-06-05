@@ -26,9 +26,9 @@ module Textus
         "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      fetch: lambda do |name, manifest|
-        "fetch #{zone_label(manifest, :quarantine, "quarantine")} entries with " \
-          "'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
+      fetch: lambda do |_name, manifest|
+        "refresh stale #{zone_label(manifest, :quarantine, "quarantine")} entries from their " \
+          "declared intake by running 'textus reconcile' (scheduled, or on demand)"
       end,
       reconcile: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
