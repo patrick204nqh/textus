@@ -164,7 +164,7 @@ RSpec.describe "Reader honors lifecycle policy" do
     end
 
     store = Textus::Store.new(build_root)
-    store.as("automation").build
+    store.as("automation").reconcile
 
     expect(orchestrator_calls).to be_empty
   end

@@ -88,7 +88,6 @@ module Textus
       { "name" => "propose" },
       { "name" => "accept" },
       { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "build" },
       { "name" => "reconcile" },
       { "name" => "audit" },
       { "name" => "blame" },

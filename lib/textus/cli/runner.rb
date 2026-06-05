@@ -131,10 +131,8 @@ module Textus
       #   get   — raises UnknownKey with resolver suggestions (a CLI-only
       #           affordance; the agent surface deliberately returns nil)
       #   put   — IntakeFetch read-through orchestration on --fetch
-      #   build — auto-resolves the build-capability actor role (not --as) and
-      #           serializes under BuildLock; the role resolution is policy, not
-      #           a projection (around: covers only the lock)
-      BEHAVIORAL_HATCHES = %i[get put build].freeze
+      # (build removed in ADR 0087: materialization is system-pushed via reconcile)
+      BEHAVIORAL_HATCHES = %i[get put].freeze
 
       # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
       # all — composite reports assembled outside the contract:

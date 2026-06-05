@@ -122,4 +122,137 @@ RSpec.describe Textus::Maintenance::Materialize do
       expect(result["published_leaves"]).to be_empty
     end
   end
+
+  # Ported from spec/integration/write/build_spec.rb (deleted in ADR 0087)
+  describe "publish_tree leaf detail" do
+    let(:store) do
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts/agents"))
+      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
+        version: textus/3
+        zones:
+          - { name: artifacts, kind: derived }
+        entries:
+          - key: artifacts.agents
+            kind: nested
+            path: artifacts/agents
+            zone: artifacts
+            owner: human:self
+            publish:
+              tree: "agents"
+      YAML
+      File.write(File.join(root, "zones/artifacts/agents/alice.md"),
+                 "---\nname: alice\n---\nbody\n")
+      File.write(File.join(root, "zones/artifacts/agents/bob.md"),
+                 "---\nname: bob\n---\nbody\n")
+      s
+    end
+
+    it "mirrors every file in the subtree into published_leaves, keyed by the entry" do
+      events = []
+      store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+
+      result = svc.call
+
+      expect(result["published_leaves"].length).to eq(2)
+      expect(result["published_leaves"].map { |r| r["key"] }).to all(eq("artifacts.agents"))
+      expect(result["published_leaves"].map { |r| File.basename(r["target"]) })
+        .to contain_exactly("alice.md", "bob.md")
+      expect(events.length).to eq(2)
+    end
+  end
+
+  describe "External entry" do
+    let(:store) do
+      FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
+      s = store_from_manifest(root, zones: %w[knowledge artifacts], manifest: <<~YAML)
+        version: textus/3
+        zones:
+          - { name: knowledge, kind: canon }
+          - { name: artifacts, kind: derived }
+        entries:
+          - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
+          - key: artifacts.catalogs.big
+            kind: derived
+            path: artifacts/catalogs/big.md
+            zone: artifacts
+            owner: automation:auto
+            compute: { kind: external, sources: [knowledge.people], command: "rake build:big" }
+      YAML
+      File.write(File.join(root, "zones/knowledge/people/alice.md"), "---\nname: alice\n---\n")
+      File.write(File.join(root, "zones/artifacts/catalogs/big.md"),
+                 "---\n_meta:\n  generated:\n    at: 2030-01-01T00:00:00Z\n---\nRUNNER OUTPUT\n")
+      s
+    end
+
+    it "does not materialize the External entry (leaves the runner artifact untouched)" do
+      store # trigger lazy fixture setup so the runner's artifact exists on disk
+      before = File.read(File.join(root, "zones/artifacts/catalogs/big.md"))
+      svc.call
+      after = File.read(File.join(root, "zones/artifacts/catalogs/big.md"))
+      expect(after).to eq(before)
+      expect(after).to include("RUNNER OUTPUT")
+    end
+
+    it "omits the External entry from the built list" do
+      result = svc.call
+      built_keys = result["built"].map { |b| b["key"] }
+      expect(built_keys).not_to include("artifacts.catalogs.big")
+    end
+  end
+
+  describe "Intake entry with publish_to" do
+    let(:store) do
+      FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+      s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
+        version: textus/3
+        zones:
+          - { name: artifacts, kind: derived }
+        entries:
+          - key: artifacts.catalog
+            kind: intake
+            path: artifacts/catalog.txt
+            zone: artifacts
+            format: text
+            owner: automation:auto
+            publish:
+              to: [CATALOG.txt, docs/catalog.txt]
+            intake:
+              handler: catalog_handler
+      YAML
+      File.write(File.join(root, "zones/artifacts/catalog.txt"), "one\ntwo\nthree\n")
+      s
+    end
+
+    it "fans out the intake body to each publish_to target" do
+      events = []
+      store.events.register(:file_published, :cap) { |key:, target:, **| events << [key, target] }
+
+      result = svc.call
+
+      catalog = result["built"].find { |r| r["key"] == "artifacts.catalog" }
+      expect(catalog).not_to be_nil
+      expect(catalog["published_to"]).to eq(["CATALOG.txt", "docs/catalog.txt"])
+
+      repo_root = File.dirname(root)
+      expect(File.read(File.join(repo_root, "CATALOG.txt"))).to eq("one\ntwo\nthree\n")
+      expect(File.read(File.join(repo_root, "docs/catalog.txt"))).to eq("one\ntwo\nthree\n")
+      expect(events.map(&:first)).to contain_exactly("artifacts.catalog", "artifacts.catalog")
+    end
+  end
+
+  describe "events" do
+    it "fires :build_completed for derived entries and :file_published for all copies" do
+      build_completed = []
+      file_published  = []
+      store.events.register(:build_completed, :cap1) { |key:, **| build_completed << key }
+      store.events.register(:file_published,  :cap2) { |key:, **| file_published  << key }
+
+      svc.call
+
+      expect(build_completed).to include("artifacts.catalogs.people")
+      expect(file_published).to include("artifacts.catalogs.people")
+      expect(file_published).to include("knowledge.agents")
+    end
+  end
 end
