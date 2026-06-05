@@ -76,7 +76,7 @@ module Textus
       end
 
       def lifecycle_for(key)
-        @manifest.rules.for(key).lifecycle
+        @manifest.rules.for(key).upkeep&.lifecycle
       end
 
       def mtime_for(key)

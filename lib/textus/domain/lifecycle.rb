@@ -54,7 +54,7 @@ module Textus
       end
 
       def rows_for(mentry)
-        policy = @manifest.rules.for(mentry.key).lifecycle
+        policy = @manifest.rules.for(mentry.key).upkeep&.lifecycle
         return [] if policy.nil?
 
         @manifest.resolver.enumerate(prefix: mentry.key).filter_map do |row|

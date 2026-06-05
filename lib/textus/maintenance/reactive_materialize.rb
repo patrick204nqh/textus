@@ -56,7 +56,7 @@ module Textus
 
       # Sync iff ANY affected entry's materialize rule resolves on_change: sync.
       def any_sync?(keys)
-        keys.any? { |k| @manifest.rules.for(k).materialize&.sync? }
+        keys.any? { |k| @manifest.rules.for(k).upkeep&.materialize&.sync? }
       end
 
       def publish_failed(keys, call, error)

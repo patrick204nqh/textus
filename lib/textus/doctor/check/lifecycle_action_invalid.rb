@@ -6,7 +6,7 @@ module Textus
       class LifecycleActionInvalid < Check
         def call
           manifest.data.entries.filter_map do |mentry|
-            policy = manifest.rules.for(mentry.key).lifecycle
+            policy = manifest.rules.for(mentry.key).upkeep&.lifecycle
             next if policy.nil?
 
             intake = mentry.is_a?(Textus::Manifest::Entry::Intake)
