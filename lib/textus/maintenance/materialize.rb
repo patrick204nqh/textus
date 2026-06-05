@@ -4,8 +4,9 @@ module Textus
     # ADR 0061; demoted to a contract-less service by ADR 0087). Dispatches
     # polymorphically to each entry's `publish_via`. Callers: Reconcile (full,
     # Phase 1) and ReactiveMaterialize (scoped to an rdeps impact set). The
-    # build-actor resolution lives here (lifted from Write::Build); locking is
-    # the caller's responsibility (Write::Build wraps it via `around :build_lock`).
+    # materialize-actor resolution lives here; locking is the caller's
+    # responsibility (the reconcile / reactive path wraps it via the
+    # maintenance lock).
     class Materialize
       def initialize(container:, call:)
         @container = container
@@ -43,10 +44,10 @@ module Textus
       private
 
       def build_actor_call
-        build_role = @manifest.policy.actor_for("build") or
+        build_role = @manifest.policy.actor_for("reconcile") or
           raise Textus::UsageError.new(
-            "no role holds the 'build' capability",
-            hint: "declare a role with `can: [build]` in .textus/manifest.yaml",
+            "no role holds the 'reconcile' capability",
+            hint: "declare a role with `can: [reconcile]` in .textus/manifest.yaml",
           )
         Textus::Call.build(
           role: build_role,

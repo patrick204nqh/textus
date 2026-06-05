@@ -10,7 +10,7 @@ module Textus
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
@@ -102,7 +102,7 @@ module Textus
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
       # --with-agent profile: project facts + runbooks feed the orientation
-      # projection below, which `textus build` renders to CLAUDE.md/AGENTS.md.
+      # projection below, which `textus reconcile` renders to CLAUDE.md/AGENTS.md.
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
       - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.orientation

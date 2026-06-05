@@ -8,7 +8,7 @@ RSpec.describe Textus::Manifest::Data do
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
-        - { name: automation, can: [build] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: review,  kind: derived }
@@ -22,7 +22,7 @@ RSpec.describe Textus::Manifest::Data do
     expect(data.declared_zone_kinds).to be_a(Hash)
     expect(data.entries).to all(be_a(Textus::Manifest::Entry::Base))
     expect(data.audit_config).to include(:max_size, :keep)
-    expect(data.role_caps).to eq("human" => %w[author propose], "automation" => %w[build])
+    expect(data.role_caps).to eq("human" => %w[author propose], "automation" => %w[reconcile])
   end
 
   it "derives zone writers from capability × zone-kind" do
@@ -32,7 +32,7 @@ RSpec.describe Textus::Manifest::Data do
 
   it "exposes roles holding a capability" do
     expect(data.policy.roles_with_capability("author")).to eq(["human"])
-    expect(data.policy.roles_with_capability("build")).to eq(["automation"])
+    expect(data.policy.roles_with_capability("reconcile")).to eq(["automation"])
   end
 
   it "exposes raw and root" do

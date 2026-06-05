@@ -19,7 +19,7 @@ RSpec.describe Textus::Boot do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
         - { name: knowledge,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }

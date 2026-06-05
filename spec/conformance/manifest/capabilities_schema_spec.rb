@@ -11,7 +11,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: identity, kind: canon }
       entries: []

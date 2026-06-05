@@ -127,10 +127,10 @@ module Textus
     def initialize(holder)
       super(
         "build_in_progress",
-        "textus build already running (#{holder})",
+        "a textus maintenance pass is already running (#{holder})",
         details: { "holder" => holder },
         exit_code: 75,
-        hint: "wait for the running build to finish, or check for a recursive hook trigger"
+        hint: "wait for the running maintenance pass to finish, or check for a recursive hook trigger"
       )
     end
   end
@@ -166,9 +166,9 @@ module Textus
     def initialize(m, format: nil)
       hint =
         if format
-          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running build"
+          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running reconcile"
         else
-          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running build"
+          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running reconcile"
         end
       super("bad_render", m, hint: hint)
     end

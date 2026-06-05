@@ -1,13 +1,13 @@
 version: textus/3
 # textus's own store — used while developing textus itself (ADR 0041).
 # Write authority is derived from capabilities (ADR 0030): canon→author,
-# workspace→keep, queue→propose, derived→build. The human authors canon and
-# accepts proposals; the agent keeps durable notes and proposes; automation
-# builds the projected orientation.
+# workspace→keep, queue→propose, derived→reconcile. The human authors canon
+# and accepts proposals; the agent keeps durable notes and proposes; automation
+# reconciles the projected orientation.
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, build] }
+  - { name: automation, can: [fetch, reconcile] }
 zones:
   - { name: knowledge, kind: canon,      desc: "the maintained source of truth about the repo (project + runbooks)" }
   - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes across sessions" }

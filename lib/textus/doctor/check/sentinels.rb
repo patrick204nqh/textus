@@ -31,7 +31,7 @@ module Textus
             "level" => "warning",
             "subject" => sentinel_path,
             "message" => "sentinel is not valid JSON",
-            "fix" => "delete #{sentinel_path} and re-run 'textus build' to regenerate",
+            "fix" => "delete #{sentinel_path} and re-run 'textus reconcile' to regenerate",
           }
         end
 
@@ -51,7 +51,7 @@ module Textus
             "level" => "warning",
             "subject" => sentinel.target,
             "message" => "published file at #{sentinel.target} was modified out-of-band",
-            "fix" => "re-run 'textus build' to overwrite, or copy the manual edit back into the store source",
+            "fix" => "re-run 'textus reconcile' to overwrite, or copy the manual edit back into the store source",
           }
         end
       end

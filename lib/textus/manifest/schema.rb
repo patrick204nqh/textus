@@ -16,7 +16,7 @@ module Textus
         "workspace" => "keep",
         "quarantine" => "fetch",
         "queue" => "propose",
-        "derived" => "build",
+        "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
