@@ -34,6 +34,10 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
+      # The UNION of keys across upkeep's tags; the generic sub-key walk enforces
+      # only this set. The per-tag narrowing (rejecting cross-tag fields) lives in
+      # Domain::Policy::Upkeep#reject_foreign! — UPKEEP_KEYS is not the complete
+      # validation.
       UPKEEP_KEYS = %w[on ttl action budget_ms strategy].freeze
 
       # The ONE source of truth for the rule-block field set (WS3). Adding a
@@ -51,9 +55,11 @@ module Textus
       #                disambiguates from entry-level intake:, ADR 0059)
       #   policy_class the Domain::Policy backing the field (nil = raw value)
       #   validation   :immediate (instantiate the policy at parse, surfacing
-      #                shape errors eagerly) or :deferred (shape-check + carry
+      #                shape errors eagerly), :deferred (shape-check + carry
       #                the raw Hash; guard predicates validate at GuardFactory
-      #                build time, ADR 0031)
+      #                build time, ADR 0031), or :tagged (pass the raw Hash to a
+      #                tagged-union policy that dispatches on its discriminator
+      #                field, e.g. upkeep's on:)
       #   sub_keys     allowed nested keys for a mapping field (drives both the
       #                schema sub-key walk and the kwargs splat into policy_class)
       #   arg_key      for an immediate non-mapping field, the single kwarg the
