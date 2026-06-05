@@ -22,7 +22,7 @@ RSpec.describe Textus::Maintenance::ReactiveMaterialize do
               <<~RULES
                 rules:
                   - match: "artifacts.catalogs.people"
-                    materialize: { on_change: #{materialize_on_change} }
+                    upkeep: { "on": source_change, strategy: #{materialize_on_change} }
               RULES
             else
               ""

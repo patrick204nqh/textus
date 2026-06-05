@@ -9,7 +9,7 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [ingest, reconcile] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: feeds,     kind: quarantine }
@@ -26,8 +26,8 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
     expect(text).not_to include("review.KEY")
   end
 
-  it "names the live quarantine zone in the ingest recipe" do
-    text = recipes["ingest"]["steps"].join(" ")
+  it "names the live quarantine zone in the reconcile recipe" do
+    text = recipes["reconcile"]["steps"].join(" ")
     expect(text).to include("feeds")
     expect(text).not_to include("intake")
   end

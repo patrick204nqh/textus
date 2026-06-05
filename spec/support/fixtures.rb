@@ -83,8 +83,10 @@ module TextusSpecHelpers
   end
 
   # Preset: a quarantine "feeds" zone with one intake entry (key feeds.doc) wired
-  # to a `test_intake` handler, plus a lifecycle rule. Pass the handler's hook
-  # body and the rule's ttl / on_expire (refresh|warn for intake; ADR 0079).
+  # to a `test_intake` handler, plus an upkeep rule. Pass the handler's hook
+  # body and the rule's ttl / on_expire (refresh|warn for intake; ADR 0090 folds
+  # this into the `upkeep` tagged union — the `on_expire:` kwarg maps to the
+  # upkeep `action:` under `"on": stale`).
   # Writes the hook into the store's hooks/ dir. Defaults to quarantine; pass
   # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
   # follow the kind via LANE_ZONE.
@@ -106,7 +108,7 @@ module TextusSpecHelpers
             intake: { handler: test_intake }
         rules:
           - match: #{zone}.doc
-            lifecycle: { ttl: #{ttl}, on_expire: #{on_expire} }
+            upkeep: { "on": stale, ttl: #{ttl}, action: #{on_expire} }
       YAML
     )
   end

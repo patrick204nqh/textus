@@ -40,7 +40,7 @@ RSpec.describe Textus::CLI::Verb::Get do
             intake: { handler: test_intake }
         rules:
           - match: feeds.doc
-            lifecycle: { ttl: 1s, on_expire: refresh }
+            upkeep: { "on": stale, ttl: 1s, action: refresh }
       YAML
     )
     File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)

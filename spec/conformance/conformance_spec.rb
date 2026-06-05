@@ -40,9 +40,10 @@ RSpec.describe "textus/3 conformance" do
             config: { url: "https://example.com/calendar.ics" }
       rules:
         - match: feeds.calendar.events
-          lifecycle:
+          upkeep:
+            "on": stale
             ttl: 300s
-            on_expire: warn
+            action: warn
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)

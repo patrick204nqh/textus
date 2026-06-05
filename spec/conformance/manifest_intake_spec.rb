@@ -49,19 +49,20 @@ RSpec.describe "Manifest intake:" do
             handler: news_handler
       rules:
         - match: feeds.news
-          lifecycle:
+          upkeep:
+            "on": stale
             ttl: 10m
-            on_expire: refresh
+            action: refresh
             budget_ms: 800
     YAML
     set = m.rules.for("feeds.news")
-    expect(set.lifecycle).to be_a(Textus::Domain::Policy::Lifecycle)
-    expect(set.lifecycle.ttl_seconds).to eq(600)
-    expect(set.lifecycle.on_expire).to eq(:refresh)
-    expect(set.lifecycle.budget_ms).to eq(800)
+    expect(set.upkeep.lifecycle).to be_a(Textus::Domain::Policy::Lifecycle)
+    expect(set.upkeep.lifecycle.ttl_seconds).to eq(600)
+    expect(set.upkeep.lifecycle.on_expire).to eq(:refresh)
+    expect(set.upkeep.lifecycle.budget_ms).to eq(800)
   end
 
-  it "returns an empty RuleSet for keys with no matching lifecycle rule" do
+  it "returns an empty RuleSet for keys with no matching upkeep rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
@@ -69,7 +70,7 @@ RSpec.describe "Manifest intake:" do
         - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
-    expect(m.rules.for("knowledge.x").lifecycle).to be_nil
+    expect(m.rules.for("knowledge.x").upkeep).to be_nil
   end
 
   it "defaults to a Leaf entry when no intake block is present" do

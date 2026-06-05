@@ -11,7 +11,7 @@ RSpec.describe "Boot write-flows name no deleted verbs" do
       version: textus/3
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [ingest] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: identity, kind: canon, desc: "human-only" }
         - { name: intake,   kind: quarantine }

@@ -18,7 +18,7 @@ RSpec.describe "Pulse next_due_at" do
           intake:
             handler: noop
       rules:
-        - { match: "intake.*", lifecycle: { ttl: 3600s, on_expire: warn } }
+        - { match: "intake.*", upkeep: { "on": stale, ttl: 3600s, action: warn } }
     YAML
     File.write(
       File.join(root, "zones/intake/feed.md"),

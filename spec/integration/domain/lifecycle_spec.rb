@@ -38,7 +38,7 @@ RSpec.describe Textus::Domain::Lifecycle do
           - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
         rules:
           - match: "review.*"
-            lifecycle: { ttl: 30d, on_expire: drop }
+            upkeep: { "on": stale, ttl: 30d, action: drop }
       YAML
     end
 

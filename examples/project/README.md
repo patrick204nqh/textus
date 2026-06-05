@@ -63,7 +63,7 @@ bundle exec ../../exe/textus get proposals.decisions.0001-switch-to-sidekiq-pro
 
 # Pull a snapshot of this host into feeds.machines.local (the same nested entry
 # + hook `textus init` scaffolds). machine_intake.rb gathers git/os/runtime facts.
-# A read-through get refreshes a stale entry in-process (on_expire: refresh).
+# A read-through get refreshes a stale entry in-process (upkeep action: refresh).
 bundle exec ../../exe/textus get feeds.machines.local --as=automation   # refreshes, then returns…
 git check-ignore .textus/zones/feeds/machines/local.yaml        # …yet gitignored (tracked:false)
 ```

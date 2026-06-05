@@ -41,7 +41,7 @@ module Textus
                 local: { via: local }
       rules:
         - match: feeds.machines.**
-          lifecycle: { ttl: 1h, on_expire: warn } # meaningful on a long-running server
+          upkeep: { "on": stale, ttl: 1h, action: warn } # meaningful on a long-running server
     YAML
 
     HOOKS_README = <<~MD
@@ -72,7 +72,7 @@ module Textus
       ```
 
       The intake handler above is paired with a manifest entry plus a
-      top-level `rules:` block for lifecycle (ttl/on_expire live in
+      top-level `rules:` block for upkeep (ttl/action live in
       rules, not in the entry):
 
       ```yaml
@@ -86,9 +86,10 @@ module Textus
 
       rules:
         - match: feeds.foo
-          lifecycle:
+          upkeep:
+            "on": stale
             ttl: 10m
-            on_expire: refresh   # refresh | warn (intake); drop | archive (stored)
+            action: refresh   # refresh | warn (intake); drop | archive (stored)
       ```
 
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)

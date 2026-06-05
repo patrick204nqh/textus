@@ -7,7 +7,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [ingest, reconcile] }
+  - { name: automation, can: [reconcile] }
 zones:
   - { name: knowledge, kind: canon,      desc: "the maintained source of truth about the repo (project + runbooks)" }
   - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes across sessions" }
