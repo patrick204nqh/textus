@@ -48,7 +48,7 @@ Two additional pub-sub events observe the progress of intake fetches during `rec
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked for an `on_expire: refresh` re-pull (during `reconcile` or `hook run`). `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked for an `action: refresh` re-pull (during `reconcile` or `hook run`). `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
 | `:fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
 
 ---
