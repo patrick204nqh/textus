@@ -70,6 +70,8 @@ module Textus
             return value
           end
 
+          return meta[:policy_class].new(value) if meta[:validation] == :tagged
+
           if meta[:sub_keys]
             meta[:policy_class].new(**meta[:sub_keys].to_h { |k| [k.to_sym, value[k]] })
           else

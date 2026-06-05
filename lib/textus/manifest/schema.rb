@@ -34,8 +34,7 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      LIFECYCLE_KEYS = %w[ttl on_expire budget_ms].freeze
-      MATERIALIZE_KEYS = %w[on_change].freeze
+      UPKEEP_KEYS = %w[on ttl action budget_ms strategy].freeze
 
       # The ONE source of truth for the rule-block field set (WS3). Adding a
       # rule field means adding one entry here; everything downstream derives
@@ -81,19 +80,12 @@ module Textus
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
         },
-        lifecycle: {
-          yaml_key: "lifecycle",
-          policy_class: Textus::Domain::Policy::Lifecycle,
-          validation: :immediate, sub_keys: LIFECYCLE_KEYS, arg_key: nil,
+        upkeep: {
+          yaml_key: "upkeep",
+          policy_class: Textus::Domain::Policy::Upkeep,
+          validation: :tagged, sub_keys: UPKEEP_KEYS, arg_key: nil,
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
-        },
-        materialize: {
-          yaml_key: "materialize",
-          policy_class: Textus::Domain::Policy::Materialize,
-          validation: :immediate, sub_keys: MATERIALIZE_KEYS, arg_key: nil,
-          in_pick: true, in_ambiguity: true, # ← WS3: now surfaced (was invisible)
-          in_rule_list: true, in_rule_explain: %i[detail]
         },
       }.freeze
 
@@ -197,6 +189,7 @@ module Textus
       def self.validate_rules!(rules)
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
+          reject_retired_rule_keys!(r, path)
           walk(r, RULE_KEYS, path)
           FIELD_REGISTRY.each_value do |meta|
             next unless meta[:sub_keys]
@@ -204,6 +197,21 @@ module Textus
             value = r[meta[:yaml_key]]
             walk(value, meta[:sub_keys], "#{path}.#{meta[:yaml_key]}") if value.is_a?(Hash)
           end
+        end
+      end
+
+      # ADR 0090 merged the lifecycle/materialize rule fields into `upkeep`.
+      def self.reject_retired_rule_keys!(rule, path)
+        return unless rule.is_a?(Hash)
+
+        %w[lifecycle materialize].each do |old|
+          next unless rule.key?(old)
+
+          tag = old == "lifecycle" ? "on: stale" : "on: source_change"
+          raise BadManifest.new(
+            "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090) — use " \
+            "`upkeep: { #{tag}, … }`.",
+          )
         end
       end
 

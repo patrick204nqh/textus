@@ -51,6 +51,19 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     end
   end
 
+  it "rejects retired lifecycle:/materialize: rule fields with an upkeep hint" do
+    %w[lifecycle materialize].each do |old|
+      yaml = <<~YAML
+        version: textus/3
+        zones: [{ name: knowledge, kind: canon }]
+        entries: [{ key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }]
+        rules:
+          - { match: knowledge.x, #{old}: {} }
+      YAML
+      expect { parse(yaml) }.to raise_error(Textus::BadManifest, /#{old}.*merged into `upkeep`.*ADR 0090/m)
+    end
+  end
+
   it "rejects more than one role holding author" do
     yaml = <<~YAML
       version: textus/3
