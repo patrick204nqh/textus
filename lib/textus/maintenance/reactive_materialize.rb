@@ -54,7 +54,7 @@ module Textus
         false # unknown key → let the rdeps step decide (it returns empty)
       end
 
-      # Sync iff ANY affected entry's materialize rule resolves on_change: sync.
+      # Sync iff ANY affected entry's upkeep (on: source_change) rule resolves strategy: sync.
       def any_sync?(keys)
         keys.any? { |k| @manifest.rules.for(k).upkeep&.materialize&.sync? }
       end
