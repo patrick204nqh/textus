@@ -2,7 +2,7 @@ module Textus
   module Maintenance
     # Reactive half of ADR 0087: on a canon write, re-materialize the derived
     # entries that depend on the written key (rdeps ∩ derived). Per-entry
-    # `materialize: { on_change }` selects sync (inline, under the maintenance
+    # `upkeep: { "on": source_change, strategy }` selects sync (inline, under the maintenance
     # lock) vs async (deferred, the default). Writes into derived-zone entries do
     # not fan out (recursion guard). Failures never propagate to the writer
     # (ADR 0087 §5): a soft miss on the lock is swallowed, and a materialization

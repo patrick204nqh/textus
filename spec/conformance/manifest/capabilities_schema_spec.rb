@@ -64,6 +64,25 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     end
   end
 
+  # ADR 0090: `on:` is upkeep's discriminator. A BARE `on:` parses as the
+  # YAML 1.1 boolean true (Psych), so an unquoted `upkeep: { on: stale }`
+  # becomes `{ true => "stale" }`. Catch this footgun at load with a quoting
+  # hint instead of the generic "unknown key 'true'".
+  it "rejects an unquoted on: in upkeep with a quoting hint" do
+    yaml = <<~YAML
+      version: textus/3
+      zones: [{ name: knowledge, kind: canon }]
+      entries: [{ key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }]
+      rules:
+        - { match: knowledge.x, upkeep: { on: stale, ttl: 6h, action: refresh } }
+    YAML
+    expect { parse(yaml) }.to raise_error(
+      Textus::BadManifest,
+      /upkeep.*"on".*quote|quote.*on/i,
+    )
+    expect { parse(yaml) }.to raise_error(Textus::BadManifest, /boolean/i)
+  end
+
   it "rejects more than one role holding author" do
     yaml = <<~YAML
       version: textus/3

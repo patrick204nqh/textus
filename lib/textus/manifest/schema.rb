@@ -196,6 +196,7 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           reject_retired_rule_keys!(r, path)
+          reject_unquoted_on!(r, path)
           walk(r, RULE_KEYS, path)
           FIELD_REGISTRY.each_value do |meta|
             next unless meta[:sub_keys]
@@ -213,12 +214,30 @@ module Textus
         %w[lifecycle materialize].each do |old|
           next unless rule.key?(old)
 
-          tag = old == "lifecycle" ? "on: stale" : "on: source_change"
+          tag = old == "lifecycle" ? "\"on\": stale" : "\"on\": source_change"
           raise BadManifest.new(
             "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090) — use " \
             "`upkeep: { #{tag}, … }`.",
           )
         end
+      end
+
+      # `on:` is upkeep's discriminator, but a BARE `on:` parses as the YAML 1.1
+      # boolean true (Psych), so `upkeep: { on: stale }` arrives as
+      # `{ true => "stale" }`. Without this the generic sub-key walk rejects it
+      # as a cryptic "unknown key 'true'"; intercept with a quoting hint instead.
+      def self.reject_unquoted_on!(rule, path)
+        return unless rule.is_a?(Hash)
+
+        upkeep = rule["upkeep"]
+        return unless upkeep.is_a?(Hash)
+        return unless upkeep.keys.any? { |k| [true, false].include?(k) }
+
+        raise BadManifest.new(
+          "upkeep: the `on:` discriminator must be quoted in YAML at '#{path}.upkeep' — " \
+          "a bare `on:` parses as the boolean true (YAML 1.1). " \
+          "Write `upkeep: { \"on\": stale, … }` (ADR 0090).",
+        )
       end
 
       def self.validate_roles!(roles)

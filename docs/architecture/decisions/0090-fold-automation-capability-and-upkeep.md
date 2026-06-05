@@ -118,8 +118,8 @@ drop/archive-only-on-stored) still applies within the `on: stale` branch.
 A manifest declaring the old top-level `lifecycle:` or `materialize:` rule field
 is rejected at load with an `upkeep` hint, e.g.:
 
-> `` `lifecycle:` was merged into `upkeep` at '…' (ADR 0090) — use `upkeep: { on: stale, … }`. ``
-> `` `materialize:` was merged into `upkeep` at '…' (ADR 0090) — use `upkeep: { on: source_change, … }`. ``
+> `` `lifecycle:` was merged into `upkeep` at '…' (ADR 0090) — use `upkeep: { "on": stale, … }`. ``
+> `` `materialize:` was merged into `upkeep` at '…' (ADR 0090) — use `upkeep: { "on": source_change, … }`. ``
 
 The rule-field renames are breaking too: `on_expire` → `action`, `on_change` →
 `strategy`. The migration is mechanical and the hints name the target shape.
