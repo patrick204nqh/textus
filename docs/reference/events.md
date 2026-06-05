@@ -22,7 +22,7 @@ This is the catalog and timeline reference. The *normative* event table lives in
 
 ## The events in plain English
 
-textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events).
+textus has 18 events: 3 RPC and 15 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events).
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
@@ -38,6 +38,9 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 | `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_put` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ ctx:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
 | `:proposal_rejected` | pubsub | A pending proposal was explicitly discarded (via `textus reject` or `ops.reject(key)`). Counterpart to `:proposal_accepted`. Payload: `{ ctx:, key:, target_key: }`. |
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
+| `:session_opened` | pubsub | Fires when an MCP session is established. Payload: `{ ctx:, role:, cursor: }`. |
+| `:materialize_failed` | pubsub | Fires when a **reactive** rebuild (the on-canon-write trigger, ADR 0087) raises. Payload: `{ ctx:, keys:, error: }`. Observational; the failing rebuild is already aborted. |
+| `:reconcile_failed` | pubsub | Fires when the **`textus reconcile`** sweep finishes with one or more failed destructive/refresh actions. Payload: `{ ctx:, failed: }` where `failed` is `[{ key, error }]` — the same list the verb returns (additive; the event is the bus-side signal). Counterpart to `:materialize_failed` so both materialize paths report failure uniformly. |
 
 ### Fetch lifecycle events
 
@@ -199,6 +202,9 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 | `:entry_renamed` raises | verb still succeeds | `event_error` row |
 | `:proposal_rejected` raises | verb still succeeds | `event_error` row |
 | `:store_loaded` raises | store still ready | `event_error` row |
+| `:session_opened` raises | session still opens | `event_error` row |
+| `:materialize_failed` raises | reactive rebuild already aborted | `event_error` row |
+| `:reconcile_failed` raises | reconcile still returns its result | `event_error` row |
 | `:fetch_started` raises | verb still succeeds | `event_error` row |
 | `:fetch_failed` raises | verb still succeeds | `event_error` row |
 | `:fetch_backgrounded` raises | verb still succeeds | `event_error` row |

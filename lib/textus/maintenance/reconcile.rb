@@ -40,11 +40,25 @@ module Textus
 
         Textus::Ports::BuildLock.with(root: @container.root) do
           materialized = Textus::Maintenance::Materialize.new(container: @container, call: @call).call(prefix: prefix)
-          apply_result(apply(rows), health, materialized)
+          result = apply(rows)
+          publish_failed(result[:failed]) unless result[:failed].empty?
+          apply_result(result, health, materialized)
         end
       end
 
       private
+
+      # Mirror ReactiveMaterialize's :materialize_failed so reconcile's
+      # sweep-phase failures are observable on the event bus, not only in the
+      # returned payload (WS4 / ADR 0089-era). Additive: `failed` stays in the
+      # result; subscribers get a phase-failure signal too.
+      def publish_failed(failed)
+        @container.events.publish(
+          :reconcile_failed,
+          ctx: Textus::Hooks::Context.for(container: @container, call: @call),
+          failed: failed,
+        )
+      end
 
       def dry_run_result(rows, health, prefix)
         {

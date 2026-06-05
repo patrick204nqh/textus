@@ -66,6 +66,26 @@ RSpec.describe Textus::Maintenance::Reconcile do
       expect(result["dropped"]).to be_empty
       expect(File.exist?(leaf)).to be(true)
     end
+
+    # WS4: reconcile reports sweep failures in its payload AND publishes a
+    # :reconcile_failed event, mirroring reactive materialize's :materialize_failed.
+    it "publishes :reconcile_failed (and keeps the payload) when a sweep action fails" do
+      deleter = instance_double(Textus::Write::KeyDelete)
+      allow(Textus::Write::KeyDelete).to receive(:new).and_return(deleter)
+      allow(deleter).to receive(:call).and_raise(Textus::IoError.new("disk gone"))
+
+      events = store.container.events
+      allow(events).to receive(:publish).and_call_original
+
+      result = build_reconcile.call
+
+      expect(result["ok"]).to be(false)
+      expect(result["failed"]).to include("key" => "review.oncall", "error" => "disk gone")
+      expect(events).to have_received(:publish).with(
+        :reconcile_failed,
+        hash_including(failed: [{ "key" => "review.oncall", "error" => "disk gone" }]),
+      )
+    end
   end
 
   describe "Phase 1: materialization" do

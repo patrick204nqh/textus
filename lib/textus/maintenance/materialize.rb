@@ -63,12 +63,9 @@ module Textus
       end
 
       def entry_matches_prefix?(mentry, prefix)
-        case mentry
-        when Textus::Manifest::Entry::Nested
-          mentry.key.start_with?(prefix) || prefix.start_with?("#{mentry.key}.")
-        else
-          mentry.key.start_with?(prefix)
-        end
+        Textus::Key::Matching.matches_prefix?(
+          mentry.key, prefix, nested: mentry.is_a?(Textus::Manifest::Entry::Nested)
+        )
       end
     end
   end
