@@ -142,7 +142,7 @@ end
 textus get feeds.machines.laptop   --as=automation     # one host (refreshes if stale)
 textus get feeds.machines.prod-web --as=automation
 
-textus freshness --zone=feeds --output=json            # which hosts are expired
+textus pulse --output=json                             # `stale` lists expired hosts; `next_due_at` is the soonest deadline
 git check-ignore .textus/zones/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 

@@ -89,12 +89,19 @@ module Textus
           return
         end
 
-        @session.check_etag!(contract_etag)
-
         name = params["name"]
         args = params["arguments"] || {}
+
+        # ADR 0083: the contract-drift guard gates mutating verbs — every MCP
+        # verb that is NOT a pure read (Write:: + the destructive Maintenance::
+        # verbs tend/zone_mv/key_*_prefix). Reads and boot bypass it (a stale
+        # read returns on-disk truth; boot re-orients). Keying on read_verbs
+        # (not write_verbs) keeps the destructive Maintenance:: verbs gated.
+        @session.check_etag!(contract_etag) unless Catalog.read_verbs.include?(name)
+
         result = Catalog.call(name, session: @session, store: @store, args: args)
         @session = @session.advance_cursor(@store.audit_log.latest_seq) if name == "pulse"
+        @session = @session.with(contract_etag: contract_etag) if name == "boot"
 
         emit_result(rid, {
                       "content" => [{ "type" => "text", "text" => JSON.dump(result) }],

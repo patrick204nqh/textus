@@ -71,49 +71,50 @@ module Textus
       },
     }.freeze
 
-    # Curated agent-facing verb catalog. For verbs that have a Dispatcher contract,
-    # the summary is derived from `contract.summary` at load time (ADR 0039). The
-    # editorial strings below are the fallback for CLI-only verbs without contracts.
-    # CLI_VERBS itself is assigned in textus.rb after Zeitwerk eager_load so that
-    # all contract-declaring files are loaded before derivation runs.
+    # Curated agent-facing verb catalog. This declares which verbs the operator
+    # CLI surfaces and in what order — the editorial presentation. The summary of
+    # each verb is a fact, not presentation: it is derived from `contract.summary`
+    # at load time (ADR 0039). A literal "summary" survives here only for grouped
+    # CLI tokens (schema/key/rule/hook) that aggregate several sub-contracts and so
+    # have no single contract to derive from. CLI_VERBS itself is assigned in
+    # textus.rb after Zeitwerk eager_load so all contract files are present.
     CURATED_CLI_VERBS = [
       { "name" => "boot" },
       { "name" => "list" },
       { "name" => "get" },
-      { "name" => "where", "summary" => "resolve a key to its zone and path without reading" },
+      { "name" => "where" },
       { "name" => "schema", "summary" => "schema operations: 'schema show KEY', 'schema diff', 'schema init', 'schema migrate'" },
       { "name" => "put" },
       { "name" => "propose" },
-      { "name" => "accept",   "summary" => "apply a queued proposal to its target zone; requires the author capability" },
-      { "name" => "key",      "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "build",    "summary" => "materialize derived entries; publish_to and publish_tree fan out copies" },
+      { "name" => "accept" },
+      { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
+      { "name" => "build" },
       { "name" => "tend" },
-      { "name" => "freshness", "summary" => "per-entry lifecycle report (status, age, ttl, on_expire action)" },
-      { "name" => "audit",    "summary" => "query .textus/audit.log with filters (key, role, since, correlation-id, ...)" },
-      { "name" => "blame",    "summary" => "audit rows for one key joined with git commit metadata" },
-      { "name" => "rule",     "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
-      { "name" => "doctor",   "summary" => "health-check the store (missing schemas, illegal keys, sentinel drift, etc.)" },
-      { "name" => "hook",     "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "audit" },
+      { "name" => "blame" },
+      { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
+      { "name" => "doctor" },
+      { "name" => "hook", "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
       { "name" => "pulse" },
       { "name" => "capabilities" },
     ].freeze
 
-    # Build the CLI verb catalog by deriving each summary from the corresponding
-    # Dispatcher contract when one exists, falling back to the editorial string for
-    # CLI-only verbs without a contract (e.g. accept, build, where). Called once
-    # from textus.rb after eager_load so all contract files are present.
-    def self.build_cli_verbs
-      by_contract = Dispatcher::VERBS.values
-                                     .select { |k| k.respond_to?(:contract?) && k.contract? }
-                                     .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+    # verb token => contract.summary, for every Dispatcher verb that carries a
+    # contract. The single source for a verb's one-line summary (ADR 0039).
+    def self.contract_summaries
+      Dispatcher::VERBS.values
+                       .select { |k| k.respond_to?(:contract?) && k.contract? }
+                       .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+    end
 
+    # Build the CLI verb catalog: each summary is derived from its contract when
+    # one exists, falling back to the curated editorial string for grouped tokens
+    # (schema/key/rule/hook). Called once from textus.rb after eager_load.
+    def self.build_cli_verbs
+      summaries = contract_summaries
       CURATED_CLI_VERBS.map do |entry|
-        derived = by_contract[entry["name"]]
-        if derived
-          entry.merge("summary" => derived)
-        else
-          entry
-        end
+        derived = summaries[entry["name"]]
+        derived ? entry.merge("summary" => derived) : entry
       end
     end
 
@@ -130,7 +131,8 @@ module Textus
         # Both verb lists derive from the MCP catalog (ADR 0056, ADR 0057): the
         # agent's real read and write surface, named as verbs the agent calls —
         # not CLI strings. read_verbs can neither advertise a verb the agent
-        # cannot call (audit/freshness/doctor are CLI-only) nor omit one it can
+        # cannot call (audit/doctor are CLI-only; freshness is a Ruby-only
+        # internal scan, ADR 0085) nor omit one it can
         # (schema_show/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
         # framing (role is connection-resolved over MCP; there is no stdin).
         # writable_zones / propose_zone below carry the agent's write authority.
@@ -196,8 +198,20 @@ module Textus
       )
     end
 
-    def self.build(container:)
+    def self.build(container:, lean: false)
       manifest = container.manifest
+      etag = Textus::Etag.for_contract(container.root)
+
+      if lean
+        return {
+          "protocol" => PROTOCOL_ID,
+          "store_root" => container.root,
+          "zones" => zones_for(manifest),
+          "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
+          "contract_etag" => etag,
+        }
+      end
+
       {
         "protocol" => PROTOCOL_ID,
         "store_root" => container.root,
@@ -208,6 +222,7 @@ module Textus
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
+        "contract_etag" => etag,
         "docs" => { "spec" => "SPEC.md", "example" => "examples/project/" },
       }
     end

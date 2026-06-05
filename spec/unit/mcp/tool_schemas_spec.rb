@@ -44,9 +44,9 @@ RSpec.describe Textus::MCP::ToolSchemas do
       expect(get[:inputSchema][:required]).to eq(["key"])
     end
 
-    it "boot tool takes no arguments" do
+    it "boot tool advertises the optional lean flag (ADR 0084)" do
       boot = described_class.all.find { |t| t[:name] == "boot" }
-      expect(boot[:inputSchema][:properties]).to eq({})
+      expect(boot[:inputSchema][:properties]).to include("lean")
       expect(boot[:inputSchema][:required]).to eq([])
     end
 

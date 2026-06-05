@@ -42,6 +42,7 @@ module Textus
         # without `respond_to?` guards.
         def template       = nil
         def inject_boot    = false # rubocop:disable Naming/PredicateMethod
+        def provenance     = true  # rubocop:disable Naming/PredicateMethod
         def events         = {}
         def publish_tree   = nil
         def ignore         = []

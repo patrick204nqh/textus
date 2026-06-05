@@ -25,7 +25,7 @@ module Textus
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
         compute template publish
-        intake events inject_boot ignore tracked
+        intake events inject_boot provenance ignore tracked
       ].freeze
       # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
       # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).

@@ -147,7 +147,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
 }
 ```
 
-`changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from `freshness`. `pending_review` lists keys in the queue zone. `doctor` is a count summary.
+`changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from the internal lifecycle scan (the former `freshness` verb, folded into `pulse` by ADR 0085). `pending_review` lists keys in the queue zone. `doctor` is a count summary.
 
 #### Drift, scheduling, and hook-error signals
 

@@ -1,4 +1,4 @@
 fields:
-  name:        { type: string, required: true }
-  description: { type: string, required: true }
-  repo:        { type: string }
+  name:        { type: string, required: true, maintained_by: human }
+  description: { type: string, required: true, maintained_by: human }
+  repo:        { type: string, maintained_by: human }

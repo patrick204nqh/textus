@@ -3,9 +3,10 @@ module Textus
     class Verb
       class Boot < Verb
         command_name "boot"
+        option :lean, "--lean"
 
         def call(store)
-          emit(store.boot)
+          emit(store.boot(lean: !!lean))
         end
       end
     end

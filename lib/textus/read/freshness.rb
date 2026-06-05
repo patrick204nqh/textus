@@ -2,20 +2,24 @@ require "time"
 
 module Textus
   module Read
-    # Per-entry lifecycle report (ADR 0079). Walks every entry declared in the
-    # manifest, consults `rules.for(key)` for a `lifecycle:` policy, and reports
-    # the unified verdict. Status is one of :fresh, :expired, or :no_policy; the
-    # row also carries the policy's :action (on_expire).
+    # Per-entry lifecycle scan (ADR 0079, 0085). Walks every entry declared in
+    # the manifest, consults `rules.for(key)` for a `lifecycle:` policy, and
+    # reports the unified verdict. Status is one of :fresh, :expired, or
+    # :no_policy; the row also carries the policy's :action (on_expire).
+    #
+    # ADR 0085 removed the public `freshness` verb: there is no `:cli`/`:mcp`
+    # surface. This is now a Ruby-only internal scan (empty `surfaces`, the
+    # honest home reserved by ADR 0073) consumed by `pulse` (which derives
+    # `stale` + `next_due_at` from it) and the hook `Context`. Humans drill
+    # into per-entry lifecycle detail via `get` (last_fetched_at) + `rule_explain`
+    # (the ttl / on_expire policy) instead of a dedicated verb.
     class Freshness
       extend Textus::Contract::DSL
 
       verb     :freshness
-      summary  "Report the fetch-freshness status of every entry with a fetch policy."
-      surfaces :cli
-      cli      "freshness"
+      summary  "Internal per-entry lifecycle scan (status, age, ttl, on_expire); backs pulse + hook context. No public surface (ADR 0085)."
       arg :prefix, String, required: false, description: "filter to keys with this prefix"
       arg :zone,   String, required: false, description: "filter to entries in this zone"
-      view(:cli) { |rows| { "verb" => "freshness", "rows" => rows } }
 
       def initialize(container:, call:)
         @container  = container

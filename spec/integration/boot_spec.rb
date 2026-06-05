@@ -195,6 +195,19 @@ RSpec.describe Textus::Boot do
     end
   end
 
+  describe "lean projection + contract_etag (ADR 0084)" do
+    it "the full envelope carries a sha256 contract_etag" do
+      out = Textus::Boot.build(container: store.container)
+      expect(out["contract_etag"]).to match(/\Asha256:/)
+    end
+
+    it "lean keeps orientation essentials and drops the heavy sections" do
+      out = Textus::Boot.build(container: store.container, lean: true)
+      expect(out).to include("protocol", "store_root", "zones", "agent_quickstart", "contract_etag")
+      expect(out).not_to include("entries", "hooks", "cli_verbs", "agent_protocol", "write_flows")
+    end
+  end
+
   describe "write_flows role resolution" do
     it "falls back to default role names when roles: block is omitted" do
       yaml = <<~YAML
@@ -225,5 +238,16 @@ RSpec.describe Textus::Boot do
     expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["zones"].length).to eq(5)
     expect(parsed["cli_verbs"]).to be_an(Array)
+  end
+
+  it "the CLI --lean flag yields the lean envelope" do
+    out = StringIO.new
+    err = StringIO.new
+    code = Textus::CLI.run(["boot", "--lean", "--output=json"],
+                           stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
+    expect(code).to eq(0)
+    parsed = JSON.parse(out.string)
+    expect(parsed).to include("agent_quickstart", "contract_etag")
+    expect(parsed).not_to have_key("entries")
   end
 end

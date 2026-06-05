@@ -1,3 +1,3 @@
 fields:
-  name:        { type: string, required: true }
-  description: { type: string, required: true }
+  name:        { type: string, required: true, maintained_by: human }
+  description: { type: string, required: true, maintained_by: human }

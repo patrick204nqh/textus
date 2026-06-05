@@ -26,7 +26,8 @@ RSpec.describe Textus::Boot do
       expect(qs).to be_a(Hash)
       # read_verbs derives from the MCP catalog (ADR 0056): the verbs the agent
       # can actually call — including schema/rule_explain and the graph reads
-      # (deps/rdeps/where, ADR 0060) — and never the CLI-only audit/freshness/doctor.
+      # (deps/rdeps/where, ADR 0060) — and never audit/doctor (CLI-only) nor
+      # freshness (a Ruby-only internal scan, ADR 0085).
       expect(qs["read_verbs"]).to include("boot", "get", "list", "pulse", "schema_show",
                                           "rule_explain", "deps", "rdeps", "where")
       expect(qs["read_verbs"]).not_to include("audit", "freshness", "doctor")
