@@ -192,7 +192,7 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
 2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The verb takes only `key` — there is no `fetch` flag on any surface.
-3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no lifecycle rule, the envelope is annotated fresh. A stale `on_expire: refresh` entry is returned **stale** — the read does not refresh it; the next `reconcile` does.
+3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no `upkeep` rule, the envelope is annotated fresh. A stale `upkeep: { "on": stale, action: refresh }` entry is returned **stale** — the read does not refresh it; the next `reconcile` does.
 
 Because the read is always pure, every caller — interactive reads, dashboards, and the direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) — gets the same orchestrator-free, side-effect-free read. The prior read-through path (`get_or_fetch`, then the `fetch:`-flagged `Read::Get`, ADR 0062) and its `Write::FetchOrchestrator` are gone (ADR 0089).
 

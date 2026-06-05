@@ -36,10 +36,10 @@ entries:
     kind: intake
     intake: { handler: http_json, config: { url: "https://api.example.com/users" } }
 rules:
-  - { match: feeds.api.**, lifecycle: { ttl: 15m, on_expire: refresh } }
+  - { match: feeds.api.**, upkeep: { "on": stale, ttl: 15m, action: refresh } }
 ```
 
-Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stale `on_expire: refresh` entry; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
+Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stale `action: refresh` entry; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
 
 > **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
 > top level must be a **mapping** (an object). If your source is a top-level
@@ -48,7 +48,7 @@ Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stal
 > markdown` (the default), which stores the parsed YAML as the body.
 
 > The recipes below show only the hook — pair each with an `intake:` entry naming
-> the handler plus a `rules:` lifecycle block, exactly like the HTTP JSON example above.
+> the handler plus a `rules:` `upkeep` block, exactly like the HTTP JSON example above.
 
 ## RSS feed
 

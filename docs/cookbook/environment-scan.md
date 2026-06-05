@@ -24,7 +24,7 @@ refresh** of a stale entry (never `get`/`boot`/`pulse`, per ADR 0037 / 0089).
 ```yaml
 # manifest.yaml
 roles:
-  - { name: automation, can: [ingest] }        # the ingest capability the feeds zone needs
+  - { name: automation, can: [reconcile] }      # the reconcile capability the feeds zone needs
 zones:
   - { name: feeds, kind: quarantine }
 entries:
@@ -44,7 +44,7 @@ entries:
           db-1:     { via: ssh, host: "user@db.internal" }
 rules:
   - match: feeds.machines.**
-    lifecycle: { ttl: 1h, on_expire: refresh, budget_ms: 20000 }   # refresh on read; cap a hung SSH
+    upkeep: { "on": stale, ttl: 1h, action: refresh, budget_ms: 20000 }   # refresh on the reconcile sweep; cap a hung SSH
 ```
 
 ## 2. `.gitignore` — ignore the whole nested tree

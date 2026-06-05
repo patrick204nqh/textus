@@ -21,7 +21,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 ```mermaid
 flowchart LR
     ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| feeds["feeds<br/>(quarantine)"]
-    automation(["automation"]) -->|ingest| feeds
+    automation(["automation"]) -->|reconcile| feeds
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
     agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
@@ -32,12 +32,12 @@ flowchart LR
     artifacts -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation pulls external bytes into `feeds` (the `ingest` capability); humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation materializes `artifacts` from `knowledge`/`feeds` via `reconcile` and publishes them as shipped files.
+*Flow at a glance:* automation reconciles the machine-maintained lanes — it pulls external bytes into `feeds` and materializes `artifacts` from `knowledge`/`feeds`, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the materialized artifacts as shipped files.
 
 Two ideas do all the work:
 
 - **A zone is a write-authority partition.** Each zone declares its `kind:`; the kind decides which capability a writer must hold. Directory names are convention; the manifest is the source of truth.
-- **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `ingest`, `reconcile` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→verb table are the SSoT of [`../reference/zones.md`](../reference/zones.md).
+- **A role is a bundle of capabilities.** A role holds verbs from a closed four-element set — `propose`, `author`, `keep`, `reconcile` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→verb table are the SSoT of [`../reference/zones.md`](../reference/zones.md).
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
 
@@ -58,7 +58,7 @@ Three ideas make this a *trust* path, not just a copy:
 
 - **Two capabilities, never one.** `propose` lets an agent write into the queue zone (`textus propose` auto-prefixes the key with whatever zone declares `kind: queue`). `author` — the single trust anchor, held by at most one role — is what `accept` requires. An agent has no path to `canon` of its own.
 - **`accept` is a transition, not a capability.** It is gated by two floor predicates — **`author_held`** (you hold the anchor) and **`target_is_canon`** (you may only promote *into* a canon zone). A proposal whose `target_key` points elsewhere is refused as `guard_failed`, and `textus doctor`'s `proposal_targets` check flags it ahead of time. The exact predicate set is the SSoT of [`../reference/zones.md`](../reference/zones.md).
-- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` lifecycle rule (`on_expire: drop`) swept by `textus reconcile` ages out whatever is never resolved.
+- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` upkeep rule (`upkeep: { "on": stale, action: drop }`) swept by `textus reconcile` ages out whatever is never resolved.
 
 ## Hooks: RPC vs pub-sub
 

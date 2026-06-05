@@ -84,7 +84,7 @@ You **shape your own memory structure** inside `.textus/`. The protocol manages 
 
 textus/3 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
 
-- **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `fetch`, `reconcile`).
+- **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `reconcile`).
 - **Place** — where data lives: zones such as `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `fetch`, `reconcile`, …).
@@ -98,7 +98,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `fetch`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
+| L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `reconcile`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
 | L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
 | L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish: { to: [...] }`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/.run/sentinels/<target-rel-path>.textus-managed.json` (git-ignored runtime state) records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -139,7 +139,7 @@ The root is `.textus/` at the project working directory. A typical tree:
   zones/                 # ALL user content lives here
     knowledge/           # zone: knowledge (kind: canon — author-holders write; knowledge.identity.* is the identity convention)
     notebook/            # zone: notebook (kind: workspace — keep-holders write; agent's own durable lane)
-    feeds/               # zone: feeds (kind: quarantine — fetch-holders write)
+    feeds/               # zone: feeds (kind: quarantine — reconcile-holders write)
     proposals/           # zone: proposals (kind: queue — propose-holders write)
     artifacts/           # zone: artifacts (kind: derived — reconcile-holders write)
 ```
@@ -171,7 +171,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose] }
-  - { name: automation, can: [ingest, reconcile] }
+  - { name: automation, can: [reconcile] }
 
 zones:
   - name: knowledge
@@ -208,7 +208,7 @@ entries:
 
 rules:
   - match: feeds.**
-    lifecycle: { ttl: 6h, on_expire: warn }
+    upkeep: { "on": stale, ttl: 6h, action: warn }
 
 audit:
   max_size: 10485760   # bytes before rotating (default: 10 485 760 = 10 MiB)
@@ -259,19 +259,21 @@ The kind→verb mapping is closed:
 |---|---|---|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane — bytes never auto-promote; climb to `canon` only via propose→accept. |
-| `quarantine` | `fetch` | External bytes pending validation. |
+| `quarantine` | `reconcile` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `reconcile` | Computed from other zones. |
 
+This is a **function (zone-kind → capability), not a bijection** (ADR 0090): `quarantine` and `derived` both require `reconcile`, because both are machine-maintained lanes kept current by the same `reconcile` sweep.
+
 `owner:` on a zone is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a zone is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
 
-Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[ingest, reconcile]`):
+Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[reconcile]`):
 
 | Zone | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. `knowledge.identity.*` is the identity key convention. |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
-| `feeds` | `quarantine` | `fetch` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Fetched by external automation; never by humans or agents directly. |
+| `feeds` | `quarantine` | `reconcile` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Pulled in by the `reconcile` sweep; never by humans or agents directly. |
 | `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `knowledge`. |
 | `artifacts` | `derived` | `reconcile` | `automation` | Computed outputs (catalogs, indexes, published context). Materialized via `textus reconcile`. |
 
@@ -284,7 +286,7 @@ durable lane), `quarantine` (external bytes pending validation), `queue`
 manifest MUST declare at most one `queue` zone. Because authority is derived, a
 manifest is rejected at load if it declares a zone whose required verb is held
 by **no** declared role (`derived` ⇒ a role with `reconcile`, `queue` ⇒ `propose`,
-`quarantine` ⇒ `fetch`, `workspace` ⇒ `keep`, `canon` ⇒ `author`). Coordination
+`quarantine` ⇒ `reconcile`, `workspace` ⇒ `keep`, `canon` ⇒ `author`). Coordination
 is keyed off the declared kind: a zone is derived only if it declares
 `kind: derived`, and proposals route to the declared `queue` zone — there is no
 name-based fallback. A manifest with a kind-less zone is rejected at load.
@@ -304,7 +306,7 @@ The effective role for any CLI invocation is resolved in this order; the first m
 |---|---|---|
 | `human` | `[author, propose]` | Interactive user at a terminal; the single trust anchor. |
 | `agent` | `[propose]` | Long-running AI or LLM process; stages proposals. |
-| `automation` | `[ingest, reconcile]` | Scheduled or one-shot scripts: ingest external sources, materialize derived outputs. |
+| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the machine-maintained lanes current — pull external sources into `quarantine`, materialize `derived` outputs. |
 
 Roles are declared in the manifest's `roles:` block (§5.1.1); the names above are the default mapping when `roles:` is omitted. Unknown role values are rejected with `invalid_role`.
 
@@ -312,7 +314,7 @@ Every successful write records the resolved role and a wall-clock timestamp in `
 
 #### 5.1.1 Capabilities
 
-Roles declare **capabilities** — verbs from a closed five-element set. A
+Roles declare **capabilities** — verbs from a closed four-element set. A
 manifest declares a `roles:` block mapping each role name to the capabilities
 it holds via `can:`:
 
@@ -320,21 +322,25 @@ it holds via `can:`:
 roles:
   - { name: owner,    can: [author, propose] }
   - { name: proposer, can: [propose] }
-  - { name: fetcher,  can: [ingest] }
-  - { name: compiler, can: [reconcile] }
+  - { name: machine,  can: [reconcile] }
   - { name: keeper,   can: [keep] }
 ```
 
-Capability allow-list: `propose`, `author`, `keep`, `ingest`, `reconcile`. Each verb is the
-required capability for exactly one zone-kind:
+Capability allow-list: `propose`, `author`, `keep`, `reconcile`. The mapping from
+zone-kind to its required capability is a **function, not a bijection** (ADR
+0090): `quarantine` and `derived` both require `reconcile`, so a single
+capability can authorize more than one zone-kind:
 
 | Capability | Authorizes writes to zone-kind |
 |---|---|
 | `author` | `canon` |
 | `keep` | `workspace` |
 | `propose` | `queue` |
-| `fetch` | `quarantine` |
-| `reconcile` | `derived` |
+| `reconcile` | `quarantine`, `derived` |
+
+A manifest naming the folded quarantine capability — `ingest`, or its pre-0088
+spelling `fetch` — in a `can:` list is rejected at load with a hint pointing to
+`reconcile` (ADR 0090).
 
 `author` is the single **trust anchor**: **at most one role may hold `author`**
 (a manifest declaring two or more is rejected at load). The `accept` and
@@ -349,7 +355,7 @@ When the `roles:` block is omitted, the default mapping applies:
 |---|---|
 | `human`      | `[author, propose]` |
 | `agent`      | `[propose, keep]` |
-| `automation` | `[ingest, reconcile]` |
+| `automation` | `[reconcile]` |
 
 Wire protocol `textus/3` is unchanged — capabilities are a manifest/semantics
 concept and never appear on the wire.
@@ -398,7 +404,7 @@ No partials. No lambdas. No HTML escaping (output is raw text, intended for Mark
 
 #### 5.2.2 External compute (`kind: external`)
 
-A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `compute: { kind: external, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the derived file's `_meta.generated.at` and report staleness. (Generator/build drift is dependency-based, not age-based; ADR 0079 keeps it out of the `lifecycle:` unification and ADR 0085 keeps it out of the internal `freshness` scan — it is a `doctor` health check.)
+A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `compute: { kind: external, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the derived file's `_meta.generated.at` and report staleness. (Generator/build drift is dependency-based, not age-based; ADR 0079 keeps it out of the age-based `upkeep: { "on": stale }` policy and ADR 0085 keeps it out of the internal `freshness` scan — it is a `doctor` health check.)
 
 ```yaml
 - key: output.catalogs.skills
@@ -456,7 +462,7 @@ A sentinel is written for each published file at `<store_root>/.run/sentinels/<t
 
 ### 5.4 Intake (declared, refreshed via registered intake handler)
 
-Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry whose `lifecycle` rule says `on_expire: refresh` — a `get` never runs it (ADR 0089). The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry whose `upkeep` rule says `action: refresh` — a `get` never runs it (ADR 0089). The declaration is data only:
 
 ```yaml
 - key: feeds.calendar.events
@@ -468,22 +474,25 @@ Intake entries declare an external source by naming an **intake handler** — a 
 
 rules:
   - match: feeds.calendar.**
-    lifecycle:
+    upkeep:
+      "on": stale               # MUST quote "on" — a bare on: is YAML boolean true
       ttl: 6h
-      on_expire: refresh        # refresh | warn | drop | archive
+      action: refresh           # refresh | warn | drop | archive
       budget_ms: 500            # bound the in-process refresh (default: 500)
 ```
 
-`handler` names a registered `:resolve_intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `on_expire`, `budget_ms`) lives in a top-level **`rules:`** block matched by key glob (§5.11).
+`handler` names a registered `:resolve_intake` hook (see §5.10 for the hook contract); `config` is an opaque hash handed to the handler. The freshness budget (`ttl`, `action`, `budget_ms`) lives in a top-level **`rules:`** block matched by key glob (§5.11), under the `upkeep` field's `"on": stale` tag.
 
-#### `on_expire:` semantics
+#### `action:` semantics (`upkeep: { "on": stale }`)
 
-`on_expire:` declares what happens to an expired (past-TTL) intake entry when `reconcile` sweeps it. `get` is a **pure read on every surface** (CLI, Ruby, MCP): it returns the on-disk envelope annotated with a freshness verdict, and **never** refreshes (ADR 0089, reversing the read-through of ADR 0062). The expired entry is re-pulled by `reconcile` (or a `hook run` event), not by a read. The value lives on the matching policy block, not on the entry. For intake entries the only valid actions are `refresh` and `warn` (`drop`/`archive` apply to stored entries and are enforced by `doctor` via `lifecycle.action_invalid`).
+`action:` (the field formerly named `on_expire`) declares what happens to an expired (past-TTL) intake entry when `reconcile` sweeps it. `get` is a **pure read on every surface** (CLI, Ruby, MCP): it returns the on-disk envelope annotated with a freshness verdict, and **never** refreshes (ADR 0089, reversing the read-through of ADR 0062). The expired entry is re-pulled by `reconcile` (or a `hook run` event), not by a read. The value lives on the matching policy block, not on the entry. For intake entries the only valid actions are `refresh` and `warn` (`drop`/`archive` apply to stored entries and are enforced by `doctor` via `lifecycle.action_invalid`).
 
 | Value | Behaviour |
 |---|---|
 | `warn` (default) | A read returns the entry with `stale: true`, `stale_reason:` populated, and `fetching: false`; the entry is left untouched. |
 | `refresh` | On the next `reconcile` sweep (or a `hook run` event), run the intake handler under a `budget_ms` deadline (default 500 ms) and write the result. A `get` never refreshes — it reads the entry back stale until `reconcile` runs (ADR 0089). |
+
+(The dependency-based `upkeep: { "on": source_change, strategy: … }` tag covers reactive materialization of `derived` entries; see §5.11.)
 
 > **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does. None of them ever refresh.
 
@@ -497,7 +506,7 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Refresh paths.** Ingest is system-pushed (ADR 0089) — never triggered by a read:
 
-1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every stale `on_expire: refresh` entry: it resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `ingest` (`automation` by default). Run it on a cron/timer.
+1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every stale `action: refresh` entry: it resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `reconcile` (`automation` by default). Run it on a cron/timer.
 2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_intake` path), for sources that announce changes rather than waiting for the sweep.
 
 (A third, manual path remains for out-of-band sources: read the `stale` list from `textus pulse` — soonest deadline `next_due_at` — fetch bytes yourself, and store them with `textus put KEY --as=automation --stdin`. `put` only stores bytes; it runs no handler. `pulse` derives `stale`/`next_due_at` from the internal lifecycle scan; ADR 0085 removed the standalone `freshness` verb. For per-entry detail read `textus get KEY` and `textus rule_explain KEY`.)
@@ -686,10 +695,10 @@ A manifest MAY declare a top-level `rules:` block — a list of rule blocks matc
 ```yaml
 rules:
   - match: feeds.**
-    lifecycle: { ttl: 6h, on_expire: warn }
+    upkeep: { "on": stale, ttl: 6h, action: warn }
 
   - match: feeds.calendar.**
-    lifecycle: { ttl: 30m, on_expire: refresh, budget_ms: 800 }
+    upkeep: { "on": stale, ttl: 30m, action: refresh, budget_ms: 800 }
     intake_handler_allowlist: [ical-events]
 
   - match: proposals.**
@@ -697,29 +706,35 @@ rules:
       accept: [schema_valid, author_held]
 
   - match: artifacts.**
-    materialize: { on_change: async }
+    upkeep: { "on": source_change, strategy: async }
 ```
+
+> **YAML note:** the `upkeep` discriminator MUST be quoted — `"on": stale`. A bare `on:` is parsed as the YAML 1.1 boolean `true` (Psych) and breaks the union.
 
 **Slots (all optional within a block):**
 
 | Slot | Type | Meaning |
 |---|---|---|
-| `lifecycle` | `{ ttl, on_expire, budget_ms? }` | Unified age policy (ADR 0079). `on_expire` is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy to `<store>/archive/<relative-path>` then delete). Non-destructive actions (`refresh`/`warn`) are applied lazily on `get`; destructive actions (`drop`/`archive`) only on the `reconcile` sweep (Phase 2). `refresh` is valid only for intake entries; `drop`/`archive` only for stored entries (`doctor` `lifecycle.action_invalid` enforces). Age is measured from `_meta.last_fetched_at` (intake) when present, else the leaf file's modification time. `budget_ms` (optional) bounds a `refresh` to a deadline, returning the stale envelope and refreshing in the background when exceeded. |
-| `materialize` | `{ on_change }` | Reactive materialization policy for derived entries (ADR 0087). When a canon write touches an entry, the derived entries in `rdeps ∩ derived` of that key are re-materialized automatically — no explicit `reconcile` needed. `on_change` is `sync` (inline under the maintenance lock — the dependent artifacts are fresh by the time the write returns) or `async` (deferred to a background runner that completes before process exit). Default is `async`. The full on-demand pass is still `textus reconcile`. |
+| `upkeep` | tagged union, discriminated by `"on":` | How the system keeps the entry current (ADR 0090, merging the former `lifecycle:` and `materialize:` slots). Exactly one tag per block; each tag rejects the other's keys at parse, and `doctor`'s `upkeep.kind_mismatch` check rejects a tag on the wrong entry kind. The two tags: |
+| &nbsp;&nbsp;`"on": stale` | `{ ttl, action, budget_ms? }` | Age-based policy (ADR 0079 grammar). `action` (formerly `on_expire`) is `refresh` (re-pull intake), `warn` (flag on read), `drop` (delete), or `archive` (copy to `<store>/archive/<relative-path>` then delete). Non-destructive actions (`refresh`/`warn`) are applied lazily on `get`; destructive actions (`drop`/`archive`) only on the `reconcile` sweep (Phase 2). `refresh` is valid only for intake entries; `drop`/`archive` only for stored entries (`doctor` `lifecycle.action_invalid` enforces); a destructive `stale` on a `derived` entry is rejected by `upkeep.kind_mismatch`. Age is measured from `_meta.last_fetched_at` (intake) when present, else the leaf file's modification time. `budget_ms` (optional) bounds a `refresh` to a deadline, returning the stale envelope and refreshing in the background when exceeded. |
+| &nbsp;&nbsp;`"on": source_change` | `{ strategy }` | Dependency-based reactive materialization for derived entries (ADR 0087 grammar). When a canon write touches an entry, the derived entries in `rdeps ∩ derived` of that key are re-materialized automatically — no explicit `reconcile` needed. `strategy` (formerly `on_change`) is `sync` (inline under the maintenance lock — the dependent artifacts are fresh by the time the write returns) or `async` (deferred to a background runner that completes before process exit). Default is `async`. Valid **only on `derived` entries** (`upkeep.kind_mismatch`). The full on-demand pass is still `textus reconcile`. |
 | `intake_handler_allowlist` | list of strings | Constrains which `intake.handler:` names may be used by entries matched by this block. Enforced by `textus doctor`. |
-| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `key_delete`, `key_mv`, `accept`, `reject`, `fetch`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
+| `guard` | `{ <transition>: [predicates] }` | Extra predicates composed (AND) onto a write transition's built-in **base** guard (ADR 0031). Keyed by transition (`put`, `key_delete`, `key_mv`, `accept`, `reject`, `reconcile`). Predicate names are drawn from the closed vocabulary (`zone_writable_by`, `schema_valid`, `author_held`, `target_is_canon`, `etag_match`, `fresh_within`); parameterized predicates use `{ name: param }` form, e.g. `{ fresh_within: "1h" }`. Enforced — the transition refuses (`guard_failed`) if any predicate fails; the topology refusal keeps the `write_forbidden` code. |
 
-The `lifecycle:` slot unifies the former `fetch:` (intake freshness) and
-`retention:` (leaf pruning) slots into one age policy (ADR 0079). Generator/build
-drift — a derived entry whose sources changed since its `generated.at` — is
-dependency-based, not age-based, and is reported by the `textus doctor`
-`generator_drift` check rather than this slot.
+The `upkeep:` field merges the two former rule slots into one tagged union (ADR
+0090): `"on": stale` carries the age policy that ADR 0079 itself unified from the
+former `fetch:` (intake freshness) and `retention:` (leaf pruning) slots, and
+`"on": source_change` carries the reactive materialization policy of ADR 0087.
+The two grammars and their bases stay distinct (`ttl` never touches the
+dependency branch). Generator/build drift — a derived entry whose sources changed
+since its `generated.at` — is dependency-based, not age-based, and is reported by
+the `textus doctor` `generator_drift` check rather than this field.
 
 **Match grammar.** `match:` is a single glob using `*` (single segment) and `**` (any depth). A literal segment ranks more specifically than `*`; `*` ranks more specifically than `**`.
 
-**Resolution.** For each key textus computes a `RuleSet { handler_allowlist, guard, lifecycle, materialize }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
+**Resolution.** For each key textus computes a `RuleSet { intake_handler_allowlist, guard, upkeep }` by walking every block whose `match` matches the key, ranked by specificity. **Per slot, the most specific block wins.** Two blocks of equal specificity that match the same key and fill the same slot is a manifest error reported by `textus doctor` (`rule_ambiguity`).
 
-**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{lifecycle, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
+**Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{upkeep, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
 
 ### 5.12 Storage formats
 
@@ -825,9 +840,9 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by a `lifecycle:` rule slot (typically `feeds` / quarantine zone); always `false` elsewhere.
+- `stale` is `true` when the entry's TTL has elapsed and the data has not yet been refreshed; `false` otherwise. Only populated for entries matched by an `upkeep: { "on": stale }` rule (typically `feeds` / quarantine zone); always `false` elsewhere.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
-- `fetching` is `true` when an `on_expire: refresh` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
+- `fetching` is `true` when an `action: refresh` background refresh is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
 
 > **Note:** `list`/`where` envelopes do **not** include `stale`, `stale_reason`, or `fetching` — freshness annotation is only provided by `get`.
 
@@ -903,7 +918,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 }
 ```
 
-`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its lifecycle/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`doctor`, nor `freshness` (the Ruby-only internal lifecycle scan, ADR 0085) (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
+`read_verbs` is derived from the MCP verb catalog — the verbs the agent can actually call over its transport — so it lists the read/discovery verbs (`schema_show` for an entry's field shape, `rule_explain` for its upkeep/guard policy, and the graph reads `where`/`deps`/`rdeps`, ADR 0060) and never the CLI-only `audit`/`doctor`, nor `freshness` (the Ruby-only internal lifecycle scan, ADR 0085) (ADR 0056). An agent learns an entry's `_meta` shape by calling the `schema_show` verb before a `put`/`propose`, not by shelling out to a CLI. The graph reads `deps`/`rdeps` return a structured `{key, deps}`/`{key, rdeps}` envelope on every surface (CLI, Ruby, MCP) — a hash, not a bare array, consistent with the other structured read responses such as `where` (ADR 0060 amendment).
 
 The agent's MCP write surface includes the single-key `key_delete` and `key_mv` tools alongside their bulk `key_delete_prefix`/`key_mv_prefix` cousins (ADR 0060 amendment; the single-key tools were renamed from `delete`/`mv` to share the `key_` family stem in ADR 0082, which also removed the `migrate` YAML-plan orchestrator — its `zone_mv`/`key_mv_prefix`/`key_delete_prefix` ops remain individually callable). All of these apply by default; `dry_run: true` is a uniform opt-in preview that returns a Plan without mutating (ADR 0071 — verbs are actions, dry-run is opt-in on every surface). Single-key `key_delete` additionally accepts an optional `if_etag` optimistic-concurrency check. The blast-radius reads (`where`/`deps`/`rdeps`) remain on MCP so an agent can look before it leaps. The promotion verbs `accept` and `reject` are also on MCP (ADR 0072): they are gated by the `author_held` capability floor, not by transport absence — a default-`agent` connection is refused, while a connection launched as a role holding `author` (`--as`/`TEXTUS_ROLE`/`.textus/role`, resolved once at launch per ADR 0040) can promote, closing the propose→accept loop over one transport. `reconcile` is also on MCP (ADR 0076, ADR 0087): it is caller-agnostic and self-elevating — its materialize phase always runs as the manifest's `reconcile`-capable actor regardless of the calling role, grants no authority over content (materialization is a pure, idempotent function of already-accepted canon, ADR 0070), and the whole two-phase pass is serialized by a shared single-writer maintenance lock across all transports so a concurrent CLI, reactive, or background pass cannot collide with an MCP-triggered one.
 
@@ -936,11 +951,11 @@ The agent's MCP write surface includes the single-key `key_delete` and `key_mv` 
 
 `if_etag` is optional on both `put` and `key_delete`. When provided, the write fails with `etag_mismatch` if the on-disk file's etag differs. When omitted, the write is unconditional (last-writer-wins).
 
-The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, one verdict (`fresh`, `expired`, or `no_policy`) plus the matched rule's `on_expire` action, against its matched `lifecycle:` rule. ADR 0085 removed the standalone `freshness` verb that used to render these rows; the scan is now Ruby-only (consumed by `pulse` and the hook context), and human drill-down into a single entry's verdict is `textus get KEY` (carries `stale`/`stale_reason`) plus `textus rule_explain KEY` (the `lifecycle:` ttl + `on_expire`). `textus reconcile` materializes derived entries' projections under a `reconcile`-holding role (`automation` by default) in Phase 1, then runs the destructive lifecycle sweep in Phase 2 (§5.11); `--dry-run` prints the plan (`would_materialize` plus would-drop/archive/refresh) without executing.
+The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, one verdict (`fresh`, `expired`, or `no_policy`) plus the matched rule's `action`, against its matched `upkeep: { "on": stale }` rule. ADR 0085 removed the standalone `freshness` verb that used to render these rows; the scan is now Ruby-only (consumed by `pulse` and the hook context), and human drill-down into a single entry's verdict is `textus get KEY` (carries `stale`/`stale_reason`) plus `textus rule_explain KEY` (the `upkeep` ttl + `action`). `textus reconcile` materializes derived entries' projections under a `reconcile`-holding role (`automation` by default) in Phase 1, then runs the destructive sweep of aged `upkeep: { "on": stale }` entries in Phase 2 (§5.11); `--dry-run` prints the plan (`would_materialize` plus would-drop/archive/refresh) without executing.
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
 
-`textus reconcile [--prefix=K] [--zone=Z] [--dry-run]` is the manual full maintenance pass (ADR 0087, folding in the former `build` and `tend` verbs). It runs two phases under **one** shared maintenance lock: **Phase 1** materializes every in-scope derived entry from its sources (idempotent, content-addressed — unchanged sources write nothing), and **Phase 2** runs the destructive lifecycle sweep (drop/archive of aged entries, §5.11). The materialize phase self-elevates to the manifest's `reconcile`-capable actor (`automation` by default); it is a pure function of already-accepted canon and grants no authority over content. `--dry-run` returns a plan without mutating: a `would_materialize` list (the derived keys Phase 1 would write) alongside `would_drop`/`would_archive`/`would_refresh` from Phase 2. An apply returns `materialized` plus `dropped`/`archived`/`refreshed`. In day-to-day use derived entries stay fresh **reactively** — a canon write re-materializes its dependent derived entries automatically per the `materialize:` rule slot (§5.11) — so `reconcile` is the on-demand catch-all, not a step in the normal write loop.
+`textus reconcile [--prefix=K] [--zone=Z] [--dry-run]` is the manual full maintenance pass (ADR 0087, folding in the former `build` and `tend` verbs). It runs two phases under **one** shared maintenance lock: **Phase 1** materializes every in-scope derived entry from its sources (idempotent, content-addressed — unchanged sources write nothing), and **Phase 2** runs the destructive sweep of aged `upkeep: { "on": stale }` entries (drop/archive, §5.11). The materialize phase self-elevates to the manifest's `reconcile`-capable actor (`automation` by default); it is a pure function of already-accepted canon and grants no authority over content. `--dry-run` returns a plan without mutating: a `would_materialize` list (the derived keys Phase 1 would write) alongside `would_drop`/`would_archive`/`would_refresh` from Phase 2. An apply returns `materialized` plus `dropped`/`archived`/`refreshed`. In day-to-day use derived entries stay fresh **reactively** — a canon write re-materializes its dependent derived entries automatically per the `upkeep: { "on": source_change }` rule (§5.11) — so `reconcile` is the on-demand catch-all, not a step in the normal write loop.
 
 `textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
@@ -987,7 +1002,7 @@ Given a manifest entry where `key: identity.self` lives in the `identity` zone (
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, lifecycle: { ttl: 1h, on_expire: warn } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a refresh.
+Given a manifest entry `intake.notes` matched by a `rules: [{ match: intake.notes, upkeep: { "on": stale, ttl: 1h, action: warn } }]` block and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a refresh.
 
 **Fixture E — Projection materialize:**
 Given a manifest entry `derived.catalogs.skills` whose `compute: { kind: projection }` clause selects fields from `working.projects` entries, `textus reconcile --prefix=derived.catalogs.skills` materializes the derived entry on disk with frontmatter and body matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-materializing with unchanged sources reproduces it byte-for-byte and writes nothing.
@@ -1045,7 +1060,7 @@ A `textus/3` implementation MUST:
 - [ ] Refuse writes whose resolved role lacks the capability the target zone-kind requires with `write_forbidden`.
 - [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
 - [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement the lifecycle scan behind `pulse` (`stale`/`next_due_at`) and the hook context per §5.11 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|expired|no_policy` (plus the `on_expire` action) without invoking any refresh. (ADR 0085: a Ruby-only internal scan — there is no public `freshness` verb.)
+- [ ] Implement the lifecycle scan behind `pulse` (`stale`/`next_due_at`) and the hook context per §5.11 and §9, walking each entry, matching it against the top-level `rules:` block, and reporting `fresh|expired|no_policy` (plus the `upkeep` `action`) without invoking any refresh. (ADR 0085: a Ruby-only internal scan — there is no public `freshness` verb.)
 - [ ] Pass the conformance fixtures A–I in §12.
 
 A `textus/3` implementation MAY:
