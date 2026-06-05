@@ -106,9 +106,9 @@ RSpec.describe Textus::MCP::Catalog do
 
   describe "literal-default injection" do
     it "injects an arg's literal default when the wire omits it (ADR 0062 amendment)" do
-      spec = Textus::Dispatcher::VERBS[:get].contract
-      _pos, kw = Textus::Contract::Binder.bind(spec, { key: "knowledge.project" })
-      expect(kw[:fetch]).to be(true)
+      spec = Textus::Dispatcher::VERBS[:reconcile].contract
+      _pos, kw = Textus::Contract::Binder.bind(spec, {})
+      expect(kw[:dry_run]).to be(false)
     end
   end
 

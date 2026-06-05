@@ -122,7 +122,7 @@ module Textus
           textus list [--prefix=KEY] [--zone=Z]
           textus where KEY
           textus get KEY
-          textus put KEY --stdin [--fetch=NAME] --as=ROLE
+          textus put KEY --stdin --as=ROLE
           textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
           textus blame KEY [--limit=N]
           textus doctor

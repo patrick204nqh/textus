@@ -28,7 +28,7 @@ RSpec.describe Textus::Read::Get do
   def get = described_class.new(container: store.container, call: test_ctx(role: "human"))
 
   it "annotates an aged warn entry as stale on read, but never deletes it" do
-    env = get.call("review.oncall", fetch: true)
+    env = get.call("review.oncall")
     expect(env.freshness.stale).to be(true)
     expect(File.exist?(leaf)).to be(true)
   end
@@ -37,7 +37,7 @@ RSpec.describe Textus::Read::Get do
     File.write(File.join(root, "manifest.yaml"),
                File.read(File.join(root, "manifest.yaml")).sub("on_expire: warn", "on_expire: drop"))
     g = described_class.new(container: Textus::Store.new(root).container, call: test_ctx(role: "human"))
-    result = g.call("review.oncall", fetch: true)
+    result = g.call("review.oncall")
     expect(result.freshness.stale).to be(true)
     expect(File.exist?(leaf)).to be(true)
   end

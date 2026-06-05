@@ -456,7 +456,7 @@ A sentinel is written for each published file at `<store_root>/.run/sentinels/<t
 
 ### 5.4 Intake (declared, refreshed via registered intake handler)
 
-Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when a read-through `textus get KEY` encounters a stale entry whose `lifecycle` rule says `on_expire: refresh`. The declaration is data only:
+Intake entries declare an external source by naming an **intake handler** — a registered, named function that pulls data into the entry. textus itself still makes no implicit network calls: an intake handler only runs when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry whose `lifecycle` rule says `on_expire: refresh` — a `get` never runs it (ADR 0089). The declaration is data only:
 
 ```yaml
 - key: feeds.calendar.events
@@ -478,14 +478,14 @@ rules:
 
 #### `on_expire:` semantics
 
-`on_expire:` declares what happens when `get` encounters an expired (past-TTL) intake entry. `get` is **read-through on every surface** (CLI, Ruby, MCP): it returns the freshest obtainable envelope, refreshing on an expired verdict per the entry's `lifecycle` rule and degrading to a pure on-disk read for keys with no lifecycle rule (ADR 0062). The value lives on the matching policy block, not on the entry. For intake entries the only valid actions are `refresh` and `warn` (`drop`/`archive` apply to stored entries and are enforced by `doctor` via `lifecycle.action_invalid`).
+`on_expire:` declares what happens to an expired (past-TTL) intake entry when `reconcile` sweeps it. `get` is a **pure read on every surface** (CLI, Ruby, MCP): it returns the on-disk envelope annotated with a freshness verdict, and **never** refreshes (ADR 0089, reversing the read-through of ADR 0062). The expired entry is re-pulled by `reconcile` (or a `hook run` event), not by a read. The value lives on the matching policy block, not on the entry. For intake entries the only valid actions are `refresh` and `warn` (`drop`/`archive` apply to stored entries and are enforced by `doctor` via `lifecycle.action_invalid`).
 
 | Value | Behaviour |
 |---|---|
-| `warn` (default) | Return the entry immediately with `stale: true`, `stale_reason:` populated, and `fetching: false`. No blocking. |
-| `refresh` | Block the `get` call, run the intake handler in-process under a `budget_ms` deadline (default 500 ms), write the result, and return the fresh envelope. If the handler does not finish in time, return the stale envelope (with `stale: true`, `fetching: true`) and let the refresh complete in the background. Fires `:fetch_backgrounded` when the deadline is exceeded. |
+| `warn` (default) | A read returns the entry with `stale: true`, `stale_reason:` populated, and `fetching: false`; the entry is left untouched. |
+| `refresh` | On the next `reconcile` sweep (or a `hook run` event), run the intake handler under a `budget_ms` deadline (default 500 ms) and write the result. A `get` never refreshes — it reads the entry back stale until `reconcile` runs (ADR 0089). |
 
-> **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does.
+> **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does. None of them ever refresh.
 
 In intake mode the handler MUST return one of three shapes, all normalized by the store into its internal `{_meta, body, content}` representation (§5.12):
 
@@ -495,12 +495,14 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Built-in intake handlers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
 
-**Refresh paths.** Two are supported:
+**Refresh paths.** Ingest is system-pushed (ADR 0089) — never triggered by a read:
 
-1. **In-process** — a read-through `textus get KEY --as=automation` on a stale entry whose rule says `on_expire: refresh` resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `fetch` (`automation` by default).
-2. **External automation** — a cron job or agent harness reads the `stale` list from `textus pulse` (the soonest deadline is `next_due_at`), fetches the sources of the keys reported stale out of band, and pipes bytes back through `textus put KEY --as=automation --stdin`. (`pulse` derives `stale`/`next_due_at` from the internal lifecycle scan; ADR 0085 removed the standalone `freshness` verb. For per-entry detail — ttl, age, on_expire action — read `textus get KEY` and `textus rule_explain KEY`.)
+1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every stale `on_expire: refresh` entry: it resolves the entry's `intake.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `ingest` (`automation` by default). Run it on a cron/timer.
+2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_intake` path), for sources that announce changes rather than waiting for the sweep.
 
-Both paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+(A third, manual path remains for out-of-band sources: read the `stale` list from `textus pulse` — soonest deadline `next_due_at` — fetch bytes yourself, and store them with `textus put KEY --as=automation --stdin`. `put` only stores bytes; it runs no handler. `pulse` derives `stale`/`next_due_at` from the internal lifecycle scan; ADR 0085 removed the standalone `freshness` verb. For per-entry detail read `textus get KEY` and `textus rule_explain KEY`.)
+
+All paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
 
 ### 5.5 Pending / accept workflow
 
@@ -655,15 +657,12 @@ end
 | `:session_opened`       | pubsub  | ctx:, role:, cursor:                                     | (discarded)           | logged        |
 | `:fetch_started`        | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
 | `:fetch_failed`         | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
-| `:fetch_backgrounded`   | pubsub  | ctx:, key:, started_at:, budget_ms:                       | (discarded)           | logged        |
 
-The three `:fetch_*` lifecycle events report the progress and failures of background (timed_sync) fetches.
+The two `:fetch_*` lifecycle events report the progress and failures of intake fetches during `reconcile` / `hook run`.
 
-**`:fetch_started`** fires immediately before an intake handler is invoked. `mode:` is one of `"sync"` or `"timed_sync"`.
+**`:fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
 
 **`:fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
-
-**`:fetch_backgrounded`** fires when a `timed_sync` fetch exceeds its budget and is handed off to a background thread. `started_at:` is an ISO-8601 UTC string; `budget_ms:` is the configured deadline as an integer.
 
 **Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
 
@@ -867,7 +866,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 |---|---|---|
 | `list [--prefix=K] [--zone=Z]` | read | any |
 | `where K` | read | any |
-| `get K [--no-fetch]` | read (read-through by default: refresh-on-stale per the entry's `lifecycle` rule when `on_expire: refresh`, degrades to a pure read; `--no-fetch` / `{fetch:false}` for an explicit pure on-disk read) | any |
+| `get K` | read (a pure on-disk read annotated with a freshness verdict; never refreshes — ADR 0089) | any |
 | `schema show K` | read | any |
 | `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
 | `blame KEY` | read | any |
@@ -879,7 +878,7 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `doctor [--check=NAME[,NAME]] [--output=json]` | read | any |
 | `boot [--output=json]` | read | any |
 | `pulse [--since=N]` | read | any |
-| `put K --stdin --as=R [--fetch=NAME]` | write | per zone |
+| `put K --stdin --as=R` | write (stores the stdin JSON; runs no handler — ADR 0089) | per zone |
 | `propose K --stdin --as=R` | write | `propose`-holder (auto-prefixes propose_zone) |
 | `key delete K --if-etag=E --as=R` | write | per zone |
 | `reconcile [--prefix=K] [--zone=Z] [--dry-run]` | write | `reconcile`-holder (typically `automation`) |

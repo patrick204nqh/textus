@@ -20,7 +20,6 @@ RSpec.describe "textus/3 canonical hook events" do
     events.on(:entry_fetched, :fetched_listener) { |**| }
     events.on(:entry_deleted, :deleted_listener) { |**| }
     events.on(:fetch_started, :started_listener) { |**| }
-    events.on(:fetch_backgrounded, :backgrounded_listener) { |**| }
     events.on(:fetch_failed, :failed_listener) { |**| }
 
     # RPC events should not be accessible on EventBus
@@ -33,7 +32,7 @@ RSpec.describe "textus/3 canonical hook events" do
     pubsub_events = %i[entry_put entry_deleted entry_fetched entry_renamed build_completed
                        proposal_accepted proposal_rejected file_published store_loaded
                        session_opened
-                       fetch_started fetch_failed fetch_backgrounded]
+                       fetch_started fetch_failed]
     pubsub_events.each do |ev|
       expect { rpc.register(ev, :_) { |**| } }.to raise_error(Textus::UsageError)
     end

@@ -1,9 +1,9 @@
 module Textus
   module Write
-    # Single home for the fetch lifecycle event vocabulary (ADR 0048 D5). Both
-    # FetchWorker (synchronous semantics) and FetchOrchestrator (async policy)
-    # emit through this seam so the event names and payload shapes live in one
-    # place with one derived hook context.
+    # Single home for the fetch lifecycle event vocabulary (ADR 0048 D5).
+    # FetchWorker (the ingest executor driven by reconcile + hook) emits through
+    # this seam so the event names and payload shapes live in one place with one
+    # derived hook context.
     class FetchEvents
       def self.from(container:, call:)
         new(
@@ -30,12 +30,6 @@ module Textus
         return if change == :unchanged
 
         @events.publish(:entry_fetched, ctx: @hook_context, key: key, envelope: envelope, change: change)
-      end
-
-      def backgrounded(key, started_at:, budget_ms:)
-        payload = { key: key, started_at: started_at, budget_ms: budget_ms }
-        payload[:ctx] = @hook_context if @hook_context
-        @events.publish(:fetch_backgrounded, **payload)
       end
     end
   end

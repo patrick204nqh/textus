@@ -130,7 +130,8 @@ module Textus
       # — behavior the generic projection cannot express (ADR 0068/0069):
       #   get   — raises UnknownKey with resolver suggestions (a CLI-only
       #           affordance; the agent surface deliberately returns nil)
-      #   put   — IntakeFetch read-through orchestration on --fetch
+      #   put   — reads the entry JSON from --stdin (ADR 0089: just stores bytes,
+      #           no --fetch transform)
       # (build removed in ADR 0087: materialization is system-pushed via reconcile)
       BEHAVIORAL_HATCHES = %i[get put].freeze
 
@@ -138,7 +139,8 @@ module Textus
       # all — composite reports assembled outside the contract:
       #   boot, doctor — composite reports
       # (fetch/fetch_all were removed in ADR 0079: FetchWorker is now internal,
-      # driven by get's read-through orchestrator and the reconcile sweep.)
+      # driven by the reconcile sweep and hook run — ADR 0089 removed the
+      # read-through that once also drove it.)
       NON_PROJECTED_CLI = %i[boot doctor].freeze
 
       # The installer skips generation for either category.

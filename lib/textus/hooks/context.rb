@@ -28,16 +28,11 @@ module Textus
         @scope
       end
 
-      # read — a deliberately pure-observation surface: NOTHING here fetches
-      # (`list`/`deps`/`freshness` don't either). The invariant is that a hook
-      # observes current state and never triggers an I/O cascade. `get` bypasses
-      # the read-through behavior (ADR 0062) and reads with fetch:false directly,
-      # because read-through inside a hook would: (1) fire fetch events → hooks →
-      # unbounded reentrancy; (2) spawn the orchestrator's threads/fork from
-      # inside a hook callback; (3) probe the single-flight fetch lock its own
-      # enclosing fetch may hold (deadlock); (4) inject network latency into
-      # every hook read. With the merged Read::Get class, `fetch:false` (the
-      # method default) guarantees no orchestrator is built.
+      # read — a pure-observation surface: nothing here ingests. Since ADR 0089
+      # `get` itself is a pure read (the read-through that once forced this
+      # surface to opt out is gone, so the old re-entrancy/deadlock guard is no
+      # longer needed); `list`/`deps`/`freshness` are reads too. A hook observes
+      # current state and never triggers an I/O cascade.
       def get(key)                = pure_reader.call(key)
       def list(**)                = @scope.list(**)
       def deps(key)               = @scope.deps(key)

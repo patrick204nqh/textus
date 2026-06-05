@@ -25,7 +25,6 @@ module Textus
         session_opened: %i[ctx role cursor],
         fetch_started: %i[ctx key mode],
         fetch_failed: %i[ctx key error_class error_message],
-        fetch_backgrounded: %i[ctx key started_at budget_ms],
       }.freeze
 
       # RPC events: single handler, return value matters, receive `caps:`.

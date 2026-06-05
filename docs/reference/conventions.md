@@ -88,11 +88,11 @@ Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../
 
 ## Intake and freshness
 
-External inputs land via `:resolve_intake` hooks, not shell commands. Each intake entry names a registered handler; refresh is on demand via a read-through `get`:
+External inputs land via `:resolve_intake` hooks, not shell commands. Each intake entry names a registered handler; refresh is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push) — a `get` never refreshes (ADR 0089):
 
 ```sh
-textus get feeds.notion.roadmap --as=automation        # refreshes if stale
 textus pulse --output=json                             # `stale` lists expired entries; `next_due_at` is the soonest deadline
+textus reconcile --as=automation                       # re-pulls every stale on_expire: refresh entry
 ```
 
 Lifecycle budgets live in the top-level `rules:` block, matched by glob:
@@ -103,24 +103,24 @@ rules:
     lifecycle: { ttl: 6h, on_expire: refresh }   # refresh | warn | drop | archive
 ```
 
-A typical scheduled integration reads each expired feed (a read-through `get`
-refreshes it in-process):
+A typical scheduled integration runs `reconcile` on a cron to re-pull every
+expired feed:
 
 ```sh
-textus get feeds.notion.roadmap --as=automation   # in cron / CI
+textus reconcile --as=automation   # in cron / CI — refreshes all stale feeds
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
 
 ### Read vs. refresh
 
-There is one public read operation (ADR 0062):
+There is one public read operation, and it is pure (ADR 0089):
 
 | Operation | Behaviour | Use for |
 |-----------|-----------|---------|
-| `ops.get` | Read-through by default — refreshes on stale per the entry's `lifecycle` rule when `on_expire: refresh`; degrades to a pure on-disk read when the key has no lifecycle rule. Pass `fetch: false` (CLI `--no-fetch`, MCP `{fetch:false}`) for an explicit pure read | all callers, including interactive reads, dashboards, and scripts that want the freshest obtainable envelope |
+| `ops.get` | A pure on-disk read annotated with a freshness verdict — it NEVER ingests, regardless of `on_expire`. A stale `refresh` entry reads back stale until the next `reconcile`. | every caller — interactive reads, dashboards, scripts, and internal pipelines (materializer, projection, schema tooling, accept/reject/publish, uid, validator) |
 
-Build pipelines and other internal callers that must never trigger a refresh (materializer, projection, schema tooling, accept/reject/publish, uid, validator) construct `Read::Get` directly with the method default `fetch: false` — a pure, orchestrator-free read. They bypass the verb-dispatch injection that sets `fetch: true`, so they always get pure reads without any extra argument.
+Refreshing a stale entry is `reconcile`'s job (or a `hook run` event), never a read's — so no caller can accidentally trigger network I/O by reading.
 
 ## Body content
 

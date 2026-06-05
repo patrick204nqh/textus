@@ -94,7 +94,7 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `feeds` | `quarantine` | `ingest` | `automation` | Declared external inputs, refreshed via a read-through `textus get KEY --as=automation` (per the entry's `on_expire: refresh` lifecycle rule); never edited by hand. (Refreshed on demand.) |
+| `feeds` | `quarantine` | `ingest` | `automation` | Declared external inputs, refreshed by `textus reconcile --as=automation` (per the entry's `on_expire: refresh` lifecycle rule); never edited by hand, never refreshed by a `get` (ADR 0089). (Refreshed on the reconcile sweep.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 | `artifacts` | `derived` | `reconcile` | `automation` | Reconcile-computed outputs. Materialized from projections; never hand-edited. (Recomputed on `reconcile`.) |
 

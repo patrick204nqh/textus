@@ -6,9 +6,9 @@ module Textus
     MAX_LIMIT = 1000
     REDUCER_TIMEOUT_SECONDS = 2
 
-    # `reader` — a callable `->(key) { envelope_or_nil }`. Caller picks
-    #   semantics: pure read (`Read::Get.new(...).call(key)`, fetch:false default) for
-    #   materialization paths; `ops.get` (read-through, fetch:true injected) for fetch-on-stale.
+    # `reader` — a callable `->(key) { envelope_or_nil }`. `Read::Get` is a pure
+    #   read on every path (ADR 0089): it annotates freshness but never ingests,
+    #   so materialization and any other reader share the same side-effect-free read.
     # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
     # `rpc` — a `Hooks::RpcRegistry` used to dispatch `transform_rows` callables.
     # `transform_context` — capability object handed to transform reducers as `caps:`.

@@ -16,8 +16,8 @@ feeds.machines.db-1       → { os, packages, runtimes }   (via: ssh user@…)
 ```
 
 This keeps SPEC §5.4 intact — core makes no network calls; the SSH and the
-shell-outs all live in your hook. The scan runs **only on a read-through
-`textus get`** of a stale entry (never `boot`/`pulse`, per ADR 0037).
+shell-outs all live in your hook. The scan runs **only on a `reconcile`
+refresh** of a stale entry (never `get`/`boot`/`pulse`, per ADR 0037 / 0089).
 
 ## 1. Manifest — one nested intake, one config block
 
@@ -146,10 +146,8 @@ textus pulse --output=json                             # `stale` lists expired h
 git check-ignore .textus/zones/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 
-Each read-through `get` honours the `ttl` rule, so on a long-running control node
-the fleet re-scans at most hourly; `budget_ms` bounds a wedged SSH (the refresh
-detaches to the background and the stale snapshot is returned when the budget is
-exceeded).
+Each `reconcile` refresh honours the `ttl` rule, so on a long-running control node
+a scheduled reconcile re-scans at most hourly; `budget_ms` bounds a wedged SSH.
 
 ## Guardrails (why this stays safe)
 
@@ -161,9 +159,9 @@ exceeded).
   allowlist of versions/counts, not a dump — redact host paths/usernames too.
 - **Bounded + degrading.** Counts and versions, never package manifests; every
   probe guards with `command -v` and degrades to `null` cross-platform.
-- **Pull only on read-through `get`.** The scan is an intake — it runs on a
-  read-through `textus get` of a stale entry, never the per-turn `pulse`/`boot`
-  path (ADR 0037).
+- **Pull only on `reconcile`.** The scan is an intake — it runs on a `reconcile`
+  refresh of a stale entry, never on a `get` or the per-turn `pulse`/`boot`
+  path (ADR 0037 / 0089).
 
 > **Scaling past a handful of hosts?** Flip to a *push* model: each machine runs
 > the probe on a cron and drops its JSON to a shared sink (object store, a git

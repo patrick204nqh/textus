@@ -22,11 +22,11 @@ This is the catalog and timeline reference. The *normative* event table lives in
 
 ## The events in plain English
 
-textus has 18 events: 3 RPC and 15 pub-sub. The 3 `:fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events).
+textus has 17 events: 3 RPC and 14 pub-sub. The 2 `:fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events).
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by a read-through `textus get` that refreshes a stale entry (per its `on_expire: refresh` lifecycle rule). |
+| `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by `textus reconcile` (the scheduled sweep) and `hook run` when re-pulling a stale entry (per its `on_expire: refresh` lifecycle rule); never by a `get` (ADR 0089). |
 | `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus reconcile` (Phase 1 materialize). |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_put` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
@@ -44,13 +44,12 @@ textus has 18 events: 3 RPC and 15 pub-sub. The 3 `:fetch_*` lifecycle events ar
 
 ### Fetch lifecycle events
 
-Three additional pub-sub events observe the progress of in-process and background intake fetches.
+Two additional pub-sub events observe the progress of intake fetches during `reconcile` / `hook run`.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked for an `on_expire: refresh` read-through. `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:fetch_started` | pubsub | Fires immediately before an intake handler is invoked for an `on_expire: refresh` re-pull (during `reconcile` or `hook run`). `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
 | `:fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing refresh is already aborted; this is observational only. |
-| `:fetch_backgrounded` | pubsub | Fires when an `on_expire: refresh` exceeds its `budget_ms` deadline and is handed off to a background thread. Payload: `{ ctx:, key:, started_at:, budget_ms: }`. Callers can use this to log latency outliers. |
 
 ---
 
@@ -80,25 +79,25 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ done
 ```
 
-### `textus get KEY --as=script` (read-through refresh, `on_expire: refresh`)
+### `textus reconcile` (refresh of a stale `on_expire: refresh` intake entry)
+
+A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushed
+— `reconcile`'s sweep (and `hook run`) re-pull stale `on_expire: refresh` entries:
 
 ```
-  ┃ resolve KEY → manifest entry
-  ┃ stale per lifecycle rule + on_expire: refresh?  ── else pure read, return
+  ┃ for each stale entry whose rule says on_expire: refresh:
   ┃ require entry.intake.handler           ── ABORT if missing
   ┃ ─────────────────────────────────────► :fetch_started  (pubsub, mode: "refresh")
   ┃ ─────────────────────────────────────► :resolve_intake  (RPC)
   ┃                                          returns { _meta:, body: } | { content: } | { body: }
   ┃   if handler raises:
   ┃ ─────────────────────────────────────► :fetch_failed  (pubsub)
-  ┃   if budget_ms exceeded:
-  ┃ ─────────────────────────────────────► :fetch_backgrounded  (pubsub) — return stale, continue in bg
   ┃ normalize result by entry.format
   ┃ role gate, etag check, write           (same path as put)
   ┃ append audit row {verb:"put"}
   ┃ ─────────────────────────────────────► :entry_put         (pubsub) — every write fires :entry_put
   ┃ ─────────────────────────────────────► :entry_fetched     (pubsub) — plus the refresh-specific event
-  ✔ return fresh envelope
+  ✔ entry re-pulled
 ```
 
 ### `textus mv OLD_KEY NEW_KEY --as=<role>`
@@ -207,7 +206,6 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 | `:reconcile_failed` raises | reconcile still returns its result | `event_error` row |
 | `:fetch_started` raises | verb still succeeds | `event_error` row |
 | `:fetch_failed` raises | verb still succeeds | `event_error` row |
-| `:fetch_backgrounded` raises | verb still succeeds | `event_error` row |
 
 Every handler runs under `Timeout.timeout(2)`. A timeout is treated as a raised error: RPC handlers abort the verb, pub-sub handlers log `event_error` and the verb continues.
 

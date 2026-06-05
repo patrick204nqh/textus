@@ -8,8 +8,9 @@
    action (`on_expire: drop` deletes; `on_expire: archive` moves the leaf to
    `.textus/archive/` then deletes the original) to entries past their TTL.
 
-(Intake refresh is **not** a `reconcile` pass — stale intake entries refresh
-lazily on a read-through `textus get` per their `on_expire: refresh` rule.)
+(Intake refresh **is** part of the `reconcile` sweep — a stale `on_expire: refresh`
+intake entry is re-pulled there, or by a `hook run` event. A `get` never
+refreshes; it is a pure read (ADR 0089).)
 
 textus schedules **nothing** itself — it has no in-process runner by design
 (ADR 0078). The host owns the timer; `reconcile` is the verb it calls.

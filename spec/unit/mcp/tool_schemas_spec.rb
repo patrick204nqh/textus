@@ -38,12 +38,6 @@ RSpec.describe Textus::MCP::ToolSchemas do
       expect(get[:inputSchema][:required]).to eq(["key"])
     end
 
-    it "get advertises an optional fetch flag (ADR 0062 amendment)" do
-      get = described_class.all.find { |t| t[:name] == "get" }
-      expect(get[:inputSchema][:properties]).to include("fetch")
-      expect(get[:inputSchema][:required]).to eq(["key"])
-    end
-
     it "boot tool advertises the optional lean flag (ADR 0084)" do
       boot = described_class.all.find { |t| t[:name] == "boot" }
       expect(boot[:inputSchema][:properties]).to include("lean")
