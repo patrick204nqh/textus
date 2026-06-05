@@ -94,7 +94,7 @@ module Textus
 
         # ADR 0083: the contract-drift guard gates mutating verbs — every MCP
         # verb that is NOT a pure read (Write:: + the destructive Maintenance::
-        # verbs tend/zone_mv/key_*_prefix). Reads and boot bypass it (a stale
+        # verbs reconcile/zone_mv/key_*_prefix). Reads and boot bypass it (a stale
         # read returns on-disk truth; boot re-orients). Keying on read_verbs
         # (not write_verbs) keeps the destructive Maintenance:: verbs gated.
         @session.check_etag!(contract_etag) unless Catalog.read_verbs.include?(name)

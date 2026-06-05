@@ -140,7 +140,7 @@ module Textus
       # all — composite reports assembled outside the contract:
       #   boot, doctor — composite reports
       # (fetch/fetch_all were removed in ADR 0079: FetchWorker is now internal,
-      # driven by get's read-through orchestrator and the tend sweep.)
+      # driven by get's read-through orchestrator and the reconcile sweep.)
       NON_PROJECTED_CLI = %i[boot doctor].freeze
 
       # The installer skips generation for either category.
