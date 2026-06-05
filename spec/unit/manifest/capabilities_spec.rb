@@ -13,8 +13,8 @@ RSpec.describe Textus::Manifest::Capabilities do
         expect(caps["agent"]).to eq(%w[propose])
       end
 
-      it "maps automation → [ingest, reconcile]" do
-        expect(caps["automation"]).to eq(%w[ingest reconcile])
+      it "maps automation → [reconcile]" do
+        expect(caps["automation"]).to eq(%w[reconcile])
       end
 
       it "returns nil for unknown role names" do
@@ -26,11 +26,11 @@ RSpec.describe Textus::Manifest::Capabilities do
       it "parses each role to name → [verbs]" do
         raw = [
           { "name" => "human",      "can" => %w[author propose] },
-          { "name" => "automation", "can" => %w[ingest reconcile] },
+          { "name" => "automation", "can" => %w[reconcile] },
         ]
         caps = described_class.resolve(raw)
         expect(caps["human"]).to eq(%w[author propose])
-        expect(caps["automation"]).to eq(%w[ingest reconcile])
+        expect(caps["automation"]).to eq(%w[reconcile])
       end
 
       it "does not fall back to defaults when roles: is declared" do
@@ -71,7 +71,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       expect(m.data.role_caps).to eq(
         "human" => %w[author propose],
         "agent" => %w[propose],
-        "automation" => %w[ingest reconcile],
+        "automation" => %w[reconcile],
       )
     end
 
@@ -80,7 +80,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         version: textus/3
         roles:
           - { name: human,      can: [author, propose] }
-          - { name: automation, can: [ingest, reconcile] }
+          - { name: automation, can: [reconcile] }
         zones:
           - { name: identity, kind: canon }
           - { name: artifacts,   kind: derived }
@@ -88,7 +88,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       YAML
       expect(m.data.role_caps).to eq(
         "human" => %w[author propose],
-        "automation" => %w[ingest reconcile],
+        "automation" => %w[reconcile],
       )
     end
 
@@ -108,7 +108,7 @@ RSpec.describe Textus::Manifest::Capabilities do
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: human, can: [propose, author, ingest, reconcile] }
+          - { name: human, can: [propose, author, keep, reconcile] }
         zones:
           - { name: identity, kind: canon }
         entries: []

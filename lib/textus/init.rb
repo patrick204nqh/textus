@@ -10,7 +10,7 @@ module Textus
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
-        - { name: automation, can: [ingest, reconcile] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
