@@ -36,4 +36,12 @@ RSpec.configure do |c|
   c.define_derived_metadata(file_path: %r{/spec/unit/})        { |m| m[:unit]        = true }
   c.define_derived_metadata(file_path: %r{/spec/integration/}) { |m| m[:integration] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/}) { |m| m[:conformance] = true }
+
+  # ADR 0087: a canon `put` triggers an async derived rebuild on a tracked,
+  # join-before-exit thread (ReactiveMaterialize::AsyncRunner). Join any
+  # straggler before the next example so threads never leak across examples.
+  # Fixtures that own a tmpdir drain in their own teardown (before removing the
+  # dir) to avoid an in-flight rebuild racing `remove_entry` (`ENOTEMPTY`); this
+  # is the test-side mirror of the production `at_exit` drain.
+  c.before { Textus::Maintenance::ReactiveMaterialize::AsyncRunner.drain }
 end

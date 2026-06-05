@@ -68,14 +68,60 @@ module Textus
         )
       end
 
-      # Async runner: an in-process, fire-and-forget thread that runs the
-      # materialization after the write returns, under the same maintenance
-      # lock. textus schedules nothing itself; this is the deferral mechanism.
-      # Failure isolation is inherited from #materialize.
+      # Async runner: an in-process deferral that runs the materialization after
+      # the write returns, under the same maintenance lock. textus schedules
+      # nothing itself; this is the deferral mechanism. Failure isolation is
+      # inherited from #materialize.
+      #
+      # Completion guarantee (ADR 0087): a bare detached Thread is unreliable in
+      # a short-lived CLI process — the interpreter can exit and reap the thread
+      # before it finishes, silently dropping the rebuild. So every spawned
+      # thread is tracked, and a one-time `at_exit` joins all pending threads
+      # before the process exits. The write itself is never blocked (enqueue
+      # returns the instant the thread is spawned); only process *exit* waits,
+      # which is exactly when a CLI verb has already produced its response. In
+      # the long-lived MCP server the threads simply complete on their own and
+      # the drain is a no-op at shutdown.
       module AsyncRunner
-        def self.enqueue(container:, call:, keys:)
-          Thread.new do
-            ReactiveMaterialize.new(container: container).materialize(keys, call)
+        @mutex   = Mutex.new
+        @threads = []
+        @hooked  = false
+
+        class << self
+          def enqueue(container:, call:, keys:)
+            thread = Thread.new do
+              ReactiveMaterialize.new(container: container).materialize(keys, call)
+            end
+            track(thread)
+            thread
+          end
+
+          # Block until every spawned async rebuild has finished. Idempotent;
+          # safe to call from at_exit and directly from tests.
+          def drain
+            pending = @mutex.synchronize { @threads.dup }
+            pending.each(&:join)
+            @mutex.synchronize { @threads.delete_if { |t| !t.alive? } }
+            nil
+          end
+
+          private
+
+          def track(thread)
+            @mutex.synchronize do
+              @threads.delete_if { |t| !t.alive? }
+              @threads << thread
+              install_drain_hook
+            end
+          end
+
+          # Register the join-before-exit hook exactly once. Guarded by the
+          # caller holding @mutex.
+          def install_drain_hook
+            return if @hooked
+
+            @hooked = true
+            at_exit { drain }
           end
         end
       end
