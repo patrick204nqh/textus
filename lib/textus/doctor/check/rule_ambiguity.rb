@@ -6,7 +6,7 @@ module Textus
       # guard). Ties are non-deterministic in the parser's pick step, so
       # they're a configuration smell — surface them.
       class RuleAmbiguity < Check
-        SLOTS = %i[lifecycle handler_allowlist guard].freeze
+        SLOTS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_ambiguity] }.keys.freeze
 
         def call
           out = []

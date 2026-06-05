@@ -1,8 +1,13 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:handler_allowlist, :guard, :lifecycle, :materialize)
-      EMPTY_SET = RuleSet.new(handler_allowlist: nil, guard: nil, lifecycle: nil, materialize: nil)
+      # Every structural member here derives from Schema::FIELD_REGISTRY (WS3),
+      # so a new rule field is added in one place. `in_pick` selects the fields
+      # that participate in the most-specific `for(key)` resolution.
+      PICK_FIELDS = Schema::FIELD_REGISTRY.select { |_, m| m[:in_pick] }.keys.freeze
+
+      RuleSet = ::Data.define(*PICK_FIELDS)
+      EMPTY_SET = RuleSet.new(**PICK_FIELDS.to_h { |f| [f, nil] })
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -15,18 +20,13 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { handler_allowlist: [], guard: [], lifecycle: [], materialize: [] }
+        slots = PICK_FIELDS.to_h { |f| [f, []] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
-        RuleSet.new(
-          handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
-          guard: pick(slots[:guard], :guard, key),
-          lifecycle: pick(slots[:lifecycle], :lifecycle, key),
-          materialize: pick(slots[:materialize], :materialize, key),
-        )
+        RuleSet.new(**slots.to_h { |slot, blocks| [slot, pick(blocks, slot, key)] })
       end
 
       def explain(key)
@@ -44,48 +44,37 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :handler_allowlist, :guard, :lifecycle, :materialize
+        attr_reader :match, *Schema::FIELD_REGISTRY.keys
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
-          @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
-          @guard = parse_guard(raw["guard"])
-          @lifecycle = parse_lifecycle(raw["lifecycle"])
-          @materialize = parse_materialize(raw["materialize"])
+          Schema::FIELD_REGISTRY.each do |field, meta|
+            instance_variable_set("@#{field}", parse_field(meta, raw[meta[:yaml_key]]))
+          end
         end
 
         private
 
-        def parse_handler_allowlist(arr)
-          return nil if arr.nil?
+        # One dispatch over the registry, replacing the four bespoke parse_*
+        # methods. :deferred carries the raw Hash after a shape check (its
+        # contents validate later — guard predicates at GuardFactory build time,
+        # ADR 0031); :immediate instantiates the policy class now. A mapping
+        # field (sub_keys) splats its nested keys as kwargs; a scalar/array
+        # field passes its raw value under arg_key.
+        def parse_field(meta, value)
+          return nil if value.nil?
 
-          Textus::Domain::Policy::HandlerAllowlist.new(handlers: arr)
-        end
+          if meta[:validation] == :deferred
+            raise Textus::BadManifest.new("#{meta[:yaml_key]}: must be a map of transition => [predicates]") unless value.is_a?(Hash)
 
-        # A guard: block is a map of transition => [predicate specs]. Predicate
-        # names are validated at GuardFactory build time via Predicates::Registry
-        # (ADR 0031); here we only assert the structural shape.
-        def parse_guard(h)
-          return nil if h.nil?
-          raise Textus::BadManifest.new("guard: must be a map of transition => [predicates]") unless h.is_a?(Hash)
+            return value
+          end
 
-          h
-        end
-
-        def parse_lifecycle(h)
-          return nil if h.nil?
-
-          Textus::Domain::Policy::Lifecycle.new(
-            ttl: h["ttl"],
-            on_expire: h["on_expire"],
-            budget_ms: h["budget_ms"],
-          )
-        end
-
-        def parse_materialize(h)
-          return nil if h.nil?
-
-          Textus::Domain::Policy::Materialize.new(on_change: h["on_change"])
+          if meta[:sub_keys]
+            meta[:policy_class].new(**meta[:sub_keys].to_h { |k| [k.to_sym, value[k]] })
+          else
+            meta[:policy_class].new(meta[:arg_key] => value)
+          end
         end
       end
     end
