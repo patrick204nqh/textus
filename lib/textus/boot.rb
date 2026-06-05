@@ -180,7 +180,7 @@ module Textus
           "purpose" => "refresh stale quarantine-zone caches from their declared intake",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
-            "fetch_all (zone: #{feeds}) — re-pull the stale entries",
+            "reconcile (zone: #{feeds}) — re-pull the stale entries",
           ],
         },
       }
