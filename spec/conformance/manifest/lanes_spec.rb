@@ -5,7 +5,7 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
 
   it "is the kind => required-capability bijection" do
     expect(s::LANES).to eq(
-      "canon" => "author", "workspace" => "keep", "quarantine" => "fetch",
+      "canon" => "author", "workspace" => "keep", "quarantine" => "ingest",
       "queue" => "propose", "derived" => "reconcile"
     )
   end
@@ -15,7 +15,7 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
   end
 
   it "derives CAPABILITIES from the lane values (exactly the five, order not significant)" do
-    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "fetch", "propose", "reconcile")
+    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "ingest", "propose", "reconcile")
   end
 
   it "derives KIND_REQUIRES_VERB as the lane table itself" do

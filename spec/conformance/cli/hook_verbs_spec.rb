@@ -49,26 +49,6 @@ RSpec.describe "CLI hook verbs" do
     expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("entry_put"))
   end
 
-  it "textus put --fetch=NAME applies the fetch hook to stdin bytes" do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
-      zones: [{ name: knowledge, kind: canon }]
-      entries: [{ key: knowledge.j, path: knowledge/j.md, zone: knowledge, kind: leaf }]
-    YAML
-    File.write(File.join(root, "hooks/jfetch.rb"), <<~RUBY)
-      Textus.hook do |reg|
-        reg.on(:resolve_intake, :jbytes) { |caps:, config:, args:| { _meta: {}, body: config["bytes"] } }
-      end
-    RUBY
-    out = StringIO.new
-    rc = Textus::CLI.run(
-      ["put", "knowledge.j", "--stdin", "--fetch=jbytes", "--as=human", "--output=json"],
-      stdin: StringIO.new('{"a":1}'), stdout: out, stderr: StringIO.new, cwd: tmp,
-    )
-    expect(rc).to eq(0)
-  end
-
   it "removed: textus extensions list exits with usage error" do
     rc, line = run_cli(["extensions", "list", "--output=json"])
     expect(rc).not_to eq(0)

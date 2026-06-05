@@ -17,19 +17,33 @@ module Textus
         @manifest = container.manifest
       end
 
+      # Fields shown here are driven by FIELD_REGISTRY (in_rule_list); only the
+      # per-field serialization below is field-specific.
+      LIST_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_rule_list] }.keys.freeze
+
       def call
         @manifest.rules.blocks.map do |b|
           row = { "match" => b.match }
-          if b.lifecycle
-            row["lifecycle"] = {
-              "ttl_seconds" => b.lifecycle.ttl_seconds,
-              "on_expire" => b.lifecycle.on_expire,
-              "budget_ms" => b.lifecycle.budget_ms,
-            }
+          LIST_FIELDS.each do |field|
+            value = b.public_send(field)
+            row[field.to_s] = serialize(field, value) unless value.nil?
           end
-          row["handler_allowlist"] = b.handler_allowlist.handlers if b.handler_allowlist
-          row["guard"] = b.guard if b.guard
           row
+        end
+      end
+
+      private
+
+      def serialize(field, value)
+        case field
+        when :lifecycle
+          { "ttl_seconds" => value.ttl_seconds, "on_expire" => value.on_expire, "budget_ms" => value.budget_ms }
+        when :materialize
+          { "on_change" => value.on_change }
+        when :handler_allowlist
+          value.handlers
+        else
+          value
         end
       end
     end

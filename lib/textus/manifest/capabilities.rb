@@ -13,7 +13,7 @@ module Textus
       DEFAULT_MAPPING = {
         Textus::Role::HUMAN => %w[author propose].freeze,
         Textus::Role::AGENT => %w[propose].freeze,
-        Textus::Role::AUTOMATION => %w[fetch reconcile].freeze,
+        Textus::Role::AUTOMATION => %w[ingest reconcile].freeze,
       }.freeze
 
       # Returns { role_name => [verbs] }. When `roles:` is declared we use

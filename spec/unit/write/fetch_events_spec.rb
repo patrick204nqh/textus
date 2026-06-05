@@ -42,12 +42,4 @@ RSpec.describe Textus::Write::FetchEvents do
     expect(event).to eq(:entry_fetched)
     expect(payload).to include(ctx: :stub_ctx, key: "intake.item", envelope: env, change: :created)
   end
-
-  it "publishes :fetch_backgrounded with started_at and budget_ms" do
-    fe.backgrounded("intake.item", started_at: "2026-06-02T00:00:00Z", budget_ms: 1500)
-    event, payload = bus.published.first
-    expect(event).to eq(:fetch_backgrounded)
-    expect(payload).to include(ctx: :stub_ctx, key: "intake.item",
-                               started_at: "2026-06-02T00:00:00Z", budget_ms: 1500)
-  end
 end

@@ -58,6 +58,22 @@ RSpec.describe Textus::Read::RuleExplain do
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
     end
 
+    it "surfaces materialize in matched_blocks and effective (WS3)" do
+      mat_store = store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
+        version: textus/3
+        zones:
+          - { name: knowledge, kind: canon }
+        entries:
+          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+        rules:
+          - match: knowledge.doc
+            materialize: { on_change: sync }
+      YAML
+      result = mat_store.as("human").rule_explain("knowledge.doc", detail: true)
+      expect(result[:matched_blocks].first[:materialize]).to be(true)
+      expect(result[:effective][:materialize]).to eq("sync")
+    end
+
     it "reports the effective guard predicate names per transition" do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:guards][:put]).to eq(["zone_writable_by"])

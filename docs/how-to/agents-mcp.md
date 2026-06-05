@@ -205,8 +205,8 @@ while session_active:
         ...
 
     if pulse["stale"]:
-        # decide whether to read-through (get refreshes per the lifecycle rule)
-        # or proceed with stale data
+        # decide whether to run reconcile (re-pulls stale refresh entries)
+        # or proceed with stale data — a get never refreshes (ADR 0089)
         ...
 
     # do work; propose changes by writing to the proposals zone

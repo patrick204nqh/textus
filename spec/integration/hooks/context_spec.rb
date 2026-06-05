@@ -42,13 +42,14 @@ RSpec.describe Textus::Hooks::Context do
     expect(seen).to eq("proposals.notes")
   end
 
-  it "ctx.get is a pure read and never builds a fetch orchestrator (ADR 0062 amendment)" do
-    allow(Textus::Write::FetchOrchestrator).to receive(:new).and_call_original
-    begin
-      ctx.get("knowledge.anything")
-    rescue Textus::Error
-      nil
-    end
-    expect(Textus::Write::FetchOrchestrator).not_to have_received(:new)
+  it "ctx.get is a pure read that never ingests (ADR 0089)" do
+    # get itself no longer reads-through; a hook observing a stale entry sees it
+    # stale and triggers no ingest. Writing then reading back returns the bytes
+    # unchanged, and no fetch worker is constructed.
+    allow(Textus::Write::FetchWorker).to receive(:new).and_call_original
+    ctx.put("proposals.notes", body: "hello")
+    env = ctx.get("proposals.notes")
+    expect(env.body.chomp).to eq("hello")
+    expect(Textus::Write::FetchWorker).not_to have_received(:new)
   end
 end

@@ -23,7 +23,6 @@ module Textus
       Check::SchemaViolations,
       Check::RuleAmbiguity,
       Check::HandlerAllowlist,
-      Check::FetchLocks,
       Check::OrphanedPublishTargets,
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,

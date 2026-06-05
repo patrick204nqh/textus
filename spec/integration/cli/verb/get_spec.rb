@@ -11,7 +11,8 @@ RSpec.describe Textus::CLI::Verb::Get do
     Textus::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
   end
 
-  # A stale intake entry with a sync on_stale policy — exercises fetch behavior
+  # A stale intake entry on an on_expire: refresh rule. Since ADR 0089 `get`
+  # is a pure read — it never invokes the intake handler.
   before do
     hook_body = <<~RUBY
       Textus.hook do |reg|
@@ -51,18 +52,9 @@ RSpec.describe Textus::CLI::Verb::Get do
     MD
   end
 
-  it "default (no flag) is read-through: a stale sync-policy key returns fresh envelope" do
+  it "is a pure read: a stale key returns the on-disk stale envelope, never ingesting" do
     Thread.current[:cli_get_fetch_count] = 0
     rc = run(["get", "feeds.doc", "--as=automation"])
-    expect(rc).to eq(0), "stderr: #{stderr.string}"
-    payload = JSON.parse(stdout.string)
-    expect(payload["stale"]).to be(false)
-    expect(Thread.current[:cli_get_fetch_count]).to eq(1)
-  end
-
-  it "--no-fetch is a pure read: returns the on-disk stale envelope without fetching" do
-    Thread.current[:cli_get_fetch_count] = 0
-    rc = run(["get", "feeds.doc", "--no-fetch", "--as=automation"])
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
     expect(payload["stale"]).to be(true)

@@ -188,15 +188,13 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Read path (`store.get(key)`)
 
-`Read::Get` is the single public read verb (ADR 0062). It is read-through by default: it returns the freshest obtainable envelope, fetching on a stale verdict per the entry's fetch rule, and degrading to a pure on-disk result when the key has no fetch rule. An optional `fetch: false` flag (CLI `--no-fetch`, MCP `{fetch:false}`) forces a pure on-disk read.
+`Read::Get` is the single public read verb. It is a **pure read** (ADR 0089): it resolves the path, reads bytes, parses the envelope, and annotates a freshness verdict — it NEVER ingests and NEVER mutates. The read-through that once refreshed a stale entry in-process (ADR 0062) is removed; quarantine freshness is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push).
 
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
-2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The contract declares `arg :fetch, default: true`, injected by `Contract::Binder.bind` at the single verb-dispatch chokepoint (`RoleScope#dispatch_bound`) for every surface — so the public verb is always read-through unless the caller explicitly passes `fetch: false`.
-3. `Read::Get#call(key, fetch: false)` runs the pure read sub-step inline: resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no fetch rule, the envelope is annotated fresh and returned immediately — no orchestrator is involved.
-4. If `fetch: true` and the verdict is stale and the entry's fetch rule demands action, `Read::Get` hands off to `Write::FetchOrchestrator` (built lazily — a pure `fetch: false` call never touches the orchestrator). The orchestrator executes the fetch policy's `Action` (`sync`, `timed_sync`, `detached`, …) and returns an `Outcome`.
-5. The outcome is mapped back to an envelope: `Fetched` → fresh envelope from the write; `Detached` → original envelope with `fetching: true`; `Failed` → original envelope with `fetch_error` set; `Skipped` → original envelope unchanged.
+2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The verb takes only `key` — there is no `fetch` flag on any surface.
+3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no lifecycle rule, the envelope is annotated fresh. A stale `on_expire: refresh` entry is returned **stale** — the read does not refresh it; the next `reconcile` does.
 
-The pure read is `Read::Get#call(key, fetch: false)` — it is the safe default for direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) that must never trigger a fetch. They construct `Read::Get` directly, bypassing the dispatch injection that sets `fetch: true`. The prior separate read-through path `get_or_fetch` and the separate pure class `Read::GetEntry` were both unified into the one `Read::Get` class (ADR 0062 amendment).
+Because the read is always pure, every caller — interactive reads, dashboards, and the direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) — gets the same orchestrator-free, side-effect-free read. The prior read-through path (`get_or_fetch`, then the `fetch:`-flagged `Read::Get`, ADR 0062) and its `Write::FetchOrchestrator` are gone (ADR 0089).
 
 ## Write path (`store.put(key, ...)`)
 

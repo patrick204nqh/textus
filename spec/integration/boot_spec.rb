@@ -19,7 +19,7 @@ RSpec.describe Textus::Boot do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, reconcile] }
+        - { name: automation, can: [ingest, reconcile] }
       zones:
         - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
         - { name: knowledge,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
@@ -166,7 +166,7 @@ RSpec.describe Textus::Boot do
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
       expect(block).to have_key("role_resolution")
-      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "fetch")
+      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "ingest")
     end
 
     it "does not change the wire protocol field" do

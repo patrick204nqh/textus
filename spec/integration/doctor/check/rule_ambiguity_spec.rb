@@ -54,6 +54,28 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     end
   end
 
+  it "warns on a materialize tie (WS3: materialize is now linted)" do
+    manifest = <<~YAML
+      version: textus/3
+      zones:
+        - { name: knowledge, kind: canon }
+      entries:
+        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+      rules:
+        - match: knowledge.*
+          materialize: { on_change: sync }
+        - match: "*.foo"
+          materialize: { on_change: async }
+    YAML
+
+    with_store(manifest) do |store|
+      issues = described_class.new(store.container).call
+      ambig = issues.find { |i| i["code"] == "rule.ambiguity" && i["message"].include?("materialize") }
+      expect(ambig).not_to be_nil
+      expect(ambig["subject"]).to eq("knowledge.foo")
+    end
+  end
+
   it "does not warn when one block dominates by specificity" do
     manifest = <<~YAML
       version: textus/3

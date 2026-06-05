@@ -2,9 +2,10 @@ require "timeout"
 
 module Textus
   module Write
-    # Internal fetch executor for one quarantine/intake entry. No longer a
-    # public verb (ADR 0079 collapsed the `fetch` surface): used by `get`'s
-    # orchestrator (read-through refresh) and by the `reconcile` sweep.
+    # Internal ingest executor for one quarantine/intake entry. No longer a
+    # public verb (ADR 0079 collapsed the `fetch` surface): used by the
+    # `reconcile` sweep and `textus hook run` only — ingest is system-pushed
+    # (ADR 0089 removed the read-through that once also drove it).
     class FetchWorker
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 
@@ -94,9 +95,9 @@ module Textus
         normalized = self.class.normalize_action_result(result, format: mentry.format)
         Textus::Domain::Policy::GuardFactory.new(
           manifest: @manifest, schemas: @schemas,
-        ).for(:fetch, key).check!(
+        ).for(:ingest, key).check!(
           Textus::Domain::Policy::Evaluation.new(
-            actor: @call.role, transition: :fetch, origin: nil,
+            actor: @call.role, transition: :ingest, origin: nil,
             target: key, envelope: nil, manifest: @manifest
           ),
         )

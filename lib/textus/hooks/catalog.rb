@@ -17,6 +17,7 @@ module Textus
         entry_renamed: %i[ctx key from_key to_key envelope],
         build_completed: %i[ctx key envelope sources],
         materialize_failed: %i[ctx keys error],
+        reconcile_failed: %i[ctx failed],
         proposal_accepted: %i[ctx key target_key],
         proposal_rejected: %i[ctx key target_key],
         file_published: %i[ctx key envelope source target],
@@ -24,7 +25,6 @@ module Textus
         session_opened: %i[ctx role cursor],
         fetch_started: %i[ctx key mode],
         fetch_failed: %i[ctx key error_class error_message],
-        fetch_backgrounded: %i[ctx key started_at budget_ms],
       }.freeze
 
       # RPC events: single handler, return value matters, receive `caps:`.

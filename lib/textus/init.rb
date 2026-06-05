@@ -10,7 +10,7 @@ module Textus
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
-        - { name: automation, can: [fetch, reconcile] }
+        - { name: automation, can: [ingest, reconcile] }
       zones:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
@@ -93,9 +93,10 @@ module Textus
 
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
               :entry_put, :entry_deleted, :entry_fetched, :entry_renamed,
-              :build_completed, :proposal_accepted, :proposal_rejected,
+              :build_completed, :materialize_failed, :reconcile_failed,
+              :proposal_accepted, :proposal_rejected,
               :file_published, :store_loaded, :session_opened,
-              :fetch_started, :fetch_failed, :fetch_backgrounded (pub-sub — return discarded)
+              :fetch_started, :fetch_failed (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

@@ -14,15 +14,25 @@ module Textus
       surfaces :cli, :mcp
       cli      "rule explain"
       arg :key,    String, required: true, positional: true,
-                           description: "dotted key whose effective rules you want (fetch ttl/action, write guard, ...)"
+                           description: "dotted key whose effective rules you want (lifecycle ttl/action, write guard, ...)"
       arg :detail, :boolean,
-          description: "defaults false: lean {fetch, guard}. detail: true adds matched blocks + guard predicates per transition."
+          description: "defaults false: lean {lifecycle, guard}. detail: true adds matched blocks + guard predicates per transition."
       view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
         @schemas  = container.schemas
       end
+
+      REGISTRY = Textus::Manifest::Schema::FIELD_REGISTRY
+      # Field membership is registry-driven (WS3). Lean shows the fields tagged
+      # for :lean; detail's matched_blocks flag every :detail field. The
+      # `effective` value-block shows the instantiated-policy fields (those with
+      # a policy_class) — guard, being a raw deferred field, is surfaced through
+      # the dedicated `guards:` predicate section instead.
+      LEAN_FIELDS    = REGISTRY.select { |_, m| m[:in_rule_explain].include?(:lean) }.keys.freeze
+      DETAIL_FIELDS  = REGISTRY.select { |_, m| m[:in_rule_explain].include?(:detail) }.keys.freeze
+      EFFECTIVE_FIELDS = DETAIL_FIELDS.select { |f| REGISTRY[f][:policy_class] }.freeze
 
       def call(key, detail: false)
         detail ? explain(key) : effective(key)
@@ -33,14 +43,19 @@ module Textus
       # Lean: the effective winners only (formerly Read::Rules / the `rules` verb).
       def effective(key)
         set = @manifest.rules.for(key)
-        {
-          "lifecycle" => set.lifecycle && {
-            "ttl_seconds" => set.lifecycle.ttl_seconds,
-            "on_expire" => set.lifecycle.on_expire,
-            "budget_ms" => set.lifecycle.budget_ms,
-          },
-          "guard" => set.guard,
-        }.compact
+        LEAN_FIELDS.each_with_object({}) do |field, out|
+          value = set.public_send(field)
+          out[field.to_s] = lean_value(field, value) unless value.nil?
+        end
+      end
+
+      def lean_value(field, value)
+        case field
+        when :lifecycle
+          { "ttl_seconds" => value.ttl_seconds, "on_expire" => value.on_expire, "budget_ms" => value.budget_ms }
+        else
+          value
+        end
       end
 
       # Verbose: every matching block, per-slot effective value, and the
@@ -54,24 +69,24 @@ module Textus
         {
           key: key,
           matched_blocks: matching.map do |b|
-            {
-              match: b.match,
-              lifecycle: !b.lifecycle.nil?,
-              handler_allowlist: !b.handler_allowlist.nil?,
-              guard: !b.guard.nil?,
-            }
+            { match: b.match }.merge(DETAIL_FIELDS.to_h { |f| [f, !b.public_send(f).nil?] })
           end,
-          effective: {
-            lifecycle: winners.lifecycle && {
-              ttl_seconds: winners.lifecycle.ttl_seconds,
-              on_expire: winners.lifecycle.on_expire,
-            },
-            handler_allowlist: winners.handler_allowlist&.handlers,
-          },
+          effective: EFFECTIVE_FIELDS.to_h { |f| [f, effective_value(f, winners.public_send(f))] },
           guards: Textus::Domain::Policy::BaseGuards::BASE.keys.to_h do |transition|
             [transition, factory.for(transition, key).predicates.map(&:name)]
           end,
         }
+      end
+
+      def effective_value(field, value)
+        return nil if value.nil?
+
+        case field
+        when :lifecycle then { ttl_seconds: value.ttl_seconds, on_expire: value.on_expire }
+        when :handler_allowlist then value.handlers
+        when :materialize then value.on_change
+        else value
+        end
       end
     end
   end

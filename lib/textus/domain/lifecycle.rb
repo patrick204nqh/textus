@@ -44,7 +44,11 @@ module Textus
 
       def entry_matches?(mentry, prefix:, zone:)
         return false if zone && mentry.zone != zone
-        return false if prefix && !(mentry.key == prefix || mentry.key.start_with?("#{prefix}."))
+        if prefix && !Textus::Key::Matching.matches_prefix?(
+          mentry.key, prefix, nested: mentry.is_a?(Textus::Manifest::Entry::Nested)
+        )
+          return false
+        end
 
         true
       end

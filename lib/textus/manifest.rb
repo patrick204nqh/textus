@@ -8,7 +8,7 @@ module Textus
   #   * resolver — resolves keys → entry + path
   #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
   #     queue_zone?, permission_for, …)
-  #   * rules    — match-block rule engine (fetch, handler allowlist, promotion, …)
+  #   * rules    — match-block rule engine (lifecycle, handler allowlist, materialize, …)
   #
   # Use `manifest.data.entries`, `manifest.policy.declared_kind(z)`, etc.
   Manifest = Data.define(:data, :resolver, :policy, :rules)

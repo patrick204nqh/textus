@@ -6,7 +6,6 @@ module Textus
 
         option :as_flag, "--as=ROLE"
         option :use_stdin, "--stdin"
-        option :fetch_name, "--fetch=NAME"
 
         def invoke(store)
           key = positional.shift or raise UsageError.new("put requires a key")
@@ -14,25 +13,10 @@ module Textus
 
           role = resolved_role(store)
 
-          raw = @stdin.read
-          payload =
-            if fetch_name
-              result = Textus::Write::IntakeFetch.invoke(
-                caps: store.container, handler: fetch_name,
-                config: { "bytes" => raw }, args: {}, label: "fetch"
-              )
-              basename = key.split(".").last
-              {
-                "_meta" => {
-                  "name" => basename,
-                  "last_fetched_at" => Time.now.utc.iso8601,
-                  "fetched_with" => fetch_name,
-                }.merge(result[:_meta] || result["_meta"] || {}),
-                "body" => result[:body] || result["body"] || "",
-              }
-            else
-              JSON.parse(raw)
-            end
+          # put only stores the stdin JSON (ADR 0089): no transform-on-write.
+          # Ingest (running a handler over bytes) is system-pushed via reconcile
+          # and hook run, never a put flag.
+          payload = JSON.parse(@stdin.read)
 
           meta = payload["_meta"] || {}
           body = payload["body"] || ""

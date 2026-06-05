@@ -39,7 +39,7 @@ rules:
   - { match: feeds.api.**, lifecycle: { ttl: 15m, on_expire: refresh } }
 ```
 
-Run: `textus get feeds.api.users --as=automation` (a read-through on a stale entry refreshes it in-process)
+Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stale `on_expire: refresh` entry; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
 
 > **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
 > top level must be a **mapping** (an object). If your source is a top-level

@@ -26,7 +26,7 @@ A role is a name in the manifest that holds a set of **capabilities** — verbs 
 |------|----------------------|--------------------|
 | `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
 | `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[fetch, reconcile]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
+| `automation` | `[ingest, reconcile]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
 
 The five capabilities:
 
@@ -35,7 +35,7 @@ The five capabilities:
 | `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `fetch` | `quarantine` | Pulling external bytes in. |
+| `ingest` | `quarantine` | Pulling external bytes in. |
 | `reconcile` | `derived` | Computing outputs from other zones. |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
@@ -46,12 +46,12 @@ Declare roles in the manifest with a `roles:` block; each names the capabilities
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }
+  - { name: automation, can: [ingest, reconcile] }
 ```
 
 Two analogies that usually click for `automation`:
 
-- **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`).
+- **`ingest` is the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`).
 - **`reconcile` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`).
 
 Role names are the closed set `human`, `agent`, `automation`; what you customize is each role's `can:` capabilities — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). Per-person/per-bot attribution uses the `owner:` field. Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
@@ -66,7 +66,7 @@ Role names are the closed set `human`, `agent`, `automation`; what you customize
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }
+  - { name: automation, can: [ingest, reconcile] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -84,7 +84,7 @@ Write authority is **derived** — there is no `write_policy:`. Each zone declar
 |-------------|---------------------|---------|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
-| `quarantine` | `fetch` | External bytes pending validation. |
+| `quarantine` | `ingest` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 | `derived` | `reconcile` | Computed from other zones. |
 
@@ -94,7 +94,7 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `feeds` | `quarantine` | `fetch` | `automation` | Declared external inputs, refreshed via a read-through `textus get KEY --as=automation` (per the entry's `on_expire: refresh` lifecycle rule); never edited by hand. (Refreshed on demand.) |
+| `feeds` | `quarantine` | `ingest` | `automation` | Declared external inputs, refreshed by `textus reconcile --as=automation` (per the entry's `on_expire: refresh` lifecycle rule); never edited by hand, never refreshed by a `get` (ADR 0089). (Refreshed on the reconcile sweep.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 | `artifacts` | `derived` | `reconcile` | `automation` | Reconcile-computed outputs. Materialized from projections; never hand-edited. (Recomputed on `reconcile`.) |
 

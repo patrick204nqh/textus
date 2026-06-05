@@ -43,7 +43,7 @@ zones:
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
 name-based guessing). The kind also fixes the capability a writer must hold —
-`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`reconcile`.
+`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`ingest`, `queue`⇒`propose`, `derived`⇒`reconcile`.
 Rules: at most one `queue` zone, and (since `author` is the single trust
 anchor) at most one role may hold it.
 
@@ -69,19 +69,19 @@ zones:
   - { name: research,    kind: canon }      # AI-assisted research notes — still author-gated
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
-  - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
+  - { name: feeds,       kind: quarantine } # external signals — ingest-holders write
   - { name: built,       kind: derived }    # rendered outputs — reconcile-holders write
 ```
 
 ### Tuning role capabilities
 
-Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `fetch`, `reconcile`), subject to the one rule that at most one role may hold `author`:
+Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `ingest`, `reconcile`), subject to the one rule that at most one role may hold `author`:
 
 ```yaml
 roles:
   - { name: human,      can: [author, propose] }   # the trust anchor
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }   # or just [fetch], or just [reconcile]
+  - { name: automation, can: [ingest, reconcile] }   # or just [ingest], or just [reconcile]
 ```
 
 A manifest need not declare all three — declare the subset you use. Declaring a role whose name is not one of the three is rejected at load. To attribute work to individual people or bots, use the `owner:` field (`owner: human:patrick`, `owner: automation:ci`) — attribution, not authority.
@@ -98,7 +98,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 ## Wiring data in — intake and `:resolve_intake` hooks
 
-`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; a read-through `textus get KEY --as=automation` (or `ops.get(key)` in Ruby) on a stale entry whose rule says `on_expire: refresh` invokes the handler and writes the result. Lifecycle budgets live in a top-level `rules:` block, matched by glob.
+`intake` zones are populated by `:resolve_intake` hooks. An intake entry declares its handler; on a stale entry whose rule says `on_expire: refresh`, `textus reconcile --as=automation` (the scheduled sweep) or a `hook run` event invokes the handler and writes the result. A `get` never invokes the handler — it is a pure read (ADR 0089). Lifecycle budgets live in a top-level `rules:` block, matched by glob.
 
 ```yaml
 entries:
@@ -122,8 +122,8 @@ For intake entries, `on_expire:` may be `refresh` or `warn` (`drop`/`archive` ap
 
 | Value | Behaviour |
 |---|---|
-| `warn` (default) | Return stale data immediately with `stale: true` in the envelope. No blocking. |
-| `refresh` | Block the `get` call and refresh in-process before returning, bounded by `budget_ms` (default 500). If the budget is exceeded, return the stale envelope with `fetching: true` and let the refresh continue in the background. |
+| `warn` (default) | A read returns stale data immediately with `stale: true` in the envelope; the entry is left untouched. |
+| `refresh` | On the next `reconcile` sweep (or a `hook run` event), re-pull the entry from its declared intake handler, bounded by `budget_ms` (default 500). A `get` never refreshes — it reads the entry back stale until reconcile runs (ADR 0089). |
 
 ### Built-in `:resolve_intake` handlers
 
@@ -169,7 +169,7 @@ rules:
     lifecycle: { ttl: 6h, on_expire: refresh }
 ```
 
-A read-through `textus get feeds.notion.roadmap --as=automation` on a stale entry invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
+On a stale entry, `textus reconcile --as=automation` (or a `hook run` event) invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_intake` args)](../reference/events.md#resolve_intake-args).
 
@@ -177,9 +177,8 @@ The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the 
 
 `textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a **nested**
 `feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
-A read-through `textus get feeds.machines.local --as=automation` (when the entry
-is stale and its rule says `on_expire: refresh`) pulls a snapshot of this
-host into the `feeds` zone:
+`textus reconcile --as=automation` (when the entry is stale and its rule says
+`on_expire: refresh`) pulls a snapshot of this host into the `feeds` zone:
 
 - **git** — short HEAD, branch, dirty flag, repo root (the *control* host's repo; only meaningful for `local`)
 - **platform** — os, arch, ruby version, and `runtimes` (node/python/go versions, `null` when not installed)
@@ -190,7 +189,7 @@ It is **retrievable via the protocol** (`textus get feeds.machines.local`) but
 **gitignored and never published**, because machine info can be sensitive or
 noisy — the entry's `tracked: false` flag drives the generated `.gitignore`
 (the whole `zones/feeds/machines/` subtree). The scan runs **only on a
-read-through refresh** (never the bare `boot`/`pulse` read path), and a
+`reconcile` refresh** (never a `get`/`boot`/`pulse` read), and a
 `feeds.machines.**` lifecycle rule (`ttl: 1h, on_expire: refresh`) amortizes the
 cost (a `brew list` count is ~1–3 s) on a long-running server. The hook is a deliberate **allowlist** — versions and counts, no raw
 `env`, no secrets.
@@ -280,7 +279,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }
+  - { name: automation, can: [ingest, reconcile] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -326,7 +325,7 @@ $ git diff CLAUDE.md                                                   # review 
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with a `lifecycle: { ttl, on_expire: refresh }` matching the entry. A read-through `textus get KEY --as=automation` then refreshes any stale entry in-process and keeps it current.
+To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `ingest`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with a `lifecycle: { ttl, on_expire: refresh }` matching the entry. `textus reconcile --as=automation` (on a schedule) then re-pulls any stale entry and keeps it current; a `get` reads it but never refreshes (ADR 0089).
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 
