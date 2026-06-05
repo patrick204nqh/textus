@@ -4,7 +4,8 @@ module Textus
   module Write
     # Invokes a :resolve_intake hook handler by name under a timeout — the single
     # home for "call the intake handler under a deadline" (ADR 0048 D1). Shared by
-    # FetchWorker (the :fetch verb), `textus put --fetch`, and `textus hook run`.
+    # FetchWorker (the internal fetch mechanism — no public verb since ADR 0079),
+    # `textus put --fetch`, and `textus hook run`.
     # Always passes a Container as `caps:` so the hook contract (ADR 0027) is
     # uniform across every entry point. Maps Timeout::Error to a UsageError;
     # leaves any other error to the caller (call sites differ in how they wrap).

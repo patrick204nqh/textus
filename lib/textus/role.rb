@@ -1,7 +1,7 @@
 module Textus
   module Role
     # The three role archetypes, each string sourced exactly once: human curates
-    # canon, agent proposes, automation fetches/builds (explanation/concepts.md).
+    # canon, agent proposes, automation fetches and reconciles (explanation/concepts.md).
     # Reference these constants instead of bare literals (ADR 0044).
     HUMAN      = "human".freeze
     AGENT      = "agent".freeze

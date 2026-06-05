@@ -8,11 +8,9 @@ require "spec_helper"
 # Verbs whose CLI command path cannot resolve via standard command_name/
 # parent_group discovery (documented exceptions only). Populate ONLY if needed.
 #
-# Current state: no exemptions required. Group::Fetch carries command_name
-# "fetch" and appears in Verb.descendants, satisfying the :fetch cli_path.
-# Verb::FetchAll has command_name "all" + parent_group Group::Fetch, giving
-# path "fetch all" — also fully discoverable. Verb::Fetch itself has no
-# command_name and is therefore invisible to the second check by design.
+# Current state: no exemptions required. The fetch/fetch_all CLI commands were
+# removed with the fetch verb (ADR 0079), so every remaining :cli contract
+# resolves to a registered command at its declared path.
 CLI_RECONCILE_EXEMPT = %i[].freeze
 
 Textus::CLI.verbs # trigger Runner.install! so Gen* exist
