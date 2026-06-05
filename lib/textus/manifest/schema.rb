@@ -5,22 +5,24 @@ module Textus
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
       # The closed coordination vocabulary (ADR 0028; completed at five in ADR
-      # 0033; unified here in ADR 0034). Each lane pairs a zone-kind with the
-      # single capability that authorizes originating bytes in it — a total
-      # bijection. This table is the ONE source of truth; the three legacy
-      # constants below are derived from it so a zone-kind and its required
-      # capability cannot drift. Key order is canon-first so the unknown-kind
-      # error message reads canon, workspace, quarantine, queue, derived.
+      # 0033; unified in ADR 0034; the quarantine capability folded into
+      # reconcile in ADR 0090). Each lane pairs a zone-kind with the capability
+      # that authorizes originating bytes in it. This table is the ONE source of
+      # truth; the derived constants below cannot drift. It is a FUNCTION, not a
+      # bijection — `quarantine` and `derived` are both machine-maintained lanes
+      # and share `reconcile` (ADR 0090). Key order is canon-first so the
+      # unknown-kind error message reads canon, workspace, quarantine, queue,
+      # derived.
       LANES = {
         "canon" => "author",
         "workspace" => "keep",
-        "quarantine" => "ingest",
+        "quarantine" => "reconcile",
         "queue" => "propose",
         "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
-      CAPABILITIES       = LANES.values.freeze
+      CAPABILITIES       = LANES.values.uniq.freeze
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
@@ -222,10 +224,10 @@ module Textus
           Array(r["can"]).each do |verb|
             next if CAPABILITIES.include?(verb)
 
-            # The quarantine capability was renamed fetch→ingest (ADR 0088); a
-            # pre-0.51 manifest still saying `can: [fetch]` gets a pointed hint
-            # rather than a bare unknown-capability error (breaking, no shim).
-            hint = verb == "fetch" ? " — the quarantine capability was renamed to 'ingest' (ADR 0088)" : ""
+            # The quarantine capability folded into reconcile (ADR 0090); a
+            # manifest still naming the old quarantine capability (`ingest`, or
+            # legacy `fetch`) gets a pointed hint rather than a bare error.
+            hint = %w[ingest fetch].include?(verb) ? " — the quarantine capability folded into 'reconcile' (ADR 0090)" : ""
             raise BadManifest.new(
               "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
               "(known: #{CAPABILITIES.join(", ")})#{hint}",
