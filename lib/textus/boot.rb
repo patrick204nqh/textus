@@ -28,7 +28,7 @@ module Textus
       end,
       fetch: lambda do |_name, manifest|
         "refresh stale #{zone_label(manifest, :quarantine, "quarantine")} entries from their " \
-          "declared intake by running 'textus reconcile' (scheduled, or on demand)"
+          "declared source by running 'textus reconcile' (scheduled, or on demand)"
       end,
       reconcile: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
