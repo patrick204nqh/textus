@@ -12,6 +12,7 @@ RSpec.describe Textus::Read::RuleExplain do
         - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       rules:
+        # "on" must be quoted — bare `on:` is YAML 1.1 boolean true (Psych), breaking the upkeep tag dispatch.
         - match: "knowledge.*"
           upkeep: { "on": stale, ttl: 1h, action: refresh }
         - match: knowledge.doc
