@@ -13,9 +13,9 @@ RSpec.describe Textus::Read::RuleExplain do
 
       rules:
         - match: "knowledge.*"
-          lifecycle: { ttl: 1h, on_expire: refresh }
+          upkeep: { "on": stale, ttl: 1h, action: refresh }
         - match: knowledge.doc
-          lifecycle: { ttl: 5m, on_expire: refresh }
+          upkeep: { "on": stale, ttl: 5m, action: refresh }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
           guard:
@@ -35,8 +35,9 @@ RSpec.describe Textus::Read::RuleExplain do
     it "returns only the effective {lifecycle, guard} winners" do
       result = store.as("human").rule_explain("knowledge.doc")
       expect(result).to be_a(Hash)
-      expect(result.keys - %w[lifecycle guard]).to be_empty
-      expect(result["lifecycle"]["ttl_seconds"]).to eq(300)
+      expect(result.keys - %w[upkeep guard]).to be_empty
+      expect(result["upkeep"]["on"]).to eq("stale")
+      expect(result["upkeep"]["ttl_seconds"]).to eq(300)
     end
   end
 
@@ -53,12 +54,13 @@ RSpec.describe Textus::Read::RuleExplain do
     it "surfaces the per-slot effective winner (most-specific match)" do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
 
-      expect(result[:effective][:lifecycle][:ttl_seconds]).to eq(300)
-      expect(result[:effective][:lifecycle][:on_expire]).to eq(:refresh)
+      expect(result[:effective][:upkeep][:on]).to eq("stale")
+      expect(result[:effective][:upkeep][:ttl_seconds]).to eq(300)
+      expect(result[:effective][:upkeep][:action]).to eq(:refresh)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
     end
 
-    it "surfaces materialize in matched_blocks and effective (WS3)" do
+    it "surfaces source_change upkeep in matched_blocks and effective (ADR 0090)" do
       mat_store = store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
         version: textus/3
         zones:
@@ -67,11 +69,11 @@ RSpec.describe Textus::Read::RuleExplain do
           - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
         rules:
           - match: knowledge.doc
-            materialize: { on_change: sync }
+            upkeep: { "on": source_change, strategy: sync }
       YAML
       result = mat_store.as("human").rule_explain("knowledge.doc", detail: true)
-      expect(result[:matched_blocks].first[:materialize]).to be(true)
-      expect(result[:effective][:materialize]).to eq("sync")
+      expect(result[:matched_blocks].first[:upkeep]).to be(true)
+      expect(result[:effective][:upkeep]).to eq({ on: "source_change", strategy: "sync" })
     end
 
     it "reports the effective guard predicate names per transition" do
@@ -91,7 +93,7 @@ RSpec.describe Textus::Read::RuleExplain do
       YAML
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
-      expect(result[:effective][:lifecycle]).to be_nil
+      expect(result[:effective][:upkeep]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
       expect(result[:guards][:put]).to eq(["zone_writable_by"])
     end

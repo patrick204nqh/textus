@@ -36,14 +36,21 @@ module Textus
 
       def serialize(field, value)
         case field
-        when :lifecycle
-          { "ttl_seconds" => value.ttl_seconds, "on_expire" => value.on_expire, "budget_ms" => value.budget_ms }
-        when :materialize
-          { "on_change" => value.on_change }
+        when :upkeep
+          serialize_upkeep(value)
         when :handler_allowlist
           value.handlers
         else
           value
+        end
+      end
+
+      def serialize_upkeep(upkeep)
+        if upkeep.stale?
+          { "on" => "stale", "ttl_seconds" => upkeep.lifecycle.ttl_seconds,
+            "action" => upkeep.lifecycle.on_expire, "budget_ms" => upkeep.lifecycle.budget_ms }
+        else
+          { "on" => "source_change", "strategy" => upkeep.materialize.on_change }
         end
       end
     end
