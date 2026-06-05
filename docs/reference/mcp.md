@@ -68,7 +68,7 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 | `key_mv_prefix` | Plan (default) or applied move | `from_prefix, to_prefix, dry_run?=true` |
 | `key_delete_prefix` | Plan (default) or applied delete | `prefix, dry_run?=true` |
 | `zone_mv` | Plan (default) or renamed zone (manifest + files) | `from, to, dry_run?=true` |
-| `tend` | Plan (default) or applied lifecycle sweep (`drop`/`archive` expired entries) + health | `zone?, prefix?, dry_run?=true` |
+| `reconcile` | Plan (default) or full two-phase pass: materialize derived entries (Phase 1) + lifecycle sweep (`drop`/`archive` aged entries) + health (Phase 2) | `zone?, prefix?, dry_run?=true` |
 | `rule_lint` | Rule diff vs. live manifest (no writes) | `candidate_yaml` |
 | `migrate` | Plan (default) or result of a YAML migration plan | `plan_yaml, dry_run?=true` |
 

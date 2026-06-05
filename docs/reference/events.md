@@ -27,7 +27,7 @@ textus has 15 events: 3 RPC and 12 pub-sub. The 3 `:fetch_*` lifecycle events ar
 | Event | Mode | What it's for |
 |-------|------|---------------|
 | `:resolve_intake` | rpc | Pull bytes into an `intake` entry. Invoked by a read-through `textus get` that refreshes a stale entry (per its `on_expire: refresh` lifecycle rule). |
-| `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus build`. |
+| `:transform_rows` | rpc | Reshape projection rows for a `derived` entry. Invoked by `textus reconcile` (Phase 1 materialize). |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_put` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
 | `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ ctx:, key: }`. |
@@ -136,10 +136,10 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ store ready for use
 ```
 
-### `textus build`
+### `textus reconcile` (Phase 1 — materialize)
 
 ```
-  ┃ for each entry in a build-writable zone:
+  ┃ for each entry in a reconcile-writable zone:
   ┃   ┃ load source rows
   ┃   ┃ if compute.transform: ───────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
@@ -188,7 +188,7 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
 | `:resolve_intake` raises | fetch aborts | nothing |
-| `:transform_rows` raises | build aborts (this entry only) | nothing |
+| `:transform_rows` raises | reconcile aborts (this entry only) | nothing |
 | `:validate` raises | doctor aborts | nothing |
 | `:entry_put` raises | verb still succeeds | `event_error` row in `audit.log` |
 | `:entry_deleted` raises | verb still succeeds | `event_error` row |

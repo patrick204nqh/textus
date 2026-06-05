@@ -51,7 +51,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 A derived entry declares a `compute:` block with a `kind:` discriminator. Two kinds:
 
-**`compute: { kind: projection }`** — textus computes the entry on `textus build` from other store entries. Declarative; nothing shells out.
+**`compute: { kind: projection }`** — textus computes the entry on `textus reconcile` from other store entries. Declarative; nothing shells out.
 
 ```yaml
 - key: artifacts.catalogs.people
@@ -69,7 +69,7 @@ A derived entry declares a `compute:` block with a `kind:` discriminator. Two ki
     to: [docs/people.md]            # optional repo-relative byte-copy targets
 ```
 
-**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `build` (default: `automation`).
+**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `reconcile` (default: `automation`).
 
 ```yaml
 - key: artifacts.catalogs.skills

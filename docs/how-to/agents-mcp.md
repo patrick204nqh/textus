@@ -85,7 +85,7 @@ talks to multiple textus stores.
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `pulse`, `list`, `get`, `put`, `propose`, `tend`,
+`boot`, `pulse`, `list`, `get`, `put`, `propose`, `reconcile`,
 `schema`, `rules` (plus maintenance tools). The agent
 calls them as MCP tools — no shell strings, no parsing. The MCP tool
 names are the same as the CLI verbs (see [ADR 0036](../architecture/decisions/0036-transports-as-pure-framings.md)); the full
