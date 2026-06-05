@@ -22,7 +22,7 @@ module Textus
         - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A per-host snapshot, pulled by `textus fetch feeds.machines.local --as=automation`.
+        # A per-host snapshot, refreshed from its declared intake by `textus reconcile` (scheduled, or on demand).
         # Nested so it grows to a fleet — add feeds.machines.<host> leaves over SSH
         # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable

@@ -1,15 +1,15 @@
 # .textus/hooks/machine_intake.rb
 # Scaffolded by `textus init` — CUSTOMIZE FREELY, or delete the feeds.machines
 # entry from manifest.yaml if you don't want it.
-# Feeds a per-host SNAPSHOT into feeds.machines.<host> on `textus fetch` (never
-# on the per-turn boot/pulse path). It is NESTED so it grows to a fleet: the
+# Feeds a per-host SNAPSHOT into feeds.machines.<host> on `textus reconcile`
+# (never on the per-turn boot/pulse path). It is NESTED so it grows to a fleet: the
 # `local` leaf scans THIS host; add ssh hosts with the cookbook recipe
 # (docs/cookbook/environment-scan.md). tracked:false → gitignored. Keep this an
 # ALLOWLIST of versions and counts — NEVER secrets, raw `env`, or package lists.
 Textus.hook do |reg|
   reg.on(:resolve_intake, :machines) do |config:, args:, **|
     machine = args[:leaf_segments].first or
-      raise "fetch a host leaf, e.g. `textus fetch feeds.machines.local`"
+      raise "machines intake needs a host leaf, e.g. the 'local' in feeds.machines.local"
     spec = (config["machines"] || {}).fetch(machine) { raise "unknown machine: #{machine}" }
     unless (spec["via"] || "local").to_s == "local"
       raise "machine #{machine}: only `via: local` is scaffolded — see " \
