@@ -37,7 +37,7 @@ module Textus
       zone_mv: Textus::Maintenance::ZoneMv,
       key_mv_prefix: Textus::Maintenance::KeyMvPrefix,
       key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,
-      tend: Textus::Maintenance::Tend,
+      reconcile: Textus::Maintenance::Reconcile,
       rule_lint: Textus::Maintenance::RuleLint,
     }.freeze
 

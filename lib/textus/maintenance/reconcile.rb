@@ -10,13 +10,13 @@ module Textus
     # annotation (warn) is left to the lazy `get`/`freshness` path. Adds no new
     # authority — every sub-op runs with the CALLER's own `call` (role), and is
     # gated exactly as on its own.
-    class Tend
+    class Reconcile
       extend Textus::Contract::DSL
 
-      verb     :tend
+      verb     :reconcile
       summary  "Run the destructive lifecycle sweep: drop/archive expired entries, refresh cold intake, report health."
       surfaces :cli, :mcp
-      cli      "tend"
+      cli      "reconcile"
       arg :prefix,  String, description: "restrict the sweep to keys under this dotted prefix"
       arg :zone,    String, description: "restrict the sweep to entries in this zone"
       arg :dry_run, :boolean, default: false,

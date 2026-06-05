@@ -1,15 +1,15 @@
 require "spec_helper"
 
-RSpec.describe Textus::Maintenance::Tend do
+RSpec.describe Textus::Maintenance::Reconcile do
   it "is registered as a dispatcher verb and a RoleScope method" do
-    expect(Textus::Dispatcher::VERBS).to include(:tend)
-    expect(Textus::Dispatcher::VERBS[:tend]).to eq(described_class)
-    expect(Textus::RoleScope.instance_methods).to include(:tend)
+    expect(Textus::Dispatcher::VERBS).to include(:reconcile)
+    expect(Textus::Dispatcher::VERBS[:reconcile]).to eq(described_class)
+    expect(Textus::RoleScope.instance_methods).to include(:reconcile)
   end
 
   it "declares a contract surfaced on both CLI and MCP" do
     spec = described_class.contract
-    expect(spec.verb).to eq(:tend)
+    expect(spec.verb).to eq(:reconcile)
     expect(spec.cli?).to be(true)
     expect(spec.mcp?).to be(true)
   end
@@ -39,14 +39,14 @@ RSpec.describe Textus::Maintenance::Tend do
 
     let(:store) { Textus::Store.new(root) }
 
-    def build_tend
+    def build_reconcile
       cv = Textus::Call.new(role: "human", correlation_id: "t", now: Time.now, dry_run: false)
       described_class.new(container: store.container, call: cv)
     end
 
     it "drops an aged drop-policy entry and reports it" do
       leaf = File.join(root, "zones/review/oncall.md")
-      result = build_tend.call
+      result = build_reconcile.call
       expect(result["ok"]).to be(true)
       expect(result["dropped"]).to include("review.oncall")
       expect(File.exist?(leaf)).to be(false)
@@ -54,7 +54,7 @@ RSpec.describe Textus::Maintenance::Tend do
 
     it "dry-run previews would_drop without deleting" do
       leaf = File.join(root, "zones/review/oncall.md")
-      result = build_tend.call(dry_run: true)
+      result = build_reconcile.call(dry_run: true)
       expect(result["dry_run"]).to be(true)
       expect(result["would_drop"]).to include("review.oncall")
       expect(File.exist?(leaf)).to be(true)
@@ -62,7 +62,7 @@ RSpec.describe Textus::Maintenance::Tend do
 
     it "scopes by prefix (non-matching prefix is a no-op)" do
       leaf = File.join(root, "zones/review/oncall.md")
-      result = build_tend.call(prefix: "nonexistent")
+      result = build_reconcile.call(prefix: "nonexistent")
       expect(result["dropped"]).to be_empty
       expect(File.exist?(leaf)).to be(true)
     end
