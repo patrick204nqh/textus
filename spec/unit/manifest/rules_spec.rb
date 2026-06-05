@@ -53,5 +53,19 @@ RSpec.describe Textus::Manifest::Rules do
         expect(set.guard).to eq({ "accept" => ["schema_valid"] })
       end
     end
+
+    describe "materialize" do
+      it "parses a materialize slot into a Policy::Materialize" do
+        rules = described_class.parse(
+          [{ "match" => "artifacts.*", "materialize" => { "on_change" => "sync" } }],
+        )
+        expect(rules.for("artifacts.orientation").materialize.on_change).to eq("sync")
+      end
+
+      it "leaves materialize nil when the slot is absent" do
+        rules = described_class.parse([{ "match" => "artifacts.*", "guard" => {} }])
+        expect(rules.for("artifacts.orientation").materialize).to be_nil
+      end
+    end
   end
 end

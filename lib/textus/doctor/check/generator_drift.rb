@@ -18,7 +18,7 @@ module Textus
               "level" => "warning",
               "subject" => row["key"],
               "message" => row["reason"],
-              "fix" => "rebuild the entry: `textus build`",
+              "fix" => "rematerialize the entry: `textus reconcile`",
             }
           end
         end

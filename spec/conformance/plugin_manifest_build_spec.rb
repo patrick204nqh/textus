@@ -64,7 +64,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "builds the in-store artifact with the expected plugin manifest structure" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     artifact_path = File.join(root, "zones/artifacts/plugin.json")
     expect(File.exist?(artifact_path)).to be true
@@ -78,7 +78,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "publishes to .claude-plugin/plugin.json at the project root with no _meta key" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     expect(File.exist?(published_path)).to be true
@@ -90,7 +90,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "includes the SessionStart hooks with startup, clear, compact matchers" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     parsed = JSON.parse(File.read(published_path))
@@ -102,7 +102,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "includes the inline mcpServers stanza pointing to the installed binary" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     parsed = JSON.parse(File.read(published_path))
@@ -112,11 +112,11 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "build is idempotent — repeated builds produce no content change" do
-    store.as("automation").build
+    store.as("automation").reconcile
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     sha_first = Digest::SHA256.file(published_path).hexdigest
 
-    store.as("automation").build
+    store.as("automation").reconcile
     sha_second = Digest::SHA256.file(published_path).hexdigest
 
     expect(sha_second).to eq(sha_first)

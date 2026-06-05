@@ -16,7 +16,7 @@ module Textus
         "workspace" => "keep",
         "quarantine" => "fetch",
         "queue" => "propose",
-        "derived" => "build",
+        "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
@@ -32,8 +32,9 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      RULE_KEYS    = %w[match intake_handler_allowlist guard lifecycle].freeze
+      RULE_KEYS    = %w[match intake_handler_allowlist guard lifecycle materialize].freeze
       LIFECYCLE_KEYS = %w[ttl on_expire budget_ms].freeze
+      MATERIALIZE_KEYS = %w[on_change].freeze
       AUDIT_KEYS = %w[max_size keep].freeze
 
       # Syntactic shape of an `owner:` subject token (the `patrick` in
@@ -135,6 +136,7 @@ module Textus
           path = "$.rules[#{i}]"
           walk(r, RULE_KEYS, path)
           walk(r["lifecycle"], LIFECYCLE_KEYS, "#{path}.lifecycle") if r["lifecycle"].is_a?(Hash)
+          walk(r["materialize"], MATERIALIZE_KEYS, "#{path}.materialize") if r["materialize"].is_a?(Hash)
         end
       end
 

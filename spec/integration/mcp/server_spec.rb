@@ -52,7 +52,7 @@ RSpec.describe Textus::MCP::Server do
     list = responses.find { |r| r["id"] == 2 }
     names = list["result"]["tools"].map { |t| t["name"] }
     # propose/schema/rules are composed tools promoted in Phase C (ADR 0039)
-    expect(names).to include("boot", "pulse", "list", "get", "put", "tend")
+    expect(names).to include("boot", "pulse", "list", "get", "put", "reconcile")
   end
 
   it "executes tools/call('boot') and returns content" do
@@ -168,8 +168,8 @@ RSpec.describe Textus::MCP::Server do
   end
 
   # ADR 0083 — destructive Maintenance:: verbs must also be drift-gated
-  it "refuses a destructive maintenance verb (tend) after contract drift with ContractDrift error" do
-    lines = run_with_drift(name: "tend", arguments: {})
+  it "refuses a destructive maintenance verb (reconcile) after contract drift with ContractDrift error" do
+    lines = run_with_drift(name: "reconcile", arguments: {})
     resp = lines.find { |r| r["id"] == 2 }
     expect(resp["error"]).not_to be_nil
     expect(resp["error"]["message"]).to match(/contract changed/)

@@ -90,6 +90,7 @@ module Textus
 
     def bootstrap_hooks
       Ports::AuditSubscriber.new(audit_log).attach(events)
+      Ports::ReactiveMaterializeSubscriber.new(container).attach(events)
       Hooks::Builtin.register_all(events: events, rpc: rpc)
       Hooks::Loader.new(events: events, rpc: rpc).load_dir(File.join(root, "hooks"))
     end

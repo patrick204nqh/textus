@@ -30,10 +30,11 @@ module Textus
         "fetch #{zone_label(manifest, :quarantine, "quarantine")} entries with " \
           "'textus fetch KEY --as=#{name}' (uses the entry's declared action)"
       end,
-      build: lambda do |_name, manifest|
+      reconcile: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
-        "'textus build' computes #{derived} entries from projections; " \
-          "#{derived} files are never hand-edited"
+        "'textus reconcile' materializes #{derived} entries from their sources; " \
+          "#{derived} files are never hand-edited (reactive on canon writes, " \
+          "or a full pass on demand)"
       end,
     }.freeze
 
@@ -88,8 +89,7 @@ module Textus
       { "name" => "propose" },
       { "name" => "accept" },
       { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "build" },
-      { "name" => "tend" },
+      { "name" => "reconcile" },
       { "name" => "audit" },
       { "name" => "blame" },
       { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
@@ -146,7 +146,7 @@ module Textus
 
     # Recipes reference verbs, not a transport's CLI strings (ADR 0056): every
     # step names a verb the agent can call (each transport frames it — CLI as
-    # `textus get KEY`, MCP as the `get` tool) or is a plain build step. This
+    # `textus get KEY`, MCP as the `get` tool) or is a plain materialize step. This
     # keeps shell lines out of the surface an MCP agent reads.
     def self.recipes(manifest)
       queue = manifest.policy.queue_zone

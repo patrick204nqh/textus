@@ -39,7 +39,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "accept" => Textus::CLI::Verb::GenAccept,
       "audit" => Textus::CLI::Verb::GenAudit,
       "blame" => Textus::CLI::Verb::GenBlame,
-      "build" => Textus::CLI::Verb::Build,
       "capabilities" => Textus::CLI::Verb::GenCapabilities,
       "deps" => Textus::CLI::Verb::GenDeps,
       "doctor" => Textus::CLI::Verb::Doctor,
@@ -58,7 +57,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "reject" => Textus::CLI::Verb::GenReject,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
-      "tend" => Textus::CLI::Verb::GenTend,
+      "reconcile" => Textus::CLI::Verb::GenReconcile,
       "where" => Textus::CLI::Verb::GenWhere,
       "zone" => Textus::CLI::Group::Zone,
     }

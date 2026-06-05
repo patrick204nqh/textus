@@ -10,7 +10,7 @@ RSpec.describe "boot write_flows name live zones, not retired ones (ADR 0034)" d
                                 roles:
                                   - { name: human,      can: [author, propose] }
                                   - { name: agent,      can: [propose, keep] }
-                                  - { name: automation, can: [fetch, build] }
+                                  - { name: automation, can: [fetch, reconcile] }
                                 zones:
                                   - { name: knowledge, kind: canon }
                                   - { name: notebook,  kind: workspace, owner: agent }

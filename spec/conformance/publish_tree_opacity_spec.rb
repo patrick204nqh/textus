@@ -49,7 +49,7 @@ RSpec.describe "publish_tree opacity (ADR 0047)" do
 
   it "still mirrors the whole subtree, uppercase files included" do
     repo_root = File.dirname(root)
-    store.as("automation").build
+    store.as("automation").reconcile
 
     expect(File.read(File.join(repo_root, "skills/my-skill/SKILL.md"))).to eq("# my skill\n")
     expect(File.read(File.join(repo_root, "skills/my-skill/README.md"))).to eq("# readme\n")

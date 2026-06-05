@@ -19,7 +19,7 @@ RSpec.describe Textus::Boot do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
         - { name: knowledge,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
@@ -155,7 +155,8 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("boot", "list", "get", "put", "accept", "build", "doctor", "hook")
+    expect(names).to include("boot", "list", "get", "put", "accept", "reconcile", "doctor", "hook")
+    expect(names).not_to include("build") # build verb removed in ADR 0087
   end
 
   describe "agent_protocol block" do

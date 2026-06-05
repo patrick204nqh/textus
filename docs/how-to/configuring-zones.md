@@ -43,7 +43,7 @@ zones:
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
 name-based guessing). The kind also fixes the capability a writer must hold —
-`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`build`.
+`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`reconcile`.
 Rules: at most one `queue` zone, and (since `author` is the single trust
 anchor) at most one role may hold it.
 
@@ -70,18 +70,18 @@ zones:
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
   - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
-  - { name: built,       kind: derived }    # rendered outputs — build-holders write
+  - { name: built,       kind: derived }    # rendered outputs — reconcile-holders write
 ```
 
 ### Tuning role capabilities
 
-Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `fetch`, `build`), subject to the one rule that at most one role may hold `author`:
+Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `fetch`, `reconcile`), subject to the one rule that at most one role may hold `author`:
 
 ```yaml
 roles:
   - { name: human,      can: [author, propose] }   # the trust anchor
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, build] }       # or just [fetch], or just [build]
+  - { name: automation, can: [fetch, reconcile] }   # or just [fetch], or just [reconcile]
 ```
 
 A manifest need not declare all three — declare the subset you use. Declaring a role whose name is not one of the three is rejected at load. To attribute work to individual people or bots, use the `owner:` field (`owner: human:patrick`, `owner: automation:ci`) — attribution, not authority.
@@ -91,7 +91,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
 - **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `publish` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
-- **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `build`, even a human running `put --as=human` against the `derived` zone is refused.
+- **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `reconcile`, even a human running `put --as=human` against the `derived` zone is refused.
 - **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
 ---
@@ -214,7 +214,7 @@ rules:
     lifecycle: { ttl: 90d, on_expire: archive }   # move stale external bytes aside
 ```
 
-Then `textus tend --as=ROLE` performs the destructive sweep (the role must be
+Then `textus reconcile --as=ROLE` performs the destructive sweep (the role must be
 allowed to write the matched zone). `on_expire: drop` deletes the leaf;
 `on_expire: archive` moves it to `.textus/archive/` and then deletes the
 original. `drop`/`archive` apply only to stored entries — `doctor` rejects a
@@ -250,9 +250,9 @@ A derived entry says **"compute me from these sources, render me with this templ
 
 Hooks live in Ruby files under `.textus/hooks/`. See [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [intake wiring](#wiring-data-in--intake-and-resolve_intake-hooks) and [derived entries](#wiring-data-out--derived-entries-and-publishing) above.
 
-### What `textus build` does
+### What `textus reconcile` does (Phase 1 — materialize)
 
-For every entry in a build-writable zone:
+For every entry in a reconcile-writable zone:
 
 1. **Load sources** — gather the named keys
 2. **Project** — pluck fields, run the reducer if any
@@ -260,9 +260,11 @@ For every entry in a build-writable zone:
 4. **Write** — save the bytes to the derived path
 5. **Publish** — for each `publish: { to: }` target (or each file under a `publish: { tree: }` mirror), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:file_published` pub-sub event. Listeners can subscribe to `:file_published` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
 
+Phase 2 sweeps the lifecycle actions (drop/archive) on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
+
 ### The sentinel guard
 
-`Textus::Ports::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and build will refuse rather than clobber it.
+`Textus::Ports::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and `reconcile` will refuse rather than clobber it.
 
 ---
 
@@ -278,7 +280,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, build] }
+  - { name: automation, can: [fetch, reconcile] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -318,7 +320,7 @@ Day-to-day flow:
 ```
 $ textus put knowledge.identity.self --as=human  < new-identity.md   # edit identity
 $ textus put knowledge.notes.kickoff --as=human  < kickoff.md         # add a note
-$ textus build                                                         # rebuild CLAUDE.md
+$ textus reconcile                                                     # materialize CLAUDE.md
 $ git diff CLAUDE.md                                                   # review and commit
 ```
 

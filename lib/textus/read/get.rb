@@ -7,7 +7,7 @@ module Textus
     #     uid, validators, hooks).
     #   fetch: true — read-through: after a stale verdict on a `refresh` policy,
     #     hands off to the fetch orchestrator. A read NEVER performs a
-    #     destructive action (drop/archive) — those belong to the `tend` sweep
+    #     destructive action (drop/archive) — those belong to the `reconcile` sweep
     #     (ADR 0079).
     #
     # Lifecycle policy comes from the unified `lifecycle:` rule slot (ADR 0079).

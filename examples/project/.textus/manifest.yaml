@@ -1,8 +1,8 @@
 ---
 version: textus/3
 # Write authority is derived from capabilities (ADR 0030): canon→author,
-# queue→propose, derived→build. The human holds author+propose, the agent
-# only propose (proposals queue), and automation builds the derived output.
+# queue→propose, derived→reconcile. The human holds author+propose, the agent
+# only propose (proposals queue), and automation materializes the derived output.
 roles:
 - name: human
   can:
@@ -13,7 +13,7 @@ roles:
   - propose
 - name: automation
   can:
-  - build
+  - reconcile
   - fetch
 zones:
 - name: knowledge
@@ -27,7 +27,7 @@ zones:
   desc: changes awaiting your accept
 - name: artifacts
   kind: derived
-  desc: build-computed outputs (CLAUDE.md, AGENTS.md)
+  desc: reconcile-computed outputs (CLAUDE.md, AGENTS.md)
 entries:
 - key: knowledge.project
   path: knowledge/project.md

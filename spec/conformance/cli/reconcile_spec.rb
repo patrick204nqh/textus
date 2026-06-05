@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "textus tend" do
+RSpec.describe "textus reconcile" do
   include_context "textus_store_fixture"
   include_context "cli invocation"
 
@@ -27,7 +27,7 @@ RSpec.describe "textus tend" do
   it "runs the sweep and drops the aged leaf" do
     leaf = File.join(root, "zones/review/oncall.md")
 
-    rc = run(%w[tend --as=human])
+    rc = run(%w[reconcile --as=human])
     expect(rc).to eq(0)
 
     payload = JSON.parse(stdout.string)
@@ -39,7 +39,7 @@ RSpec.describe "textus tend" do
   it "with --dry-run reports the sweep without deleting" do
     leaf = File.join(root, "zones/review/oncall.md")
 
-    rc = run(%w[tend --dry-run --as=human])
+    rc = run(%w[reconcile --dry-run --as=human])
     expect(rc).to eq(0)
 
     payload = JSON.parse(stdout.string)

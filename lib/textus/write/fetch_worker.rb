@@ -4,7 +4,7 @@ module Textus
   module Write
     # Internal fetch executor for one quarantine/intake entry. No longer a
     # public verb (ADR 0079 collapsed the `fetch` surface): used by `get`'s
-    # orchestrator (read-through refresh) and by the `tend` sweep.
+    # orchestrator (read-through refresh) and by the `reconcile` sweep.
     class FetchWorker
       FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
 

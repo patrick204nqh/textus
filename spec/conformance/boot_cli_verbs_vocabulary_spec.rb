@@ -21,8 +21,8 @@ RSpec.describe "boot CLI verb catalog avoids retired zone names (ADR 0034)" do
     expect(verbs["accept"]).to include("proposal")
   end
 
-  it "describes build without retired zone names" do
-    expect(verbs["build"]).not_to include("output")
+  it "build verb is absent from the CLI verbs list (ADR 0087)" do
+    expect(verbs).not_to have_key("build")
   end
 
   it "describes pulse without the bare 'review' instance name" do

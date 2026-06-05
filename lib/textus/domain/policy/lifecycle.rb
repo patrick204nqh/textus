@@ -5,7 +5,7 @@ module Textus
       # Replaces the separate Fetch (ttl/on_stale) and Retention
       # (expire_after/archive_after) policies. The action's destructiveness
       # decides WHERE it runs: lazy actions (refresh/warn) on get/list reads;
-      # destructive actions (drop/archive) only on the tend sweep.
+      # destructive actions (drop/archive) only on the reconcile sweep.
       class Lifecycle
         LAZY        = %i[refresh warn].freeze
         DESTRUCTIVE = %i[drop archive].freeze

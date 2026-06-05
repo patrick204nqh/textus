@@ -10,13 +10,13 @@ module Textus
     # annotation (warn) is left to the lazy `get`/`freshness` path. Adds no new
     # authority — every sub-op runs with the CALLER's own `call` (role), and is
     # gated exactly as on its own.
-    class Tend
+    class Reconcile
       extend Textus::Contract::DSL
 
-      verb     :tend
+      verb     :reconcile
       summary  "Run the destructive lifecycle sweep: drop/archive expired entries, refresh cold intake, report health."
       surfaces :cli, :mcp
-      cli      "tend"
+      cli      "reconcile"
       arg :prefix,  String, description: "restrict the sweep to keys under this dotted prefix"
       arg :zone,    String, description: "restrict the sweep to entries in this zone"
       arg :dry_run, :boolean, default: false,
@@ -36,16 +36,20 @@ module Textus
         ).call(prefix: prefix, zone: zone)
 
         health = Read::Doctor.new(container: @container, call: @call).call
-        return dry_run_result(rows, health) if dry_run
+        return dry_run_result(rows, health, prefix) if dry_run
 
-        apply_result(apply(rows), health)
+        Textus::Ports::BuildLock.with(root: @container.root) do
+          materialized = Textus::Maintenance::Materialize.new(container: @container, call: @call).call(prefix: prefix)
+          apply_result(apply(rows), health, materialized)
+        end
       end
 
       private
 
-      def dry_run_result(rows, health)
+      def dry_run_result(rows, health, prefix)
         {
           "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
+          "would_materialize" => derived_keys_in_scope(prefix),
           "would_drop" => action_keys(rows, "drop"),
           "would_archive" => action_keys(rows, "archive"),
           "would_refresh" => action_keys(rows, "refresh"),
@@ -53,11 +57,12 @@ module Textus
         }
       end
 
-      def apply_result(result, health)
+      def apply_result(result, health, materialized)
         {
           "protocol" => Textus::PROTOCOL,
           "ok" => result[:failed].empty?,
           "dry_run" => false,
+          "materialized" => materialized["built"].map { |b| b["key"] },
           "dropped" => result[:dropped], "archived" => result[:archived],
           "refreshed" => result[:refreshed], "failed" => result[:failed],
           "health" => health
@@ -66,6 +71,13 @@ module Textus
 
       def action_keys(rows, action)
         rows.select { |r| r["action"] == action }.map { |r| r["key"] }
+      end
+
+      def derived_keys_in_scope(prefix)
+        @container.manifest.data.entries
+                  .grep(Textus::Manifest::Entry::Derived)
+                  .select { |e| prefix.nil? || e.key.start_with?(prefix) }
+                  .map(&:key)
       end
 
       def apply(rows)

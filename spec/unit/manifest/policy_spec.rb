@@ -8,7 +8,7 @@ RSpec.describe Textus::Manifest::Policy do
       version: textus/3
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: review,  kind: derived }
@@ -30,7 +30,7 @@ RSpec.describe Textus::Manifest::Policy do
   describe "#verb_for_zone" do
     it "maps each zone to the capability its kind requires" do
       expect(policy.verb_for_zone("knowledge")).to eq("author")
-      expect(policy.verb_for_zone("review")).to eq("build")
+      expect(policy.verb_for_zone("review")).to eq("reconcile")
     end
   end
 
@@ -38,13 +38,13 @@ RSpec.describe Textus::Manifest::Policy do
     it "lists roles holding a given verb" do
       expect(policy.roles_with_capability("author")).to eq(["human"])
       expect(policy.roles_with_capability("propose")).to eq(["human"])
-      expect(policy.roles_with_capability("build")).to eq(["automation"])
+      expect(policy.roles_with_capability("reconcile")).to eq(["automation"])
     end
   end
 
   describe "#zone_writers" do
     it "returns roles holding the verb the zone-kind requires" do
-      # canon requires author → human; derived requires build → automation
+      # canon requires author → human; derived requires reconcile → automation
       expect(policy.zone_writers("knowledge")).to eq(["human"])
       expect(policy.zone_writers("review")).to eq(["automation"])
     end
@@ -85,7 +85,7 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: automation, can: [fetch, build] }
+          - { name: automation, can: [fetch, reconcile] }
         zones:
           - { name: intake, kind: quarantine }
           - { name: artifacts, kind: derived }
@@ -98,7 +98,7 @@ RSpec.describe Textus::Manifest::Policy do
 
   describe "#actor_for" do
     it "returns the sole role holding the verb" do
-      expect(policy.actor_for("build")).to eq("automation")
+      expect(policy.actor_for("reconcile")).to eq("automation")
       expect(policy.actor_for("fetch")).to eq("automation")
       expect(policy.actor_for("author")).to eq("human")
     end
@@ -118,18 +118,18 @@ RSpec.describe Textus::Manifest::Policy do
       expect(p2.actor_for("propose")).to eq("human")
     end
 
-    it "resolves by capability, not by a conventional name (agent may hold build)" do
+    it "resolves by capability, not by a conventional name (agent may hold reconcile)" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: agent, can: [propose, build] }
+          - { name: agent, can: [propose, reconcile] }
         zones:
           - { name: review, kind: queue }
           - { name: artifacts, kind: derived }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.actor_for("build")).to eq("agent")
+      expect(p2.actor_for("reconcile")).to eq("agent")
     end
 
     it "returns nil when no role holds the verb" do
@@ -142,7 +142,7 @@ RSpec.describe Textus::Manifest::Policy do
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.actor_for("build")).to be_nil
+      expect(p2.actor_for("reconcile")).to be_nil
     end
   end
 
@@ -153,7 +153,7 @@ RSpec.describe Textus::Manifest::Policy do
           version: textus/3
           roles:
             - { name: human,      can: [author, propose] }
-            - { name: automation, can: [fetch, build] }
+            - { name: automation, can: [fetch, reconcile] }
           zones:
             - { name: review, kind: queue }
             - { name: draft,  kind: derived }
@@ -227,7 +227,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [fetch, build] }
+          - { name: automation, can: [fetch, reconcile] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
@@ -293,7 +293,7 @@ RSpec.describe Textus::Manifest::Policy do
   it "Entry#in_generator_zone? delegates to derived_zone?" do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
-      roles: [{ name: automation, can: [fetch, build] }]
+      roles: [{ name: automation, can: [fetch, reconcile] }]
       zones: [{ name: artifacts, kind: derived }]
       entries:
         - { key: artifacts.x, path: artifacts/x.md, zone: artifacts, owner: automation:auto, kind: derived,
@@ -311,7 +311,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [fetch, build] }
+          - { name: automation, can: [fetch, reconcile] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }

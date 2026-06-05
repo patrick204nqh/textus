@@ -16,6 +16,7 @@ module Textus
         entry_fetched: %i[ctx key envelope change],
         entry_renamed: %i[ctx key from_key to_key envelope],
         build_completed: %i[ctx key envelope sources],
+        materialize_failed: %i[ctx keys error],
         proposal_accepted: %i[ctx key target_key],
         proposal_rejected: %i[ctx key target_key],
         file_published: %i[ctx key envelope source target],

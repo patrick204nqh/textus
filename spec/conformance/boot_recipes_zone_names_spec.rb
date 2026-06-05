@@ -9,7 +9,7 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, build] }
+        - { name: automation, can: [fetch, reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: feeds,     kind: quarantine }

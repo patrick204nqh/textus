@@ -35,20 +35,20 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
     end.to raise_error(Textus::BadManifest, /at most one zone may declare kind: queue/)
   end
 
-  it "rejects a derived zone when no declared role holds build" do
+  it "rejects a derived zone when no declared role holds reconcile" do
     roles = <<~ROLES
       roles:
         - { name: human, can: [author, propose] }
     ROLES
     expect { parse("  - { name: artifacts, kind: derived }", roles) }
-      .to raise_error(Textus::BadManifest, /needs a role with capability 'build'/)
+      .to raise_error(Textus::BadManifest, /needs a role with capability 'reconcile'/)
   end
 
-  it "accepts a derived zone when a declared role holds build" do
+  it "accepts a derived zone when a declared role holds reconcile" do
     roles = <<~ROLES
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [build] }
+        - { name: automation, can: [reconcile] }
     ROLES
     expect { parse("  - { name: artifacts, kind: derived }", roles) }.not_to raise_error
   end

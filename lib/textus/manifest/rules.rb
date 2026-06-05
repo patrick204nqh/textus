@@ -1,8 +1,8 @@
 module Textus
   class Manifest
     class Rules
-      RuleSet = ::Data.define(:handler_allowlist, :guard, :lifecycle)
-      EMPTY_SET = RuleSet.new(handler_allowlist: nil, guard: nil, lifecycle: nil)
+      RuleSet = ::Data.define(:handler_allowlist, :guard, :lifecycle, :materialize)
+      EMPTY_SET = RuleSet.new(handler_allowlist: nil, guard: nil, lifecycle: nil, materialize: nil)
 
       def self.parse(raw)
         new(Array(raw).map { |b| Block.new(b) })
@@ -15,7 +15,7 @@ module Textus
       attr_reader :blocks
 
       def for(key)
-        slots = { handler_allowlist: [], guard: [], lifecycle: [] }
+        slots = { handler_allowlist: [], guard: [], lifecycle: [], materialize: [] }
         @blocks.each do |b|
           next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
 
@@ -25,6 +25,7 @@ module Textus
           handler_allowlist: pick(slots[:handler_allowlist], :handler_allowlist, key),
           guard: pick(slots[:guard], :guard, key),
           lifecycle: pick(slots[:lifecycle], :lifecycle, key),
+          materialize: pick(slots[:materialize], :materialize, key),
         )
       end
 
@@ -43,13 +44,14 @@ module Textus
       end
 
       class Block
-        attr_reader :match, :handler_allowlist, :guard, :lifecycle
+        attr_reader :match, :handler_allowlist, :guard, :lifecycle, :materialize
 
         def initialize(raw)
           @match = raw["match"] or raise Textus::UsageError.new("rule block missing match:")
           @handler_allowlist = parse_handler_allowlist(raw["intake_handler_allowlist"])
           @guard = parse_guard(raw["guard"])
           @lifecycle = parse_lifecycle(raw["lifecycle"])
+          @materialize = parse_materialize(raw["materialize"])
         end
 
         private
@@ -78,6 +80,12 @@ module Textus
             on_expire: h["on_expire"],
             budget_ms: h["budget_ms"],
           )
+        end
+
+        def parse_materialize(h)
+          return nil if h.nil?
+
+          Textus::Domain::Policy::Materialize.new(on_change: h["on_change"])
         end
       end
     end

@@ -21,5 +21,5 @@ drives the **working tree** (`bundle exec exe/textus`), not the released gem —
 so the agent that helps develop textus runs the code under review.
 
 This file is the slow-changing root identity entry. Only humans can write to
-the `knowledge` (canon) zone. Edit this file, then run `textus build` to
+the `knowledge` (canon) zone. Edit this file, then run `textus reconcile` to
 rebuild the projected `CLAUDE.md` and `AGENTS.md` at the repo root.

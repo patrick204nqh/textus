@@ -26,7 +26,7 @@ A role is a name in the manifest that holds a set of **capabilities** — verbs 
 |------|----------------------|--------------------|
 | `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
 | `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[fetch, build]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
+| `automation` | `[fetch, reconcile]` | Scheduled or one-shot scripts: pull external sources in, materialize derived outputs. |
 
 The five capabilities:
 
@@ -36,7 +36,7 @@ The five capabilities:
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
 | `fetch` | `quarantine` | Pulling external bytes in. |
-| `build` | `derived` | Computing outputs from other zones. |
+| `reconcile` | `derived` | Computing outputs from other zones. |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -46,13 +46,13 @@ Declare roles in the manifest with a `roles:` block; each names the capabilities
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, build] }
+  - { name: automation, can: [fetch, reconcile] }
 ```
 
 Two analogies that usually click for `automation`:
 
 - **`fetch` is the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`).
-- **`build` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`).
+- **`reconcile` is the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`).
 
 Role names are the closed set `human`, `agent`, `automation`; what you customize is each role's `can:` capabilities — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). Per-person/per-bot attribution uses the `owner:` field. Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
 
@@ -66,7 +66,7 @@ Role names are the closed set `human`, `agent`, `automation`; what you customize
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, build] }
+  - { name: automation, can: [fetch, reconcile] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -86,7 +86,7 @@ Write authority is **derived** — there is no `write_policy:`. Each zone declar
 | `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
 | `quarantine` | `fetch` | External bytes pending validation. |
 | `queue` | `propose` | Proposals awaiting promotion. |
-| `derived` | `build` | Computed from other zones. |
+| `derived` | `reconcile` | Computed from other zones. |
 
 Crossing that table with the default role mapping gives the default writers:
 
@@ -96,7 +96,7 @@ Crossing that table with the default role mapping gives the default writers:
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
 | `feeds` | `quarantine` | `fetch` | `automation` | Declared external inputs, refreshed via a read-through `textus get KEY --as=automation` (per the entry's `on_expire: refresh` lifecycle rule); never edited by hand. (Refreshed on demand.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
-| `artifacts` | `derived` | `build` | `automation` | Build-computed outputs. Materialized from projections; never hand-edited. (Recomputed every build.) |
+| `artifacts` | `derived` | `reconcile` | `automation` | Reconcile-computed outputs. Materialized from projections; never hand-edited. (Recomputed on `reconcile`.) |
 
 These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).
 
@@ -132,7 +132,7 @@ entries:
 | `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
 | `publish:` | no | Typed publish block with exactly one sub-key (ADR 0052). `publish: { to: [paths] }` byte-copies the built file to one or more external paths. `publish: { tree: "dir" }` (for `nested:` entries) mirrors the entry's whole stored subtree to one target directory, preserving layout — path-driven (no keys or template variables); its files are opaque payload, never keys (ADR 0047). |
 | `ignore:` | no | For `nested:` entries — a list of gitignore-style globs (e.g. `["**/node_modules/**"]`). Matching paths are excluded from enumeration **and** from `doctor`'s key checks. See [Nested entries](#nested-entries). |
-| `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build` event). |
+| `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build_completed` event). |
 
 The full schema lives in [`SPEC.md §4`](../../SPEC.md).
 

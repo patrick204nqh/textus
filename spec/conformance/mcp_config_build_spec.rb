@@ -54,7 +54,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "builds the in-store artifact with the expected MCP server config" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     artifact_path = File.join(root, "zones/artifacts/mcp.json")
     expect(File.exist?(artifact_path)).to be true
@@ -71,7 +71,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "publishes to .mcp.json at the project root with no _meta key" do
-    store.as("automation").build
+    store.as("automation").reconcile
 
     published_path = File.join(tmp, ".mcp.json")
     expect(File.exist?(published_path)).to be true
@@ -86,11 +86,11 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "build is idempotent — repeated builds produce no content change" do
-    store.as("automation").build
+    store.as("automation").reconcile
     published_path = File.join(tmp, ".mcp.json")
     sha_first = Digest::SHA256.file(published_path).hexdigest
 
-    store.as("automation").build
+    store.as("automation").reconcile
     sha_second = Digest::SHA256.file(published_path).hexdigest
 
     expect(sha_second).to eq(sha_first)

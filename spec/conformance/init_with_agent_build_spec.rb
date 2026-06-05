@@ -19,7 +19,7 @@ RSpec.describe "init --with-agent produces a buildable orientation" do
         body: "steps...\n",
       )
 
-      store.as("automation").build
+      store.as("automation").reconcile
 
       claude = File.join(dir, "CLAUDE.md")
       agents = File.join(dir, "AGENTS.md")

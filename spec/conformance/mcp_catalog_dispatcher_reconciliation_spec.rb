@@ -16,9 +16,9 @@ MCP_CATALOG_COMPOSED = [].freeze
 #     nor MCP; ADR 0085); pulse + the hook context consume it directly.
 # accept/reject are NO LONGER here: they are surfaced to MCP and gated by the
 # author_held capability floor, not by transport absence (ADR 0072).
-# build is NO LONGER here: it is surfaced to MCP per ADR 0076 — it runs as the
-# manifest's build actor (caller-agnostic, self-elevating) and is serialized by
-# a shared around :build_lock resource across all transports.
+# build was removed in ADR 0087: materialization is system-pushed via reconcile,
+# not a user-callable verb. The build CAPABILITY remains in the manifest (Task 11
+# will rename it to reconcile).
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   audit blame uid freshness
   doctor rule_list published
