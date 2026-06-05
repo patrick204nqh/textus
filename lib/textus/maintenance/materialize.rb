@@ -4,7 +4,8 @@ module Textus
     # ADR 0061; demoted to a contract-less service by ADR 0087). Dispatches
     # polymorphically to each entry's `publish_via`. Callers: Reconcile (full,
     # Phase 1) and ReactiveMaterialize (scoped to an rdeps impact set). The
-    # build-actor resolution and BuildLock live here now (lifted from Write::Build).
+    # build-actor resolution lives here (lifted from Write::Build); locking is
+    # the caller's responsibility (Write::Build wraps it via `around :build_lock`).
     class Materialize
       def initialize(container:, call:)
         @container = container
