@@ -176,8 +176,8 @@ module Textus
             "accept #{queue}.KEY — promotes the proposal into its target zone",
           ],
         },
-        "ingest" => {
-          "purpose" => "refresh stale quarantine-zone caches from their declared intake",
+        "reconcile" => {
+          "purpose" => "keep the machine-maintained lanes fresh — refresh stale quarantine caches from their declared intake",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
             "reconcile (zone: #{feeds}) — re-pull the stale entries",

@@ -8,7 +8,7 @@ RSpec.describe Textus::Manifest::Policy do
       version: textus/3
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [ingest, reconcile] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: review,  kind: derived }
@@ -85,7 +85,7 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles:
-          - { name: automation, can: [ingest, reconcile] }
+          - { name: automation, can: [reconcile] }
         zones:
           - { name: intake, kind: quarantine }
           - { name: artifacts, kind: derived }
@@ -99,7 +99,6 @@ RSpec.describe Textus::Manifest::Policy do
   describe "#actor_for" do
     it "returns the sole role holding the verb" do
       expect(policy.actor_for("reconcile")).to eq("automation")
-      expect(policy.actor_for("ingest")).to eq("automation")
       expect(policy.actor_for("author")).to eq("human")
     end
 
@@ -153,7 +152,7 @@ RSpec.describe Textus::Manifest::Policy do
           version: textus/3
           roles:
             - { name: human,      can: [author, propose] }
-            - { name: automation, can: [ingest, reconcile] }
+            - { name: automation, can: [reconcile] }
           zones:
             - { name: review, kind: queue }
             - { name: draft,  kind: derived }
@@ -227,7 +226,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [ingest, reconcile] }
+          - { name: automation, can: [reconcile] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
@@ -293,7 +292,7 @@ RSpec.describe Textus::Manifest::Policy do
   it "Entry#in_generator_zone? delegates to derived_zone?" do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
-      roles: [{ name: automation, can: [ingest, reconcile] }]
+      roles: [{ name: automation, can: [reconcile] }]
       zones: [{ name: artifacts, kind: derived }]
       entries:
         - { key: artifacts.x, path: artifacts/x.md, zone: artifacts, owner: automation:auto, kind: derived,
@@ -311,7 +310,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [ingest, reconcile] }
+          - { name: automation, can: [reconcile] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
