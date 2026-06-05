@@ -145,5 +145,21 @@ RSpec.describe Textus::Maintenance::Reconcile do
       result = build_reconcile_for_derived.call(dry_run: true, prefix: "nonexistent")
       expect(result["would_materialize"]).to be_empty
     end
+
+    it "apply mode: runs materialize + sweep under one shared maintenance lock" do
+      lock = instance_double(Textus::Ports::BuildLock)
+      allow(Textus::Ports::BuildLock).to receive(:new).and_return(lock)
+      allow(lock).to receive(:acquire_or_raise).and_yield
+      result = build_reconcile_for_derived.call(dry_run: false)
+      expect(Textus::Ports::BuildLock).to have_received(:new).once
+      expect(lock).to have_received(:acquire_or_raise).once
+      expect(result).to include("materialized", "ok")
+    end
+
+    it "dry_run mode: does NOT acquire the maintenance lock" do
+      allow(Textus::Ports::BuildLock).to receive(:new).and_call_original
+      build_reconcile_for_derived.call(dry_run: true)
+      expect(Textus::Ports::BuildLock).not_to have_received(:new)
+    end
   end
 end

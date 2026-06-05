@@ -38,8 +38,10 @@ module Textus
         health = Read::Doctor.new(container: @container, call: @call).call
         return dry_run_result(rows, health, prefix) if dry_run
 
-        materialized = Textus::Maintenance::Materialize.new(container: @container, call: @call).call(prefix: prefix)
-        apply_result(apply(rows), health, materialized)
+        Textus::Ports::BuildLock.with(root: @container.root) do
+          materialized = Textus::Maintenance::Materialize.new(container: @container, call: @call).call(prefix: prefix)
+          apply_result(apply(rows), health, materialized)
+        end
       end
 
       private
