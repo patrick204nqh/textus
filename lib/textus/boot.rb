@@ -32,7 +32,7 @@ module Textus
         "'textus reconcile' materializes #{derived} entries from their sources and " \
           "refreshes stale #{quarantine} entries from their declared source; " \
           "#{derived} files are never hand-edited (reactive on canon writes, " \
-          "or a full pass on demand, scheduled or on demand)"
+          "or a full pass on demand, scheduled or ad hoc)"
       end,
     }.freeze
 
