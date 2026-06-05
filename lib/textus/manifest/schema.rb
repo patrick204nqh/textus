@@ -14,7 +14,7 @@ module Textus
       LANES = {
         "canon" => "author",
         "workspace" => "keep",
-        "quarantine" => "fetch",
+        "quarantine" => "ingest",
         "queue" => "propose",
         "derived" => "reconcile",
       }.freeze
@@ -222,9 +222,13 @@ module Textus
           Array(r["can"]).each do |verb|
             next if CAPABILITIES.include?(verb)
 
+            # The quarantine capability was renamed fetch→ingest (ADR 0088); a
+            # pre-0.51 manifest still saying `can: [fetch]` gets a pointed hint
+            # rather than a bare unknown-capability error (breaking, no shim).
+            hint = verb == "fetch" ? " — the quarantine capability was renamed to 'ingest' (ADR 0088)" : ""
             raise BadManifest.new(
               "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
-              "(known: #{CAPABILITIES.join(", ")})",
+              "(known: #{CAPABILITIES.join(", ")})#{hint}",
             )
           end
         end

@@ -43,7 +43,7 @@ zones:
 kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
 `textus put` routes proposals to the zone declaring `kind: queue` (no
 name-based guessing). The kind also fixes the capability a writer must hold —
-`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`fetch`, `queue`⇒`propose`, `derived`⇒`reconcile`.
+`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`ingest`, `queue`⇒`propose`, `derived`⇒`reconcile`.
 Rules: at most one `queue` zone, and (since `author` is the single trust
 anchor) at most one role may hold it.
 
@@ -69,19 +69,19 @@ zones:
   - { name: research,    kind: canon }      # AI-assisted research notes — still author-gated
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
-  - { name: feeds,       kind: quarantine } # external signals — fetch-holders write
+  - { name: feeds,       kind: quarantine } # external signals — ingest-holders write
   - { name: built,       kind: derived }    # rendered outputs — reconcile-holders write
 ```
 
 ### Tuning role capabilities
 
-Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `fetch`, `reconcile`), subject to the one rule that at most one role may hold `author`:
+Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed five-verb set (`author`, `propose`, `keep`, `ingest`, `reconcile`), subject to the one rule that at most one role may hold `author`:
 
 ```yaml
 roles:
   - { name: human,      can: [author, propose] }   # the trust anchor
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }   # or just [fetch], or just [reconcile]
+  - { name: automation, can: [ingest, reconcile] }   # or just [ingest], or just [reconcile]
 ```
 
 A manifest need not declare all three — declare the subset you use. Declaring a role whose name is not one of the three is rejected at load. To attribute work to individual people or bots, use the `owner:` field (`owner: human:patrick`, `owner: automation:ci`) — attribution, not authority.
@@ -280,7 +280,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [fetch, reconcile] }
+  - { name: automation, can: [ingest, reconcile] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -326,7 +326,7 @@ $ git diff CLAUDE.md                                                   # review 
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `fetch`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with a `lifecycle: { ttl, on_expire: refresh }` matching the entry. A read-through `textus get KEY --as=automation` then refreshes any stale entry in-process and keeps it current.
+To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `ingest`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with a `lifecycle: { ttl, on_expire: refresh }` matching the entry. A read-through `textus get KEY --as=automation` then refreshes any stale entry in-process and keeps it current.
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 

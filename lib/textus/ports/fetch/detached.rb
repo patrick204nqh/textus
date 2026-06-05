@@ -9,7 +9,7 @@ module Textus
         end
 
         def acting_role(store)
-          store.manifest.policy.actor_for("fetch")
+          store.manifest.policy.actor_for("ingest")
         end
 
         def spawn(store_root:, key:)
@@ -25,9 +25,9 @@ module Textus
 
             begin
               store = Textus::Store.new(store_root)
-              # No fetch-holder configured — exit the child cleanly. In practice
+              # No ingest-holder configured — exit the child cleanly. In practice
               # this is unreachable: the background fork only happens after a
-              # foreground fetch was already authorized (so a fetch-holder
+              # foreground fetch was already authorized (so an ingest-holder
               # exists). Config-time detection is doctor's job (ADR 0044 Q2).
               role = acting_role(store)
               exit(0) unless role

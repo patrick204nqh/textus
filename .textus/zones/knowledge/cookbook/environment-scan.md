@@ -24,7 +24,7 @@ shell-outs all live in your hook. The scan runs **only on a read-through
 ```yaml
 # manifest.yaml
 roles:
-  - { name: automation, can: [fetch] }        # the fetch capability the feeds zone needs
+  - { name: automation, can: [ingest] }        # the ingest capability the feeds zone needs
 zones:
   - { name: feeds, kind: quarantine }
 entries:

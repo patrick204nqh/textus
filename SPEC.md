@@ -171,7 +171,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose] }
-  - { name: automation, can: [fetch, reconcile] }
+  - { name: automation, can: [ingest, reconcile] }
 
 zones:
   - name: knowledge
@@ -265,7 +265,7 @@ The kind→verb mapping is closed:
 
 `owner:` on a zone is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a zone is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
 
-Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[fetch, reconcile]`):
+Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[ingest, reconcile]`):
 
 | Zone | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
@@ -304,7 +304,7 @@ The effective role for any CLI invocation is resolved in this order; the first m
 |---|---|---|
 | `human` | `[author, propose]` | Interactive user at a terminal; the single trust anchor. |
 | `agent` | `[propose]` | Long-running AI or LLM process; stages proposals. |
-| `automation` | `[fetch, reconcile]` | Scheduled or one-shot scripts: fetch external sources, materialize derived outputs. |
+| `automation` | `[ingest, reconcile]` | Scheduled or one-shot scripts: ingest external sources, materialize derived outputs. |
 
 Roles are declared in the manifest's `roles:` block (§5.1.1); the names above are the default mapping when `roles:` is omitted. Unknown role values are rejected with `invalid_role`.
 
@@ -320,12 +320,12 @@ it holds via `can:`:
 roles:
   - { name: owner,    can: [author, propose] }
   - { name: proposer, can: [propose] }
-  - { name: fetcher,  can: [fetch] }
+  - { name: fetcher,  can: [ingest] }
   - { name: compiler, can: [reconcile] }
   - { name: keeper,   can: [keep] }
 ```
 
-Capability allow-list: `propose`, `author`, `keep`, `fetch`, `reconcile`. Each verb is the
+Capability allow-list: `propose`, `author`, `keep`, `ingest`, `reconcile`. Each verb is the
 required capability for exactly one zone-kind:
 
 | Capability | Authorizes writes to zone-kind |
@@ -349,7 +349,7 @@ When the `roles:` block is omitted, the default mapping applies:
 |---|---|
 | `human`      | `[author, propose]` |
 | `agent`      | `[propose, keep]` |
-| `automation` | `[fetch, reconcile]` |
+| `automation` | `[ingest, reconcile]` |
 
 Wire protocol `textus/3` is unchanged — capabilities are a manifest/semantics
 concept and never appear on the wire.

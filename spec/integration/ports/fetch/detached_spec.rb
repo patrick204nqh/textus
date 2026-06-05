@@ -4,12 +4,12 @@ RSpec.describe Textus::Ports::Fetch::Detached do
   include_context "textus_store_fixture"
 
   describe ".acting_role" do
-    it "resolves the fetch-holder by capability (a non-default holder)" do
+    it "resolves the ingest-holder by capability (a non-default holder)" do
       FileUtils.mkdir_p(File.join(root, "zones/feeds"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:
-          - { name: agent, can: [propose, fetch] }
+          - { name: agent, can: [propose, ingest] }
         zones:
           - { name: feeds, kind: quarantine }
         entries: []
@@ -18,7 +18,7 @@ RSpec.describe Textus::Ports::Fetch::Detached do
       expect(described_class.acting_role(store)).to eq("agent")
     end
 
-    it "returns nil when no role holds fetch" do
+    it "returns nil when no role holds ingest" do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3

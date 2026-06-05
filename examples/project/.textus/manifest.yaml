@@ -14,7 +14,7 @@ roles:
 - name: automation
   can:
   - reconcile
-  - fetch
+  - ingest
 zones:
 - name: knowledge
   kind: canon

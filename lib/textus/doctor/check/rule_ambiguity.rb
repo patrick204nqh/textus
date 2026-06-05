@@ -2,8 +2,8 @@ module Textus
   module Doctor
     class Check
       # Flags entries whose key is matched by two or more rule blocks of the
-      # SAME specificity in the same slot (fetch / handler_allowlist /
-      # guard). Ties are non-deterministic in the parser's pick step, so
+      # SAME specificity in the same slot (lifecycle / handler_allowlist /
+      # guard / materialize). Ties are non-deterministic in the parser's pick step, so
       # they're a configuration smell — surface them.
       class RuleAmbiguity < Check
         SLOTS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_ambiguity] }.keys.freeze

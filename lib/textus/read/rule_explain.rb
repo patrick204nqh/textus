@@ -14,9 +14,9 @@ module Textus
       surfaces :cli, :mcp
       cli      "rule explain"
       arg :key,    String, required: true, positional: true,
-                           description: "dotted key whose effective rules you want (fetch ttl/action, write guard, ...)"
+                           description: "dotted key whose effective rules you want (lifecycle ttl/action, write guard, ...)"
       arg :detail, :boolean,
-          description: "defaults false: lean {fetch, guard}. detail: true adds matched blocks + guard predicates per transition."
+          description: "defaults false: lean {lifecycle, guard}. detail: true adds matched blocks + guard predicates per transition."
       view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument

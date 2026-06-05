@@ -26,7 +26,7 @@ module Textus
         "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      fetch: lambda do |_name, manifest|
+      ingest: lambda do |_name, manifest|
         "refresh stale #{zone_label(manifest, :quarantine, "quarantine")} entries from their " \
           "declared source by running 'textus reconcile' (scheduled, or on demand)"
       end,
@@ -176,7 +176,7 @@ module Textus
             "accept #{queue}.KEY — promotes the proposal into its target zone",
           ],
         },
-        "fetch" => {
+        "ingest" => {
           "purpose" => "refresh stale quarantine-zone caches from their declared intake",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",

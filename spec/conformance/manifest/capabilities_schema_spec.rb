@@ -11,7 +11,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [fetch, reconcile] }
+        - { name: automation, can: [ingest, reconcile] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -29,6 +29,24 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       entries: []
     YAML
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown capability 'teleport'/)
+  end
+
+  # WS2 / ADR 0088: the quarantine capability was renamed fetch→ingest (breaking,
+  # no shim). A pre-0.51 manifest still saying `can: [fetch]` is rejected like any
+  # unknown capability, but with a pointed hint at the new name.
+  it "rejects the retired 'fetch' capability with an ingest hint" do
+    yaml = <<~YAML
+      version: textus/3
+      roles:
+        - { name: automation, can: [fetch, reconcile] }
+      zones:
+        - { name: feeds, kind: quarantine }
+      entries: []
+    YAML
+    expect { parse(yaml) }.to raise_error(
+      Textus::BadManifest,
+      /unknown capability 'fetch'.*renamed to 'ingest' \(ADR 0088\)/m,
+    )
   end
 
   it "rejects more than one role holding author" do
@@ -60,7 +78,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     yaml = <<~YAML
       version: textus/3
       roles:
-        - { name: importer, can: [fetch] }
+        - { name: importer, can: [ingest] }
       zones:
         - { name: feeds, kind: quarantine }
       entries: []
