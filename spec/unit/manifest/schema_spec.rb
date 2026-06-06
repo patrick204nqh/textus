@@ -52,17 +52,17 @@ RSpec.describe Textus::Manifest::Schema do
     end.to raise_error(Textus::BadManifest, /unknown key 'projection' at '\$\.entries\[0\]'/)
   end
 
-  it "rejects compute.reduce via the generic path" do
+  it "rejects an unknown source sub-key via the generic path" do
     expect do
       validate!(
         "version" => "textus/3",
         "zones" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
-          "key" => "x", "zone" => "output", "path" => "x.json",
-          "compute" => { "kind" => "projection", "select" => ["w.x"], "reduce" => "f" }
+          "key" => "x", "zone" => "output", "path" => "x.json", "kind" => "derived",
+          "source" => { "from" => "template", "template" => "t.mustache", "reduce" => "f" }
         }],
       )
-    end.to raise_error(Textus::BadManifest, /unknown key 'reduce' at '\$\.entries\[0\]\.compute'/)
+    end.to raise_error(Textus::BadManifest, /unknown key 'reduce' at '\$\.entries\[0\]\.source'/)
   end
 
   it "rejects handler_allowlist in a rule via the generic path" do
@@ -235,9 +235,9 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
-  it "rejects the retired upkeep on: discriminator (ADR 0091)" do
+  it "rejects the retired upkeep rule key with a retention/source hint (ADR 0093)" do
     expect { Textus::Manifest::Schema.validate_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
-      .to raise_error(Textus::BadManifest, /unknown key 'on'/)
+      .to raise_error(Textus::BadManifest, /`upkeep:` was removed.*retention/m)
   end
 
   describe "ADR 0091 machine kind" do

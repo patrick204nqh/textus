@@ -8,41 +8,32 @@ RSpec.describe Textus::Manifest::Entry::Derived, ".from_raw provenance" do
     }
   end
 
-  def projection_source
-    Textus::Domain::Policy::Source.new(
-      "from" => "template", "template" => "t.mustache",
-      "project" => { "select" => ["working.*"] }
-    )
+  def source_raw(extra = {})
+    {
+      "source" => {
+        "from" => "template", "template" => "t.mustache",
+        "project" => { "select" => ["working.*"] }
+      }.merge(extra),
+    }
   end
 
   describe "default (no provenance key in raw)" do
     it "defaults provenance to true" do
-      raw = {
-        "compute" => { "kind" => "projection", "select" => ["working.*"] },
-      }
-      entry = described_class.from_raw(common, raw)
+      entry = described_class.from_raw(common, source_raw)
       expect(entry.provenance).to be(true)
     end
   end
 
-  describe "explicit provenance: false" do
+  describe "explicit source.provenance: false" do
     it "parses provenance as false" do
-      raw = {
-        "compute" => { "kind" => "projection", "select" => ["working.*"] },
-        "provenance" => false,
-      }
-      entry = described_class.from_raw(common, raw)
+      entry = described_class.from_raw(common, source_raw("provenance" => false))
       expect(entry.provenance).to be(false)
     end
   end
 
-  describe "explicit provenance: true" do
+  describe "explicit source.provenance: true" do
     it "parses provenance as true" do
-      raw = {
-        "compute" => { "kind" => "projection", "select" => ["working.*"] },
-        "provenance" => true,
-      }
-      entry = described_class.from_raw(common, raw)
+      entry = described_class.from_raw(common, source_raw("provenance" => true))
       expect(entry.provenance).to be(true)
     end
   end
