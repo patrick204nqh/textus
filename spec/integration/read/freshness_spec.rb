@@ -4,6 +4,9 @@ require "time"
 RSpec.describe Textus::Read::Freshness do
   include_context "textus_store_fixture"
 
+  # knowledge.doc / knowledge.stale are intake entries with a source.ttl (the
+  # :refresh signal); identity.note has no source.ttl and no retention rule, so
+  # it is :no_policy. Intake age basis is the envelope's last_fetched_at (ADR 0093).
   let!(:store) do
     store_from_manifest(
       root,
@@ -12,20 +15,14 @@ RSpec.describe Textus::Read::Freshness do
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: knowledge, kind: canon }
+          - { name: knowledge, kind: machine }
           - { name: identity,   kind: canon }
         entries:
-          - { key: knowledge.doc,   path: knowledge/doc.md,   zone: knowledge, kind: leaf}
+          - { key: knowledge.doc,   path: knowledge/doc.md,   zone: knowledge, kind: intake, source: { from: handler, handler: noop, ttl: 1h } }
 
-          - { key: knowledge.stale, path: knowledge/stale.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.stale, path: knowledge/stale.md, zone: knowledge, kind: intake, source: { from: handler, handler: noop, ttl: 1s } }
 
           - { key: identity.note,    path: identity/note.md,    zone: identity, kind: leaf}
-
-        rules:
-          - match: knowledge.doc
-            retention: { ttl: 1h, action: drop }
-          - match: knowledge.stale
-            retention: { ttl: 1s, action: drop }
       YAML
     )
   end

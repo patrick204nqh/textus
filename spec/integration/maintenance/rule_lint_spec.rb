@@ -10,9 +10,9 @@ RSpec.describe Textus::Maintenance::RuleLint do
       zones:
         - { name: intake, kind: machine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: intake, intake: { handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: intake, source: { from: handler, handler: noop } }
       rules:
-        - { match: "intake.*", upkeep: { ttl: 600, action: warn } }
+        - { match: "intake.*", retention: { ttl: 600, action: drop } }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -40,7 +40,7 @@ RSpec.describe Textus::Maintenance::RuleLint do
 
   it "reports an added rule" do
     candidate = File.read(File.join(root, "manifest.yaml")) +
-                %(  - { match: "intake.other", upkeep: { "on": stale, ttl: 60, action: warn } }\n)
+                %(  - { match: "intake.other", retention: { ttl: 60, action: drop } }\n)
     result = build_rule_lint.call(candidate_yaml: candidate)
     adds = result.steps.select { |s| s["op"] == "add_rule" }
     expect(adds.size).to eq(1)

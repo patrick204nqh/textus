@@ -20,12 +20,12 @@ RSpec.describe "publish_tree (ADR 0047)" do
     File.write(abs, contents)
   end
 
-  # Returns the Materialize envelope (published_leaves, pruned, built).
-  # Use this when the test needs to inspect the result shape; use .reconcile
-  # when only the side effects matter.
+  # Runs a full reconcile pass (ADR 0093 replaced Maintenance::Materialize).
+  # publish_tree mirroring is now a side effect of reconcile's produce phase,
+  # so tests assert on the published files ON DISK rather than a result shape.
   def materialize(s = Textus::Store.new(root))
     call = Textus::Call.build(role: "automation")
-    Textus::Maintenance::Materialize.new(container: s.container, call: call).call
+    Textus::Maintenance::Reconcile.new(container: s.container, call: call).call
   end
 
   describe "manifest wiring" do
@@ -76,10 +76,11 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.exist?(File.join(root, ".run/sentinels/skills/my-skill/scripts/build.py.textus-managed.json"))).to be true
     end
 
-    it "reports every mirrored file in published_leaves under the entry key" do
-      envelope = materialize
-      rows = envelope["published_leaves"].select { |r| r["key"] == "working.skills" }
-      expect(rows.map { |r| File.basename(r["target"]) })
+    it "mirrors every leaf file under the published tree on disk" do
+      repo_root = File.dirname(root)
+      materialize
+      mirrored = Dir.glob(File.join(repo_root, "skills/**/*")).select { |p| File.file?(p) }
+      expect(mirrored.map { |p| File.basename(p) })
         .to contain_exactly("commands.md", "foo.md", "build.py")
     end
   end
@@ -107,7 +108,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.exist?(File.join(repo_root, "skills/my-skill/scratch.tmp"))).to be false
     end
 
-    it "raises when the target escapes repo root" do
+    it "reports a produce failure (isolated, not raised) when the target escapes repo root" do
       write_manifest(<<~Y)
         - key: working.skills
           kind: nested
@@ -120,8 +121,12 @@ RSpec.describe "publish_tree (ADR 0047)" do
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
 
-      expect { materialize }
-        .to raise_error(Textus::PublishError, /escapes repo root/)
+      # ADR 0093 reconcile isolates per-entry produce failures into the result
+      # rather than crashing the whole pass.
+      result = materialize
+      expect(result["ok"]).to be false
+      failure = result["produce_failed"].find { |f| f["key"] == "working.skills" }
+      expect(failure["error"]).to match(/escapes repo root/)
     end
   end
 
@@ -141,18 +146,17 @@ RSpec.describe "publish_tree (ADR 0047)" do
       write_file("skills/my-skill/references/foo.md", "foo\n")
     end
 
-    it "deletes a managed file when its source is removed, and reports it in 'pruned'" do
+    it "deletes a managed file from the published tree when its source is removed" do
       repo_root = File.dirname(root)
       store = Textus::Store.new(root)
       materialize(store)
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
 
       File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
-      envelope = materialize(store)
+      materialize(store)
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
       expect(File.exist?(File.join(root, ".run/sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
-      expect(envelope["pruned"]).to include(File.join(repo_root, "skills/my-skill/references/foo.md"))
     end
 
     it "never deletes an unmanaged file a human placed in the target tree" do
@@ -214,10 +218,9 @@ RSpec.describe "publish_tree (ADR 0047)" do
       repo_root = File.dirname(root)
       index = seed_managed_file(repo_root, "skills/my-skill/SKILL.md", "derived index\n")
 
-      envelope = materialize
+      materialize
 
       expect(File.exist?(index)).to be false
-      expect(envelope["pruned"]).to include(index)
     end
   end
 end

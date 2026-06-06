@@ -32,8 +32,7 @@ RSpec.describe Textus::Write::Materializer do
           path: artifacts/catalogs/people.md
           zone: artifacts
           owner: automation:auto
-          compute: { kind: projection, select: knowledge.people, pluck: [name, org], sort_by: name }
-          template: people.mustache
+          source: { from: template, template: people.mustache, project: { select: knowledge.people, pluck: [name, org], sort_by: name } }
     YAML
 
     File.write(File.join(root, "zones/knowledge/people/alice.md"),

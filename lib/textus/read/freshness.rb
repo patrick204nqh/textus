@@ -66,7 +66,10 @@ module Textus
         return base_row(mentry, last).merge(status: :no_policy) if ttl.nil?
 
         basis = basis_time(mentry, last)
-        expired = !basis.nil? && (@call.now - basis).to_i > ttl
+        # A never-recorded entry (no last_fetched_at and no on-disk file) is past
+        # due — it has never been produced. Matches Domain::IntakeStaleness#due?
+        # and the pre-0093 Lifecycle.verdict "never recorded" contract.
+        expired = basis.nil? || (@call.now - basis).to_i > ttl
         base_row(mentry, last).merge(
           ttl_seconds: ttl,
           action: action,

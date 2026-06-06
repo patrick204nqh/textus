@@ -11,7 +11,7 @@ RSpec.describe Textus::CLI::Verb::Get do
     Textus::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
   end
 
-  # A stale intake entry on an on_expire: refresh rule. Since ADR 0089 `get`
+  # A stale intake entry whose source carries a short ttl. Since ADR 0089 `get`
   # is a pure read — it never invokes the intake handler.
   before do
     hook_body = <<~RUBY
@@ -37,10 +37,7 @@ RSpec.describe Textus::CLI::Verb::Get do
             kind: intake
             path: feeds/doc.md
             zone: feeds
-            intake: { handler: test_intake }
-        rules:
-          - match: feeds.doc
-            upkeep: { ttl: 1s, action: refresh }
+            source: { from: handler, handler: test_intake, ttl: 1s }
       YAML
     )
     File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)

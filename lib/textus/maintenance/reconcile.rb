@@ -51,15 +51,19 @@ module Textus
       private
 
       # The full produce scope (ADR 0093): every derived entry (always
-      # re-render — cheap, idempotent) plus every intake entry past its
-      # source.ttl (re-pull only when due, so external sources aren't hammered).
+      # re-render — cheap, idempotent), every entry that mirrors a publish_tree
+      # (the nested-subtree publishers, ADR 0047 — mirrored each pass so a
+      # removed source leaf is swept from the published tree), plus every intake
+      # entry past its source.ttl (re-pull only when due, so external sources
+      # aren't hammered).
       def produce_scope(prefix, zone, file_stat)
-        derived = @container.manifest.data.entries.select(&:derived?)
-                            .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
+        publishable = @container.manifest.data.entries
+                                .select { |e| e.derived? || !e.publish_tree.nil? }
+                                .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
         stale_intake = Textus::Domain::IntakeStaleness.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
         ).call(prefix: prefix, zone: zone)
-        derived + stale_intake
+        (publishable + stale_intake).uniq
       end
 
       def in_scope?(entry, prefix, zone)

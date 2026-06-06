@@ -14,7 +14,8 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
             kind: intake
             path: feeds/foo.md
             zone: feeds
-            intake:
+            source:
+              from: handler
               handler: nonexistent_handler
       YAML
 

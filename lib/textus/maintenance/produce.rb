@@ -58,7 +58,10 @@ module Textus
         if entry.intake?
           Write::FetchWorker.new(container: @container, call: build_call).run(key)
           out[:produced] << key
-        elsif entry.derived?
+        elsif entry.derived? || !entry.publish_tree.nil?
+          # Derived entries render+publish; nested publish_tree entries mirror
+          # their source subtree to the published tree (ADR 0047) — both go
+          # through the polymorphic publish_via.
           result = entry.publish_via(context)
           result.nil? ? (out[:skipped] << key) : (out[:produced] << key)
         else

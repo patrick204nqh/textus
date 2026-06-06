@@ -20,7 +20,8 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
           kind: intake
           path: intake/notes.md
           zone: intake
-          intake:
+          source:
+            from: handler
             handler: local_file
       rules:
         - match: intake.*
@@ -43,7 +44,8 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
           kind: intake
           path: intake/notes.md
           zone: intake
-          intake:
+          source:
+            from: handler
             handler: shady_handler
       rules:
         - match: intake.*
@@ -71,7 +73,8 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
           kind: intake
           path: intake/notes.md
           zone: intake
-          intake:
+          source:
+            from: handler
             handler: anything_goes
     YAML
 
