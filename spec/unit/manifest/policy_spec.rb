@@ -289,18 +289,18 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
-  it "Entry#in_generator_zone? delegates to derived_zone?" do
+  it "Entry::Derived#derived? returns true (ADR 0091: derived-ness is an entry property)" do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
       roles: [{ name: automation, can: [reconcile] }]
-      zones: [{ name: artifacts, kind: derived }]
+      zones: [{ name: artifacts, kind: machine }]
       entries:
         - { key: artifacts.x, path: artifacts/x.md, zone: artifacts, owner: automation:auto, kind: derived,
             compute: { kind: projection, select: [knowledge.notes], pluck: "*" }, template: x.mustache }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     entry = d2.entries.first
-    expect(entry.in_generator_zone?(d2.policy)).to be(true)
+    expect(entry.derived?).to be(true)
   end
 
   describe "declared zone kinds on Data" do

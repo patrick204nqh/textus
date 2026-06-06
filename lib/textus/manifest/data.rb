@@ -49,8 +49,8 @@ module Textus
         @audit_config = build_audit_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])
         # Policy is constructed before entries because Entry validators
-        # call `entry.in_generator_zone?(policy)` and similar helpers
-        # that take Policy as an argument.
+        # use the entry's own `derived?` and similar helpers that call into
+        # Policy; Policy must exist before entries are built.
         @policy = Policy.new(self)
         @entries = build_entries(raw)
         validate_declared_keys!

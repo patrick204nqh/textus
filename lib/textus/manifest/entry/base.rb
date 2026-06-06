@@ -23,8 +23,7 @@ module Textus
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_generator_zone?(policy) = policy.derived_entry?(@key)
-        def in_proposal_zone?(policy)  = policy.queue_zone?(@zone)
+        def in_proposal_zone?(policy) = policy.queue_zone?(@zone)
 
         def nested?  = false
         def derived? = false
