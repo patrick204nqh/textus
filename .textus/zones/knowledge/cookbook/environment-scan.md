@@ -2,17 +2,17 @@
 
 > **Cookbook** · for integrators · **read when** you want a fleet's environments (laptop, cloud servers, …) as protocol-readable, gitignored feed data
 
-The built-in `feeds.machine` snapshot ([machine snapshot](../how-to/configuring-zones.md#machine-snapshot-scaffolded))
+The built-in `artifacts.feeds.machines` snapshot ([machine snapshot](../how-to/configuring-zones.md#machine-snapshot-scaffolded))
 captures *this* host. This recipe scales it to **many machines**: one nested
-intake `feeds.machines.*`, **one leaf per machine**, each holding that host's
+intake `artifacts.feeds.machines.*`, **one leaf per machine**, each holding that host's
 OS / package / runtime snapshot. The control store (your laptop) pulls each
 remote over SSH — *you* own the connection and the probe; textus owns the
 ingest, the `tracked:false` gitignore, and the protocol read.
 
 ```
-feeds.machines.laptop     → { os, packages, runtimes }   (via: local)
-feeds.machines.prod-web   → { os, packages, runtimes }   (via: ssh user@…)
-feeds.machines.db-1       → { os, packages, runtimes }   (via: ssh user@…)
+artifacts.feeds.machines.laptop     → { os, packages, runtimes }   (via: local)
+artifacts.feeds.machines.prod-web   → { os, packages, runtimes }   (via: ssh user@…)
+artifacts.feeds.machines.db-1       → { os, packages, runtimes }   (via: ssh user@…)
 ```
 
 This keeps SPEC §5.4 intact — core makes no network calls; the SSH and the
@@ -24,15 +24,15 @@ refresh** of a stale entry (never `get`/`boot`/`pulse`, per ADR 0037 / 0089).
 ```yaml
 # manifest.yaml
 roles:
-  - { name: automation, can: [reconcile] }      # the reconcile capability the feeds zone needs
+  - { name: automation, can: [reconcile] }      # the reconcile capability the machine zone needs
 zones:
-  - { name: feeds, kind: quarantine }
+  - { name: artifacts, kind: machine }
 entries:
-  - key: feeds.machines
-    path: feeds/machines
-    zone: feeds
+  - key: artifacts.feeds.machines
+    path: artifacts/feeds/machines
+    zone: artifacts
     format: yaml
-    nested: true                              # feeds.machines.<name> fans out, one file per host
+    nested: true                              # artifacts.feeds.machines.<name> fans out, one file per host
     tracked: false                            # gitignored — env data is sensitive/noisy
     kind: intake
     intake:
@@ -43,8 +43,8 @@ entries:
           prod-web: { via: ssh, host: "user@10.0.0.5" }
           db-1:     { via: ssh, host: "user@db.internal" }
 rules:
-  - match: feeds.machines.**
-    upkeep: { "on": stale, ttl: 1h, action: refresh, budget_ms: 20000 }   # refresh on the reconcile sweep; cap a hung SSH
+  - match: artifacts.feeds.machines.**
+    upkeep: { ttl: 1h, action: refresh, budget_ms: 20000 }   # refresh on the reconcile sweep; cap a hung SSH
 ```
 
 ## 2. `.gitignore` — ignore the whole nested tree
@@ -139,15 +139,23 @@ end
 ## 5. Read it (refreshes on stale)
 
 ```bash
-textus get feeds.machines.laptop   --as=automation     # one host (refreshes if stale)
-textus get feeds.machines.prod-web --as=automation
+textus get artifacts.feeds.machines.laptop   --as=automation     # one host (refreshes if stale)
+textus get artifacts.feeds.machines.prod-web --as=automation
 
-textus pulse --output=json                             # `stale` lists expired hosts; `next_due_at` is the soonest deadline
-git check-ignore .textus/zones/feeds/machines/prod-web.yaml   # …yet gitignored
+textus pulse --output=json                                        # `stale` lists expired hosts; `next_due_at` is the soonest deadline
+git check-ignore .textus/zones/artifacts/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 
 Each `reconcile` refresh honours the `ttl` rule, so on a long-running control node
 a scheduled reconcile re-scans at most hourly; `budget_ms` bounds a wedged SSH.
+
+The `.gitignore` entry for the subtree should reference the new path:
+
+```gitignore
+# .textus/.gitignore
+.run/
+zones/artifacts/feeds/machines/
+```
 
 ## Guardrails (why this stays safe)
 

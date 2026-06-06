@@ -24,7 +24,7 @@ module Textus
         private
 
         def applicable?(mentry)
-          mentry.in_generator_zone?(@manifest.policy) &&
+          mentry.derived? &&
             mentry.is_a?(Textus::Manifest::Entry::Derived) &&
             mentry.source.is_a?(Textus::Manifest::Entry::Derived::External)
         end

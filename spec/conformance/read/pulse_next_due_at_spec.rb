@@ -9,7 +9,7 @@ RSpec.describe "Pulse next_due_at" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: quarantine }
+        - { name: intake, kind: machine }
       entries:
         - key: intake.feed
           path: intake/feed.md
@@ -18,7 +18,7 @@ RSpec.describe "Pulse next_due_at" do
           intake:
             handler: noop
       rules:
-        - { match: "intake.*", upkeep: { "on": stale, ttl: 3600s, action: warn } }
+        - { match: "intake.*", upkeep: { ttl: 3600s, action: warn } }
     YAML
     File.write(
       File.join(root, "zones/intake/feed.md"),
@@ -40,7 +40,7 @@ RSpec.describe "Pulse next_due_at" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: quarantine }
+        - { name: intake, kind: machine }
       entries:
         - key: intake.feed
           path: intake/feed.md

@@ -9,7 +9,7 @@ RSpec.describe "CLI hook verbs" do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: intake, kind: quarantine }]
+      zones: [{ name: intake, kind: machine }]
       entries:
         - key: intake.x
           kind: intake

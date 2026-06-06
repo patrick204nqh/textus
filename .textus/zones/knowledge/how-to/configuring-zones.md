@@ -22,30 +22,28 @@ Edit `.textus/manifest.yaml` and add entries under `zones:`. A zone declares onl
 
 ```yaml
 zones:
-  - { name: <zone-name>, kind: <canon|workspace|quarantine|queue|derived> }
+  - { name: <zone-name>, kind: <canon|workspace|machine|queue> }
 ```
 
 ### Declaring a zone's kind
 
 Every zone declares its data-flow role with `kind:` — one of `canon`,
-`workspace`, `quarantine`, `queue`, `derived`:
+`workspace`, `machine`, `queue`:
 
 ```yaml
 zones:
   - { name: knowledge,  kind: canon }
   - { name: notebook,   kind: workspace }
-  - { name: feeds,      kind: quarantine }
+  - { name: artifacts,  kind: machine }
   - { name: proposals,  kind: queue }
-  - { name: artifacts,  kind: derived }
 ```
 
 `kind:` is required — a manifest with a kind-less zone is rejected at load. The
-kind is authoritative: a zone is "derived" only if it says `kind: derived`, and
-`textus put` routes proposals to the zone declaring `kind: queue` (no
-name-based guessing). The kind also fixes the capability a writer must hold —
-`canon`⇒`author`, `workspace`⇒`keep`, `quarantine`⇒`reconcile`, `queue`⇒`propose`, `derived`⇒`reconcile`. (This is a function, not a bijection — `quarantine` and `derived` share `reconcile`; ADR 0090.)
-Rules: at most one `queue` zone, and (since `author` is the single trust
-anchor) at most one role may hold it.
+kind is authoritative: `textus put` routes proposals to the zone declaring
+`kind: queue` (no name-based guessing). The kind also fixes the capability a
+writer must hold — `canon`⇒`author`, `workspace`⇒`keep`, `machine`⇒`reconcile`, `queue`⇒`propose`. This is a **bijection** — one kind maps to exactly one capability (ADR 0091).
+Rules: at most one `queue` zone, at most one `machine` zone, and (since `author`
+is the single trust anchor) at most one role may hold it.
 
 ### Renaming defaults
 
@@ -55,8 +53,8 @@ anchor) at most one role may hold it.
 zones:
   - { name: self,     kind: canon }                       # was knowledge
   - { name: scratch,  kind: workspace }                   # was notebook
-  - { name: extern,   kind: quarantine, read_policy: [all] } # was feeds
-  - { name: compiled, kind: derived }                     # was artifacts
+  - { name: outputs,  kind: machine, read_policy: [all] } # was artifacts
+  - { name: review,   kind: queue }                       # was proposals
 ```
 
 ### Adding new zones
@@ -69,8 +67,7 @@ zones:
   - { name: research,    kind: canon }      # AI-assisted research notes — still author-gated
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
-  - { name: feeds,       kind: quarantine } # external signals — reconcile-holders write
-  - { name: built,       kind: derived }    # rendered outputs — reconcile-holders write
+  - { name: artifacts,   kind: machine }    # machine zone: intake feeds + derived outputs — reconcile-holders write
 ```
 
 ### Tuning role capabilities
@@ -90,7 +87,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
-- **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `publish` (for `derived`), but `put --as=anything` will be refused with `write_forbidden`.
+- **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `publish` (for `machine` derived entries), but `put --as=anything` will be refused with `write_forbidden`.
 - **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `reconcile`, even a human running `put --as=human` against the `derived` zone is refused.
 - **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
@@ -102,26 +99,23 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 ```yaml
 entries:
-  - key: feeds.upstream.notes
-    path: feeds/upstream/notes.md
-    zone: feeds
+  - key: artifacts.feeds.notes
+    path: artifacts/feeds/notes.md
+    zone: artifacts
     intake:
       handler: pull_notes
       config: { url: "https://example.com/notes" }
 
 rules:
-  - match: feeds.upstream.**
-    upkeep:
-      "on": stale          # MUST quote "on" — a bare on: is YAML boolean true
-      ttl: 1h
-      action: refresh
+  - match: artifacts.feeds.**
+    upkeep: { ttl: 1h, action: refresh }
 ```
 
-The `upkeep:` field is a **tagged union** discriminated by `on:` (ADR 0090): `"on": stale` carries the age-based grammar (`ttl`, `action`, optional `budget_ms`); `"on": source_change` carries the dependency-based grammar (`strategy`) — covered under [derived entries](#wiring-data-out--derived-entries-and-publishing) below. **The `"on":` key must be quoted in YAML** — a bare `on:` is parsed as the boolean `true` (YAML 1.1 / Psych) and breaks the union.
+The `upkeep:` block has **no `on:` discriminator** (ADR 0091). The grammar is read from the keys present: `{ ttl, action, budget_ms }` is the age-based grammar (for intake or stored entries); `{ strategy }` is the dependency-based grammar (for derived entries). Mixing the two key-sets, or an empty block, is a load-time parse error. There is no `"on":` key to quote — that YAML footgun is gone.
 
-#### `action:` options (intake — `"on": stale`)
+#### `action:` options (age grammar — intake or stored entries)
 
-For intake entries, `action:` may be `refresh` or `warn` (`drop`/`archive` apply only to stored entries; `doctor` rejects the mismatch via `lifecycle.action_invalid`). A `"on": source_change` tag on a non-derived entry is rejected by `doctor`'s `upkeep.kind_mismatch` check.
+For intake entries, `action:` may be `refresh` or `warn`; `drop`/`archive` apply only to stored (leaf/nested) entries. Derived entries take no age grammar at all — they regenerate from sources. These rules are enforced at load time by `Schema.validate_upkeep_kinds!`: an illegal upkeep↔entry-kind combination is a `BadManifest` load error, not a doctor finding.
 
 | Value | Behaviour |
 |---|---|
@@ -169,7 +163,7 @@ entries:
 
 rules:
   - match: feeds.notion.**
-    upkeep: { "on": stale, ttl: 6h, action: refresh }
+    upkeep: { ttl: 6h, action: refresh }
 ```
 
 On a stale entry, `textus reconcile --as=automation` (or a `hook run` event) invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
@@ -179,21 +173,21 @@ The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the 
 ### Machine snapshot (scaffolded)
 
 `textus init` drops a `machine_intake.rb` `:resolve_intake` hook and a **nested**
-`feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
+`artifacts.feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
 `textus reconcile --as=automation` (when the entry is stale and its rule says
-`action: refresh`) pulls a snapshot of this host into the `feeds` zone:
+`action: refresh`) pulls a snapshot of this host into the `artifacts` machine zone:
 
 - **git** — short HEAD, branch, dirty flag, repo root (the *control* host's repo; only meaningful for `local`)
 - **platform** — os, arch, ruby version, and `runtimes` (node/python/go versions, `null` when not installed)
 - **packages** — counts per manager (`brew`, `apt`); never the package list
 - `captured_at`, `textus_version`, `protocol`
 
-It is **retrievable via the protocol** (`textus get feeds.machines.local`) but
+It is **retrievable via the protocol** (`textus get artifacts.feeds.machines.local`) but
 **gitignored and never published**, because machine info can be sensitive or
 noisy — the entry's `tracked: false` flag drives the generated `.gitignore`
-(the whole `zones/feeds/machines/` subtree). The scan runs **only on a
-`reconcile` refresh** (never a `get`/`boot`/`pulse` read), and a
-`feeds.machines.**` upkeep rule (`upkeep: { "on": stale, ttl: 1h, action: refresh }`) amortizes the
+(the whole `zones/artifacts/feeds/machines/` subtree). The scan runs **only on a
+`reconcile` refresh** (never a `get`/`boot`/`pulse` read), and an
+`artifacts.feeds.machines.**` upkeep rule (`upkeep: { ttl: 1h, action: refresh }`) amortizes the
 cost (a `brew list` count is ~1–3 s) on a long-running server. The hook is a deliberate **allowlist** — versions and counts, no raw
 `env`, no secrets.
 
@@ -202,28 +196,24 @@ Because it's **nested**, it grows to a fleet without renaming: add
 machines* cookbook recipe shows the fan-out). Don't want it? Delete the entry +
 hook to opt out.
 
-### Aging entries out — `upkeep: { "on": stale }` with a destructive action
+### Aging entries out — age-grammar `upkeep:` with a destructive action
 
-Queue and quarantine zones accumulate; an `upkeep: { "on": stale, … }` rule with a
+Queue and machine zones accumulate; an age-grammar `upkeep:` rule with a
 destructive `action` lets them self-prune. Declare it in a `rules:` block, matched
 by glob:
 
 ```yaml
 rules:
   - match: proposals.**
-    upkeep: { "on": stale, ttl: 30d, action: drop }      # delete accepted/abandoned proposals
-  - match: feeds.**
-    upkeep: { "on": stale, ttl: 90d, action: archive }   # move stale external bytes aside
+    upkeep: { ttl: 30d, action: drop }      # delete accepted/abandoned proposals
+  - match: artifacts.feeds.**
+    upkeep: { ttl: 90d, action: archive }   # move stale external bytes aside
 ```
 
 Then `textus reconcile --as=ROLE` performs the destructive sweep (the role must be
 allowed to write the matched zone). `action: drop` deletes the leaf;
 `action: archive` moves it to `.textus/archive/` and then deletes the
-original. `drop`/`archive` apply only to stored entries — `doctor` rejects a
-`refresh` action on a stored entry (and a `drop`/`archive` on an intake entry)
-via `lifecycle.action_invalid`, and a destructive `"on": stale` on a `derived`
-entry via `upkeep.kind_mismatch` (a derived entry regenerates — dropping it on age
-is meaningless). Age is measured from the leaf's file
+original. `drop`/`archive` apply only to stored (leaf/nested) entries; `refresh`/`warn` apply only to intake entries; derived entries take no age grammar (they regenerate — dropping on age is meaningless). These rules are enforced at load by `Schema.validate_upkeep_kinds!` — an illegal combination is a `BadManifest` error, not a doctor finding. Age is measured from the leaf's file
 modification time. Preview with `--dry-run`, narrow a sweep with `--prefix` or
 `--zone`, and inspect what a key is subject to with `textus rule explain KEY` —
 the resolved `upkeep` appears in the effective output.
@@ -264,17 +254,17 @@ For every entry in a reconcile-writable zone:
 4. **Write** — save the bytes to the derived path
 5. **Publish** — for each `publish: { to: }` target (or each file under a `publish: { tree: }` mirror), byte-copy to the repo path, write a sentinel under `.textus/sentinels/`, and fire the `:file_published` pub-sub event. Listeners can subscribe to `:file_published` to react per-file — e.g. run `git add`, notify on writes, or compute checksums.
 
-Phase 2 sweeps the destructive `upkeep: { "on": stale, action: drop|archive }` actions on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
+Phase 2 sweeps the destructive age-grammar `upkeep:` actions (`action: drop|archive`) on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
 
-Derived entries also stay fresh **reactively** between full passes: a canon write re-materializes the derived entries that depend on it, governed by the `source_change` tag of `upkeep`:
+Derived entries also stay fresh **reactively** between full passes: a canon write re-materializes the derived entries that depend on it, governed by the dependency grammar of `upkeep`:
 
 ```yaml
 rules:
-  - match: artifacts.**
-    upkeep: { "on": source_change, strategy: async }   # sync | async (default async)
+  - match: artifacts.derived.**
+    upkeep: { strategy: async }   # sync | async (default async)
 ```
 
-`"on": source_change` is the dependency-based grammar (ADR 0090, the former `materialize` field): `strategy: sync` re-materializes inline under the maintenance lock (the artifact is fresh by the time the write returns); `strategy: async` defers to a background runner. It is valid **only on `derived` entries** — `doctor`'s `upkeep.kind_mismatch` check rejects it elsewhere. The `ttl`/`action` (`"on": stale`) grammar and the `strategy` (`"on": source_change`) grammar are mutually exclusive: a block carries one tag, and each tag rejects the other's keys.
+The dependency grammar (`{ strategy }`) is the ADR 0090/0091 successor to the former `materialize` field: `strategy: sync` re-materializes inline under the maintenance lock (the artifact is fresh by the time the write returns); `strategy: async` defers to a background runner. It is valid **only on `derived` entries** — `Schema.validate_upkeep_kinds!` rejects it elsewhere at load time. The age grammar (`{ ttl, action, budget_ms }`) and the dependency grammar (`{ strategy }`) are mutually exclusive: mixing the two key-sets is a load-time parse error.
 
 ### The sentinel guard
 
@@ -299,7 +289,7 @@ roles:
 zones:
   - { name: knowledge,  kind: canon }
   - { name: notebook,   kind: workspace, owner: agent }
-  - { name: artifacts,  kind: derived }
+  - { name: artifacts,  kind: machine }
 
 entries:
   - key: knowledge.identity.self
@@ -314,17 +304,17 @@ entries:
     nested: true
     owner: human:self
 
-  - key: artifacts.claude-root
-    path: artifacts/claude-root.md
+  - key: artifacts.derived.claude-root
+    path: artifacts/derived/claude-root.md
     zone: artifacts
-    owner: automation:build
+    owner: automation:reconcile
     compute:
       kind: projection
       select: [knowledge.identity.self, knowledge.notes]
       pluck: "*"
-      transform: claude_root         # name of a :transform_rows hook in .textus/hooks/
-    template: claude-root.mustache   # under .textus/templates/
-    inject_boot: true                # merge `textus boot` payload into template data
+      transform: claude_root           # name of a :transform_rows hook in .textus/hooks/
+    template: claude-root.mustache     # under .textus/templates/
+    inject_boot: true                  # merge `textus boot` payload into template data
     publish:
       to: [CLAUDE.md]
 ```
@@ -340,7 +330,7 @@ $ git diff CLAUDE.md                                                   # review 
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, add a zone with `kind: quarantine` (writable by a role holding `reconcile`, e.g. `automation`) and an entry whose `intake: handler:` points at a `:resolve_intake` hook, plus a `rules:` block with an `upkeep: { "on": stale, ttl, action: refresh }` matching the entry. `textus reconcile --as=automation` (on a schedule) then re-pulls any stale entry and keeps it current; a `get` reads it but never refreshes (ADR 0089).
+To layer external feeds in, declare intake entries under `artifacts.feeds.*` in the `machine` zone, each with an `intake: handler:` pointing at a `:resolve_intake` hook, plus a `rules:` block with an `upkeep: { ttl:, action: refresh }` matching those entries. `textus reconcile --as=automation` (on a schedule) then re-pulls any stale entry and keeps it current; a `get` reads it but never refreshes (ADR 0089).
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 

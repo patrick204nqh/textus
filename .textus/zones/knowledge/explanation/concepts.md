@@ -20,19 +20,20 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 
 ```mermaid
 flowchart LR
-    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| feeds["feeds<br/>(quarantine)"]
-    automation(["automation"]) -->|reconcile| feeds
+    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| artifacts_feeds["artifacts.feeds.*<br/>(intake entries)"]
+    automation(["automation"]) -->|reconcile| artifacts_feeds
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
     agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
     proposals -->|human accept| knowledge
-    automation -->|reconcile| artifacts["artifacts<br/>(derived)"]
-    feeds -.->|projection source| artifacts
-    knowledge -.->|projection source| artifacts
-    artifacts -->|publish| files["shipped files"]
+    automation -->|reconcile| artifacts_derived["artifacts.derived.*<br/>(derived entries)"]
+    artifacts_feeds -.->|projection source| artifacts_derived
+    knowledge -.->|projection source| artifacts_derived
+    artifacts_feeds & artifacts_derived -.->|one machine zone| artifacts["artifacts<br/>(machine)"]
+    artifacts_derived -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation reconciles the machine-maintained lanes — it pulls external bytes into `feeds` and materializes `artifacts` from `knowledge`/`feeds`, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the materialized artifacts as shipped files.
+*Flow at a glance:* automation reconciles the one `machine` zone (`artifacts`) — it pulls external bytes into intake entries (`artifacts.feeds.*`) and materializes derived entries (`artifacts.derived.*`) from `knowledge` and feeds, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the materialized artifacts as shipped files.
 
 Two ideas do all the work:
 
@@ -58,7 +59,7 @@ Three ideas make this a *trust* path, not just a copy:
 
 - **Two capabilities, never one.** `propose` lets an agent write into the queue zone (`textus propose` auto-prefixes the key with whatever zone declares `kind: queue`). `author` — the single trust anchor, held by at most one role — is what `accept` requires. An agent has no path to `canon` of its own.
 - **`accept` is a transition, not a capability.** It is gated by two floor predicates — **`author_held`** (you hold the anchor) and **`target_is_canon`** (you may only promote *into* a canon zone). A proposal whose `target_key` points elsewhere is refused as `guard_failed`, and `textus doctor`'s `proposal_targets` check flags it ahead of time. The exact predicate set is the SSoT of [`../reference/zones.md`](../reference/zones.md).
-- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` upkeep rule (`upkeep: { "on": stale, action: drop }`) swept by `textus reconcile` ages out whatever is never resolved.
+- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` upkeep rule (`upkeep: { ttl: 30d, action: drop }`) swept by `textus reconcile` ages out whatever is never resolved.
 
 ## Hooks: RPC vs pub-sub
 

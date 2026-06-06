@@ -7,7 +7,7 @@ module Textus
     # (Schema::KIND_REQUIRES_VERB) and a role may write a zone iff its caps
     # include that verb (verb_for_zone, roles_with_capability). Derived /
     # proposal-queue status is authoritative via the declared-kind family
-    # (declared_kind, derived_zone?, queue_zone?, queue_zone).
+    # (declared_kind, derived_entry?, queue_zone?, queue_zone).
     class Policy
       def initialize(data)
         @data = data
@@ -72,9 +72,21 @@ module Textus
         @data.declared_zone_kinds.key(:queue)
       end
 
-      # A zone is derived iff it declares kind: derived.
-      def derived_zone?(zone_name)
-        declared_kind(zone_name) == :derived
+      # ADR 0091: derived-ness is a property of the ENTRY, not its zone (one
+      # machine zone holds both intake and derived entries). Resolve the entry
+      # and ask it directly. Returns false if entries are not yet built
+      # (validator phase during Data#initialize) — validators must not rely on
+      # cross-entry state during construction.
+      def derived_entry?(key)
+        return false if @data.entries.nil?
+
+        entry = @data.entries.find { |e| e.key == key } or return false
+        entry.derived?
+      end
+
+      # The single zone declaring kind: machine, or nil.
+      def machine_zone
+        @data.declared_zone_kinds.key(:machine)
       end
 
       # A zone is a proposal queue iff it declares kind: queue.

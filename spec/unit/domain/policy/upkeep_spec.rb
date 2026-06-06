@@ -1,8 +1,8 @@
 require "spec_helper"
 
 RSpec.describe Textus::Domain::Policy::Upkeep do
-  describe "on: stale (age-based)" do
-    let(:policy) { described_class.new("on" => "stale", "ttl" => "6h", "action" => "refresh") }
+  describe "age-based (ttl/action keys)" do
+    let(:policy) { described_class.new("ttl" => "6h", "action" => "refresh") }
 
     it "is the stale tag and exposes a Lifecycle sub-view" do
       expect(policy.stale?).to be(true)
@@ -13,19 +13,19 @@ RSpec.describe Textus::Domain::Policy::Upkeep do
       expect(policy.materialize).to be_nil
     end
 
-    it "rejects a source_change-only field under stale" do
-      expect { described_class.new("on" => "stale", "ttl" => "6h", "action" => "refresh", "strategy" => "sync") }
-        .to raise_error(Textus::BadManifest, /strategy/)
+    it "rejects mixing age and dependency keys" do
+      expect { described_class.new("ttl" => "6h", "action" => "refresh", "strategy" => "sync") }
+        .to raise_error(Textus::BadManifest, /cannot mix/)
     end
 
     it "rejects an unknown action via the inner Lifecycle" do
-      expect { described_class.new("on" => "stale", "ttl" => "6h", "action" => "explode") }
+      expect { described_class.new("ttl" => "6h", "action" => "explode") }
         .to raise_error(Textus::Error, /refresh|warn|drop|archive/)
     end
   end
 
-  describe "on: source_change (dependency-based)" do
-    let(:policy) { described_class.new("on" => "source_change", "strategy" => "sync") }
+  describe "dependency-based (strategy key)" do
+    let(:policy) { described_class.new("strategy" => "sync") }
 
     it "is the source_change tag and exposes a Materialize sub-view" do
       expect(policy.source_change?).to be(true)
@@ -34,18 +34,39 @@ RSpec.describe Textus::Domain::Policy::Upkeep do
       expect(policy.lifecycle).to be_nil
     end
 
-    it "defaults strategy to async when omitted" do
-      expect(described_class.new("on" => "source_change").materialize.on_change).to eq("async")
-    end
-
-    it "rejects a stale-only field under source_change" do
-      expect { described_class.new("on" => "source_change", "ttl" => "6h") }
-        .to raise_error(Textus::BadManifest, /ttl/)
+    it "defaults strategy to async when strategy key is nil" do
+      expect(described_class.new("strategy" => nil).materialize.on_change).to eq("async")
     end
   end
 
-  it "rejects an unknown tag" do
-    expect { described_class.new("on" => "whenever") }
-      .to raise_error(Textus::BadManifest, /upkeep.on must be one of stale\|source_change/)
+  it "rejects an empty block (no recognisable keys)" do
+    expect { described_class.new({}) }
+      .to raise_error(Textus::BadManifest, /must carry/)
+  end
+
+  describe "ADR 0091 keyed upkeep (no on:)" do
+    it "reads the age grammar from ttl/action keys" do
+      u = Textus::Domain::Policy::Upkeep.new({ "ttl" => "30m", "action" => "refresh" })
+      expect(u.lifecycle.on_expire).to eq(:refresh)
+      expect(u.materialize).to be_nil
+      expect(u.stale?).to be(true)
+    end
+
+    it "reads the dependency grammar from strategy" do
+      u = Textus::Domain::Policy::Upkeep.new({ "strategy" => "sync" })
+      expect(u.materialize.sync?).to be(true)
+      expect(u.lifecycle).to be_nil
+      expect(u.source_change?).to be(true)
+    end
+
+    it "rejects mixing the two grammars" do
+      expect { Textus::Domain::Policy::Upkeep.new({ "ttl" => "30m", "strategy" => "sync" }) }
+        .to raise_error(Textus::BadManifest, /cannot mix/)
+    end
+
+    it "rejects an empty/ambiguous block" do
+      expect { Textus::Domain::Policy::Upkeep.new({}) }
+        .to raise_error(Textus::BadManifest, /must carry/)
+    end
   end
 end

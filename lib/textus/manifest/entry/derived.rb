@@ -21,7 +21,7 @@ module Textus
         def external?   = @source.is_a?(External)
 
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          return nil unless in_generator_zone?(pctx.manifest.policy)
+          # Derived entries always materialize here; external ones are skipped below.
           # External entries are produced by an out-of-band runner — textus has
           # no in-process runner. The build path only tracks their staleness
           # (Domain::Staleness::GeneratorCheck); materializing here would clobber

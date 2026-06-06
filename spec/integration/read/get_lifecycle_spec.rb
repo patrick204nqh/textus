@@ -12,7 +12,7 @@ RSpec.describe Textus::Read::Get do
         - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
       rules:
         - match: "review.*"
-          upkeep: { "on": stale, ttl: 30d, action: warn }
+          upkeep: { ttl: 30d, action: warn }
     YAML
   end
 

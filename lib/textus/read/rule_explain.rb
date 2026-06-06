@@ -88,12 +88,12 @@ module Textus
 
       # Lean keeps string keys (it merges into the string-keyed lean view);
       # detail's `effective` block is symbol-keyed. `action` carries the
-      # Lifecycle#on_expire Symbol as-is (matches the prior lifecycle rendering).
+      # Lifecycle#on_expire Symbol as-is. ADR 0091: grammar is keyed, no `on:`.
       def upkeep_hash(upkeep, string_keys:)
         h = if upkeep.stale?
-              { on: "stale", ttl_seconds: upkeep.lifecycle.ttl_seconds, action: upkeep.lifecycle.on_expire }
+              { ttl_seconds: upkeep.lifecycle.ttl_seconds, action: upkeep.lifecycle.on_expire }
             else
-              { on: "source_change", strategy: upkeep.materialize.on_change }
+              { strategy: upkeep.materialize.on_change }
             end
         string_keys ? h.transform_keys(&:to_s) : h
       end

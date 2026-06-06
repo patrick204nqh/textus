@@ -30,7 +30,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
       roles:
         - { name: automation, can: [reconcile] }
       zones:
-        - { name: feeds, kind: quarantine }
+        - { name: feeds, kind: machine }
       entries:
         - key: feeds.machines
           path: feeds/machines
@@ -47,7 +47,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
                 prod-web: { via: ssh, host: "user@10.0.0.5" }
       rules:
         - match: feeds.machines.**
-          upkeep: { "on": stale, ttl: 1h, action: warn }
+          upkeep: { ttl: 1h, action: warn }
     YAML
   end
 

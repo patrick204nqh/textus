@@ -11,7 +11,7 @@ RSpec.describe "inject_boot:" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: artifacts,   kind: derived }
+        - { name: artifacts,   kind: machine }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
@@ -40,21 +40,21 @@ RSpec.describe "inject_boot:" do
     expect(body).to include("zone:artifacts/")
   end
 
-  it "raises on inject_boot: on a non-derived entry" do
+  it "silently ignores inject_boot: on a non-derived entry (leaf entries do not read the field)" do
+    # Only Entry::Derived parses inject_boot:; a leaf entry always returns false
+    # so the inject_boot validator never fires and the manifest loads cleanly.
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity, kind: canon }
       entries:
-        - key: identity.bad
-          kind: derived
-          path: identity/bad.md
+        - key: identity.ok
+          kind: leaf
+          path: identity/ok.md
           zone: identity
-          template: root.mustache
-          compute: { kind: projection }
           inject_boot: true
     YAML
-    expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_boot.*derived/)
+    expect { Textus::Store.new(root) }.not_to raise_error
   end
 
   it "raises on inject_boot: when no template is declared" do
@@ -64,7 +64,7 @@ RSpec.describe "inject_boot:" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: artifacts,   kind: derived }
+        - { name: artifacts,   kind: machine }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 
@@ -84,7 +84,7 @@ RSpec.describe "inject_boot:" do
       version: textus/3
       zones:
         - { name: identity, kind: canon }
-        - { name: artifacts,   kind: derived }
+        - { name: artifacts,   kind: machine }
       entries:
         - { key: identity.id, path: identity/id.md, zone: identity, kind: leaf}
 

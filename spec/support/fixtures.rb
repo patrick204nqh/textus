@@ -46,8 +46,8 @@ module TextusSpecHelpers
   # presets name their zone after its kind, so a `kind_zone:` override yields a
   # correctly-named lane (e.g. canon → "knowledge") rather than a mislabeled one.
   LANE_ZONE = {
-    "canon" => "knowledge", "workspace" => "notebook", "quarantine" => "feeds",
-    "queue" => "proposals", "derived" => "artifacts"
+    "canon" => "knowledge", "workspace" => "notebook", "machine" => "feeds",
+    "queue" => "proposals"
   }.freeze
 
   # Preset: a single canon zone "knowledge" holding one leaf entry. The most
@@ -67,14 +67,14 @@ module TextusSpecHelpers
     YAML
   end
 
-  # Preset: a quarantine "feeds" zone + a canon "knowledge" zone, each with one
-  # leaf. The standard write-path shape (untrusted intake in quarantine, owned
+  # Preset: a machine "feeds" zone + a canon "knowledge" zone, each with one
+  # leaf. The standard write-path shape (untrusted intake in machine, owned
   # content in canon). Used by put/delete/mv/accept/reject specs.
   def quarantine_store(root)
     store_from_manifest(root, zones: %w[feeds knowledge], manifest: <<~YAML)
       version: textus/3
       zones:
-        - { name: feeds, kind: quarantine }
+        - { name: feeds, kind: machine }
         - { name: knowledge, kind: canon }
       entries:
         - { key: feeds.foo, path: feeds/foo.md, zone: feeds, kind: leaf }
@@ -82,15 +82,15 @@ module TextusSpecHelpers
     YAML
   end
 
-  # Preset: a quarantine "feeds" zone with one intake entry (key feeds.doc) wired
+  # Preset: a machine "feeds" zone with one intake entry (key feeds.doc) wired
   # to a `test_intake` handler, plus an upkeep rule. Pass the handler's hook
   # body and the rule's ttl / on_expire (refresh|warn for intake; ADR 0090 folds
   # this into the `upkeep` tagged union — the `on_expire:` kwarg maps to the
-  # upkeep `action:` under `"on": stale`).
-  # Writes the hook into the store's hooks/ dir. Defaults to quarantine; pass
+  # upkeep `action:` under a keyed upkeep).
+  # Writes the hook into the store's hooks/ dir. Defaults to machine; pass
   # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
   # follow the kind via LANE_ZONE.
-  def intake_store(root, intake_body:, ttl: "1h", on_expire: "refresh", kind_zone: "quarantine")
+  def intake_store(root, intake_body:, ttl: "1h", on_expire: "refresh", kind_zone: "machine")
     zone = LANE_ZONE.fetch(kind_zone)
     store_from_manifest(
       root,
@@ -108,7 +108,7 @@ module TextusSpecHelpers
             intake: { handler: test_intake }
         rules:
           - match: #{zone}.doc
-            upkeep: { "on": stale, ttl: #{ttl}, action: #{on_expire} }
+            upkeep: { ttl: #{ttl}, action: #{on_expire} }
       YAML
     )
   end

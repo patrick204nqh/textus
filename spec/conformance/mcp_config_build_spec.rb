@@ -28,7 +28,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
 

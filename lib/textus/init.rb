@@ -3,7 +3,7 @@ require "pathname"
 
 module Textus
   module Init
-    ZONES = %w[knowledge notebook feeds proposals artifacts].freeze
+    ZONES = %w[knowledge notebook proposals artifacts].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
@@ -14,22 +14,21 @@ module Textus
       zones:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
-        - { name: feeds,     kind: quarantine, desc: "external inputs pulled in" }
         - { name: proposals, kind: queue,     desc: "changes awaiting your accept" }
-        - { name: artifacts, kind: derived,   desc: "computed, shippable outputs" }
+        - { name: artifacts, kind: machine,   desc: "machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)" }
       entries:
         - { key: knowledge.identity, path: knowledge/identity.md, zone: knowledge, schema: null, owner: human:self, kind: leaf }
         - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
         # A per-host snapshot, refreshed from its declared intake by `textus reconcile` (scheduled, or on demand).
-        # Nested so it grows to a fleet — add feeds.machines.<host> leaves over SSH
+        # Nested so it grows to a fleet — add artifacts.feeds.machines.<host> leaves over SSH
         # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable
-        # via `textus get feeds.machines.local`. Delete to opt out. (ADR 0043)
-        - key: feeds.machines
-          path: feeds/machines
-          zone: feeds
+        # via `textus get artifacts.feeds.machines.local`. Delete to opt out. (ADR 0043)
+        - key: artifacts.feeds.machines
+          path: artifacts/feeds/machines
+          zone: artifacts
           format: yaml
           nested: true
           tracked: false
@@ -40,8 +39,8 @@ module Textus
               machines:
                 local: { via: local }
       rules:
-        - match: feeds.machines.**
-          upkeep: { "on": stale, ttl: 1h, action: warn } # meaningful on a long-running server
+        - match: artifacts.feeds.machines.**
+          upkeep: { ttl: 1h, action: warn } # meaningful on a long-running server
     YAML
 
     HOOKS_README = <<~MD
@@ -77,17 +76,16 @@ module Textus
 
       ```yaml
       entries:
-        - key: feeds.foo
+        - key: artifacts.feeds.foo
           kind: intake
-          path: feeds/foo.md
-          zone: feeds
+          path: artifacts/feeds/foo.md
+          zone: artifacts
           intake:
             handler: my_source
 
       rules:
-        - match: feeds.foo
+        - match: artifacts.feeds.foo
           upkeep:
-            "on": stale
             ttl: 10m
             action: refresh   # refresh | warn (intake); drop | archive (stored)
       ```
@@ -107,8 +105,8 @@ module Textus
       # projection below, which `textus reconcile` renders to CLAUDE.md/AGENTS.md.
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
       - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
-      - key: artifacts.orientation
-        path: artifacts/orientation.md
+      - key: artifacts.derived.orientation
+        path: artifacts/derived/orientation.md
         zone: artifacts
         template: orientation.mustache
         inject_boot: true
@@ -195,7 +193,7 @@ module Textus
       manifest = Textus::Manifest.load(target_root)
       root = Pathname.new(target_root)
       untracked = manifest.data.entries.reject(&:tracked?).map do |e|
-        if e.nested? # a whole subtree of leaf files (feeds.machines.* → zones/feeds/machines/)
+        if e.nested? # a whole subtree of leaf files (artifacts.feeds.machines.* → zones/artifacts/feeds/machines/)
           "#{File.join("zones", e.path)}/"
         else
           Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s

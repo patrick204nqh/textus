@@ -12,16 +12,15 @@ RSpec.describe "textus/3 conformance" do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/network/org"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/projects"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
+    FileUtils.mkdir_p(File.join(root, "zones/artifacts/feeds/calendar"))
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/feeds/calendar"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
         - { name: identity,  kind: canon }
         - { name: knowledge,   kind: canon }
-        - { name: artifacts, kind: derived }
-        - { name: feeds,     kind: quarantine }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: identity.self,         path: identity/self,         zone: identity,   owner: human:patrick, kind: leaf}
 
@@ -30,18 +29,17 @@ RSpec.describe "textus/3 conformance" do
         - { key: knowledge.projects,      path: knowledge/projects,      zone: knowledge,    owner: human:patrick, kind: nested}
 
         - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
-        - key: feeds.calendar.events
+        - key: artifacts.feeds.calendar.events
           kind: intake
-          path: feeds/calendar/events
-          zone: feeds
+          path: artifacts/feeds/calendar/events
+          zone: artifacts
           owner: automation:cron
           intake:
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
       rules:
-        - match: feeds.calendar.events
+        - match: artifacts.feeds.calendar.events
           upkeep:
-            "on": stale
             ttl: 300s
             action: warn
     YAML
@@ -158,8 +156,8 @@ RSpec.describe "textus/3 conformance" do
 
   describe "feeds lifecycle via TTL (freshness)" do
     def feeds_row
-      store.as(Textus::Role::DEFAULT).freshness(zone: "feeds")
-           .find { |r| r[:key] == "feeds.calendar.events" }
+      store.as(Textus::Role::DEFAULT).freshness(zone: "artifacts")
+           .find { |r| r[:key] == "artifacts.feeds.calendar.events" }
     end
 
     it "marks a never-recorded feeds entry expired" do
@@ -169,7 +167,7 @@ RSpec.describe "textus/3 conformance" do
     end
 
     it "marks a feeds entry past its TTL expired" do
-      feeds_path = File.join(root, "zones/feeds/calendar/events.md")
+      feeds_path = File.join(root, "zones/artifacts/feeds/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
       # iso8601 second-truncation in last_fetched_at.
       stale_time = (Time.now - 3600).utc.iso8601
@@ -186,7 +184,7 @@ RSpec.describe "textus/3 conformance" do
     end
 
     it "marks a feeds entry within its TTL fresh" do
-      feeds_path = File.join(root, "zones/feeds/calendar/events.md")
+      feeds_path = File.join(root, "zones/artifacts/feeds/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
       File.write(feeds_path, <<~MD)
         ---

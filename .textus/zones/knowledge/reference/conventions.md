@@ -95,12 +95,12 @@ textus pulse --output=json                             # `stale` lists expired e
 textus reconcile --as=automation                       # re-pulls every stale action: refresh entry
 ```
 
-Upkeep budgets live in the top-level `rules:` block, matched by glob (the `"on":` discriminator must be quoted — a bare `on:` is YAML boolean true):
+Upkeep budgets live in the top-level `rules:` block, matched by glob. The grammar is read from the keys present: `{ ttl, action, budget_ms }` is the age grammar (intake or stored entries); `{ strategy }` is the dependency grammar (derived entries only):
 
 ```yaml
 rules:
-  - match: feeds.notion.**
-    upkeep: { "on": stale, ttl: 6h, action: refresh }   # refresh | warn | drop | archive
+  - match: artifacts.feeds.notion.**
+    upkeep: { ttl: 6h, action: refresh }   # refresh | warn | drop | archive
 ```
 
 A typical scheduled integration runs `reconcile` on a cron to re-pull every

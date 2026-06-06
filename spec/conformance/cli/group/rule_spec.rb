@@ -14,11 +14,11 @@ RSpec.describe "textus rule group" do
         - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       rules:
-        # "on" must be quoted — bare `on:` is YAML 1.1 boolean true (Psych), breaking the upkeep tag dispatch.
+        # ADR 0091: no `on:` discriminator — grammar is keyed (ttl/action → age; strategy → dependency)
         - match: "knowledge.*"
-          upkeep: { "on": stale, ttl: 1h, action: refresh }
+          upkeep: { ttl: 1h, action: warn }
         - match: knowledge.doc
-          upkeep: { "on": stale, ttl: 5m, action: refresh }
+          upkeep: { ttl: 5m, action: warn }
           intake_handler_allowlist: [src_a]
     YAML
   end
@@ -31,8 +31,8 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_list")
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
-      expect(payload["policies"].first["upkeep"]["on"]).to eq("stale")
       expect(payload["policies"].first["upkeep"]["ttl_seconds"]).to eq(3600)
+      expect(payload["policies"].first["upkeep"]["action"]).to eq("warn")
     end
 
     it "serializes a stale upkeep as a plain hash with integer seconds" do
@@ -46,14 +46,14 @@ RSpec.describe "textus rule group" do
 
         rules:
           - match: knowledge.doc
-            upkeep: { "on": stale, ttl: 30d, action: drop }
+            upkeep: { ttl: 30d, action: drop }
       YAML
       rc = run(%w[rule list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       block = payload["policies"].find { |b| b["match"] == "knowledge.doc" }
       expect(block["upkeep"]).to eq(
-        "on" => "stale", "ttl_seconds" => 2_592_000, "action" => "drop", "budget_ms" => nil,
+        "ttl_seconds" => 2_592_000, "action" => "drop", "budget_ms" => nil,
       )
     end
   end
@@ -65,8 +65,8 @@ RSpec.describe "textus rule group" do
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("rule_explain")
       expect(payload.keys - %w[protocol verb upkeep guard]).to be_empty
-      expect(payload["upkeep"]["on"]).to eq("stale")
       expect(payload["upkeep"]["ttl_seconds"]).to eq(300)
+      expect(payload["upkeep"]["action"]).to eq("warn")
     end
 
     it "with --detail returns matched blocks and effective values for a key" do
@@ -76,8 +76,8 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_explain")
       expect(payload["key"]).to eq("knowledge.doc")
       expect(payload["matched_blocks"].length).to eq(2)
-      expect(payload["effective"]["upkeep"]["on"]).to eq("stale")
       expect(payload["effective"]["upkeep"]["ttl_seconds"]).to eq(300)
+      expect(payload["effective"]["upkeep"]["action"]).to eq("warn")
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])
     end
 
@@ -95,10 +95,10 @@ RSpec.describe "textus rule group" do
       File.write(cand, <<~YAML)
         rules:
           - match: knowledge.doc
-            upkeep: { "on": stale, ttl: 5m, action: refresh }
+            upkeep: { ttl: 5m, action: warn }
             intake_handler_allowlist: [src_a]
           - match: knowledge.new
-            upkeep: { "on": stale, ttl: 2h, action: warn }
+            upkeep: { ttl: 2h, action: warn }
       YAML
       rc = run(["rule", "lint", "--against=#{cand}"])
       expect(rc).to eq(0), "stderr: #{stderr.string}"

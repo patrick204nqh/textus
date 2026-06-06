@@ -12,7 +12,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
       template: opts[:template],
-      in_generator_zone?: opts.fetch(:in_generator_zone, false),
     )
   end
 
@@ -28,7 +27,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       schema: opts[:schema],
       template: opts[:template],
       external?: opts.fetch(:external, false),
-      in_generator_zone?: opts.fetch(:in_generator_zone, false),
+      projection?: opts.fetch(:projection, !opts.fetch(:external, false)),
     )
   end
 
@@ -43,7 +42,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       format: opts.fetch(:format, "text"),
       schema: opts[:schema],
       template: opts[:template],
-      in_generator_zone?: opts.fetch(:in_generator_zone, true),
     )
   end
 
@@ -74,7 +72,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
   it "requires template for derived markdown" do
     expect do
       described_class.call(derived_entry(
-                             format: "markdown", in_generator_zone: true,
+                             format: "markdown",
                              template: nil, external: false
                            ), policy: nil)
     end.to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
@@ -83,7 +81,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
   it "accepts derived text with template" do
     expect do
       described_class.call(derived_entry(
-                             format: "text", path: "x.txt", in_generator_zone: true,
+                             format: "text", path: "x.txt",
                              template: "x.mustache", external: false
                            ), policy: nil)
     end.not_to raise_error
@@ -92,7 +90,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
   it "accepts derived markdown with generator (no template)" do
     expect do
       described_class.call(derived_entry(
-                             format: "markdown", in_generator_zone: true,
+                             format: "markdown",
                              template: nil, external: true
                            ), policy: nil)
     end.not_to raise_error

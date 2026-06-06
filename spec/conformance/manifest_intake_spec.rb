@@ -21,7 +21,7 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.handler and intake.config" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: feeds, kind: quarantine }]
+      zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
           kind: intake
@@ -39,7 +39,7 @@ RSpec.describe "Manifest intake:" do
   it "exposes lifecycle rule via Manifest#rules_for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
-      zones: [{ name: feeds, kind: quarantine }]
+      zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
           kind: intake
@@ -50,7 +50,6 @@ RSpec.describe "Manifest intake:" do
       rules:
         - match: feeds.news
           upkeep:
-            "on": stale
             ttl: 10m
             action: refresh
             budget_ms: 800
@@ -88,7 +87,7 @@ RSpec.describe "Manifest intake:" do
   it "parses intake.publish_to as a list of targets" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: feeds, kind: quarantine }]
+      zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
           kind: intake
@@ -105,7 +104,7 @@ RSpec.describe "Manifest intake:" do
   it "defaults publish_to to an empty array when omitted" do
     e = load_entry(<<~YAML)
       version: textus/3
-      zones: [{ name: feeds, kind: quarantine }]
+      zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
           kind: intake

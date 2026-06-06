@@ -17,7 +17,7 @@ RSpec.describe Textus::Maintenance::Materialize do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
 
@@ -130,7 +130,7 @@ RSpec.describe Textus::Maintenance::Materialize do
       s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries:
           - key: artifacts.agents
             kind: nested
@@ -169,7 +169,7 @@ RSpec.describe Textus::Maintenance::Materialize do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries:
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
           - key: artifacts.catalogs.big
@@ -207,7 +207,7 @@ RSpec.describe Textus::Maintenance::Materialize do
       s = store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML)
         version: textus/3
         zones:
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries:
           - key: artifacts.catalog
             kind: intake

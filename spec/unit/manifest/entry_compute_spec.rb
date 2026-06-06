@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Entry do
     Textus::Manifest.parse(<<~YAML)
       version: textus/3
       zones:
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
       #{yaml_body.gsub(/^/, "  ")}
     YAML

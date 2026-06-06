@@ -62,7 +62,7 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, kind: quarantine }]
+        zones: [{ name: intake, kind: machine }]
         entries:
           - key: intake.x
             kind: intake
@@ -158,7 +158,7 @@ RSpec.describe "Lifecycle events" do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: artifacts,  kind: derived }
+          - { name: artifacts,  kind: machine }
         entries:
           - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 

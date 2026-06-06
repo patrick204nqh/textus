@@ -7,7 +7,6 @@ RSpec.describe Textus::Boot do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/identity"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/intake"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
     FileUtils.mkdir_p(File.join(root, "zones/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
@@ -21,11 +20,10 @@ RSpec.describe Textus::Boot do
         - { name: agent,      can: [propose] }
         - { name: automation, can: [reconcile] }
       zones:
-        - { name: identity, kind: canon,      desc: "slow-changing identity; human-only writes" }
-        - { name: knowledge,  kind: canon,      desc: "active project state; humans, AI, and scripts share this surface" }
-        - { name: intake,   kind: quarantine }
-        - { name: proposals,   kind: queue }
-        - { name: artifacts,   kind: derived }
+        - { name: identity,  kind: canon,   desc: "slow-changing identity; human-only writes" }
+        - { name: knowledge, kind: canon,   desc: "active project state; humans, AI, and scripts share this surface" }
+        - { name: artifacts, kind: machine, desc: "computed outputs + external feeds" }
+        - { name: proposals, kind: queue }
       entries:
         - { key: identity.self, path: identity/self.md, zone: identity, owner: human:self, kind: leaf}
 
@@ -34,10 +32,10 @@ RSpec.describe Textus::Boot do
           path: knowledge/notes
           zone: knowledge
           nested: true
-        - key: intake.feed
+        - key: artifacts.feed
           kind: intake
-          path: intake/feed.md
-          zone: intake
+          path: artifacts/feed.md
+          zone: artifacts
           owner: automation:local
           intake:
             handler: demo-action
@@ -82,7 +80,7 @@ RSpec.describe Textus::Boot do
   it "lists zones with writers and purposes derived from manifest desc:" do
     env = described_class.build(container: store.container)
     names = env["zones"].map { |z| z["name"] }
-    expect(names).to contain_exactly("identity", "knowledge", "intake", "proposals", "artifacts")
+    expect(names).to contain_exactly("identity", "knowledge", "artifacts", "proposals")
     identity = env["zones"].find { |z| z["name"] == "identity" }
     expect(identity["writers"]).to eq(["human"])
     expect(identity["purpose"]).to include("human-only")
@@ -90,9 +88,6 @@ RSpec.describe Textus::Boot do
     knowledge = env["zones"].find { |z| z["name"] == "knowledge" }
     expect(knowledge["writers"]).to eq(["human"])
     expect(knowledge).to have_key("purpose")
-
-    intake = env["zones"].find { |z| z["name"] == "intake" }
-    expect(intake["writers"]).to eq(["automation"])
 
     proposals = env["zones"].find { |z| z["name"] == "proposals" }
     expect(proposals["writers"]).to contain_exactly("human", "agent")
@@ -124,8 +119,8 @@ RSpec.describe Textus::Boot do
     expect(by_key["identity.self"]["derived"]).to be false
     expect(by_key["identity.self"]["intake"]).to be false
 
-    expect(by_key["intake.feed"]["intake"]).to be true
-    expect(by_key["intake.feed"]["derived"]).to be false
+    expect(by_key["artifacts.feed"]["intake"]).to be true
+    expect(by_key["artifacts.feed"]["derived"]).to be false
 
     expect(by_key["artifacts.report"]["derived"]).to be true
     expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
@@ -216,7 +211,7 @@ RSpec.describe Textus::Boot do
         zones:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
-          - { name: artifacts,   kind: derived }
+          - { name: artifacts,   kind: machine }
         entries: []
       YAML
       s = store_from_manifest(root, manifest: yaml)
@@ -237,7 +232,7 @@ RSpec.describe Textus::Boot do
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
     expect(parsed["protocol"]).to eq("textus/3")
-    expect(parsed["zones"].length).to eq(5)
+    expect(parsed["zones"].length).to eq(4)
     expect(parsed["cli_verbs"]).to be_an(Array)
   end
 

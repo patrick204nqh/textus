@@ -4,7 +4,7 @@
 
 1. **Phase 1 — materialize** — re-render every derived entry in scope from its
    sources (idempotent; unchanged sources write nothing).
-2. **Phase 2 — stale sweep** — apply each entry's destructive `upkeep: { "on": stale }`
+2. **Phase 2 — stale sweep** — apply each entry's destructive age-grammar `upkeep:`
    action (`action: drop` deletes; `action: archive` moves the leaf to
    `.textus/archive/` then deletes the original) to entries past their TTL.
 
@@ -17,7 +17,7 @@ textus schedules **nothing** itself — it has no in-process runner by design
 
 In day-to-day use, derived entries stay fresh **reactively** — a canon write
 re-materializes dependent derived entries automatically per the
-`upkeep: { "on": source_change }` rule. `reconcile` is the on-demand catch-all for full recomputation or
+`upkeep: { strategy: async }` rule. `reconcile` is the on-demand catch-all for full recomputation or
 lifecycle enforcement.
 
 ## Preview first

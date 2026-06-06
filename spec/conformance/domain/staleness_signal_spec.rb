@@ -21,7 +21,7 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts,  kind: derived }
+        - { name: artifacts,  kind: machine }
       entries:
         - key: knowledge.src
           kind: leaf
@@ -74,7 +74,7 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - key: artifacts.report
           kind: derived
@@ -106,7 +106,12 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
     expect(rows.first["message"]).to match(/modified after generated\.at/)
   end
 
-  it "negative-signal: a zone literally named 'derived' but with kind: canon is NOT generator-kind" do
+  # ADR 0091: generator-drift detection is keyed off ENTRY kind (entry.derived?),
+  # not zone kind. A zone named "derived" with kind: canon still contains derived
+  # entries that ARE flagged — the zone-name coincidence is irrelevant.
+  # The real negative-signal is: leaf entries (kind: leaf) NEVER trigger drift
+  # regardless of zone name.
+  it "negative-signal: leaf entries do NOT trigger generator_drift regardless of zone name" do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/derived"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -120,20 +125,14 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
           path: knowledge/src.md
           zone: knowledge
         - key: derived.note
-          kind: derived
+          kind: leaf
           path: derived/note.md
           zone: derived
-          compute:
-            kind: external
-            command: "echo"
-            sources: [knowledge.src]
     YAML
 
     File.write(File.join(root, "zones/knowledge/src.md"), "---\nname: src\n---\nbody\n")
-    # No file at derived/note.md → if treated as generator zone, would be flagged
-    # with "derived entry has never been generated". Because the zone declares
-    # kind: canon (not derived), it must NOT be inspected by Staleness's
-    # generator pass.
+    File.write(File.join(root, "zones/derived/note.md"), "---\nname: note\n---\nbody\n")
+    # Leaf entries never carry compute: — Staleness's generator pass skips them.
 
     store = Textus::Store.new(root)
     expect(generator_drift(store)).to eq([])

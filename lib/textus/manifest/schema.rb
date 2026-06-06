@@ -1,24 +1,20 @@
 module Textus
   class Manifest
-    module Schema
+    module Schema # rubocop:disable Metrics/ModuleLength
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
-      # The closed coordination vocabulary (ADR 0028; completed at five in ADR
-      # 0033; unified in ADR 0034; the quarantine capability folded into
-      # reconcile in ADR 0090). Each lane pairs a zone-kind with the capability
-      # that authorizes originating bytes in it. This table is the ONE source of
-      # truth; the derived constants below cannot drift. It is a FUNCTION, not a
-      # bijection — `quarantine` and `derived` are both machine-maintained lanes
-      # and share `reconcile` (ADR 0090). Key order is canon-first so the
-      # unknown-kind error message reads canon, workspace, quarantine, queue,
-      # derived.
+      # The closed coordination vocabulary (ADR 0028; five in 0033; unified in
+      # 0034; the quarantine + derived ZONE-KINDS folded into one `machine` kind
+      # in ADR 0091). Each kind pairs with the capability that authorizes
+      # originating bytes in it. ONE source of truth; the derived constants below
+      # cannot drift. A BIJECTION again (0090 had two kinds → reconcile; 0091
+      # collapses them, so kind ↔ capability is 1:1).
       LANES = {
         "canon" => "author",
         "workspace" => "keep",
-        "quarantine" => "reconcile",
+        "machine" => "reconcile",
         "queue" => "propose",
-        "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
@@ -38,7 +34,7 @@ module Textus
       # only this set. The per-tag narrowing (rejecting cross-tag fields) lives in
       # Domain::Policy::Upkeep#reject_foreign! — UPKEEP_KEYS is not the complete
       # validation.
-      UPKEEP_KEYS = %w[on ttl action budget_ms strategy].freeze
+      UPKEEP_KEYS = %w[ttl action budget_ms strategy].freeze
 
       # The ONE source of truth for the rule-block field set (WS3). Adding a
       # rule field means adding one entry here; everything downstream derives
@@ -116,6 +112,7 @@ module Textus
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_single_queue!(raw)
+        validate_single_machine!(raw)
         validate_zone_kind_consistency!(raw)
       end
 
@@ -126,6 +123,13 @@ module Textus
             raise BadManifest.new("zone '#{z["name"]}' at '$.zones[#{i}]' must declare a kind (one of: #{ZONE_KINDS.join(", ")})")
           end
           next if ZONE_KINDS.include?(z["kind"])
+
+          if %w[quarantine derived].include?(z["kind"])
+            raise BadManifest.new(
+              "zone kind '#{z["kind"]}' at '$.zones[#{i}]' was folded into 'machine' (ADR 0091) — " \
+              "use `kind: machine`",
+            )
+          end
 
           raise BadManifest.new(
             "unknown zone kind '#{z["kind"]}' at '$.zones[#{i}]' (known: #{ZONE_KINDS.join(", ")})",
@@ -196,7 +200,6 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           reject_retired_rule_keys!(r, path)
-          reject_unquoted_on!(r, path)
           walk(r, RULE_KEYS, path)
           FIELD_REGISTRY.each_value do |meta|
             next unless meta[:sub_keys]
@@ -208,36 +211,19 @@ module Textus
       end
 
       # ADR 0090 merged the lifecycle/materialize rule fields into `upkeep`.
+      # ADR 0091 removed the `on:` discriminator — grammar is now keyed.
       def self.reject_retired_rule_keys!(rule, path)
         return unless rule.is_a?(Hash)
 
         %w[lifecycle materialize].each do |old|
           next unless rule.key?(old)
 
-          tag = old == "lifecycle" ? "\"on\": stale" : "\"on\": source_change"
+          hint = old == "lifecycle" ? "upkeep: { ttl, action }" : "upkeep: { strategy }"
           raise BadManifest.new(
-            "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090) — use " \
-            "`upkeep: { #{tag}, … }`.",
+            "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090/0091) — use " \
+            "`#{hint}`.",
           )
         end
-      end
-
-      # `on:` is upkeep's discriminator, but a BARE `on:` parses as the YAML 1.1
-      # boolean true (Psych), so `upkeep: { on: stale }` arrives as
-      # `{ true => "stale" }`. Without this the generic sub-key walk rejects it
-      # as a cryptic "unknown key 'true'"; intercept with a quoting hint instead.
-      def self.reject_unquoted_on!(rule, path)
-        return unless rule.is_a?(Hash)
-
-        upkeep = rule["upkeep"]
-        return unless upkeep.is_a?(Hash)
-        return unless upkeep.keys.any? { |k| [true, false].include?(k) }
-
-        raise BadManifest.new(
-          "upkeep: the `on:` discriminator must be quoted in YAML at '#{path}.upkeep' — " \
-          "a bare `on:` parses as the boolean true (YAML 1.1). " \
-          "Write `upkeep: { \"on\": stale, … }` (ADR 0090).",
-        )
       end
 
       def self.validate_roles!(roles)
@@ -334,6 +320,45 @@ module Textus
         raise BadManifest.new(
           "at most one zone may declare kind: queue (found: #{queues.join(", ")})",
         )
+      end
+
+      def self.validate_single_machine!(raw)
+        machines = Array(raw["zones"]).select { |z| z["kind"] == "machine" }.map { |z| z["name"] }
+        return if machines.size <= 1
+
+        raise BadManifest.new(
+          "at most one zone may declare kind: machine (found: #{machines.join(", ")})",
+        )
+      end
+
+      # ADR 0091: the upkeep grammar must match the entry kind. Replaces the
+      # deleted doctor checks upkeep.kind_mismatch + lifecycle.action_invalid
+      # with one eager load error (illegal combinations cannot load).
+      def self.validate_upkeep_kinds!(manifest)
+        manifest.data.entries.each do |entry|
+          upkeep = manifest.rules.for(entry.key).upkeep
+          next if upkeep.nil?
+
+          if upkeep.source_change? && !entry.derived?
+            raise BadManifest.new("entry '#{entry.key}': upkeep strategy (dependency) is only valid for a derived entry")
+          end
+          next unless upkeep.stale?
+
+          action = upkeep.lifecycle.on_expire
+          if entry.derived?
+            raise BadManifest.new(
+              "entry '#{entry.key}': a derived entry regenerates; " \
+              "an age-retention upkeep is invalid (drop it or use strategy)",
+            )
+          elsif action == :refresh && !entry.intake?
+            raise BadManifest.new("entry '#{entry.key}': upkeep action: refresh is only valid for an intake entry")
+          elsif %i[drop archive].include?(action) && entry.intake?
+            raise BadManifest.new(
+              "entry '#{entry.key}': upkeep action: #{action} is invalid for an intake entry " \
+              "(it re-fetches, not prunes)",
+            )
+          end
+        end
       end
 
       # Write authority is derived from capabilities (ADR 0030): a zone of a

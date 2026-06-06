@@ -13,7 +13,7 @@ RSpec.describe "textus reconcile concurrency (build lock)" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 

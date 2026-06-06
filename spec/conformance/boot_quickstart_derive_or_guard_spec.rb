@@ -17,7 +17,7 @@ RSpec.describe "boot agent quickstart / recipes — derive-or-guard (ADR 0056)" 
         - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
-        - { name: feeds,     kind: quarantine }
+        - { name: feeds,     kind: machine }
         - { name: proposals, kind: queue }
       entries: []
     YAML

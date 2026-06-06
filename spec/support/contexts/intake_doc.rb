@@ -11,7 +11,7 @@
 RSpec.shared_context "intake doc" do
   let(:intake_ttl)       { "1h" }
   let(:intake_on_expire) { "refresh" }
-  let(:intake_kind_zone) { "quarantine" }
+  let(:intake_kind_zone) { "machine" }
   let(:intake_body) do
     <<~RUBY
       Textus.hook do |reg|

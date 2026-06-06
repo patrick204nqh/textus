@@ -12,7 +12,7 @@ RSpec.describe Textus::Doctor do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
 
@@ -203,5 +203,9 @@ RSpec.describe Textus::Doctor do
       codes = res["issues"].map { |i| i["code"] }
       expect(codes).to include("role_authority")
     end
+  end
+
+  it "no longer registers the retired upkeep checks (ADR 0091)" do
+    expect(Textus::Doctor::ALL_CHECKS).not_to include("upkeep_kind_mismatch", "lifecycle_action_invalid")
   end
 end

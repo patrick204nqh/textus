@@ -9,7 +9,7 @@ RSpec.describe Textus::Read::Get do
   end
 
   def build_store_no_intake
-    minimal_store(root, kind_zone: "quarantine", key: "feeds.doc", path: "feeds/doc.md")
+    minimal_store(root, kind_zone: "machine", key: "feeds.doc", path: "feeds/doc.md")
   end
 
   def write_doc_in_knowledge(last_fetched_at:)

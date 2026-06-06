@@ -9,7 +9,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
+        "zones" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [],
       )
@@ -26,7 +26,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "ohno" => 1 }],
+        "zones" => [{ "name" => "intake", "kind" => "machine", "ohno" => 1 }],
         "entries" => [],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'ohno' at '\$\.zones\[0\]'/)
@@ -36,7 +36,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine", "writable_by" => ["automation"] }],
+        "zones" => [{ "name" => "intake", "kind" => "machine", "writable_by" => ["automation"] }],
         "entries" => [],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'writable_by'/)
@@ -46,7 +46,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "derived" }],
+        "zones" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{ "key" => "x", "zone" => "output", "path" => "x.json", "projection" => {} }],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'projection' at '\$\.entries\[0\]'/)
@@ -56,7 +56,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "derived" }],
+        "zones" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
           "key" => "x", "zone" => "output", "path" => "x.json",
           "compute" => { "kind" => "projection", "select" => ["w.x"], "reduce" => "f" }
@@ -69,7 +69,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
+        "zones" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [{ "match" => "intake.x.*", "handler_allowlist" => ["h"] }],
       )
@@ -114,14 +114,13 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   it "accepts 'inbox' zone structurally (schema validates keys not values)" do
-    # The schema walker validates KEYS, not values. The 'inbox' rename is gone
-    # too — there is no special handling. An 'inbox' zone is structurally legal here;
-    # nothing in the codebase actually creates zone directories under that name.
+    # The schema walker validates KEYS, not values. An 'inbox' zone is structurally
+    # legal here; nothing in the codebase actually creates zone directories under that name.
     # This is intentional — one error format per concern.
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "inbox", "kind" => "quarantine" }],
+        "zones" => [{ "name" => "inbox", "kind" => "machine" }],
         "entries" => [],
       )
     end.not_to raise_error
@@ -188,7 +187,7 @@ RSpec.describe Textus::Manifest::Schema do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "intake", "kind" => "quarantine" }],
+          "zones" => [{ "name" => "intake", "kind" => "machine" }],
           "entries" => [],
         )
       end.not_to raise_error
@@ -233,6 +232,33 @@ RSpec.describe Textus::Manifest::Schema do
           "entries" => [],
         )
       end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.zones\[0\]'/)
+    end
+  end
+
+  it "rejects the retired upkeep on: discriminator (ADR 0091)" do
+    expect { Textus::Manifest::Schema.validate_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
+      .to raise_error(Textus::BadManifest, /unknown key 'on'/)
+  end
+
+  describe "ADR 0091 machine kind" do
+    it "accepts kind: machine and maps it to reconcile" do
+      expect(Textus::Manifest::Schema::LANES["machine"]).to eq("reconcile")
+      expect(Textus::Manifest::Schema::ZONE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
+    end
+
+    it "rejects the retired quarantine/derived kinds with a 0091 hint" do
+      expect do
+        Textus::Manifest::Schema.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
+      end.to raise_error(Textus::BadManifest, /folded into 'machine' \(ADR 0091\)/)
+    end
+
+    it "rejects a manifest with two machine zones" do
+      raw = { "zones" => [
+        { "name" => "artifacts", "kind" => "machine" },
+        { "name" => "feeds", "kind" => "machine" },
+      ] }
+      expect { Textus::Manifest::Schema.validate_single_machine!(raw) }
+        .to raise_error(Textus::BadManifest, /at most one zone may declare kind: machine/)
     end
   end
 end

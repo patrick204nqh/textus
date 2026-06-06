@@ -1,6 +1,6 @@
 # Intake recipes
 
-> **Cookbook** · for integrators · **read when** wiring an external source into a `feeds` zone
+> **Cookbook** · for integrators · **read when** wiring an external source into the `machine` zone as intake entries
 
 Each recipe is the same shape: **declare an entry + rule → write a hook that does
 the I/O → delegate parsing to a built-in.** You own the network call; textus owns
@@ -30,13 +30,13 @@ end
 ```yaml
 # manifest.yaml
 entries:
-  - key: feeds.api.users
-    path: feeds/api/users.md
-    zone: feeds
+  - key: artifacts.feeds.api.users
+    path: artifacts/feeds/api/users.md
+    zone: artifacts
     kind: intake
     intake: { handler: http_json, config: { url: "https://api.example.com/users" } }
 rules:
-  - { match: feeds.api.**, upkeep: { "on": stale, ttl: 15m, action: refresh } }
+  - { match: artifacts.feeds.api.**, upkeep: { ttl: 15m, action: refresh } }
 ```
 
 Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stale `action: refresh` entry; `textus get feeds.api.users` is then a pure read of the refreshed bytes)

@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts,  kind: derived }
+        - { name: artifacts,  kind: machine }
       entries:
         - key: knowledge.src
           kind: leaf

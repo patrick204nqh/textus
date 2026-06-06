@@ -6,7 +6,7 @@ module Textus
   #
   #   * data     — frozen value: raw, root, zones, entries, audit_config, role_caps
   #   * resolver — resolves keys → entry + path
-  #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
+  #   * policy   — zone/role authority (zone_writers, declared_kind, derived_entry?,
   #     queue_zone?, permission_for, …)
   #   * rules    — match-block rule engine (lifecycle, handler allowlist, materialize, …)
   #
@@ -44,12 +44,14 @@ module Textus # rubocop:disable Style/OneClassPerFile
 
       def build(raw, root)
         data = Manifest::Data.parse(raw, root: root)
-        new(
+        manifest = new(
           data: data,
           resolver: Manifest::Resolver.new(data),
           policy: data.policy,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
+        Manifest::Schema.validate_upkeep_kinds!(manifest) # ADR 0091
+        manifest
       end
 
       def check_version!(raw, source)

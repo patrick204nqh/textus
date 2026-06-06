@@ -3,12 +3,10 @@ module Textus
     class Entry
       module Validators
         module InjectBoot
-          def self.call(entry, policy:)
+          def self.call(entry, policy:) # rubocop:disable Lint/UnusedMethodArgument
             return unless entry.inject_boot
 
-            unless entry.in_generator_zone?(policy)
-              raise UsageError.new("entry '#{entry.key}': inject_boot: is only valid on derived entries")
-            end
+            raise UsageError.new("entry '#{entry.key}': inject_boot: is only valid on derived entries") unless entry.derived?
 
             return unless entry.template.nil?
 

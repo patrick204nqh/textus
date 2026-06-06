@@ -95,7 +95,7 @@ git commit -m "Adopt textus context store"
 | Project facts and operational knowledge | `knowledge` | human only | `knowledge.project` — the `ledger` service description; `knowledge.runbooks.*` |
 | External data pulled in on `fetch` | `feeds` | automation (`fetch`) | `feeds.machines.local` — nested host snapshot (git/os/runtimes); `tracked:false` so it's protocol-readable but gitignored |
 | Agent suggests a change for human approval | `proposals` | agent → human accept | `proposals.decisions.0001-…` |
-| Build-computed projection of all of the above | `artifacts` | automation only | `artifacts.orientation` → `CLAUDE.md` + `AGENTS.md` |
+| Build-computed projection of all of the above | `artifacts` | automation only | `artifacts.derived.orientation` → `CLAUDE.md` + `AGENTS.md` |
 
 The `proposals` flow is the load-bearing piece for AI-assisted edits: agents
 never write directly to knowledge zones — they write a

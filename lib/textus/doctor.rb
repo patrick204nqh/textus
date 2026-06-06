@@ -26,8 +26,6 @@ module Textus
       Check::OrphanedPublishTargets,
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
-      Check::LifecycleActionInvalid,
-      Check::UpkeepKindMismatch,
       Check::GeneratorDrift,
     ].freeze
 
