@@ -19,14 +19,14 @@ RSpec.describe "Textus::Init with_agent profile" do
   it "appends the orientation projection entries under --with-agent" do
     dir, root, = init(with_agent: true)
     manifest = File.read(File.join(root, "manifest.yaml"))
-    expect(manifest).to include("key: artifacts.orientation")
+    expect(manifest).to include("key: artifacts.derived.orientation")
     expect(manifest).to include("transform: orientation_reducer")
     expect(manifest).to include("- CLAUDE.md").and include("- AGENTS.md")
     # base entries still present (additive superset)
     expect(manifest).to include("key: knowledge.identity")
     expect(manifest).to include("key: knowledge.project")
     # entries stay above the rules block
-    expect(manifest.index("artifacts.orientation")).to be < manifest.index("rules:")
+    expect(manifest.index("artifacts.derived.orientation")).to be < manifest.index("rules:")
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
@@ -34,7 +34,7 @@ RSpec.describe "Textus::Init with_agent profile" do
   it "produces a loadable manifest under --with-agent" do
     dir, root, = init(with_agent: true)
     expect { Textus::Manifest.load(root) }.not_to raise_error
-    entry = Textus::Manifest.load(root).data.entries.find { |e| e.key == "artifacts.orientation" }
+    entry = Textus::Manifest.load(root).data.entries.find { |e| e.key == "artifacts.derived.orientation" }
     expect(entry).not_to be_nil
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)

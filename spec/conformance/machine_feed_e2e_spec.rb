@@ -23,8 +23,8 @@ RSpec.describe "feeds.machines end-to-end" do
   # into stores, that the nested `local` leaf is protocol-readable, the tree is
   # gitignored, and nothing leaks secrets.
   it "fetches the local leaf: allowlisted, protocol-readable, AND gitignored" do
-    fetch_machine("feeds.machines.local") # explicit fetch — never per-turn
-    content = store.as("automation").get("feeds.machines.local").content
+    fetch_machine("artifacts.feeds.machines.local") # explicit fetch — never per-turn
+    content = store.as("automation").get("artifacts.feeds.machines.local").content
 
     expect(content.keys).to contain_exactly(
       "git_head", "git_branch", "git_dirty", "repo_root", "captured_at",
@@ -39,11 +39,11 @@ RSpec.describe "feeds.machines end-to-end" do
     expect(content).not_to have_key("env")
     expect(content.to_s).not_to include(ENV.fetch("HOME", "/Users/nobody"))
 
-    expect(`git check-ignore .textus/zones/feeds/machines/local.yaml`.strip).not_to be_empty
+    expect(`git check-ignore .textus/zones/artifacts/feeds/machines/local.yaml`.strip).not_to be_empty
   end
 
   it "rejects an unknown machine leaf with a clear error" do
-    expect { fetch_machine("feeds.machines.nope") }
+    expect { fetch_machine("artifacts.feeds.machines.nope") }
       .to raise_error(/unknown machine: nope/)
   end
 end
