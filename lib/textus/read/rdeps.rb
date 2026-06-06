@@ -24,9 +24,9 @@ module Textus
           next unless e.is_a?(Textus::Manifest::Entry::Derived)
 
           src = e.source
-          sources = if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
+          sources = if src.projection?
                       Array(src.select).compact
-                    elsif src.is_a?(Textus::Manifest::Entry::Derived::External)
+                    elsif src.external?
                       Array(src.sources).compact
                     else
                       []

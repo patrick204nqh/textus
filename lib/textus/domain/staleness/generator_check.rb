@@ -26,7 +26,7 @@ module Textus
         def applicable?(mentry)
           mentry.derived? &&
             mentry.is_a?(Textus::Manifest::Entry::Derived) &&
-            mentry.source.is_a?(Textus::Manifest::Entry::Derived::External)
+            mentry.source.external?
         end
 
         def stale_reason(mentry, path)

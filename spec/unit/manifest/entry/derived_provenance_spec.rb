@@ -9,8 +9,9 @@ RSpec.describe Textus::Manifest::Entry::Derived, ".from_raw provenance" do
   end
 
   def projection_source
-    Textus::Manifest::Entry::Derived::Projection.new(
-      select: ["working.*"], pluck: nil, sort_by: nil, transform: nil,
+    Textus::Domain::Policy::Source.new(
+      "from" => "template", "template" => "t.mustache",
+      "project" => { "select" => ["working.*"] }
     )
   end
 

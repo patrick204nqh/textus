@@ -12,7 +12,7 @@ module Textus
         meta = {}
         if mentry.is_a?(Textus::Manifest::Entry::Derived)
           src = mentry.source
-          if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
+          if src.projection?
             from = Array(src.select).compact
             meta["from"] = from unless from.empty?
             meta["reduce"] = src.transform if src.transform
@@ -55,7 +55,7 @@ module Textus
         data =
           Textus::Projection.new(
             reader: deps.reader,
-            spec: mentry.source.to_h.transform_keys(&:to_s),
+            spec: mentry.source.projection_spec,
             lister: deps.lister,
             rpc: deps.rpc,
             transform_context: deps.transform_context,
