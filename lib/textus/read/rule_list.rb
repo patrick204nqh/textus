@@ -45,12 +45,13 @@ module Textus
         end
       end
 
+      # ADR 0091: grammar is keyed (no `on:` discriminator in rendered output).
       def serialize_upkeep(upkeep)
         if upkeep.stale?
-          { "on" => "stale", "ttl_seconds" => upkeep.lifecycle.ttl_seconds,
+          { "ttl_seconds" => upkeep.lifecycle.ttl_seconds,
             "action" => upkeep.lifecycle.on_expire, "budget_ms" => upkeep.lifecycle.budget_ms }
         else
-          { "on" => "source_change", "strategy" => upkeep.materialize.on_change }
+          { "strategy" => upkeep.materialize.on_change }
         end
       end
     end

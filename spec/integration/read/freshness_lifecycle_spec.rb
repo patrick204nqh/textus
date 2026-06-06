@@ -12,7 +12,7 @@ RSpec.describe Textus::Read::Freshness do
         - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
       rules:
         - match: "review.*"
-          upkeep: { "on": stale, ttl: 30d, action: drop }
+          upkeep: { ttl: 30d, action: drop }
     YAML
   end
 
