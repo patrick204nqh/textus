@@ -2,7 +2,7 @@ require "timeout"
 
 module Textus
   module Write
-    # Internal ingest executor for one quarantine/intake entry. No longer a
+    # Internal ingest executor for one machine-zone intake entry. No longer a
     # public verb (ADR 0079 collapsed the `fetch` surface): used by the
     # `reconcile` sweep and `textus hook run` only — ingest is system-pushed
     # (ADR 0089 removed the read-through that once also drove it).
