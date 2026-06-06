@@ -6,7 +6,7 @@ module Textus
   #
   #   * data     — frozen value: raw, root, zones, entries, audit_config, role_caps
   #   * resolver — resolves keys → entry + path
-  #   * policy   — zone/role authority (zone_writers, declared_kind/derived_zone?/
+  #   * policy   — zone/role authority (zone_writers, declared_kind, derived_entry?,
   #     queue_zone?, permission_for, …)
   #   * rules    — match-block rule engine (lifecycle, handler allowlist, materialize, …)
   #
