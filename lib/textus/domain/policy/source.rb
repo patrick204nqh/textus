@@ -45,7 +45,22 @@ module Textus
         def sync?       = @on_write == "sync"
         def ttl_seconds = @ttl.nil? ? nil : Textus::Domain::Duration.seconds(@ttl)
 
+        # Projection field accessors (ADR 0093) — mirror the old
+        # Derived::Projection Data surface so the builder/renderers read them
+        # uniformly off a Policy::Source. nil when this is not a template source
+        # or the field is absent.
+        def select    = project_field("select")
+        def pluck     = project_field("pluck")
+        def sort_by   = project_field("sort_by")
+        def transform = project_field("transform")
+
+        # The projection spec hash the builder feeds to Textus::Projection
+        # (string keys, the four projection fields). {} when no projection.
+        def projection_spec = @project || {}
+
         private
+
+        def project_field(key) = @project && @project[key]
 
         def init_handler(raw)
           @handler = raw["handler"] or

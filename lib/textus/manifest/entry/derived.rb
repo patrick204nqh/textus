@@ -2,9 +2,6 @@ module Textus
   class Manifest
     class Entry
       class Derived < Base
-        Projection = ::Data.define(:select, :pluck, :sort_by, :transform)
-        External   = ::Data.define(:sources, :command)
-
         attr_reader :source, :template, :inject_boot, :provenance, :events
 
         def initialize(source:, template: nil, inject_boot: false, provenance: true, events: {}, **rest)
@@ -16,9 +13,9 @@ module Textus
           @events = events || {}
         end
 
-        def derived? = true
-        def projection? = @source.is_a?(Projection)
-        def external?   = @source.is_a?(External)
+        def derived?    = true
+        def projection? = @source.projection?
+        def external?   = @source.external?
 
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
           # Derived entries always materialize here; external ones are skipped below.
@@ -39,8 +36,7 @@ module Textus
             pctx.emit(:file_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
           end
 
-          src = @source
-          selects = src.is_a?(Projection) ? Array(src.select).compact : []
+          selects = @source.projection? ? Array(@source.select).compact : []
           pctx.emit(:build_completed, key: @key, envelope: envelope, sources: selects)
 
           { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
@@ -50,11 +46,13 @@ module Textus
 
         def self.from_raw(common, raw)
           source = Parser.parse_source(raw, common[:key])
+          raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: template|command") unless source.kind == :derived
+
           new(
             source: source,
-            template: raw["template"],
-            inject_boot: raw["inject_boot"] == true,
-            provenance: raw.fetch("provenance", true) != false,
+            template: source.template,
+            inject_boot: source.inject_boot,
+            provenance: source.provenance,
             events: raw["events"] || {},
             **common,
           )

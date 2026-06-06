@@ -45,6 +45,17 @@ RSpec.describe Textus::Domain::Policy::Source do
       expect(s.sync?).to be(false)
       expect(s.provenance).to be(true)
     end
+
+    it "exposes projection field accessors" do
+      expect(src.select).to eq("k.*")
+      expect(src.pluck).to eq(["title"])
+      expect(src.sort_by).to be_nil
+      expect(src.transform).to be_nil
+    end
+
+    it "exposes projection_spec as the project hash" do
+      expect(src.projection_spec).to eq("select" => "k.*", "pluck" => ["title"])
+    end
   end
 
   describe "from: command (derived external)" do
@@ -60,6 +71,11 @@ RSpec.describe Textus::Domain::Policy::Source do
 
     it "returns nil ttl_seconds when no ttl is set" do
       expect(src.ttl_seconds).to be_nil
+    end
+
+    it "has nil projection accessors and empty projection_spec when not a template" do
+      expect(src.select).to be_nil
+      expect(src.projection_spec).to eq({})
     end
   end
 
