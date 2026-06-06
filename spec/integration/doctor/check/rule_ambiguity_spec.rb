@@ -20,7 +20,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.foo
-          lifecycle: { ttl: 10m, on_expire: warn }
+          upkeep: { "on": stale, ttl: 10m, action: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -39,9 +39,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          lifecycle: { ttl: 10m, on_expire: warn }
+          upkeep: { "on": stale, ttl: 10m, action: warn }
         - match: "*.foo"
-          lifecycle: { ttl: 1h, on_expire: warn }
+          upkeep: { "on": stale, ttl: 1h, action: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -50,11 +50,11 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       expect(ambig).not_to be_nil
       expect(ambig["subject"]).to eq("knowledge.foo")
       expect(ambig["level"]).to eq("warning")
-      expect(ambig["message"]).to include("lifecycle")
+      expect(ambig["message"]).to include("upkeep")
     end
   end
 
-  it "warns on a materialize tie (WS3: materialize is now linted)" do
+  it "warns on an upkeep source_change tie (materialize folded into upkeep; ADR 0090)" do
     manifest = <<~YAML
       version: textus/3
       zones:
@@ -63,14 +63,14 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
         - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
       rules:
         - match: knowledge.*
-          materialize: { on_change: sync }
+          upkeep: { "on": source_change, strategy: sync }
         - match: "*.foo"
-          materialize: { on_change: async }
+          upkeep: { "on": source_change, strategy: async }
     YAML
 
     with_store(manifest) do |store|
       issues = described_class.new(store.container).call
-      ambig = issues.find { |i| i["code"] == "rule.ambiguity" && i["message"].include?("materialize") }
+      ambig = issues.find { |i| i["code"] == "rule.ambiguity" && i["message"].include?("upkeep") }
       expect(ambig).not_to be_nil
       expect(ambig["subject"]).to eq("knowledge.foo")
     end
@@ -86,9 +86,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          lifecycle: { ttl: 10m, on_expire: warn }
+          upkeep: { "on": stale, ttl: 10m, action: warn }
         - match: knowledge.foo
-          lifecycle: { ttl: 1h, on_expire: warn }
+          upkeep: { "on": stale, ttl: 1h, action: warn }
     YAML
 
     with_store(manifest) do |store|

@@ -155,7 +155,7 @@ Manifest references the same name on both sides:
 
 rules:
   - match: intake.linear.**
-    lifecycle: { ttl: 1h, on_expire: warn }
+    upkeep: { "on": stale, ttl: 1h, action: warn }
 ```
 
 ### Audit listener — every write to a sensitive zone

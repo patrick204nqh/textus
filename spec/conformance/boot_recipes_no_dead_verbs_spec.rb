@@ -11,7 +11,7 @@ RSpec.describe "Boot recipes name no deleted verbs" do
       version: textus/3
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [ingest, reconcile] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: identity, kind: canon, desc: "human-only" }
         - { name: intake,   kind: quarantine }
@@ -19,8 +19,8 @@ RSpec.describe "Boot recipes name no deleted verbs" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:ingest_recipe) { Textus::Boot.build(container: store.container)["agent_protocol"]["recipes"]["ingest"] }
-  let(:steps_text) { ingest_recipe["steps"].join("\n") }
+  let(:reconcile_recipe) { Textus::Boot.build(container: store.container)["agent_protocol"]["recipes"]["reconcile"] }
+  let(:steps_text) { reconcile_recipe["steps"].join("\n") }
 
   it "the refresh recipe does not call fetch_all" do
     expect(steps_text).not_to include("fetch_all")

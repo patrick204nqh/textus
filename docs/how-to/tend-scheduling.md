@@ -4,11 +4,11 @@
 
 1. **Phase 1 — materialize** — re-render every derived entry in scope from its
    sources (idempotent; unchanged sources write nothing).
-2. **Phase 2 — lifecycle sweep** — apply each entry's destructive `lifecycle`
-   action (`on_expire: drop` deletes; `on_expire: archive` moves the leaf to
+2. **Phase 2 — stale sweep** — apply each entry's destructive `upkeep: { "on": stale }`
+   action (`action: drop` deletes; `action: archive` moves the leaf to
    `.textus/archive/` then deletes the original) to entries past their TTL.
 
-(Intake refresh **is** part of the `reconcile` sweep — a stale `on_expire: refresh`
+(Intake refresh **is** part of the `reconcile` sweep — a stale `action: refresh`
 intake entry is re-pulled there, or by a `hook run` event. A `get` never
 refreshes; it is a pure read (ADR 0089).)
 
@@ -16,8 +16,8 @@ textus schedules **nothing** itself — it has no in-process runner by design
 (ADR 0078). The host owns the timer; `reconcile` is the verb it calls.
 
 In day-to-day use, derived entries stay fresh **reactively** — a canon write
-re-materializes dependent derived entries automatically per the `materialize:`
-rule slot. `reconcile` is the on-demand catch-all for full recomputation or
+re-materializes dependent derived entries automatically per the
+`upkeep: { "on": source_change }` rule. `reconcile` is the on-demand catch-all for full recomputation or
 lifecycle enforcement.
 
 ## Preview first

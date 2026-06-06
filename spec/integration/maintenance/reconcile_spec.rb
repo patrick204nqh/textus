@@ -27,7 +27,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
           - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
         rules:
           - match: "review.*"
-            lifecycle: { ttl: 30d, on_expire: drop }
+            upkeep: { "on": stale, ttl: 30d, action: drop }
       YAML
       leaf = File.join(root, "zones/review/oncall.md")
       File.write(leaf, "---\n_meta: {name: oncall, uid: aaaaaaaaaaaaaaaa}\n---\nbody\n")
@@ -93,7 +93,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
 
     # Fixture: a canon zone with source entries + a derived zone with one
     # projection entry. The manifest omits `roles:` so the default mapping
-    # applies (automation => [ingest, reconcile]).
+    # applies (automation => [reconcile]).
     let(:store) do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
       FileUtils.mkdir_p(File.join(root, "zones/artifacts"))

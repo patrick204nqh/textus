@@ -28,7 +28,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
     store_from_manifest(root, zones: %w[feeds], files: { "hooks/machines.rb" => hook }, manifest: <<~YAML)
       version: textus/3
       roles:
-        - { name: automation, can: [ingest] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: feeds, kind: quarantine }
       entries:
@@ -47,7 +47,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
                 prod-web: { via: ssh, host: "user@10.0.0.5" }
       rules:
         - match: feeds.machines.**
-          lifecycle: { ttl: 1h, on_expire: warn }
+          upkeep: { "on": stale, ttl: 1h, action: warn }
     YAML
   end
 

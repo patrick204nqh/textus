@@ -90,7 +90,7 @@ RSpec.describe Textus::Write::Accept do
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
-          - { name: automation, can: [ingest] }
+          - { name: automation, can: [reconcile] }
         zones:
           - { name: feeds, kind: quarantine }
           - { name: proposals, kind: queue }

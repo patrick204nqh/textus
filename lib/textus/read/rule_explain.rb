@@ -51,10 +51,8 @@ module Textus
 
       def lean_value(field, value)
         case field
-        when :lifecycle
-          { "ttl_seconds" => value.ttl_seconds, "on_expire" => value.on_expire, "budget_ms" => value.budget_ms }
-        else
-          value
+        when :upkeep then upkeep_hash(value, string_keys: true)
+        else value
         end
       end
 
@@ -82,11 +80,22 @@ module Textus
         return nil if value.nil?
 
         case field
-        when :lifecycle then { ttl_seconds: value.ttl_seconds, on_expire: value.on_expire }
+        when :upkeep            then upkeep_hash(value, string_keys: false)
         when :handler_allowlist then value.handlers
-        when :materialize then value.on_change
         else value
         end
+      end
+
+      # Lean keeps string keys (it merges into the string-keyed lean view);
+      # detail's `effective` block is symbol-keyed. `action` carries the
+      # Lifecycle#on_expire Symbol as-is (matches the prior lifecycle rendering).
+      def upkeep_hash(upkeep, string_keys:)
+        h = if upkeep.stale?
+              { on: "stale", ttl_seconds: upkeep.lifecycle.ttl_seconds, action: upkeep.lifecycle.on_expire }
+            else
+              { on: "source_change", strategy: upkeep.materialize.on_change }
+            end
+        string_keys ? h.transform_keys(&:to_s) : h
       end
     end
   end

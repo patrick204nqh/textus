@@ -24,7 +24,7 @@ RSpec.describe Textus::Write::Put do
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
     # knowledge is a canon zone (needs the 'author' capability); automation
-    # holds only [ingest, reconcile], so the write is genuinely refused.
+    # holds only [reconcile], so the write is genuinely refused.
     expect { store.as("automation").put("knowledge.bar", meta: {}, body: "x") }
       .to raise_error(
         Textus::WriteForbidden,

@@ -39,23 +39,18 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
-  describe "materialize visibility (WS3 bug fix)" do
-    it "participates in pick, ambiguity, rule_list, and rule_explain detail" do
-      meta = registry.fetch(:materialize)
+  describe "upkeep field (ADR 0090)" do
+    it "is in the registry as a tagged union and participates in all surfaces" do
+      meta = registry.fetch(:upkeep)
+      expect(meta[:validation]).to eq(:tagged)
       expect(meta[:in_pick]).to be(true)
       expect(meta[:in_ambiguity]).to be(true)
       expect(meta[:in_rule_list]).to be(true)
-      expect(meta[:in_rule_explain]).to include(:detail)
+      expect(meta[:in_rule_explain]).to include(:lean, :detail)
     end
 
-    it "is shown by rule_list" do
-      blocks = Textus::Manifest::Rules.parse(
-        [{ "match" => "artifacts.*", "materialize" => { "on_change" => "sync" } }],
-      ).blocks
-      manifest = instance_double(Textus::Manifest, rules: Textus::Manifest::Rules.new(blocks))
-      container = instance_double(Textus::Container, manifest: manifest)
-      rows = Textus::Read::RuleList.new(container: container).call
-      expect(rows.first["materialize"]).to eq("on_change" => "sync")
+    it "replaces lifecycle and materialize (neither remains a field)" do
+      expect(registry.keys).to eq(%i[handler_allowlist guard upkeep])
     end
   end
 end

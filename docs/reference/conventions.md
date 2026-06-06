@@ -92,15 +92,15 @@ External inputs land via `:resolve_intake` hooks, not shell commands. Each intak
 
 ```sh
 textus pulse --output=json                             # `stale` lists expired entries; `next_due_at` is the soonest deadline
-textus reconcile --as=automation                       # re-pulls every stale on_expire: refresh entry
+textus reconcile --as=automation                       # re-pulls every stale action: refresh entry
 ```
 
-Lifecycle budgets live in the top-level `rules:` block, matched by glob:
+Upkeep budgets live in the top-level `rules:` block, matched by glob (the `"on":` discriminator must be quoted — a bare `on:` is YAML boolean true):
 
 ```yaml
 rules:
   - match: feeds.notion.**
-    lifecycle: { ttl: 6h, on_expire: refresh }   # refresh | warn | drop | archive
+    upkeep: { "on": stale, ttl: 6h, action: refresh }   # refresh | warn | drop | archive
 ```
 
 A typical scheduled integration runs `reconcile` on a cron to re-pull every
@@ -118,7 +118,7 @@ There is one public read operation, and it is pure (ADR 0089):
 
 | Operation | Behaviour | Use for |
 |-----------|-----------|---------|
-| `ops.get` | A pure on-disk read annotated with a freshness verdict — it NEVER ingests, regardless of `on_expire`. A stale `refresh` entry reads back stale until the next `reconcile`. | every caller — interactive reads, dashboards, scripts, and internal pipelines (materializer, projection, schema tooling, accept/reject/publish, uid, validator) |
+| `ops.get` | A pure on-disk read annotated with a freshness verdict — it NEVER ingests, regardless of the entry's `action`. A stale `refresh` entry reads back stale until the next `reconcile`. | every caller — interactive reads, dashboards, scripts, and internal pipelines (materializer, projection, schema tooling, accept/reject/publish, uid, validator) |
 
 Refreshing a stale entry is `reconcile`'s job (or a `hook run` event), never a read's — so no caller can accidentally trigger network I/O by reading.
 

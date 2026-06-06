@@ -4,7 +4,7 @@ RSpec.describe Textus::Manifest::Rules do
   let(:raw) do
     [
       { "match" => "intake.**",       "intake_handler_allowlist" => ["http_get"] },
-      { "match" => "intake.news.*",   "lifecycle" => { "ttl" => "6h", "on_expire" => "refresh" } },
+      { "match" => "intake.news.*",   "upkeep" => { "on" => "stale", "ttl" => "6h", "action" => "refresh" } },
       { "match" => "review.**", "guard" => { "accept" => ["schema_valid"] } },
     ]
   end
@@ -14,8 +14,8 @@ RSpec.describe Textus::Manifest::Rules do
   describe "#for(key)" do
     it "merges all matching rules into one RuleSet, most-specific per slot" do
       set = rules.for("intake.news.hn")
-      expect(set.lifecycle).to be_a(Textus::Domain::Policy::Lifecycle)
-      expect(set.lifecycle.ttl_seconds).to eq(6 * 3600)
+      expect(set.upkeep.stale?).to be(true)
+      expect(set.upkeep.lifecycle.ttl_seconds).to eq(6 * 3600)
       expect(set.handler_allowlist).to be_a(Textus::Domain::Policy::HandlerAllowlist)
       expect(set.handler_allowlist.allows?("http_get")).to be(true)
       expect(set.guard).to be_nil
@@ -23,19 +23,19 @@ RSpec.describe Textus::Manifest::Rules do
 
     it "returns an empty set for keys not matched by any rule" do
       set = rules.for("identity.something")
-      expect(set.lifecycle).to be_nil
+      expect(set.upkeep).to be_nil
       expect(set.handler_allowlist).to be_nil
       expect(set.guard).to be_nil
     end
 
     it "respects specificity: a more-specific block overrides a less-specific one per slot" do
       raw2 = [
-        { "match" => "intake.**",     "lifecycle" => { "ttl" => "1d", "on_expire" => "warn" } },
-        { "match" => "intake.news.*", "lifecycle" => { "ttl" => "6h", "on_expire" => "refresh" } },
+        { "match" => "intake.**",     "upkeep" => { "on" => "stale", "ttl" => "1d", "action" => "warn" } },
+        { "match" => "intake.news.*", "upkeep" => { "on" => "stale", "ttl" => "6h", "action" => "refresh" } },
       ]
       set = described_class.parse(raw2).for("intake.news.hn")
-      expect(set.lifecycle.ttl_seconds).to eq(6 * 3600)
-      expect(set.lifecycle.on_expire).to eq(:refresh)
+      expect(set.upkeep.lifecycle.ttl_seconds).to eq(6 * 3600)
+      expect(set.upkeep.lifecycle.on_expire).to eq(:refresh)
     end
 
     describe "intake_handler_allowlist" do
@@ -54,17 +54,22 @@ RSpec.describe Textus::Manifest::Rules do
       end
     end
 
-    describe "materialize" do
-      it "parses a materialize slot into a Policy::Materialize" do
-        rules = described_class.parse(
-          [{ "match" => "artifacts.*", "materialize" => { "on_change" => "sync" } }],
-        )
-        expect(rules.for("artifacts.orientation").materialize.on_change).to eq("sync")
+    describe "upkeep" do
+      it "parses on: stale into a Lifecycle sub-view" do
+        rules = described_class.parse([{ "match" => "feeds.*", "upkeep" => { "on" => "stale", "ttl" => "6h", "action" => "refresh" } }])
+        up = rules.for("feeds.x").upkeep
+        expect(up.stale?).to be(true)
+        expect(up.lifecycle.ttl_seconds).to eq(6 * 3600)
       end
 
-      it "leaves materialize nil when the slot is absent" do
+      it "parses on: source_change into a Materialize sub-view" do
+        rules = described_class.parse([{ "match" => "artifacts.*", "upkeep" => { "on" => "source_change", "strategy" => "sync" } }])
+        expect(rules.for("artifacts.x").upkeep.materialize.sync?).to be(true)
+      end
+
+      it "leaves upkeep nil when the slot is absent" do
         rules = described_class.parse([{ "match" => "artifacts.*", "guard" => {} }])
-        expect(rules.for("artifacts.orientation").materialize).to be_nil
+        expect(rules.for("artifacts.x").upkeep).to be_nil
       end
     end
   end

@@ -3,9 +3,9 @@ require "spec_helper"
 RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
   let(:s) { Textus::Manifest::Schema }
 
-  it "is the kind => required-capability bijection" do
+  it "is the kind => required-capability function (ADR 0090: quarantine + derived share reconcile)" do
     expect(s::LANES).to eq(
-      "canon" => "author", "workspace" => "keep", "quarantine" => "ingest",
+      "canon" => "author", "workspace" => "keep", "quarantine" => "reconcile",
       "queue" => "propose", "derived" => "reconcile"
     )
   end
@@ -14,8 +14,8 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
     expect(s::ZONE_KINDS).to eq(%w[canon workspace quarantine queue derived])
   end
 
-  it "derives CAPABILITIES from the lane values (exactly the five, order not significant)" do
-    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "ingest", "propose", "reconcile")
+  it "derives CAPABILITIES from the lane values, de-duplicated (four: reconcile is shared)" do
+    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "reconcile")
   end
 
   it "derives KIND_REQUIRES_VERB as the lane table itself" do

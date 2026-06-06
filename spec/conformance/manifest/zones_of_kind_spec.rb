@@ -9,7 +9,7 @@ RSpec.describe "Manifest::Policy#zones_of_kind (ADR 0034)" do
       roles:
         - { name: human,      can: [author] }
         - { name: agent,      can: [keep] }
-        - { name: automation, can: [ingest] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
         - { name: notebook,  kind: workspace, owner: agent }

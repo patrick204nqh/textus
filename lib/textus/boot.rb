@@ -26,15 +26,13 @@ module Textus
         "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      ingest: lambda do |_name, manifest|
-        "refresh stale #{zone_label(manifest, :quarantine, "quarantine")} entries from their " \
-          "declared source by running 'textus reconcile' (scheduled, or on demand)"
-      end,
       reconcile: lambda do |_name, manifest|
         derived = zone_label(manifest, :derived, "derived")
-        "'textus reconcile' materializes #{derived} entries from their sources; " \
+        quarantine = zone_label(manifest, :quarantine, "quarantine")
+        "'textus reconcile' materializes #{derived} entries from their sources and " \
+          "refreshes stale #{quarantine} entries from their declared source; " \
           "#{derived} files are never hand-edited (reactive on canon writes, " \
-          "or a full pass on demand)"
+          "or a full pass on demand, scheduled or ad hoc)"
       end,
     }.freeze
 
@@ -176,8 +174,8 @@ module Textus
             "accept #{queue}.KEY — promotes the proposal into its target zone",
           ],
         },
-        "ingest" => {
-          "purpose" => "refresh stale quarantine-zone caches from their declared intake",
+        "reconcile" => {
+          "purpose" => "keep the machine-maintained lanes fresh — refresh stale quarantine caches from their declared intake",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
             "reconcile (zone: #{feeds}) — re-pull the stale entries",

@@ -5,22 +5,24 @@ module Textus
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
       # The closed coordination vocabulary (ADR 0028; completed at five in ADR
-      # 0033; unified here in ADR 0034). Each lane pairs a zone-kind with the
-      # single capability that authorizes originating bytes in it — a total
-      # bijection. This table is the ONE source of truth; the three legacy
-      # constants below are derived from it so a zone-kind and its required
-      # capability cannot drift. Key order is canon-first so the unknown-kind
-      # error message reads canon, workspace, quarantine, queue, derived.
+      # 0033; unified in ADR 0034; the quarantine capability folded into
+      # reconcile in ADR 0090). Each lane pairs a zone-kind with the capability
+      # that authorizes originating bytes in it. This table is the ONE source of
+      # truth; the derived constants below cannot drift. It is a FUNCTION, not a
+      # bijection — `quarantine` and `derived` are both machine-maintained lanes
+      # and share `reconcile` (ADR 0090). Key order is canon-first so the
+      # unknown-kind error message reads canon, workspace, quarantine, queue,
+      # derived.
       LANES = {
         "canon" => "author",
         "workspace" => "keep",
-        "quarantine" => "ingest",
+        "quarantine" => "reconcile",
         "queue" => "propose",
         "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
-      CAPABILITIES       = LANES.values.freeze
+      CAPABILITIES       = LANES.values.uniq.freeze
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
@@ -32,8 +34,11 @@ module Textus
       PUBLISH_KEYS = %w[to tree].freeze
       COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
       INTAKE_KEYS  = %w[handler config].freeze
-      LIFECYCLE_KEYS = %w[ttl on_expire budget_ms].freeze
-      MATERIALIZE_KEYS = %w[on_change].freeze
+      # The UNION of keys across upkeep's tags; the generic sub-key walk enforces
+      # only this set. The per-tag narrowing (rejecting cross-tag fields) lives in
+      # Domain::Policy::Upkeep#reject_foreign! — UPKEEP_KEYS is not the complete
+      # validation.
+      UPKEEP_KEYS = %w[on ttl action budget_ms strategy].freeze
 
       # The ONE source of truth for the rule-block field set (WS3). Adding a
       # rule field means adding one entry here; everything downstream derives
@@ -50,9 +55,11 @@ module Textus
       #                disambiguates from entry-level intake:, ADR 0059)
       #   policy_class the Domain::Policy backing the field (nil = raw value)
       #   validation   :immediate (instantiate the policy at parse, surfacing
-      #                shape errors eagerly) or :deferred (shape-check + carry
+      #                shape errors eagerly), :deferred (shape-check + carry
       #                the raw Hash; guard predicates validate at GuardFactory
-      #                build time, ADR 0031)
+      #                build time, ADR 0031), or :tagged (pass the raw Hash to a
+      #                tagged-union policy that dispatches on its discriminator
+      #                field, e.g. upkeep's on:)
       #   sub_keys     allowed nested keys for a mapping field (drives both the
       #                schema sub-key walk and the kwargs splat into policy_class)
       #   arg_key      for an immediate non-mapping field, the single kwarg the
@@ -79,19 +86,12 @@ module Textus
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
         },
-        lifecycle: {
-          yaml_key: "lifecycle",
-          policy_class: Textus::Domain::Policy::Lifecycle,
-          validation: :immediate, sub_keys: LIFECYCLE_KEYS, arg_key: nil,
+        upkeep: {
+          yaml_key: "upkeep",
+          policy_class: Textus::Domain::Policy::Upkeep,
+          validation: :tagged, sub_keys: UPKEEP_KEYS, arg_key: nil,
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
-        },
-        materialize: {
-          yaml_key: "materialize",
-          policy_class: Textus::Domain::Policy::Materialize,
-          validation: :immediate, sub_keys: MATERIALIZE_KEYS, arg_key: nil,
-          in_pick: true, in_ambiguity: true, # ← WS3: now surfaced (was invisible)
-          in_rule_list: true, in_rule_explain: %i[detail]
         },
       }.freeze
 
@@ -195,6 +195,8 @@ module Textus
       def self.validate_rules!(rules)
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
+          reject_retired_rule_keys!(r, path)
+          reject_unquoted_on!(r, path)
           walk(r, RULE_KEYS, path)
           FIELD_REGISTRY.each_value do |meta|
             next unless meta[:sub_keys]
@@ -203,6 +205,39 @@ module Textus
             walk(value, meta[:sub_keys], "#{path}.#{meta[:yaml_key]}") if value.is_a?(Hash)
           end
         end
+      end
+
+      # ADR 0090 merged the lifecycle/materialize rule fields into `upkeep`.
+      def self.reject_retired_rule_keys!(rule, path)
+        return unless rule.is_a?(Hash)
+
+        %w[lifecycle materialize].each do |old|
+          next unless rule.key?(old)
+
+          tag = old == "lifecycle" ? "\"on\": stale" : "\"on\": source_change"
+          raise BadManifest.new(
+            "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090) — use " \
+            "`upkeep: { #{tag}, … }`.",
+          )
+        end
+      end
+
+      # `on:` is upkeep's discriminator, but a BARE `on:` parses as the YAML 1.1
+      # boolean true (Psych), so `upkeep: { on: stale }` arrives as
+      # `{ true => "stale" }`. Without this the generic sub-key walk rejects it
+      # as a cryptic "unknown key 'true'"; intercept with a quoting hint instead.
+      def self.reject_unquoted_on!(rule, path)
+        return unless rule.is_a?(Hash)
+
+        upkeep = rule["upkeep"]
+        return unless upkeep.is_a?(Hash)
+        return unless upkeep.keys.any? { |k| [true, false].include?(k) }
+
+        raise BadManifest.new(
+          "upkeep: the `on:` discriminator must be quoted in YAML at '#{path}.upkeep' — " \
+          "a bare `on:` parses as the boolean true (YAML 1.1). " \
+          "Write `upkeep: { \"on\": stale, … }` (ADR 0090).",
+        )
       end
 
       def self.validate_roles!(roles)
@@ -222,10 +257,10 @@ module Textus
           Array(r["can"]).each do |verb|
             next if CAPABILITIES.include?(verb)
 
-            # The quarantine capability was renamed fetch→ingest (ADR 0088); a
-            # pre-0.51 manifest still saying `can: [fetch]` gets a pointed hint
-            # rather than a bare unknown-capability error (breaking, no shim).
-            hint = verb == "fetch" ? " — the quarantine capability was renamed to 'ingest' (ADR 0088)" : ""
+            # The quarantine capability folded into reconcile (ADR 0090); a
+            # manifest still naming the old quarantine capability (`ingest`, or
+            # legacy `fetch`) gets a pointed hint rather than a bare error.
+            hint = %w[ingest fetch].include?(verb) ? " — the quarantine capability folded into 'reconcile' (ADR 0090)" : ""
             raise BadManifest.new(
               "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
               "(known: #{CAPABILITIES.join(", ")})#{hint}",

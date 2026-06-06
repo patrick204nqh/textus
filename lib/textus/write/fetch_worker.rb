@@ -95,9 +95,9 @@ module Textus
         normalized = self.class.normalize_action_result(result, format: mentry.format)
         Textus::Domain::Policy::GuardFactory.new(
           manifest: @manifest, schemas: @schemas,
-        ).for(:ingest, key).check!(
+        ).for(:reconcile, key).check!(
           Textus::Domain::Policy::Evaluation.new(
-            actor: @call.role, transition: :ingest, origin: nil,
+            actor: @call.role, transition: :reconcile, origin: nil,
             target: key, envelope: nil, manifest: @manifest
           ),
         )

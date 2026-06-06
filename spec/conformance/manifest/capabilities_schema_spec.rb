@@ -11,7 +11,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [ingest, reconcile] }
+        - { name: automation, can: [reconcile] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -31,22 +31,56 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown capability 'teleport'/)
   end
 
-  # WS2 / ADR 0088: the quarantine capability was renamed fetch→ingest (breaking,
-  # no shim). A pre-0.51 manifest still saying `can: [fetch]` is rejected like any
-  # unknown capability, but with a pointed hint at the new name.
-  it "rejects the retired 'fetch' capability with an ingest hint" do
+  # ADR 0090: the quarantine capability folded into reconcile. A manifest still
+  # naming the old quarantine capability (`ingest`, or legacy `fetch`) is rejected
+  # with a pointed hint at reconcile.
+  it "rejects the folded quarantine capability with a reconcile hint" do
+    %w[ingest fetch].each do |old|
+      yaml = <<~YAML
+        version: textus/3
+        roles:
+          - { name: automation, can: [#{old}, reconcile] }
+        zones:
+          - { name: feeds, kind: quarantine }
+        entries: []
+      YAML
+      expect { parse(yaml) }.to raise_error(
+        Textus::BadManifest,
+        /unknown capability '#{old}'.*folded into 'reconcile' \(ADR 0090\)/m,
+      )
+    end
+  end
+
+  it "rejects retired lifecycle:/materialize: rule fields with an upkeep hint" do
+    %w[lifecycle materialize].each do |old|
+      yaml = <<~YAML
+        version: textus/3
+        zones: [{ name: knowledge, kind: canon }]
+        entries: [{ key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }]
+        rules:
+          - { match: knowledge.x, #{old}: {} }
+      YAML
+      expect { parse(yaml) }.to raise_error(Textus::BadManifest, /#{old}.*merged into `upkeep`.*ADR 0090/m)
+    end
+  end
+
+  # ADR 0090: `on:` is upkeep's discriminator. A BARE `on:` parses as the
+  # YAML 1.1 boolean true (Psych), so an unquoted `upkeep: { on: stale }`
+  # becomes `{ true => "stale" }`. Catch this footgun at load with a quoting
+  # hint instead of the generic "unknown key 'true'".
+  it "rejects an unquoted on: in upkeep with a quoting hint" do
     yaml = <<~YAML
       version: textus/3
-      roles:
-        - { name: automation, can: [fetch, reconcile] }
-      zones:
-        - { name: feeds, kind: quarantine }
-      entries: []
+      zones: [{ name: knowledge, kind: canon }]
+      entries: [{ key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }]
+      rules:
+        - { match: knowledge.x, upkeep: { on: stale, ttl: 6h, action: refresh } }
     YAML
     expect { parse(yaml) }.to raise_error(
       Textus::BadManifest,
-      /unknown capability 'fetch'.*renamed to 'ingest' \(ADR 0088\)/m,
+      /upkeep.*"on".*quote|quote.*on/i,
     )
+    expect { parse(yaml) }.to raise_error(Textus::BadManifest, /boolean/i)
   end
 
   it "rejects more than one role holding author" do

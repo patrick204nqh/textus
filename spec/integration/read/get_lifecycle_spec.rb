@@ -12,7 +12,7 @@ RSpec.describe Textus::Read::Get do
         - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
       rules:
         - match: "review.*"
-          lifecycle: { ttl: 30d, on_expire: warn }
+          upkeep: { "on": stale, ttl: 30d, action: warn }
     YAML
   end
 
@@ -33,9 +33,9 @@ RSpec.describe Textus::Read::Get do
     expect(File.exist?(leaf)).to be(true)
   end
 
-  it "does not act destructively on read even when on_expire is drop" do
+  it "does not act destructively on read even when the upkeep action is drop" do
     File.write(File.join(root, "manifest.yaml"),
-               File.read(File.join(root, "manifest.yaml")).sub("on_expire: warn", "on_expire: drop"))
+               File.read(File.join(root, "manifest.yaml")).sub("action: warn", "action: drop"))
     g = described_class.new(container: Textus::Store.new(root).container, call: test_ctx(role: "human"))
     result = g.call("review.oncall")
     expect(result.freshness.stale).to be(true)

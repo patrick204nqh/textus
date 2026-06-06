@@ -14,7 +14,6 @@ roles:
 - name: automation
   can:
   - reconcile
-  - ingest
 zones:
 - name: knowledge
   kind: canon
@@ -85,6 +84,7 @@ entries:
         local: { via: local }
 rules:
 - match: feeds.machines.**
-  lifecycle:
+  upkeep:
+    "on": stale
     ttl: 1h
-    on_expire: warn
+    action: warn

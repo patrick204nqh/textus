@@ -58,7 +58,9 @@ module Textus
         # One dispatch over the registry, replacing the four bespoke parse_*
         # methods. :deferred carries the raw Hash after a shape check (its
         # contents validate later — guard predicates at GuardFactory build time,
-        # ADR 0031); :immediate instantiates the policy class now. A mapping
+        # ADR 0031); :immediate instantiates the policy class now. :tagged passes
+        # the raw Hash straight to a policy class that is a tagged union and
+        # dispatches on its discriminator field (e.g. upkeep's on:). A mapping
         # field (sub_keys) splats its nested keys as kwargs; a scalar/array
         # field passes its raw value under arg_key.
         def parse_field(meta, value)
@@ -69,6 +71,8 @@ module Textus
 
             return value
           end
+
+          return meta[:policy_class].new(value) if meta[:validation] == :tagged
 
           if meta[:sub_keys]
             meta[:policy_class].new(**meta[:sub_keys].to_h { |k| [k.to_sym, value[k]] })
