@@ -2,7 +2,7 @@ require "time"
 
 module Textus
   module Domain
-    # Retention reporter (ADR 0093, replaces Domain::Lifecycle). Which entries
+    # Retention reporter (ADR 0093). Which entries
     # are past their `retention:` ttl and the destructive action that applies.
     # Age basis: file mtime. Only drop/archive — refresh/warn are gone.
     class Retention

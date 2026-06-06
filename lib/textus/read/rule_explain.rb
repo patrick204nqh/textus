@@ -51,7 +51,7 @@ module Textus
 
       def lean_value(field, value)
         case field
-        when :upkeep then upkeep_hash(value, string_keys: true)
+        when :retention then retention_hash(value, string_keys: true)
         else value
         end
       end
@@ -80,21 +80,15 @@ module Textus
         return nil if value.nil?
 
         case field
-        when :upkeep            then upkeep_hash(value, string_keys: false)
+        when :retention         then retention_hash(value, string_keys: false)
         when :handler_allowlist then value.handlers
         else value
         end
       end
 
-      # Lean keeps string keys (it merges into the string-keyed lean view);
-      # detail's `effective` block is symbol-keyed. `action` carries the
-      # Lifecycle#on_expire Symbol as-is. ADR 0091: grammar is keyed, no `on:`.
-      def upkeep_hash(upkeep, string_keys:)
-        h = if upkeep.stale?
-              { ttl_seconds: upkeep.lifecycle.ttl_seconds, action: upkeep.lifecycle.on_expire }
-            else
-              { strategy: upkeep.materialize.on_change }
-            end
+      # ADR 0093: retention is a flat GC policy (ttl + drop/archive action).
+      def retention_hash(retention, string_keys:)
+        h = { ttl_seconds: retention.ttl_seconds, action: retention.action }
         string_keys ? h.transform_keys(&:to_s) : h
       end
     end

@@ -36,8 +36,8 @@ module Textus
 
       def serialize(field, value)
         case field
-        when :upkeep
-          serialize_upkeep(value)
+        when :retention
+          serialize_retention(value)
         when :handler_allowlist
           value.handlers
         else
@@ -45,14 +45,9 @@ module Textus
         end
       end
 
-      # ADR 0091: grammar is keyed (no `on:` discriminator in rendered output).
-      def serialize_upkeep(upkeep)
-        if upkeep.stale?
-          { "ttl_seconds" => upkeep.lifecycle.ttl_seconds,
-            "action" => upkeep.lifecycle.on_expire, "budget_ms" => upkeep.lifecycle.budget_ms }
-        else
-          { "strategy" => upkeep.materialize.on_change }
-        end
+      # ADR 0093: retention is a flat GC policy.
+      def serialize_retention(retention)
+        { "ttl_seconds" => retention.ttl_seconds, "action" => retention.action.to_s }
       end
     end
   end

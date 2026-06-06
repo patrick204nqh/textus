@@ -15,7 +15,7 @@ RSpec.describe Textus::MCP::Catalog do
   # Drain async derived rebuilds (ADR 0087) before removing the tmpdir so an
   # in-flight rebuild thread cannot race teardown (`ENOTEMPTY` on .textus/zones).
   after do
-    Textus::Maintenance::ReactiveMaterialize::AsyncRunner.drain
+    Textus::Maintenance::Produce::AsyncRunner.drain
     FileUtils.remove_entry(tmp)
   end
 

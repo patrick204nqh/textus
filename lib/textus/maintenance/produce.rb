@@ -5,10 +5,9 @@ module Textus
     #   intake  (handler)             -> re-pull (FetchWorker)
     #   derived (template/projection) -> render + publish (publish_via)
     #   derived (command/external)    -> skip (no in-process runner; staleness only)
-    # Replaces Maintenance::Materialize and the materialize half of
-    # ReactiveMaterialize. Runs as the reconcile build actor (self-elevating);
-    # the passed `call` supplies only correlation_id/dry_run. Callers choose the
-    # key set: the write subscriber passes rdeps ∩ derived; reconcile passes
+    # Runs as the reconcile build actor (self-elevating); the passed `call`
+    # supplies only correlation_id/dry_run. Callers choose the key set: the
+    # write subscriber passes rdeps ∩ derived; reconcile passes
     # all-derived + stale-intake.
     class Produce
       # Locked + failure-isolated convergence — the shared entry point for the
@@ -67,8 +66,6 @@ module Textus
         end
       end
 
-      # --- lifted verbatim from Maintenance::Materialize ---
-
       def build_actor_call
         build_role = @manifest.policy.actor_for("reconcile") or
           raise Textus::UsageError.new(
@@ -89,9 +86,9 @@ module Textus
         )
       end
 
-      # In-process deferral for the async write trigger (ported from
-      # ReactiveMaterialize::AsyncRunner, ADR 0087). Spawns a tracked thread that
-      # runs Produce.converge after the write returns; a one-time at_exit joins
+      # In-process deferral for the async write trigger (ADR 0087/0093).
+      # Spawns a tracked thread that runs Produce.converge after the write
+      # returns; a one-time at_exit joins
       # all pending threads so a short-lived CLI process cannot exit before an
       # async rebuild completes. The write itself never blocks.
       module AsyncRunner

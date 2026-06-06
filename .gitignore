@@ -10,5 +10,6 @@
 *.gem
 .ruby-lsp/
 docs/plans/
+docs/specs/
 .worktrees/
 **/.textus/.run/

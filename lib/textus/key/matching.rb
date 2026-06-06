@@ -1,11 +1,9 @@
 module Textus
   module Key
-    # Dotted-key scope matching, shared by the two prefix-scoped sweeps
-    # (WS4 / ADR 0089-era cleanup): Maintenance::Materialize and
-    # Domain::Lifecycle both ask "does this entry fall within a prefix?" and
-    # had drifted — materialize used a loose `start_with?(prefix)` plus a
-    # Nested ancestor case; lifecycle used a dotted boundary but omitted the
-    # Nested case. This is the one definition both now call.
+    # Dotted-key scope matching, shared by all prefix-scoped sweeps
+    # (WS4 / ADR 0089-era cleanup). Canonicalised here so every consumer
+    # uses a consistent dotted-boundary check with proper Nested ancestor
+    # handling. ADR 0093: Produce is the sole engine calling this.
     module Matching
       module_function
 
