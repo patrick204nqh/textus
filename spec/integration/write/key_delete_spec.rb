@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Write::KeyDelete do
   include_context "textus_store_fixture"
 
-  let!(:store) { quarantine_store(root) }
+  let!(:store) { machine_store(root) }
   # Contract for the cross-cutting write behaviours (spec/support/examples).
   let(:perform) { -> { store.as("automation").key_delete("feeds.foo") } }
   let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").key_delete("feeds.foo") } }

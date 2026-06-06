@@ -1,7 +1,7 @@
 # ADR 0080 — Spec suite: a three-category physical split (unit / integration / conformance) over the lib mirror
 
 **Date:** 2026-06-04
-**Status:** Accepted
+**Status:** Accepted · Phase 4 (evidence-gated retirement) executed by [ADR 0092](./0092-spec-suite-churn-resistance.md)
 **Touches:** the spec-layout guard convention (`spec/support/spec_layout.rb` + `spec/spec_layout_spec.rb`, introduced as test infrastructure on 2026-06-03) — this ADR keeps the lib-mirror rule but **re-anchors it below a category segment**, so the guard is rewritten, not retired.
 
 > **One sentence:** the 271-file spec suite mirrors `lib/textus/` flat at the spec root, which conflates three kinds of test (isolated unit, store-backed integration, cross-surface conformance) into one undifferentiated tree with no way to run them separately and no shared foundation for the boilerplate they each repeat; this ADR moves every spec under one of **`spec/unit` · `spec/integration` · `spec/conformance`**, keeps the lib-mirror *inside* each category, derives an `:unit`/`:integration`/`:conformance` RSpec tag from the spec's location (so the categories are runnable, not just visual), and stands up a shared-context / shared-examples / verifying-double foundation that later phases delete the duplicated setup into — staged so the full suite stays green at every step.

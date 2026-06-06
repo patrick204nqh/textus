@@ -1,7 +1,7 @@
 require "spec_helper"
 
 # Since ADR 0089 the reader NEVER ingests, regardless of on_expire. A stale
-# entry is observed stale on `get`; quarantine freshness is system-pushed via
+# entry is observed stale on `get`; machine-zone freshness is system-pushed via
 # `reconcile` (scheduled sweep) and `hook run` (event push). These examples pin
 # that contract: a read leaves the intake handler untouched; reconcile is what
 # re-pulls a stale `on_expire: refresh` entry.

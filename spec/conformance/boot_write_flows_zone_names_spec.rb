@@ -33,7 +33,7 @@ RSpec.describe "boot write_flows name live zones, not retired ones (ADR 0034)" d
     expect(flows["agent"]).to include("no accept needed")
   end
 
-  it "names the live queue and machine zone (ADR 0091: quarantine + derived merged into machine)" do
+  it "names the live queue and machine zone (ADR 0091: the two machine kinds merged into one)" do
     expect(flows["agent"]).to include("proposals.*")
     expect(flows["automation"]).to include("artifacts")
   end
