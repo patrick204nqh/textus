@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Manifest intake:" do
+RSpec.describe "Manifest intake source: + retention:" do
   include_context "textus_store_fixture"
 
   before { FileUtils.mkdir_p(root) }
@@ -18,7 +18,7 @@ RSpec.describe "Manifest intake:" do
     load_manifest(yaml).data.entries.first
   end
 
-  it "parses intake.handler and intake.config" do
+  it "parses source.handler and source.config (intake)" do
     e = load_entry(<<~YAML)
       version: textus/3
       zones: [{ name: feeds, kind: machine }]
@@ -27,7 +27,8 @@ RSpec.describe "Manifest intake:" do
           kind: intake
           path: feeds/news.md
           zone: feeds
-          intake:
+          source:
+            from: handler
             handler: news_handler
             config: { url: https://example.com/feed }
     YAML
@@ -36,7 +37,24 @@ RSpec.describe "Manifest intake:" do
     expect(e.config).to eq({ "url" => "https://example.com/feed" })
   end
 
-  it "exposes lifecycle rule via Manifest#rules_for(key)" do
+  it "carries the re-pull cadence on source.ttl" do
+    e = load_entry(<<~YAML)
+      version: textus/3
+      zones: [{ name: feeds, kind: machine }]
+      entries:
+        - key: feeds.news
+          kind: intake
+          path: feeds/news.md
+          zone: feeds
+          source:
+            from: handler
+            handler: news_handler
+            ttl: 10m
+    YAML
+    expect(e.source.ttl_seconds).to eq(600)
+  end
+
+  it "exposes a retention rule via Manifest#rules.for(key)" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: feeds, kind: machine }]
@@ -45,23 +63,22 @@ RSpec.describe "Manifest intake:" do
           kind: intake
           path: feeds/news.md
           zone: feeds
-          intake:
+          source:
+            from: handler
             handler: news_handler
       rules:
         - match: feeds.news
-          upkeep:
+          retention:
             ttl: 10m
-            action: refresh
-            budget_ms: 800
+            action: archive
     YAML
     set = m.rules.for("feeds.news")
-    expect(set.upkeep.lifecycle).to be_a(Textus::Domain::Policy::Lifecycle)
-    expect(set.upkeep.lifecycle.ttl_seconds).to eq(600)
-    expect(set.upkeep.lifecycle.on_expire).to eq(:refresh)
-    expect(set.upkeep.lifecycle.budget_ms).to eq(800)
+    expect(set.retention).to be_a(Textus::Domain::Policy::Retention)
+    expect(set.retention.ttl_seconds).to eq(600)
+    expect(set.retention.action).to eq(:archive)
   end
 
-  it "returns an empty RuleSet for keys with no matching upkeep rule" do
+  it "returns an empty RuleSet for keys with no matching retention rule" do
     m = load_manifest(<<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
@@ -69,10 +86,10 @@ RSpec.describe "Manifest intake:" do
         - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
-    expect(m.rules.for("knowledge.x").upkeep).to be_nil
+    expect(m.rules.for("knowledge.x").retention).to be_nil
   end
 
-  it "defaults to a Leaf entry when no intake block is present" do
+  it "defaults to a Leaf entry when no source block is present" do
     e = load_entry(<<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
@@ -84,7 +101,7 @@ RSpec.describe "Manifest intake:" do
     expect(e).not_to be_intake
   end
 
-  it "parses intake.publish_to as a list of targets" do
+  it "parses publish.to as a list of targets" do
     e = load_entry(<<~YAML)
       version: textus/3
       zones: [{ name: feeds, kind: machine }]
@@ -95,7 +112,8 @@ RSpec.describe "Manifest intake:" do
           zone: feeds
           publish:
             to: [NEWS.md, docs/news.md]
-          intake:
+          source:
+            from: handler
             handler: news_handler
     YAML
     expect(e.publish_to).to eq(["NEWS.md", "docs/news.md"])
@@ -110,7 +128,8 @@ RSpec.describe "Manifest intake:" do
           kind: intake
           path: feeds/news.md
           zone: feeds
-          intake:
+          source:
+            from: handler
             handler: news_handler
     YAML
     expect(e.publish_to).to eq([])

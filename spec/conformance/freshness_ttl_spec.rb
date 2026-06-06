@@ -13,7 +13,7 @@ RSpec.describe "textus/3 conformance — feeds lifecycle via TTL (freshness)" do
     it "marks a never-recorded feeds entry expired" do
       row = feeds_row
       expect(row[:status]).to eq(:expired)
-      expect(row[:reason]).to match(/never recorded/)
+      expect(row[:action]).to eq(:refresh)
     end
 
     it "marks a feeds entry past its TTL expired" do
@@ -30,7 +30,7 @@ RSpec.describe "textus/3 conformance — feeds lifecycle via TTL (freshness)" do
       MD
       row = feeds_row
       expect(row[:status]).to eq(:expired)
-      expect(row[:reason]).to match(/ttl exceeded/i)
+      expect(row[:next_due_at]).not_to be_nil
     end
 
     it "marks a feeds entry within its TTL fresh" do

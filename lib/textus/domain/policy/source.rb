@@ -64,7 +64,7 @@ module Textus
 
         def init_handler(raw)
           @handler = raw["handler"] or
-            raise Textus::BadManifest.new("source (from: handler) requires a `handler:` field")
+            raise Textus::BadManifest.new("source (from: handler) requires a 'handler:' field")
           @config = raw["config"] || {}
         end
 
@@ -79,12 +79,12 @@ module Textus
           @project = raw["project"]
           return unless @template.nil? && @project.nil?
 
-          raise Textus::BadManifest.new("source (from: template) requires a `template:` or `project:` field")
+          raise Textus::BadManifest.new("source (from: template) requires a 'template:' or 'project:' field")
         end
 
         def init_command(raw)
           @command = raw["command"] or
-            raise Textus::BadManifest.new("source (from: command) requires a `command:` field")
+            raise Textus::BadManifest.new("source (from: command) requires a 'command:' field")
           @sources = raw["sources"] || []
         end
       end

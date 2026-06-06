@@ -15,10 +15,10 @@ RSpec.describe "Pulse next_due_at" do
           path: intake/feed.md
           zone: intake
           kind: intake
-          intake:
+          source:
+            from: handler
             handler: noop
-      rules:
-        - { match: "intake.*", upkeep: { ttl: 3600s, action: warn } }
+            ttl: 3600s
     YAML
     File.write(
       File.join(root, "zones/intake/feed.md"),
@@ -46,7 +46,8 @@ RSpec.describe "Pulse next_due_at" do
           path: intake/feed.md
           zone: intake
           kind: intake
-          intake:
+          source:
+            from: handler
             handler: noop
     YAML
     # Reinitialize store with fresh manifest (no rules)

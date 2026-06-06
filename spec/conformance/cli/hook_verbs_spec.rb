@@ -15,7 +15,7 @@ RSpec.describe "CLI hook verbs" do
           kind: intake
           path: intake/x.md
           zone: intake
-          intake: { handler: stub }
+          source: { from: handler, handler: stub }
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       Textus.hook do |reg|

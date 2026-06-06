@@ -14,7 +14,7 @@ module Textus
 
         def initialize(raw)
           @ttl = raw["ttl"] or
-            raise Textus::BadManifest.new("retention requires a `ttl:`")
+            raise Textus::BadManifest.new("retention requires a 'ttl:'")
           @action = (raw["action"] || "").to_s.to_sym
           return if ACTIONS.include?(@action)
 

@@ -57,7 +57,7 @@ RSpec.describe "Manifest format: field validation" do
         kind: derived
         path: artifacts/x.md
         zone: artifacts
-        compute: { kind: projection, select: [knowledge] }
+        source: { from: template, project: { select: [knowledge] } }
     YAML
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
@@ -69,7 +69,7 @@ RSpec.describe "Manifest format: field validation" do
         kind: derived
         path: artifacts/x.json
         zone: artifacts
-        compute: { kind: projection, select: [knowledge] }
+        source: { from: template, project: { select: [knowledge] } }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error
   end
