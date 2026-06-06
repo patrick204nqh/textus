@@ -13,11 +13,11 @@ module Textus
 
         attr_reader :on_expire, :budget_ms
 
-        def initialize(ttl:, on_expire:, budget_ms: nil)
+        def initialize(ttl:, on_expire:, budget_ms: nil, allowed: ALLOWED)
           action = on_expire.is_a?(Symbol) ? on_expire : on_expire.to_s.to_sym
-          unless ALLOWED.include?(action)
+          unless allowed.include?(action)
             raise Textus::UsageError.new(
-              "lifecycle on_expire must be one of #{ALLOWED.join("|")}, got #{on_expire.inspect}",
+              "lifecycle action must be one of #{allowed.join("|")}, got #{on_expire.inspect}",
             )
           end
 

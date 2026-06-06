@@ -16,6 +16,11 @@ RSpec.describe Textus::Domain::Policy::Lifecycle do
 
   it "rejects an unknown on_expire action" do
     expect { described_class.new(ttl: "1h", on_expire: "nuke") }
-      .to raise_error(Textus::UsageError, /on_expire/)
+      .to raise_error(Textus::UsageError, /lifecycle action must be one of/)
+  end
+
+  it "rejects an action outside the allowed set passed by the caller (ADR 0091)" do
+    expect { Textus::Domain::Policy::Lifecycle.new(ttl: "30m", on_expire: "drop", allowed: %i[refresh warn]) }
+      .to raise_error(Textus::UsageError, /must be one of refresh\|warn/)
   end
 end
