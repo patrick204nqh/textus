@@ -27,12 +27,10 @@ module Textus
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
       reconcile: lambda do |_name, manifest|
-        derived = zone_label(manifest, :derived, "derived")
-        quarantine = zone_label(manifest, :quarantine, "quarantine")
-        "'textus reconcile' materializes #{derived} entries from their sources and " \
-          "refreshes stale #{quarantine} entries from their declared source; " \
-          "#{derived} files are never hand-edited (reactive on canon writes, " \
-          "or a full pass on demand, scheduled or ad hoc)"
+        machine = zone_label(manifest, :machine, "machine")
+        "'textus reconcile' materializes derived #{machine} entries from their sources and " \
+          "refreshes stale intake #{machine} entries from their declared source; " \
+          "derived files are never hand-edited (reactive on canon writes, or a full pass on demand)"
       end,
     }.freeze
 
@@ -148,7 +146,7 @@ module Textus
     # keeps shell lines out of the surface an MCP agent reads.
     def self.recipes(manifest)
       queue = manifest.policy.queue_zone
-      feeds = zone_label(manifest, :quarantine, "the quarantine zone")
+      feeds = zone_label(manifest, :machine, "the machine zone")
       {
         "read" => {
           "purpose" => "find and read an entry",
@@ -175,7 +173,7 @@ module Textus
           ],
         },
         "reconcile" => {
-          "purpose" => "keep the machine-maintained lanes fresh — refresh stale quarantine caches from their declared intake",
+          "purpose" => "keep the machine-maintained lanes fresh — re-pull stale intake entries from their declared source",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
             "reconcile (zone: #{feeds}) — re-pull the stale entries",
@@ -238,7 +236,7 @@ module Textus
 
     def self.entries_for(manifest)
       manifest.data.entries.map do |e|
-        derived = manifest.policy.derived_zone?(e.zone)
+        derived = e.derived?
         {
           "key" => e.key,
           "zone" => e.zone,
