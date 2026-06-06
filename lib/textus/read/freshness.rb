@@ -23,7 +23,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :freshness
-      summary  "Internal per-entry lifecycle scan (status, age, ttl, on_expire); backs pulse + hook context. No public surface (ADR 0085)."
+      summary  "Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085)."
       arg :prefix, String, required: false, description: "filter to keys with this prefix"
       arg :zone,   String, required: false, description: "filter to entries in this zone"
 

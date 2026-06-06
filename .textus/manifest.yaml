@@ -93,42 +93,45 @@ entries:
   - key: artifacts.derived.orientation
     path: artifacts/derived/orientation.md
     zone: artifacts
-    template: orientation.mustache
-    inject_boot: true
     publish:
       to:
         - CLAUDE.md
         - AGENTS.md
-    compute:
-      kind: projection
-      select:
-        - knowledge.project
-        - knowledge.runbooks
-      transform: orientation_reducer
+    source:
+      from: template
+      template: orientation.mustache
+      inject_boot: true
+      project:
+        select:
+          - knowledge.project
+          - knowledge.runbooks
+        transform: orientation_reducer
     kind: derived
   - key: artifacts.derived.mcp-config
     path: artifacts/derived/mcp.json
     zone: artifacts
-    provenance: false
     publish:
       to:
         - .mcp.json
-    compute:
-      kind: projection
-      select:
-        - knowledge.project
-      transform: mcp_config_reducer
+    source:
+      from: template
+      provenance: false
+      project:
+        select:
+          - knowledge.project
+        transform: mcp_config_reducer
     kind: derived
   - key: artifacts.derived.claude-plugin
     path: artifacts/derived/plugin.json
     zone: artifacts
-    provenance: false
     publish:
       to:
         - .claude-plugin/plugin.json
-    compute:
-      kind: projection
-      select:
-        - knowledge.project
-      transform: plugin_manifest_reducer
+    source:
+      from: template
+      provenance: false
+      project:
+        select:
+          - knowledge.project
+        transform: plugin_manifest_reducer
     kind: derived

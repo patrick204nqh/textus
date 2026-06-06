@@ -68,10 +68,18 @@ module Textus
           @config = raw["config"] || {}
         end
 
+        # A template projection may omit `template:` only when it carries a
+        # `project:` block — the "templateless escape hatch" for json/yaml
+        # outputs, where the projected/reduced data is rendered directly by the
+        # format renderer (Renderer::Json#default_shape). FormatMatrix still
+        # rejects templateless markdown/text. A source with neither template nor
+        # project is meaningless and rejected.
         def init_template(raw)
-          @template = raw["template"] or
-            raise Textus::BadManifest.new("source (from: template) requires a `template:` field")
+          @template = raw["template"]
           @project = raw["project"]
+          return unless @template.nil? && @project.nil?
+
+          raise Textus::BadManifest.new("source (from: template) requires a `template:` or `project:` field")
         end
 
         def init_command(raw)

@@ -95,9 +95,16 @@ RSpec.describe Textus::Domain::Policy::Source do
         .to raise_error(Textus::BadManifest, /on_write must be one of/)
     end
 
-    it "rejects a missing template for from: template" do
+    it "rejects a from: template with neither template nor project" do
       expect { described_class.new("from" => "template") }
-        .to raise_error(Textus::BadManifest, /template/)
+        .to raise_error(Textus::BadManifest, /template.*or.*project/)
+    end
+
+    it "accepts a templateless projection (escape hatch) when project: is present" do
+      s = described_class.new("from" => "template", "project" => { "select" => "k.*" })
+      expect(s.template).to be_nil
+      expect(s.projection?).to be(true)
+      expect(s.projection_spec).to eq("select" => "k.*")
     end
 
     it "rejects a missing command for from: command" do

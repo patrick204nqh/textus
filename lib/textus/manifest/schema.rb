@@ -213,19 +213,22 @@ module Textus
         end
       end
 
-      # ADR 0090 merged the lifecycle/materialize rule fields into `upkeep`.
-      # ADR 0091 removed the `on:` discriminator — grammar is now keyed.
+      # ADR 0093 split production from age-GC: age-GC moved to the `retention:`
+      # rule; intake cadence + production (handler/template) moved to the
+      # entry's `source:` block. Legacy `lifecycle:`/`materialize:` rule keys
+      # are rejected with a migration hint toward the new shape.
       def self.reject_retired_rule_keys!(rule, path)
         return unless rule.is_a?(Hash)
 
-        %w[lifecycle materialize].each do |old|
+        hints = {
+          "lifecycle" => "age GC moved to the `retention:` rule ({ ttl, action: drop|archive }); " \
+                         "intake cadence to the entry's `source: { ttl }`",
+          "materialize" => "moved to the entry's `source: { on_write: sync|async }`",
+        }
+        hints.each do |old, hint|
           next unless rule.key?(old)
 
-          hint = old == "lifecycle" ? "upkeep: { ttl, action }" : "upkeep: { strategy }"
-          raise BadManifest.new(
-            "`#{old}:` was merged into `upkeep` at '#{path}' (ADR 0090/0091) — use " \
-            "`#{hint}`.",
-          )
+          raise BadManifest.new("`#{old}:` was removed at '#{path}' (ADR 0093) — #{hint}.")
         end
       end
 
