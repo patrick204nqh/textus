@@ -5,12 +5,10 @@
 #   include_context "textus_store_fixture"
 #   include_context "intake doc"
 #   let(:intake_ttl) { "1s" }              # default "1h"
-#   let(:intake_on_expire) { "warn" }      # default "refresh"
 #
 # Exposes `store` (an intake-wired Store) so the host can call straight into it.
 RSpec.shared_context "intake doc" do
   let(:intake_ttl)       { "1h" }
-  let(:intake_on_expire) { "refresh" }
   let(:intake_kind_zone) { "machine" }
   let(:intake_body) do
     <<~RUBY
@@ -24,7 +22,6 @@ RSpec.shared_context "intake doc" do
       root,
       intake_body: intake_body,
       ttl: intake_ttl,
-      on_expire: intake_on_expire,
       kind_zone: intake_kind_zone,
     )
   end

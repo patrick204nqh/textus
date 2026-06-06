@@ -23,9 +23,9 @@ RSpec.describe Textus::Read::Freshness do
 
         rules:
           - match: knowledge.doc
-            upkeep: { ttl: 1h, action: warn }
+            retention: { ttl: 1h, action: drop }
           - match: knowledge.stale
-            upkeep: { ttl: 1s, action: warn }
+            retention: { ttl: 1s, action: drop }
       YAML
     )
   end
