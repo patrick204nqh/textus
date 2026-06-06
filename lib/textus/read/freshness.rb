@@ -2,17 +2,23 @@ require "time"
 
 module Textus
   module Read
-    # Per-entry lifecycle scan (ADR 0079, 0085). Walks every entry declared in
-    # the manifest, consults `rules.for(key)` for a `lifecycle:` policy, and
-    # reports the unified verdict. Status is one of :fresh, :expired, or
-    # :no_policy; the row also carries the policy's :action (on_expire).
+    # Per-entry staleness scan (ADR 0079, 0085, 0093). Walks every entry declared
+    # in the manifest and reports a staleness verdict sourced from the two new
+    # policy slots (ADR 0093):
+    #   - intake entries: `entry.source.ttl_seconds` is the re-pull cadence;
+    #     basis = `_meta.last_fetched_at` (else file mtime). Past ttl ⇒ :expired.
+    #   - entries matched by a `retention:` rule: `retention.ttl_seconds` is the
+    #     GC age; basis = file mtime. Past ttl ⇒ :expired (:action = drop/archive).
+    # Intake cadence wins when both apply (freshness is content currency; GC dueness
+    # shows via `reconcile --dry-run`).
+    # Status is one of :fresh, :expired, or :no_policy; the row also carries
+    # :action (:refresh for intake, :drop/:archive for retention).
     #
     # ADR 0085 removed the public `freshness` verb: there is no `:cli`/`:mcp`
-    # surface. This is now a Ruby-only internal scan (empty `surfaces`, the
-    # honest home reserved by ADR 0073) consumed by `pulse` (which derives
-    # `stale` + `next_due_at` from it) and the hook `Context`. Humans drill
-    # into per-entry lifecycle detail via `get` (last_fetched_at) + `rule_explain`
-    # (the ttl / on_expire policy) instead of a dedicated verb.
+    # surface. This is now a Ruby-only internal scan consumed by `pulse` (which
+    # derives `stale` + `next_due_at` from it) and the hook `Context`. Humans drill
+    # into per-entry staleness detail via `get` (last_fetched_at) + `rule_explain`
+    # (the ttl / action policy) instead of a dedicated verb.
     class Freshness
       extend Textus::Contract::DSL
 
@@ -54,29 +60,41 @@ module Textus
       private
 
       def row_for(mentry)
-        policy = lifecycle_for(mentry.key)
         envelope = safe_get(mentry.key)
         last = envelope&.meta&.dig("last_fetched_at")
+        ttl, action = policy_for(mentry)
+        return base_row(mentry, last).merge(status: :no_policy) if ttl.nil?
 
-        return base_row(mentry, last).merge(status: :no_policy) if policy.nil?
-
-        expired, reason = Textus::Domain::Lifecycle.verdict(
-          policy: policy,
-          last_fetched_at: last,
-          mtime: mtime_for(mentry.key),
-          now: @call.now,
-        )
+        basis = basis_time(mentry, last)
+        expired = !basis.nil? && (@call.now - basis).to_i > ttl
         base_row(mentry, last).merge(
-          ttl_seconds: policy.ttl_seconds,
-          action: policy.on_expire,
+          ttl_seconds: ttl,
+          action: action,
           status: expired ? :expired : :fresh,
-          reason: reason,
-          next_due_at: next_due(last, policy.ttl_seconds),
+          next_due_at: basis.nil? ? nil : (basis + ttl).utc.iso8601,
         )
       end
 
-      def lifecycle_for(key)
-        @manifest.rules.for(key).upkeep&.lifecycle
+      # ADR 0093: staleness comes from the intake re-pull cadence (source.ttl)
+      # or a retention GC rule (retention.ttl). Intake cadence wins when an entry
+      # has both (freshness is about content currency; GC dueness still shows via
+      # `reconcile --dry-run`). Returns [ttl_seconds, action] or [nil, nil].
+      def policy_for(mentry)
+        if mentry.intake?
+          ttl = mentry.source.ttl_seconds
+          return [ttl, :refresh] unless ttl.nil?
+        end
+        ret = @manifest.rules.for(mentry.key).retention
+        return [ret.ttl_seconds, ret.action] unless ret.nil?
+
+        [nil, nil]
+      end
+
+      # Age basis as a Time: last_fetched_at for intake when present, else mtime.
+      def basis_time(mentry, last)
+        return Time.parse(last) if mentry.intake? && last
+
+        mtime_for(mentry.key)
       end
 
       def mtime_for(key)
@@ -110,12 +128,6 @@ module Textus
         )
       rescue Textus::Error
         nil
-      end
-
-      def next_due(last, ttl)
-        return nil if last.nil? || ttl.nil?
-
-        (Time.parse(last) + ttl).utc.iso8601
       end
     end
   end

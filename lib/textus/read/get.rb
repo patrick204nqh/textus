@@ -1,3 +1,5 @@
+require "time"
+
 module Textus
   module Read
     # The one read path — a pure read (ADR 0089, 0093): the on-disk envelope
@@ -40,13 +42,31 @@ module Textus
 
       private
 
-      # Pure read; freshness is always reported as fresh (no lifecycle action at
-      # read time — ADR 0093). Intake cadence and GC are reconcile-only.
+      # Pure read (ADR 0089, 0093) — no lifecycle ACTION at read time, but the
+      # envelope is annotated with a freshness VERDICT: an intake entry past its
+      # source.ttl reads back stale (it is NOT re-pulled — reconcile/hook owns
+      # that). Non-intake entries are always fresh (retention is GC, not content
+      # staleness, and is evaluated only by the reconcile sweep).
       def annotated_envelope(key)
         envelope = read_raw_envelope(key)
         return nil if envelope.nil?
 
-        annotate_fresh(envelope)
+        entry = @manifest.resolver.resolve(key).entry
+        ttl = entry.intake? ? entry.source.ttl_seconds : nil
+        return annotate_fresh(envelope) if ttl.nil?
+
+        basis = envelope.meta&.dig("last_fetched_at")
+        basis_time = basis ? Time.parse(basis) : mtime_for(key)
+        stale = !basis_time.nil? && (@call.now - basis_time).to_i > ttl
+        reason = stale ? "ttl exceeded" : nil
+        envelope.with(freshness: Textus::Domain::Freshness.build(stale: stale, reason: reason, fetching: false))
+      end
+
+      def mtime_for(key)
+        path = @manifest.resolver.resolve(key).path
+        @file_stat.exists?(path) ? @file_stat.mtime(path) : nil
+      rescue Textus::Error
+        nil
       end
 
       def read_raw_envelope(key)
