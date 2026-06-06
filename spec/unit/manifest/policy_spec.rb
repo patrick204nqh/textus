@@ -331,4 +331,20 @@ RSpec.describe Textus::Manifest::Policy do
         .to raise_error(Textus::BadManifest, /must declare a kind/)
     end
   end
+
+  it "resolves derived per-entry inside a mixed machine zone (ADR 0091)" do
+    raw2 = YAML.safe_load(<<~YAML, aliases: false)
+      version: textus/3
+      roles: [{ name: automation, can: [reconcile] }]
+      zones: [{ name: artifacts, kind: machine }]
+      entries:
+        - { key: artifacts.feeds.cal, path: feeds/cal.json, zone: artifacts, kind: intake, intake: { handler: noop } }
+        - { key: artifacts.derived.idx, path: idx.md, zone: artifacts, owner: automation:auto, kind: derived,
+            compute: { kind: projection, select: ["x.*"] } }
+    YAML
+    d2 = Textus::Manifest::Data.parse(raw2, root: ".")
+    policy2 = d2.policy
+    expect(policy2.derived_entry?("artifacts.derived.idx")).to be(true)
+    expect(policy2.derived_entry?("artifacts.feeds.cal")).to be(false)
+  end
 end
