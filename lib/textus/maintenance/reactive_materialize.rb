@@ -16,7 +16,7 @@ module Textus
       # key:  the just-written canon key.
       # call: the originating Call (role/correlation_id/dry_run).
       def on_write(key:, call:)
-        return if derived_zone?(key) # recursion guard
+        return if derived_write?(key) # recursion guard
 
         affected = Textus::Read::Rdeps.new(container: @container).call(key)["rdeps"]
         return if affected.empty?
@@ -45,11 +45,11 @@ module Textus
 
       private
 
-      # The recursion guard: a write into a derived-kind zone is materialization
+      # The recursion guard: a write INTO a derived entry is materialization
       # output, not a source change, so it must not fan out (it would loop).
-      def derived_zone?(key)
-        zone = @manifest.resolver.resolve(key).entry.zone
-        @manifest.policy.derived_zone?(zone)
+      # ADR 0091: derived-ness is the entry's own property.
+      def derived_write?(key)
+        @manifest.resolver.resolve(key).entry.derived?
       rescue Textus::Error
         false # unknown key → let the rdeps step decide (it returns empty)
       end
