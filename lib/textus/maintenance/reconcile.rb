@@ -22,8 +22,8 @@ module Textus
       arg :prefix,  String, description: "restrict the sweep to keys under this dotted prefix"
       arg :zone,    String, description: "restrict the sweep to entries in this zone"
       arg :dry_run, :boolean, default: false,
-                              description: "when true, report what the sweep WOULD do without applying; " \
-                                           "defaults to false, so omitting it drops/archives/refreshes immediately"
+                              description: "when true, report what the pass WOULD do without applying; " \
+                                           "defaults to false, so omitting it produces + drops/archives immediately"
 
       def initialize(container:, call:)
         @container = container

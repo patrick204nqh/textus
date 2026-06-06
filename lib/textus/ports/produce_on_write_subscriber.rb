@@ -26,13 +26,13 @@ module Textus
         return if derived_write?(key) # recursion guard: produce output is not a source change
 
         affected = Textus::Read::Rdeps.new(container: @container).call(key)["rdeps"]
-        derived = affected.select { |k| derived_write?(k) }
-        return if derived.empty?
+        producible = affected.select { |k| producible?(k) }
+        return if producible.empty?
 
-        if any_sync?(derived)
-          Textus::Maintenance::Produce.converge(container: @container, call: call, keys: derived)
+        if any_sync?(producible)
+          Textus::Maintenance::Produce.converge(container: @container, call: call, keys: producible)
         else
-          Textus::Maintenance::Produce::AsyncRunner.enqueue(container: @container, call: call, keys: derived)
+          Textus::Maintenance::Produce::AsyncRunner.enqueue(container: @container, call: call, keys: producible)
         end
       end
 
@@ -44,8 +44,25 @@ module Textus
         false
       end
 
+      # The producible scope mirrors Maintenance::Produce#produce_one: derived
+      # entries render+publish, and nested publish_tree entries mirror their
+      # source subtree (ADR 0047). Including the latter restores reactive
+      # re-mirroring on a write into a tree's source — dropped when the scope
+      # narrowed to `derived?` only.
+      def producible?(key)
+        entry = @container.manifest.resolver.resolve(key).entry
+        entry.derived? || !entry.publish_tree.nil?
+      rescue Textus::Error
+        false
+      end
+
+      # Only derived entries carry a source with on_write semantics; a nested
+      # publish_tree entry has no source and defaults to async.
       def any_sync?(keys)
-        keys.any? { |k| @container.manifest.resolver.resolve(k).entry.source.sync? }
+        keys.any? do |k|
+          entry = @container.manifest.resolver.resolve(k).entry
+          entry.derived? && entry.source.sync?
+        end
       end
     end
   end
