@@ -4,21 +4,17 @@ module Textus
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
-      # The closed coordination vocabulary (ADR 0028; completed at five in ADR
-      # 0033; unified in ADR 0034; the quarantine capability folded into
-      # reconcile in ADR 0090). Each lane pairs a zone-kind with the capability
-      # that authorizes originating bytes in it. This table is the ONE source of
-      # truth; the derived constants below cannot drift. It is a FUNCTION, not a
-      # bijection — `quarantine` and `derived` are both machine-maintained lanes
-      # and share `reconcile` (ADR 0090). Key order is canon-first so the
-      # unknown-kind error message reads canon, workspace, quarantine, queue,
-      # derived.
+      # The closed coordination vocabulary (ADR 0028; five in 0033; unified in
+      # 0034; the quarantine + derived ZONE-KINDS folded into one `machine` kind
+      # in ADR 0091). Each kind pairs with the capability that authorizes
+      # originating bytes in it. ONE source of truth; the derived constants below
+      # cannot drift. A BIJECTION again (0090 had two kinds → reconcile; 0091
+      # collapses them, so kind ↔ capability is 1:1).
       LANES = {
         "canon" => "author",
         "workspace" => "keep",
-        "quarantine" => "reconcile",
+        "machine" => "reconcile",
         "queue" => "propose",
-        "derived" => "reconcile",
       }.freeze
 
       ZONE_KINDS         = LANES.keys.freeze
@@ -126,6 +122,13 @@ module Textus
             raise BadManifest.new("zone '#{z["name"]}' at '$.zones[#{i}]' must declare a kind (one of: #{ZONE_KINDS.join(", ")})")
           end
           next if ZONE_KINDS.include?(z["kind"])
+
+          if %w[quarantine derived].include?(z["kind"])
+            raise BadManifest.new(
+              "zone kind '#{z["kind"]}' at '$.zones[#{i}]' was folded into 'machine' (ADR 0091) — " \
+              "use `kind: machine`",
+            )
+          end
 
           raise BadManifest.new(
             "unknown zone kind '#{z["kind"]}' at '$.zones[#{i}]' (known: #{ZONE_KINDS.join(", ")})",

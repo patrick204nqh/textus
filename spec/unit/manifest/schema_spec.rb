@@ -235,4 +235,17 @@ RSpec.describe Textus::Manifest::Schema do
       end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.zones\[0\]'/)
     end
   end
+
+  describe "ADR 0091 machine kind" do
+    it "accepts kind: machine and maps it to reconcile" do
+      expect(Textus::Manifest::Schema::LANES["machine"]).to eq("reconcile")
+      expect(Textus::Manifest::Schema::ZONE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
+    end
+
+    it "rejects the retired quarantine/derived kinds with a 0091 hint" do
+      expect do
+        Textus::Manifest::Schema.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
+      end.to raise_error(Textus::BadManifest, /folded into 'machine' \(ADR 0091\)/)
+    end
+  end
 end
