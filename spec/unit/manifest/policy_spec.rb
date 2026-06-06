@@ -11,7 +11,7 @@ RSpec.describe Textus::Manifest::Policy do
         - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
-        - { name: review,  kind: derived }
+        - { name: review,  kind: machine }
       entries:
         - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
@@ -87,8 +87,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: automation, can: [reconcile] }
         zones:
-          - { name: intake, kind: quarantine }
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -124,7 +123,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: agent, can: [propose, reconcile] }
         zones:
           - { name: review, kind: queue }
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
@@ -155,7 +154,7 @@ RSpec.describe Textus::Manifest::Policy do
             - { name: automation, can: [reconcile] }
           zones:
             - { name: review, kind: queue }
-            - { name: draft,  kind: derived }
+            - { name: draft,  kind: machine }
           entries:
             - { key: review.notes, path: review/notes.md, zone: review, owner: human:self, kind: leaf }
         YAML
@@ -230,7 +229,7 @@ RSpec.describe Textus::Manifest::Policy do
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
-          - { name: artifacts,  kind: derived }
+          - { name: artifacts,  kind: machine }
         entries: []
       YAML
     end
@@ -244,12 +243,12 @@ RSpec.describe Textus::Manifest::Policy do
       expect(policy.queue_zone).to eq("review")
     end
 
-    it "treats a kind: derived zone as derived" do
-      expect(policy.derived_zone?("artifacts")).to be(true)
-      expect(policy.derived_zone?("knowledge")).to be(false)
+    it "treats a kind: machine zone as the generator zone (machine_zone)" do
+      expect(policy.machine_zone).to eq("artifacts")
+      expect(policy.declared_kind("knowledge")).not_to eq(:machine)
     end
 
-    it "does NOT treat a non-derived zone as derived" do
+    it "does NOT treat a non-machine zone as the machine zone" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles: [{ name: human, can: [author, propose] }]
@@ -257,7 +256,7 @@ RSpec.describe Textus::Manifest::Policy do
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.derived_zone?("out")).to be(false)
+      expect(p2.machine_zone).to be_nil
     end
 
     it "lists author-holders via roles_with_capability" do
@@ -314,14 +313,14 @@ RSpec.describe Textus::Manifest::Policy do
         zones:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
-          - { name: artifacts,  kind: derived }
+          - { name: artifacts,  kind: machine }
         entries: []
       YAML
     end
 
     it "exposes declared_zone_kinds keyed by zone name with symbol values" do
       expect(data.declared_zone_kinds).to eq(
-        "knowledge" => :canon, "review" => :queue, "artifacts" => :derived,
+        "knowledge" => :canon, "review" => :queue, "artifacts" => :machine,
       )
     end
 
@@ -339,8 +338,8 @@ RSpec.describe Textus::Manifest::Policy do
       zones: [{ name: artifacts, kind: machine }]
       entries:
         - { key: artifacts.feeds.cal, path: feeds/cal.json, zone: artifacts, kind: intake, intake: { handler: noop } }
-        - { key: artifacts.derived.idx, path: idx.md, zone: artifacts, owner: automation:auto, kind: derived,
-            compute: { kind: projection, select: ["x.*"] } }
+        - { key: artifacts.derived.idx, path: idx.json, zone: artifacts, owner: automation:auto, kind: derived,
+            format: json, compute: { kind: projection, select: ["x.*"] } }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     policy2 = d2.policy

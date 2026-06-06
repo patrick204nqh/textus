@@ -11,7 +11,7 @@ RSpec.describe Textus::Manifest::Data do
         - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
-        - { name: review,  kind: derived }
+        - { name: review,  kind: machine }
       entries:
         - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
     YAML
