@@ -1,10 +1,11 @@
 require "spec_helper"
 
 RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
-  def with_store(manifest_yaml)
+  def with_store(manifest_yaml, extra_zones: [])
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
+      extra_zones.each { |z| FileUtils.mkdir_p(File.join(textus, "zones", z)) }
       File.write(File.join(textus, "manifest.yaml"), manifest_yaml)
       yield Textus::Store.new(textus)
     end
@@ -20,7 +21,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.foo
-          upkeep: { "on": stale, ttl: 10m, action: warn }
+          upkeep: { ttl: 10m, action: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -39,9 +40,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          upkeep: { "on": stale, ttl: 10m, action: warn }
+          upkeep: { ttl: 10m, action: warn }
         - match: "*.foo"
-          upkeep: { "on": stale, ttl: 1h, action: warn }
+          upkeep: { ttl: 1h, action: warn }
     YAML
 
     with_store(manifest) do |store|
@@ -54,25 +55,30 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     end
   end
 
-  it "warns on an upkeep source_change tie (materialize folded into upkeep; ADR 0090)" do
+  it "warns on an upkeep strategy tie (source_change ambiguity; ADR 0090/0091)" do
+    # Two equally-specific rules both assign a `strategy:` upkeep to the same derived entry.
     manifest = <<~YAML
       version: textus/3
+      roles: [{ name: automation, can: [reconcile] }, { name: human, can: [author] }]
       zones:
         - { name: knowledge, kind: canon }
+        - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.src, path: knowledge/src.md, zone: knowledge, kind: leaf }
+        - { key: artifacts.foo, path: artifacts/foo.json, zone: artifacts,
+            kind: derived, format: json, compute: { kind: projection, select: ["knowledge.*"] } }
       rules:
-        - match: knowledge.*
-          upkeep: { "on": source_change, strategy: sync }
+        - match: artifacts.*
+          upkeep: { strategy: sync }
         - match: "*.foo"
-          upkeep: { "on": source_change, strategy: async }
+          upkeep: { strategy: async }
     YAML
 
-    with_store(manifest) do |store|
+    with_store(manifest, extra_zones: ["artifacts"]) do |store|
       issues = described_class.new(store.container).call
       ambig = issues.find { |i| i["code"] == "rule.ambiguity" && i["message"].include?("upkeep") }
       expect(ambig).not_to be_nil
-      expect(ambig["subject"]).to eq("knowledge.foo")
+      expect(ambig["subject"]).to eq("artifacts.foo")
     end
   end
 
@@ -86,9 +92,9 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
       rules:
         - match: knowledge.*
-          upkeep: { "on": stale, ttl: 10m, action: warn }
+          upkeep: { ttl: 10m, action: warn }
         - match: knowledge.foo
-          upkeep: { "on": stale, ttl: 1h, action: warn }
+          upkeep: { ttl: 1h, action: warn }
     YAML
 
     with_store(manifest) do |store|

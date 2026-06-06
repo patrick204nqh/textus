@@ -12,7 +12,7 @@ RSpec.describe Textus::Doctor do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
 

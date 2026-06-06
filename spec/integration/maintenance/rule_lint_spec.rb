@@ -8,11 +8,11 @@ RSpec.describe Textus::Maintenance::RuleLint do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: quarantine }
+        - { name: intake, kind: machine }
       entries:
         - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: intake, intake: { handler: noop } }
       rules:
-        - { match: "intake.*", upkeep: { "on": stale, ttl: 600, action: warn } }
+        - { match: "intake.*", upkeep: { ttl: 600, action: warn } }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")

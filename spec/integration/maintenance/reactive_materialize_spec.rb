@@ -22,7 +22,7 @@ RSpec.describe Textus::Maintenance::ReactiveMaterialize do
               <<~RULES
                 rules:
                   - match: "artifacts.catalogs.people"
-                    upkeep: { "on": source_change, strategy: #{materialize_on_change} }
+                    upkeep: { strategy: #{materialize_on_change} }
               RULES
             else
               ""
@@ -31,7 +31,7 @@ RSpec.describe Textus::Maintenance::ReactiveMaterialize do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
 

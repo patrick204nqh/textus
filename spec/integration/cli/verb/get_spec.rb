@@ -31,7 +31,7 @@ RSpec.describe Textus::CLI::Verb::Get do
       manifest: <<~YAML,
         version: textus/3
         zones:
-          - { name: feeds, kind: quarantine }
+          - { name: feeds, kind: machine }
         entries:
           - key: feeds.doc
             kind: intake
@@ -40,7 +40,7 @@ RSpec.describe Textus::CLI::Verb::Get do
             intake: { handler: test_intake }
         rules:
           - match: feeds.doc
-            upkeep: { "on": stale, ttl: 1s, action: refresh }
+            upkeep: { ttl: 1s, action: refresh }
       YAML
     )
     File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)

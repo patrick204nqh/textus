@@ -8,7 +8,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: feeds, kind: quarantine }
+          - { name: feeds, kind: machine }
         entries:
           - key: feeds.foo
             kind: intake

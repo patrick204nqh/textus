@@ -9,7 +9,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
       version: textus/3
       zones:
         - { name: working, kind: canon }
-        - { name: gen, kind: derived }
+        - { name: gen, kind: machine }
       entries:
       #{entries_yaml}
     YAML

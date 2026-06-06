@@ -27,7 +27,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
           - { key: review.oncall, path: review/oncall.md, zone: review, kind: leaf }
         rules:
           - match: "review.*"
-            upkeep: { "on": stale, ttl: 30d, action: drop }
+            upkeep: { ttl: 30d, action: drop }
       YAML
       leaf = File.join(root, "zones/review/oncall.md")
       File.write(leaf, "---\n_meta: {name: oncall, uid: aaaaaaaaaaaaaaaa}\n---\nbody\n")
@@ -102,7 +102,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries:
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
           - key: artifacts.roster

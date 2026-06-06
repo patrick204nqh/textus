@@ -1,8 +1,9 @@
 ---
 version: textus/3
 # Write authority is derived from capabilities (ADR 0030): canon→author,
-# queue→propose, derived→reconcile. The human holds author+propose, the agent
-# only propose (proposals queue), and automation materializes the derived output.
+# queue→propose, machine→reconcile. The human holds author+propose, the agent
+# only propose (proposals queue), and automation materializes/fetches in the
+# machine zone (ADR 0091: quarantine + derived folded into `machine`).
 roles:
 - name: human
   can:
@@ -18,15 +19,12 @@ zones:
 - name: knowledge
   kind: canon
   desc: project facts and operational runbooks
-- name: feeds
-  kind: quarantine
-  desc: external inputs pulled in (e.g. the incident export)
 - name: proposals
   kind: queue
   desc: changes awaiting your accept
 - name: artifacts
-  kind: derived
-  desc: reconcile-computed outputs (CLAUDE.md, AGENTS.md)
+  kind: machine
+  desc: computed outputs + external feeds (ADR 0091)
 entries:
 - key: knowledge.project
   path: knowledge/project.md
@@ -64,15 +62,15 @@ entries:
     - knowledge.runbooks
     transform: orientation_reducer
   kind: derived
-# A per-host snapshot, pulled by `textus fetch feeds.machines.local
+# A per-host snapshot, pulled by `textus fetch artifacts.machines.local
 # --as=automation` (the same nested entry + machine_intake.rb hook that
-# `textus init` scaffolds). Grows to a fleet — add feeds.machines.<host> over
-# SSH (see ../../../docs/cookbook/environment-scan.md). tracked:false → the
-# fetched files are gitignored (machine info can be sensitive/noisy) but stay
-# readable via `textus get feeds.machines.local`, and are never published. (ADR 0043)
-- key: feeds.machines
-  path: feeds/machines
-  zone: feeds
+# `textus init` scaffolds). Grows to a fleet — add artifacts.machines.<host>
+# over SSH (see ../../../docs/cookbook/environment-scan.md). tracked:false →
+# the fetched files are gitignored but stay readable via
+# `textus get artifacts.machines.local`. (ADR 0043)
+- key: artifacts.machines
+  path: artifacts/machines
+  zone: artifacts
   format: yaml
   nested: true
   tracked: false
@@ -83,8 +81,7 @@ entries:
       machines:
         local: { via: local }
 rules:
-- match: feeds.machines.**
+- match: artifacts.machines.**
   upkeep:
-    "on": stale
     ttl: 1h
     action: warn

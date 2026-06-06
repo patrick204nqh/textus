@@ -92,7 +92,7 @@ RSpec.describe Textus::Write::Accept do
           - { name: agent, can: [propose] }
           - { name: automation, can: [reconcile] }
         zones:
-          - { name: feeds, kind: quarantine }
+          - { name: feeds, kind: machine }
           - { name: proposals, kind: queue }
         entries:
           - { key: feeds.n, path: feeds/n.md, zone: feeds, owner: human:self, kind: leaf }

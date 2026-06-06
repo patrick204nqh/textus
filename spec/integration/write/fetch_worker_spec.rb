@@ -29,7 +29,7 @@ RSpec.describe Textus::Write::FetchWorker do
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
-        - { name: intake, kind: quarantine }
+        - { name: intake, kind: machine }
       entries:
         - key: intake.item
           kind: intake
@@ -140,7 +140,7 @@ RSpec.describe Textus::Write::FetchWorker do
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
-          - { name: intake, kind: quarantine }
+          - { name: intake, kind: machine }
         entries:
           - key: intake.vendor
             kind: intake

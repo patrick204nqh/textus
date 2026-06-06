@@ -15,7 +15,7 @@ RSpec.describe Textus::Read::Published do
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
-          - { name: artifacts, kind: derived }
+          - { name: artifacts, kind: machine }
         entries:
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
