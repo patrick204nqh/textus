@@ -236,6 +236,11 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
+  it "rejects the retired upkeep on: discriminator (ADR 0091)" do
+    expect { Textus::Manifest::Schema.validate_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
+      .to raise_error(Textus::BadManifest, /unknown key 'on'/)
+  end
+
   describe "ADR 0091 machine kind" do
     it "accepts kind: machine and maps it to reconcile" do
       expect(Textus::Manifest::Schema::LANES["machine"]).to eq("reconcile")
