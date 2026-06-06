@@ -16,9 +16,8 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 → Write authority by zone:
     - **knowledge** (human ) — the maintained source of truth about the repo (project + runbooks)
     - **notebook** (agent ) — the agent's own durable working notes across sessions
-    - **feeds** (automation ) — external inputs pulled in
     - **proposals** (human agent ) — changes awaiting a human accept
-    - **artifacts** (automation ) — computed outputs (CLAUDE.md, AGENTS.md)
+    - **artifacts** (automation ) — machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs
 
 → Agent protocol (from `textus boot`):
    • **read** — find and read an entry
