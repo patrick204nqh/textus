@@ -1,53 +1,42 @@
 module Textus
   module Domain
     module Policy
-      # The unified `upkeep:` rule field (ADR 0090) — a tagged union discriminated
-      # by `on:`. It routes to the existing inner policy and exposes it as a
-      # sub-view, so reconcile/reactive call sites read `.lifecycle` / `.materialize`
-      # unchanged:
-      #   on: stale         → age-based, the Lifecycle grammar (ttl, action, budget_ms)
-      #   on: source_change → dependency-based, the Materialize grammar (strategy)
-      # The two grammars and bases stay distinct (ADR 0079/0087 substance preserved);
-      # `ttl` never touches the dependency branch. A given key needs at most one
-      # tag (doctor enforces it, see Check::UpkeepKindMismatch).
+      # The `upkeep:` rule field (ADR 0090, reshaped ADR 0091). NO `on:` tag —
+      # the grammar is read from the keys present:
+      #   { ttl, action, budget_ms } → age-based   (Lifecycle)
+      #   { strategy }               → dependency   (Materialize)
+      # Mixing the two key-sets, or an empty block, is a parse error. WHICH
+      # grammar is legal for WHICH entry-kind is enforced once, at load, by
+      # Schema.validate_upkeep_kinds! (it has the entry in hand; this class does
+      # not). The action set is left wide here and narrowed per entry-kind by
+      # that load validation.
       class Upkeep
-        TAGS               = %w[stale source_change].freeze
-        STALE_KEYS         = %w[on ttl action budget_ms].freeze
-        SOURCE_CHANGE_KEYS = %w[on strategy].freeze
+        AGE_KEYS = %w[ttl action budget_ms].freeze
+        DEP_KEYS = %w[strategy].freeze
 
-        attr_reader :on, :lifecycle, :materialize
+        attr_reader :lifecycle, :materialize
 
         def initialize(raw)
-          @on = raw["on"].to_s
-          case @on
-          when "stale"
-            reject_foreign!(raw, STALE_KEYS)
-            @lifecycle   = Lifecycle.new(ttl: raw["ttl"], on_expire: raw["action"], budget_ms: raw["budget_ms"])
-            @materialize = nil
-          when "source_change"
-            reject_foreign!(raw, SOURCE_CHANGE_KEYS)
+          keys = raw.keys.map(&:to_s)
+          age  = keys.intersect?(AGE_KEYS)
+          dep  = keys.intersect?(DEP_KEYS)
+
+          if age && dep
+            raise Textus::BadManifest.new("upkeep cannot mix age (#{AGE_KEYS.join("/")}) and dependency (#{DEP_KEYS.join("/")}) keys")
+          end
+          raise Textus::BadManifest.new("upkeep must carry either #{AGE_KEYS.join("/")} or #{DEP_KEYS.join("/")}") unless age || dep
+
+          if dep
             @materialize = Materialize.new(on_change: raw["strategy"])
-            @lifecycle   = nil
+            @lifecycle = nil
           else
-            raise Textus::BadManifest.new(
-              "upkeep.on must be one of #{TAGS.join("|")}, got #{@on.inspect}",
-            )
+            @lifecycle = Lifecycle.new(ttl: raw["ttl"], on_expire: raw["action"], budget_ms: raw["budget_ms"])
+            @materialize = nil
           end
         end
 
-        def stale?         = @on == "stale"
-        def source_change? = @on == "source_change"
-
-        private
-
-        def reject_foreign!(raw, allowed)
-          extra = raw.keys.map(&:to_s) - allowed
-          return if extra.empty?
-
-          raise Textus::BadManifest.new(
-            "upkeep on: #{@on} does not allow #{extra.join(", ")} (allowed: #{allowed.join(", ")})",
-          )
-        end
+        def stale?         = !@lifecycle.nil?
+        def source_change? = !@materialize.nil?
       end
     end
   end
