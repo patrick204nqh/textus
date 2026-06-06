@@ -46,8 +46,8 @@ entries:
   owner: agent
   nested: true
   kind: nested
-- key: artifacts.orientation
-  path: artifacts/orientation.md
+- key: artifacts.derived.orientation
+  path: artifacts/derived/orientation.md
   zone: artifacts
   template: orientation.mustache
   inject_boot: true
@@ -62,14 +62,14 @@ entries:
     - knowledge.runbooks
     transform: orientation_reducer
   kind: derived
-# A per-host snapshot, pulled by `textus fetch artifacts.machines.local
+# A per-host snapshot, pulled by `textus fetch artifacts.feeds.machines.local
 # --as=automation` (the same nested entry + machine_intake.rb hook that
-# `textus init` scaffolds). Grows to a fleet — add artifacts.machines.<host>
+# `textus init` scaffolds). Grows to a fleet — add artifacts.feeds.machines.<host>
 # over SSH (see ../../../docs/cookbook/environment-scan.md). tracked:false →
 # the fetched files are gitignored but stay readable via
-# `textus get artifacts.machines.local`. (ADR 0043)
-- key: artifacts.machines
-  path: artifacts/machines
+# `textus get artifacts.feeds.machines.local`. (ADR 0043)
+- key: artifacts.feeds.machines
+  path: artifacts/feeds/machines
   zone: artifacts
   format: yaml
   nested: true
@@ -81,7 +81,7 @@ entries:
       machines:
         local: { via: local }
 rules:
-- match: artifacts.machines.**
+- match: artifacts.feeds.machines.**
   upkeep:
     ttl: 1h
     action: warn
