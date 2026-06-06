@@ -8,9 +8,8 @@ RSpec.describe "textus action verb" do
       zones:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
-        - { name: intake,   kind: quarantine }
         - { name: review,   kind: canon }
-        - { name: artifacts,   kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
         - { key: knowledge.demo, path: knowledge/demo.md, zone: knowledge, kind: leaf}
 

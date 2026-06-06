@@ -14,7 +14,7 @@ RSpec.describe "Boot recipes name no deleted verbs" do
         - { name: automation, can: [reconcile] }
       zones:
         - { name: identity, kind: canon, desc: "human-only" }
-        - { name: intake,   kind: quarantine }
+        - { name: intake,   kind: machine }
     YAML
   end
 

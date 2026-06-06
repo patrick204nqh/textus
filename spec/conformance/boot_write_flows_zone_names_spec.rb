@@ -4,7 +4,7 @@ RSpec.describe "boot write_flows name live zones, not retired ones (ADR 0034)" d
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge notebook feeds proposals artifacts],
+    store_from_manifest(root, zones: %w[knowledge notebook artifacts proposals],
                               manifest: <<~YAML)
                                 version: textus/3
                                 roles:
@@ -14,9 +14,8 @@ RSpec.describe "boot write_flows name live zones, not retired ones (ADR 0034)" d
                                 zones:
                                   - { name: knowledge, kind: canon }
                                   - { name: notebook,  kind: workspace, owner: agent }
-                                  - { name: feeds,     kind: quarantine }
+                                  - { name: artifacts, kind: machine }
                                   - { name: proposals, kind: queue }
-                                  - { name: artifacts, kind: derived }
                                 entries: []
                               YAML
   end
@@ -34,13 +33,18 @@ RSpec.describe "boot write_flows name live zones, not retired ones (ADR 0034)" d
     expect(flows["agent"]).to include("no accept needed")
   end
 
-  it "names the live queue, quarantine, and derived zones" do
+  it "names the live queue and machine zone (ADR 0091: quarantine + derived merged into machine)" do
     expect(flows["agent"]).to include("proposals.*")
-    expect(flows["automation"]).to include("feeds")
     expect(flows["automation"]).to include("artifacts")
   end
 
   it "never emits a retired zone instance name" do
-    expect(flows.values.join(" ")).not_to match(/\b(?:review|intake|output)\b/)
+    # `intake` and `output` are retired zone instance names; `intake` is also a
+    # valid entry-kind descriptor (ADR 0091) so match only zone-name patterns.
+    # `review` and `output` are pure zone-name relics with no other valid use.
+    expect(flows.values.join(" ")).not_to match(/\b(?:review|output)\b/)
+    # Detect `intake` only when used as a zone name (e.g. "write to intake")
+    # not as an entry-kind modifier ("intake artifacts").
+    expect(flows.values.join(" ")).not_to match(/\bwrite.*\bintake\b|\bintake\s+zone\b/)
   end
 end

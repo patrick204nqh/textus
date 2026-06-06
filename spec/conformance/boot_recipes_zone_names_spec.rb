@@ -12,7 +12,7 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
         - { name: automation, can: [reconcile] }
       zones:
         - { name: knowledge, kind: canon }
-        - { name: feeds,     kind: quarantine }
+        - { name: feeds,     kind: machine }
         - { name: proposals, kind: queue }
       entries: []
     YAML
@@ -26,7 +26,7 @@ RSpec.describe "boot agent_protocol recipes name live zones (ADR 0034)" do
     expect(text).not_to include("review.KEY")
   end
 
-  it "names the live quarantine zone in the reconcile recipe" do
+  it "names the live machine zone in the reconcile recipe" do
     text = recipes["reconcile"]["steps"].join(" ")
     expect(text).to include("feeds")
     expect(text).not_to include("intake")
