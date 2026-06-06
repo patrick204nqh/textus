@@ -1,6 +1,6 @@
 module Textus
   class Manifest
-    module Schema
+    module Schema # rubocop:disable Metrics/ModuleLength
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
@@ -329,6 +329,36 @@ module Textus
         raise BadManifest.new(
           "at most one zone may declare kind: machine (found: #{machines.join(", ")})",
         )
+      end
+
+      # ADR 0091: the upkeep grammar must match the entry kind. Replaces the
+      # deleted doctor checks upkeep.kind_mismatch + lifecycle.action_invalid
+      # with one eager load error (illegal combinations cannot load).
+      def self.validate_upkeep_kinds!(manifest)
+        manifest.data.entries.each do |entry|
+          upkeep = manifest.rules.for(entry.key).upkeep
+          next if upkeep.nil?
+
+          if upkeep.source_change? && !entry.derived?
+            raise BadManifest.new("entry '#{entry.key}': upkeep strategy (dependency) is only valid for a derived entry")
+          end
+          next unless upkeep.stale?
+
+          action = upkeep.lifecycle.on_expire
+          if entry.derived?
+            raise BadManifest.new(
+              "entry '#{entry.key}': a derived entry regenerates; " \
+              "an age-retention upkeep is invalid (drop it or use strategy)",
+            )
+          elsif action == :refresh && !entry.intake?
+            raise BadManifest.new("entry '#{entry.key}': upkeep action: refresh is only valid for an intake entry")
+          elsif %i[drop archive].include?(action) && entry.intake?
+            raise BadManifest.new(
+              "entry '#{entry.key}': upkeep action: #{action} is invalid for an intake entry " \
+              "(it re-fetches, not prunes)",
+            )
+          end
+        end
       end
 
       # Write authority is derived from capabilities (ADR 0030): a zone of a

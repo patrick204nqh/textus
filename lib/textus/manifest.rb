@@ -44,12 +44,14 @@ module Textus # rubocop:disable Style/OneClassPerFile
 
       def build(raw, root)
         data = Manifest::Data.parse(raw, root: root)
-        new(
+        manifest = new(
           data: data,
           resolver: Manifest::Resolver.new(data),
           policy: data.policy,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
+        Manifest::Schema.validate_upkeep_kinds!(manifest) # ADR 0091
+        manifest
       end
 
       def check_version!(raw, source)
