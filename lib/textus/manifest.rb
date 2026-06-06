@@ -50,7 +50,7 @@ module Textus # rubocop:disable Style/OneClassPerFile
           policy: data.policy,
           rules: Manifest::Rules.parse(raw["rules"] || []),
         )
-        Manifest::Schema.validate_upkeep_kinds!(manifest) # ADR 0091
+        Manifest::Schema.validate_source_and_retention!(manifest) # ADR 0093
         manifest
       end
 

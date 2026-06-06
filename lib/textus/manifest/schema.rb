@@ -1,6 +1,6 @@
 module Textus
   class Manifest
-    module Schema # rubocop:disable Metrics/ModuleLength
+    module Schema
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
@@ -22,19 +22,17 @@ module Textus
       KIND_REQUIRES_VERB = LANES
       ENTRY_KEYS = %w[
         key path zone kind schema owner nested format
-        compute template publish
-        intake events inject_boot provenance ignore tracked
+        source publish
+        events ignore tracked
       ].freeze
       # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
       # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).
       PUBLISH_KEYS = %w[to tree].freeze
-      COMPUTE_KEYS = %w[kind select pluck sort_by limit transform command sources].freeze
-      INTAKE_KEYS  = %w[handler config].freeze
-      # The UNION of keys across upkeep's tags; the generic sub-key walk enforces
-      # only this set. The per-tag narrowing (rejecting cross-tag fields) lives in
-      # Domain::Policy::Upkeep#reject_foreign! — UPKEEP_KEYS is not the complete
-      # validation.
-      UPKEEP_KEYS = %w[ttl action budget_ms strategy].freeze
+      # ADR 0093: entry-level production block. `project:` is a free hash
+      # consumed by Projection — its inner keys are not walked (YAGNI).
+      SOURCE_KEYS = %w[from handler config template project command sources ttl on_write inject_boot provenance].freeze
+      # ADR 0093: rule-level GC slot. drop/archive only (refresh gone).
+      RETENTION_KEYS = %w[ttl action].freeze
 
       # The ONE source of truth for the rule-block field set (WS3). Adding a
       # rule field means adding one entry here; everything downstream derives
@@ -82,10 +80,10 @@ module Textus
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
         },
-        upkeep: {
-          yaml_key: "upkeep",
-          policy_class: Textus::Domain::Policy::Upkeep,
-          validation: :tagged, sub_keys: UPKEEP_KEYS, arg_key: nil,
+        retention: {
+          yaml_key: "retention",
+          policy_class: Textus::Domain::Policy::Retention,
+          validation: :tagged, sub_keys: RETENTION_KEYS, arg_key: nil,
           in_pick: true, in_ambiguity: true,
           in_rule_list: true, in_rule_explain: %i[lean detail]
         },
@@ -143,8 +141,7 @@ module Textus
           reject_retired_publish_keys!(e, path)
           walk(e, ENTRY_KEYS, path)
           validate_publish_block!(e, path)
-          walk(e["compute"], COMPUTE_KEYS, "#{path}.compute") if e["compute"].is_a?(Hash)
-          walk(e["intake"], INTAKE_KEYS, "#{path}.intake") if e["intake"].is_a?(Hash)
+          walk(e["source"], SOURCE_KEYS, "#{path}.source") if e["source"]
         end
       end
 
@@ -200,6 +197,12 @@ module Textus
         Array(rules).each_with_index do |r, i|
           path = "$.rules[#{i}]"
           reject_retired_rule_keys!(r, path)
+          if r.is_a?(Hash) && r.key?("upkeep")
+            raise BadManifest.new(
+              "rule key `upkeep:` was removed (ADR 0093): move age-GC to `retention:` " \
+              "and production (handler/template) to the entry's `source:`",
+            )
+          end
           walk(r, RULE_KEYS, path)
           FIELD_REGISTRY.each_value do |meta|
             next unless meta[:sub_keys]
@@ -331,33 +334,20 @@ module Textus
         )
       end
 
-      # ADR 0091: the upkeep grammar must match the entry kind. Replaces the
-      # deleted doctor checks upkeep.kind_mismatch + lifecycle.action_invalid
-      # with one eager load error (illegal combinations cannot load).
-      def self.validate_upkeep_kinds!(manifest)
+      # ADR 0093: retention (drop/archive) is age-based GC; it is invalid on a
+      # derived entry (a derived entry regenerates from its source, it isn't aged
+      # out). source.kind ↔ entry.kind agreement is already enforced in the entry
+      # classes' from_raw. (Replaces validate_upkeep_kinds!.)
+      def self.validate_source_and_retention!(manifest)
         manifest.data.entries.each do |entry|
-          upkeep = manifest.rules.for(entry.key).upkeep
-          next if upkeep.nil?
+          retention = manifest.rules.for(entry.key).retention
+          next if retention.nil?
+          next unless entry.derived?
 
-          if upkeep.source_change? && !entry.derived?
-            raise BadManifest.new("entry '#{entry.key}': upkeep strategy (dependency) is only valid for a derived entry")
-          end
-          next unless upkeep.stale?
-
-          action = upkeep.lifecycle.on_expire
-          if entry.derived?
-            raise BadManifest.new(
-              "entry '#{entry.key}': a derived entry regenerates; " \
-              "an age-retention upkeep is invalid (drop it or use strategy)",
-            )
-          elsif action == :refresh && !entry.intake?
-            raise BadManifest.new("entry '#{entry.key}': upkeep action: refresh is only valid for an intake entry")
-          elsif %i[drop archive].include?(action) && entry.intake?
-            raise BadManifest.new(
-              "entry '#{entry.key}': upkeep action: #{action} is invalid for an intake entry " \
-              "(it re-fetches, not prunes)",
-            )
-          end
+          raise BadManifest.new(
+            "entry '#{entry.key}': a derived entry regenerates from its source; " \
+            "retention (drop/archive) is invalid",
+          )
         end
       end
 
