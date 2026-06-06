@@ -247,5 +247,14 @@ RSpec.describe Textus::Manifest::Schema do
         Textus::Manifest::Schema.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
       end.to raise_error(Textus::BadManifest, /folded into 'machine' \(ADR 0091\)/)
     end
+
+    it "rejects a manifest with two machine zones" do
+      raw = { "zones" => [
+        { "name" => "artifacts", "kind" => "machine" },
+        { "name" => "feeds", "kind" => "machine" },
+      ] }
+      expect { Textus::Manifest::Schema.validate_single_machine!(raw) }
+        .to raise_error(Textus::BadManifest, /at most one zone may declare kind: machine/)
+    end
   end
 end

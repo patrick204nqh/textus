@@ -112,6 +112,7 @@ module Textus
         validate_rules!(raw["rules"])
         walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         validate_single_queue!(raw)
+        validate_single_machine!(raw)
         validate_zone_kind_consistency!(raw)
       end
 
@@ -336,6 +337,15 @@ module Textus
 
         raise BadManifest.new(
           "at most one zone may declare kind: queue (found: #{queues.join(", ")})",
+        )
+      end
+
+      def self.validate_single_machine!(raw)
+        machines = Array(raw["zones"]).select { |z| z["kind"] == "machine" }.map { |z| z["name"] }
+        return if machines.size <= 1
+
+        raise BadManifest.new(
+          "at most one zone may declare kind: machine (found: #{machines.join(", ")})",
         )
       end
 
