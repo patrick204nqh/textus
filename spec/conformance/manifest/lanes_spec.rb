@@ -3,18 +3,18 @@ require "spec_helper"
 RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
   let(:s) { Textus::Manifest::Schema }
 
-  it "is the kind => required-capability function (ADR 0090: quarantine + derived share reconcile)" do
+  it "is the kind => required-capability function (ADR 0091: quarantine + derived folded into machine)" do
     expect(s::LANES).to eq(
-      "canon" => "author", "workspace" => "keep", "quarantine" => "reconcile",
-      "queue" => "propose", "derived" => "reconcile"
+      "canon" => "author", "workspace" => "keep", "machine" => "reconcile",
+      "queue" => "propose"
     )
   end
 
   it "derives ZONE_KINDS from the lane keys (order preserved for the error message)" do
-    expect(s::ZONE_KINDS).to eq(%w[canon workspace quarantine queue derived])
+    expect(s::ZONE_KINDS).to eq(%w[canon workspace machine queue])
   end
 
-  it "derives CAPABILITIES from the lane values, de-duplicated (four: reconcile is shared)" do
+  it "derives CAPABILITIES from the lane values, de-duplicated (three: machine requires reconcile)" do
     expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "reconcile")
   end
 

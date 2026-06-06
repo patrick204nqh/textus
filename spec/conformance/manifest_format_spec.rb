@@ -13,7 +13,7 @@ RSpec.describe "Manifest format: field validation" do
       version: textus/3
       zones:
         - { name: knowledge, kind: canon }
-        - { name: artifacts, kind: derived }
+        - { name: artifacts, kind: machine }
       entries:
       #{entries_yaml}
     YAML
