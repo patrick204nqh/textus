@@ -57,7 +57,7 @@ Each step keeps `rspec` and `rubocop` green, mirroring 0080's discipline:
 ## Consequences
 
 - **The next zone/namespace rename is a one-file edit.** The ~30-file ripple ADR 0091 paid does not recur; the guard makes regression a CI failure rather than a review catch.
-- **The suite shrinks modestly, on evidence.** Phase 3 removes only coverage-redundant dead specs; the absence guards and live-behavior specs stay, so the safety net is intact.
+- **No specs were retired; the suite's legibility improved, on coverage evidence.** Phase 3's coverage-gated audit found the reconcile-era sweep (0087→0091) left no dead specs — every mention of a swept concept is an absence guard or live behavior (deltas all ≈0), so nothing was deleted; the audit's value is that evidence plus the standing §4 retired-token guard. Phase 4 split the `conformance_spec.rb` monolith — which bundled ~10 unrelated subsystem concerns yet contributed only 8 unique lines / 3 unique branches — into 8 per-concern conformance specs sharing one extracted `"textus/3 conformance fixture"` context; `events_spec.rb` was left intact (cohesive: one event-emission subsystem). Line/branch coverage held exactly at the measured baseline 94.05% / 77.77% (above ADR 0080's 93.43% / 75.65%, as the codebase grew since). Net example count unchanged: 2079 → 2079.
 - **A new house invariant is written down.** "Conformance asserts contract, not fixture spelling" was implicit in 0080's exemption of string-described specs from the mirror; §3/§4 make it explicit and enforced.
 - **No runtime change is promised or pursued.** The 9.5 s figure is the baseline, not a target to beat.
 - **ADR 0080's Phase 4 is closed.** The staged-cleanup story that 0080 opened is finished here rather than left as a standing TODO.
