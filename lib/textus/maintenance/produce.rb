@@ -11,6 +11,26 @@ module Textus
     # key set: the write subscriber passes rdeps ∩ derived; reconcile passes
     # all-derived + stale-intake.
     class Produce
+      # Locked + failure-isolated convergence — the shared entry point for the
+      # write trigger (ADR 0093). Both the sync path (inline, in the subscriber)
+      # and the async path (AsyncRunner) call this. A held lock is a soft miss
+      # (an in-flight build/reconcile already produces fresh output); any other
+      # error is republished as :materialize_failed and never raised at the
+      # writer (ADR 0087 §5 failure isolation, preserved).
+      def self.converge(container:, call:, keys:)
+        Textus::Ports::BuildLock.with(root: container.root) do
+          new(container: container, call: call).call(keys: keys)
+        end
+      rescue Textus::BuildInProgress
+        nil
+      rescue Textus::Error => e
+        container.events.publish(
+          :materialize_failed,
+          ctx: Textus::Hooks::Context.for(container: container, call: call),
+          keys: keys, error: e.message
+        )
+      end
+
       def initialize(container:, call:)
         @container = container
         @call      = call
@@ -67,6 +87,53 @@ module Textus
           container: @container, call: call,
           reader: Textus::Read::Get.new(container: @container, call: call)
         )
+      end
+
+      # In-process deferral for the async write trigger (ported from
+      # ReactiveMaterialize::AsyncRunner, ADR 0087). Spawns a tracked thread that
+      # runs Produce.converge after the write returns; a one-time at_exit joins
+      # all pending threads so a short-lived CLI process cannot exit before an
+      # async rebuild completes. The write itself never blocks.
+      module AsyncRunner
+        @mutex   = Mutex.new
+        @threads = []
+        @hooked  = false
+
+        class << self
+          def enqueue(container:, call:, keys:)
+            thread = Thread.new { Produce.converge(container: container, call: call, keys: keys) }
+            track(thread)
+            thread
+          end
+
+          # Block until every spawned async rebuild has finished. Idempotent;
+          # safe to call from at_exit and directly from tests.
+          def drain
+            pending = @mutex.synchronize { @threads.dup }
+            pending.each(&:join)
+            @mutex.synchronize { @threads.delete_if { |t| !t.alive? } }
+            nil
+          end
+
+          private
+
+          def track(thread)
+            @mutex.synchronize do
+              @threads.delete_if { |t| !t.alive? }
+              @threads << thread
+              install_drain_hook
+            end
+          end
+
+          # Register the join-before-exit hook exactly once. Guarded by the
+          # caller holding @mutex.
+          def install_drain_hook
+            return if @hooked
+
+            @hooked = true
+            at_exit { drain }
+          end
+        end
       end
     end
   end
