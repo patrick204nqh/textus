@@ -12,7 +12,7 @@ This is the configuration reference. For the wire protocol, see [`../../SPEC.md`
 ## Table of contents
 
 1. [Roles and capabilities — who is allowed to write](#roles-and-capabilities--who-is-allowed-to-write)
-2. [The five default zones](#the-five-default-zones) — `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`
+2. [The four default zones](#the-four-default-zones) — `knowledge`, `notebook`, `artifacts`, `proposals`
 3. [Defining entries](#defining-entries)
 4. [Enforcement — what `textus doctor` checks](#enforcement--what-textus-doctor-checks)
 
@@ -26,7 +26,7 @@ A role is a name in the manifest that holds a set of **capabilities** — verbs 
 |------|----------------------|--------------------|
 | `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
 | `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the machine-maintained lanes current — pull external sources in (`quarantine`) and materialize derived outputs (`derived`). |
+| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the one `machine` zone current — refresh intake (`artifacts.feeds.*`) entries and materialize derived (`artifacts.derived.*`) entries. |
 
 The four capabilities:
 
@@ -35,7 +35,7 @@ The four capabilities:
 | `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `reconcile` | `quarantine`, `derived` | Keeping the machine-maintained lanes current: pulling external bytes into `quarantine` and computing `derived` outputs from other zones. Both are system-pushed by the `reconcile` sweep (ADR 0089/0090). |
+| `reconcile` | `machine` | Keeping the one machine zone current: refreshing intake entries (`artifacts.feeds.*`) and materializing derived entries (`artifacts.derived.*`). Both are system-pushed by the `reconcile` sweep (ADR 0089/0091). |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -50,14 +50,14 @@ roles:
 
 Two analogies that usually click for `automation` — both jobs belong to the one `reconcile` capability, because the `reconcile` sweep drives both:
 
-- **the grocery shopper** — goes outside, brings raw ingredients home (into `feeds`, the `quarantine` lane).
-- **the chef** — takes ingredients already in the kitchen and cooks the meal (into `artifacts`, the `derived` lane).
+- **the grocery shopper** — goes outside, brings raw ingredients home (into the `machine` zone, as intake entries under `artifacts.feeds.*`).
+- **the chef** — takes ingredients already in the kitchen and cooks the meal (computing derived entries under `artifacts.derived.*` in the same `machine` zone).
 
 Role names are the closed set `human`, `agent`, `automation`; what you customize is each role's `can:` capabilities — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md). Per-person/per-bot attribution uses the `owner:` field. Only one constraint is absolute: **at most one role may hold `author`** (the trust anchor).
 
 ---
 
-## The five default zones
+## The four default zones
 
 `textus init` scaffolds this manifest (Setup-1):
 
@@ -70,9 +70,8 @@ roles:
 zones:
   - { name: knowledge,  kind: canon }
   - { name: notebook,   kind: workspace, owner: agent, desc: "agent's durable working memory" }
-  - { name: feeds,      kind: quarantine }
+  - { name: artifacts,  kind: machine }
   - { name: proposals,  kind: queue }
-  - { name: artifacts,  kind: derived }
 ```
 
 `owner:` on a zone is **optional, informational** metadata — not enforced in 0.33.0 (owner-scoped enforcement is deferred). `desc:` is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
@@ -83,11 +82,10 @@ Write authority is **derived** — there is no `write_policy:`. Each zone declar
 |-------------|---------------------|---------|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
-| `quarantine` | `reconcile` | External bytes pending validation. |
+| `machine` | `reconcile` | The one machine-maintained zone: holds both intake (`artifacts.feeds.*`) and derived (`artifacts.derived.*`) entries. At most one `machine` zone per manifest. |
 | `queue` | `propose` | Proposals awaiting promotion. |
-| `derived` | `reconcile` | Computed from other zones. |
 
-This mapping is a **function (zone-kind → capability), not a bijection** (ADR 0090): `quarantine` and `derived` both require `reconcile`, because both are machine-maintained lanes kept current by the same `reconcile` sweep. Every other kind still maps to its own capability.
+This mapping is a **bijection** (ADR 0091): each zone-kind maps 1:1 to exactly one capability. `machine` is the single kind requiring `reconcile`; the two-kind surjection (`quarantine` + `derived` → `reconcile`) that ADR 0090 introduced is gone.
 
 Crossing that table with the default role mapping gives the default writers:
 
@@ -95,11 +93,10 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `feeds` | `quarantine` | `reconcile` | `automation` | Declared external inputs, refreshed by `textus reconcile --as=automation` (per the entry's `upkeep: { "on": stale, action: refresh }` rule); never edited by hand, never refreshed by a `get` (ADR 0089). (Refreshed on the reconcile sweep.) |
+| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are refreshed by `textus reconcile --as=automation` (per `upkeep: { ttl, action: refresh }`); derived entries under `artifacts.derived.*` are materialized from projections. Never hand-edited. (Refreshed/recomputed on `reconcile`.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
-| `artifacts` | `derived` | `reconcile` | `automation` | Reconcile-computed outputs. Materialized from projections; never hand-edited. (Recomputed on `reconcile`.) |
 
-These five are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).
+These four are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).
 
 ---
 
