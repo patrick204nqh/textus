@@ -2,8 +2,6 @@ module Textus
   class Manifest
     class Entry
       module Parser
-        COMPUTE_KINDS = %w[projection external].freeze
-
         def self.call(raw)
           key = raw["key"] or raise UsageError.new("manifest entry missing key")
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
@@ -29,26 +27,13 @@ module Textus
           klass.from_raw(common, raw)
         end
 
+        # ADR 0093: an entry's production block is the unified `source:`. Returns a
+        # Domain::Policy::Source; kind (intake/derived) is read from source.from.
         def self.parse_source(raw, key)
-          compute = raw["compute"]
-          raise BadManifest.new("derived entry '#{key}' requires compute: { kind: projection|external } or template:") if compute.nil?
+          block = raw["source"] or
+            raise BadManifest.new("entry '#{key}' requires a source: { from: handler|template|command, ... }")
 
-          unless COMPUTE_KINDS.include?(compute["kind"])
-            raise BadManifest.new(
-              "entry '#{key}': compute.kind must be one of #{COMPUTE_KINDS.join(", ")} (got #{compute["kind"].inspect})",
-            )
-          end
-
-          if compute["kind"] == "projection"
-            Entry::Derived::Projection.new(
-              select: compute["select"],
-              pluck: compute["pluck"],
-              sort_by: compute["sort_by"],
-              transform: compute["transform"],
-            )
-          else
-            Entry::Derived::External.new(sources: compute["sources"], command: compute["command"])
-          end
+          Textus::Domain::Policy::Source.new(block)
         end
 
         def self.resolve_format(raw, path)
