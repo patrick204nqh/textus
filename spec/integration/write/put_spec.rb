@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Write::Put do
   include_context "textus_store_fixture"
 
-  let(:store) { quarantine_store(root) }
+  let(:store) { machine_store(root) }
 
   # Contract for the cross-cutting write behaviours (audit row, correlation
   # propagation, event) shared from spec/support/examples/write_behaviours.rb.

@@ -64,10 +64,30 @@ module SpecLayout
   # pure: a store-backed spec under spec/unit/ is a misfile.
   STORE_BACKED = /
     include_context\s+["']textus_store_fixture | Dir\.mktmpdir | Textus::Store\.new |
-    store_from_manifest | \b(?:minimal|quarantine|intake)_store\(
+    store_from_manifest | \b(?:minimal|machine|intake)_store\(
   /x
 
   def store_backed?(source) = source.match?(STORE_BACKED)
+
+  # Zone-kind tokens a sweep has retired from the vocabulary (ADR 0092). A
+  # retired token must not reappear in a spec body outside spec/support/ and the
+  # dedicated kind-guards (RETIRED_TOKEN_GUARDS) that assert its rejection — so a
+  # straggler left after a rename fails CI instead of lingering as noise. This is
+  # a denylist of *dead* tokens, NOT a ban on live kinds: `machine`/`canon`/
+  # `workspace`/`queue` are spelled freely in inline manifests, and `derived`
+  # stays a live entry-kind word. Grows by one entry each time a kind is retired.
+  RETIRED_KIND_TOKENS = %w[quarantine].freeze
+
+  # Specs whose job IS to assert a retired token is rejected (or, for the guard's
+  # own spec, that carry retired tokens as test data) — exempt from the scan.
+  RETIRED_TOKEN_GUARDS = %w[
+    schema_spec.rb capabilities_schema_spec.rb lanes_spec.rb spec_layout_spec.rb
+  ].freeze
+
+  # Retired tokens present in `source` as whole words, or [] when clean.
+  def retired_kind_tokens(source)
+    RETIRED_KIND_TOKENS.select { |t| source.match?(/\b#{Regexp.escape(t)}\b/) }
+  end
 
   # True when the top-level group describes a string literal (a cross-surface
   # conformance spec). Distinct from `described_constant` returning nil: that is

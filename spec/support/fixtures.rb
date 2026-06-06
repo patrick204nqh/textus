@@ -51,7 +51,7 @@ module TextusSpecHelpers
   }.freeze
 
   # Preset: a single canon zone "knowledge" holding one leaf entry. The most
-  # common read/write shape. Override `kind_zone:` for quarantine/queue/derived;
+  # common read/write shape. Override `kind_zone:` for machine/queue/workspace;
   # the zone name follows the kind via LANE_ZONE.
   #
   #   let(:store) { minimal_store(root) }                       # knowledge.foo leaf
@@ -70,7 +70,7 @@ module TextusSpecHelpers
   # Preset: a machine "feeds" zone + a canon "knowledge" zone, each with one
   # leaf. The standard write-path shape (untrusted intake in machine, owned
   # content in canon). Used by put/delete/mv/accept/reject specs.
-  def quarantine_store(root)
+  def machine_store(root)
     store_from_manifest(root, zones: %w[feeds knowledge], manifest: <<~YAML)
       version: textus/3
       zones:

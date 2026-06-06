@@ -104,6 +104,17 @@ RSpec.describe SpecLayout do
   # specs mirror lib/ inside it; string-described specs are conformance; unit
   # specs stay pure. (A non-Textus-constant describe — like this file's own
   # `SpecLayout` group — is exempt from the mirror/conformance rules.)
+  describe ".retired_kind_tokens" do
+    it "flags a retired zone-kind token present as a whole word" do
+      expect(described_class.retired_kind_tokens(%(kind: "quarantine"))).to eq(["quarantine"])
+    end
+
+    it "is clean for live kinds and for the retired token as a substring" do
+      expect(described_class.retired_kind_tokens("kind: machine\nkind: canon")).to be_empty
+      expect(described_class.retired_kind_tokens("quarantined_entries")).to be_empty
+    end
+  end
+
   describe "the live spec tree" do
     let(:spec_root)  { File.expand_path("..", __dir__) }
     let(:spec_files) { Dir.glob(File.join(spec_root, "**", "*_spec.rb")) }
@@ -154,6 +165,22 @@ RSpec.describe SpecLayout do
       expect(violations).to be_empty,
                             "Spec layout drifted from the unit/integration/conformance split:\n\n" \
                             "#{violations.join("\n")}"
+    end
+
+    # ADR 0092: a zone-kind token a sweep retired must not creep back into a spec
+    # body — only the dedicated kind-guards (which assert its rejection) may name
+    # it, so a straggler after a rename fails CI instead of lingering as noise.
+    it "lets no retired zone-kind token leak outside the kind-guards" do
+      offenders = spec_files.each_with_object([]) do |path, acc|
+        next if SpecLayout::RETIRED_TOKEN_GUARDS.include?(File.basename(path))
+
+        dead = SpecLayout.retired_kind_tokens(File.read(path))
+        acc << "#{dir_segments(path, spec_root).first}: #{dead.inspect}" if dead.any?
+      end
+
+      expect(offenders).to be_empty,
+                           "Retired zone-kind tokens (ADR 0092) — use the fixture vocabulary " \
+                           "in spec/support/:\n\n#{offenders.join("\n")}"
     end
   end
 end
