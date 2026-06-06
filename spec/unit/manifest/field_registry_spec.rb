@@ -48,9 +48,8 @@ RSpec.describe Textus::Manifest::Schema do
       expect(meta[:in_rule_explain]).to include(:lean, :detail)
     end
 
-    it "replaces upkeep (no upkeep/lifecycle/materialize field remains)" do
+    it "is the only cadence/GC field (the retired policy fields are gone)" do
       expect(registry.keys).to eq(%i[handler_allowlist guard retention])
-      expect(registry).not_to have_key(:upkeep)
     end
   end
 end

@@ -205,7 +205,7 @@ RSpec.describe Textus::Doctor do
     end
   end
 
-  it "no longer registers the retired upkeep checks (ADR 0091)" do
+  it "no longer registers the retired cadence-policy checks (ADR 0091/0093)" do
     expect(Textus::Doctor::ALL_CHECKS).not_to include("upkeep_kind_mismatch", "lifecycle_action_invalid")
   end
 end

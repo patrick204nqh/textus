@@ -115,6 +115,18 @@ RSpec.describe SpecLayout do
     end
   end
 
+  describe ".retired_manifest_tokens" do
+    it "flags a retired manifest-grammar token present as a whole word" do
+      expect(described_class.retired_manifest_tokens(%(upkeep: { ttl: 1h }))).to eq(["upkeep"])
+      expect(described_class.retired_manifest_tokens(%(on_expire: refresh))).to eq(["on_expire"])
+    end
+
+    it "is clean for live source/retention vocabulary and for substrings" do
+      expect(described_class.retired_manifest_tokens("source: { from: template }\nretention: {}")).to be_empty
+      expect(described_class.retired_manifest_tokens("upkeeping_records")).to be_empty
+    end
+  end
+
   describe "the live spec tree" do
     let(:spec_root)  { File.expand_path("..", __dir__) }
     let(:spec_files) { Dir.glob(File.join(spec_root, "**", "*_spec.rb")) }
@@ -181,6 +193,23 @@ RSpec.describe SpecLayout do
       expect(offenders).to be_empty,
                            "Retired zone-kind tokens (ADR 0092) — use the fixture vocabulary " \
                            "in spec/support/:\n\n#{offenders.join("\n")}"
+    end
+
+    # ADR 0093: the retired manifest grammar (upkeep / on_change / source_change /
+    # on_expire) must not creep back into a spec body — only the guards that
+    # assert its rejection may name it. Production now lives in `source:` and
+    # age-GC in the `retention:` rule.
+    it "lets no retired manifest-grammar token leak outside the rejection guards" do
+      offenders = spec_files.each_with_object([]) do |path, acc|
+        next if SpecLayout::RETIRED_MANIFEST_TOKEN_GUARDS.include?(File.basename(path))
+
+        dead = SpecLayout.retired_manifest_tokens(File.read(path))
+        acc << "#{dir_segments(path, spec_root).first}: #{dead.inspect}" if dead.any?
+      end
+
+      expect(offenders).to be_empty,
+                           "Retired manifest tokens (ADR 0093) — use source:/retention: " \
+                           "vocabulary:\n\n#{offenders.join("\n")}"
     end
   end
 end
