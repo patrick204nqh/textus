@@ -30,8 +30,10 @@ module Textus
         []
       end
 
-      def enumerate(prefix: nil)
-        out = @data.entries.flat_map { |entry| nested_entry?(entry) ? enumerate_nested(entry) : enumerate_leaf(entry) }
+      def enumerate(prefix: nil, include_keyless: false)
+        out = @data.entries.flat_map do |entry|
+          nested_entry?(entry) ? enumerate_nested(entry, include_keyless: include_keyless) : enumerate_leaf(entry)
+        end
         out.select! { |row| row[:key] == prefix || row[:key].start_with?("#{prefix}.") } if prefix
         out.sort_by { |row| row[:key] }
       end
@@ -62,10 +64,14 @@ module Textus
         File.exist?(fp) ? [{ key: entry.key, path: fp, manifest_entry: entry }] : []
       end
 
-      def enumerate_nested(entry)
+      def enumerate_nested(entry, include_keyless: false)
         # publish_tree mirrors opaque payload by path — its files are never
         # enumerated as keys (ADR 0047). Ask the resolved mode, not the path.
-        return [] if entry.publish_mode.keyless?
+        # The `include_keyless:` override is used only by the projection lister
+        # so that `from: project` selects can read source data from keyless
+        # nested entries (e.g. knowledge.decisions) without exposing them as
+        # addressable store keys in the public `list` surface.
+        return [] if entry.publish_mode.keyless? && !include_keyless
 
         base = File.join(@data.root, "zones", entry.path)
         return [] unless File.directory?(base)

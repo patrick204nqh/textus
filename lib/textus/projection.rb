@@ -25,10 +25,15 @@ module Textus
     def run
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
+      pluck_key = explicit_pluck && Array(@spec["pluck"]).include?("_key")
       rows = keys.map do |key|
         env = @reader.call(key)
         row = pluck(env.meta, env.body)
-        explicit_pluck ? row : row.merge("_key" => key)
+        if explicit_pluck
+          pluck_key ? row.merge("_key" => key) : row
+        else
+          row.merge("_key" => key)
+        end
       end
       reduced = apply_reducer(rows)
       # Reducers may return either an Array of rows (legacy / templated builds)
@@ -64,12 +69,18 @@ module Textus
       prefixes.flat_map { |p| @lister.call(prefix: p).map { |row| row["key"] } }.uniq
     end
 
-    def pluck(frontmatter, _body)
+    def pluck(frontmatter, body)
       fields = @spec["pluck"]
       if fields.nil? || fields == "*"
         frontmatter
       else
-        Array(fields).each_with_object({}) { |f, h| h[f] = frontmatter[f] if frontmatter.key?(f) }
+        Array(fields).each_with_object({}) do |f, h|
+          if f == "body"
+            h["body"] = body
+          elsif frontmatter.key?(f)
+            h[f] = frontmatter[f]
+          end
+        end
       end
     end
 

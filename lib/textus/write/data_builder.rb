@@ -19,14 +19,22 @@ module Textus
       # Runs the builder pipeline for `mentry` and returns the on-disk
       # target_path string.
       def run(mentry)
-        reader = Textus::Read::Get.new(container: @container, call: @call)
-        lister = Textus::Read::List.new(container: @container)
+        reader   = Textus::Read::Get.new(container: @container, call: @call)
+        # Projections must be able to read source data from any nested entry,
+        # including keyless (publish_tree) ones like knowledge.decisions.
+        # The `include_keyless: true` option makes the resolver walk those dirs
+        # without exposing them on the public `list` / CLI surface (ADR 0047).
+        resolver = @manifest.resolver
+        lister = lambda do |prefix:|
+          resolver.enumerate(prefix: prefix, include_keyless: true)
+                  .map { |row| { "key" => row[:key], "zone" => row[:manifest_entry].zone, "path" => row[:path] } }
+        end
         Builder::Pipeline.run(
           mentry: mentry,
           deps: Builder::Pipeline::Deps.new(
             manifest: @manifest,
             reader: reader.method(:call),
-            lister: lister.method(:call),
+            lister: lister,
             rpc: @rpc,
             transform_context: @container,
           ),

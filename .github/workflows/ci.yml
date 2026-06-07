@@ -31,3 +31,25 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
       - run: bundle exec rubocop
+
+  docs:
+    name: docs freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      # Produced docs (verbs/schema/adr-log) and CLAUDE.md/AGENTS.md/configs are
+      # generated from upstream by `reconcile`. Code edits don't auto-trigger it,
+      # so this gate fails the PR when a reconcile would change a committed file —
+      # i.e. someone changed a source without regenerating (ADR 0097).
+      - name: reconcile must be a no-op
+        run: |
+          bundle exec textus reconcile
+          if ! git diff --quiet; then
+            echo "::error::generated files are stale — run 'textus reconcile' and commit the result"
+            git --no-pager diff --stat
+            exit 1
+          fi

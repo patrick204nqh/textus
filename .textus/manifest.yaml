@@ -23,6 +23,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -113,3 +114,38 @@ entries:
     source: { from: project, select: [knowledge.project], transform: plugin_manifest_reducer }
     publish: [{ to: .claude-plugin/plugin.json }]
     kind: produced
+  - key: artifacts.derived.verbs
+    path: artifacts/derived/verbs.json
+    zone: artifacts
+    format: json
+    source: { from: handler, handler: verbs }
+    publish:
+      - { to: docs/reference/verbs.md, template: verbs.mustache }
+    kind: produced
+  - key: artifacts.derived.schema
+    path: artifacts/derived/schema.json
+    zone: artifacts
+    format: json
+    source: { from: handler, handler: schema }
+    publish:
+      - { to: docs/reference/schema.md, template: schema.mustache }
+    kind: produced
+  - key: artifacts.derived.adr-log
+    path: artifacts/derived/adr-log.json
+    zone: artifacts
+    format: json
+    source:
+      from: project
+      select: [knowledge.decisions]
+      transform: adr_index_reducer
+      pluck: [body, _key]
+    publish:
+      - { to: docs/reference/adr-log.md, template: adr-log.mustache }
+    kind: produced
+
+
+rules:
+  - match: artifacts.derived.verbs
+    intake_handler_allowlist: [verbs]
+  - match: artifacts.derived.schema
+    intake_handler_allowlist: [schema]

@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "uid": "1e9f34a1ffe39217"
+  },
+  "schemas": [
+    {
+      "name": "project",
+      "fields": [
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": false,
+          "maintained_by": "human"
+        }
+      ]
+    },
+    {
+      "name": "runbook",
+      "fields": [
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        }
+      ]
+    }
+  ]
+}
