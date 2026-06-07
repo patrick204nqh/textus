@@ -32,7 +32,7 @@ module Textus
 
       def call(prefix: nil, zone: nil, dry_run: false)
         file_stat = Textus::Ports::Storage::FileStat.new
-        retention_rows = Textus::Domain::Retention.new(
+        retention_rows = Textus::Domain::Retention::Sweep.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
         ).call(prefix: prefix, zone: zone)
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Retention do
+RSpec.describe Textus::Domain::Retention::Sweep do
   subject(:rows) do
     described_class.new(
       manifest: store.manifest,
