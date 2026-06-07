@@ -9,6 +9,12 @@ module Textus
 
           raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (#{Entry::REGISTRY.keys.join("|")})")
           kind = raw_kind.to_sym
+          if %i[derived intake].include?(kind)
+            raise BadManifest.new(
+              "entry '#{key}': kind: #{kind} was collapsed into `kind: produced` (ADR 0095) — " \
+              "the produce method is `source.from` (#{kind == :intake ? "handler" : "project|command"})",
+            )
+          end
           format = resolve_format(raw, path)
 
           common = {
