@@ -1,0 +1,184 @@
+{
+  "_meta": {
+    "uid": "c66c48cdb18b52d9"
+  },
+  "verbs": [
+    {
+      "name": "accept",
+      "summary": "apply a queued proposal to its target zone; requires the author capability",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "audit",
+      "summary": "Query the audit log with optional filters.",
+      "options": [
+        "as_flag",
+        "correlation_id",
+        "key",
+        "limit",
+        "role",
+        "seq_since",
+        "since",
+        "verb",
+        "zone"
+      ]
+    },
+    {
+      "name": "blame",
+      "summary": "Annotate audit rows for a key with the git commit that introduced each file state.",
+      "options": [
+        "as_flag",
+        "limit"
+      ]
+    },
+    {
+      "name": "boot",
+      "summary": "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.",
+      "options": [
+        "lean"
+      ]
+    },
+    {
+      "name": "capabilities",
+      "summary": "Machine-readable contract surface: every verb, its transports, and arg schema.",
+      "options": [
+        "as_flag",
+        "verb"
+      ]
+    },
+    {
+      "name": "deps",
+      "summary": "List the keys a derived entry depends on (its projection/external sources).",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "doctor",
+      "summary": "Run health checks on the textus store and report any issues.",
+      "options": [
+        "checks"
+      ]
+    },
+    {
+      "name": "get",
+      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "hook",
+      "summary": "",
+      "options": []
+    },
+    {
+      "name": "init",
+      "summary": "",
+      "options": [
+        "with_agent"
+      ]
+    },
+    {
+      "name": "key",
+      "summary": "",
+      "options": []
+    },
+    {
+      "name": "list",
+      "summary": "List keys filtered by zone and/or prefix.",
+      "options": [
+        "as_flag",
+        "prefix",
+        "zone"
+      ]
+    },
+    {
+      "name": "mcp",
+      "summary": "",
+      "options": []
+    },
+    {
+      "name": "propose",
+      "summary": "Write a proposal to the role's propose_zone. Auto-prefixes the key.",
+      "options": [
+        "as_flag",
+        "body",
+        "content",
+        "meta",
+        "use_stdin"
+      ]
+    },
+    {
+      "name": "published",
+      "summary": "List all entries that declare a publish_to target.",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "pulse",
+      "summary": "Delta since cursor — changed entries, stale, pending proposals, doctor summary.",
+      "options": [
+        "as_flag",
+        "since"
+      ]
+    },
+    {
+      "name": "put",
+      "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
+      "options": [
+        "as_flag",
+        "use_stdin"
+      ]
+    },
+    {
+      "name": "rdeps",
+      "summary": "List the derived entries that depend on a key (reverse deps / impact set).",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "reconcile",
+      "summary": "Run the convergence pass: produce derived + stale intake, then drop/archive aged entries; report health.",
+      "options": [
+        "as_flag",
+        "dry_run",
+        "prefix",
+        "zone"
+      ]
+    },
+    {
+      "name": "reject",
+      "summary": "discard a queued proposal without applying it",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "rule",
+      "summary": "",
+      "options": []
+    },
+    {
+      "name": "schema",
+      "summary": "",
+      "options": []
+    },
+    {
+      "name": "where",
+      "summary": "Resolve a key to its zone, owner, and path without reading the body.",
+      "options": [
+        "as_flag"
+      ]
+    },
+    {
+      "name": "zone",
+      "summary": "",
+      "options": []
+    }
+  ]
+}
