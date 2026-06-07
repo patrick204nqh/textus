@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0102](../architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry | 2026-06-08 | Proposed |
 | [0101](../architecture/decisions/0101-interface-fossils.md) | interface-layer fossils | 2026-06-07 | Accepted |
 | [0100](../architecture/decisions/0100-produce-topology.md) | `produce/` topology + de-fossilized names | 2026-06-07 | Accepted |
 | [0099](../architecture/decisions/0099-one-freshness-evaluator.md) | one `Freshness` evaluator | 2026-06-07 | Accepted |

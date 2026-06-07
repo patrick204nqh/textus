@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0102",
+      "title": "produce the event catalog from the registry",
+      "date": "2026-06-08",
+      "status": "Proposed",
+      "slug": "0102-produced-event-catalog"
+    },
+    {
       "number": "0101",
       "title": "interface-layer fossils",
       "date": "2026-06-07",
