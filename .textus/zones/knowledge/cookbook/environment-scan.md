@@ -35,8 +35,10 @@ entries:
     nested: true                              # artifacts.feeds.machines.<name> fans out, one file per host
     tracked: false                            # gitignored — env data is sensitive/noisy
     kind: intake
-    intake:
+    source:
+      from: handler
       handler: machines
+      ttl: 1h                                 # re-pull cadence; reconcile re-pulls when past ttl
       config:
         machines:                             # the fleet — NO credentials here (manifest is committed)
           laptop:   { via: local }
@@ -44,7 +46,7 @@ entries:
           db-1:     { via: ssh, host: "user@db.internal" }
 rules:
   - match: artifacts.feeds.machines.**
-    upkeep: { ttl: 1h, action: refresh, budget_ms: 20000 }   # refresh on the reconcile sweep; cap a hung SSH
+    retention: { ttl: 30d, action: drop }     # orthogonal GC — prune snapshots a host stops reporting
 ```
 
 ## 2. `.gitignore` — ignore the whole nested tree
@@ -113,7 +115,7 @@ Textus.hook do |reg|
       "$(command -v dpkg-query >/dev/null 2>&1 && dpkg-query -f '.\\n' -W 2>/dev/null | wc -l | tr -d ' ' || printf null)"
   SH
 
-  reg.on(:resolve_intake, :machines) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :machines) do |caps:, config:, args:|
     machine = args[:leaf_segments].first or
       raise "read a specific machine, e.g. `textus get feeds.machines.laptop`"
     spec = config.fetch("machines").fetch(machine) { raise "unknown machine: #{machine}" }
@@ -131,7 +133,7 @@ Textus.hook do |reg|
         raise "machine #{machine}: `via` must be `local` or `ssh`"
       end
 
-    caps.rpc.invoke(:resolve_intake, :json, caps: caps, config: { "bytes" => raw }, args: args)
+    caps.rpc.invoke(:resolve_handler, :json, caps: caps, config: { "bytes" => raw }, args: args)
   end
 end
 ```
