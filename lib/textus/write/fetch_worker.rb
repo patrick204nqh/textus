@@ -61,7 +61,7 @@ module Textus
       private
 
       def fetch_events
-        @fetch_events ||= FetchEvents.from(container: @container, call: @call)
+        @fetch_events ||= Produce::Events.from(container: @container, call: @call)
       end
 
       # ADR 0079: a per-rule fetch_timeout_seconds override was an accepted loss
