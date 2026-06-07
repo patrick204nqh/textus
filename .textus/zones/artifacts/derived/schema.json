@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "uid": "1e9f34a1ffe39217"
+  },
+  "schemas": [
+    {
+      "name": "project",
+      "required": [],
+      "optional": [],
+      "fields": [
+        "description",
+        "name",
+        "repo"
+      ]
+    },
+    {
+      "name": "runbook",
+      "required": [],
+      "optional": [],
+      "fields": [
+        "description",
+        "name"
+      ]
+    }
+  ]
+}
