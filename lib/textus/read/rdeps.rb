@@ -21,7 +21,7 @@ module Textus
 
       def dependents_of(key)
         @manifest.data.entries.each_with_object([]) do |e, acc|
-          next unless e.is_a?(Textus::Manifest::Entry::Derived)
+          next unless e.derived?
 
           src = e.source
           sources = if src.projection?

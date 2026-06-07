@@ -10,7 +10,7 @@ module Textus
       # Build time lives out of the tracked artifact.
       def self.call(content_hash, mentry)
         meta = {}
-        if mentry.is_a?(Textus::Manifest::Entry::Derived)
+        if mentry.derived?
           src = mentry.source
           if src.projection?
             from = Array(src.select).compact
@@ -42,7 +42,7 @@ module Textus
         # filtered out upstream (Derived#publish_via), so reaching here with a
         # non-projection source is a wiring bug — fail loudly rather than emit an
         # empty payload (and never re-stamp the volatile generated_at, ADR 0070).
-        unless mentry.is_a?(Textus::Manifest::Entry::Derived) && mentry.projection?
+        unless mentry.projection?
           raise UsageError.new(
             "builder: '#{mentry.key}' is not a projection-derived entry; only projections are buildable",
           )

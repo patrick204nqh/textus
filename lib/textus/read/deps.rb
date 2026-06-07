@@ -21,7 +21,7 @@ module Textus
 
       def sources_for(key)
         entry = @manifest.data.entries.find { |e| e.key == key }
-        return [] unless entry.is_a?(Textus::Manifest::Entry::Derived)
+        return [] unless entry&.derived?
 
         src = entry.source
         result = if src.projection?

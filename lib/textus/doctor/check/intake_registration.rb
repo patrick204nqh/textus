@@ -36,7 +36,7 @@ module Textus
         def collect_declared_handlers
           set = Set.new
           manifest.data.entries.each do |mentry|
-            set << mentry.handler.to_sym if mentry.is_a?(Textus::Manifest::Entry::Intake)
+            set << mentry.handler.to_sym if mentry.intake?
           end
           set
         end
