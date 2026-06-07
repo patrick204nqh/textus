@@ -39,18 +39,17 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
-  describe "upkeep field (ADR 0090)" do
-    it "is in the registry as a tagged union and participates in all surfaces" do
-      meta = registry.fetch(:upkeep)
-      expect(meta[:validation]).to eq(:tagged)
+  describe "retention field (ADR 0093)" do
+    it "is in the registry and participates in all surfaces" do
+      meta = registry.fetch(:retention)
       expect(meta[:in_pick]).to be(true)
       expect(meta[:in_ambiguity]).to be(true)
       expect(meta[:in_rule_list]).to be(true)
       expect(meta[:in_rule_explain]).to include(:lean, :detail)
     end
 
-    it "replaces lifecycle and materialize (neither remains a field)" do
-      expect(registry.keys).to eq(%i[handler_allowlist guard upkeep])
+    it "is the only cadence/GC field (the retired policy fields are gone)" do
+      expect(registry.keys).to eq(%i[handler_allowlist guard retention])
     end
   end
 end

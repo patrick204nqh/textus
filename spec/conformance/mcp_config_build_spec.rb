@@ -36,15 +36,16 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
           kind: derived
           path: artifacts/mcp.json
           zone: artifacts
-          provenance: false
           publish:
             to:
               - .mcp.json
-          compute:
-            kind: projection
-            select:
-              - knowledge.project
-            transform: mcp_config_reducer
+          source:
+            from: template
+            provenance: false
+            project:
+              select:
+                - knowledge.project
+              transform: mcp_config_reducer
     YAML
 
     File.write(File.join(root, "zones/knowledge/project.md"),

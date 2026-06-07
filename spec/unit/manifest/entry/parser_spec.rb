@@ -34,13 +34,12 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
 
-    it "extracts compute: projection" do
+    it "extracts source: from template (projection)" do
       entry = described_class.call(
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
           "kind" => "derived",
-          "compute" => { "kind" => "projection", "select" => ["working.bar"] },
-          "template" => "x.mustache"
+          "source" => { "from" => "template", "template" => "x.mustache", "project" => { "select" => ["working.bar"] } }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Derived)
@@ -48,36 +47,36 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       expect(entry.source.select).to eq(["working.bar"])
     end
 
-    it "extracts compute: external" do
+    it "extracts source: from command (external)" do
       entry = described_class.call(
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
           "kind" => "derived",
-          "compute" => { "kind" => "external", "command" => "echo hi" }
+          "source" => { "from" => "command", "command" => "echo hi" }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Derived)
       expect(entry).to be_external
     end
 
-    it "rejects unknown compute.kind" do
+    it "rejects unknown source.from" do
       expect do
         described_class.call(
           {
             "key" => "output.foo", "path" => "foo.md", "zone" => "output",
             "kind" => "derived",
-            "compute" => { "kind" => "weird" }
+            "source" => { "from" => "weird" }
           },
         )
-      end.to raise_error(Textus::BadManifest, /compute.kind must be one of/)
+      end.to raise_error(Textus::BadManifest, /source.from must be one of/)
     end
 
-    it "extracts intake config" do
+    it "extracts source: from handler config" do
       entry = described_class.call(
         {
           "key" => "intake.foo", "path" => "foo.md", "zone" => "intake",
           "kind" => "intake",
-          "intake" => { "handler" => "pull_foo", "config" => { "url" => "x" } }
+          "source" => { "from" => "handler", "handler" => "pull_foo", "config" => { "url" => "x" } }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Intake)
@@ -97,14 +96,14 @@ RSpec.describe Textus::Manifest::Entry::Parser do
 
     it "parses an explicit derived/projection row" do
       e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "kind" => "derived",
-                                 "compute" => { "kind" => "projection", "select" => "z.n" } })
+                                 "source" => { "from" => "template", "template" => "t.mustache", "project" => { "select" => "z.n" } } })
       expect(e).to be_a(Textus::Manifest::Entry::Derived)
       expect(e).to be_projection
     end
 
     it "parses an explicit intake row" do
       e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "zone" => "i", "kind" => "intake",
-                                 "intake" => { "handler" => "h" } })
+                                 "source" => { "from" => "handler", "handler" => "h" } })
       expect(e).to be_a(Textus::Manifest::Entry::Intake)
       expect(e.handler).to eq("h")
     end

@@ -6,8 +6,9 @@ RSpec.describe Textus::Builder::Renderer::Markdown do
     instance_double(
       Textus::Manifest::Entry::Derived,
       format: "markdown", template: "tpl.md.mustache",
-      source: Textus::Manifest::Entry::Derived::Projection.new(
-        select: ["working.*"], pluck: nil, sort_by: nil, transform: nil,
+      source: Textus::Domain::Policy::Source.new(
+        "from" => "template", "template" => "tpl.md.mustache",
+        "project" => { "select" => ["working.*"] }
       ),
       inject_boot: false
     )

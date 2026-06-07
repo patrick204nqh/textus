@@ -7,7 +7,7 @@ module Textus
 
           body = Mustache.render(@template_loader.call(mentry.template), data)
           from = if mentry.is_a?(Textus::Manifest::Entry::Derived) &&
-                    mentry.source.is_a?(Textus::Manifest::Entry::Derived::Projection)
+                    mentry.source.projection?
                    Array(mentry.source.select).compact
                  else
                    []

@@ -15,7 +15,7 @@ RSpec.describe "textus reconcile" do
 
       rules:
         - match: "review.*"
-          upkeep: { ttl: 30d, action: drop }
+          retention: { ttl: 30d, action: drop }
     YAML
 
     leaf = File.join(root, "zones/review/oncall.md")

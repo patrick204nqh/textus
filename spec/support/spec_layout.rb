@@ -89,6 +89,27 @@ module SpecLayout
     RETIRED_KIND_TOKENS.select { |t| source.match?(/\b#{Regexp.escape(t)}\b/) }
   end
 
+  # Manifest-grammar tokens ADR 0093 retired: the `upkeep:` rule field and its
+  # `on_change`/`source_change` discriminators, and the `on_expire:` action key.
+  # Production now lives in `source:` (handler/template/command + ttl/on_write)
+  # and age-GC in the `retention:` rule. A retired token must not reappear in a
+  # spec body outside the guards that assert its rejection. NOT a ban on live
+  # words: `template`/`project`/`source`/`retention` are spelled freely; `compute`
+  # and `lifecycle`/`materialize` are omitted (they may appear in ADR prose).
+  RETIRED_MANIFEST_TOKENS = %w[upkeep on_change source_change on_expire].freeze
+
+  # Specs allowed to mention the retired manifest tokens BECAUSE their job is to
+  # assert those tokens are rejected (plus the guard's own spec, which carries
+  # them as test data).
+  RETIRED_MANIFEST_TOKEN_GUARDS = %w[
+    schema_spec.rb source_retention_load_spec.rb spec_layout_spec.rb
+  ].freeze
+
+  # Retired manifest tokens present in `source` as whole words, or [] when clean.
+  def retired_manifest_tokens(source)
+    RETIRED_MANIFEST_TOKENS.select { |t| source.match?(/\b#{Regexp.escape(t)}\b/) }
+  end
+
   # True when the top-level group describes a string literal (a cross-surface
   # conformance spec). Distinct from `described_constant` returning nil: that is
   # also nil for a non-Textus constant (e.g. `RSpec.describe SpecLayout`), which

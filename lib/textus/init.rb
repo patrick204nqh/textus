@@ -33,14 +33,14 @@ module Textus
           nested: true
           tracked: false
           kind: intake
-          intake:
+          source:
+            from: handler
             handler: machines
+            ttl: 1h # cadence on a long-running server
             config:
               machines:
                 local: { via: local }
-      rules:
-        - match: artifacts.feeds.machines.**
-          upkeep: { ttl: 1h, action: warn } # meaningful on a long-running server
+      rules: []
     YAML
 
     HOOKS_README = <<~MD
@@ -70,9 +70,10 @@ module Textus
       end
       ```
 
-      The intake handler above is paired with a manifest entry plus a
-      top-level `rules:` block for upkeep (ttl/action live in
-      rules, not in the entry):
+      The intake handler above is paired with a manifest entry whose
+      `source:` block declares the handler and its refresh cadence
+      (`ttl`). Age GC (drop/archive) lives in a top-level `retention:`
+      rule, not on the entry:
 
       ```yaml
       entries:
@@ -80,14 +81,16 @@ module Textus
           kind: intake
           path: artifacts/feeds/foo.md
           zone: artifacts
-          intake:
+          source:
+            from: handler
             handler: my_source
+            ttl: 10m        # refresh cadence for this intake
 
       rules:
         - match: artifacts.feeds.foo
-          upkeep:
-            ttl: 10m
-            action: refresh   # refresh | warn (intake); drop | archive (stored)
+          retention:
+            ttl: 30d
+            action: archive   # drop | archive (age GC of stored rows)
       ```
 
       Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
@@ -108,18 +111,19 @@ module Textus
       - key: artifacts.derived.orientation
         path: artifacts/derived/orientation.md
         zone: artifacts
-        template: orientation.mustache
-        inject_boot: true
         publish:
           to:
           - CLAUDE.md
           - AGENTS.md
-        compute:
-          kind: projection
-          select:
-          - knowledge.project
-          - knowledge.runbooks
-          transform: orientation_reducer
+        source:
+          from: template
+          template: orientation.mustache
+          inject_boot: true
+          project:
+            select:
+            - knowledge.project
+            - knowledge.runbooks
+            transform: orientation_reducer
         kind: derived
     YAML
 

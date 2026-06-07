@@ -24,9 +24,9 @@ module Textus
         return [] unless entry.is_a?(Textus::Manifest::Entry::Derived)
 
         src = entry.source
-        result = if src.is_a?(Textus::Manifest::Entry::Derived::Projection)
+        result = if src.projection?
                    Array(src.select).compact
-                 elsif src.is_a?(Textus::Manifest::Entry::Derived::External)
+                 elsif src.external?
                    Array(src.sources).compact
                  else
                    []

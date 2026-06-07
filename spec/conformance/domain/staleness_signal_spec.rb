@@ -31,8 +31,8 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
           kind: derived
           path: artifacts/catalog.md
           zone: artifacts
-          compute:
-            kind: external
+          source:
+            from: command
             command: "rake catalog"
             sources: [knowledge.src]
     YAML
@@ -80,8 +80,8 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
           kind: derived
           path: artifacts/report.md
           zone: artifacts
-          compute:
-            kind: external
+          source:
+            from: command
             command: "make report"
             sources: ["#{src_dir}"]
     YAML

@@ -37,7 +37,8 @@ RSpec.describe Textus::Boot do
           path: artifacts/feed.md
           zone: artifacts
           owner: automation:local
-          intake:
+          source:
+            from: handler
             handler: demo-action
             config: { foo: 1 }
         - key: artifacts.report
@@ -45,11 +46,12 @@ RSpec.describe Textus::Boot do
           path: artifacts/report.md
           zone: artifacts
           owner: automation:auto
-          compute:
-            kind: projection
-            select: [knowledge.notes]
-            pluck: "*"
-          template: report.mustache
+          source:
+            from: template
+            template: report.mustache
+            project:
+              select: [knowledge.notes]
+              pluck: "*"
           publish:
             to: [REPORT.md]
     YAML

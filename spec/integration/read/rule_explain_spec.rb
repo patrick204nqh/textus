@@ -3,8 +3,8 @@ require "spec_helper"
 RSpec.describe Textus::Read::RuleExplain do
   include_context "textus_store_fixture"
 
-  # `knowledge.doc` is a canon leaf; `warn` is valid for any stored (non-intake,
-  # non-derived) entry. Using a `warn` action avoids requiring an intake kind here.
+  # `knowledge.doc` is a canon leaf; retention (drop/archive) is valid for any
+  # stored (non-derived) entry, so a leaf can carry a retention rule (ADR 0093).
   let(:store) do
     store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
       version: textus/3
@@ -15,9 +15,9 @@ RSpec.describe Textus::Read::RuleExplain do
 
       rules:
         - match: "knowledge.*"
-          upkeep: { ttl: 1h, action: warn }
+          retention: { ttl: 1h, action: archive }
         - match: knowledge.doc
-          upkeep: { ttl: 5m, action: warn }
+          retention: { ttl: 5m, action: drop }
           intake_handler_allowlist: [src_a, src_b]
         - match: "**"
           guard:
@@ -34,13 +34,12 @@ RSpec.describe Textus::Read::RuleExplain do
   end
 
   describe "lean (default) — the agent-cheap effective read" do
-    it "returns only the effective {lifecycle, guard} winners" do
+    it "returns only the effective {retention, guard} winners" do
       result = store.as("human").rule_explain("knowledge.doc")
       expect(result).to be_a(Hash)
-      expect(result.keys - %w[upkeep guard]).to be_empty
-      # ADR 0091: keyed grammar — no `on:` discriminator in rendered output
-      expect(result["upkeep"]).not_to have_key("on")
-      expect(result["upkeep"]["ttl_seconds"]).to eq(300)
+      expect(result.keys - %w[retention guard]).to be_empty
+      expect(result["retention"]["ttl_seconds"]).to eq(300)
+      expect(result["retention"]["action"]).to eq(:drop)
     end
   end
 
@@ -57,16 +56,14 @@ RSpec.describe Textus::Read::RuleExplain do
     it "surfaces the per-slot effective winner (most-specific match)" do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
 
-      # ADR 0091: keyed grammar — no `on:` discriminator in rendered output
-      expect(result[:effective][:upkeep]).not_to have_key(:on)
-      expect(result[:effective][:upkeep][:ttl_seconds]).to eq(300)
-      expect(result[:effective][:upkeep][:action]).to eq(:warn)
+      expect(result[:effective][:retention][:ttl_seconds]).to eq(300)
+      expect(result[:effective][:retention][:action]).to eq(:drop)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
     end
 
-    it "surfaces source_change upkeep in matched_blocks and effective (ADR 0091)" do
-      # A derived entry in a machine zone accepts strategy grammar
-      mat_store = store_from_manifest(root, zones: %w[artifacts knowledge], manifest: <<~YAML)
+    it "surfaces a retention rule in matched_blocks and effective (ADR 0093)" do
+      # An intake entry in a machine zone can carry a retention (age-GC) rule.
+      ret_store = store_from_manifest(root, zones: %w[artifacts knowledge], manifest: <<~YAML)
         version: textus/3
         roles: [{ name: automation, can: [reconcile] }, { name: human, can: [author] }]
         zones:
@@ -74,16 +71,15 @@ RSpec.describe Textus::Read::RuleExplain do
           - { name: artifacts, kind: machine }
         entries:
           - { key: knowledge.src, path: knowledge/src.md, zone: knowledge, kind: leaf }
-          - { key: artifacts.out, path: artifacts/out.json, zone: artifacts,
-              kind: derived, format: json, compute: { kind: projection, select: ["knowledge.*"] } }
+          - { key: artifacts.feed, path: artifacts/feed.md, zone: artifacts,
+              kind: intake, source: { from: handler, handler: noop } }
         rules:
-          - match: artifacts.out
-            upkeep: { strategy: sync }
+          - match: artifacts.feed
+            retention: { ttl: 30d, action: archive }
       YAML
-      result = mat_store.as("human").rule_explain("artifacts.out", detail: true)
-      expect(result[:matched_blocks].first[:upkeep]).to be(true)
-      # ADR 0091: keyed grammar — strategy rendered without `on:` prefix
-      expect(result[:effective][:upkeep]).to eq({ strategy: "sync" })
+      result = ret_store.as("human").rule_explain("artifacts.feed", detail: true)
+      expect(result[:matched_blocks].first[:retention]).to be(true)
+      expect(result[:effective][:retention][:action]).to eq(:archive)
     end
 
     it "reports the effective guard predicate names per transition" do
@@ -103,7 +99,7 @@ RSpec.describe Textus::Read::RuleExplain do
       YAML
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
-      expect(result[:effective][:upkeep]).to be_nil
+      expect(result[:effective][:retention]).to be_nil
       expect(result[:effective][:handler_allowlist]).to be_nil
       expect(result[:guards][:put]).to eq(["zone_writable_by"])
     end

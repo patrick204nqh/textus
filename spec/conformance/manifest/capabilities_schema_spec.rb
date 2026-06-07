@@ -51,8 +51,9 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     end
   end
 
-  it "rejects retired lifecycle:/materialize: rule fields with an upkeep hint" do
-    %w[lifecycle materialize].each do |old|
+  it "rejects retired lifecycle:/materialize: rule fields with a retention/source hint (ADR 0093)" do
+    hints = { "lifecycle" => /retention/, "materialize" => /on_write/ }
+    hints.each do |old, hint|
       yaml = <<~YAML
         version: textus/3
         zones: [{ name: knowledge, kind: canon }]
@@ -60,14 +61,10 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
         rules:
           - { match: knowledge.x, #{old}: {} }
       YAML
-      expect { parse(yaml) }.to raise_error(Textus::BadManifest, /#{old}.*merged into `upkeep`.*ADR 0090/m)
+      expect { parse(yaml) }.to raise_error(Textus::BadManifest, /#{old}.*was removed.*ADR 0093/m)
+      expect { parse(yaml) }.to raise_error(Textus::BadManifest, hint)
     end
   end
-
-  # ADR 0091: `on:` discriminator was REMOVED — upkeep grammar is now determined
-  # by keys alone (ttl/action → age; strategy → dependency). An unquoted `on:`
-  # still parses as the YAML 1.1 boolean `true` and produces "unknown key 'true'",
-  # but there is no special quoting hint anymore (the guard was deleted in ADR 0091).
 
   it "rejects more than one role holding author" do
     yaml = <<~YAML

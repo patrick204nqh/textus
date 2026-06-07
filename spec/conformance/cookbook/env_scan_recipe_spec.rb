@@ -39,15 +39,15 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
           nested: true
           tracked: false
           kind: intake
-          intake:
+          source:
+            from: handler
             handler: machines
+            ttl: 1h
             config:
               machines:
                 laptop:   { via: local }
                 prod-web: { via: ssh, host: "user@10.0.0.5" }
-      rules:
-        - match: feeds.machines.**
-          upkeep: { ttl: 1h, action: warn }
+      rules: []
     YAML
   end
 

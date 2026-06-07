@@ -24,8 +24,7 @@ RSpec.describe Textus::Read::Rdeps do
             path: artifacts/catalogs/people.md
             zone: artifacts
             owner: automation:auto
-            compute: { kind: projection, select: knowledge.people }
-            template: people.mustache
+            source: { from: template, template: people.mustache, project: { select: knowledge.people } }
       YAML
     )
   end

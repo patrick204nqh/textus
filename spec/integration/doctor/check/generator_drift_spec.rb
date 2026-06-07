@@ -20,8 +20,8 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
           kind: derived
           path: artifacts/catalog.md
           zone: artifacts
-          compute:
-            kind: external
+          source:
+            from: command
             command: "rake catalog"
             sources: [knowledge.src]
     YAML

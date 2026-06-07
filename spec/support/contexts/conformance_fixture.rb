@@ -24,20 +24,17 @@ RSpec.shared_context "textus/3 conformance fixture" do
 
         - { key: knowledge.projects,      path: knowledge/projects,      zone: knowledge,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, compute: { kind: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, source: { from: command, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: artifacts.feeds.calendar.events
           kind: intake
           path: artifacts/feeds/calendar/events
           zone: artifacts
           owner: automation:cron
-          intake:
+          source:
+            from: handler
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
-      rules:
-        - match: artifacts.feeds.calendar.events
-          upkeep:
             ttl: 300s
-            action: warn
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)

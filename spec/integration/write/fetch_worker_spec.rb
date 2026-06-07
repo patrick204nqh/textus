@@ -35,7 +35,7 @@ RSpec.describe Textus::Write::FetchWorker do
           kind: intake
           path: intake/item.md
           zone: intake
-          intake: { handler: test_intake }
+          source: { from: handler, handler: test_intake }
     YAML
 
     File.write(File.join(textus, "hooks", "test_intake.rb"), intake_body)
@@ -147,7 +147,7 @@ RSpec.describe Textus::Write::FetchWorker do
             path: intake/vendor
             zone: intake
             nested: true
-            intake: { handler: capturing_intake }
+            source: { from: handler, handler: capturing_intake }
       YAML
 
       File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)

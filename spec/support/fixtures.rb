@@ -4,7 +4,7 @@ RSpec.shared_context "textus_store_fixture" do
   # Drain async derived rebuilds (ADR 0087) before removing the tmpdir so an
   # in-flight rebuild thread cannot race teardown (`ENOTEMPTY` on .textus/zones).
   after do
-    Textus::Maintenance::ReactiveMaterialize::AsyncRunner.drain
+    Textus::Maintenance::Produce::AsyncRunner.drain
     FileUtils.remove_entry(tmp)
   end
 end
@@ -83,33 +83,31 @@ module TextusSpecHelpers
   end
 
   # Preset: a machine "feeds" zone with one intake entry (key feeds.doc) wired
-  # to a `test_intake` handler, plus an upkeep rule. Pass the handler's hook
-  # body and the rule's ttl / on_expire (refresh|warn for intake; ADR 0090 folds
-  # this into the `upkeep` tagged union — the `on_expire:` kwarg maps to the
-  # upkeep `action:` under a keyed upkeep).
+  # to a `test_intake` handler. Pass the handler's hook body and the source ttl.
+  # Optionally pass a `retention:` hash (e.g. `{ ttl: "30d", action: "drop" }`)
+  # to add a retention rule; omit for intake-only freshness (ADR 0093).
   # Writes the hook into the store's hooks/ dir. Defaults to machine; pass
   # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
   # follow the kind via LANE_ZONE.
-  def intake_store(root, intake_body:, ttl: "1h", on_expire: "refresh", kind_zone: "machine")
+  def intake_store(root, intake_body:, ttl: "1h", retention: nil, kind_zone: "machine")
     zone = LANE_ZONE.fetch(kind_zone)
+    manifest = <<~YAML
+      version: textus/3
+      zones:
+        - { name: #{zone}, kind: #{kind_zone} }
+      entries:
+        - key: #{zone}.doc
+          kind: intake
+          path: #{zone}/doc.md
+          zone: #{zone}
+          source: { from: handler, handler: test_intake, ttl: #{ttl} }
+    YAML
+    manifest << "rules:\n  - { match: #{zone}.doc, retention: #{retention} }\n" if retention
     store_from_manifest(
       root,
       zones: [zone],
       files: { "hooks/test_intake.rb" => intake_body },
-      manifest: <<~YAML,
-        version: textus/3
-        zones:
-          - { name: #{zone}, kind: #{kind_zone} }
-        entries:
-          - key: #{zone}.doc
-            kind: intake
-            path: #{zone}/doc.md
-            zone: #{zone}
-            intake: { handler: test_intake }
-        rules:
-          - match: #{zone}.doc
-            upkeep: { ttl: #{ttl}, action: #{on_expire} }
-      YAML
+      manifest: manifest,
     )
   end
 

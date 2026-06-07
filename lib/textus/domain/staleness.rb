@@ -1,10 +1,9 @@
 module Textus
   module Domain
     class Staleness
-      # ADR 0079: intake (age-based) staleness moved to the unified lifecycle
-      # path (Domain::Lifecycle / freshness); only generator/build drift —
-      # dependency-based, surfaced by the doctor `generator_drift` check —
-      # remains here.
+      # ADR 0079/0093: intake (age-based) staleness lives in the retention/
+      # freshness path; only generator/build drift — dependency-based, surfaced
+      # by the doctor `generator_drift` check — remains here.
       def initialize(manifest:, file_stat:, clock: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = manifest
         @generator_check = GeneratorCheck.new(manifest: manifest, file_stat: file_stat)

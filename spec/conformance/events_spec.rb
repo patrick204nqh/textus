@@ -68,7 +68,7 @@ RSpec.describe "Lifecycle events" do
             kind: intake
             path: intake/x.md
             zone: intake
-            intake: { handler: f }
+            source: { from: handler, handler: f }
       YAML
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
@@ -166,11 +166,12 @@ RSpec.describe "Lifecycle events" do
             kind: derived
             path: artifacts/summary.md
             zone: artifacts
-            template: summary.mustache
-            compute:
-              kind: projection
-              select: [knowledge]
-              pluck: [name]
+            source:
+              from: template
+              template: summary.mustache
+              project:
+                select: [knowledge]
+                pluck: [name]
       YAML
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")

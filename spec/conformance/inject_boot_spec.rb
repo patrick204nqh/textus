@@ -19,9 +19,7 @@ RSpec.describe "inject_boot:" do
           kind: derived
           path: artifacts/root.md
           zone: artifacts
-          compute: { kind: projection, select: [identity.id], pluck: "*" }
-          template: root.mustache
-          inject_boot: true
+          source: { from: template, template: root.mustache, inject_boot: true, project: { select: [identity.id], pluck: "*" } }
     YAML
     File.write(File.join(root, "templates/root.mustache"), <<~TPL)
       protocol={{boot.protocol}}
@@ -40,9 +38,9 @@ RSpec.describe "inject_boot:" do
     expect(body).to include("zone:artifacts/")
   end
 
-  it "silently ignores inject_boot: on a non-derived entry (leaf entries do not read the field)" do
-    # Only Entry::Derived parses inject_boot:; a leaf entry always returns false
-    # so the inject_boot validator never fires and the manifest loads cleanly.
+  it "is a source-only concern: a leaf entry has no inject_boot and loads cleanly" do
+    # ADR 0093: inject_boot: lives under source: (derived only). A leaf has no
+    # source, so inject_boot never applies and the manifest loads cleanly.
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -52,9 +50,10 @@ RSpec.describe "inject_boot:" do
           kind: leaf
           path: identity/ok.md
           zone: identity
-          inject_boot: true
     YAML
-    expect { Textus::Store.new(root) }.not_to raise_error
+    store = Textus::Store.new(root)
+    entry = store.container.manifest.data.entries.find { |e| e.key == "identity.ok" }
+    expect(entry.inject_boot).to be(false)
   end
 
   it "raises on inject_boot: when no template is declared" do
@@ -73,8 +72,7 @@ RSpec.describe "inject_boot:" do
           path: artifacts/root.json
           zone: artifacts
           format: json
-          compute: { kind: projection, select: [identity.id], pluck: "*" }
-          inject_boot: true
+          source: { from: template, inject_boot: true, project: { select: [identity.id], pluck: "*" } }
     YAML
     expect { Textus::Store.new(root) }.to raise_error(Textus::UsageError, /inject_boot.*template/)
   end
@@ -92,8 +90,7 @@ RSpec.describe "inject_boot:" do
           kind: derived
           path: artifacts/root.md
           zone: artifacts
-          compute: { kind: projection, select: [identity.id], pluck: "*" }
-          template: root.mustache
+          source: { from: template, template: root.mustache, project: { select: [identity.id], pluck: "*" } }
     YAML
     store = Textus::Store.new(root)
     store.as("automation").reconcile

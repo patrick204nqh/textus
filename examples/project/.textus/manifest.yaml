@@ -49,18 +49,19 @@ entries:
 - key: artifacts.derived.orientation
   path: artifacts/derived/orientation.md
   zone: artifacts
-  template: orientation.mustache
-  inject_boot: true
   publish:
     to:
     - CLAUDE.md
     - AGENTS.md
-  compute:
-    kind: projection
-    select:
-    - knowledge.project
-    - knowledge.runbooks
-    transform: orientation_reducer
+  source:
+    from: template
+    template: orientation.mustache
+    inject_boot: true
+    project:
+      select:
+      - knowledge.project
+      - knowledge.runbooks
+      transform: orientation_reducer
   kind: derived
 # A per-host snapshot, pulled by `textus fetch artifacts.feeds.machines.local
 # --as=automation` (the same nested entry + machine_intake.rb hook that
@@ -75,13 +76,11 @@ entries:
   nested: true
   tracked: false
   kind: intake
-  intake:
+  source:
+    from: handler
     handler: machines
+    ttl: 1h
     config:
       machines:
         local: { via: local }
-rules:
-- match: artifacts.feeds.machines.**
-  upkeep:
-    ttl: 1h
-    action: warn
+rules: []

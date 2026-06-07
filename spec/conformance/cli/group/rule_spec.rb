@@ -14,11 +14,11 @@ RSpec.describe "textus rule group" do
         - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
       rules:
-        # ADR 0091: no `on:` discriminator — grammar is keyed (ttl/action → age; strategy → dependency)
+        # ADR 0093: age-GC is the `retention:` rule ({ ttl, action: drop|archive }).
         - match: "knowledge.*"
-          upkeep: { ttl: 1h, action: warn }
+          retention: { ttl: 1h, action: archive }
         - match: knowledge.doc
-          upkeep: { ttl: 5m, action: warn }
+          retention: { ttl: 5m, action: drop }
           intake_handler_allowlist: [src_a]
     YAML
   end
@@ -31,11 +31,11 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_list")
       expect(payload["policies"].length).to eq(2)
       expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
-      expect(payload["policies"].first["upkeep"]["ttl_seconds"]).to eq(3600)
-      expect(payload["policies"].first["upkeep"]["action"]).to eq("warn")
+      expect(payload["policies"].first["retention"]["ttl_seconds"]).to eq(3600)
+      expect(payload["policies"].first["retention"]["action"]).to eq("archive")
     end
 
-    it "serializes a stale upkeep as a plain hash with integer seconds" do
+    it "serializes a retention rule as a plain hash with integer seconds" do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -46,27 +46,27 @@ RSpec.describe "textus rule group" do
 
         rules:
           - match: knowledge.doc
-            upkeep: { ttl: 30d, action: drop }
+            retention: { ttl: 30d, action: drop }
       YAML
       rc = run(%w[rule list])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       block = payload["policies"].find { |b| b["match"] == "knowledge.doc" }
-      expect(block["upkeep"]).to eq(
-        "ttl_seconds" => 2_592_000, "action" => "drop", "budget_ms" => nil,
+      expect(block["retention"]).to eq(
+        "ttl_seconds" => 2_592_000, "action" => "drop",
       )
     end
   end
 
   describe "textus rule explain KEY" do
-    it "is lean by default: the effective {upkeep, guard} winners only" do
+    it "is lean by default: the effective {retention, guard} winners only" do
       rc = run(%w[rule explain knowledge.doc])
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("rule_explain")
-      expect(payload.keys - %w[protocol verb upkeep guard]).to be_empty
-      expect(payload["upkeep"]["ttl_seconds"]).to eq(300)
-      expect(payload["upkeep"]["action"]).to eq("warn")
+      expect(payload.keys - %w[protocol verb retention guard]).to be_empty
+      expect(payload["retention"]["ttl_seconds"]).to eq(300)
+      expect(payload["retention"]["action"]).to eq("drop")
     end
 
     it "with --detail returns matched blocks and effective values for a key" do
@@ -76,8 +76,8 @@ RSpec.describe "textus rule group" do
       expect(payload["verb"]).to eq("rule_explain")
       expect(payload["key"]).to eq("knowledge.doc")
       expect(payload["matched_blocks"].length).to eq(2)
-      expect(payload["effective"]["upkeep"]["ttl_seconds"]).to eq(300)
-      expect(payload["effective"]["upkeep"]["action"]).to eq("warn")
+      expect(payload["effective"]["retention"]["ttl_seconds"]).to eq(300)
+      expect(payload["effective"]["retention"]["action"]).to eq("drop")
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])
     end
 
@@ -95,10 +95,10 @@ RSpec.describe "textus rule group" do
       File.write(cand, <<~YAML)
         rules:
           - match: knowledge.doc
-            upkeep: { ttl: 5m, action: warn }
+            retention: { ttl: 5m, action: drop }
             intake_handler_allowlist: [src_a]
           - match: knowledge.new
-            upkeep: { ttl: 2h, action: warn }
+            retention: { ttl: 2h, action: archive }
       YAML
       rc = run(["rule", "lint", "--against=#{cand}"])
       expect(rc).to eq(0), "stderr: #{stderr.string}"

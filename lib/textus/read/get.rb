@@ -1,14 +1,13 @@
+require "time"
+
 module Textus
   module Read
-    # The one read path — a pure read (ADR 0089): the on-disk envelope annotated
-    # with a lifecycle freshness verdict. It NEVER mutates and NEVER ingests.
+    # The one read path — a pure read (ADR 0089, 0093): the on-disk envelope
+    # annotated with a freshness annotation. It NEVER mutates and NEVER ingests.
     # Quarantine freshness is system-pushed via `reconcile` (scheduled sweep) and
-    # `hook run` (event push) — a read no longer triggers ingest (the read-that-
-    # writes seam ADR 0062 introduced is removed). A stale `on_expire: refresh`
-    # entry stays stale until the next reconcile; its staleness is reported in the
-    # `freshness` annotation (and surfaced by `pulse`).
-    #
-    # Lifecycle policy comes from the unified `lifecycle:` rule slot (ADR 0079).
+    # `hook run` (event push). Lifecycle is removed from the get path (ADR 0093):
+    # intake cadence lives in `source.ttl`; GC lives in `retention:` rules; both
+    # are evaluated exclusively by the `reconcile` sweep, not by a read.
     class Get
       extend Textus::Contract::DSL
 
@@ -43,27 +42,24 @@ module Textus
 
       private
 
-      # Pure read + unified lifecycle verdict; no orchestrator dependency.
+      # Pure read (ADR 0089, 0093) — no lifecycle ACTION at read time, but the
+      # envelope is annotated with a freshness VERDICT: an intake entry past its
+      # source.ttl reads back stale (it is NOT re-pulled — reconcile/hook owns
+      # that). Non-intake entries are always fresh (retention is GC, not content
+      # staleness, and is evaluated only by the reconcile sweep).
       def annotated_envelope(key)
         envelope = read_raw_envelope(key)
         return nil if envelope.nil?
 
-        policy = lifecycle_for(key)
-        return annotate_fresh(envelope) if policy.nil?
+        entry = @manifest.resolver.resolve(key).entry
+        ttl = entry.intake? ? entry.source.ttl_seconds : nil
+        return annotate_fresh(envelope) if ttl.nil?
 
-        expired, reason = Textus::Domain::Lifecycle.verdict(
-          policy: policy,
-          last_fetched_at: envelope.meta&.dig("last_fetched_at"),
-          mtime: mtime_for(key),
-          now: @call.now,
-        )
-        envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: expired, reason: reason, fetching: false,
-        ))
-      end
-
-      def lifecycle_for(key)
-        @manifest.rules.for(key).upkeep&.lifecycle
+        basis = envelope.meta&.dig("last_fetched_at")
+        basis_time = basis ? Time.parse(basis) : mtime_for(key)
+        stale = !basis_time.nil? && (@call.now - basis_time).to_i > ttl
+        reason = stale ? "ttl exceeded" : nil
+        envelope.with(freshness: Textus::Domain::Freshness.build(stale: stale, reason: reason, fetching: false))
       end
 
       def mtime_for(key)

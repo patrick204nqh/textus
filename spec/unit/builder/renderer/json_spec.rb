@@ -8,8 +8,9 @@ RSpec.describe Textus::Builder::Renderer::Json do
       format: "json",
       template: template,
       provenance: provenance,
-      source: Textus::Manifest::Entry::Derived::Projection.new(
-        select: ["working.*"], pluck: nil, sort_by: nil, transform: transform,
+      source: Textus::Domain::Policy::Source.new(
+        "from" => "template", "template" => "t.mustache",
+        "project" => { "select" => ["working.*"], "transform" => transform }.compact
       ),
     )
   end

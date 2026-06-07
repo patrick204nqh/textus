@@ -2,26 +2,28 @@ require "fileutils"
 
 module Textus
   module Maintenance
-    # The destructive-only lifecycle sweep (ADR 0079, supersedes the composite
-    # 0078 body). Drives off the unified Domain::Lifecycle reporter: it applies
-    # destructive actions a read never performs (drop = delete via Write::KeyDelete;
-    # archive = copy to <store>/archive/ then delete) and refreshes cold expired
-    # intake entries (on_expire: refresh) via Write::FetchWorker. Non-destructive
-    # annotation (warn) is left to the lazy `get`/`freshness` path. Adds no new
-    # authority — every sub-op runs with the CALLER's own `call` (role), and is
-    # gated exactly as on its own.
+    # Two-phase convergence pass (ADR 0093). Replaces the old Lifecycle-reporter
+    # sweep.
+    #
+    # Phase 1 — Produce (non-destructive): re-render ALL derived entries (cheap,
+    # idempotent) plus every intake entry past its source.ttl (stale-only, so
+    # external sources are not hammered). Driven by Maintenance::Produce.
+    #
+    # Phase 2 — Retention sweep (destructive): drop or archive entries past their
+    # retention ttl. Driven by Domain::Retention. The old refresh/warn actions are
+    # gone — intake re-pull is now Produce's responsibility.
     class Reconcile
       extend Textus::Contract::DSL
 
       verb     :reconcile
-      summary  "Run the destructive lifecycle sweep: drop/archive expired entries, refresh cold intake, report health."
+      summary  "Run the convergence pass: produce derived + stale intake, then drop/archive aged entries; report health."
       surfaces :cli, :mcp
       cli      "reconcile"
       arg :prefix,  String, description: "restrict the sweep to keys under this dotted prefix"
       arg :zone,    String, description: "restrict the sweep to entries in this zone"
       arg :dry_run, :boolean, default: false,
-                              description: "when true, report what the sweep WOULD do without applying; " \
-                                           "defaults to false, so omitting it drops/archives/refreshes immediately"
+                              description: "when true, report what the pass WOULD do without applying; " \
+                                           "defaults to false, so omitting it produces + drops/archives immediately"
 
       def initialize(container:, call:)
         @container = container
@@ -29,56 +31,74 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil, dry_run: false)
-        rows = Textus::Domain::Lifecycle.new(
-          manifest: @container.manifest,
-          file_stat: Textus::Ports::Storage::FileStat.new,
-          clock: Textus::Ports::Clock,
+        file_stat = Textus::Ports::Storage::FileStat.new
+        retention_rows = Textus::Domain::Retention.new(
+          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
         ).call(prefix: prefix, zone: zone)
 
+        produce_keys = produce_scope(prefix, zone, file_stat)
         health = Read::Doctor.new(container: @container, call: @call).call
-        return dry_run_result(rows, health, prefix) if dry_run
+        return dry_run_result(produce_keys, retention_rows, health) if dry_run
+
+        # reconcile is the authoritative "make everything current now" pass, so
+        # it subsumes any in-flight reactive produce: drain pending async
+        # produce-on-write threads first, both to fold their work in and to free
+        # the shared maintenance lock (BuildLock is non-blocking — a thread still
+        # holding it would make the acquire below raise BuildInProgress). ADR 0093.
+        Textus::Maintenance::Produce::AsyncRunner.drain
 
         Textus::Ports::BuildLock.with(root: @container.root) do
-          materialized = Textus::Maintenance::Materialize.new(container: @container, call: @call).call(prefix: prefix)
-          result = apply(rows)
-          publish_failed(result[:failed]) unless result[:failed].empty?
-          apply_result(result, health, materialized)
+          produced = Textus::Maintenance::Produce.new(container: @container, call: @call).call(keys: produce_keys)
+          swept = apply(retention_rows)
+          publish_failed(swept[:failed]) unless swept[:failed].empty?
+          apply_result(produced, swept, health)
         end
       end
 
       private
 
-      # Mirror ReactiveMaterialize's :materialize_failed so reconcile's
-      # sweep-phase failures are observable on the event bus, not only in the
-      # returned payload (WS4 / ADR 0089-era). Additive: `failed` stays in the
-      # result; subscribers get a phase-failure signal too.
-      def publish_failed(failed)
-        @container.events.publish(
-          :reconcile_failed,
-          ctx: Textus::Hooks::Context.for(container: @container, call: @call),
-          failed: failed,
-        )
+      # The full produce scope (ADR 0093): every derived entry (always
+      # re-render — cheap, idempotent), every entry that mirrors a publish_tree
+      # (the nested-subtree publishers, ADR 0047 — mirrored each pass so a
+      # removed source leaf is swept from the published tree), plus every intake
+      # entry past its source.ttl (re-pull only when due, so external sources
+      # aren't hammered).
+      def produce_scope(prefix, zone, file_stat)
+        publishable = @container.manifest.data.entries
+                                .select { |e| e.derived? || !e.publish_tree.nil? }
+                                .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
+        stale_intake = Textus::Domain::IntakeStaleness.new(
+          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
+        ).call(prefix: prefix, zone: zone)
+        (publishable + stale_intake).uniq
       end
 
-      def dry_run_result(rows, health, prefix)
+      def in_scope?(entry, prefix, zone)
+        return false if zone && entry.zone != zone
+        return false if prefix && !entry.key.start_with?(prefix)
+
+        true
+      end
+
+      def dry_run_result(produce_keys, rows, health)
         {
           "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
-          "would_materialize" => derived_keys_in_scope(prefix),
+          "would_produce" => produce_keys,
           "would_drop" => action_keys(rows, "drop"),
           "would_archive" => action_keys(rows, "archive"),
-          "would_refresh" => action_keys(rows, "refresh"),
           "health" => health
         }
       end
 
-      def apply_result(result, health, materialized)
+      def apply_result(produced, swept, health)
         {
           "protocol" => Textus::PROTOCOL,
-          "ok" => result[:failed].empty?,
+          "ok" => produced[:failed].empty? && swept[:failed].empty?,
           "dry_run" => false,
-          "materialized" => materialized["built"].map { |b| b["key"] },
-          "dropped" => result[:dropped], "archived" => result[:archived],
-          "refreshed" => result[:refreshed], "failed" => result[:failed],
+          "produced" => produced[:produced],
+          "produce_failed" => produced[:failed],
+          "dropped" => swept[:dropped], "archived" => swept[:archived],
+          "failed" => swept[:failed],
           "health" => health
         }
       end
@@ -87,18 +107,19 @@ module Textus
         rows.select { |r| r["action"] == action }.map { |r| r["key"] }
       end
 
-      def derived_keys_in_scope(prefix)
-        @container.manifest.data.entries
-                  .grep(Textus::Manifest::Entry::Derived)
-                  .select { |e| prefix.nil? || e.key.start_with?(prefix) }
-                  .map(&:key)
+      def publish_failed(failed)
+        @container.events.publish(
+          :reconcile_failed,
+          ctx: Textus::Hooks::Context.for(container: @container, call: @call),
+          failed: failed,
+        )
       end
 
+      # Phase 2: destructive retention only (drop/archive). No refresh — intake
+      # re-pull is Produce's job (Phase 1). ADR 0093.
       def apply(rows)
-        out = { dropped: [], archived: [], refreshed: [], failed: [] }
-        delete  = Write::KeyDelete.new(container: @container, call: @call)
-        refresh = Write::FetchWorker.new(container: @container, call: @call)
-
+        out = { dropped: [], archived: [], failed: [] }
+        delete = Write::KeyDelete.new(container: @container, call: @call)
         rows.each do |row|
           key = row["key"]
           begin
@@ -110,9 +131,6 @@ module Textus
               archive_leaf(row)
               delete.call(key)
               out[:archived] << key
-            when "refresh"
-              refresh.run(key)
-              out[:refreshed] << key
             end
           rescue Textus::Error => e
             out[:failed] << { "key" => key, "error" => e.message }
