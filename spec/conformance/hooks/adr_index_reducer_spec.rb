@@ -52,7 +52,28 @@ RSpec.describe "adr_index_reducer" do
     expect(first_adr["status"]).to eq("Accepted")
   end
 
-  it "skips rows whose body does not match the ADR title pattern" do
+  it "derives number from the key/filename, not from the heading" do
+    # 0001's heading has a malformed version string; number must still be 0001
+    out = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
+    first_adr = out["adrs"].last
+    expect(first_adr["number"]).to eq("0001")
+  end
+
+  it "handles the no-'ADR'-prefix heading style (0005-style)" do
+    no_prefix_row = {
+      "_key" => "knowledge.decisions.0005-store-facade-final-removal",
+      "body" => "# 0005 — Store facade final removal (Phase 1 completion)\n\n**Date:** 2025-03-01\n**Status:** Accepted\n",
+    }
+    out = rpc.invoke(:transform_rows, :adr_index_reducer,
+                     rows: [no_prefix_row], caps: caps, config: {})
+    expect(out["adrs"].length).to eq(1)
+    adr = out["adrs"].first
+    expect(adr["number"]).to eq("0005")
+    expect(adr["title"]).to eq("Store facade final removal (Phase 1 completion)")
+    expect(adr["slug"]).to eq("0005-store-facade-final-removal")
+  end
+
+  it "excludes the README (key does not match NNNN-slug pattern)" do
     readme_row = { "_key" => "knowledge.decisions.README",
                    "body" => "# Architecture Decisions\n\nThis folder holds the ADR log.\n" }
     out = rpc.invoke(:transform_rows, :adr_index_reducer,
@@ -60,6 +81,11 @@ RSpec.describe "adr_index_reducer" do
     # Only the genuine ADR row should appear
     expect(out["adrs"].length).to eq(1)
     expect(out["adrs"].first["number"]).to eq("0001")
+  end
+
+  it "emits a slug field for link construction" do
+    out = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
+    expect(out["adrs"].map { |a| a["slug"] }).to eq(%w[0010-tenth 0001-first])
   end
 
   it "returns a hash with an 'adrs' key" do
@@ -72,5 +98,17 @@ RSpec.describe "adr_index_reducer" do
     r1 = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
     r2 = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
     expect(r1).to eq(r2)
+  end
+
+  it "sorts numerically descending (not lexicographically)" do
+    # 0010 > 0009 > 0001 numerically; lexicographic would put "0010" before "0009" too,
+    # but "0099" < "0100" numerically should sort above "0099" — verify numeric sort
+    high_row = {
+      "_key" => "knowledge.decisions.0100-high",
+      "body" => "# ADR 0100 — High\n\n**Date:** 2025-01-01\n**Status:** Accepted\n",
+    }
+    out = rpc.invoke(:transform_rows, :adr_index_reducer,
+                     rows: [rows.first, high_row], caps: caps, config: {})
+    expect(out["adrs"].map { |a| a["number"] }).to eq(%w[0100 0001])
   end
 end

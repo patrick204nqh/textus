@@ -23,7 +23,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -129,6 +129,18 @@ entries:
     source: { from: handler, handler: schema }
     publish:
       - { to: docs/reference/schema.md, template: schema.mustache }
+    kind: produced
+  - key: artifacts.derived.adr-log
+    path: artifacts/derived/adr-log.json
+    zone: artifacts
+    format: json
+    source:
+      from: project
+      select: [knowledge.decisions]
+      transform: adr_index_reducer
+      pluck: [body, _key]
+    publish:
+      - { to: docs/reference/adr-log.md, template: adr-log.mustache }
     kind: produced
 
 

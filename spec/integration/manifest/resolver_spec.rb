@@ -65,4 +65,45 @@ RSpec.describe Textus::Manifest::Resolver do
       expect(keys.none? { |k| k.include?("build") }).to be(true)
     end
   end
+
+  describe "include_keyless (ADR 0047 / ADR 0097)" do
+    include TextusSpecHelpers
+
+    before do
+      # A publish_tree nested entry is keyless: its files are never enumerated
+      # as addressable keys on the public surface (ADR 0047). ADR 0097's ADR-log
+      # projection needs to read those files as *source* data, which the
+      # include_keyless: override permits without exposing them to `list`.
+      store_from_manifest(
+        root,
+        zones: %w[knowledge],
+        manifest: <<~YAML,
+          version: textus/3
+          zones:
+            - { name: knowledge, kind: canon }
+          entries:
+            - key: decisions
+              path: knowledge/decisions
+              zone: knowledge
+              owner: human:self
+              kind: nested
+              publish:
+                - { tree: docs/decisions }
+        YAML
+        files: {
+          "zones/knowledge/decisions/0001-first.md" => "# ADR 0001 — First\n",
+        },
+      )
+    end
+
+    it "excludes keyless publish_tree files by default (public surface)" do
+      keys = resolver.enumerate.map { |r| r[:key] }
+      expect(keys.none? { |k| k.start_with?("decisions") }).to be(true)
+    end
+
+    it "includes keyless publish_tree files when include_keyless: true" do
+      keys = resolver.enumerate(include_keyless: true).map { |r| r[:key] }
+      expect(keys).to include("decisions.0001-first")
+    end
+  end
 end

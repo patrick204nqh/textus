@@ -25,10 +25,15 @@ module Textus
     def run
       keys = collect_keys
       explicit_pluck = !@spec["pluck"].nil? && @spec["pluck"] != "*"
+      pluck_key = explicit_pluck && Array(@spec["pluck"]).include?("_key")
       rows = keys.map do |key|
         env = @reader.call(key)
         row = pluck(env.meta, env.body)
-        explicit_pluck ? row : row.merge("_key" => key)
+        if explicit_pluck
+          pluck_key ? row.merge("_key" => key) : row
+        else
+          row.merge("_key" => key)
+        end
       end
       reduced = apply_reducer(rows)
       # Reducers may return either an Array of rows (legacy / templated builds)
