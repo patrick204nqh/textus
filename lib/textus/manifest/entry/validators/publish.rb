@@ -14,7 +14,9 @@ module Textus
         module Publish
           def self.call(entry, policy: nil) # rubocop:disable Lint/UnusedMethodArgument
             unless entry.nested?
-              raise UsageError.new("entry '#{entry.key}': publish.tree requires nested: true") if entry.raw.dig("publish", "tree")
+              # ADR 0094: publish: is now a list; use publish_tree (derived reader)
+              # rather than raw.dig("publish", "tree") which breaks on an Array.
+              raise UsageError.new("entry '#{entry.key}': publish.tree requires nested: true") if entry.publish_tree
 
               return
             end

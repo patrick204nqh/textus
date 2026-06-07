@@ -1,6 +1,6 @@
 module Textus
   class Manifest
-    module Schema
+    module Schema # rubocop:disable Metrics/ModuleLength
       ROOT_KEYS    = %w[version roles zones entries rules audit].freeze
       ROLE_KEYS    = %w[name can].freeze
       ZONE_KEYS    = %w[name kind owner desc].freeze
@@ -28,9 +28,17 @@ module Textus
       # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
       # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).
       PUBLISH_KEYS = %w[to tree].freeze
-      # ADR 0093: entry-level production block. `project:` is a free hash
-      # consumed by Projection — its inner keys are not walked (YAGNI).
-      SOURCE_KEYS = %w[from handler config template project command sources ttl on_write inject_boot provenance].freeze
+      # ADR 0093/0094: entry-level acquisition block. `from: project` sources
+      # expose flat projection fields (select/pluck/sort_by/transform) directly
+      # on the source block (ADR 0094). Render fields (template/inject_boot/
+      # provenance) that were formerly on the source are retired — they live on
+      # publish targets. The legacy `project:` free hash and `template`/
+      # `inject_boot`/`provenance` fields are kept here so the schema walk can
+      # still emit the migration hint rather than a bare "unknown key".
+      SOURCE_KEYS = %w[
+        from handler config template project command sources ttl on_write inject_boot provenance
+        select pluck sort_by transform
+      ].freeze
       # ADR 0093: rule-level GC slot. drop/archive only (refresh gone).
       RETENTION_KEYS = %w[ttl action].freeze
 
@@ -139,6 +147,7 @@ module Textus
         Array(entries).each_with_index do |e, i|
           path = "$.entries[#{i}]"
           reject_retired_publish_keys!(e, path)
+          reject_retired_render_keys!(e, path)
           walk(e, ENTRY_KEYS, path)
           validate_publish_block!(e, path)
           walk(e["source"], SOURCE_KEYS, "#{path}.source") if e["source"]
@@ -182,15 +191,48 @@ module Textus
         )
       end
 
-      # Shape of the ADR 0052 publish block: a Hash whose only keys are to/tree.
-      # Exclusivity (both set) and per-mode rules stay in Publish.resolve (ADR 0049).
+      # ADR 0094: rendering is a publish concern. An entry no longer
+      # declares a build-time template or render flags — they move onto publish
+      # targets. Provenance lives in the data's `_meta`, not a flag.
+      def self.reject_retired_render_keys!(entry, path)
+        return unless entry.is_a?(Hash)
+
+        if entry.key?("template")
+          raise BadManifest.new(
+            "entry-level `template:` was removed at '#{path}' (ADR 0094): rendering is a " \
+            "publish concern — `publish: [{ to:, template: }]`.",
+          )
+        end
+        if entry.key?("inject_boot")
+          raise BadManifest.new(
+            "entry-level `inject_boot:` was removed at '#{path}' (ADR 0094): it is a render " \
+            "flag — `publish: [{ to:, inject_boot: }]`.",
+          )
+        end
+        return unless entry.key?("provenance")
+
+        raise BadManifest.new("entry-level `provenance:` was removed at '#{path}' (ADR 0094): provenance lives in the data's `_meta`.")
+      end
+
+      # ADR 0094: publish is a LIST of target objects. The old
+      # `{ to: [...] }` / `{ tree: … }` map forms are retired (fold hint).
       def self.validate_publish_block!(entry, path)
         return unless entry.is_a?(Hash) && entry.key?("publish")
 
         block = entry["publish"]
-        raise BadManifest.new("publish: must be a mapping with `to:` or `tree:` at '#{path}.publish'") unless block.is_a?(Hash)
+        if block.is_a?(Hash)
+          raise BadManifest.new(
+            "publish: at '#{path}.publish' must be a list of targets " \
+            "[{ to:, template:? } | { tree: }] (ADR 0094); the map form was retired.",
+          )
+        end
+        raise BadManifest.new("publish: must be a list of targets at '#{path}.publish'") unless block.is_a?(Array)
 
-        walk(block, PUBLISH_KEYS, "#{path}.publish")
+        block.each_with_index do |t, i|
+          raise BadManifest.new("publish target ##{i} must be a mapping at '#{path}.publish'") unless t.is_a?(Hash)
+
+          walk(t, %w[to tree template inject_boot], "#{path}.publish[#{i}]")
+        end
       end
 
       def self.validate_rules!(rules)
