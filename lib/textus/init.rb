@@ -109,21 +109,17 @@ module Textus
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
       - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.derived.orientation
-        path: artifacts/derived/orientation.md
+        path: artifacts/derived/orientation.json
         zone: artifacts
         publish:
-          to:
-          - CLAUDE.md
-          - AGENTS.md
+        - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
+        - { to: AGENTS.md, template: orientation.mustache, inject_boot: true }
         source:
-          from: template
-          template: orientation.mustache
-          inject_boot: true
-          project:
-            select:
-            - knowledge.project
-            - knowledge.runbooks
-            transform: orientation_reducer
+          from: project
+          select:
+          - knowledge.project
+          - knowledge.runbooks
+          transform: orientation_reducer
         kind: derived
     YAML
 
