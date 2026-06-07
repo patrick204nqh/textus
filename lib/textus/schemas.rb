@@ -24,6 +24,14 @@ module Textus
       @schemas.values
     end
 
+    # Name-keyed view: { canonical_name => Schema }. The key is the schema's
+    # file stem, which is authoritative even when a schema file carries no
+    # top-level `name:` (Schema#name reads the body and may be nil). Symmetric
+    # with #all (values); use this when you need the names too.
+    def by_name
+      @schemas.dup
+    end
+
     private
 
     def load_all

@@ -85,6 +85,22 @@ RSpec.describe Textus::Schemas do
     end
   end
 
+  describe "#by_name" do
+    it "maps each schema's canonical (file-stem) name to its Schema" do
+      write_schema(tmp, "agent", agent_yaml)
+      write_schema(tmp, "skill", skill_yaml)
+      schemas = described_class.new(tmp)
+      expect(schemas.by_name.keys.sort).to eq(%w[agent skill])
+      expect(schemas.by_name["agent"]).to be_a(Textus::Schema)
+    end
+
+    it "keys on the file stem even when the schema body carries no name:" do
+      write_schema(tmp, "nameless", "required: [x]\nfields:\n  x: { type: string }\n")
+      schemas = described_class.new(tmp)
+      expect(schemas.by_name.keys).to eq(["nameless"])
+    end
+  end
+
   describe "canon zone-kind (ADR 0033)" do
     it "accepts kind: canon and rejects the retired kind: origin" do
       canon = { "version" => "textus/3",
