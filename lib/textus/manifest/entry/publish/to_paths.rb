@@ -61,7 +61,7 @@ module Textus
               f.write(bytes)
               f.flush
               Textus::Ports::Publisher.publish(
-                source: f.path, target: target_abs, store_root: pctx.root, provenance_source: data_path
+                source: f.path, target: target_abs, store_root: pctx.root, provenance_source: data_path,
               )
             end
             pctx.emit(:entry_published, key: key, envelope: envelope, source: data_path, target: target_abs)
