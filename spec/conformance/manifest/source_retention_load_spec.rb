@@ -24,9 +24,9 @@ RSpec.describe "source/retention manifest load (ADR 0093)" do
       entries:
         - key: feeds.cat
           kind: derived
-          path: feeds/cat.md
+          path: feeds/cat.json
           zone: feeds
-          source: { from: template, template: c.mustache }
+          source: { from: project, select: "knowledge.*" }
       rules:
         - { match: "feeds.cat", retention: { ttl: 1d, action: drop } }
     YAML

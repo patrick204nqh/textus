@@ -164,14 +164,14 @@ RSpec.describe "Lifecycle events" do
 
           - key: artifacts.summary
             kind: derived
-            path: artifacts/summary.md
+            path: artifacts/summary.json
             zone: artifacts
             source:
-              from: template
-              template: summary.mustache
-              project:
-                select: [knowledge]
-                pluck: [name]
+              from: project
+              select: [knowledge]
+              pluck: [name]
+            publish:
+              - { to: SUMMARY.md, template: summary.mustache }
       YAML
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")

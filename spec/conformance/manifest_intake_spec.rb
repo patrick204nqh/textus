@@ -111,7 +111,8 @@ RSpec.describe "Manifest intake source: + retention:" do
           path: feeds/news.md
           zone: feeds
           publish:
-            to: [NEWS.md, docs/news.md]
+            - { to: NEWS.md }
+            - { to: docs/news.md }
           source:
             from: handler
             handler: news_handler
