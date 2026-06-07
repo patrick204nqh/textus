@@ -55,16 +55,16 @@ module Textus
 
       ```ruby
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :my_source) do |config:, args:, **|
+        reg.on(:resolve_handler, :my_source) do |config:, args:, **|
           { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "…" }
         end
 
         reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
         reg.on(:validate,       :my_check)  { |caps:, **| [] }
-        reg.on(:entry_put,      :my_listener, keys: ["knowledge.*"]) { |key:, envelope:, **| }
+        reg.on(:entry_written,      :my_listener, keys: ["knowledge.*"]) { |key:, envelope:, **| }
 
         # Run a side-effect every time textus writes a file to your repo:
-        reg.on(:file_published, :notify) do |key:, target:, **|
+        reg.on(:entry_published, :notify) do |key:, target:, **|
           warn "wrote \#{target} (from \#{key})"
         end
       end
@@ -93,12 +93,12 @@ module Textus
             action: archive   # drop | archive (age GC of stored rows)
       ```
 
-      Events: :resolve_intake, :transform_rows, :validate (rpc — return value used)
-              :entry_put, :entry_deleted, :entry_fetched, :entry_renamed,
-              :build_completed, :materialize_failed, :reconcile_failed,
+      Events: :resolve_handler, :transform_rows, :validate (rpc — return value used)
+              :entry_written, :entry_deleted, :entry_fetched, :entry_renamed,
+              :entry_produced, :produce_failed, :reconcile_failed,
               :proposal_accepted, :proposal_rejected,
-              :file_published, :store_loaded, :session_opened,
-              :fetch_started, :fetch_failed (pub-sub — return discarded)
+              :entry_published, :store_loaded, :session_opened,
+              :entry_fetch_started, :entry_fetch_failed (pub-sub — return discarded)
 
       See SPEC.md §5.10 for the full table.
     MD

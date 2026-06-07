@@ -14,7 +14,7 @@ module Textus
       # write trigger (ADR 0093). Both the sync path (inline, in the subscriber)
       # and the async path (AsyncRunner) call this. A held lock is a soft miss
       # (an in-flight build/reconcile already produces fresh output); any other
-      # error is republished as :materialize_failed and never raised at the
+      # error is republished as :produce_failed and never raised at the
       # writer (ADR 0087 §5 failure isolation, preserved).
       def self.converge(container:, call:, keys:)
         Textus::Ports::BuildLock.with(root: container.root) do
@@ -24,7 +24,7 @@ module Textus
         nil
       rescue Textus::Error => e
         container.events.publish(
-          :materialize_failed,
+          :produce_failed,
           ctx: Textus::Hooks::Context.for(container: container, call: call),
           keys: keys, error: e.message
         )

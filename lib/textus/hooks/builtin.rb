@@ -8,21 +8,21 @@ module Textus
     module Builtin
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.register_all(events:, rpc:) # rubocop:disable Lint/UnusedMethodArgument
-        rpc.register(:resolve_intake, :json) do |caps:, config:, args:|
+        rpc.register(:resolve_handler, :json) do |caps:, config:, args:|
           _ = caps
           _ = args
           data = JSON.parse(config["bytes"].to_s)
           { _meta: {}, body: YAML.dump(data) }
         end
 
-        rpc.register(:resolve_intake, :csv) do |caps:, config:, args:|
+        rpc.register(:resolve_handler, :csv) do |caps:, config:, args:|
           _ = caps
           _ = args
           rows = CSV.parse(config["bytes"].to_s, headers: true).map(&:to_h)
           { _meta: {}, body: YAML.dump(rows) }
         end
 
-        rpc.register(:resolve_intake, :"markdown-links") do |caps:, config:, args:|
+        rpc.register(:resolve_handler, :"markdown-links") do |caps:, config:, args:|
           _ = caps
           _ = args
           links = config["bytes"].to_s.scan(%r{\[([^\]]+)\]\((https?://[^)\s]+)\)}).map do |text, href|
@@ -31,7 +31,7 @@ module Textus
           { _meta: {}, body: YAML.dump(links) }
         end
 
-        rpc.register(:resolve_intake, :"ical-events") do |caps:, config:, args:|
+        rpc.register(:resolve_handler, :"ical-events") do |caps:, config:, args:|
           _ = caps
           _ = args
           events_list = []
@@ -50,7 +50,7 @@ module Textus
           { _meta: {}, body: YAML.dump(events_list) }
         end
 
-        rpc.register(:resolve_intake, :rss) do |caps:, config:, args:|
+        rpc.register(:resolve_handler, :rss) do |caps:, config:, args:|
           _ = caps
           _ = args
           doc = REXML::Document.new(config["bytes"].to_s)

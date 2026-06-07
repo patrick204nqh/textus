@@ -33,11 +33,11 @@ module Textus
           Array(publish_to).each do |rel|
             target_abs = File.join(pctx.repo_root, rel)
             Textus::Ports::Publisher.publish(source: target_path, target: target_abs, store_root: pctx.root)
-            pctx.emit(:file_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
+            pctx.emit(:entry_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
           end
 
           selects = @source.projection? ? Array(@source.select).compact : []
-          pctx.emit(:build_completed, key: @key, envelope: envelope, sources: selects)
+          pctx.emit(:entry_produced, key: @key, envelope: envelope, sources: selects)
 
           { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
         end

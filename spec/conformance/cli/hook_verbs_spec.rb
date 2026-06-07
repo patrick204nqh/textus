@@ -19,9 +19,9 @@ RSpec.describe "CLI hook verbs" do
     YAML
     File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :stub) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
+        reg.on(:resolve_handler, :stub) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "ok" } }
         reg.on(:transform_rows, :r)    { |caps:, rows:, config:| rows }
-        reg.on(:entry_put, :h)         { |**| }
+        reg.on(:entry_written, :h)         { |**| }
         reg.on(:validate, :dc)         { |caps:| [] }
       end
     RUBY
@@ -38,15 +38,15 @@ RSpec.describe "CLI hook verbs" do
     expect(rc).to eq(0)
     payload = JSON.parse(line)
     by_event = payload["hooks"].group_by { |e| e["event"] }
-    expect(by_event["resolve_intake"].map { |e| e["name"] }).to include("stub")
+    expect(by_event["resolve_handler"].map { |e| e["name"] }).to include("stub")
     expect(by_event["transform_rows"].map { |e| e["name"] }).to include("r")
-    expect(by_event["entry_put"].map { |e| e["name"] }).to include("h")
+    expect(by_event["entry_written"].map { |e| e["name"] }).to include("h")
     expect(by_event["validate"].map { |e| e["name"] }).to include("dc")
   end
 
-  it "textus hook list --event=entry_put filters" do
-    _rc, line = run_cli(["hook", "list", "--event=entry_put", "--output=json"])
-    expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("entry_put"))
+  it "textus hook list --event=entry_written filters" do
+    _rc, line = run_cli(["hook", "list", "--event=entry_written", "--output=json"])
+    expect(JSON.parse(line)["hooks"].map { |e| e["event"] }).to all(eq("entry_written"))
   end
 
   it "removed: textus extensions list exits with usage error" do

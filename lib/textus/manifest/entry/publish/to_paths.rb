@@ -15,7 +15,7 @@ module Textus
             targets.each do |rel|
               target_abs = File.join(pctx.repo_root, rel)
               Textus::Ports::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
-              pctx.emit(:file_published, key: entry.key, envelope: envelope, source: source_path, target: target_abs)
+              pctx.emit(:entry_published, key: entry.key, envelope: envelope, source: source_path, target: target_abs)
             end
 
             { kind: :built, value: { "key" => entry.key, "path" => source_path, "published_to" => targets } }

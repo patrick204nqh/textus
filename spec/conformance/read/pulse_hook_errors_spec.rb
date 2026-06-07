@@ -25,12 +25,12 @@ RSpec.describe "Pulse hook_errors" do
 
   it "includes a row when a hook errors" do
     store.events.error_log.record(
-      seq: 1, event: :entry_put, hook: :sample,
+      seq: 1, event: :entry_written, hook: :sample,
       key: "knowledge.note", error_class: "RuntimeError", error_message: "boom"
     )
     result = store.as("human").pulse(since: 0)
     expect(result["hook_errors"].size).to eq(1)
-    expect(result["hook_errors"][0]).to include("event" => "entry_put", "hook" => "sample", "error_class" => "RuntimeError")
+    expect(result["hook_errors"][0]).to include("event" => "entry_written", "hook" => "sample", "error_class" => "RuntimeError")
   end
 
   it "filters by since seq" do

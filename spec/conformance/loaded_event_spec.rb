@@ -22,7 +22,7 @@ RSpec.describe ":store_loaded event" do
           list = ctx.list
           $textus_event_log << [:store_loaded, list.length]
         end
-        reg.on(:entry_put, :log_put) { |key:, **| $textus_event_log << [:entry_put, key] }
+        reg.on(:entry_written, :log_put) { |key:, **| $textus_event_log << [:entry_written, key] }
       end
     RUBY
     $textus_event_log = []
@@ -45,11 +45,11 @@ RSpec.describe ":store_loaded event" do
     expect(loaded[1]).to be_a(Integer) # store.list worked inside the hook
   end
 
-  it "fires :store_loaded before any subsequent :entry_put" do
+  it "fires :store_loaded before any subsequent :entry_written" do
     store = Textus::Store.new(root)
     store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
     order = $textus_event_log.map(&:first)
-    expect(order.index(:store_loaded)).to be < order.index(:entry_put)
+    expect(order.index(:store_loaded)).to be < order.index(:entry_written)
   end
 end
 # rubocop:enable Style/GlobalVars

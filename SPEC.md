@@ -88,7 +88,7 @@ textus/3 names its concepts along six axes. Reviewers who internalize these can 
 - **Place** — where data lives: zones such as `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `fetch`, `reconcile`, …).
-- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_put`, `:build_completed`, …).
+- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_handler`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_written`, `:entry_produced`, …).
 - **Rule** — constraints declared in the top-level `rules:` array of the manifest.
 
 ### 1.2 The five layers
@@ -488,7 +488,7 @@ Intake entries declare production via `source: { from: handler, ... }`. The `sou
     ttl: 6h                    # re-pull cadence; reconcile re-pulls when past ttl
 ```
 
-`handler` names a registered `:resolve_intake` hook (see §5.10); `config` is an opaque hash handed to the handler. `ttl` is the re-pull cadence: the `reconcile` sweep (and `hook run`) re-pulls the entry when `now - last_fetched_at > ttl`. A `get` annotates the entry with `stale: true` when past ttl but **never** re-pulls (ADR 0089). Age-based garbage collection of intake entries is separate and orthogonal — declare a `retention:` rule block (§5.11).
+`handler` names a registered `:resolve_handler` hook (see §5.10); `config` is an opaque hash handed to the handler. `ttl` is the re-pull cadence: the `reconcile` sweep (and `hook run`) re-pulls the entry when `now - last_fetched_at > ttl`. A `get` annotates the entry with `stale: true` when past ttl but **never** re-pulls (ADR 0089). Age-based garbage collection of intake entries is separate and orthogonal — declare a `retention:` rule block (§5.11).
 
 > **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does. None of them ever re-pull.
 
@@ -502,8 +502,8 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Re-pull paths.** Ingest is system-pushed (ADR 0089) — never triggered by a read:
 
-1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every intake entry past its `source.ttl`: it resolves the entry's `source.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `reconcile` (`automation` by default). Run it on a cron/timer.
-2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_intake` path), for sources that announce changes rather than waiting for the sweep.
+1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every intake entry past its `source.ttl`: it resolves the entry's `source.handler`, invokes the registered `:resolve_handler` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `reconcile` (`automation` by default). Run it on a cron/timer.
+2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_handler` path), for sources that announce changes rather than waiting for the sweep.
 
 (A third, manual path remains for out-of-band sources: read the `stale` list from `textus pulse` — soonest deadline `next_due_at` — fetch bytes yourself, and store them with `textus put KEY --as=automation --stdin`. `put` only stores bytes; it runs no handler. For per-entry detail read `textus get KEY` and `textus rule_explain KEY`.)
 
@@ -633,11 +633,11 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 ```ruby
 # Canonical form — works for every event:
 Textus.hook do |reg|
-  reg.on(:resolve_intake,  :my_source)              { |caps:, config:, args:, **|  … }
-  reg.on(:transform_rows,  :rank_by_recency)         { |caps:, rows:, **|            … }
-  reg.on(:validate,        :storage_writable)        { |caps:|                        … }
-  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
-  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:resolve_handler,  :my_source)              { |caps:, config:, args:, **|  … }
+  reg.on(:transform_rows,   :rank_by_recency)         { |caps:, rows:, **|            … }
+  reg.on(:validate,         :storage_writable)        { |caps:|                        … }
+  reg.on(:entry_written,    :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
+  reg.on(:entry_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -647,27 +647,27 @@ end
 
 | Event                   | Mode    | Args                                                      | Return                | Failure       |
 |-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| `:resolve_intake`       | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
+| `:resolve_handler`      | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
 | `:transform_rows`       | rpc     | caps:, rows:, config:                                     | rows array            | aborts op     |
 | `:validate`             | rpc     | caps:                                                     | issues array          | aborts doctor |
-| `:entry_put`            | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
+| `:entry_written`        | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
 | `:entry_deleted`        | pubsub  | ctx:, key:                                                | (discarded)           | logged        |
 | `:entry_fetched`        | pubsub  | ctx:, key:, envelope:, change:                            | (discarded)           | logged        |
-| `:build_completed`      | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
+| `:entry_produced`       | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
 | `:proposal_accepted`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
-| `:file_published`       | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
+| `:entry_published`      | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
 | `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
 | `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
 | `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
 | `:session_opened`       | pubsub  | ctx:, role:, cursor:                                     | (discarded)           | logged        |
-| `:fetch_started`        | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
-| `:fetch_failed`         | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
+| `:entry_fetch_started`  | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
+| `:entry_fetch_failed`   | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
 
-The two `:fetch_*` lifecycle events report the progress and failures of intake fetches during `reconcile` / `hook run`.
+The two `:entry_fetch_*` lifecycle events report the progress and failures of intake fetches during `reconcile` / `hook run`.
 
-**`:fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
+**`:entry_fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
 
-**`:fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
+**`:entry_fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
 
 **Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
 
@@ -1068,21 +1068,21 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | Manifest | `promote_requires:` | `guard: { accept: [...] }` |
 | Manifest | `projection:` | `source: { from: template, project: { ... } }` |
 | Manifest | `generator:` | `source: { from: command, ... }` |
-| Hook event | `:intake` | `:resolve_intake` |
+| Hook event | `:intake` | `:resolve_handler` |
 | Hook event | `:reduce` | `:transform_rows` |
 | Hook event | `:check` | `:validate` |
-| Hook event | `:put` | `:entry_put` |
+| Hook event | `:put` | `:entry_written` |
 | Hook event | `:deleted` | `:entry_deleted` |
 | Hook event | `:refreshed` | `:entry_fetched` |
-| Hook event | `:built` | `:build_completed` |
+| Hook event | `:built` | `:entry_produced` |
 | Hook event | `:accepted` | `:proposal_accepted` |
 | Hook event | `:reject` | `:proposal_rejected` |
-| Hook event | `:published` | `:file_published` |
+| Hook event | `:published` | `:entry_published` |
 | Hook event | `:mv` | `:entry_renamed` |
 | Hook event | `:loaded` | `:store_loaded` |
-| Hook event | `:refresh_began` | `:fetch_started` |
+| Hook event | `:refresh_began` | `:entry_fetch_started` |
 | Hook event | `:refresh_detached` | `:fetch_backgrounded` |
-| Hook event | `:refresh_failed` | `:fetch_failed` |
+| Hook event | `:refresh_failed` | `:entry_fetch_failed` |
 | Hook DSL | `Textus.hook(ev, name)` / sugar | `Textus.on(ev, name)` |
 | Compute field | `projection.reduce:` | `compute.transform:` |
 | `_meta` key | `reducer` | `transform` |

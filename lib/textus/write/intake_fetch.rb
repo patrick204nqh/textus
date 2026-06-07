@@ -2,7 +2,7 @@ require "timeout"
 
 module Textus
   module Write
-    # Invokes a :resolve_intake hook handler by name under a timeout — the single
+    # Invokes a :resolve_handler hook handler by name under a timeout — the single
     # home for "call the intake handler under a deadline" (ADR 0048 D1). Shared by
     # FetchWorker (the internal ingest mechanism — no public verb since ADR 0079)
     # as driven by the `reconcile` sweep and `textus hook run` (ADR 0089 made
@@ -17,7 +17,7 @@ module Textus
 
       def invoke(caps:, handler:, config:, args:, label:, timeout: FETCH_TIMEOUT_SECONDS)
         Timeout.timeout(timeout) do
-          caps.rpc.invoke(:resolve_intake, handler, caps: caps, config: config, args: args)
+          caps.rpc.invoke(:resolve_handler, handler, caps: caps, config: config, args: args)
         end
       rescue Timeout::Error
         raise Textus::UsageError.new("#{label} '#{handler}' exceeded #{timeout}s timeout")

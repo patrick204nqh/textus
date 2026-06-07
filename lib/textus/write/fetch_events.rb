@@ -18,12 +18,12 @@ module Textus
       end
 
       def started(key, mode: :sync)
-        @events.publish(:fetch_started, ctx: @hook_context, key: key, mode: mode)
+        @events.publish(:entry_fetch_started, ctx: @hook_context, key: key, mode: mode)
       end
 
       def failed(key, error)
-        @events.publish(:fetch_failed, ctx: @hook_context, key: key,
-                                       error_class: error.class.name, error_message: error.message)
+        @events.publish(:entry_fetch_failed, ctx: @hook_context, key: key,
+                                             error_class: error.class.name, error_message: error.message)
       end
 
       def fetched(key, envelope, change)

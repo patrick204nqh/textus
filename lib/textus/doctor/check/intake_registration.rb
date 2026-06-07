@@ -6,15 +6,15 @@ module Textus
 
         def call
           declared = collect_declared_handlers
-          registered = rpc.names(:resolve_intake).to_set
+          registered = rpc.names(:resolve_handler).to_set
 
           out = (declared - registered).map do |name|
             {
               "code" => "intake.handler_missing",
               "level" => "error",
               "subject" => name.to_s,
-              "message" => "manifest references intake handler '#{name}' but no resolve_intake hook for '#{name}' is registered",
-              "fix" => "create .textus/hooks/#{name}.rb with `Textus.hook { |reg| reg.on(:resolve_intake, :#{name}) { ... } }`",
+              "message" => "manifest references intake handler '#{name}' but no resolve_handler hook for '#{name}' is registered",
+              "fix" => "create .textus/hooks/#{name}.rb with `Textus.hook { |reg| reg.on(:resolve_handler, :#{name}) { ... } }`",
             }
           end
 
@@ -23,7 +23,7 @@ module Textus
               "code" => "intake.handler_orphan",
               "level" => "warning",
               "subject" => name.to_s,
-              "message" => "resolve_intake hook '#{name}' is registered but no manifest entry references it",
+              "message" => "resolve_handler hook '#{name}' is registered but no manifest entry references it",
               "fix" => "remove the unused handler, or add an entry with `intake.handler: #{name}`",
             }
           end

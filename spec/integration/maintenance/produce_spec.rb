@@ -96,10 +96,10 @@ RSpec.describe Textus::Maintenance::Produce do
   describe ".converge failure isolation" do
     # A manifest where no role holds the `reconcile` capability: build_actor_call
     # raises a Textus::UsageError that escapes Produce#call (it is outside the
-    # per-key rescue). converge must swallow it and publish :materialize_failed.
-    it "does not raise and publishes :materialize_failed" do
+    # per-key rescue). converge must swallow it and publish :produce_failed.
+    it "does not raise and publishes :produce_failed" do
       fired = []
-      store.container.events.on(:materialize_failed, :probe) { |error:, **| fired << error }
+      store.container.events.on(:produce_failed, :probe) { |error:, **| fired << error }
 
       # Force build_actor_call to fail (no reconcile actor at call time) so a
       # Textus::Error escapes Produce#call — the path .converge must isolate.

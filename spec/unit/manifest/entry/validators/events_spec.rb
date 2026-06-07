@@ -12,7 +12,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::Events do
   end
 
   context "with a known pubsub event" do
-    let(:events) { { "entry_put" => "skill_fanout" } }
+    let(:events) { { "entry_written" => "skill_fanout" } }
 
     it "does not raise" do
       expect { described_class.call(entry) }.not_to raise_error

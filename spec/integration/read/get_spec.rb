@@ -8,7 +8,7 @@ RSpec.describe Textus::Read::Get do
   # The hook file must exist so the manifest loads; the file's mtime is used
   # as the staleness basis when last_fetched_at is absent from the envelope.
   def intake_hook_rb
-    "Textus.hook { |reg| reg.on(:resolve_intake, :test_intake) { |**| { body: \"x\" } } }\n"
+    "Textus.hook { |reg| reg.on(:resolve_handler, :test_intake) { |**| { body: \"x\" } } }\n"
   end
 
   def build_store_with_intake(ttl:, zone: "knowledge")

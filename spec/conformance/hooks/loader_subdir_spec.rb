@@ -17,7 +17,7 @@ RSpec.describe "Hook loader subdirectory support" do
 
       File.write(
         File.join(textus, "hooks", "intake", "nested_intake.rb"),
-        'Textus.hook { |reg| reg.on(:resolve_intake, :nested_intake) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } } }',
+        'Textus.hook { |reg| reg.on(:resolve_handler, :nested_intake) { |config:, args:, **| [config, args]; { _meta: {}, body: "n" } } }',
       )
 
       File.write(
@@ -27,7 +27,7 @@ RSpec.describe "Hook loader subdirectory support" do
 
       store = Textus::Store.new(textus)
 
-      expect(store.rpc.names(:resolve_intake)).to include(:nested_intake)
+      expect(store.rpc.names(:resolve_handler)).to include(:nested_intake)
       expect(store.rpc.names(:transform_rows)).to include(:nested_reduce)
     end
   end
@@ -40,11 +40,11 @@ RSpec.describe "Hook loader subdirectory support" do
 
       File.write(
         File.join(textus, "hooks", "flat.rb"),
-        'Textus.hook { |reg| reg.on(:resolve_intake, :flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } } }',
+        'Textus.hook { |reg| reg.on(:resolve_handler, :flat) { |config:, args:, **| [config, args]; { _meta: {}, body: "f" } } }',
       )
 
       store = Textus::Store.new(textus)
-      expect(store.rpc.names(:resolve_intake)).to include(:flat)
+      expect(store.rpc.names(:resolve_handler)).to include(:flat)
     end
   end
 end

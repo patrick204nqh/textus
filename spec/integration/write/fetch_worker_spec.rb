@@ -43,11 +43,11 @@ RSpec.describe Textus::Write::FetchWorker do
     Textus::Store.new(textus)
   end
 
-  it "persists the envelope and fires :fetch_started and :entry_fetched events on success" do
+  it "persists the envelope and fires :entry_fetch_started and :entry_fetched events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+          reg.on(:resolve_handler, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
         end
       RUBY
 
@@ -62,7 +62,7 @@ RSpec.describe Textus::Write::FetchWorker do
       expect(envelope.body).to eq("hello")
 
       event_names = test_events.events.map(&:first)
-      expect(event_names).to include(:fetch_started)
+      expect(event_names).to include(:entry_fetch_started)
       expect(event_names).to include(:entry_fetched)
 
       fetched_payload = test_events.events.find { |name, _| name == :entry_fetched }.last
@@ -71,11 +71,11 @@ RSpec.describe Textus::Write::FetchWorker do
     end
   end
 
-  it "fires :fetch_failed and raises UsageError when the intake handler raises StandardError" do
+  it "fires :entry_fetch_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :test_intake) { |caps:, config:, args:| raise "something went wrong" }
+          reg.on(:resolve_handler, :test_intake) { |caps:, config:, args:| raise "something went wrong" }
         end
       RUBY
 
@@ -88,7 +88,7 @@ RSpec.describe Textus::Write::FetchWorker do
         worker.run("intake.item")
       end.to raise_error(Textus::UsageError, /raised: RuntimeError: something went wrong/)
 
-      failed_events = test_events.events.filter { |ev| ev.first == :fetch_failed }
+      failed_events = test_events.events.filter { |ev| ev.first == :entry_fetch_failed }
       expect(failed_events).not_to be_empty
       expect(failed_events.first.last[:key]).to eq("intake.item")
     end
@@ -152,7 +152,7 @@ RSpec.describe Textus::Write::FetchWorker do
 
       File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :capturing_intake) do |caps:, config:, args:|
+          reg.on(:resolve_handler, :capturing_intake) do |caps:, config:, args:|
             Thread.current[:captured_args] = args
             { _meta: { "name" => "agent-eval" }, body: "x" }
           end
