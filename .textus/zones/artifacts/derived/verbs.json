@@ -6,15 +6,14 @@
     {
       "name": "accept",
       "summary": "apply a queued proposal to its target zone; requires the author capability",
-      "options": [
-        "as_flag"
+      "args": [
+        "pending_key"
       ]
     },
     {
       "name": "audit",
       "summary": "Query the audit log with optional filters.",
-      "options": [
-        "as_flag",
+      "args": [
         "correlation_id",
         "key",
         "limit",
@@ -28,124 +27,140 @@
     {
       "name": "blame",
       "summary": "Annotate audit rows for a key with the git commit that introduced each file state.",
-      "options": [
-        "as_flag",
+      "args": [
+        "key",
         "limit"
       ]
     },
     {
       "name": "boot",
       "summary": "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.",
-      "options": [
+      "args": [
         "lean"
       ]
     },
     {
       "name": "capabilities",
       "summary": "Machine-readable contract surface: every verb, its transports, and arg schema.",
-      "options": [
-        "as_flag",
+      "args": [
         "verb"
       ]
     },
     {
       "name": "deps",
       "summary": "List the keys a derived entry depends on (its projection/external sources).",
-      "options": [
-        "as_flag"
+      "args": [
+        "key"
       ]
     },
     {
       "name": "doctor",
       "summary": "Run health checks on the textus store and report any issues.",
-      "options": [
+      "args": [
         "checks"
       ]
     },
     {
-      "name": "get",
-      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
-      "options": [
-        "as_flag"
-      ]
-    },
-    {
-      "name": "hook",
-      "summary": "",
-      "options": []
-    },
-    {
-      "name": "init",
-      "summary": "",
-      "options": [
-        "with_agent"
-      ]
-    },
-    {
-      "name": "key",
-      "summary": "",
-      "options": []
-    },
-    {
-      "name": "list",
-      "summary": "List keys filtered by zone and/or prefix.",
-      "options": [
-        "as_flag",
+      "name": "freshness",
+      "summary": "Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).",
+      "args": [
         "prefix",
         "zone"
       ]
     },
     {
-      "name": "mcp",
-      "summary": "",
-      "options": []
+      "name": "get",
+      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "key_delete",
+      "summary": "Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.",
+      "args": [
+        "if_etag",
+        "key"
+      ]
+    },
+    {
+      "name": "key_delete_prefix",
+      "summary": "Bulk-delete every leaf key under prefix.",
+      "args": [
+        "dry_run",
+        "prefix"
+      ]
+    },
+    {
+      "name": "key_mv",
+      "summary": "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.",
+      "args": [
+        "dry_run",
+        "new_key",
+        "old_key"
+      ]
+    },
+    {
+      "name": "key_mv_prefix",
+      "summary": "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.",
+      "args": [
+        "dry_run",
+        "from_prefix",
+        "to_prefix"
+      ]
+    },
+    {
+      "name": "list",
+      "summary": "List keys filtered by zone and/or prefix.",
+      "args": [
+        "prefix",
+        "zone"
+      ]
     },
     {
       "name": "propose",
       "summary": "Write a proposal to the role's propose_zone. Auto-prefixes the key.",
-      "options": [
-        "as_flag",
+      "args": [
+        "_meta",
         "body",
         "content",
-        "meta",
-        "use_stdin"
+        "key"
       ]
     },
     {
       "name": "published",
       "summary": "List all entries that declare a publish_to target.",
-      "options": [
-        "as_flag"
-      ]
+      "args": []
     },
     {
       "name": "pulse",
       "summary": "Delta since cursor — changed entries, stale, pending proposals, doctor summary.",
-      "options": [
-        "as_flag",
+      "args": [
         "since"
       ]
     },
     {
       "name": "put",
       "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
-      "options": [
-        "as_flag",
-        "use_stdin"
+      "args": [
+        "_meta",
+        "body",
+        "content",
+        "if_etag",
+        "key"
       ]
     },
     {
       "name": "rdeps",
       "summary": "List the derived entries that depend on a key (reverse deps / impact set).",
-      "options": [
-        "as_flag"
+      "args": [
+        "key"
       ]
     },
     {
       "name": "reconcile",
       "summary": "Run the convergence pass: produce derived + stale intake, then drop/archive aged entries; report health.",
-      "options": [
-        "as_flag",
+      "args": [
         "dry_run",
         "prefix",
         "zone"
@@ -154,31 +169,59 @@
     {
       "name": "reject",
       "summary": "discard a queued proposal without applying it",
-      "options": [
-        "as_flag"
+      "args": [
+        "pending_key"
       ]
     },
     {
-      "name": "rule",
-      "summary": "",
-      "options": []
+      "name": "rule_explain",
+      "summary": "Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.",
+      "args": [
+        "detail",
+        "key"
+      ]
     },
     {
-      "name": "schema",
-      "summary": "",
-      "options": []
+      "name": "rule_lint",
+      "summary": "Diff candidate manifest YAML's rules against the live manifest. No writes.",
+      "args": [
+        "against"
+      ]
+    },
+    {
+      "name": "rule_list",
+      "summary": "List every rule block in the manifest.",
+      "args": []
+    },
+    {
+      "name": "schema_show",
+      "summary": "Return the schema (field shape) for an entry's family, by key.",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "uid",
+      "summary": "Return the stable UID of an entry without reading its body.",
+      "args": [
+        "key"
+      ]
     },
     {
       "name": "where",
       "summary": "Resolve a key to its zone, owner, and path without reading the body.",
-      "options": [
-        "as_flag"
+      "args": [
+        "key"
       ]
     },
     {
-      "name": "zone",
-      "summary": "",
-      "options": []
+      "name": "zone_mv",
+      "summary": "Rename a zone — manifest + files. Refuses if destination exists.",
+      "args": [
+        "dry_run",
+        "from",
+        "to"
+      ]
     }
   ]
 }

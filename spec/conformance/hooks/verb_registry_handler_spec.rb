@@ -24,21 +24,12 @@ RSpec.describe "verb_registry_handler" do
     expect(rpc.names(:resolve_handler)).to include(:verbs)
   end
 
-  it "emits one content row per top-level verb, sorted by name, with name + summary" do
-    result = rpc.invoke(:resolve_handler, :verbs, caps: caps, config: {}, args: [])
-    verbs = result["content"]["verbs"]
-
-    expect(verbs).to be_an(Array)
-    names = verbs.map { |v| v["name"] }
-    expect(names).to eq(names.sort)
-    expect(names).to include("get", "put", "boot")
-    expect(verbs.first.keys).to include("name", "summary")
-  end
-
-  it "includes all top-level CLI verbs" do
+  it "sources verbs from Read::Capabilities (no Dispatcher-internals reach)" do
+    projected = Textus::Read::Capabilities.new.call["verbs"].map { |v| v["verb"] }.sort
     result = rpc.invoke(:resolve_handler, :verbs, caps: caps, config: {}, args: [])
     names = result["content"]["verbs"].map { |v| v["name"] }
-    expect(names).to include(*Textus::CLI.verbs.keys)
+    expect(names).to eq(projected)
+    expect(result["content"]["verbs"].first.keys).to include("name", "summary")
   end
 
   it "has deterministic output (sorted by name)" do

@@ -8,14 +8,13 @@
 
 apply a queued proposal to its target zone; requires the author capability
 
-- `--as_flag`
+- `--pending_key`
 
 
 ## `textus audit`
 
 Query the audit log with optional filters.
 
-- `--as_flag`
 - `--correlation_id`
 - `--key`
 - `--limit`
@@ -30,7 +29,7 @@ Query the audit log with optional filters.
 
 Annotate audit rows for a key with the git commit that introduced each file state.
 
-- `--as_flag`
+- `--key`
 - `--limit`
 
 
@@ -45,7 +44,6 @@ Return the orientation contract: zones, entries, schemas, write_flows, agent_qui
 
 Machine-readable contract surface: every verb, its transports, and arg schema.
 
-- `--as_flag`
 - `--verb`
 
 
@@ -53,7 +51,7 @@ Machine-readable contract surface: every verb, its transports, and arg schema.
 
 List the keys a derived entry depends on (its projection/external sources).
 
-- `--as_flag`
+- `--key`
 
 
 ## `textus doctor`
@@ -63,70 +61,83 @@ Run health checks on the textus store and report any issues.
 - `--checks`
 
 
+## `textus freshness`
+
+Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).
+
+- `--prefix`
+- `--zone`
+
+
 ## `textus get`
 
 Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
 
-- `--as_flag`
+- `--key`
 
 
-## `textus hook`
+## `textus key_delete`
+
+Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.
+
+- `--if_etag`
+- `--key`
 
 
+## `textus key_delete_prefix`
+
+Bulk-delete every leaf key under prefix.
+
+- `--dry_run`
+- `--prefix`
 
 
+## `textus key_mv`
 
-## `textus init`
+Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.
 
-
-
-- `--with_agent`
-
-
-## `textus key`
+- `--dry_run`
+- `--new_key`
+- `--old_key`
 
 
+## `textus key_mv_prefix`
 
+Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.
+
+- `--dry_run`
+- `--from_prefix`
+- `--to_prefix`
 
 
 ## `textus list`
 
 List keys filtered by zone and/or prefix.
 
-- `--as_flag`
 - `--prefix`
 - `--zone`
-
-
-## `textus mcp`
-
-
-
 
 
 ## `textus propose`
 
 Write a proposal to the role's propose_zone. Auto-prefixes the key.
 
-- `--as_flag`
+- `--_meta`
 - `--body`
 - `--content`
-- `--meta`
-- `--use_stdin`
+- `--key`
 
 
 ## `textus published`
 
 List all entries that declare a publish_to target.
 
-- `--as_flag`
 
 
 ## `textus pulse`
 
 Delta since cursor — changed entries, stale, pending proposals, doctor summary.
 
-- `--as_flag`
 - `--since`
 
 
@@ -134,22 +145,24 @@ Delta since cursor — changed entries, stale, pending proposals, doctor summary
 
 Create or update an entry. Schema-validated. Returns {uid, etag}.
 
-- `--as_flag`
-- `--use_stdin`
+- `--_meta`
+- `--body`
+- `--content`
+- `--if_etag`
+- `--key`
 
 
 ## `textus rdeps`
 
 List the derived entries that depend on a key (reverse deps / impact set).
 
-- `--as_flag`
+- `--key`
 
 
 ## `textus reconcile`
 
 Run the convergence pass: produce derived + stale intake, then drop/archive aged entries; report health.
 
-- `--as_flag`
 - `--dry_run`
 - `--prefix`
 - `--zone`
@@ -159,31 +172,57 @@ Run the convergence pass: produce derived + stale intake, then drop/archive aged
 
 discard a queued proposal without applying it
 
-- `--as_flag`
+- `--pending_key`
 
 
-## `textus rule`
+## `textus rule_explain`
+
+Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.
+
+- `--detail`
+- `--key`
+
+
+## `textus rule_lint`
+
+Diff candidate manifest YAML's rules against the live manifest. No writes.
+
+- `--against`
+
+
+## `textus rule_list`
+
+List every rule block in the manifest.
 
 
 
+## `textus schema_show`
+
+Return the schema (field shape) for an entry's family, by key.
+
+- `--key`
 
 
-## `textus schema`
+## `textus uid`
 
+Return the stable UID of an entry without reading its body.
 
-
+- `--key`
 
 
 ## `textus where`
 
 Resolve a key to its zone, owner, and path without reading the body.
 
-- `--as_flag`
+- `--key`
 
 
-## `textus zone`
+## `textus zone_mv`
 
+Rename a zone — manifest + files. Refuses if destination exists.
 
-
+- `--dry_run`
+- `--from`
+- `--to`
 
 
