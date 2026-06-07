@@ -51,4 +51,52 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
     expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Read::Get)
     expect(Textus::Dispatcher::VERBS).not_to have_key(:get_or_fetch)
   end
+
+  # Floor guard (ADR 0039): the MCP dispatch set and the advertised JSON schemas
+  # must name the exact same tool set. Both are now DERIVED from the same source
+  # (per-verb contracts via MCP::Catalog), so parity is automatic — this spec
+  # proves it. A tool you can call but not discover (or discover but not call)
+  # would require a bug in Catalog itself; this makes such a bug a red build.
+  describe "dispatch and ToolSchemas name the same tools" do
+    let(:catalog_names) { Textus::MCP::Catalog.names.sort }
+    let(:schema_names)  { Textus::MCP::ToolSchemas.all.map { |t| t[:name] }.sort }
+
+    it "advertised schemas match the derived dispatch set" do
+      expect(schema_names).to eq(catalog_names),
+                              "dispatch set vs advertised schemas mismatch: " \
+                              "only-in-dispatch=#{(catalog_names - schema_names).inspect} " \
+                              "only-in-schemas=#{(schema_names - catalog_names).inspect}"
+    end
+  end
+
+  # Guard (ADR 0039): the floor for the residue derivation can't cover. A verb
+  # marked surfaces(:mcp) must declare a contract; if its raw return value is not
+  # already JSON-encodable it must declare a default `view` shaper. A verb added
+  # to the dispatcher with no contract cannot be reached by MCP, but this guard
+  # also stops a half-declared contract (surfaces :mcp but unusable) from shipping.
+  describe "MCP-surfaced verbs are completely declared" do
+    let(:mcp_specs) { Textus::MCP::Catalog.specs }
+
+    it "exposes at least the core read/write verbs" do
+      expect(Textus::MCP::Catalog.names).to include("boot", "pulse", "list", "get", "put", "propose")
+    end
+
+    it "every MCP spec has a non-empty summary" do
+      bad = mcp_specs.reject { |s| s.summary.is_a?(String) && !s.summary.empty? }.map(&:verb)
+      expect(bad).to be_empty, "MCP verbs missing a summary: #{bad.inspect}"
+    end
+
+    it "every MCP spec's inputSchema is well-formed JSON-Schema" do
+      mcp_specs.each do |s|
+        schema = s.input_schema
+        expect(schema[:type]).to eq("object")
+        expect(schema[:properties]).to be_a(Hash)
+        expect(schema[:required]).to all(be_a(String))
+      end
+    end
+
+    it "every MCP spec carries a callable default view shaper" do
+      expect(mcp_specs.map { |s| s.view(:default) }).to all(respond_to(:call))
+    end
+  end
 end
