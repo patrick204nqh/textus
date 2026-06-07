@@ -109,8 +109,8 @@ module SpecLayout
     schema_spec.rb source_retention_load_spec.rb spec_layout_spec.rb
     data_publish_load_spec.rb
     publish_target_spec.rb source_spec.rb publish_targets_spec.rb
-    publish_renderer_spec.rb inject_boot_spec.rb derived_provenance_spec.rb
-    json_spec.rb mcp_config_build_spec.rb plugin_manifest_build_spec.rb
+    publish_renderer_spec.rb
+    mcp_config_build_spec.rb plugin_manifest_build_spec.rb
     entry_spec.rb
   ].freeze
 
