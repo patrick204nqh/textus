@@ -7,6 +7,20 @@
   },
   "adrs": [
     {
+      "number": "0101",
+      "title": "interface-layer fossils",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0101-interface-fossils"
+    },
+    {
+      "number": "0100",
+      "title": "`produce/` topology + de-fossilized names",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0100-produce-topology"
+    },
+    {
       "number": "0099",
       "title": "one `Freshness` evaluator",
       "date": "2026-06-07",
