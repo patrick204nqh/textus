@@ -43,3 +43,5 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 ## Docs
 
 Full documentation is canon — authored under `.textus/zones/knowledge/` and published to `docs/`. Read the map with `textus get knowledge.docs-index`; the ADR log index is `textus get knowledge.architecture-index`. Sections: how-to · reference · explanation · tutorials · cookbook · decisions.
+
+Three reference docs are **generated**, not hand-authored: `docs/reference/verbs.md` and `docs/reference/schema.md` (projected from the live registry) and `docs/reference/adr-log.md` (projected from the ADR files). Do **not** edit these by hand — they are rebuilt by `textus reconcile` and a hand-edit is clobbered on the next run (and flagged by `textus doctor`). To change them, edit the source (the verb/schema code, or add an ADR under `.textus/zones/knowledge/decisions/`) and run `textus reconcile`.
