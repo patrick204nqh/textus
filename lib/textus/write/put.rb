@@ -39,7 +39,7 @@ module Textus
           if_etag: if_etag,
         )
 
-        @events.publish(:entry_put,
+        @events.publish(:entry_written,
                         ctx: hook_context,
                         key: key,
                         envelope: envelope)

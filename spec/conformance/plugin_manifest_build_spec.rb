@@ -47,15 +47,12 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
           path: artifacts/plugin.json
           zone: artifacts
           publish:
-            to:
-              - .claude-plugin/plugin.json
+            - { to: .claude-plugin/plugin.json }
           source:
-            from: template
-            provenance: false
-            project:
-              select:
-                - knowledge.project
-              transform: plugin_manifest_reducer
+            from: project
+            select:
+              - knowledge.project
+            transform: plugin_manifest_reducer
     YAML
 
     File.write(File.join(root, "zones/knowledge/project.md"),

@@ -29,15 +29,21 @@ RSpec.describe Textus::Entry do
 
     it "exposes publish_to on Base (not just on subclasses)" do
       expect(build_leaf.publish_to).to eq([])
-      expect(build_leaf(publish_to: ["A.md"]).publish_to).to eq(["A.md"])
+      target = Textus::Domain::Policy::PublishTarget.new("to" => "A.md")
+      expect(build_leaf(publish_targets: [target]).publish_to).to eq(["A.md"])
     end
 
-    it "returns nil from Base stubs for optional cross-cutting attrs" do
+    it "returns defaults from Base stubs for optional cross-cutting attrs" do
       leaf = build_leaf
-      expect(leaf.template).to be_nil
-      expect(leaf.inject_boot).to be(false)
       expect(leaf.events).to eq({})
+      expect(leaf.ignore).to eq([])
       expect(leaf.publish_tree).to be_nil
+    end
+
+    it "answers production-trait predicates falsey on Base (Derived overrides)" do
+      leaf = build_leaf
+      expect(leaf.external?).to be(false)
+      expect(leaf.projection?).to be(false)
     end
   end
 

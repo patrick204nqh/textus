@@ -2,14 +2,11 @@ module Textus
   class Manifest
     class Entry
       class Derived < Base
-        attr_reader :source, :template, :inject_boot, :provenance, :events
+        attr_reader :source, :events
 
-        def initialize(source:, template: nil, inject_boot: false, provenance: true, events: {}, **rest)
+        def initialize(source:, events: {}, **rest)
           super(**rest)
           @source = source
-          @template = template
-          @inject_boot = inject_boot
-          @provenance = provenance
           @events = events || {}
         end
 
@@ -17,45 +14,34 @@ module Textus
         def projection? = @source.projection?
         def external?   = @source.external?
 
-        def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          # Derived entries always materialize here; external ones are skipped below.
-          # External entries are produced by an out-of-band runner — textus has
-          # no in-process runner. The build path only tracks their staleness
-          # (Domain::Staleness::GeneratorCheck); materializing here would clobber
-          # the runner's artifact with an empty render. Skip the build entirely.
-          return nil if external?
-
-          target_path = Textus::Write::Materializer.new(
-            container: pctx.container, call: pctx.call,
-          ).run(self)
-
-          envelope = pctx.reader.call(@key)
-          Array(publish_to).each do |rel|
-            target_abs = File.join(pctx.repo_root, rel)
-            Textus::Ports::Publisher.publish(source: target_path, target: target_abs, store_root: pctx.root)
-            pctx.emit(:file_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
+        # ADR 0094: build the DATA artifact (project), then publish via
+        # the ONE shared mode (Publish::ToPaths). External (command) entries are
+        # produced out-of-band — skip the build, but still publish their existing
+        # store bytes through the same mode. A project entry with no targets is a
+        # terminal data node: it produced data, so report :built even though
+        # nothing was emitted.
+        def publish_via(pctx, prefix: nil)
+          built = false
+          unless external?
+            Textus::Write::DataBuilder.new(container: pctx.container, call: pctx.call).run(self)
+            built = true
+            pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
           end
 
-          selects = @source.projection? ? Array(@source.select).compact : []
-          pctx.emit(:build_completed, key: @key, envelope: envelope, sources: selects)
+          emitted = publish_mode.publish(pctx, prefix: prefix)
+          return emitted if emitted
+          return nil unless built
 
-          { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
+          { kind: :built, value: { "key" => @key, "path" => Key::Path.resolve(pctx.manifest.data, self), "published_to" => [] } }
         end
 
         KIND = :derived
 
         def self.from_raw(common, raw)
           source = Parser.parse_source(raw, common[:key])
-          raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: template|command") unless source.kind == :derived
+          raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: project|command") unless source.kind == :derived
 
-          new(
-            source: source,
-            template: source.template,
-            inject_boot: source.inject_boot,
-            provenance: source.provenance,
-            events: raw["events"] || {},
-            **common,
-          )
+          new(source: source, events: raw["events"] || {}, **common)
         end
 
         Entry::REGISTRY[KIND] = self

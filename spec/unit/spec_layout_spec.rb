@@ -121,8 +121,14 @@ RSpec.describe SpecLayout do
       expect(described_class.retired_manifest_tokens(%(on_expire: refresh))).to eq(["on_expire"])
     end
 
-    it "is clean for live source/retention vocabulary and for substrings" do
+    it "flags ADR 0094 retired render-key tokens as whole words" do
+      expect(described_class.retired_manifest_tokens(%(inject_boot: true))).to eq(["inject_boot"])
+      expect(described_class.retired_manifest_tokens(%(provenance: false))).to eq(["provenance"])
+    end
+
+    it "is clean for live source/retention/publish-target vocabulary and for substrings" do
       expect(described_class.retired_manifest_tokens("source: { from: template }\nretention: {}")).to be_empty
+      expect(described_class.retired_manifest_tokens("publish: [{ to: OUT.md, template: t.mustache }]")).to be_empty
       expect(described_class.retired_manifest_tokens("upkeeping_records")).to be_empty
     end
   end

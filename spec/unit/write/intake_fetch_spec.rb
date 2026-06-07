@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec.describe Textus::Write::IntakeFetch do
   describe ".invoke" do
-    it "invokes :resolve_intake through caps.rpc, passing caps through to the handler" do
+    it "invokes :resolve_handler through caps.rpc, passing caps through to the handler" do
       result = { _meta: { "name" => "repos" }, body: "hello" }
       rpc = instance_double(Textus::Hooks::RpcRegistry)
       allow(rpc).to receive(:invoke).and_return(result)
@@ -15,7 +15,7 @@ RSpec.describe Textus::Write::IntakeFetch do
 
       expect(returned).to eq(result)
       expect(rpc).to have_received(:invoke).with(
-        :resolve_intake, "h",
+        :resolve_handler, "h",
         caps: caps, config: { "word" => "hi" }, args: { "who" => "patrick" }
       )
     end

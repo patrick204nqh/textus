@@ -19,15 +19,15 @@ RSpec.describe Textus::Write::FetchEvents do
   let(:bus) { recording_events }
   let(:ctx) { :stub_ctx }
 
-  it "publishes :fetch_started with the context, key and mode" do
+  it "publishes :entry_fetch_started with the context, key and mode" do
     fe.started("intake.item")
-    expect(bus.published).to eq([[:fetch_started, { ctx: :stub_ctx, key: "intake.item", mode: :sync }]])
+    expect(bus.published).to eq([[:entry_fetch_started, { ctx: :stub_ctx, key: "intake.item", mode: :sync }]])
   end
 
-  it "publishes :fetch_failed with the error class and message" do
+  it "publishes :entry_fetch_failed with the error class and message" do
     fe.failed("intake.item", Textus::UsageError.new("boom"))
     event, payload = bus.published.first
-    expect(event).to eq(:fetch_failed)
+    expect(event).to eq(:entry_fetch_failed)
     expect(payload).to include(ctx: :stub_ctx, key: "intake.item",
                                error_class: "Textus::UsageError", error_message: "boom")
   end

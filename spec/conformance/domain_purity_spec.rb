@@ -93,8 +93,12 @@ RSpec.describe "Domain purity — no direct filesystem/clock I/O" do
         end
 
         # --- Regex-based forbidden pattern checks ---
+        # Strip string literals first so backtick-quoted prose inside an error
+        # message (e.g. "the `to:` field") does not read as shell execution; the
+        # guard targets real I/O calls, never message punctuation.
+        code_no_strings = code.gsub(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/, '""')
         DOMAIN_PURITY_FORBIDDEN_PATTERNS.each do |pattern, explanation|
-          next unless code.match?(pattern)
+          next unless code_no_strings.match?(pattern)
 
           violations << "#{path}:#{idx + 1}: #{explanation}\n  #{line.rstrip}"
         end

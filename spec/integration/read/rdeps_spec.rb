@@ -21,10 +21,12 @@ RSpec.describe Textus::Read::Rdeps do
 
           - key: artifacts.catalogs.people
             kind: derived
-            path: artifacts/catalogs/people.md
+            path: artifacts/catalogs/people.json
             zone: artifacts
             owner: automation:auto
-            source: { from: template, template: people.mustache, project: { select: knowledge.people } }
+            source: { from: project, select: knowledge.people }
+            publish:
+              - { to: PEOPLE.md, template: people.mustache }
       YAML
     )
   end

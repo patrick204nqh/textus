@@ -21,7 +21,7 @@ RSpec.describe "Textus::Init with_agent profile" do
     manifest = File.read(File.join(root, "manifest.yaml"))
     expect(manifest).to include("key: artifacts.derived.orientation")
     expect(manifest).to include("transform: orientation_reducer")
-    expect(manifest).to include("- CLAUDE.md").and include("- AGENTS.md")
+    expect(manifest).to include("to: CLAUDE.md").and include("to: AGENTS.md")
     # base entries still present (additive superset)
     expect(manifest).to include("key: knowledge.identity")
     expect(manifest).to include("key: knowledge.project")

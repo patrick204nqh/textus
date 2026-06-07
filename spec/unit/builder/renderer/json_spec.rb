@@ -1,48 +1,34 @@
 require "spec_helper"
 
 RSpec.describe Textus::Builder::Renderer::Json do
-  def make_mentry(provenance: true, template: nil, transform: nil)
+  def make_mentry(transform: nil)
     instance_double(
       Textus::Manifest::Entry::Derived,
       key: "output.config",
       format: "json",
-      template: template,
-      provenance: provenance,
       source: Textus::Domain::Policy::Source.new(
-        "from" => "template", "template" => "t.mustache",
-        "project" => { "select" => ["working.*"], "transform" => transform }.compact
+        "from" => "project",
+        "select" => ["working.a"],
+        "transform" => transform,
       ),
     )
   end
 
-  let(:renderer) { described_class.new(template_loader: ->(_) { raise "not used" }) }
+  let(:renderer) { described_class.new }
 
-  describe "provenance: true (default)" do
-    it "includes _meta in the built JSON" do
-      mentry = make_mentry(provenance: true)
-      data = { "entries" => [{ "key" => "working.a" }] }
-      bytes = renderer.call(mentry: mentry, data: data)
-      parsed = JSON.parse(bytes)
-      expect(parsed).to have_key("_meta")
-    end
+  it "serializes projection data and always stamps _meta into the stored artifact (ADR 0094)" do
+    mentry = make_mentry
+    data = { "entries" => [{ "key" => "working.a" }] }
+    parsed = JSON.parse(renderer.call(mentry: mentry, data: data))
+    expect(parsed).to have_key("_meta")
+    expect(parsed["entries"]).to eq([{ "key" => "working.a" }])
   end
 
-  describe "provenance: false" do
-    it "omits _meta from the built JSON" do
-      mentry = make_mentry(provenance: false)
-      data = { "entries" => [{ "key" => "working.a" }] }
-      bytes = renderer.call(mentry: mentry, data: data)
-      parsed = JSON.parse(bytes)
-      expect(parsed).not_to have_key("_meta")
-    end
-
-    it "preserves the rest of the content unchanged" do
-      mentry = make_mentry(provenance: false, transform: true)
-      data = { "mcpServers" => { "textus" => { "command" => "textus" } } }
-      bytes = renderer.call(mentry: mentry, data: data)
-      parsed = JSON.parse(bytes)
-      expect(parsed["mcpServers"]).to eq({ "textus" => { "command" => "textus" } })
-      expect(parsed).not_to have_key("_meta")
-    end
+  it "preserves transformed content shape (no entries wrapper) alongside _meta" do
+    mentry = make_mentry(transform: true)
+    data = { "mcpServers" => { "textus" => { "command" => "textus" } } }
+    parsed = JSON.parse(renderer.call(mentry: mentry, data: data))
+    expect(parsed["mcpServers"]).to eq({ "textus" => { "command" => "textus" } })
+    expect(parsed).to have_key("_meta")
   end
 end

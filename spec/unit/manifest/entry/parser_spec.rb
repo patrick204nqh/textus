@@ -34,12 +34,12 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
 
-    it "extracts source: from template (projection)" do
+    it "extracts source: from project (projection)" do
       entry = described_class.call(
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
           "kind" => "derived",
-          "source" => { "from" => "template", "template" => "x.mustache", "project" => { "select" => ["working.bar"] } }
+          "source" => { "from" => "project", "select" => ["working.bar"] }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Derived)
@@ -96,7 +96,7 @@ RSpec.describe Textus::Manifest::Entry::Parser do
 
     it "parses an explicit derived/projection row" do
       e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "kind" => "derived",
-                                 "source" => { "from" => "template", "template" => "t.mustache", "project" => { "select" => "z.n" } } })
+                                 "source" => { "from" => "project", "select" => "z.n" } })
       expect(e).to be_a(Textus::Manifest::Entry::Derived)
       expect(e).to be_projection
     end

@@ -93,23 +93,28 @@ RSpec.describe Textus::Manifest::Schema do
     }
   end
 
-  describe "typed publish: block (ADR 0052)" do
-    it "accepts publish: { to: [...] }" do
-      expect { validate!(entry_manifest("publish" => { "to" => ["A.md"] })) }.not_to raise_error
+  describe "publish: target list (ADR 0094)" do
+    it "accepts a list of to-targets" do
+      expect { validate!(entry_manifest("publish" => [{ "to" => "A.md" }])) }.not_to raise_error
     end
 
-    it "accepts publish: { tree: \"...\" }" do
-      expect { validate!(entry_manifest("publish" => { "tree" => "skills" })) }.not_to raise_error
+    it "accepts a tree-target" do
+      expect { validate!(entry_manifest("publish" => [{ "tree" => "skills" }])) }.not_to raise_error
     end
 
-    it "rejects an unknown sub-key in the publish block" do
-      expect { validate!(entry_manifest("publish" => { "bogus" => 1 })) }
-        .to raise_error(Textus::BadManifest, /unknown key 'bogus' at '\$\.entries\[0\]\.publish'/)
+    it "rejects an unknown sub-key in a publish target" do
+      expect { validate!(entry_manifest("publish" => [{ "bogus" => 1 }])) }
+        .to raise_error(Textus::BadManifest, /unknown key 'bogus' at '\$\.entries\[0\]\.publish\[0\]'/)
     end
 
-    it "rejects a non-mapping publish value" do
+    it "rejects the retired map form" do
+      expect { validate!(entry_manifest("publish" => { "to" => ["A.md"] })) }
+        .to raise_error(Textus::BadManifest, /must be a list of targets|map form was retired/)
+    end
+
+    it "rejects a non-list publish value" do
       expect { validate!(entry_manifest("publish" => "CLAUDE.md")) }
-        .to raise_error(Textus::BadManifest, /publish: must be a mapping/)
+        .to raise_error(Textus::BadManifest, /must be a list of targets/)
     end
   end
 

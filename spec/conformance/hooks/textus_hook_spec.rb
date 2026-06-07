@@ -33,16 +33,16 @@ RSpec.describe "Textus.hook collector" do
     let(:dsl)    { Textus::Hooks::Loader::Dsl.new(events: events, rpc: rpc) }
 
     it "registers an RPC handler via dsl.on" do
-      dsl.on(:resolve_intake, :gh) do |config:, args:, **|
+      dsl.on(:resolve_handler, :gh) do |config:, args:, **|
         [config, args]
         { _meta: {}, body: "x" }
       end
-      expect(rpc.names(:resolve_intake)).to include(:gh)
+      expect(rpc.names(:resolve_handler)).to include(:gh)
     end
 
     it "registers a pub-sub listener with keys: filter via dsl.on" do
-      dsl.on(:entry_put, :tap, keys: ["working.*"]) { |key:, **| key }
-      expect(events.pubsub_handlers(:entry_put).map { |h| h[:name] }).to include(:tap)
+      dsl.on(:entry_written, :tap, keys: ["working.*"]) { |key:, **| key }
+      expect(events.pubsub_handlers(:entry_written).map { |h| h[:name] }).to include(:tap)
     end
   end
 end

@@ -139,7 +139,7 @@ Container = Data.define(
 )
 ```
 
-The `Store` builds one `Container` at boot; every use case receives it via `(container:, call:)`. RPC hook callables (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps: <Container>` — field names match what the prior `WriteCaps` exposed, so handlers reading `caps.manifest`, `caps.events`, etc. continue to work.
+The `Store` builds one `Container` at boot; every use case receives it via `(container:, call:)`. RPC hook callables (`:resolve_handler`, `:transform_rows`, `:validate`) receive `caps: <Container>` — field names match what the prior `WriteCaps` exposed, so handlers reading `caps.manifest`, `caps.events`, etc. continue to work.
 
 ## Ports
 
@@ -201,7 +201,7 @@ Because the read is always pure, every caller — interactive reads, dashboards,
 1. CLI verb calls `store.put(key, meta:, body:, content:, if_etag:, role:)`.
 2. `Write::Put#call` validates the key, resolves the manifest entry, builds `GuardFactory.for(:put, key)` and calls `Guard#check!(eval)` (topology is predicate #0, `zone_writable_by`) — raises `WriteForbidden` if the topology gate denies, `GuardFailed` if any other predicate fails.
 3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
-4. Publishes `:entry_put` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
+4. Publishes `:entry_written` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
 `Write::{Delete,Mv,Accept,Reject,Build}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
@@ -211,18 +211,18 @@ Because the read is always pure, every caller — interactive reads, dashboards,
 
 1. CLI `Verb::Fetch` calls `store.fetch(key, role: "automation")`.
 2. `Write::FetchWorker#run(key)`:
-   - Resolves the manifest entry, looks up the intake handler via `container.rpc.callable(:resolve_intake, mentry.handler)`.
-   - Publishes `:fetch_started` with the hook context.
+   - Resolves the manifest entry, looks up the intake handler via `container.rpc.callable(:resolve_handler, mentry.handler)`.
+   - Publishes `:entry_fetch_started` with the hook context.
    - Invokes the handler under a 30s thread-join deadline.
-   - On any error: publishes `:fetch_failed`, then re-raises.
+   - On any error: publishes `:entry_fetch_failed`, then re-raises.
    - On success: builds `GuardFactory.for(:fetch, key)` and calls `Guard#check!`, then persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_fetched` unless etag is unchanged.
 3. `store.fetch_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `FetchWorker#run` per entry; returns `{ fetched:, failed:, skipped: }`.
 
 ## Hook payload contract
 
-Pub-sub hooks (`:entry_put`, `:entry_fetched`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
+Pub-sub hooks (`:entry_written`, `:entry_fetched`, …) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface (`get`, `list`, `put`, `delete`, `audit`, `publish_followup`, plus `role` and `correlation_id`). The raw `Store` is not handed out.
 
-RPC hooks (`:resolve_intake`, `:transform_rows`, `:validate`) receive `caps:` — a `Textus::Container`. They are gem-internal: the framework calls them, not user pub-sub.
+RPC hooks (`:resolve_handler`, `:transform_rows`, `:validate`) receive `caps:` — a `Textus::Container`. They are gem-internal: the framework calls them, not user pub-sub.
 
 ## Agent surface (boot + pulse + MCP)
 

@@ -40,7 +40,7 @@ end
 # Host defines `store`, `event_key`, and `emit` (a lambda running the action
 # with correlation_id "corr-1"):
 #
-#   it_behaves_like "an event-emitting action", :entry_put
+#   it_behaves_like "an event-emitting action", :entry_written
 RSpec.shared_examples "an event-emitting action" do |event_name|
   it "fires #{event_name} with the key and correlation id" do
     seen = []

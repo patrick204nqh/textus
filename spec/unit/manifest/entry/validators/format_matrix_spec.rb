@@ -11,7 +11,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
-      template: opts[:template],
     )
   end
 
@@ -25,7 +24,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
-      template: opts[:template],
       external?: opts.fetch(:external, false),
       projection?: opts.fetch(:projection, !opts.fetch(:external, false)),
     )
@@ -41,7 +39,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: true,
       format: opts.fetch(:format, "text"),
       schema: opts[:schema],
-      template: opts[:template],
     )
   end
 
@@ -69,29 +66,11 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
     end.to raise_error(Textus::UsageError, /text format must not declare a schema/)
   end
 
-  it "requires template for derived markdown" do
+  it "accepts derived markdown with no template (rendering is a publish concern, ADR 0094)" do
     expect do
       described_class.call(derived_entry(
                              format: "markdown",
                              template: nil, external: false
-                           ), policy: nil)
-    end.to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
-  end
-
-  it "accepts derived text with template" do
-    expect do
-      described_class.call(derived_entry(
-                             format: "text", path: "x.txt",
-                             template: "x.mustache", external: false
-                           ), policy: nil)
-    end.not_to raise_error
-  end
-
-  it "accepts derived markdown with generator (no template)" do
-    expect do
-      described_class.call(derived_entry(
-                             format: "markdown",
-                             template: nil, external: true
                            ), policy: nil)
     end.not_to raise_error
   end

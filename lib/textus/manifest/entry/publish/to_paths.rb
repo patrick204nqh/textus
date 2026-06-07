@@ -1,24 +1,70 @@
+require "tempfile"
+
 module Textus
   class Manifest
     class Entry
       module Publish
-        # publish.to: copy the entry's one stored file to each fixed repo path.
-        # The behaviour of any entry that declares `publish: { to: [...] }`.
+        # publish.to: render or copy the entry's stored data to each fixed repo path.
+        # The behaviour of any entry that declares `publish: [{ to: ... }, ...]`.
+        # ADR 0094: iterates publish_targets (to-targets), rendering through a
+        # template when the target declares one, or copying verbatim otherwise.
         class ToPaths < Mode
-          def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-            targets = Array(entry.publish_to)
+          def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument,Metrics/AbcSize
+            targets = entry.publish_targets.select(&:to_target?)
             return nil if targets.empty?
 
-            source_path = pctx.manifest.resolver.resolve(entry.key).path
-            envelope = pctx.reader.call(entry.key)
+            data_path = pctx.manifest.resolver.resolve(entry.key).path
+            envelope  = pctx.reader.call(entry.key)
+            renderer  = Textus::Write::PublishRenderer.new(template_loader: ->(n) { pctx.read_template(n) })
+            content = nil # parsed lazily; the data's `content` (always _meta-free)
 
-            targets.each do |rel|
-              target_abs = File.join(pctx.repo_root, rel)
-              Textus::Ports::Publisher.publish(source: source_path, target: target_abs, store_root: pctx.root)
-              pctx.emit(:file_published, key: entry.key, envelope: envelope, source: source_path, target: target_abs)
+            targets.each do |t|
+              if t.renders?
+                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                publish_bytes(render_bytes(t, content, renderer, pctx), entry.key, t, pctx, data_path, envelope)
+              elsif strip_meta?(entry)
+                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: content)
+                publish_bytes(bytes, entry.key, t, pctx, data_path, envelope)
+              else
+                # opaque / command / non-structured — publish the stored file as-is
+                target_abs = File.join(pctx.repo_root, t.to)
+                Textus::Ports::Publisher.publish(source: data_path, target: target_abs, store_root: pctx.root)
+                pctx.emit(:entry_published, key: entry.key, envelope: envelope, source: data_path, target: target_abs)
+              end
             end
 
-            { kind: :built, value: { "key" => entry.key, "path" => source_path, "published_to" => targets } }
+            { kind: :built, value: { "key" => entry.key, "path" => data_path, "published_to" => targets.map(&:to) } }
+          end
+
+          private
+
+          # A structured-data entry that textus owns: its `_meta` stays in the
+          # store, so the published file is the re-serialized meta-free content.
+          # An external (command) entry is opaque — never parse/re-serialize it.
+          def strip_meta?(entry)
+            !entry.external? && %w[json yaml].include?(entry.format.to_s)
+          end
+
+          def render_bytes(target, content, renderer, pctx)
+            boot = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
+            renderer.bytes_for(target: target, data: content, boot: boot)
+          end
+
+          # Write bytes to a system temp, publish (recording the persistent data
+          # file as the sentinel source), then remove the temp — the store is
+          # never polluted with render artifacts.
+          def publish_bytes(bytes, key, target, pctx, data_path, envelope)
+            target_abs = File.join(pctx.repo_root, target.to)
+            Tempfile.create(["textus-publish", File.extname(target.to)]) do |f|
+              f.binmode
+              f.write(bytes)
+              f.flush
+              Textus::Ports::Publisher.publish(
+                source: f.path, target: target_abs, store_root: pctx.root, provenance_source: data_path,
+              )
+            end
+            pctx.emit(:entry_published, key: key, envelope: envelope, source: data_path, target: target_abs)
           end
         end
       end

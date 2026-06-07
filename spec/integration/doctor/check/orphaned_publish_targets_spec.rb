@@ -17,7 +17,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
     YAML
   end
 

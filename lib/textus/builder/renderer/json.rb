@@ -5,27 +5,12 @@ module Textus
     class Renderer
       class Json < Renderer
         def call(mentry:, data:)
-          content = mentry.template ? parse_rendered_template!(mentry, data) : default_shape(mentry, data)
-          final = mentry.provenance ? InjectMeta.call(content, mentry) : content
+          content = default_shape(mentry, data)
+          final   = InjectMeta.call(content, mentry)
           Entry.for_format("json").serialize(meta: {}, body: "", content: final)
         end
 
         private
-
-        def parse_rendered_template!(mentry, data)
-          rendered = Mustache.render(@template_loader.call(mentry.template), data)
-          begin
-            parsed = ::JSON.parse(rendered)
-          rescue ::JSON::ParserError => e
-            raise BadRender.new("entry '#{mentry.key}': template did not render valid json: #{e.message}", format: "json")
-          end
-          unless parsed.is_a?(Hash)
-            raise BadRender.new("entry '#{mentry.key}': template must render a top-level object/mapping",
-                                format: "json")
-          end
-
-          parsed
-        end
 
         def default_shape(mentry, data)
           has_transform = mentry.is_a?(Textus::Manifest::Entry::Derived) &&

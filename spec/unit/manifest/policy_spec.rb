@@ -294,8 +294,8 @@ RSpec.describe Textus::Manifest::Policy do
       roles: [{ name: automation, can: [reconcile] }]
       zones: [{ name: artifacts, kind: machine }]
       entries:
-        - { key: artifacts.x, path: artifacts/x.md, zone: artifacts, owner: automation:auto, kind: derived,
-            source: { from: template, template: x.mustache, project: { select: [knowledge.notes], pluck: "*" } } }
+        - { key: artifacts.x, path: artifacts/x.json, zone: artifacts, owner: automation:auto, kind: derived,
+            source: { from: project, select: [knowledge.notes], pluck: "*" } }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     entry = d2.entries.first
@@ -339,7 +339,7 @@ RSpec.describe Textus::Manifest::Policy do
       entries:
         - { key: artifacts.feeds.cal, path: feeds/cal.json, zone: artifacts, kind: intake, source: { from: handler, handler: noop } }
         - { key: artifacts.derived.idx, path: idx.json, zone: artifacts, owner: automation:auto, kind: derived,
-            format: json, source: { from: template, project: { select: ["x.*"] } } }
+            format: json, source: { from: project, select: ["x.*"] } }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     policy2 = d2.policy

@@ -12,7 +12,7 @@ RSpec.describe Textus::Hooks::Loader do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "a.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :a) { |config:, args:, **| [config, args]; { _meta: {}, body: "a" } }
+          reg.on(:resolve_handler, :a) { |config:, args:, **| [config, args]; { _meta: {}, body: "a" } }
         end
       RUBY
       File.write(File.join(dir, "b.rb"), <<~RUBY)
@@ -23,7 +23,7 @@ RSpec.describe Textus::Hooks::Loader do
 
       described_class.new(events: events, rpc: rpc).load_dir(dir)
 
-      expect(rpc.names(:resolve_intake)).to include(:a)
+      expect(rpc.names(:resolve_handler)).to include(:a)
       expect(rpc.names(:transform_rows)).to include(:b)
     end
   end
@@ -32,7 +32,7 @@ RSpec.describe Textus::Hooks::Loader do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "a.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :a) { |config:, args:, **| [config, args]; { _meta: {}, body: "a" } }
+          reg.on(:resolve_handler, :a) { |config:, args:, **| [config, args]; { _meta: {}, body: "a" } }
         end
       RUBY
 
@@ -45,7 +45,7 @@ RSpec.describe Textus::Hooks::Loader do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "a.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :iso) { |config:, args:, **| [config, args]; { _meta: {}, body: "x" } }
+          reg.on(:resolve_handler, :iso) { |config:, args:, **| [config, args]; { _meta: {}, body: "x" } }
         end
       RUBY
 
@@ -59,8 +59,8 @@ RSpec.describe Textus::Hooks::Loader do
       t2 = Thread.new { described_class.new(events: ev_b, rpc: rpc_b).load_dir(dir) }
       t2.join
 
-      expect(rpc_a.names(:resolve_intake)).to include(:iso)
-      expect(rpc_b.names(:resolve_intake)).to include(:iso)
+      expect(rpc_a.names(:resolve_handler)).to include(:iso)
+      expect(rpc_b.names(:resolve_handler)).to include(:iso)
     end
   end
 
@@ -94,12 +94,12 @@ RSpec.describe Textus::Hooks::Loader do
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "a.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :ok) { |config:, args:, **| [config, args]; { _meta: {}, body: "ok" } }
+          reg.on(:resolve_handler, :ok) { |config:, args:, **| [config, args]; { _meta: {}, body: "ok" } }
         end
       RUBY
 
       expect { described_class.new(events: events, rpc: rpc).load_dir(dir) }.not_to raise_error
-      expect(rpc.names(:resolve_intake)).to include(:ok)
+      expect(rpc.names(:resolve_handler)).to include(:ok)
     end
   end
 

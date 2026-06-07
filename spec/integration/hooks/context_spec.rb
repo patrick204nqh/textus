@@ -37,8 +37,8 @@ RSpec.describe Textus::Hooks::Context do
 
   it "publish_followup routes through the bus with the same ctx" do
     seen = nil
-    store.events.register(:entry_put, :spy) { |key:, **| seen = key }
-    ctx.publish_followup(:entry_put, key: "proposals.notes", envelope: nil)
+    store.events.register(:entry_written, :spy) { |key:, **| seen = key }
+    ctx.publish_followup(:entry_written, key: "proposals.notes", envelope: nil)
     expect(seen).to eq("proposals.notes")
   end
 

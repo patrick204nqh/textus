@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "from": [
+      "knowledge.project",
+      "knowledge.runbooks"
+    ],
+    "reduce": "orientation_reducer"
+  },
+  "project": {
+    "name": "textus",
+    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor."
+  },
+  "runbooks": [
+    {
+      "name": "adr",
+      "description": "Add an Architecture Decision Record for a load-bearing decision."
+    },
+    {
+      "name": "release",
+      "description": "Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR."
+    }
+  ]
+}

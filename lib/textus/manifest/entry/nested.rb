@@ -6,11 +6,10 @@ module Textus
       # Entry::Publish::* — Nested is just the value (attributes + ignore
       # predicate) those modes read.
       class Nested < Base
-        attr_reader :publish_tree, :ignore
+        attr_reader :ignore
 
-        def initialize(publish_tree: nil, ignore: nil, **rest)
+        def initialize(ignore: nil, **rest)
           super(**rest)
-          @publish_tree = publish_tree
           @ignore = Array(ignore)
         end
 
@@ -24,8 +23,8 @@ module Textus
         KIND = :nested
 
         def self.from_raw(common, raw)
+          # publish_tree is derived from publish_targets (ADR 0094) via Base#publish_tree
           new(
-            publish_tree: raw.dig("publish", "tree"), # ADR 0052: typed publish block
             ignore: raw["ignore"],
             **common,
           )

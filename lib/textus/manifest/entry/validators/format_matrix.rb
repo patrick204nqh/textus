@@ -10,15 +10,9 @@ module Textus
               raise UsageError.new("entry '#{entry.key}': #{e.message}")
             end
 
-            if entry.format == "text" && !entry.schema.nil?
-              raise UsageError.new("entry '#{entry.key}': text format must not declare a schema")
-            end
+            return unless entry.format == "text" && !entry.schema.nil?
 
-            has_template = !entry.template.nil?
-            return unless entry.derived? && entry.projection? && !has_template &&
-                          %w[markdown text].include?(entry.format) && !entry.nested?
-
-            raise UsageError.new("entry '#{entry.key}': #{entry.format} entries in a generator zone require a template")
+            raise UsageError.new("entry '#{entry.key}': text format must not declare a schema")
           end
         end
       end

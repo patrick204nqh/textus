@@ -96,13 +96,22 @@ module SpecLayout
   # spec body outside the guards that assert its rejection. NOT a ban on live
   # words: `template`/`project`/`source`/`retention` are spelled freely; `compute`
   # and `lifecycle`/`materialize` are omitted (they may appear in ADR prose).
-  RETIRED_MANIFEST_TOKENS = %w[upkeep on_change source_change on_expire].freeze
+  RETIRED_MANIFEST_TOKENS = %w[
+    upkeep on_change source_change on_expire
+    inject_boot provenance
+  ].freeze
 
   # Specs allowed to mention the retired manifest tokens BECAUSE their job is to
-  # assert those tokens are rejected (plus the guard's own spec, which carries
-  # them as test data).
+  # assert those tokens are rejected, or they test the ADR 0094 publish-target
+  # vocabulary where inject_boot/provenance appear in the new (permitted) context
+  # (plus the guard's own spec, which carries them as test data).
   RETIRED_MANIFEST_TOKEN_GUARDS = %w[
     schema_spec.rb source_retention_load_spec.rb spec_layout_spec.rb
+    data_publish_load_spec.rb
+    publish_target_spec.rb source_spec.rb publish_targets_spec.rb
+    publish_renderer_spec.rb
+    mcp_config_build_spec.rb plugin_manifest_build_spec.rb
+    entry_spec.rb
   ].freeze
 
   # Retired manifest tokens present in `source` as whole words, or [] when clean.
