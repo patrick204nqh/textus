@@ -9,8 +9,8 @@ the parse. This keeps SPEC §5.4 intact — core makes no implicit network calls
 Built-in parsers available to delegate to: `json`, `csv`, `markdown-links`,
 `ical-events`, `rss` (see [`../reference/zones.md`](../reference/zones.md)). Each
 expects raw bytes in `config["bytes"]`. Reach them from your hook via
-`caps.rpc.invoke(:resolve_intake, :<name>, …)` — `caps` is the
-`Textus::Container` handed to every `:resolve_intake` handler, and `caps.rpc` is
+`caps.rpc.invoke(:resolve_handler, :<name>, …)` — `caps` is the
+`Textus::Container` handed to every `:resolve_handler` handler, and `caps.rpc` is
 the registry the built-ins live on.
 
 ## HTTP JSON API
@@ -18,10 +18,10 @@ the registry the built-ins live on.
 ```ruby
 # .textus/hooks/http_json.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :http_json) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :http_json) do |caps:, config:, args:|
     require "net/http"
     body = Net::HTTP.get(URI(config.fetch("url")))         # YOU own the I/O
-    caps.rpc.invoke(:resolve_intake, :json,                # delegate to the built-in parser
+    caps.rpc.invoke(:resolve_handler, :json,                # delegate to the built-in parser
                     caps: caps, config: { "bytes" => body }, args: args)
   end
 end
@@ -34,12 +34,12 @@ entries:
     path: artifacts/feeds/api/users.md
     zone: artifacts
     kind: intake
-    intake: { handler: http_json, config: { url: "https://api.example.com/users" } }
+    source: { from: handler, handler: http_json, ttl: 15m, config: { url: "https://api.example.com/users" } }
 rules:
-  - { match: artifacts.feeds.api.**, upkeep: { ttl: 15m, action: refresh } }
+  - { match: artifacts.feeds.api.**, retention: { ttl: 90d, action: archive } }   # orthogonal GC
 ```
 
-Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stale `action: refresh` entry; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
+Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every intake entry past its `source.ttl`; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
 
 > **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
 > top level must be a **mapping** (an object). If your source is a top-level
@@ -47,18 +47,19 @@ Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every stal
 > wrap it in an object (`{ "items": [...] }`) or keep the entry `format:
 > markdown` (the default), which stores the parsed YAML as the body.
 
-> The recipes below show only the hook — pair each with an `intake:` entry naming
-> the handler plus a `rules:` `upkeep` block, exactly like the HTTP JSON example above.
+> The recipes below show only the hook — pair each with a `kind: intake` entry whose
+> `source: { from: handler, handler: ..., ttl: ... }` names the handler, exactly like
+> the HTTP JSON example above (add an orthogonal `retention:` rule if you want GC).
 
 ## RSS feed
 
 ```ruby
 # .textus/hooks/http_rss.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :http_rss) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :http_rss) do |caps:, config:, args:|
     require "net/http"
     body = Net::HTTP.get(URI(config.fetch("url")))
-    caps.rpc.invoke(:resolve_intake, :rss,
+    caps.rpc.invoke(:resolve_handler, :rss,
                     caps: caps, config: { "bytes" => body }, args: args)
   end
 end
@@ -69,10 +70,10 @@ end
 ```ruby
 # .textus/hooks/http_ical.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :http_ical) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :http_ical) do |caps:, config:, args:|
     require "net/http"
     body = Net::HTTP.get(URI(config.fetch("url")))
-    caps.rpc.invoke(:resolve_intake, :"ical-events",
+    caps.rpc.invoke(:resolve_handler, :"ical-events",
                     caps: caps, config: { "bytes" => body }, args: args)
   end
 end
@@ -83,9 +84,9 @@ end
 ```ruby
 # .textus/hooks/local_csv.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_csv) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :local_csv) do |caps:, config:, args:|
     body = File.read(config.fetch("path"))                 # local read, no network
-    caps.rpc.invoke(:resolve_intake, :csv,
+    caps.rpc.invoke(:resolve_handler, :csv,
                     caps: caps, config: { "bytes" => body }, args: args)
   end
 end
@@ -99,7 +100,7 @@ directly (`{ _meta:, body: }`):
 ```ruby
 # .textus/hooks/notion.rb
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :notion) do |config:, **|
+  reg.on(:resolve_handler, :notion) do |config:, **|
     page_id = config.fetch("page_id")
     body = NotionClient.new.fetch_markdown(page_id)        # YOU own the SDK + auth
     { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: body }

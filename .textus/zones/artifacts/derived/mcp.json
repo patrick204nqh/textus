@@ -1,4 +1,10 @@
 {
+  "_meta": {
+    "from": [
+      "knowledge.project"
+    ],
+    "reduce": "mcp_config_reducer"
+  },
   "mcpServers": {
     "textus": {
       "command": "bundle",

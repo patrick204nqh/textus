@@ -1,35 +1,15 @@
----
-generated:
-  from:
-  - knowledge.project
-  - knowledge.runbooks
----
 <!--
 This file is the orientation any agent (Claude Code, Cursor, etc.) reads on
 session start. It is the projection of textus over `.textus/zones/...`. Do
 not edit by hand — edit the source under `.textus/zones/...` and run
 `textus build`.
 
-→ Context store: `.textus/` (textus, protocol textus/3).
+→ Context store: `.textus/` (textus, protocol ).
 → Talk to it over MCP (`.mcp.json` wires the `textus` server; tools are `mcp__textus__*`) or the `textus` CLI.
 → Run `textus boot` for the catalog + write flows; `textus capabilities` for the full machine-readable verb contract.
 → Write authority by zone:
-    - **knowledge** (human ) — the maintained source of truth about the repo (project + runbooks)
-    - **notebook** (agent ) — the agent's own durable working notes across sessions
-    - **proposals** (human agent ) — changes awaiting a human accept
-    - **artifacts** (automation ) — machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs
 
 → Agent protocol (from `textus boot`):
-   • **read** — find and read an entry
-     `list (zone:, prefix:) — discover keys without reading bodies`
-     `get KEY — returns the entry envelope`
-   • **write** — create or update an entry
-     `schema KEY — learn the _meta field shape (required, optional, field types) before writing`
-     `assemble an envelope: { _meta: {…}, body: "…" }`
-     `put KEY — persist it (role-gated); pass if_etag to guard a concurrent edit`
-   • **propose** — agent suggests a change for human review
-     agent: `propose KEY — writes the change into the proposals zone for review`
-     human: `accept proposals.KEY — promotes the proposal into its target zone`
 -->
 
 
