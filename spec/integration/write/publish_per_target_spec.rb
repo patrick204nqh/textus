@@ -36,8 +36,10 @@ RSpec.describe "one publish path renders per target (ADR 0094)" do
     expect(File.read(File.join(tmp, "OUT.md"))).to include("knowledge.a")
   end
 
-  it "copies the json target verbatim (data == output)" do
-    stored = File.read(File.join(root, "zones/artifacts/cat.json"))
-    expect(File.read(File.join(tmp, "out.json"))).to eq(stored)
+  it "publishes the json target as clean content (no textus _meta)" do
+    published = JSON.parse(File.read(File.join(tmp, "out.json")))
+    expect(published).not_to have_key("_meta")
+    expect(published).to have_key("entries")
+    expect(JSON.parse(File.read(File.join(root, "zones/artifacts/cat.json")))).to have_key("_meta")
   end
 end
