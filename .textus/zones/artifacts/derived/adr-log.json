@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0097",
+      "title": "Reference docs become produced (projected/introspected, published out)",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0097-produced-reference-docs"
+    },
+    {
       "number": "0096",
       "title": "Does the conformance tier earn a distinct category?",
       "date": "2026-06-07",

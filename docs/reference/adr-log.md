@@ -6,6 +6,7 @@
 
 | # | Decision | Status |
 |---|---|---|
+| [0097](../architecture/decisions/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) | Accepted |
 | [0096](../architecture/decisions/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? | Proposed |
 | [0095](../architecture/decisions/0095-collapse-produced-kind.md) | collapse `derived`/`intake` into one `produced` kind | Accepted |
 | [0094](../architecture/decisions/0094-source-data-publish-render.md) | `source` produces data; one publish path renders | Accepted |
