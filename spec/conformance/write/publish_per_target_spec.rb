@@ -43,3 +43,37 @@ RSpec.describe "one publish path renders per target (ADR 0094)" do
     expect(JSON.parse(File.read(File.join(root, "zones/artifacts/cat.json")))).to have_key("_meta")
   end
 end
+
+RSpec.describe "json leaf verbatim publish (ADR 0094 — Base#external?)" do
+  include_context "textus_store_fixture"
+
+  let(:store) do
+    store_from_manifest(root, zones: %w[knowledge],
+                              manifest: <<~YAML,
+                                version: textus/3
+                                zones:
+                                  - { name: knowledge, kind: canon }
+                                entries:
+                                  - key: knowledge.cfg
+                                    kind: leaf
+                                    path: knowledge/cfg.json
+                                    zone: knowledge
+                                    publish:
+                                      - { to: out.json }
+                              YAML
+                              files: {
+                                "zones/knowledge/cfg.json" => %({"_meta":{"key":"knowledge.cfg"},"content":{"a":1}}\n),
+                              })
+  end
+
+  it "publishes a json leaf verbatim without crashing (Base#external?)" do
+    expect do
+      Textus::Maintenance::Produce.new(container: store.container, call: test_ctx(role: "automation"))
+                                  .call(keys: ["knowledge.cfg"])
+    end.not_to raise_error
+
+    published = JSON.parse(File.read(File.join(tmp, "out.json")))
+    expect(published).not_to have_key("_meta")
+    expect(published).to eq("content" => { "a" => 1 })
+  end
+end

@@ -30,6 +30,12 @@ module Textus
         def intake?  = false
         def leaf?    = false
 
+        # Production traits. Default false on Base (a leaf/intake entry is neither
+        # an out-of-band command nor a projection); Derived overrides both from
+        # its source. Lets publish modes call these without a `respond_to?` guard.
+        def external?   = false
+        def projection? = false
+
         # Whether git should track this entry's file. Default true; an entry
         # marked `tracked: false` in the manifest stays protocol-readable but is
         # listed in the generated `.gitignore` (ADR 0043). Cross-cutting, so it
@@ -44,9 +50,6 @@ module Textus
         # Nil stubs for cross-cutting optional attrs. Subclasses override the
         # ones they own. Validators and serializers can call these directly
         # without `respond_to?` guards.
-        def template       = nil
-        def inject_boot    = false # rubocop:disable Naming/PredicateMethod
-        def provenance     = true  # rubocop:disable Naming/PredicateMethod
         def events         = {}
         def ignore         = []
 

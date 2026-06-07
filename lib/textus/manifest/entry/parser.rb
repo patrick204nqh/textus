@@ -28,7 +28,7 @@ module Textus
         # Domain::Policy::Source; kind (intake/derived) is read from source.from.
         def self.parse_source(raw, key)
           block = raw["source"] or
-            raise BadManifest.new("entry '#{key}' requires a source: { from: handler|template|command, ... }")
+            raise BadManifest.new("entry '#{key}' requires a source: { from: project|handler|command, ... }")
 
           Textus::Domain::Policy::Source.new(block)
         end

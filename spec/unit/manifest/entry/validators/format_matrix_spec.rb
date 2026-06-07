@@ -11,7 +11,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
-      template: opts[:template],
     )
   end
 
@@ -25,7 +24,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: false,
       format: opts.fetch(:format, "markdown"),
       schema: opts[:schema],
-      template: opts[:template],
       external?: opts.fetch(:external, false),
       projection?: opts.fetch(:projection, !opts.fetch(:external, false)),
     )
@@ -41,7 +39,6 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
       intake?: true,
       format: opts.fetch(:format, "text"),
       schema: opts[:schema],
-      template: opts[:template],
     )
   end
 
