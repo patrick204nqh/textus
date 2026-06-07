@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0103",
+      "title": "the root README is canon, published out",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0103-root-readme-is-canon"
+    },
+    {
       "number": "0102",
       "title": "produce the event catalog from the registry",
       "date": "2026-06-08",

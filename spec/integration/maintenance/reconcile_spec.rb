@@ -79,6 +79,31 @@ RSpec.describe Textus::Maintenance::Reconcile do
     end
   end
 
+  describe "authored leaf with a publish.to target (ADR 0103)" do
+    let(:store) do
+      store_from_manifest(root, zones: %w[knowledge],
+                                manifest: <<~YAML,
+                                  version: textus/3
+                                  zones:
+                                    - { name: knowledge, kind: canon }
+                                  entries:
+                                    - key: knowledge.readme
+                                      path: knowledge/readme.md
+                                      zone: knowledge
+                                      kind: leaf
+                                      publish:
+                                        - { to: README.md }
+                                  rules: []
+                                YAML
+                                files: { "zones/knowledge/readme.md" => "# Hello\n" })
+    end
+
+    it "converges the leaf's publish.to target each pass (not just derived/tree)" do
+      expect(result["produced"]).to include("knowledge.readme")
+      expect(File.read(File.join(tmp, "README.md"))).to eq("# Hello\n")
+    end
+  end
+
   describe "sweep failure isolation (:reconcile_failed)" do
     # A canon entry under a retention rule: the automation caller lacks `author`,
     # so KeyDelete raises WriteForbidden — a real Textus::Error landing in the

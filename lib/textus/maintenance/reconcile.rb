@@ -60,13 +60,18 @@ module Textus
       # The full produce scope (ADR 0093): every derived entry (always
       # re-render — cheap, idempotent), every entry that mirrors a publish_tree
       # (the nested-subtree publishers, ADR 0047 — mirrored each pass so a
-      # removed source leaf is swept from the published tree), plus every intake
-      # entry past its source.ttl (re-pull only when due, so external sources
-      # aren't hammered). Ttl-less intake entries (:no_policy) are skipped —
-      # they have no freshness contract and are never auto-re-pulled (ADR 0099).
+      # removed source leaf is swept from the published tree), every authored
+      # leaf with a `publish.to` target (the single-file canon publishers —
+      # docs/README.md, the architecture index, the root README; ADR 0103 —
+      # converged each pass so a stale published copy is rewritten and the
+      # `reconcile`-is-a-no-op check guards them), plus every intake entry past
+      # its source.ttl (re-pull only when due, so external sources aren't
+      # hammered). Ttl-less intake entries (:no_policy) are skipped — they have
+      # no freshness contract and are never auto-re-pulled (ADR 0099). All are
+      # idempotent: publish writes only when the target's content changed.
       def produce_scope(prefix, zone, file_stat)
         publishable = @container.manifest.data.entries
-                                .select { |e| e.derived? || !e.publish_tree.nil? }
+                                .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
                                 .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
         stale_intake = Textus::Domain::Freshness::Evaluator.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,

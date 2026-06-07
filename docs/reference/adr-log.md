@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0103](../architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
 | [0102](../architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry | 2026-06-08 | Proposed |
 | [0101](../architecture/decisions/0101-interface-fossils.md) | interface-layer fossils | 2026-06-07 | Accepted |
 | [0100](../architecture/decisions/0100-produce-topology.md) | `produce/` topology + de-fossilized names | 2026-06-07 | Accepted |
