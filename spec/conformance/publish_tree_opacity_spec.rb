@@ -23,7 +23,7 @@ RSpec.describe "publish_tree opacity (ADR 0047)" do
           kind: nested
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
     YAML
   end
 
