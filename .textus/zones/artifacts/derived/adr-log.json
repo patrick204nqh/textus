@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0099",
+      "title": "one `Freshness` evaluator",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0099-one-freshness-evaluator"
+    },
+    {
       "number": "0098",
       "title": "Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status",
       "date": "2026-06-07",
