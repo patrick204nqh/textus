@@ -1,21 +1,19 @@
 module Textus
   module Domain
     module Policy
-      # An entry's production declaration (ADR 0093). Unifies the former
-      # `intake:` block and the derived `compute:`/`template:` blocks into one
-      # `source:` field: the entry's bytes are PRODUCED from upstream, and the
-      # only difference between the kinds is the staleness signal —
-      #   from: handler  -> intake  (upstream UNOBSERVABLE; staleness = ttl proxy)
-      #   from: template -> derived (upstream OBSERVABLE; staleness = rdeps)
-      #   from: command  -> derived/external (out-of-band runner; staleness only)
+      # An entry's data-acquisition declaration (ADR 0094). `source:` says HOW the
+      # entry's data is acquired; rendering is a publish concern, so there are no
+      # template/render fields here. `from` is the acquire + staleness axis:
+      #   from: project -> derived  (internal projection; observable -> rdeps staleness)
+      #   from: handler -> intake   (external fetch; unobservable -> ttl staleness)
+      #   from: command -> external (out-of-band runner; staleness only, textus never runs it)
       # `on_write` (sync|async, default async) is the write-trigger strategy for
-      # observable (template) sources; it is meaningless for intake.
+      # observable (project) sources; meaningless for intake/command.
       class Source
-        FROMS      = %w[handler template command].freeze
+        FROMS      = %w[project handler command].freeze
         STRATEGIES = %w[async sync].freeze
 
-        attr_reader :from, :handler, :config, :template, :project,
-                    :command, :sources, :inject_boot, :provenance
+        attr_reader :from, :handler, :config, :command, :sources
 
         def initialize(raw)
           @from = raw["from"].to_s
@@ -28,63 +26,51 @@ module Textus
             raise Textus::BadManifest.new("source.on_write must be one of #{STRATEGIES.join("/")}, got #{@on_write.inspect}")
           end
 
-          @ttl         = raw["ttl"]
-          @inject_boot = raw["inject_boot"] == true
-          @provenance  = raw.fetch("provenance", true) != false
+          @ttl = raw["ttl"]
+          @projection = {}
 
           case @from
-          when "handler"  then init_handler(raw)
-          when "template" then init_template(raw)
-          when "command"  then init_command(raw)
+          when "project" then init_project(raw)
+          when "handler" then init_handler(raw)
+          when "command" then init_command(raw)
           end
         end
 
         def kind        = @from == "handler" ? :intake : :derived
         def external?   = @from == "command"
-        def projection? = @from == "template"
+        def projection? = @from == "project"
         def sync?       = @on_write == "sync"
         def ttl_seconds = @ttl.nil? ? nil : Textus::Domain::Duration.seconds(@ttl)
 
-        # Projection field accessors (ADR 0093) — mirror the old
-        # Derived::Projection Data surface so the builder/renderers read them
-        # uniformly off a Policy::Source. nil when this is not a template source
-        # or the field is absent.
-        def select    = project_field("select")
-        def pluck     = project_field("pluck")
-        def sort_by   = project_field("sort_by")
-        def transform = project_field("transform")
+        # Flattened projection accessors (ADR 0094) — read directly off the source
+        # block; nil when absent or not a projection source.
+        def select    = @projection["select"]
+        def pluck     = @projection["pluck"]
+        def sort_by   = @projection["sort_by"]
+        def transform = @projection["transform"]
 
-        # The projection spec hash the builder feeds to Textus::Projection
-        # (string keys, the four projection fields). {} when no projection.
-        def projection_spec = @project || {}
+        # The projection spec hash fed to Textus::Projection (string keys, only the
+        # present fields). {} when not a projection.
+        def projection_spec = @projection.dup
 
         private
 
-        def project_field(key) = @project && @project[key]
+        def init_project(raw)
+          %w[select pluck sort_by transform].each { |f| @projection[f] = raw[f] if raw.key?(f) }
+          return unless @projection["select"].nil? && @projection["transform"].nil?
+
+          raise Textus::BadManifest.new("source (from: project) requires `select:` and/or `transform:`")
+        end
 
         def init_handler(raw)
           @handler = raw["handler"] or
-            raise Textus::BadManifest.new("source (from: handler) requires a 'handler:' field")
+            raise Textus::BadManifest.new("source (from: handler) requires a `handler:` field")
           @config = raw["config"] || {}
-        end
-
-        # A template projection may omit `template:` only when it carries a
-        # `project:` block — the "templateless escape hatch" for json/yaml
-        # outputs, where the projected/reduced data is rendered directly by the
-        # format renderer (Renderer::Json#default_shape). FormatMatrix still
-        # rejects templateless markdown/text. A source with neither template nor
-        # project is meaningless and rejected.
-        def init_template(raw)
-          @template = raw["template"]
-          @project = raw["project"]
-          return unless @template.nil? && @project.nil?
-
-          raise Textus::BadManifest.new("source (from: template) requires a 'template:' or 'project:' field")
         end
 
         def init_command(raw)
           @command = raw["command"] or
-            raise Textus::BadManifest.new("source (from: command) requires a 'command:' field")
+            raise Textus::BadManifest.new("source (from: command) requires a `command:` field")
           @sources = raw["sources"] || []
         end
       end
