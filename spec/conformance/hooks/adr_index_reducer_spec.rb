@@ -94,6 +94,16 @@ RSpec.describe "adr_index_reducer" do
     expect(out).to have_key("adrs")
   end
 
+  it "flattens markdown links in status to label text (data normalization) and does not escape pipes" do
+    rows = [{ "_key" => "knowledge.decisions.0011-x",
+              "body" => "# ADR 0011 — X\n\n**Date:** 2025-01-01\n**Status:** Superseded by [ADR 0031](./0031-unified-guard.md)\n" }]
+    out = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
+    status = out["adrs"].first["status"]
+    expect(status).to eq("Superseded by ADR 0031")
+    expect(status).not_to include("\\|")
+    expect(status).not_to include("](")
+  end
+
   it "produces deterministic output (same input → same output)" do
     r1 = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})
     r2 = rpc.invoke(:transform_rows, :adr_index_reducer, rows: rows, caps: caps, config: {})

@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0098",
+      "title": "Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0098-docs-ssot-cleanup"
+    },
+    {
       "number": "0097",
       "title": "Reference docs become produced (projected/introspected, published out)",
       "date": "2026-06-07",
