@@ -1,3 +1,5 @@
+require "tempfile"
+
 module Textus
   class Manifest
     class Entry
@@ -15,20 +17,21 @@ module Textus
             envelope  = pctx.reader.call(entry.key)
             renderer  = Textus::Write::PublishRenderer.new(template_loader: ->(n) { pctx.read_template(n) })
             content = nil # parsed lazily; the data's `content` (always _meta-free)
-            parse_content = lambda do
-              content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
-            end
 
             targets.each do |t|
-              src =
-                if t.renders?
-                  write_render(t, parse_content.call, renderer, pctx, data_path)
-                else
-                  verbatim_source(entry, parse_content, data_path)
-                end
-              target_abs = File.join(pctx.repo_root, t.to)
-              Textus::Ports::Publisher.publish(source: src, target: target_abs, store_root: pctx.root)
-              pctx.emit(:entry_published, key: entry.key, envelope: envelope, source: src, target: target_abs)
+              if t.renders?
+                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                publish_bytes(render_bytes(t, content, renderer, pctx), entry.key, t, pctx, data_path, envelope)
+              elsif strip_meta?(entry)
+                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: content)
+                publish_bytes(bytes, entry.key, t, pctx, data_path, envelope)
+              else
+                # opaque / command / non-structured — publish the stored file as-is
+                target_abs = File.join(pctx.repo_root, t.to)
+                Textus::Ports::Publisher.publish(source: data_path, target: target_abs, store_root: pctx.root)
+                pctx.emit(:entry_published, key: entry.key, envelope: envelope, source: data_path, target: target_abs)
+              end
             end
 
             { kind: :built, value: { "key" => entry.key, "path" => data_path, "published_to" => targets.map(&:to) } }
@@ -36,31 +39,32 @@ module Textus
 
           private
 
-          # Render to a temp file beside the data artifact so Publisher's
-          # copy+sentinel primitive is unchanged.
-          def write_render(target, content, renderer, pctx, data_path)
-            boot  = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
-            bytes = renderer.bytes_for(target: target, data: content, boot: boot)
-            tmp   = "#{data_path}.#{File.basename(target.to)}.rendered"
-            File.binwrite(tmp, bytes)
-            tmp
+          # A structured-data entry that textus owns: its `_meta` stays in the
+          # store, so the published file is the re-serialized meta-free content.
+          # An external (command) entry is opaque — never parse/re-serialize it.
+          def strip_meta?(entry)
+            !entry.external? && %w[json yaml].include?(entry.format.to_s)
           end
 
-          # ADR 0094: published artifacts are clean content — textus's `_meta`
-          # stays in the store, never the consumer file. For a structured data
-          # format, re-serialize the `content` (without `_meta`); for any other
-          # format the stored file IS the content, so copy it verbatim. An
-          # external (command) entry is an opaque out-of-band artifact — copy it
-          # literally, never parse/re-serialize (it may not even be valid
-          # json/yaml that textus owns).
-          def verbatim_source(entry, parse_content, data_path)
-            return data_path if entry.external?
-            return data_path unless %w[json yaml].include?(entry.format.to_s)
+          def render_bytes(target, content, renderer, pctx)
+            boot = target.inject_boot ? Textus::Boot.build(container: pctx.container) : nil
+            renderer.bytes_for(target: target, data: content, boot: boot)
+          end
 
-            bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: parse_content.call)
-            tmp   = "#{data_path}.clean.published"
-            File.binwrite(tmp, bytes)
-            tmp
+          # Write bytes to a system temp, publish (recording the persistent data
+          # file as the sentinel source), then remove the temp — the store is
+          # never polluted with render artifacts.
+          def publish_bytes(bytes, key, target, pctx, data_path, envelope)
+            target_abs = File.join(pctx.repo_root, target.to)
+            Tempfile.create(["textus-publish", File.extname(target.to)]) do |f|
+              f.binmode
+              f.write(bytes)
+              f.flush
+              Textus::Ports::Publisher.publish(
+                source: f.path, target: target_abs, store_root: pctx.root, provenance_source: data_path
+              )
+            end
+            pctx.emit(:entry_published, key: key, envelope: envelope, source: data_path, target: target_abs)
           end
         end
       end

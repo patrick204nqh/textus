@@ -11,12 +11,12 @@ module Textus
     # mirror the target's repo-relative layout so consumer directories aren't
     # polluted with `.textus-managed.json` siblings.
     module Publisher
-      def self.publish(source:, target:, store_root:)
+      def self.publish(source:, target:, store_root:, provenance_source: source)
         FileUtils.mkdir_p(File.dirname(target))
         guard_clobber(source, target, store_root)
         File.delete(target) if File.symlink?(target)
         FileUtils.cp(source, target)
-        Textus::Ports::SentinelStore.new.write!(target: target, source: source, store_root: store_root)
+        Textus::Ports::SentinelStore.new.write!(target: target, source: provenance_source, store_root: store_root)
       end
 
       # Removes a previously-published file and its sentinel. No-op unless the
