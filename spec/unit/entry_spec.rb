@@ -29,7 +29,8 @@ RSpec.describe Textus::Entry do
 
     it "exposes publish_to on Base (not just on subclasses)" do
       expect(build_leaf.publish_to).to eq([])
-      expect(build_leaf(publish_to: ["A.md"]).publish_to).to eq(["A.md"])
+      target = Textus::Domain::Policy::PublishTarget.new("to" => "A.md")
+      expect(build_leaf(publish_targets: [target]).publish_to).to eq(["A.md"])
     end
 
     it "returns nil from Base stubs for optional cross-cutting attrs" do
