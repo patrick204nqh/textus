@@ -10,17 +10,13 @@
 # when the heading omits the "ADR" prefix (e.g. 0005-style) or carries a
 # malformed version string (0001-style heading bug). Rows whose key does not
 # match the NNNN-slug pattern (e.g. the README) are silently excluded.
-Textus.hook do |reg|
+Textus.hook do |reg| # rubocop:disable Metrics/BlockLength
   reg.on(:transform_rows, :adr_index_reducer) do |rows:, **|
-    # The ADR files carry relative markdown links in their headers (e.g.
-    # "Superseded by [ADR 0031](./0031-unified-guard.md)") that resolve from
-    # docs/architecture/decisions/. Rendered into docs/reference/adr-log.md
-    # those relative links break, so flatten links to their label text and
-    # escape table-breaking pipes before placing a header line in a table cell.
-    cellify = lambda do |s|
+    # Flatten "[label](url)" links to label text (data normalization — ADR 0094:
+    # source produces data; no pipe-escaping, that is a render-target concern).
+    normalize = lambda do |s|
       s.to_s
-       .gsub(/\[([^\]]+)\]\([^)]+\)/, '\1') # [label](url) -> label
-       .gsub("|", "\\|")                     # escape pipes for the markdown table
+       .gsub(/\[([^\]]+)\]\([^)]+\)/, '\1')
        .gsub(/\s+/, " ")
        .strip
     end
@@ -41,9 +37,9 @@ Textus.hook do |reg|
 
       {
         "number" => number,
-        "title" => cellify.call(title),
+        "title" => normalize.call(title),
         "date" => text[/^\*\*Date:\*\*\s*(.+)$/, 1]&.strip,
-        "status" => cellify.call(text[/^\*\*Status:\*\*\s*(.+)$/, 1]),
+        "status" => normalize.call(text[/^\*\*Status:\*\*\s*(.+)$/, 1]),
         "slug" => slug,
       }
     end.sort_by { |a| a["number"].to_i }.reverse
