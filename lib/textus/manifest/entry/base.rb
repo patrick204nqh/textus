@@ -72,6 +72,19 @@ module Textus
             events.publish(event, ctx: hook_context, **payload)
           end
 
+          # Read a named template from the store's templates/ directory.
+          # Raises TemplateError when the file doesn't exist.
+          def read_template(name)
+            path = File.join(container.root.to_s, "templates", name)
+            unless File.exist?(path)
+              raise Textus::TemplateError.new(
+                "template '#{name}' not found",
+                template_name: name,
+              )
+            end
+            File.read(path)
+          end
+
           private
 
           def scope_for_hooks

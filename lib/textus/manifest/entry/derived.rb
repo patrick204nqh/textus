@@ -14,29 +14,25 @@ module Textus
         def projection? = @source.projection?
         def external?   = @source.external?
 
-        def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          # Derived entries always build data here; external ones are skipped below.
-          # External entries are produced by an out-of-band runner — textus has
-          # no in-process runner. The build path only tracks their staleness
-          # (Domain::Staleness::GeneratorCheck); building here would clobber
-          # the runner's artifact with an empty payload. Skip the build entirely.
-          return nil if external?
-
-          target_path = Textus::Write::DataBuilder.new(
-            container: pctx.container, call: pctx.call,
-          ).run(self)
-
-          envelope = pctx.reader.call(@key)
-          Array(publish_to).each do |rel|
-            target_abs = File.join(pctx.repo_root, rel)
-            Textus::Ports::Publisher.publish(source: target_path, target: target_abs, store_root: pctx.root)
-            pctx.emit(:entry_published, key: @key, envelope: envelope, source: target_path, target: target_abs)
+        # ADR 0094: build the DATA artifact (project), then publish via
+        # the ONE shared mode (Publish::ToPaths). External (command) entries are
+        # produced out-of-band — skip the build, but still publish their existing
+        # store bytes through the same mode. A project entry with no targets is a
+        # terminal data node: it produced data, so report :built even though
+        # nothing was emitted.
+        def publish_via(pctx, prefix: nil)
+          built = false
+          unless external?
+            Textus::Write::DataBuilder.new(container: pctx.container, call: pctx.call).run(self)
+            built = true
+            pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
           end
 
-          selects = @source.projection? ? Array(@source.select).compact : []
-          pctx.emit(:entry_produced, key: @key, envelope: envelope, sources: selects)
+          emitted = publish_mode.publish(pctx, prefix: prefix)
+          return emitted if emitted
+          return nil unless built
 
-          { kind: :built, value: { "key" => @key, "path" => target_path, "published_to" => publish_to } }
+          { kind: :built, value: { "key" => @key, "path" => Key::Path.resolve(pctx.manifest.data, self), "published_to" => [] } }
         end
 
         KIND = :derived
