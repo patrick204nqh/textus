@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0098](../architecture/decisions/0098-docs-ssot-cleanup.md) | Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status | 2026-06-07 | Accepted |
 | [0097](../architecture/decisions/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) | 2026-06-07 | Accepted |
 | [0096](../architecture/decisions/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? | 2026-06-07 | Proposed |
 | [0095](../architecture/decisions/0095-collapse-produced-kind.md) | collapse `derived`/`intake` into one `produced` kind | 2026-06-07 | Accepted |
