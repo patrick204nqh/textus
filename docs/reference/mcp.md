@@ -58,6 +58,9 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `where` | Resolve a key to its zone, owner, and path (no body read) | `key: string` |
 | `deps` | Keys a derived entry depends on (its sources) | `key: string` |
 | `rdeps` | Derived entries that depend on a key (impact set) | `key: string` |
+| `capabilities` | Machine-readable contract surface: every verb, its transports, and arg schema | `verb?: string` |
+| `accept` | Apply a queued proposal to its target zone (requires the author capability) | `key: string` |
+| `reject` | Discard a queued proposal | `key: string` |
 
 Maintenance tools (admin / bulk operations). The four bulk-destructive verbs
 default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
@@ -70,7 +73,6 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 | `zone_mv` | Plan (default) or renamed zone (manifest + files) | `from, to, dry_run?=true` |
 | `reconcile` | Plan (default) or full two-phase pass: materialize derived entries (Phase 1) + lifecycle sweep (`drop`/`archive` aged entries) + health (Phase 2) | `zone?, prefix?, dry_run?=true` |
 | `rule_lint` | Rule diff vs. live manifest (no writes) | `candidate_yaml` |
-| `migrate` | Plan (default) or result of a YAML migration plan | `plan_yaml, dry_run?=true` |
 
 ### Errors
 
