@@ -64,12 +64,18 @@ module Textus
       prefixes.flat_map { |p| @lister.call(prefix: p).map { |row| row["key"] } }.uniq
     end
 
-    def pluck(frontmatter, _body)
+    def pluck(frontmatter, body)
       fields = @spec["pluck"]
       if fields.nil? || fields == "*"
         frontmatter
       else
-        Array(fields).each_with_object({}) { |f, h| h[f] = frontmatter[f] if frontmatter.key?(f) }
+        Array(fields).each_with_object({}) do |f, h|
+          if f == "body"
+            h["body"] = body
+          elsif frontmatter.key?(f)
+            h[f] = frontmatter[f]
+          end
+        end
       end
     end
 

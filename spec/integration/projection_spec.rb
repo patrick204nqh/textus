@@ -74,6 +74,26 @@ RSpec.describe Textus::Projection do
     expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
   end
 
+  it "includes body in rows when 'body' is in the pluck list" do
+    FileUtils.mkdir_p(File.join(root, "zones/knowledge/docs"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: knowledge, kind: canon }
+      entries:
+        - { key: knowledge.docs, path: knowledge/docs, zone: knowledge, owner: human:self, kind: nested, schema: null}
+    YAML
+    File.write(File.join(root, "zones/knowledge/docs/readme.md"),
+               "# Hello World\n\nSome content here.\n")
+    proj = build_projection(
+      "select" => "knowledge.docs",
+      "pluck" => ["body"],
+    )
+    result = proj.run
+    expect(result["entries"].length).to eq(1)
+    expect(result["entries"].first["body"]).to include("# Hello World")
+  end
+
   it "raises UsageError when a reducer exceeds 2s timeout" do
     store.rpc.register(:transform_rows, :slow) do |caps:, rows:, config:|
       _ = rows
