@@ -59,7 +59,7 @@ module Textus
         basis_time = basis ? Time.parse(basis) : mtime_for(key)
         stale = !basis_time.nil? && (@call.now - basis_time).to_i > ttl
         reason = stale ? "ttl exceeded" : nil
-        envelope.with(freshness: Textus::Domain::Freshness.build(stale: stale, reason: reason, fetching: false))
+        envelope.with(freshness: Textus::Domain::Freshness::Verdict.build(stale: stale, reason: reason, fetching: false))
       end
 
       def mtime_for(key)
@@ -85,7 +85,7 @@ module Textus
       end
 
       def annotate_fresh(envelope)
-        envelope.with(freshness: Textus::Domain::Freshness.build(
+        envelope.with(freshness: Textus::Domain::Freshness::Verdict.build(
           stale: false, reason: nil, fetching: false,
         ))
       end
