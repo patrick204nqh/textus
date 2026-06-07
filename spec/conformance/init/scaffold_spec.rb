@@ -1,0 +1,49 @@
+require "spec_helper"
+
+RSpec.describe "init scaffolds machine surfaces" do
+  describe "feeds.machines snapshot" do
+    around { |ex| Dir.mktmpdir { |d| Dir.chdir(d) { ex.run } } }
+
+    before { Textus::Init.run(File.join(Dir.pwd, ".textus")) }
+
+    it "drops the intake hook" do
+      expect(File).to exist(".textus/hooks/machine_intake.rb")
+    end
+
+    it "declares a nested artifacts.feeds.machines intake entry, tracked:false, in the artifacts zone" do
+      manifest = Textus::Manifest.load(File.join(Dir.pwd, ".textus"))
+      entry = manifest.data.entries.find { |e| e.key == "artifacts.feeds.machines" }
+      expect(entry).not_to be_nil
+      expect(entry.intake?).to be(true)
+      expect(entry.nested?).to be(true)
+      expect(entry.tracked?).to be(false)
+      expect(entry.publish_to).to eq([]) # never published (sensitive)
+      expect(entry.zone).to eq("artifacts")
+    end
+
+    it "gitignores the whole nested subtree (and still the run subtree)" do
+      ignore = File.read(".textus/.gitignore")
+      expect(ignore).to include("#{Textus::Layout::RUN}/")
+      expect(ignore).to include("zones/artifacts/feeds/machines/")
+    end
+  end
+
+  describe "Setup-1 zone kinds (ADR 0033)" do
+    it "declares the four Setup-1 zones with the right kinds and validates" do
+      raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
+      kinds = raw["zones"].to_h { |z| [z["name"], z["kind"]] }
+      expect(kinds).to eq(
+        "knowledge" => "canon", "notebook" => "workspace",
+        "proposals" => "queue", "artifacts" => "machine"
+      )
+      expect { Textus::Manifest::Schema.validate!(raw) }.not_to raise_error
+    end
+
+    it "gives agent a keep capability and human author" do
+      raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
+      caps = raw["roles"].to_h { |r| [r["name"], r["can"]] }
+      expect(caps["agent"]).to include("keep")
+      expect(caps["human"]).to include("author")
+    end
+  end
+end

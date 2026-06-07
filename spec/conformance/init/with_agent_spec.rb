@@ -118,4 +118,46 @@ RSpec.describe "Textus::Init with_agent profile" do
       expect(JSON.parse(out.string)["profile"]).to eq("default")
     end
   end
+
+  describe "agent-memory promise (ADR 0033)" do
+    it "lets the agent write its notebook without a human accept" do
+      Dir.mktmpdir do |dir|
+        dot = File.join(dir, ".textus")
+        Textus::Init.run(dot)
+        store = Textus::Store.new(dot)
+        store.as("agent").put("notebook.notes.s1", meta: { "name" => "s1" }, body: "remembered\n")
+        expect(store.as("agent").get("notebook.notes.s1").body).to eq("remembered\n")
+      end
+    end
+  end
+
+  describe "buildable orientation" do
+    it "publishes CLAUDE.md and AGENTS.md from authored canon" do
+      Dir.mktmpdir do |dir|
+        root = File.join(dir, ".textus")
+        Textus::Init.run(root, with_agent: true)
+
+        store = Textus::Store.new(root)
+        store.as("human").put(
+          "knowledge.project",
+          meta: { "name" => "project", "description" => "double-entry accounting service" },
+          body: "",
+        )
+        store.as("human").put(
+          "knowledge.runbooks.deploy",
+          meta: { "name" => "deploy", "description" => "ship a release" },
+          body: "steps...\n",
+        )
+
+        store.as("automation").reconcile
+
+        claude = File.join(dir, "CLAUDE.md")
+        agents = File.join(dir, "AGENTS.md")
+        expect(File.exist?(claude)).to be true
+        expect(File.exist?(agents)).to be true
+        expect(File.read(claude)).to include("# project")
+        expect(File.read(claude)).to include("**deploy** — ship a release")
+      end
+    end
+  end
 end
