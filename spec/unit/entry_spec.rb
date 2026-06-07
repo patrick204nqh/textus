@@ -40,7 +40,7 @@ RSpec.describe Textus::Entry do
       expect(leaf.publish_tree).to be_nil
     end
 
-    it "answers production-trait predicates falsey on Base (Derived overrides)" do
+    it "answers production-trait predicates falsey on Base (Produced overrides)" do
       leaf = build_leaf
       expect(leaf.external?).to be(false)
       expect(leaf.projection?).to be(false)
@@ -48,15 +48,14 @@ RSpec.describe Textus::Entry do
   end
 
   describe "Manifest::Entry::REGISTRY" do
-    it "registers all four kinds at load" do
-      expect(Textus::Manifest::Entry::REGISTRY.keys).to contain_exactly(:leaf, :nested, :derived, :intake)
+    it "registers all kinds at load (ADR 0095: derived+intake folded into produced)" do
+      expect(Textus::Manifest::Entry::REGISTRY.keys).to contain_exactly(:leaf, :nested, :produced)
     end
 
     it "maps each kind to its class" do
       expect(Textus::Manifest::Entry::REGISTRY[:leaf]).to eq(Textus::Manifest::Entry::Leaf)
       expect(Textus::Manifest::Entry::REGISTRY[:nested]).to eq(Textus::Manifest::Entry::Nested)
-      expect(Textus::Manifest::Entry::REGISTRY[:derived]).to eq(Textus::Manifest::Entry::Derived)
-      expect(Textus::Manifest::Entry::REGISTRY[:intake]).to eq(Textus::Manifest::Entry::Intake)
+      expect(Textus::Manifest::Entry::REGISTRY[:produced]).to eq(Textus::Manifest::Entry::Produced)
     end
   end
 end

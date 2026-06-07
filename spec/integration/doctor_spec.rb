@@ -19,7 +19,7 @@ RSpec.describe Textus::Doctor do
         - key: artifacts.summary
           path: artifacts/summary.json
           zone: artifacts
-          kind: derived
+          kind: produced
           source: { from: project, select: [knowledge.notes] }
           publish:
             - { to: summary.md, template: summary.mustache }

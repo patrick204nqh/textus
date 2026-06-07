@@ -10,7 +10,7 @@ RSpec.describe Textus::Maintenance::RuleLint do
       zones:
         - { name: intake, kind: machine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: intake, source: { from: handler, handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: produced, source: { from: handler, handler: noop } }
       rules:
         - { match: "intake.*", retention: { ttl: 600, action: drop } }
     YAML

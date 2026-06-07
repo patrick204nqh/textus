@@ -18,7 +18,7 @@ RSpec.describe "textus reconcile concurrency (build lock)" do
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
         - key: artifacts.note
-          kind: derived
+          kind: produced
           path: artifacts/note.json
           zone: artifacts
           owner: automation:auto

@@ -24,9 +24,9 @@ RSpec.shared_context "textus/3 conformance fixture" do
 
         - { key: knowledge.projects,      path: knowledge/projects,      zone: knowledge,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: derived, source: { from: command, command: "rake catalog:skills", sources: [knowledge.projects] } }
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: produced, source: { from: command, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: artifacts.feeds.calendar.events
-          kind: intake
+          kind: produced
           path: artifacts/feeds/calendar/events
           zone: artifacts
           owner: automation:cron

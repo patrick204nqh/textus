@@ -33,7 +33,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
         - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
 
         - key: artifacts.mcp-config
-          kind: derived
+          kind: produced
           path: artifacts/mcp.json
           zone: artifacts
           publish:

@@ -58,7 +58,7 @@ RSpec.describe Textus::Manifest::Schema do
         "version" => "textus/3",
         "zones" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
-          "key" => "x", "zone" => "output", "path" => "x.json", "kind" => "derived",
+          "key" => "x", "zone" => "output", "path" => "x.json", "kind" => "produced",
           "source" => { "from" => "template", "template" => "t.mustache", "reduce" => "f" }
         }],
       )

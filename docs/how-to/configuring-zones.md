@@ -102,7 +102,7 @@ entries:
   - key: artifacts.feeds.notes
     path: artifacts/feeds/notes.md
     zone: artifacts
-    kind: intake
+    kind: produced               # produce-method (intake) read from source.from: handler
     source:
       from: handler
       handler: pull_notes
@@ -155,7 +155,7 @@ entries:
   - key: artifacts.feeds.notion.roadmap
     path: artifacts/feeds/notion/roadmap.md
     zone: artifacts
-    kind: intake
+    kind: produced              # produce-method (intake) read from source.from: handler
     source:
       from: handler
       handler: notion           # matches the hook name

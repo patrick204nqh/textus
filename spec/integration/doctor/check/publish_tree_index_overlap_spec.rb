@@ -31,7 +31,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         publish:
           - { tree: "skills" }
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
@@ -57,7 +57,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
           - { tree: "skills" }
         ignore: ["**/SKILL.md"]
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
@@ -81,7 +81,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
           - { tree: "skills" }
         ignore: ["SKILL.md"]
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
@@ -104,7 +104,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         publish:
           - { tree: "skills" }
       - key: gen.other
-        kind: derived
+        kind: produced
         path: gen/other.yaml
         zone: gen
         schema: null

@@ -23,7 +23,7 @@ RSpec.describe "source/retention manifest load (ADR 0093)" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.cat
-          kind: derived
+          kind: produced
           path: feeds/cat.json
           zone: feeds
           source: { from: project, select: "knowledge.*" }
@@ -38,7 +38,7 @@ RSpec.describe "source/retention manifest load (ADR 0093)" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.doc
-          kind: intake
+          kind: produced
           path: feeds/doc.md
           zone: feeds
           source: { from: handler, handler: h, ttl: 1h }
@@ -53,7 +53,7 @@ RSpec.describe "source/retention manifest load (ADR 0093)" do
       version: textus/3
       zones: [{ name: feeds, kind: machine }]
       entries:
-        - { key: feeds.cat, kind: derived, path: feeds/cat.md, zone: feeds, source: { from: template, template: c, bogus: 1 } }
+        - { key: feeds.cat, kind: produced, path: feeds/cat.md, zone: feeds, source: { from: template, template: c, bogus: 1 } }
     YAML
   end
 end

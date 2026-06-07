@@ -13,7 +13,7 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
                                 entries:
                                   - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                   - key: artifacts.data
-                                    kind: derived
+                                    kind: produced
                                     path: artifacts/data.json
                                     zone: artifacts
                                     source: { from: project, select: [knowledge.a], pluck: [key] }

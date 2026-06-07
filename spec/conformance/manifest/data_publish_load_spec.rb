@@ -14,7 +14,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       zones: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
-          kind: derived
+          kind: produced
           path: artifacts/x.json
           zone: artifacts
           template: c.mustache
@@ -29,7 +29,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       zones: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
-          kind: derived
+          kind: produced
           path: artifacts/x.json
           zone: artifacts
           inject_boot: true
@@ -44,7 +44,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       zones: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
-          kind: derived
+          kind: produced
           path: artifacts/x.json
           zone: artifacts
           source: { from: project, select: [knowledge.a], transform: r }

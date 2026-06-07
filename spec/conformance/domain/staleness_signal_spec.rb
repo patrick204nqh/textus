@@ -2,7 +2,7 @@ require "spec_helper"
 
 # Regression test for generator-drift detection (ADR 0079: surfaced via the
 # doctor `generator_drift` check, formerly the `stale` verb): it must detect
-# generator-kind zones via the kind: derived signal (the zone-kind that
+# generator-kind zones via the kind: produced signal (the zone-kind that
 # requires the `build` capability), not via the literal zone name "derived".
 # Prior to signal-based detection, post-0.9.2 default `artifacts` zones were
 # skipped entirely.
@@ -28,7 +28,7 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
           path: knowledge/src.md
           zone: knowledge
         - key: artifacts.catalog
-          kind: derived
+          kind: produced
           path: artifacts/catalog.md
           zone: artifacts
           source:
@@ -77,7 +77,7 @@ RSpec.describe "generator-drift signal-based generator-zone detection" do
         - { name: artifacts, kind: machine }
       entries:
         - key: artifacts.report
-          kind: derived
+          kind: produced
           path: artifacts/report.md
           zone: artifacts
           source:

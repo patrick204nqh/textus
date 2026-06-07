@@ -21,7 +21,7 @@ RSpec.describe Textus::Maintenance::Produce do
         entries:
           - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
           - key: feeds.catalog
-            kind: derived
+            kind: produced
             path: feeds/catalog.json
             zone: feeds
             source:
@@ -31,7 +31,7 @@ RSpec.describe Textus::Maintenance::Produce do
             publish:
               - { to: CATALOG.md, template: catalog.mustache }
           - key: feeds.ext
-            kind: derived
+            kind: produced
             path: feeds/ext.md
             zone: feeds
             source: { from: command, command: "true", sources: ["knowledge.*"] }
@@ -81,7 +81,7 @@ RSpec.describe Textus::Maintenance::Produce do
               publish:
                 - { tree: "../outside" }
             - key: feeds.catalog
-              kind: derived
+              kind: produced
               path: feeds/catalog.json
               zone: feeds
               source: { from: project, select: "knowledge", pluck: [title] }

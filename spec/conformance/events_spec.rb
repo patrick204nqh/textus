@@ -65,7 +65,7 @@ RSpec.describe "Lifecycle events" do
         zones: [{ name: intake, kind: machine }]
         entries:
           - key: intake.x
-            kind: intake
+            kind: produced
             path: intake/x.md
             zone: intake
             source: { from: handler, handler: f }
@@ -163,7 +163,7 @@ RSpec.describe "Lifecycle events" do
           - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
           - key: artifacts.summary
-            kind: derived
+            kind: produced
             path: artifacts/summary.json
             zone: artifacts
             source:

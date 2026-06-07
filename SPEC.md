@@ -369,7 +369,7 @@ when the acting role holds `author`). See §5.11 for composing extra predicates 
 
 ### 5.2 Source layer (produced entries)
 
-Produced entries live in a `machine` zone (writable by a role holding `reconcile`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their **data** is acquired from a declared `source:` block with a `from:` discriminator (`project | handler | command`). A `source:` is **acquire-only**: it produces the data the store holds; it does **not** render. Rendering is a publish concern (§5.3). `from: project | command` entries are `kind: derived`; `from: handler` entries are `kind: intake` (§5.4).
+Produced entries live in a `machine` zone (writable by a role holding `reconcile`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their **data** is acquired from a declared `source:` block with a `from:` discriminator (`project | handler | command`). A `source:` is **acquire-only**: it produces the data the store holds; it does **not** render. Rendering is a publish concern (§5.3). Every produced entry is `kind: produced` (ADR 0095); the **produce-method** is read from `source.from` — `from: project | command` is *derived* (internal projection / out-of-band command), `from: handler` is *intake* (external fetch, §5.4). `kind:` no longer restates the produce-method (the former `kind: derived` / `kind: intake` are rejected at load with a fold hint).
 
 #### 5.2.1 Projection source (`from: project`)
 
@@ -377,7 +377,7 @@ A derived entry produced by a pure in-process projection declares `source: { fro
 
 ```yaml
 - key: artifacts.derived.people
-  kind: derived
+  kind: produced                   # produce-method (derived) read from source.from: project
   zone: artifacts
   source:
     from: project
@@ -407,7 +407,7 @@ A derived entry that is produced by a build tool *outside* textus — `rake`, `j
 ```yaml
 - key: artifacts.derived.skills
   path: artifacts/derived/skills.md
-  kind: derived
+  kind: produced                   # produce-method (derived) read from source.from: command
   zone: artifacts
   owner: automation:catalog-skills
   source:
@@ -475,11 +475,11 @@ A sentinel is written for each published file at `<store_root>/.run/sentinels/<t
 
 ### 5.4 Intake source (`from: handler`)
 
-Intake entries acquire their data via `source: { from: handler, ... }` — an external fetch through a registered handler. The `source:` block fully replaces the former `intake:` block; the entry's `kind:` MUST be `intake`. Like every `source:`, it is acquire-only — a fetched feed is **data**, and if it needs rendering for a consumer that is a publish target's `template:` (§5.3), never the handler's job. textus itself makes no implicit network calls: the handler runs only when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry past its `source.ttl` — a `get` never runs it (ADR 0089).
+Intake entries acquire their data via `source: { from: handler, ... }` — an external fetch through a registered handler. The `source:` block fully replaces the former `intake:` block; the entry's `kind:` is `produced` and the *intake* produce-method is read from `source.from: handler` (ADR 0095). Like every `source:`, it is acquire-only — a fetched feed is **data**, and if it needs rendering for a consumer that is a publish target's `template:` (§5.3), never the handler's job. textus itself makes no implicit network calls: the handler runs only when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry past its `source.ttl` — a `get` never runs it (ADR 0089).
 
 ```yaml
 - key: feeds.calendar.events
-  kind: intake
+  kind: produced                 # produce-method (intake) read from source.from: handler
   zone: feeds
   source:
     from: handler
@@ -984,10 +984,10 @@ Given a manifest entry where `key: identity.self` lives in the `identity` zone (
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` with `kind: intake` and `source: { from: handler, handler: h, ttl: 1h }`, and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-pull.
+Given a manifest entry `intake.notes` with `kind: produced` and `source: { from: handler, handler: h, ttl: 1h }` (the intake produce-method read from `source.from`), and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-pull.
 
 **Fixture E — Projection produce:**
-Given a manifest entry `artifacts.derived.skills` with `kind: derived` and `source: { from: project, select: knowledge.projects, ... }`, `textus reconcile --prefix=artifacts.derived.skills` produces the derived entry's **data** on disk (serialized per `format:`) matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
+Given a manifest entry `artifacts.derived.skills` with `kind: produced` and `source: { from: project, select: knowledge.projects, ... }` (the derived produce-method read from `source.from`), `textus reconcile --prefix=artifacts.derived.skills` produces the derived entry's **data** on disk (serialized per `format:`) matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
 
 **Fixture F — Mustache render at publish:**
 Given a produced entry with a to-target `{ to:, template: <name> }`, `textus reconcile` renders the entry's stored data through the template and emits a file whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization). Two to-targets with different templates produce different bytes from the one entry.

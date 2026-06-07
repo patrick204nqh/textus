@@ -38,7 +38,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
           format: yaml
           nested: true
           tracked: false
-          kind: intake
+          kind: produced
           source:
             from: handler
             handler: machines

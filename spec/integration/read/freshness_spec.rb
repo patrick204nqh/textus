@@ -18,9 +18,9 @@ RSpec.describe Textus::Read::Freshness do
           - { name: knowledge, kind: machine }
           - { name: identity,   kind: canon }
         entries:
-          - { key: knowledge.doc,   path: knowledge/doc.md,   zone: knowledge, kind: intake, source: { from: handler, handler: noop, ttl: 1h } }
+          - { key: knowledge.doc,   path: knowledge/doc.md,   zone: knowledge, kind: produced, source: { from: handler, handler: noop, ttl: 1h } }
 
-          - { key: knowledge.stale, path: knowledge/stale.md, zone: knowledge, kind: intake, source: { from: handler, handler: noop, ttl: 1s } }
+          - { key: knowledge.stale, path: knowledge/stale.md, zone: knowledge, kind: produced, source: { from: handler, handler: noop, ttl: 1s } }
 
           - { key: identity.note,    path: identity/note.md,    zone: identity, kind: leaf}
       YAML

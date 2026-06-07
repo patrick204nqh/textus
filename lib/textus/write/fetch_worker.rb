@@ -28,7 +28,7 @@ module Textus
         mentry = res.entry
         path = res.path
         remaining = res.remaining
-        raise UsageError.new("no intake declared for '#{key}'") unless mentry.is_a?(Textus::Manifest::Entry::Intake)
+        raise UsageError.new("no intake declared for '#{key}'") unless mentry.intake?
 
         before_etag = @container.file_store.exists?(path) ? @container.file_store.etag(path) : nil
         result = fetch_with_events(key, mentry, remaining)

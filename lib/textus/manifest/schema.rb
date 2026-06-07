@@ -381,8 +381,9 @@ module Textus
 
       # ADR 0093: retention (drop/archive) is age-based GC; it is invalid on a
       # derived entry (a derived entry regenerates from its source, it isn't aged
-      # out). source.kind ↔ entry.kind agreement is already enforced in the entry
-      # classes' from_raw. (Replaces validate_upkeep_kinds!.)
+      # out). Per ADR 0095 the produce-method is read from source.from on the one
+      # Produced kind, so there is no longer a kind to agree against the source.
+      # (Replaces validate_upkeep_kinds!.)
       def self.validate_source_and_retention!(manifest)
         manifest.data.entries.each do |entry|
           retention = manifest.rules.for(entry.key).retention

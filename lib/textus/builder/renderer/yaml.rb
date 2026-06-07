@@ -13,8 +13,7 @@ module Textus
         private
 
         def default_shape(mentry, data)
-          has_transform = mentry.is_a?(Textus::Manifest::Entry::Derived) &&
-                          mentry.source.projection? &&
+          has_transform = mentry.projection? &&
                           mentry.source.transform
           if has_transform && data.is_a?(Hash) && !data.key?("entries")
             data

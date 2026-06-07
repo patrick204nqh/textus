@@ -58,7 +58,7 @@ entries:
     - knowledge.project
     - knowledge.runbooks
     transform: orientation_reducer
-  kind: derived
+  kind: produced
 # A per-host snapshot, pulled by `textus fetch artifacts.feeds.machines.local
 # --as=automation` (the same nested entry + machine_intake.rb hook that
 # `textus init` scaffolds). Grows to a fleet — add artifacts.feeds.machines.<host>
@@ -71,7 +71,7 @@ entries:
   format: yaml
   nested: true
   tracked: false
-  kind: intake
+  kind: produced
   source:
     from: handler
     handler: machines

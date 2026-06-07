@@ -34,7 +34,7 @@ RSpec.describe Textus::CLI::Verb::Get do
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.doc
-            kind: intake
+            kind: produced
             path: feeds/doc.md
             zone: feeds
             source: { from: handler, handler: test_intake, ttl: 1s }

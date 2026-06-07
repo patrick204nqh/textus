@@ -12,13 +12,13 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
                                 zones: [{ name: artifacts, kind: machine }]
                                 entries:
                                   - key: artifacts.bundle
-                                    kind: derived
+                                    kind: produced
                                     path: artifacts/bundle.json
                                     zone: artifacts
                                     source: { from: command, command: "true", sources: ["src/*"] }
                                     publish: [{ to: dist/bundle.json }]
                                   - key: artifacts.signal
-                                    kind: derived
+                                    kind: produced
                                     path: artifacts/signal.json
                                     zone: artifacts
                                     source: { from: command, command: "true", sources: ["src/*"] }
