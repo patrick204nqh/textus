@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Builder::Renderer::Json do
+RSpec.describe Textus::Produce::Acquire::Serializer::Json do
   def make_mentry(transform: nil)
     instance_double(
       Textus::Manifest::Entry::Produced,

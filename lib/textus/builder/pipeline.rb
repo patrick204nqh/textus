@@ -30,9 +30,9 @@ module Textus
 
       def self.renderers
         @renderers ||= {
-          "text" => Renderer::Text,
-          "json" => Renderer::Json,
-          "yaml" => Renderer::Yaml,
+          "text" => Produce::Acquire::Serializer::Text,
+          "json" => Produce::Acquire::Serializer::Json,
+          "yaml" => Produce::Acquire::Serializer::Yaml,
         }
       end
 
