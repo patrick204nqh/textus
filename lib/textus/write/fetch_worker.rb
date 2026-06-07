@@ -7,7 +7,7 @@ module Textus
     # `reconcile` sweep and `textus hook run` only — ingest is system-pushed
     # (ADR 0089 removed the read-through that once also drove it).
     class FetchWorker
-      FETCH_TIMEOUT_SECONDS = IntakeFetch::FETCH_TIMEOUT_SECONDS
+      FETCH_TIMEOUT_SECONDS = Produce::Acquire::Handler::FETCH_TIMEOUT_SECONDS
 
       def initialize(container:, call:)
         @container    = container
@@ -77,7 +77,7 @@ module Textus
       end
 
       def call_intake(key, mentry, remaining)
-        IntakeFetch.invoke(
+        Produce::Acquire::Handler.invoke(
           caps: @container, handler: mentry.handler,
           config: mentry.config,
           args: { trigger_key: key, leaf_segments: remaining || [] },

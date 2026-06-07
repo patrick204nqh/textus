@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::IntakeFetch do
+RSpec.describe Textus::Produce::Acquire::Handler do
   describe ".invoke" do
     it "invokes :resolve_handler through caps.rpc, passing caps through to the handler" do
       result = { _meta: { "name" => "repos" }, body: "hello" }
