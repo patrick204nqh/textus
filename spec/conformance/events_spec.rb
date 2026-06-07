@@ -82,10 +82,10 @@ RSpec.describe "Lifecycle events" do
 
     after { $log = nil }
 
-    # FetchWorker is the internal executor since the `fetch` verb was collapsed
+    # Produce::Acquire::Intake is the internal executor since the `fetch` verb was collapsed
     # (ADR 0079); it fires the same :entry_fetched/:entry_written events.
     def fetch_via(store, key = "intake.x")
-      Textus::Write::FetchWorker.new(
+      Textus::Produce::Acquire::Intake.new(
         container: store.container, call: Textus::Call.build(role: "automation"),
       ).run(key)
     end

@@ -138,7 +138,7 @@ module Textus
       # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
       # all — composite reports assembled outside the contract:
       #   boot, doctor — composite reports
-      # (fetch/fetch_all were removed in ADR 0079: FetchWorker is now internal,
+      # (fetch/fetch_all were removed in ADR 0079: Produce::Acquire::Intake is now internal,
       # driven by the reconcile sweep and hook run — ADR 0089 removed the
       # read-through that once also drove it.)
       NON_PROJECTED_CLI = %i[boot doctor].freeze

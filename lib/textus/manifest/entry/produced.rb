@@ -25,7 +25,7 @@ module Textus
 
         # ADR 0094/0095: projection (from: project) sources build their DATA
         # artifact here, then publish via the ONE shared mode (Publish::ToPaths).
-        # Intake bytes come from FetchWorker and command (external) bytes from the
+        # Intake bytes come from Produce::Acquire::Intake and command (external) bytes from the
         # out-of-band runner — neither builds, but both still publish their
         # existing store bytes through the same mode. A projection entry with no
         # targets is a terminal data node: it produced data, so report :built

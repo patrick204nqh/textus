@@ -5,7 +5,7 @@ module Textus
     module Acquire
       # Invokes a :resolve_handler hook handler by name under a timeout — the single
       # home for "call the intake handler under a deadline" (ADR 0048 D1). Shared by
-      # FetchWorker (the internal ingest mechanism — no public verb since ADR 0079)
+      # Produce::Acquire::Intake (the internal ingest mechanism — no public verb since ADR 0079)
       # as driven by the `reconcile` sweep and `textus hook run` (ADR 0089 made
       # ingest system-pushed; there is no read or put trigger).
       # Always passes a Container as `caps:` so the hook contract (ADR 0027) is

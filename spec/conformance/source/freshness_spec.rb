@@ -114,10 +114,10 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
 
     let(:store) { Textus::Store.new(File.join(Dir.pwd, ".textus")) }
 
-    # FetchWorker is the internal executor since the `fetch` verb was collapsed
+    # Produce::Acquire::Intake is the internal executor since the `fetch` verb was collapsed
     # (ADR 0079).
     def fetch_machine(key)
-      Textus::Write::FetchWorker.new(
+      Textus::Produce::Acquire::Intake.new(
         container: store.container, call: Textus::Call.build(role: "automation"),
       ).run(key)
     end

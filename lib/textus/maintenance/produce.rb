@@ -3,7 +3,7 @@ module Textus
     # The single convergence engine (ADR 0093/0094). "Make these machine entries
     # current from upstream." Acquire is per-`from`; publish is one uniform
     # `publish_via` entry point for all kinds (ADR 0094):
-    #   intake  (from: handler)  -> re-pull (FetchWorker), then publish_via
+    #   intake  (from: handler)  -> re-pull (Produce::Acquire::Intake), then publish_via
     #   derived (from: project)  -> build data + publish_via (ToPaths or None)
     #   derived (from: command)  -> skip the build; publish_via publishes
     #                               existing store bytes via mode resolution
@@ -63,7 +63,7 @@ module Textus
         entry = @manifest.resolver.resolve(key).entry
 
         if entry.intake?
-          Write::FetchWorker.new(container: @container, call: build_call).run(key) # acquire: re-pull
+          Textus::Produce::Acquire::Intake.new(container: @container, call: build_call).run(key) # acquire: re-pull
           entry.publish_via(context)                                                # emit any targets
           out[:produced] << key                                                     # a fetch is production
         else

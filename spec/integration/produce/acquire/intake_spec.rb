@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::FetchWorker do
+RSpec.describe Textus::Produce::Acquire::Intake do
   # A simple test events object that records published events, delegating nothing.
   def make_test_events
     Class.new do
