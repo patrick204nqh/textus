@@ -45,7 +45,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "get" => Textus::CLI::Verb::Get,
       "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,
-      "boot" => Textus::CLI::Verb::Boot,
+      "boot" => Textus::CLI::Verb::GenBoot,
       "key" => Textus::CLI::Group::Key,
       "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
