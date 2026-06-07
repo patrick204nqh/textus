@@ -7,7 +7,7 @@ module Textus
         class Json < Serializer
           def call(mentry:, data:)
             content = default_shape(mentry, data)
-            final   = Builder::InjectMeta.call(content, mentry)
+            final   = Produce::Acquire::Projection::InjectMeta.call(content, mentry)
             Entry.for_format("json").serialize(meta: {}, body: "", content: final)
           end
 
