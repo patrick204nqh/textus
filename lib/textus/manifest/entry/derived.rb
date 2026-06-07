@@ -2,14 +2,11 @@ module Textus
   class Manifest
     class Entry
       class Derived < Base
-        attr_reader :source, :template, :inject_boot, :provenance, :events
+        attr_reader :source, :events
 
-        def initialize(source:, template: nil, inject_boot: false, provenance: true, events: {}, **rest)
+        def initialize(source:, events: {}, **rest)
           super(**rest)
           @source = source
-          @template = template
-          @inject_boot = inject_boot
-          @provenance = provenance
           @events = events || {}
         end
 
@@ -18,14 +15,14 @@ module Textus
         def external?   = @source.external?
 
         def publish_via(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
-          # Derived entries always materialize here; external ones are skipped below.
+          # Derived entries always build data here; external ones are skipped below.
           # External entries are produced by an out-of-band runner — textus has
           # no in-process runner. The build path only tracks their staleness
-          # (Domain::Staleness::GeneratorCheck); materializing here would clobber
-          # the runner's artifact with an empty render. Skip the build entirely.
+          # (Domain::Staleness::GeneratorCheck); building here would clobber
+          # the runner's artifact with an empty payload. Skip the build entirely.
           return nil if external?
 
-          target_path = Textus::Write::Materializer.new(
+          target_path = Textus::Write::DataBuilder.new(
             container: pctx.container, call: pctx.call,
           ).run(self)
 
@@ -48,11 +45,7 @@ module Textus
           source = Parser.parse_source(raw, common[:key])
           raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: project|command") unless source.kind == :derived
 
-          new(
-            source: source,
-            events: raw["events"] || {},
-            **common,
-          )
+          new(source: source, events: raw["events"] || {}, **common)
         end
 
         Entry::REGISTRY[KIND] = self

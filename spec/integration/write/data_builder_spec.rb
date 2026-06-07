@@ -1,9 +1,9 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::Materializer do
-  subject(:materializer) do
+RSpec.describe Textus::Write::DataBuilder do
+  subject(:data_builder) do
     container = store.container
-    Textus::Write::Materializer.new(
+    Textus::Write::DataBuilder.new(
       container: container,
       call: ctx,
     )
@@ -17,7 +17,6 @@ RSpec.describe Textus::Write::Materializer do
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
-    FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -29,29 +28,28 @@ RSpec.describe Textus::Write::Materializer do
 
         - key: artifacts.catalogs.people
           kind: derived
-          path: artifacts/catalogs/people.md
+          path: artifacts/catalogs/people.json
           zone: artifacts
           owner: automation:auto
-          source: { from: template, template: people.mustache, project: { select: knowledge.people, pluck: [name, org], sort_by: name } }
+          source: { from: project, select: [knowledge.people], pluck: [name, org], sort_by: name }
     YAML
 
     File.write(File.join(root, "zones/knowledge/people/alice.md"),
                "---\nname: alice\norg: x\n---\n")
     File.write(File.join(root, "zones/knowledge/people/bob.md"),
                "---\nname: bob\norg: y\n---\n")
-    File.write(File.join(root, "templates/people.mustache"),
-               "{{#entries}}- {{name}} ({{org}})\n{{/entries}}")
   end
 
-  it "materializes a Derived entry and writes rendered content to disk" do
+  it "builds a Derived entry and writes data (json) to disk" do
     mentry = store.manifest.data.entries.find { |e| e.key == "artifacts.catalogs.people" }
     expect(mentry).to be_a(Textus::Manifest::Entry::Derived)
 
-    target_path = materializer.run(mentry)
+    target_path = data_builder.run(mentry)
 
     expect(File.exist?(target_path)).to be true
     content = File.read(target_path)
-    expect(content).to include("- alice (x)")
-    expect(content).to include("- bob (y)")
+    expect { JSON.parse(content) }.not_to raise_error
+    expect(content).to include("alice")
+    expect(content).to include("bob")
   end
 end
