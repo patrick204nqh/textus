@@ -24,7 +24,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/reference
+      - { tree: docs/reference }
   - key: knowledge.how-to
     path: knowledge/how-to
     zone: knowledge
@@ -33,7 +33,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/how-to
+      - { tree: docs/how-to }
   - key: knowledge.explanation
     path: knowledge/explanation
     zone: knowledge
@@ -42,7 +42,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/explanation
+      - { tree: docs/explanation }
   - key: knowledge.cookbook
     path: knowledge/cookbook
     zone: knowledge
@@ -51,7 +51,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/cookbook
+      - { tree: docs/cookbook }
   - key: knowledge.tutorials
     path: knowledge/tutorials
     zone: knowledge
@@ -60,7 +60,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/tutorials
+      - { tree: docs/tutorials }
   - key: knowledge.decisions
     path: knowledge/decisions
     zone: knowledge
@@ -69,7 +69,7 @@ entries:
     nested: true
     kind: nested
     publish:
-      tree: docs/architecture/decisions
+      - { tree: docs/architecture/decisions }
   - key: knowledge.docs-index
     path: knowledge/docs-readme.md
     zone: knowledge
@@ -77,8 +77,7 @@ entries:
     owner: human:self
     kind: leaf
     publish:
-      to:
-        - docs/README.md
+      - { to: docs/README.md }
   - key: knowledge.architecture-index
     path: knowledge/architecture-readme.md
     zone: knowledge
@@ -86,52 +85,31 @@ entries:
     owner: human:self
     kind: leaf
     publish:
-      to:
-        - docs/architecture/README.md
+      - { to: docs/architecture/README.md }
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.derived.orientation
-    path: artifacts/derived/orientation.md
+    path: artifacts/derived/orientation.json
     zone: artifacts
-    publish:
-      to:
-        - CLAUDE.md
-        - AGENTS.md
     source:
-      from: template
-      template: orientation.mustache
-      inject_boot: true
-      project:
-        select:
-          - knowledge.project
-          - knowledge.runbooks
-        transform: orientation_reducer
+      from: project
+      select:
+        - knowledge.project
+        - knowledge.runbooks
+      transform: orientation_reducer
+    publish:
+      - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
+      - { to: AGENTS.md, template: orientation.mustache }
     kind: derived
   - key: artifacts.derived.mcp-config
     path: artifacts/derived/mcp.json
     zone: artifacts
-    publish:
-      to:
-        - .mcp.json
-    source:
-      from: template
-      provenance: false
-      project:
-        select:
-          - knowledge.project
-        transform: mcp_config_reducer
+    source: { from: project, select: [knowledge.project], transform: mcp_config_reducer }
+    publish: [{ to: .mcp.json }]
     kind: derived
   - key: artifacts.derived.claude-plugin
     path: artifacts/derived/plugin.json
     zone: artifacts
-    publish:
-      to:
-        - .claude-plugin/plugin.json
-    source:
-      from: template
-      provenance: false
-      project:
-        select:
-          - knowledge.project
-        transform: plugin_manifest_reducer
+    source: { from: project, select: [knowledge.project], transform: plugin_manifest_reducer }
+    publish: [{ to: .claude-plugin/plugin.json }]
     kind: derived
