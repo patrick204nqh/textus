@@ -218,9 +218,9 @@ For each key, `Engine#produce_one`:
    - Publishes `:entry_fetch_started` via `Produce::Events`.
    - Invokes the handler under a timeout deadline.
    - On error: publishes `:entry_fetch_failed`, re-raises.
-   - On success: normalises the result through `Acquire::Serializer` (JSON/YAML/text), checks guard, persists via `Envelope::IO::Writer`, publishes `:entry_fetched` unless the etag is unchanged.
-   - `Acquire::Handler` resolves the RPC callable; `Acquire::Projection` maps handler output to the envelope's body/meta shape.
-2. **Render phase** — `entry.publish_via(context)` calls `Produce::Render#bytes_for(target:, data:, boot:)` to expand the Liquid template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
+   - On success: normalises the handler result via its own `normalize_action_result` (keyed on the entry's format), checks guard, persists via `Envelope::IO::Writer`, publishes `:entry_fetched` unless the etag is unchanged.
+   - `Acquire::Handler` resolves and invokes the RPC callable under the timeout deadline. (The sibling **projection** sub-path — `from: project` entries — instead runs `Acquire::Projection`, which renders data files through `Acquire::Serializer::{Json,Yaml,Text}` before persisting.)
+2. **Render phase** — `entry.publish_via(context)` calls `Produce::Render#bytes_for(target:, data:, boot:)` to expand the Mustache template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
 
 `AsyncRunner` (nested in `Engine`) enqueues reactive produce when `entry_written` fires, then drains before the process exits via an `at_exit` hook. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
 

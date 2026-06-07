@@ -53,9 +53,7 @@ All produce-pipeline files move under `lib/textus/produce/`, split into:
 
 ```
 lib/textus/produce/
-  engine.rb                 # was Maintenance::Produce
-  engine/
-    async_runner.rb         # was Maintenance::Produce::AsyncRunner
+  engine.rb                 # was Maintenance::Produce (AsyncRunner stays nested inside)
   acquire/
     intake.rb               # was Write::FetchWorker
     handler.rb              # was Write::IntakeFetch
@@ -104,7 +102,7 @@ Moving the file to the new path and updating all call sites is the complete rena
 
 This is a **pure mechanical move + rename**:
 
-- The verb surface (`fetch`, `reconcile`, `get`, `pulse`, `doctor`, and all other
+- The verb surface (`reconcile`, `get`, `pulse`, `doctor`, and all other
   CLI/MCP verbs) is **unchanged**.
 - The manifest grammar (`source:`, `publish:`, `kind:`, `from:`, etc.) is
   **unchanged**.
