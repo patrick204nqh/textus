@@ -1,4 +1,4 @@
-# ADR 0094 — Does the conformance tier earn a distinct category?
+# ADR 0095 — Does the conformance tier earn a distinct category?
 
 **Date:** 2026-06-07
 **Status:** Proposed
