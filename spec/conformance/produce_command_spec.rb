@@ -26,7 +26,7 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
                               files: { "zones/artifacts/bundle.json" => "{\"ok\":true}\n" })
   end
 
-  let(:produce) { Textus::Maintenance::Produce.new(container: store.container, call: test_ctx(role: "automation")) }
+  let(:produce) { Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation")) }
 
   it "publishes a command entry's existing store bytes without running the command" do
     out = produce.call(keys: ["artifacts.bundle"])

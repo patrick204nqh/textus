@@ -29,8 +29,8 @@ RSpec.describe "publish per target (ADR 0094)" do
     end
 
     before do
-      Textus::Maintenance::Produce.new(container: store.container, call: test_ctx(role: "automation"))
-                                  .call(keys: ["artifacts.cat"])
+      Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+                             .call(keys: ["artifacts.cat"])
     end
 
     it "renders the markdown target through its template" do
@@ -67,8 +67,8 @@ RSpec.describe "publish per target (ADR 0094)" do
 
     it "publishes a json leaf verbatim without crashing (Base#external?)" do
       expect do
-        Textus::Maintenance::Produce.new(container: store.container, call: test_ctx(role: "automation"))
-                                    .call(keys: ["knowledge.cfg"])
+        Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+                               .call(keys: ["knowledge.cfg"])
       end.not_to raise_error
 
       published = JSON.parse(File.read(File.join(tmp, "out.json")))

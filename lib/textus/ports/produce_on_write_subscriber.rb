@@ -30,9 +30,9 @@ module Textus
         return if producible.empty?
 
         if any_sync?(producible)
-          Textus::Maintenance::Produce.converge(container: @container, call: call, keys: producible)
+          Textus::Produce::Engine.converge(container: @container, call: call, keys: producible)
         else
-          Textus::Maintenance::Produce::AsyncRunner.enqueue(container: @container, call: call, keys: producible)
+          Textus::Produce::Engine::AsyncRunner.enqueue(container: @container, call: call, keys: producible)
         end
       end
 
@@ -44,7 +44,7 @@ module Textus
         false
       end
 
-      # The producible scope mirrors Maintenance::Produce#produce_one: derived
+      # The producible scope mirrors Produce::Engine#produce_one: derived
       # entries render+publish, and nested publish_tree entries mirror their
       # source subtree (ADR 0047). Including the latter restores reactive
       # re-mirroring on a write into a tree's source — dropped when the scope

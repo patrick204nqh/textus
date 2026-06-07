@@ -1,5 +1,5 @@
 module Textus
-  module Maintenance
+  module Produce
     # The single convergence engine (ADR 0093/0094). "Make these machine entries
     # current from upstream." Acquire is per-`from`; publish is one uniform
     # `publish_via` entry point for all kinds (ADR 0094):
@@ -12,7 +12,7 @@ module Textus
     # supplies only correlation_id/dry_run. Callers choose the key set: the
     # write subscriber passes rdeps ∩ derived; reconcile passes
     # all-derived + stale-intake.
-    class Produce
+    class Engine
       # Locked + failure-isolated convergence — the shared entry point for the
       # write trigger (ADR 0093). Both the sync path (inline, in the subscriber)
       # and the async path (AsyncRunner) call this. A held lock is a soft miss
@@ -104,7 +104,7 @@ module Textus
 
         class << self
           def enqueue(container:, call:, keys:)
-            thread = Thread.new { Produce.converge(container: container, call: call, keys: keys) }
+            thread = Thread.new { Textus::Produce::Engine.converge(container: container, call: call, keys: keys) }
             track(thread)
             thread
           end

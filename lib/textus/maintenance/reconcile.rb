@@ -7,7 +7,7 @@ module Textus
     #
     # Phase 1 — Produce (non-destructive): re-render ALL derived entries (cheap,
     # idempotent) plus every intake entry past its source.ttl (stale-only, so
-    # external sources are not hammered). Driven by Maintenance::Produce.
+    # external sources are not hammered). Driven by Produce::Engine.
     #
     # Phase 2 — Retention sweep (destructive): drop or archive entries past their
     # retention ttl. Driven by Domain::Retention::Sweep. The old refresh/warn
@@ -45,10 +45,10 @@ module Textus
         # produce-on-write threads first, both to fold their work in and to free
         # the shared maintenance lock (BuildLock is non-blocking — a thread still
         # holding it would make the acquire below raise BuildInProgress). ADR 0093.
-        Textus::Maintenance::Produce::AsyncRunner.drain
+        Textus::Produce::Engine::AsyncRunner.drain
 
         Textus::Ports::BuildLock.with(root: @container.root) do
-          produced = Textus::Maintenance::Produce.new(container: @container, call: @call).call(keys: produce_keys)
+          produced = Textus::Produce::Engine.new(container: @container, call: @call).call(keys: produce_keys)
           swept = apply(retention_rows)
           publish_failed(swept[:failed]) unless swept[:failed].empty?
           apply_result(produced, swept, health)

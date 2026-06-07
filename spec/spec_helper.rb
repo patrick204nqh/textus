@@ -43,5 +43,5 @@ RSpec.configure do |c|
   # Fixtures that own a tmpdir drain in their own teardown (before removing the
   # dir) to avoid an in-flight rebuild racing `remove_entry` (`ENOTEMPTY`); this
   # is the test-side mirror of the production `at_exit` drain.
-  c.before { Textus::Maintenance::Produce::AsyncRunner.drain }
+  c.before { Textus::Produce::Engine::AsyncRunner.drain }
 end
