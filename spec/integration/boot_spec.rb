@@ -43,17 +43,15 @@ RSpec.describe Textus::Boot do
             config: { foo: 1 }
         - key: artifacts.report
           kind: derived
-          path: artifacts/report.md
+          path: artifacts/report.json
           zone: artifacts
           owner: automation:auto
           source:
-            from: template
-            template: report.mustache
-            project:
-              select: [knowledge.notes]
-              pluck: "*"
+            from: project
+            select: [knowledge.notes]
+            pluck: "*"
           publish:
-            to: [REPORT.md]
+            - { to: REPORT.md, template: report.mustache }
     YAML
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
