@@ -11,5 +11,6 @@
 .ruby-lsp/
 docs/plans/
 docs/specs/
+docs/superpowers/
 .worktrees/
 **/.textus/.run/
