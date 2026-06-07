@@ -5,19 +5,21 @@ module Textus
         def call
           out = []
           manifest.data.entries.each do |entry|
-            template = entry.respond_to?(:template) ? entry.template : nil
-            next if template.nil?
+            entry.publish_targets.each do |target|
+              template = target.template
+              next if template.nil?
 
-            tp = File.join(root, "templates", template)
-            next if File.exist?(tp)
+              tp = File.join(root, "templates", template)
+              next if File.exist?(tp)
 
-            out << {
-              "code" => "template.missing",
-              "level" => "error",
-              "subject" => entry.key,
-              "message" => "template '#{template}' not found at #{tp}",
-              "fix" => "create the file at #{tp} or update the entry's template: field",
-            }
+              out << {
+                "code" => "template.missing",
+                "level" => "error",
+                "subject" => entry.key,
+                "message" => "template '#{template}' not found at #{tp}",
+                "fix" => "create the file at #{tp} or update the publish target's template: field",
+              }
+            end
           end
           out
         end

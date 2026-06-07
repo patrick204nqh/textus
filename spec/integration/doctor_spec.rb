@@ -16,7 +16,13 @@ RSpec.describe Textus::Doctor do
       entries:
         - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
 
-        - { key: artifacts.summary, path: artifacts/summary.md, zone: artifacts, kind: derived, source: { from: template, template: summary.mustache, project: {} }}
+        - key: artifacts.summary
+          path: artifacts/summary.json
+          zone: artifacts
+          kind: derived
+          source: { from: project, select: [knowledge.notes] }
+          publish:
+            - { to: summary.md, template: summary.mustache }
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)

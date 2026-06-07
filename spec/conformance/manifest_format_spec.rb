@@ -51,25 +51,13 @@ RSpec.describe "Manifest format: field validation" do
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("markdown")
   end
 
-  it "rejects markdown output without template" do
-    write_manifest(<<~YAML)
-      - key: artifacts.x
-        kind: derived
-        path: artifacts/x.md
-        zone: artifacts
-        source: { from: template, project: { select: [knowledge] } }
-    YAML
-    expect { Textus::Manifest.load(root) }
-      .to raise_error(Textus::UsageError, /markdown entries in a generator zone require a template/)
-  end
-
-  it "accepts json output without template (templateless escape hatch is also OK)" do
+  it "accepts a derived projection without any publish template (rendering is a publish concern, ADR 0094)" do
     write_manifest(<<~YAML)
       - key: artifacts.x
         kind: derived
         path: artifacts/x.json
         zone: artifacts
-        source: { from: template, project: { select: [knowledge] } }
+        source: { from: project, select: [knowledge] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error
   end
