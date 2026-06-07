@@ -2,10 +2,10 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :publish_to
+        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :publish_targets
 
         # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
-        def initialize(raw:, key:, path:, zone:, schema:, owner:, format:, publish_to: [])
+        def initialize(raw:, key:, path:, zone:, schema:, owner:, format:, publish_targets: [])
           @raw = raw
           @key = key
           @path = path
@@ -13,7 +13,7 @@ module Textus
           @schema = schema
           @owner = owner
           @format = format
-          @publish_to = Array(publish_to)
+          @publish_targets = Array(publish_targets)
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
@@ -36,6 +36,11 @@ module Textus
         # reads from raw here rather than threading through every constructor.
         def tracked? = @raw["tracked"] != false
 
+        # Single source of truth is @publish_targets (ADR 0094). These
+        # derive the ADR-0049/0052 views the publish modes consume.
+        def publish_to   = @publish_targets.select(&:to_target?).map(&:to)
+        def publish_tree = @publish_targets.find(&:tree_target?)&.tree
+
         # Nil stubs for cross-cutting optional attrs. Subclasses override the
         # ones they own. Validators and serializers can call these directly
         # without `respond_to?` guards.
@@ -43,7 +48,6 @@ module Textus
         def inject_boot    = false # rubocop:disable Naming/PredicateMethod
         def provenance     = true  # rubocop:disable Naming/PredicateMethod
         def events         = {}
-        def publish_tree   = nil
         def ignore         = []
 
         # Per-entry ignore (ADR 0042). Base entries enumerate no tree, so

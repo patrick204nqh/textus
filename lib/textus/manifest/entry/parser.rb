@@ -16,10 +16,7 @@ module Textus
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
             format: format,
-            # ADR 0052: publish config is one typed block; the internal
-            # publish_to/publish_tree readers (the ADR 0049 modes) are sourced
-            # from it (publish_to <- publish.to, publish_tree <- publish.tree).
-            publish_to: raw.dig("publish", "to")
+            publish_targets: publish_targets(raw)
           }
 
           klass = Entry::REGISTRY[kind] or
@@ -34,6 +31,22 @@ module Textus
             raise BadManifest.new("entry '#{key}' requires a source: { from: handler|template|command, ... }")
 
           Textus::Domain::Policy::Source.new(block)
+        end
+
+        # ADR 0094: `publish:` is a LIST of target objects — to-targets
+        # [{to, template?, inject_boot?}] and/or a tree-target [{tree}]. The
+        # ADR-0052 map forms ({to: […]} / {tree: …}) are retired.
+        def self.publish_targets(raw)
+          block = raw["publish"]
+          return [] if block.nil?
+
+          unless block.is_a?(Array)
+            raise BadManifest.new(
+              "entry '#{raw["key"]}': `publish:` must be a list of targets " \
+              "[{to:, template:?} | {tree:}] (ADR 0094); the `publish: { … }` map form was retired",
+            )
+          end
+          block.map { |t| Textus::Domain::Policy::PublishTarget.new(t) }
         end
 
         def self.resolve_format(raw, path)

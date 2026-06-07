@@ -46,13 +46,10 @@ module Textus
 
         def self.from_raw(common, raw)
           source = Parser.parse_source(raw, common[:key])
-          raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: template|command") unless source.kind == :derived
+          raise UsageError.new("entry '#{common[:key]}' kind: derived needs source.from: project|command") unless source.kind == :derived
 
           new(
             source: source,
-            template: source.template,
-            inject_boot: source.inject_boot,
-            provenance: source.provenance,
             events: raw["events"] || {},
             **common,
           )
