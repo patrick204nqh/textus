@@ -15,14 +15,16 @@ module Textus
             envelope  = pctx.reader.call(entry.key)
             renderer  = Textus::Write::PublishRenderer.new(template_loader: ->(n) { pctx.read_template(n) })
             content = nil # parsed lazily; the data's `content` (always _meta-free)
+            parse_content = lambda do
+              content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+            end
 
             targets.each do |t|
-              content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
               src =
                 if t.renders?
-                  write_render(t, content, renderer, pctx, data_path)
+                  write_render(t, parse_content.call, renderer, pctx, data_path)
                 else
-                  verbatim_source(entry, content, data_path)
+                  verbatim_source(entry, parse_content, data_path)
                 end
               target_abs = File.join(pctx.repo_root, t.to)
               Textus::Ports::Publisher.publish(source: src, target: target_abs, store_root: pctx.root)
@@ -47,11 +49,15 @@ module Textus
           # ADR 0094: published artifacts are clean content — textus's `_meta`
           # stays in the store, never the consumer file. For a structured data
           # format, re-serialize the `content` (without `_meta`); for any other
-          # format the stored file IS the content, so copy it verbatim.
-          def verbatim_source(entry, content, data_path)
+          # format the stored file IS the content, so copy it verbatim. An
+          # external (command) entry is an opaque out-of-band artifact — copy it
+          # literally, never parse/re-serialize (it may not even be valid
+          # json/yaml that textus owns).
+          def verbatim_source(entry, parse_content, data_path)
+            return data_path if entry.external?
             return data_path unless %w[json yaml].include?(entry.format.to_s)
 
-            bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: content)
+            bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: parse_content.call)
             tmp   = "#{data_path}.clean.published"
             File.binwrite(tmp, bytes)
             tmp
