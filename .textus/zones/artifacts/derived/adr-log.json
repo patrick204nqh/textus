@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0104",
+      "title": "finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0104-root-docs-canon-and-cleanup"
+    },
+    {
       "number": "0103",
       "title": "the root README is canon, published out",
       "date": "2026-06-08",

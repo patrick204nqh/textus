@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0104](../architecture/decisions/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift | 2026-06-08 | Accepted |
 | [0103](../architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
 | [0102](../architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry | 2026-06-08 | Proposed |
 | [0101](../architecture/decisions/0101-interface-fossils.md) | interface-layer fossils | 2026-06-07 | Accepted |
