@@ -22,12 +22,14 @@ RSpec.describe Textus::Maintenance::Produce do
           - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
           - key: feeds.catalog
             kind: derived
-            path: feeds/catalog.md
+            path: feeds/catalog.json
             zone: feeds
             source:
-              from: template
-              template: catalog.mustache
-              project: { select: "knowledge", pluck: [title] }
+              from: project
+              select: "knowledge"
+              pluck: [title]
+            publish:
+              - { to: CATALOG.md, template: catalog.mustache }
           - key: feeds.ext
             kind: derived
             path: feeds/ext.md
@@ -39,10 +41,11 @@ RSpec.describe Textus::Maintenance::Produce do
 
   let(:call) { test_ctx(role: "automation") }
 
-  it "produces a derived template entry (renders to disk)" do
+  it "produces a derived projection (data to store, render to publish target)" do
     result = produce.call(keys: ["feeds.catalog"])
     expect(result[:produced]).to include("feeds.catalog")
-    expect(File.read(File.join(root, "zones/feeds/catalog.md"))).to include("A")
+    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("A")
+    expect(File.read(File.join(tmp, "CATALOG.md"))).to include("A")
   end
 
   it "skips an external (command) source" do
@@ -75,12 +78,13 @@ RSpec.describe Textus::Maintenance::Produce do
               zone: working
               schema: null
               nested: true
-              publish: { tree: "../outside" }
+              publish:
+                - { tree: "../outside" }
             - key: feeds.catalog
               kind: derived
-              path: feeds/catalog.md
+              path: feeds/catalog.json
               zone: feeds
-              source: { from: template, template: catalog.mustache, project: { select: "knowledge", pluck: [title] } }
+              source: { from: project, select: "knowledge", pluck: [title] }
         YAML
       )
     end

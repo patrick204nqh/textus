@@ -19,10 +19,12 @@ RSpec.describe "textus reconcile concurrency (build lock)" do
 
         - key: artifacts.note
           kind: derived
-          path: artifacts/note.md
+          path: artifacts/note.json
           zone: artifacts
           owner: automation:auto
-          source: { from: template, template: echo.mustache, project: { select: knowledge.note } }
+          source: { from: project, select: knowledge.note }
+          publish:
+            - { to: NOTE.md, template: echo.mustache }
     YAML
 
     File.write(File.join(root, "templates/echo.mustache"), "hello {{key}}\n")
