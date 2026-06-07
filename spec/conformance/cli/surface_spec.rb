@@ -61,4 +61,17 @@ RSpec.describe "textus/3 conformance — CLI surface" do
       expect(store.as(Textus::Role::DEFAULT).list(zone: "knowledge").map { |r| r["zone"] }.uniq).to eq(["knowledge"])
     end
   end
+
+  # Guard: `textus --help` must not advertise verbs the dispatcher rejects.
+  # `textus fetch`/`fetch all` were removed in ADR 0079 and now error.
+  describe "--help advertises no deleted verbs" do
+    include_context "textus_store_fixture"
+    include_context "cli invocation"
+
+    it "does not list 'textus fetch'" do
+      run(["--help"])
+      expect(stdout.string).to include("textus get KEY") # sanity: help rendered
+      expect(stdout.string).not_to include("textus fetch")
+    end
+  end
 end
