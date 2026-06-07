@@ -43,7 +43,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
         - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
 
         - key: artifacts.claude-plugin
-          kind: derived
+          kind: produced
           path: artifacts/plugin.json
           zone: artifacts
           publish:

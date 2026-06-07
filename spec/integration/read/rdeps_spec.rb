@@ -20,7 +20,7 @@ RSpec.describe Textus::Read::Rdeps do
           - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
           - key: artifacts.catalogs.people
-            kind: derived
+            kind: produced
             path: artifacts/catalogs/people.json
             zone: artifacts
             owner: automation:auto

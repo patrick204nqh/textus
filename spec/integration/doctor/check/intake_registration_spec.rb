@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.foo
-            kind: intake
+            kind: produced
             path: feeds/foo.md
             zone: feeds
             source:

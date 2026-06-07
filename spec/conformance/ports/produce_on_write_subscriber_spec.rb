@@ -13,7 +13,7 @@ RSpec.describe "produce-on-write (ADR 0093)" do
                                 entries:
                                   - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                   - key: feeds.catalog
-                                    kind: derived
+                                    kind: produced
                                     path: feeds/catalog.json
                                     zone: feeds
                                     source:
@@ -61,7 +61,7 @@ RSpec.describe "produce-on-write (ADR 0093)" do
                                   entries:
                                     - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                     - key: feeds.catalog
-                                      kind: derived
+                                      kind: produced
                                       path: feeds/catalog.json
                                       zone: feeds
                                       source:

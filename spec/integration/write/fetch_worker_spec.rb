@@ -32,7 +32,7 @@ RSpec.describe Textus::Write::FetchWorker do
         - { name: intake, kind: machine }
       entries:
         - key: intake.item
-          kind: intake
+          kind: produced
           path: intake/item.md
           zone: intake
           source: { from: handler, handler: test_intake }
@@ -143,7 +143,7 @@ RSpec.describe Textus::Write::FetchWorker do
           - { name: intake, kind: machine }
         entries:
           - key: intake.vendor
-            kind: intake
+            kind: produced
             path: intake/vendor
             zone: intake
             nested: true

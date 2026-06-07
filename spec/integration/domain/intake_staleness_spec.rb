@@ -16,7 +16,7 @@ RSpec.describe Textus::Domain::IntakeStaleness do
       version: textus/3
       zones: [{ name: feeds, kind: machine }]
       entries:
-        - { key: feeds.doc, kind: intake, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
+        - { key: feeds.doc, kind: produced, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
     YAML
                               files: { "zones/feeds/doc.md" => "---\n---\nbody\n" })
   end

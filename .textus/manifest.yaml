@@ -100,16 +100,16 @@ entries:
     publish:
       - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
       - { to: AGENTS.md, template: orientation.mustache }
-    kind: derived
+    kind: produced
   - key: artifacts.derived.mcp-config
     path: artifacts/derived/mcp.json
     zone: artifacts
     source: { from: project, select: [knowledge.project], transform: mcp_config_reducer }
     publish: [{ to: .mcp.json }]
-    kind: derived
+    kind: produced
   - key: artifacts.derived.claude-plugin
     path: artifacts/derived/plugin.json
     zone: artifacts
     source: { from: project, select: [knowledge.project], transform: plugin_manifest_reducer }
     publish: [{ to: .claude-plugin/plugin.json }]
-    kind: derived
+    kind: produced

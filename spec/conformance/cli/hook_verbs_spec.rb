@@ -12,7 +12,7 @@ RSpec.describe "CLI hook verbs" do
       zones: [{ name: intake, kind: machine }]
       entries:
         - key: intake.x
-          kind: intake
+          kind: produced
           path: intake/x.md
           zone: intake
           source: { from: handler, handler: stub }

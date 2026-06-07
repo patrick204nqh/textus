@@ -3,9 +3,11 @@ require "spec_helper"
 RSpec.describe Textus::Builder::Renderer::Json do
   def make_mentry(transform: nil)
     instance_double(
-      Textus::Manifest::Entry::Derived,
+      Textus::Manifest::Entry::Produced,
       key: "output.config",
       format: "json",
+      derived?: true,
+      projection?: true,
       source: Textus::Domain::Policy::Source.new(
         "from" => "project",
         "select" => ["working.a"],

@@ -16,7 +16,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
                                   - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                   - { key: feeds.stale, path: feeds/stale.md, zone: feeds, kind: leaf }
                                   - key: feeds.catalog
-                                    kind: derived
+                                    kind: produced
                                     path: feeds/catalog.json
                                     zone: feeds
                                     source: { from: project, select: "knowledge", pluck: [title] }

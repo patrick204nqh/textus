@@ -24,7 +24,7 @@ RSpec.describe "Manifest intake source: + retention:" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
-          kind: intake
+          kind: produced
           path: feeds/news.md
           zone: feeds
           source:
@@ -32,7 +32,8 @@ RSpec.describe "Manifest intake source: + retention:" do
             handler: news_handler
             config: { url: https://example.com/feed }
     YAML
-    expect(e).to be_a(Textus::Manifest::Entry::Intake)
+    expect(e).to be_a(Textus::Manifest::Entry::Produced)
+    expect(e.intake?).to be(true)
     expect(e.handler).to eq("news_handler")
     expect(e.config).to eq({ "url" => "https://example.com/feed" })
   end
@@ -43,7 +44,7 @@ RSpec.describe "Manifest intake source: + retention:" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
-          kind: intake
+          kind: produced
           path: feeds/news.md
           zone: feeds
           source:
@@ -60,7 +61,7 @@ RSpec.describe "Manifest intake source: + retention:" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
-          kind: intake
+          kind: produced
           path: feeds/news.md
           zone: feeds
           source:
@@ -107,7 +108,7 @@ RSpec.describe "Manifest intake source: + retention:" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
-          kind: intake
+          kind: produced
           path: feeds/news.md
           zone: feeds
           publish:
@@ -126,7 +127,7 @@ RSpec.describe "Manifest intake source: + retention:" do
       zones: [{ name: feeds, kind: machine }]
       entries:
         - key: feeds.news
-          kind: intake
+          kind: produced
           path: feeds/news.md
           zone: feeds
           source:

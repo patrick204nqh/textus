@@ -38,11 +38,11 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       entry = described_class.call(
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
-          "kind" => "derived",
+          "kind" => "produced",
           "source" => { "from" => "project", "select" => ["working.bar"] }
         },
       )
-      expect(entry).to be_a(Textus::Manifest::Entry::Derived)
+      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
       expect(entry).to be_projection
       expect(entry.source.select).to eq(["working.bar"])
     end
@@ -51,11 +51,11 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       entry = described_class.call(
         {
           "key" => "output.foo", "path" => "foo.md", "zone" => "output",
-          "kind" => "derived",
+          "kind" => "produced",
           "source" => { "from" => "command", "command" => "echo hi" }
         },
       )
-      expect(entry).to be_a(Textus::Manifest::Entry::Derived)
+      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
       expect(entry).to be_external
     end
 
@@ -64,7 +64,7 @@ RSpec.describe Textus::Manifest::Entry::Parser do
         described_class.call(
           {
             "key" => "output.foo", "path" => "foo.md", "zone" => "output",
-            "kind" => "derived",
+            "kind" => "produced",
             "source" => { "from" => "weird" }
           },
         )
@@ -75,11 +75,11 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       entry = described_class.call(
         {
           "key" => "intake.foo", "path" => "foo.md", "zone" => "intake",
-          "kind" => "intake",
+          "kind" => "produced",
           "source" => { "from" => "handler", "handler" => "pull_foo", "config" => { "url" => "x" } }
         },
       )
-      expect(entry).to be_a(Textus::Manifest::Entry::Intake)
+      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
       expect(entry.handler).to eq("pull_foo")
       expect(entry.config).to eq({ "url" => "x" })
     end
@@ -95,16 +95,16 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     end
 
     it "parses an explicit derived/projection row" do
-      e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "kind" => "derived",
+      e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "kind" => "produced",
                                  "source" => { "from" => "project", "select" => "z.n" } })
-      expect(e).to be_a(Textus::Manifest::Entry::Derived)
+      expect(e).to be_a(Textus::Manifest::Entry::Produced)
       expect(e).to be_projection
     end
 
     it "parses an explicit intake row" do
-      e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "zone" => "i", "kind" => "intake",
+      e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "zone" => "i", "kind" => "produced",
                                  "source" => { "from" => "handler", "handler" => "h" } })
-      expect(e).to be_a(Textus::Manifest::Entry::Intake)
+      expect(e).to be_a(Textus::Manifest::Entry::Produced)
       expect(e.handler).to eq("h")
     end
 

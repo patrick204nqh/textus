@@ -21,7 +21,7 @@ RSpec.describe Textus::Read::Get do
                             - { name: #{zone}, kind: canon }
                           entries:
                             - key: #{zone}.doc
-                              kind: intake
+                              kind: produced
                               path: #{zone}/doc.md
                               zone: #{zone}
                               source: { from: handler, handler: test_intake, ttl: #{ttl} }

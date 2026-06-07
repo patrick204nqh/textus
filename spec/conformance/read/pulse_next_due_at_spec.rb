@@ -14,7 +14,7 @@ RSpec.describe "Pulse next_due_at" do
         - key: intake.feed
           path: intake/feed.md
           zone: intake
-          kind: intake
+          kind: produced
           source:
             from: handler
             handler: noop
@@ -45,7 +45,7 @@ RSpec.describe "Pulse next_due_at" do
         - key: intake.feed
           path: intake/feed.md
           zone: intake
-          kind: intake
+          kind: produced
           source:
             from: handler
             handler: noop

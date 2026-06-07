@@ -17,7 +17,7 @@ RSpec.describe Textus::Read::Freshness do
                                   - { name: feeds, kind: machine }
                                   - { name: review, kind: canon }
                                 entries:
-                                  - { key: feeds.doc, kind: intake, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
+                                  - { key: feeds.doc, kind: produced, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
                                   - { key: review.old, path: review/old.md, zone: review, kind: leaf }
                                 rules:
                                   - { match: "review.*", retention: { ttl: 1d, action: archive } }

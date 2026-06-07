@@ -33,7 +33,7 @@ RSpec.describe Textus::Boot do
           zone: knowledge
           nested: true
         - key: artifacts.feed
-          kind: intake
+          kind: produced
           path: artifacts/feed.md
           zone: artifacts
           owner: automation:local
@@ -42,7 +42,7 @@ RSpec.describe Textus::Boot do
             handler: demo-action
             config: { foo: 1 }
         - key: artifacts.report
-          kind: derived
+          kind: produced
           path: artifacts/report.json
           zone: artifacts
           owner: automation:auto

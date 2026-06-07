@@ -27,7 +27,7 @@ RSpec.describe Textus::Write::DataBuilder do
         - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
 
         - key: artifacts.catalogs.people
-          kind: derived
+          kind: produced
           path: artifacts/catalogs/people.json
           zone: artifacts
           owner: automation:auto
@@ -40,9 +40,10 @@ RSpec.describe Textus::Write::DataBuilder do
                "---\nname: bob\norg: y\n---\n")
   end
 
-  it "builds a Derived entry and writes data (json) to disk" do
+  it "builds a produced (derived) entry and writes data (json) to disk" do
     mentry = store.manifest.data.entries.find { |e| e.key == "artifacts.catalogs.people" }
-    expect(mentry).to be_a(Textus::Manifest::Entry::Derived)
+    expect(mentry).to be_a(Textus::Manifest::Entry::Produced)
+    expect(mentry.derived?).to be(true)
 
     target_path = data_builder.run(mentry)
 

@@ -16,7 +16,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
 
   def derived_entry(opts = {})
     instance_double(
-      Textus::Manifest::Entry::Derived,
+      Textus::Manifest::Entry::Produced,
       key: "working.foo",
       path: opts.fetch(:path, "foo.md"),
       nested?: false,
@@ -31,7 +31,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::FormatMatrix do
 
   def intake_entry(opts = {})
     instance_double(
-      Textus::Manifest::Entry::Intake,
+      Textus::Manifest::Entry::Produced,
       key: "output.catalog",
       path: opts.fetch(:path, "catalog.txt"),
       nested?: false,

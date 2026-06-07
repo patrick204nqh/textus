@@ -54,7 +54,7 @@ RSpec.describe "Manifest format: field validation" do
   it "accepts a derived projection without any publish template (rendering is a publish concern, ADR 0094)" do
     write_manifest(<<~YAML)
       - key: artifacts.x
-        kind: derived
+        kind: produced
         path: artifacts/x.json
         zone: artifacts
         source: { from: project, select: [knowledge] }

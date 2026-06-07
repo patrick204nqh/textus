@@ -32,7 +32,7 @@ module Textus
           format: yaml
           nested: true
           tracked: false
-          kind: intake
+          kind: produced
           source:
             from: handler
             handler: machines
@@ -78,7 +78,7 @@ module Textus
       ```yaml
       entries:
         - key: artifacts.feeds.foo
-          kind: intake
+          kind: produced
           path: artifacts/feeds/foo.md
           zone: artifacts
           source:
@@ -120,7 +120,7 @@ module Textus
           - knowledge.project
           - knowledge.runbooks
           transform: orientation_reducer
-        kind: derived
+        kind: produced
     YAML
 
     def self.run(target_root, with_agent: false)

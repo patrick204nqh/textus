@@ -14,7 +14,7 @@ RSpec.describe "publish per target (ADR 0094)" do
                                   entries:
                                     - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                     - key: artifacts.cat
-                                      kind: derived
+                                      kind: produced
                                       path: artifacts/cat.json
                                       zone: artifacts
                                       source: { from: project, select: [knowledge.a] }
