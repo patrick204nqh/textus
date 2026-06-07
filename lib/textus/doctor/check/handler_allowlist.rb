@@ -8,7 +8,7 @@ module Textus
         def call
           out = []
           manifest.data.entries.each do |mentry|
-            next unless mentry.is_a?(Textus::Manifest::Entry::Intake)
+            next unless mentry.intake?
 
             handler = mentry.handler
 

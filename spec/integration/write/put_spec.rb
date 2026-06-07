@@ -39,5 +39,5 @@ RSpec.describe Textus::Write::Put do
 
   it_behaves_like "an audited write", "put"
   it_behaves_like "a correlated write", "put"
-  it_behaves_like "an event-emitting action", :entry_put
+  it_behaves_like "an event-emitting action", :entry_written
 end

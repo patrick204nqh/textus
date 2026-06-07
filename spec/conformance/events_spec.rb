@@ -18,7 +18,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $textus_event_log ||= []
         Textus.hook do |reg|
-          reg.on(:entry_put, :log_put)    { |key:, **| $textus_event_log << [:entry_put, key] }
+          reg.on(:entry_written, :log_put)    { |key:, **| $textus_event_log << [:entry_written, key] }
           reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
         end
       RUBY
@@ -27,10 +27,10 @@ RSpec.describe "Lifecycle events" do
 
     after { $textus_event_log = nil }
 
-    it "fires :entry_put after a write" do
+    it "fires :entry_written after a write" do
       store = Textus::Store.new(root)
       store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
-      expect($textus_event_log).to include([:entry_put, "knowledge.x"])
+      expect($textus_event_log).to include([:entry_written, "knowledge.x"])
     end
 
     it "fires :entry_deleted after a delete" do
@@ -44,14 +44,14 @@ RSpec.describe "Lifecycle events" do
     it "logs hook errors to audit log but does not abort the write" do
       File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:entry_put, :boom) { |key:, **| raise "bang" }
+          reg.on(:entry_written, :boom) { |key:, **| raise "bang" }
         end
       RUBY
       store = Textus::Store.new(root)
       env = store.as("human").put("knowledge.x", meta: { "name" => "x" }, body: "hi")
       expect(env.body).to eq("hi") # write succeeded
       last = last_audit_row(store)
-      expect(last["extras"]["event"]).to eq("entry_put")
+      expect(last["extras"]["event"]).to eq("entry_written")
       expect(last["extras"]["error"]).to match(/bang/)
     end
   end
@@ -65,7 +65,7 @@ RSpec.describe "Lifecycle events" do
         zones: [{ name: intake, kind: machine }]
         entries:
           - key: intake.x
-            kind: intake
+            kind: produced
             path: intake/x.md
             zone: intake
             source: { from: handler, handler: f }
@@ -73,7 +73,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
           reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -83,7 +83,7 @@ RSpec.describe "Lifecycle events" do
     after { $log = nil }
 
     # FetchWorker is the internal executor since the `fetch` verb was collapsed
-    # (ADR 0079); it fires the same :entry_fetched/:entry_put events.
+    # (ADR 0079); it fires the same :entry_fetched/:entry_written events.
     def fetch_via(store, key = "intake.x")
       Textus::Write::FetchWorker.new(
         container: store.container, call: Textus::Call.build(role: "automation"),
@@ -102,7 +102,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
+          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
           reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -120,7 +120,7 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log ||= []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
+          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
           reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
         end
       RUBY
@@ -132,19 +132,19 @@ RSpec.describe "Lifecycle events" do
       expect($log).to eq([["intake.x", :created]])
     end
 
-    it "does NOT double-fire :entry_put when fetch writes (suppress_events:)" do
+    it "does NOT double-fire :entry_written when fetch writes (suppress_events:)" do
       File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-          reg.on(:entry_put, :p) { |key:, **| $log << [:entry_put, key] }
+          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
+          reg.on(:entry_written, :p) { |key:, **| $log << [:entry_written, key] }
           reg.on(:entry_fetched, :r) { |key:, change:, **| $log << [:entry_fetched, key, change] }
         end
       RUBY
       $log = []
       store = Textus::Store.new(root)
       fetch_via(store)
-      expect($log.count { |e| e[0] == :entry_put }).to eq(0)
+      expect($log.count { |e| e[0] == :entry_written }).to eq(0)
       expect($log.count { |e| e[0] == :entry_fetched }).to eq(1)
     end
   end
@@ -163,15 +163,15 @@ RSpec.describe "Lifecycle events" do
           - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
           - key: artifacts.summary
-            kind: derived
-            path: artifacts/summary.md
+            kind: produced
+            path: artifacts/summary.json
             zone: artifacts
             source:
-              from: template
-              template: summary.mustache
-              project:
-                select: [knowledge]
-                pluck: [name]
+              from: project
+              select: [knowledge]
+              pluck: [name]
+            publish:
+              - { to: SUMMARY.md, template: summary.mustache }
       YAML
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")
@@ -179,8 +179,8 @@ RSpec.describe "Lifecycle events" do
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
         $log = []
         Textus.hook do |reg|
-          reg.on(:build_completed, :t) do |key:, sources:, **|
-            $log << [:build_completed, key, sources]
+          reg.on(:entry_produced, :t) do |key:, sources:, **|
+            $log << [:entry_produced, key, sources]
           end
         end
       RUBY
@@ -189,10 +189,10 @@ RSpec.describe "Lifecycle events" do
 
     after { $log = nil }
 
-    it "fires :build_completed after Builder materializes an artifacts entry" do
+    it "fires :entry_produced after Builder materializes an artifacts entry" do
       store = Textus::Store.new(root)
       store.as("automation").reconcile
-      expect($log).to include([:build_completed, "artifacts.summary", ["knowledge"]])
+      expect($log).to include([:entry_produced, "artifacts.summary", ["knowledge"]])
     end
   end
 

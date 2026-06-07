@@ -29,15 +29,15 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         nested: true
         publish:
-          tree: "skills"
+          - { tree: "skills" }
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
         publish:
-          to: ["skills/my-skill/SKILL.md"]
-        source: { from: template, project: { select: ["working.skilldefs"] } }
+          - { to: "skills/my-skill/SKILL.md" }
+        source: { from: project, select: ["working.skilldefs"] }
     Y
 
     found = issues
@@ -54,16 +54,16 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         nested: true
         publish:
-          tree: "skills"
+          - { tree: "skills" }
         ignore: ["**/SKILL.md"]
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
         publish:
-          to: ["skills/my-skill/SKILL.md"]
-        source: { from: template, project: { select: ["working.skilldefs"] } }
+          - { to: "skills/my-skill/SKILL.md" }
+        source: { from: project, select: ["working.skilldefs"] }
     Y
 
     expect(issues).to be_empty
@@ -78,16 +78,16 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         nested: true
         publish:
-          tree: "skills"
+          - { tree: "skills" }
         ignore: ["SKILL.md"]
       - key: gen.skilldoc
-        kind: derived
+        kind: produced
         path: gen/skilldoc.yaml
         zone: gen
         schema: null
         publish:
-          to: ["skills/my-skill/SKILL.md"]
-        source: { from: template, project: { select: ["working.skilldefs"] } }
+          - { to: "skills/my-skill/SKILL.md" }
+        source: { from: project, select: ["working.skilldefs"] }
     Y
 
     expect(issues.map { |i| i["code"] }).to include("publish.tree_index_overlap")
@@ -102,15 +102,15 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         nested: true
         publish:
-          tree: "skills"
+          - { tree: "skills" }
       - key: gen.other
-        kind: derived
+        kind: produced
         path: gen/other.yaml
         zone: gen
         schema: null
         publish:
-          to: ["docs/other.md"]
-        source: { from: template, project: { select: ["working.skilldefs"] } }
+          - { to: "docs/other.md" }
+        source: { from: project, select: ["working.skilldefs"] }
     Y
 
     expect(issues).to be_empty

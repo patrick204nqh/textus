@@ -16,7 +16,7 @@ RSpec.describe Textus::CLI::Verb::Get do
   before do
     hook_body = <<~RUBY
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :test_intake) do |caps:, config:, args:|
+        reg.on(:resolve_handler, :test_intake) do |caps:, config:, args:|
           Thread.current[:cli_get_fetch_count] ||= 0
           Thread.current[:cli_get_fetch_count] += 1
           { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh body" }
@@ -34,7 +34,7 @@ RSpec.describe Textus::CLI::Verb::Get do
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.doc
-            kind: intake
+            kind: produced
             path: feeds/doc.md
             zone: feeds
             source: { from: handler, handler: test_intake, ttl: 1s }

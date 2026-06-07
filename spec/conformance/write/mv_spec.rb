@@ -119,7 +119,7 @@ RSpec.describe "textus mv" do
           reg.on(:entry_renamed, :log_mv) do |from_key:, to_key:, envelope:, **|
             $textus_event_log << [:entry_renamed, from_key, to_key, envelope.uid]
           end
-          reg.on(:entry_put, :log_put)    { |key:, **| $textus_event_log << [:entry_put, key] }
+          reg.on(:entry_written, :log_put)    { |key:, **| $textus_event_log << [:entry_written, key] }
           reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
         end
       RUBY
@@ -140,12 +140,12 @@ RSpec.describe "textus mv" do
       expect(mv_events.first[3]).to match(/\A[0-9a-f]{16}\z/)
     end
 
-    it "does NOT fire :entry_put or :entry_deleted on mv (entry_renamed is its own signal)" do
+    it "does NOT fire :entry_written or :entry_deleted on mv (entry_renamed is its own signal)" do
       store = Textus::Store.new(root)
       store.as("human").put("knowledge.a", meta: { "name" => "a" }, body: "hi")
       $textus_event_log.clear
       store.as("human").key_mv("knowledge.a", "knowledge.b")
-      expect($textus_event_log.map(&:first)).not_to include(:entry_put, :entry_deleted)
+      expect($textus_event_log.map(&:first)).not_to include(:entry_written, :entry_deleted)
     end
 
     it "does NOT fire :entry_renamed on dry_run" do

@@ -20,7 +20,7 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 
 ```mermaid
 flowchart LR
-    ext["external world<br/>APIs · files · feeds"] -->|:resolve_intake hook| artifacts_feeds["artifacts.feeds.*<br/>(intake entries)"]
+    ext["external world<br/>APIs · files · feeds"] -->|:resolve_handler hook| artifacts_feeds["artifacts.feeds.*<br/>(intake entries)"]
     automation(["automation"]) -->|reconcile| artifacts_feeds
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
     agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
@@ -33,7 +33,7 @@ flowchart LR
     artifacts_derived -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation reconciles the one `machine` zone (`artifacts`) — it pulls external bytes into intake entries (`artifacts.feeds.*`) and materializes derived entries (`artifacts.derived.*`) from `knowledge` and feeds, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the materialized artifacts as shipped files.
+*Flow at a glance:* automation reconciles the one `machine` zone (`artifacts`) — it pulls external bytes into intake entries (`artifacts.feeds.*`) and produces derived entries' data (`artifacts.derived.*`) from `knowledge` and feeds, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the produced data as shipped files (copied verbatim, or rendered through a per-target template).
 
 Two ideas do all the work:
 
@@ -73,18 +73,17 @@ You extend textus with Ruby hooks. The whole mental model is one distinction in 
    • raised error ABORTS the verb   • raised error LOGGED, verb continues
    • named explicitly by manifest   • triggered by lifecycle, filtered by keys:
 
-   :resolve_intake → input to the store     :entry_put          → after any write
-   :transform_rows → projection shaping     :entry_deleted      → after delete
-   :validate       → doctor checks          :entry_fetched      → after fetch
-                                            :build_completed    → after derived materialization
-                                            :proposal_accepted  → after pending → target promotion
-                                            :file_published     → after each file written to a repo path
-                                            :entry_renamed      → after rename
-                                            :proposal_rejected  → after proposal discard
-                                            :store_loaded       → once per Store.new
-                                            :fetch_started      → before intake handler runs
-                                            :fetch_failed       → intake handler raised
-                                            :fetch_backgrounded → timed_sync budget exceeded
+   :resolve_handler → input to the store    :entry_written       → after any write
+   :transform_rows → data shaping           :entry_deleted       → after delete
+   :validate       → doctor checks          :entry_fetched       → after fetch
+                                            :entry_produced      → after a produced entry's data builds
+                                            :proposal_accepted   → after pending → target promotion
+                                            :entry_published     → after each file emitted to a repo path
+                                            :entry_renamed       → after rename
+                                            :proposal_rejected   → after proposal discard
+                                            :store_loaded        → once per Store.new
+                                            :entry_fetch_started → before intake handler runs
+                                            :entry_fetch_failed  → intake handler raised
 ```
 
 **RPC events steer the verb's data. Pub-sub events observe the verb's outcome.** That's the whole model. For the full event catalog, per-verb lifecycle timelines, and `ctx:` fields, see [`../reference/events.md`](../reference/events.md).
@@ -144,7 +143,7 @@ Returns a delta envelope. The agent advances the cursor each turn.
   "doctor":          { "ok": true, "warn": 0, "fail": 0 },
   "contract_etag":   "sha256:abc123...",
   "next_due_at":     "2026-05-28T12:34:56Z",
-  "hook_errors":     [ { "seq": 1844, "event": "entry_put", "hook": "audit_extra", "key": "knowledge.notes.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
+  "hook_errors":     [ { "seq": 1844, "event": "entry_written", "hook": "audit_extra", "key": "knowledge.notes.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
 }
 ```
 

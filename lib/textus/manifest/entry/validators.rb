@@ -5,7 +5,6 @@ module Textus
         REGISTERED = [
           Events,
           Publish,
-          InjectBoot,
           Ignore,
           FormatMatrix,
         ].freeze

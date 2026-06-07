@@ -21,15 +21,17 @@ RSpec.describe Textus::Maintenance::Produce do
         entries:
           - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
           - key: feeds.catalog
-            kind: derived
-            path: feeds/catalog.md
+            kind: produced
+            path: feeds/catalog.json
             zone: feeds
             source:
-              from: template
-              template: catalog.mustache
-              project: { select: "knowledge", pluck: [title] }
+              from: project
+              select: "knowledge"
+              pluck: [title]
+            publish:
+              - { to: CATALOG.md, template: catalog.mustache }
           - key: feeds.ext
-            kind: derived
+            kind: produced
             path: feeds/ext.md
             zone: feeds
             source: { from: command, command: "true", sources: ["knowledge.*"] }
@@ -39,10 +41,11 @@ RSpec.describe Textus::Maintenance::Produce do
 
   let(:call) { test_ctx(role: "automation") }
 
-  it "produces a derived template entry (renders to disk)" do
+  it "produces a derived projection (data to store, render to publish target)" do
     result = produce.call(keys: ["feeds.catalog"])
     expect(result[:produced]).to include("feeds.catalog")
-    expect(File.read(File.join(root, "zones/feeds/catalog.md"))).to include("A")
+    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("A")
+    expect(File.read(File.join(tmp, "CATALOG.md"))).to include("A")
   end
 
   it "skips an external (command) source" do
@@ -75,12 +78,13 @@ RSpec.describe Textus::Maintenance::Produce do
               zone: working
               schema: null
               nested: true
-              publish: { tree: "../outside" }
+              publish:
+                - { tree: "../outside" }
             - key: feeds.catalog
-              kind: derived
-              path: feeds/catalog.md
+              kind: produced
+              path: feeds/catalog.json
               zone: feeds
-              source: { from: template, template: catalog.mustache, project: { select: "knowledge", pluck: [title] } }
+              source: { from: project, select: "knowledge", pluck: [title] }
         YAML
       )
     end
@@ -96,10 +100,10 @@ RSpec.describe Textus::Maintenance::Produce do
   describe ".converge failure isolation" do
     # A manifest where no role holds the `reconcile` capability: build_actor_call
     # raises a Textus::UsageError that escapes Produce#call (it is outside the
-    # per-key rescue). converge must swallow it and publish :materialize_failed.
-    it "does not raise and publishes :materialize_failed" do
+    # per-key rescue). converge must swallow it and publish :produce_failed.
+    it "does not raise and publishes :produce_failed" do
       fired = []
-      store.container.events.on(:materialize_failed, :probe) { |error:, **| fired << error }
+      store.container.events.on(:produce_failed, :probe) { |error:, **| fired << error }
 
       # Force build_actor_call to fail (no reconcile actor at call time) so a
       # Textus::Error escapes Produce#call — the path .converge must isolate.

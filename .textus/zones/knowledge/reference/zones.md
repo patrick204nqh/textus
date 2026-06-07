@@ -26,7 +26,7 @@ A role is a name in the manifest that holds a set of **capabilities** — verbs 
 |------|----------------------|--------------------|
 | `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
 | `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the one `machine` zone current — refresh intake (`artifacts.feeds.*`) entries and materialize derived (`artifacts.derived.*`) entries. |
+| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the one `machine` zone current — re-pull intake (`artifacts.feeds.*`) entries and produce derived (`artifacts.derived.*`) entries' data. |
 
 The four capabilities:
 
@@ -35,7 +35,7 @@ The four capabilities:
 | `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `reconcile` | `machine` | Keeping the one machine zone current: refreshing intake entries (`artifacts.feeds.*`) and materializing derived entries (`artifacts.derived.*`). Both are system-pushed by the `reconcile` sweep (ADR 0089/0091). |
+| `reconcile` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `reconcile` sweep (ADR 0089/0091/0093). |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -93,7 +93,7 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are refreshed by `textus reconcile --as=automation` (per `upkeep: { ttl, action: refresh }`); derived entries under `artifacts.derived.*` are materialized from projections. Never hand-edited. (Refreshed/recomputed on `reconcile`.) |
+| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus reconcile --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `reconcile`.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 
 These four are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).
@@ -124,13 +124,10 @@ entries:
 | `owner` | yes | `<role>:<actor>` — for audit and convention; not enforced. |
 | `nested` | no | If `true`, the key prefix-matches subdirectories. `knowledge.notes.daily.2026-05-21` resolves under `knowledge/notes/`. |
 | `format` | no | `markdown` \| `json` \| `yaml` \| `text`. Inferred from extension if omitted. |
-| `intake:` | no | Declares this is an intake entry. See [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md#wiring-data-in--intake-and-resolve_intake-hooks). |
-| `compute:` | no | Declares this is a derived entry (`kind: projection` computes from store entries; `kind: external` tracks an outside build tool). See [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md#wiring-data-out--derived-entries-and-publishing). |
-| `template:` | no | Mustache template name under `.textus/templates/`. Required for markdown/text derived entries; optional for JSON/YAML. |
-| `inject_boot:` | no | When `true` on a derived entry, the `textus boot` payload is merged into the projection data so templates can reference it. |
-| `publish:` | no | Typed publish block with exactly one sub-key (ADR 0052). `publish: { to: [paths] }` byte-copies the built file to one or more external paths. `publish: { tree: "dir" }` (for `nested:` entries) mirrors the entry's whole stored subtree to one target directory, preserving layout — path-driven (no keys or template variables); its files are opaque payload, never keys (ADR 0047). |
+| `source:` | no | How the entry acquires its **data** (ADR 0093/0094) — `from: handler` (intake, external fetch), `from: project` (in-process projection over store keys), or `from: command` (external build tool). Acquire-only: rendering is a publish concern. See [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md#wiring-data-out--derived-entries-and-publishing). |
+| `publish:` | no | A **list** of publish targets (ADR 0052/0094). A to-target `{ to:, template?:, inject_boot?: }` emits the entry's data to a repo path — `template:` absent copies it verbatim (json/yaml re-serialized without `_meta`), present renders the data through the named Mustache template; `inject_boot: true` merges the `textus boot` payload into the render data (per target). A tree-target `{ tree: "dir" }` (for `nested:` entries) mirrors the entry's whole stored subtree to one target directory, preserving layout — path-driven, opaque payload, never keys (ADR 0047). Published artifacts are clean content — `_meta` provenance stays in the store. |
 | `ignore:` | no | For `nested:` entries — a list of gitignore-style globs (e.g. `["**/node_modules/**"]`). Matching paths are excluded from enumeration **and** from `doctor`'s key checks. See [Nested entries](#nested-entries). |
-| `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:build_completed` event). |
+| `events:` | no | Per-entry pub-sub bindings (e.g. run a shell command after this entry's `:entry_produced` event). |
 
 The full schema lives in [`SPEC.md §4`](../../SPEC.md).
 

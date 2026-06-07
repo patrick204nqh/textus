@@ -38,7 +38,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
       Y
 
       m = Textus::Manifest.load(root)
@@ -57,7 +57,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       write_file("skills/my-skill/references/foo.md", "foo reference\n")
@@ -95,7 +95,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
           ignore: ["**/*.tmp"]
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
@@ -117,7 +117,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "../outside"
+            - { tree: "../outside" }
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
 
@@ -140,7 +140,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       write_file("skills/my-skill/references/foo.md", "foo\n")
@@ -190,7 +190,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
           ignore: ["**/SKILL.md"]
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
@@ -212,7 +212,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
           schema: null
           nested: true
           publish:
-            tree: "skills"
+            - { tree: "skills" }
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
       repo_root = File.dirname(root)
@@ -244,7 +244,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
             kind: nested
             nested: true
             publish:
-              tree: "skills"
+              - { tree: "skills" }
       YAML
     end
 

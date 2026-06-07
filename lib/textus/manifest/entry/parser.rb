@@ -9,6 +9,12 @@ module Textus
 
           raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (#{Entry::REGISTRY.keys.join("|")})")
           kind = raw_kind.to_sym
+          if %i[derived intake].include?(kind)
+            raise BadManifest.new(
+              "entry '#{key}': kind: #{kind} was collapsed into `kind: produced` (ADR 0095) — " \
+              "the produce method is `source.from` (#{kind == :intake ? "handler" : "project|command"})",
+            )
+          end
           format = resolve_format(raw, path)
 
           common = {
@@ -16,10 +22,7 @@ module Textus
             key: key, path: path, zone: zone,
             schema: raw["schema"], owner: raw["owner"],
             format: format,
-            # ADR 0052: publish config is one typed block; the internal
-            # publish_to/publish_tree readers (the ADR 0049 modes) are sourced
-            # from it (publish_to <- publish.to, publish_tree <- publish.tree).
-            publish_to: raw.dig("publish", "to")
+            publish_targets: publish_targets(raw)
           }
 
           klass = Entry::REGISTRY[kind] or
@@ -31,9 +34,25 @@ module Textus
         # Domain::Policy::Source; kind (intake/derived) is read from source.from.
         def self.parse_source(raw, key)
           block = raw["source"] or
-            raise BadManifest.new("entry '#{key}' requires a source: { from: handler|template|command, ... }")
+            raise BadManifest.new("entry '#{key}' requires a source: { from: project|handler|command, ... }")
 
           Textus::Domain::Policy::Source.new(block)
+        end
+
+        # ADR 0094: `publish:` is a LIST of target objects — to-targets
+        # [{to, template?, inject_boot?}] and/or a tree-target [{tree}]. The
+        # ADR-0052 map forms ({to: […]} / {tree: …}) are retired.
+        def self.publish_targets(raw)
+          block = raw["publish"]
+          return [] if block.nil?
+
+          unless block.is_a?(Array)
+            raise BadManifest.new(
+              "entry '#{raw["key"]}': `publish:` must be a list of targets " \
+              "[{to:, template:?} | {tree:}] (ADR 0094); the `publish: { … }` map form was retired",
+            )
+          end
+          block.map { |t| Textus::Domain::Policy::PublishTarget.new(t) }
         end
 
         def self.resolve_format(raw, path)

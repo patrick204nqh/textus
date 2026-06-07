@@ -245,7 +245,7 @@ module Textus
           "owner" => e.owner,
           "format" => e.format,
           "derived" => derived,
-          "intake" => e.is_a?(Textus::Manifest::Entry::Intake),
+          "intake" => e.intake?,
           "publish_to" => Array(e.publish_to),
         }
       end

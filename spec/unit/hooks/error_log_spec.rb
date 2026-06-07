@@ -3,8 +3,8 @@ require "spec_helper"
 RSpec.describe Textus::Hooks::ErrorLog do
   it "stores errors and returns them in insertion order via since(seq)" do
     log = described_class.new(capacity: 8)
-    log.record(seq: 1, event: :entry_put, hook: :h1, key: "a", error_class: "Foo", error_message: "boom")
-    log.record(seq: 2, event: :entry_put, hook: :h2, key: "b", error_class: "Bar", error_message: "kaboom")
+    log.record(seq: 1, event: :entry_written, hook: :h1, key: "a", error_class: "Foo", error_message: "boom")
+    log.record(seq: 2, event: :entry_written, hook: :h2, key: "b", error_class: "Bar", error_message: "kaboom")
     rows = log.since(0)
     expect(rows.map { |r| r[:hook] }).to eq(%i[h1 h2])
   end

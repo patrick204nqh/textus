@@ -1,10 +1,13 @@
 module Textus
   module Maintenance
-    # The single convergence engine (ADR 0093). "Make these machine entries
-    # current from upstream." Dispatches per entry kind:
-    #   intake  (handler)             -> re-pull (FetchWorker)
-    #   derived (template/projection) -> render + publish (publish_via)
-    #   derived (command/external)    -> skip (no in-process runner; staleness only)
+    # The single convergence engine (ADR 0093/0094). "Make these machine entries
+    # current from upstream." Acquire is per-`from`; publish is one uniform
+    # `publish_via` entry point for all kinds (ADR 0094):
+    #   intake  (from: handler)  -> re-pull (FetchWorker), then publish_via
+    #   derived (from: project)  -> build data + publish_via (ToPaths or None)
+    #   derived (from: command)  -> skip the build; publish_via publishes
+    #                               existing store bytes via mode resolution
+    #                               (None when no targets -> skipped)
     # Runs as the reconcile build actor (self-elevating); the passed `call`
     # supplies only correlation_id/dry_run. Callers choose the key set: the
     # write subscriber passes rdeps ∩ derived; reconcile passes
@@ -14,7 +17,7 @@ module Textus
       # write trigger (ADR 0093). Both the sync path (inline, in the subscriber)
       # and the async path (AsyncRunner) call this. A held lock is a soft miss
       # (an in-flight build/reconcile already produces fresh output); any other
-      # error is republished as :materialize_failed and never raised at the
+      # error is republished as :produce_failed and never raised at the
       # writer (ADR 0087 §5 failure isolation, preserved).
       def self.converge(container:, call:, keys:)
         Textus::Ports::BuildLock.with(root: container.root) do
@@ -24,7 +27,7 @@ module Textus
         nil
       rescue Textus::Error => e
         container.events.publish(
-          :materialize_failed,
+          :produce_failed,
           ctx: Textus::Hooks::Context.for(container: container, call: call),
           keys: keys, error: e.message
         )
@@ -53,19 +56,19 @@ module Textus
 
       private
 
+      # Acquire is per-`from`; publish is one uniform entry point (publish_via)
+      # for every kind. The command emit-vs-skip falls out of publish-mode
+      # resolution (Publish::None when no targets), so there is no command branch.
       def produce_one(key, build_call, context, out)
         entry = @manifest.resolver.resolve(key).entry
+
         if entry.intake?
-          Write::FetchWorker.new(container: @container, call: build_call).run(key)
-          out[:produced] << key
-        elsif entry.derived? || !entry.publish_tree.nil?
-          # Derived entries render+publish; nested publish_tree entries mirror
-          # their source subtree to the published tree (ADR 0047) — both go
-          # through the polymorphic publish_via.
-          result = entry.publish_via(context)
-          result.nil? ? (out[:skipped] << key) : (out[:produced] << key)
+          Write::FetchWorker.new(container: @container, call: build_call).run(key) # acquire: re-pull
+          entry.publish_via(context)                                                # emit any targets
+          out[:produced] << key                                                     # a fetch is production
         else
-          out[:skipped] << key # non-machine entry: nothing to produce
+          result = entry.publish_via(context) # derived builds inside; command publishes-or-None
+          result.nil? ? (out[:skipped] << key) : (out[:produced] << key)
         end
       end
 

@@ -41,7 +41,7 @@ module Textus
 
               dst = File.join(target_dir, relative(src, walk_root))
               Textus::Ports::Publisher.publish(source: src, target: dst, store_root: @pctx.root)
-              @pctx.emit(:file_published, key: key, envelope: envelope, source: src, target: dst)
+              @pctx.emit(:entry_published, key: key, envelope: envelope, source: src, target: dst)
               { "key" => key, "source" => src, "target" => dst }
             end
           end

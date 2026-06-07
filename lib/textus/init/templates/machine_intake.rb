@@ -7,7 +7,7 @@
 # (docs/cookbook/environment-scan.md). tracked:false → gitignored. Keep this an
 # ALLOWLIST of versions and counts — NEVER secrets, raw `env`, or package lists.
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :machines) do |config:, args:, **|
+  reg.on(:resolve_handler, :machines) do |config:, args:, **|
     machine = args[:leaf_segments].first or
       raise "machines intake needs a host leaf, e.g. the 'local' in feeds.machines.local"
     spec = (config["machines"] || {}).fetch(machine) { raise "unknown machine: #{machine}" }

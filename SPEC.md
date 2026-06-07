@@ -21,11 +21,11 @@
 - [5. Zones and capability-based write gates](#5-zones-and-capability-based-write-gates)
   - [5.1 Role resolution](#51-role-resolution)
     - [5.1.1 Capabilities](#511-capabilities)
-  - [5.2 Compute layer (derived entries)](#52-compute-layer-derived-entries)
-    - [5.2.1 Projection compute](#521-projection-compute-kind-projection)
-    - [5.2.2 External compute](#522-external-compute-kind-external)
+  - [5.2 Source layer (produced entries)](#52-source-layer-produced-entries)
+    - [5.2.1 Projection source (`from: project`)](#521-projection-source-from-project)
+    - [5.2.2 External source (`from: command`)](#522-external-source-from-command)
   - [5.3 Publish layer](#53-publish-layer-publish)
-  - [5.4 Intake](#54-intake-declared-fetched-via-registered-intake-handler)
+  - [5.4 Intake source (`from: handler`)](#54-intake-source-from-handler)
   - [5.5 Pending / accept workflow](#55-pending--accept-workflow)
   - [5.6 Audit log](#56-audit-log)
   - [5.7 Security bounds](#57-security-bounds)
@@ -74,9 +74,9 @@ implementation is the bug.
 
 ## 1. What textus is
 
-A storage convention and JSON wire protocol for humans, agents, and automation to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, capability-based write gates, declarative compute, and copy-based publish targets.
+A storage convention and JSON wire protocol for humans, agents, and automation to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, capability-based write gates, declarative data sources, and a list of publish targets that copy or render that data.
 
-The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees, declares the capabilities each role holds, and declares each zone's kind — write authority for a zone is derived from the role's capabilities and the zone's kind. Schemas (also YAML) define what frontmatter shape each entry must have. Derived entries are computed from other entries via pure projections and a vendored Mustache template engine, then optionally published to repo-relative paths as byte-for-byte file copies. The CLI surface (`textus get/put/list/where/schema/reconcile/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
+The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees, declares the capabilities each role holds, and declares each zone's kind — write authority for a zone is derived from the role's capabilities and the zone's kind. Schemas (also YAML) define what frontmatter shape each entry must have. Produced entries acquire their data via a declared `source:` (a pure projection over other entries, an external fetch, or an out-of-band command); that data is then optionally published to repo-relative paths — copied verbatim, or rendered through a per-target Mustache template. The CLI surface (`textus get/put/list/where/schema/reconcile/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
 You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, gated, computed, and published. The contents are entirely yours.
 
@@ -88,7 +88,7 @@ textus/3 names its concepts along six axes. Reviewers who internalize these can 
 - **Place** — where data lives: zones such as `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
 - **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `fetch`, `reconcile`, …).
-- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_put`, `:build_completed`, …).
+- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_handler`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_written`, `:entry_produced`, …).
 - **Rule** — constraints declared in the top-level `rules:` array of the manifest.
 
 ### 1.2 The five layers
@@ -99,8 +99,8 @@ textus is organized as five composable layers. Each layer has a single responsib
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
 | L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `reconcile`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
-| L3 | **Compute** | Pure transforms from store entries to derived entries. Projections (select/pluck/sort/limit/format) plus a vendored Mustache template subset. No shell execution. |
-| L4 | **Publish** | Byte-for-byte file copy from derived entries to repo-relative paths declared via `publish: { to: [...] }`. The in-store artifact is the consumer-shaped output; the published file is an identical copy. A sentinel under `.textus/.run/sentinels/<target-rel-path>.textus-managed.json` (git-ignored runtime state) records the source, sha256, and `mode: "copy"`. |
+| L3 | **Source** | An entry's `source:` *acquires* **data** — a pure in-process projection from store entries (select/pluck/sort/transform), an external fetch via a handler, or an out-of-band command. Acquire-only: rendering is not a source concern. No shell execution. |
+| L4 | **Publish** | Emits a produced entry's data to repo-relative paths, declared via a **list** of `publish:` targets. A target with no `template:` copies the data verbatim (json/yaml re-serialized without `_meta`; other formats byte-copied); a target with a `template:` renders the data through it. A `{ tree: }` target mirrors a subtree (ADR 0047). Published artifacts are clean content — textus's `_meta` provenance stays in the store. A sentinel under `.textus/.run/sentinels/<target-rel-path>.textus-managed.json` (git-ignored runtime state) records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
 
 ## 2. Goals and non-goals
@@ -111,7 +111,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 - Schema-validated frontmatter using YAML schemas as data.
 - Capability-based write gates (roles hold capabilities; write authority per zone is derived from the role's capabilities and the zone's kind).
 - Optimistic concurrency via ETags.
-- Pure declarative compute: derived entries computed from projections + Mustache, no shell-out.
+- Pure declarative data sources: derived entries acquire their data from projections over store keys, no shell-out; presentation (Mustache) is a separate publish concern.
 - Publish derived entries to well-known paths as body-only plain files.
 - Plain-file backend — consumers can also read raw if they prefer.
 
@@ -228,11 +228,11 @@ Zone names are conventional — write authority comes from each zone's declared 
 | `yaml`     | `.yaml` or `.yml` required  | optional (escape hatch) | optional (top-level keys) |
 | `text`     | `.txt` or no extension      | required for derived | MUST be null |
 
-For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema. Each matching file is enumerated as its own key, with the key segments derived from the path relative to the entry (extension stripped). A nested entry that instead mirrors a whole directory of files to a consumer path — without enumerating any of them as keys — uses `publish: { tree: }` (below); its files are opaque payload. (The former `index_filename:` directory-keyed enumeration was removed in 0.43.0 — ADR 0053.)
+For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema. Each matching file is enumerated as its own key, with the key segments derived from the path relative to the entry (extension stripped). A nested entry that instead mirrors a whole directory of files to a consumer path — without enumerating any of them as keys — uses a `{ tree: }` publish target (below); its files are opaque payload. (The former `index_filename:` directory-keyed enumeration was removed in 0.43.0 — ADR 0053.)
 
-**The `publish:` block (ADR 0052).** Publishing is configured by one typed `publish:` block with exactly one of two sub-keys — `publish: { to: [...] }` (file fan-out, §5.3) **xor** `publish: { tree: "dir" }` (subtree mirror, below). Setting both is an error. The legacy top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message.
+**The `publish:` list (ADR 0052, ADR 0094).** Publishing is configured by a `publish:` **list** of targets; each element is exactly one of a to-target `{ to:, template?:, inject_boot?: }` (file emit, §5.3) or a tree-target `{ tree: }` (subtree mirror, below). The legacy *map* forms (`publish: { to: [...] }`, `publish: { tree: ... }`) and the older top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message — `publish:` is a list, and a mirror is a `{ tree: }` element of it.
 
-**Subtree mirror (`publish: { tree: }`).** A nested manifest entry MAY declare `publish: { tree: "dir" }` to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every build the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). When a `publish.tree` target directory overlaps a `derived` entry's `publish.to` (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
+**Subtree mirror (a `{ tree: }` target).** A nested manifest entry MAY include a `{ tree: "dir" }` target to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every reconcile the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). When a `{ tree: }` target directory overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
 
 ```yaml
 - key: working.skills
@@ -241,11 +241,11 @@ For `nested: true`, the recursive glob matches the format's extension (markdown�
   schema: skill
   nested: true
   publish:
-    tree: "skills"
+    - { tree: "skills" }
   ignore: ["*.tmp", ".DS_Store"]
 ```
 
-**`inject_boot:`.** A derived entry with a `template:` MAY declare `inject_boot: true`. When `textus reconcile` materializes the entry, it merges the `textus boot` envelope (§9) into the projection data under the key `boot`, so the template can render orientation content (zones, write flows, CLI catalog) alongside its projected rows. The flag is rejected at manifest load on (a) non-derived entries or (b) derived entries without a `template:` — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus boot` exposes.
+**`inject_boot:` (a publish-target flag).** A to-target with a `template:` MAY declare `inject_boot: true`. When `textus reconcile` publishes that target, it merges the `textus boot` envelope (§9) into the render data under the key `boot`, so the template can render orientation content (zones, write flows, CLI catalog) alongside the entry's data. `inject_boot:` is per-target and only meaningful alongside a `template:`; on a templateless or tree target it is rejected at load — agents reading the rendered file should be able to trust the preamble was produced by the same source of truth `textus boot` exposes.
 
 **Lookup rule:** to resolve a key, find the entry with the longest `key:` prefix that matches. If that entry has `nested: true`, the remaining segments map to subdirectories under its `path`. Otherwise the key must equal an entry exactly. The resolved filesystem path is `<.textus root>/zones/<entry.path>[/<remaining>...].md` — implementations MUST prepend `zones/` to the manifest `path:` when constructing the filesystem location.
 
@@ -367,60 +367,47 @@ predicate keys on the `author` capability and is named `author_held` (it passes
 when the acting role holds `author`). See §5.11 for composing extra predicates via
 `rules[].guard:`.
 
-### 5.2 Compute layer (derived entries)
+### 5.2 Source layer (produced entries)
 
-Derived entries live in a `derived` zone (writable by a role holding `reconcile`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their body is produced from declared sources. A derived entry's `kind:` is `derived` and it declares a `source:` block with a `from:` discriminator.
+Produced entries live in a `machine` zone (writable by a role holding `reconcile`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their **data** is acquired from a declared `source:` block with a `from:` discriminator (`project | handler | command`). A `source:` is **acquire-only**: it produces the data the store holds; it does **not** render. Rendering is a publish concern (§5.3). Every produced entry is `kind: produced` (ADR 0095); the **produce-method** is read from `source.from` — `from: project | command` is *derived* (internal projection / out-of-band command), `from: handler` is *intake* (external fetch, §5.4). `kind:` no longer restates the produce-method (the former `kind: derived` / `kind: intake` are rejected at load with a fold hint).
 
-#### 5.2.1 Projection compute (`from: template`)
+#### 5.2.1 Projection source (`from: project`)
 
-A derived entry produced by a pure in-process projection declares `source: { from: template, ... }`. The optional `project:` sub-key specifies the selection, and an optional `template:` sub-key names a Mustache template to render the result. A templateless projection (no `template:`) is valid when `project:` is present — textus serializes the projection directly using the `format:` strategy (e.g. `json`, `yaml`, `markdown-table`).
+A derived entry produced by a pure in-process projection declares `source: { from: project, ... }`. The projection fields are **flat** under `source:` (there is no nested `project:` block). The stored form is **data** — serialized via the `format:` strategy (e.g. `json`, `yaml`, `markdown-table`); no template is consulted at acquire time.
 
 ```yaml
-- key: artifacts.catalogs.people
-  kind: derived
+- key: artifacts.derived.people
+  kind: produced                   # produce-method (derived) read from source.from: project
   zone: artifacts
   source:
-    from: template
-    template: people.mustache        # optional; omit for templateless projection
-    project:
-      select: knowledge.network.org  # prefix OR [list of prefixes]
-      pluck:  [name, relationship, org]
-      sort_by: name                  # optional
-      limit: 1000                    # default 1000, max 1000
-      format: yaml-list-in-md        # one of: list, hash, yaml-list-in-md, json, markdown-table
-      transform: rank_by_recency     # optional — names a :transform_rows hook
-    on_write: async                  # sync | async (default async)
-    inject_boot: false               # true merges boot envelope into template data
-    provenance: true                 # include _meta provenance block
+    from: project
+    select: knowledge.network.org  # prefix OR [list of prefixes]
+    pluck:  [name, relationship, org]
+    sort_by: name                  # optional
+    limit: 1000                    # default 1000, max 1000
+    format: json                   # one of: list, hash, yaml-list-in-md, json, markdown-table
+    transform: rank_by_recency     # optional — names a :transform_rows hook
+    on_write: async                # sync | async (default async)
 ```
 
-`project.select` is either a single dotted-key prefix or a list of prefixes. Every entry whose key starts with one of those prefixes is included. `project.pluck` names the frontmatter fields to retain. `project.sort_by` is optional; when absent, entries are sorted by key. `project.limit` is bounded at 1000 entries (hard cap); requests above 1000 are rejected.
+`select` is either a single dotted-key prefix or a list of prefixes. Every entry whose key starts with one of those prefixes is included. `pluck` names the frontmatter fields to retain. `sort_by` is optional; when absent, entries are sorted by key. `limit` is bounded at 1000 entries (hard cap); requests above 1000 are rejected.
 
-`project.format` controls body serialization when no template is supplied. Permitted values: `list`, `hash`, `yaml-list-in-md`, `json`, `markdown-table`.
+`format` controls how the acquired data is serialized for storage. Permitted values: `list`, `hash`, `yaml-list-in-md`, `json`, `markdown-table`.
 
-`project.transform:` (optional) names a registered `:transform_rows` hook (see §5.10). The hook receives the projected rows array and may reorder, filter, or augment before serialization.
+`transform:` (optional) names a registered `:transform_rows` hook (see §5.10). The hook receives the projected rows array and may reorder, filter, or augment before serialization — it shapes the **data**, not its presentation.
 
-When `template:` is given, it names a Mustache template under `.textus/templates/`. textus implements a deliberately restricted Mustache subset:
+`on_write:` (`sync` | `async`, default `async`) controls the write-trigger strategy: `sync` rebuilds the entry's data inline before the triggering write returns; `async` defers it to a background pass that completes before process exit.
 
-- `{{var}}` — variable interpolation.
-- `{{#section}}...{{/section}}` — section (iteration / truthy block).
-- `{{^inverted}}...{{/inverted}}` — inverted section.
-- `{{!comment}}` — comment.
+> **No source-level `template:` / `inject_boot:` / `provenance:`.** Those are retired from `source:` (and from the entry top level). Rendering and boot injection move to a publish target (§5.3); provenance is carried in the data's `_meta` (§5.12), never a flag. A manifest carrying `source: { from: template }`, an entry-level/`source` `template:`/`inject_boot:`/`provenance:`, or a nested `project:` block is **rejected at load** with a fold hint (ADR 0094).
 
-No partials. No lambdas. No HTML escaping (output is raw text, intended for Markdown). Template recursion depth is bounded at 8; exceeding the limit is an error.
-
-`on_write:` (`sync` | `async`, default `async`) controls the write-trigger strategy: `sync` re-materializes the entry inline before the triggering write returns; `async` defers it to a background pass that completes before process exit.
-
-`inject_boot:` and `provenance:` are `source:` sub-keys (not top-level entry fields). `inject_boot: true` requires `template:` to be present; the flag is rejected at load on non-derived entries or derived entries without a template.
-
-#### 5.2.2 External compute (`from: command`)
+#### 5.2.2 External source (`from: command`)
 
 A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `source: { from: command, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the derived file's `_meta.generated.at` and report staleness. (Generator/build drift is dependency-based, not age-based; ADR 0085 keeps it out of the internal `freshness` scan — it is a `doctor` health check.)
 
 ```yaml
-- key: artifacts.catalogs.skills
-  path: artifacts/catalogs/skills.md
-  kind: derived
+- key: artifacts.derived.skills
+  path: artifacts/derived/skills.md
+  kind: produced                   # produce-method (derived) read from source.from: command
   zone: artifacts
   owner: automation:catalog-skills
   source:
@@ -451,34 +438,48 @@ generated:
 
 `generated.from` SHOULD match `source.sources` — they're the same list, recorded twice so a diff proves what was actually consumed.
 
-`from: command` and `from: template` are alternatives — exactly one per derived entry. The external automation produces the bytes directly for `from: command`; no template is used.
+`from: command` and `from: project` are alternatives — exactly one per derived entry. The external automation produces the bytes directly for `from: command`; the in-process projection produces them for `from: project`. Either way the stored form is data; rendering is deferred to publish (§5.3).
 
 ### 5.3 Publish layer (`publish:`)
 
-Publishing is configured by one typed `publish:` block with exactly one sub-key (ADR 0052): `to:` (file fan-out) **xor** `tree:` (subtree mirror). Setting both is an error; the legacy top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message.
+Rendering and emission are a **publish** concern, orthogonal to acquire (§5.2). `publish:` is always a **list** of targets (ADR 0094). Each element is exactly one of two shapes:
 
-A derived entry MAY declare `publish: { to: [...] }`, listing one or more destination paths relative to the project root:
+- a **to-target** — `{ to: <path>, template?: <name>, inject_boot?: <bool> }` — emit the entry's data to one repo-relative path;
+- a **tree-target** — `{ tree: <dir> }` — mirror the entry's stored subtree (ADR 0047).
+
+The legacy *map* forms — `publish: { to: [...] }` and `publish: { tree: ... }` — and the older top-level `publish_to:` / `publish_tree:` keys are **rejected at load** with a migration message: `publish:` is a list, and a mirror is a `{ tree: }` element of it.
 
 ```yaml
 publish:
-  to:
-    - CLAUDE.md
-    - .ai/instructions.md
+  - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
+  - { to: AGENTS.md, template: orientation.mustache }   # same data, its own render
+  - { to: .mcp.json }                                    # no template → copy data verbatim
+  - { tree: skills/ }                                    # subtree mirror (ADR 0047)
 ```
 
-When the entry is recomputed, textus copies the in-store file byte-for-byte to each destination. The in-store artifact under `.textus/zones/<output-zone>/…` is already the consumer-shaped output (per the format strategy — see §5.x), so publish is a verbatim file copy with no parsing or stripping.
+A **to-target** carries `to:` (required) and optionally `template:` / `inject_boot:`:
 
-A sentinel is written for each published file at `<store_root>/.run/sentinels/<target-relative-to-repo>.textus-managed.json` (git-ignored runtime state — ADR 0070), recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store's runtime tree rather than beside the consumer file so target directories stay clean, and are regenerated by the next build (via content-identical adoption) rather than committed. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing, marked as managed, or **byte-identical to the source being published**. An identical destination is *adopted*: its sentinel is written and management proceeds (the copy is a content no-op), so an artifact tree already on disk onboards without a manual delete. An unmanaged destination whose content **differs**, or any unmanaged symlink, is still refused (ADR 0050). Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
+- **No `template:`** → publish the entry's **content**. For a structured data format (`json`/`yaml`) the content is re-serialized *without* textus's `_meta` block, so a config like `.mcp.json` stays a clean consumer file; for any other / opaque format, a literal byte-copy. (This is "publish the content," not "copy the stored envelope.")
+- **`template:` present** → render the entry's data through the named Mustache template under `.textus/templates/` and publish the rendered bytes. One dataset can feed differently-formatted outputs by giving each to-target its own template.
+- **`inject_boot:`** (default `false`) → merge the `textus boot` payload into the render data for *this target*. It is per-target and only meaningful alongside a `template:`.
 
-**Subtree mirror.** A nested entry MAY declare `publish: { tree: "dir" }` instead of `to:` (see §4). On every build, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/.run/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The build envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `built` array, plus a `pruned` array listing any orphaned managed files removed on this build. Targets that would resolve outside the repo root are refused. When a `publish.tree` target overlaps a `derived` entry's `publish.to` (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
+**Published artifacts are clean content.** textus's `_meta` provenance (`from`/`reduce`, §5.12) stays in the **stored** entry and is never emitted — a verbatim copy strips it on re-serialize, a rendered template surfaces provenance only if it explicitly references `_meta`. There is no entry-level / publish `provenance:` flag (rejected at load); provenance is carried in one place, the stored data's `_meta`.
 
-### 5.4 Intake (declared, re-pulled via registered intake handler)
+The vendored Mustache subset for `template:`: `{{var}}` (interpolation), `{{#section}}...{{/section}}` (iteration / truthy block), `{{^inverted}}...{{/inverted}}` (inverted section), `{{!comment}}`. No partials, no lambdas, no HTML escaping (output is raw text). Template recursion depth is bounded at 8; exceeding the limit is an error.
 
-Intake entries declare production via `source: { from: handler, ... }`. The `source:` block fully replaces the former `intake:` block; the entry's `kind:` MUST be `intake`. textus itself makes no implicit network calls: the handler runs only when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry past its `source.ttl` — a `get` never runs it (ADR 0089).
+A sentinel is written for each published file at `<store_root>/.run/sentinels/<target-relative-to-repo>.textus-managed.json` (git-ignored runtime state — ADR 0070), recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store's runtime tree rather than beside the consumer file so target directories stay clean, and are regenerated by the next reconcile (via content-identical adoption) rather than committed. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing, marked as managed, or **byte-identical to the source being published**. An identical destination is *adopted*: its sentinel is written and management proceeds (the copy is a content no-op), so an artifact tree already on disk onboards without a manual delete. An unmanaged destination whose content **differs**, or any unmanaged symlink, is still refused (ADR 0050). Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
+
+**Subtree mirror.** A nested entry MAY include a `{ tree: "dir" }` target (see §4). On every reconcile, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/.run/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The reconcile envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `produced` array, plus a `pruned` array listing any orphaned managed files removed on this pass. Targets that would resolve outside the repo root are refused. When a `{ tree: }` target overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
+
+**Publish presence is a uniform rule across all kinds.** Absent → the entry is terminal data (consumed internally via another entry's `select`, or read via `get`). Present → emit to the listed targets, every kind through one publish path. A `from: command` entry with publish targets emits the bytes the command already wrote into the store; without targets it is a staleness-only signal.
+
+### 5.4 Intake source (`from: handler`)
+
+Intake entries acquire their data via `source: { from: handler, ... }` — an external fetch through a registered handler. The `source:` block fully replaces the former `intake:` block; the entry's `kind:` is `produced` and the *intake* produce-method is read from `source.from: handler` (ADR 0095). Like every `source:`, it is acquire-only — a fetched feed is **data**, and if it needs rendering for a consumer that is a publish target's `template:` (§5.3), never the handler's job. textus itself makes no implicit network calls: the handler runs only when `textus reconcile` (the scheduled sweep) or a `hook run` event re-pulls a stale entry past its `source.ttl` — a `get` never runs it (ADR 0089).
 
 ```yaml
 - key: feeds.calendar.events
-  kind: intake
+  kind: produced                 # produce-method (intake) read from source.from: handler
   zone: feeds
   source:
     from: handler
@@ -488,7 +489,7 @@ Intake entries declare production via `source: { from: handler, ... }`. The `sou
     ttl: 6h                    # re-pull cadence; reconcile re-pulls when past ttl
 ```
 
-`handler` names a registered `:resolve_intake` hook (see §5.10); `config` is an opaque hash handed to the handler. `ttl` is the re-pull cadence: the `reconcile` sweep (and `hook run`) re-pulls the entry when `now - last_fetched_at > ttl`. A `get` annotates the entry with `stale: true` when past ttl but **never** re-pulls (ADR 0089). Age-based garbage collection of intake entries is separate and orthogonal — declare a `retention:` rule block (§5.11).
+`handler` names a registered `:resolve_handler` hook (see §5.10); `config` is an opaque hash handed to the handler. `ttl` is the re-pull cadence: the `reconcile` sweep (and `hook run`) re-pulls the entry when `now - last_fetched_at > ttl`. A `get` annotates the entry with `stale: true` when past ttl but **never** re-pulls (ADR 0089). Age-based garbage collection of intake entries is separate and orthogonal — declare a `retention:` rule block (§5.11).
 
 > **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does. None of them ever re-pull.
 
@@ -502,8 +503,8 @@ In intake mode the handler MUST return one of three shapes, all normalized by th
 
 **Re-pull paths.** Ingest is system-pushed (ADR 0089) — never triggered by a read:
 
-1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every intake entry past its `source.ttl`: it resolves the entry's `source.handler`, invokes the registered `:resolve_intake` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `reconcile` (`automation` by default). Run it on a cron/timer.
-2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_intake` path), for sources that announce changes rather than waiting for the sweep.
+1. **Scheduled sweep** — `textus reconcile --as=automation` re-pulls every intake entry past its `source.ttl`: it resolves the entry's `source.handler`, invokes the registered `:resolve_handler` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `reconcile` (`automation` by default). Run it on a cron/timer.
+2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_handler` path), for sources that announce changes rather than waiting for the sweep.
 
 (A third, manual path remains for out-of-band sources: read the `stale` list from `textus pulse` — soonest deadline `next_due_at` — fetch bytes yourself, and store them with `textus put KEY --as=automation --stdin`. `put` only stores bytes; it runs no handler. For per-entry detail read `textus get KEY` and `textus rule_explain KEY`.)
 
@@ -633,11 +634,11 @@ The subdirectory layout under `hooks/` is organizational only; the registered ev
 ```ruby
 # Canonical form — works for every event:
 Textus.hook do |reg|
-  reg.on(:resolve_intake,  :my_source)              { |caps:, config:, args:, **|  … }
-  reg.on(:transform_rows,  :rank_by_recency)         { |caps:, rows:, **|            … }
-  reg.on(:validate,        :storage_writable)        { |caps:|                        … }
-  reg.on(:entry_put,       :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
-  reg.on(:file_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:resolve_handler,  :my_source)              { |caps:, config:, args:, **|  … }
+  reg.on(:transform_rows,   :rank_by_recency)         { |caps:, rows:, **|            … }
+  reg.on(:validate,         :storage_writable)        { |caps:|                        … }
+  reg.on(:entry_written,    :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
+  reg.on(:entry_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -647,27 +648,27 @@ end
 
 | Event                   | Mode    | Args                                                      | Return                | Failure       |
 |-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| `:resolve_intake`       | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
+| `:resolve_handler`      | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
 | `:transform_rows`       | rpc     | caps:, rows:, config:                                     | rows array            | aborts op     |
 | `:validate`             | rpc     | caps:                                                     | issues array          | aborts doctor |
-| `:entry_put`            | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
+| `:entry_written`        | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
 | `:entry_deleted`        | pubsub  | ctx:, key:                                                | (discarded)           | logged        |
 | `:entry_fetched`        | pubsub  | ctx:, key:, envelope:, change:                            | (discarded)           | logged        |
-| `:build_completed`      | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
+| `:entry_produced`       | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
 | `:proposal_accepted`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
-| `:file_published`       | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
+| `:entry_published`      | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
 | `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
 | `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
 | `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
 | `:session_opened`       | pubsub  | ctx:, role:, cursor:                                     | (discarded)           | logged        |
-| `:fetch_started`        | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
-| `:fetch_failed`         | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
+| `:entry_fetch_started`  | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
+| `:entry_fetch_failed`   | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
 
-The two `:fetch_*` lifecycle events report the progress and failures of intake fetches during `reconcile` / `hook run`.
+The two `:entry_fetch_*` lifecycle events report the progress and failures of intake fetches during `reconcile` / `hook run`.
 
-**`:fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
+**`:entry_fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
 
-**`:fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
+**`:entry_fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
 
 **Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
 
@@ -678,7 +679,7 @@ Declaring `store:` instead of `caps:` in an RPC callable will pass registration 
 
 The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry. For `:session_opened`, no key — it fires once per MCP connection at `initialize` with the connection's resolved `role:` and boot `cursor:` (ADR 0075); distinct from `:store_loaded`, which fires once per process at `Store#initialize` under the default role.
 
-**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`intake.handler: NAME`, `compute.transform: NAME`). Failure or timeout aborts the calling operation.
+**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`source.handler: NAME` for `:resolve_handler`, `source.transform: NAME` for `:transform_rows`). Failure or timeout aborts the calling operation.
 
 **Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
 
@@ -936,7 +937,7 @@ The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, 
 
 `textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
 
-`textus reconcile [--prefix=K] [--zone=Z] [--dry-run]` is the manual full maintenance pass (ADR 0093). It runs two phases under **one** shared maintenance lock: **Phase 1 (non-destructive)** — produce ALL in-scope derived entries (always re-render — pure/idempotent, unchanged sources write nothing) and re-pull every intake entry past its `source.ttl`; nested `publish: tree:` entries are also produced. **Phase 2 (destructive)** — the `retention:` sweep: drop or archive entries past their `retention.ttl` (§5.11). Phase 1 self-elevates to the manifest's `reconcile`-capable actor (`automation` by default) — materialization is a pure function of already-accepted canon and grants no authority over content. Phase 2 runs as the **caller** (gated as the caller's own `key_delete` authority), never self-elevates. `--dry-run` returns a plan without mutating: `would_produce` (the keys Phase 1 would write) alongside `would_drop`/`would_archive` from Phase 2. An apply returns `produced`, `produce_failed`, `dropped`, `archived`, `failed`, and `health`. In day-to-day use derived entries stay fresh **reactively** — a canon write re-materializes dependent derived entries inline (the per-write reactive rebuild is "reconcile narrowed to rdeps ∩ derived") — so `reconcile` is the on-demand catch-all, not a step in the normal write loop.
+`textus reconcile [--prefix=K] [--zone=Z] [--dry-run]` is the manual full maintenance pass (ADR 0093). It runs two phases under **one** shared maintenance lock: **Phase 1 (non-destructive)** — produce ALL in-scope derived entries' data (always rebuild — pure/idempotent, unchanged sources write nothing) and re-pull every intake entry past its `source.ttl`; nested entries with a `{ tree: }` publish target are also produced. **Phase 2 (destructive)** — the `retention:` sweep: drop or archive entries past their `retention.ttl` (§5.11). Phase 1 self-elevates to the manifest's `reconcile`-capable actor (`automation` by default) — materialization is a pure function of already-accepted canon and grants no authority over content. Phase 2 runs as the **caller** (gated as the caller's own `key_delete` authority), never self-elevates. `--dry-run` returns a plan without mutating: `would_produce` (the keys Phase 1 would write) alongside `would_drop`/`would_archive` from Phase 2. An apply returns `produced`, `produce_failed`, `dropped`, `archived`, `failed`, and `health`. In day-to-day use derived entries stay fresh **reactively** — a canon write re-materializes dependent derived entries inline (the per-write reactive rebuild is "reconcile narrowed to rdeps ∩ derived") — so `reconcile` is the on-demand catch-all, not a step in the normal write loop.
 
 `textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
@@ -983,16 +984,16 @@ Given a manifest entry where `key: identity.self` lives in the `identity` zone (
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` with `kind: intake` and `source: { from: handler, handler: h, ttl: 1h }`, and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-pull.
+Given a manifest entry `intake.notes` with `kind: produced` and `source: { from: handler, handler: h, ttl: 1h }` (the intake produce-method read from `source.from`), and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-pull.
 
 **Fixture E — Projection produce:**
-Given a manifest entry `artifacts.catalogs.skills` with `kind: derived` and `source: { from: template, project: { select: knowledge.projects, ... } }`, `textus reconcile --prefix=artifacts.catalogs.skills` produces the derived entry on disk with frontmatter and body matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
+Given a manifest entry `artifacts.derived.skills` with `kind: produced` and `source: { from: project, select: knowledge.projects, ... }` (the derived produce-method read from `source.from`), `textus reconcile --prefix=artifacts.derived.skills` produces the derived entry's **data** on disk (serialized per `format:`) matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
 
-**Fixture F — Mustache render:**
-Given a derived entry with a `template` clause referencing a `.mustache` file and inputs drawn from other keys, `textus reconcile` produces a body whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization).
+**Fixture F — Mustache render at publish:**
+Given a produced entry with a to-target `{ to:, template: <name> }`, `textus reconcile` renders the entry's stored data through the template and emits a file whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization). Two to-targets with different templates produce different bytes from the one entry.
 
 **Fixture G — Copy publish:**
-Given a manifest entry with `publish: { to: [<path>] }`, a successful `textus reconcile` for that entry leaves a plain file at `<path>` whose contents are byte-identical to the in-store artifact at `.textus/zones/<...>`, accompanied by a sentinel at `.textus/.run/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `reconcile` is idempotent.
+Given a manifest entry with a templateless to-target `publish: [{ to: <path> }]`, a successful `textus reconcile` for that entry leaves a plain file at `<path>` whose contents are the entry's content re-serialized without `_meta` (byte-identical to a clean consumer config), accompanied by a sentinel at `.textus/.run/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `reconcile` is idempotent.
 
 **Fixture H — Audit log format:**
 Every successful write verb (`put`, `key_delete`, `reconcile`, `accept`, `schema migrate`) appends exactly one line per affected key to the audit log, in the canonical format defined in §audit (timestamp, actor role, verb, key, etag-before, etag-after). No write produces zero or multiple lines per key.
@@ -1066,25 +1067,25 @@ textus does not ship a built-in textus/2 → textus/3 migrator. The historical u
 | Manifest | `policies:` | `rules:` |
 | Manifest | `handler_allowlist:` | `intake_handler_allowlist:` |
 | Manifest | `promote_requires:` | `guard: { accept: [...] }` |
-| Manifest | `projection:` | `source: { from: template, project: { ... } }` |
+| Manifest | `projection:` | `source: { from: project, select: ..., ... }` (flat fields) |
 | Manifest | `generator:` | `source: { from: command, ... }` |
-| Hook event | `:intake` | `:resolve_intake` |
+| Hook event | `:intake` | `:resolve_handler` |
 | Hook event | `:reduce` | `:transform_rows` |
 | Hook event | `:check` | `:validate` |
-| Hook event | `:put` | `:entry_put` |
+| Hook event | `:put` | `:entry_written` |
 | Hook event | `:deleted` | `:entry_deleted` |
 | Hook event | `:refreshed` | `:entry_fetched` |
-| Hook event | `:built` | `:build_completed` |
+| Hook event | `:built` | `:entry_produced` |
 | Hook event | `:accepted` | `:proposal_accepted` |
 | Hook event | `:reject` | `:proposal_rejected` |
-| Hook event | `:published` | `:file_published` |
+| Hook event | `:published` | `:entry_published` |
 | Hook event | `:mv` | `:entry_renamed` |
 | Hook event | `:loaded` | `:store_loaded` |
-| Hook event | `:refresh_began` | `:fetch_started` |
+| Hook event | `:refresh_began` | `:entry_fetch_started` |
 | Hook event | `:refresh_detached` | `:fetch_backgrounded` |
-| Hook event | `:refresh_failed` | `:fetch_failed` |
+| Hook event | `:refresh_failed` | `:entry_fetch_failed` |
 | Hook DSL | `Textus.hook(ev, name)` / sugar | `Textus.on(ev, name)` |
-| Compute field | `projection.reduce:` | `compute.transform:` |
+| Source field | `projection.reduce:` | `source.transform:` |
 | `_meta` key | `reducer` | `transform` |
 | CLI flag | `--format=json` (envelope) | `--output=json` |
 | CLI verb | `refresh-stale` | `fetch all` |

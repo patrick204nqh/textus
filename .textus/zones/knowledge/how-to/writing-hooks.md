@@ -24,12 +24,12 @@ Hook files wrap a single `Textus.hook { |reg| ... }` block. The block receives t
 ```ruby
 # RPC and pub-sub register the same way — through reg.on.
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :local_file) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :local_file) do |caps:, config:, args:|
     { _meta: {}, body: File.read(config["path"]) }
   end
 
-  reg.on(:entry_put, :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| ... }
-  reg.on(:file_published, :git_add, keys: ["derived.*"]) { |ctx:, key:, target:, **| `git add #{target.shellescape}` }
+  reg.on(:entry_written, :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| ... }
+  reg.on(:entry_published, :git_add, keys: ["artifacts.derived.*"]) { |ctx:, key:, target:, **| `git add #{target.shellescape}` }
 end
 ```
 
@@ -41,11 +41,11 @@ Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them
 
 ## The `ctx:` handle
 
-Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_put, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
+Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_written, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
 
 All writes via `ctx` route through the use-case dispatch (`store.as(role)` → `RoleScope` → `Dispatcher`) so authorization, schema validation, and audit logging always fire — there are no bypass paths.
 
-RPC events (`:resolve_intake`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). A block that declares legacy `store:` but not `caps:` is rejected at registration time: the required `caps:` kwarg comes back missing from the signature check.
+RPC events (`:resolve_handler`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). A block that declares legacy `store:` but not `caps:` is rejected at registration time: the required `caps:` kwarg comes back missing from the signature check.
 
 If you don't need `ctx:`, absorb it with `**`:
 
@@ -65,14 +65,14 @@ Pub-sub handlers can scope themselves with a `keys:` filter. Globs use `File.fnm
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:entry_put, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
-  reg.on(:entry_put, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
-  reg.on(:entry_put, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
-  reg.on(:entry_put, :audit_all) { ... }                                # no filter → every key
+  reg.on(:entry_written, :audit_working, keys: ["working.*"])      { ... }  # working.x ✓, working.y.z ✗
+  reg.on(:entry_written, :audit_working_deep, keys: ["working.**"]) { ... } # any depth ✓
+  reg.on(:entry_written, :audit_identity, keys: ["identity.*", "identity.**"]) { ... }
+  reg.on(:entry_written, :audit_all) { ... }                                # no filter → every key
 end
 ```
 
-One `:entry_put` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
+One `:entry_written` fans out to **every matching handler**, sequentially, each under its own 2-second timeout. Order is registration order (alphabetical by hook file path).
 
 ---
 
@@ -87,15 +87,15 @@ RSpec.describe "my notion hook" do
   let(:rpc) { Textus::Hooks::RpcRegistry.new }
 
   it "registers under :notion" do
-    rpc.register(:resolve_intake, :notion) { |args:, **| { _meta: {}, body: "stub" } }
-    expect(rpc.names(:resolve_intake)).to include(:notion)
+    rpc.register(:resolve_handler, :notion) { |args:, **| { _meta: {}, body: "stub" } }
+    expect(rpc.names(:resolve_handler)).to include(:notion)
   end
 
   it "returns the expected shape" do
-    rpc.register(:resolve_intake, :notion) do |args:, **|
+    rpc.register(:resolve_handler, :notion) do |args:, **|
       { _meta: { "fetched_at" => "now" }, body: "hello" }
     end
-    result = rpc.invoke(:resolve_intake, :notion, caps: nil, config: {}, args: {})
+    result = rpc.invoke(:resolve_handler, :notion, caps: nil, config: {}, args: {})
     expect(result[:body]).to eq("hello")
   end
 end
@@ -108,10 +108,10 @@ let(:bus) { Textus::Hooks::EventBus.new }
 
 it "fires only on a matching key" do
   fired = []
-  bus.on(:entry_put, :listener, keys: ["working.*"]) { |key:, **| fired << key }
+  bus.on(:entry_written, :listener, keys: ["working.*"]) { |key:, **| fired << key }
 
-  bus.publish(:entry_put, ctx: nil, key: "working.x", envelope: {})
-  bus.publish(:entry_put, ctx: nil, key: "other.y",   envelope: {})
+  bus.publish(:entry_written, ctx: nil, key: "working.x", envelope: {})
+  bus.publish(:entry_written, ctx: nil, key: "other.y",   envelope: {})
 
   expect(fired).to eq(["working.x"])
 end
@@ -125,11 +125,11 @@ See `spec/hooks/event_bus_spec.rb` and `spec/hooks/rpc_registry_spec.rb` for the
 
 ## Common patterns
 
-### Connector — paired `:resolve_intake` + `:transform_rows`
+### Connector — paired `:resolve_handler` + `:transform_rows`
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:resolve_intake, :linear) do |caps:, config:, args:|
+  reg.on(:resolve_handler, :linear) do |caps:, config:, args:|
     bytes = LinearClient.fetch(config["team_id"])
     { _meta: { "fetched_at" => Time.now.utc.iso8601 }, body: bytes }
   end
@@ -142,38 +142,44 @@ Textus.hook do |reg|
 end
 ```
 
-Manifest references the same name on both sides:
+Manifest references the same name on both sides — both entries are `kind: produced`;
+the produce-method is read from `source.from`. The intake entry fetches data via
+`source: { from: handler }`, and the derived entry projects + reshapes it via
+`source: { from: project }` (the reducer shapes the data; rendering, if any, is a
+publish target's concern):
 
 ```yaml
-- key: intake.linear.issues
-  zone: intake
-  intake: { handler: linear, config: { team_id: "ENG" } }
+- key: artifacts.feeds.linear.issues
+  kind: produced                  # from: handler → intake produce-method
+  zone: artifacts
+  source: { from: handler, handler: linear, config: { team_id: "ENG" }, ttl: 1h }
 
-- key: output.linear.dashboard
-  zone: output
-  compute: { kind: projection, select: [intake.linear.issues], transform: linear }
+- key: artifacts.derived.linear.dashboard
+  kind: produced                  # from: project → derived produce-method
+  zone: artifacts
+  source: { from: project, select: [artifacts.feeds.linear.issues], transform: linear }
 
 rules:
-  - match: intake.linear.**
-    upkeep: { ttl: 1h, action: warn }
+  - match: artifacts.feeds.linear.**
+    retention: { ttl: 90d, action: archive }
 ```
 
 ### Audit listener — every write to a sensitive zone
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:entry_put, :identity_audit, keys: ["identity.**"]) do |ctx:, key:, envelope:, **|
+  reg.on(:entry_written, :identity_audit, keys: ["identity.**"]) do |ctx:, key:, envelope:, **|
     Syslog.log(Syslog::LOG_INFO, "identity-write key=#{key} etag=#{envelope['etag']} role=#{ctx.role}")
   end
 end
 ```
 
-### Build notifier — desktop ping when derived files rebuild
+### Produce notifier — desktop ping when a produced entry rebuilds
 
 ```ruby
 Textus.hook do |reg|
-  reg.on(:build_completed, :notify) do |ctx:, key:, sources:, **|
-    system("terminal-notifier", "-message", "Built #{key} from #{sources.size} sources")
+  reg.on(:entry_produced, :notify) do |ctx:, key:, sources:, **|
+    system("terminal-notifier", "-message", "Produced #{key} from #{sources.size} sources")
   end
 end
 ```
@@ -214,6 +220,6 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 
 - [`../reference/events.md`](../reference/events.md) — the event catalog, lifecycle timelines, and `ctx:` fields
 - [`./configuring-zones.md`](configuring-zones.md) — the manifest side: declaring which entries trigger which hooks
-- [`../../SPEC.md` §5.4, §5.10](../../SPEC.md#510-hooks) — the normative `:resolve_intake` and event contracts
+- [`../../SPEC.md` §5.4, §5.10](../../SPEC.md#510-hooks) — the normative `:resolve_handler` and event contracts
 - [`../architecture/README.md`](../architecture/README.md) — how `Hooks::EventBus` and `Hooks::RpcRegistry` are implemented
 - [`../../examples/project/.textus/hooks/`](../../examples/project/.textus/hooks/) — a worked `:transform_rows` hook that reshapes projection rows for a template

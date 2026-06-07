@@ -10,12 +10,12 @@ RSpec.describe "entries load from source: (ADR 0093)" do
         - { name: feeds, kind: machine }
         - { name: knowledge, kind: canon }
       entries:
-        - { key: feeds.doc, kind: intake, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
+        - { key: feeds.doc, kind: produced, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
         - key: feeds.cat
-          kind: derived
-          path: feeds/cat.md
+          kind: produced
+          path: feeds/cat.json
           zone: feeds
-          source: { from: template, template: c.mustache, project: { select: "knowledge.*", pluck: [key] } }
+          source: { from: project, select: "knowledge.*", pluck: [key] }
     YAML
     doc = store.manifest.resolver.resolve("feeds.doc").entry
     cat = store.manifest.resolver.resolve("feeds.cat").entry
@@ -23,17 +23,18 @@ RSpec.describe "entries load from source: (ADR 0093)" do
     expect(doc.handler).to eq("h")
     expect(cat.derived?).to be(true)
     expect(cat.projection?).to be(true)
-    expect(cat.template).to eq("c.mustache")
+    expect(cat.source.select).to eq("knowledge.*")
   end
 
-  it "rejects a kind/source mismatch (kind: intake with from: template)" do
-    expect do
-      store_from_manifest(root, zones: %w[feeds], manifest: <<~YAML)
-        version: textus/3
-        zones: [{ name: feeds, kind: machine }]
-        entries:
-          - { key: feeds.x, kind: intake, path: feeds/x.md, zone: feeds, source: { from: template, template: c } }
-      YAML
-    end.to raise_error(Textus::Error, /intake needs source.from: handler/)
+  it "derives the produce method from source.from (ADR 0095: no kind/source mismatch)" do
+    store = store_from_manifest(root, zones: %w[feeds], manifest: <<~YAML)
+      version: textus/3
+      zones: [{ name: feeds, kind: machine }]
+      entries:
+        - { key: feeds.x, kind: produced, path: feeds/x.md, zone: feeds, source: { from: project, select: "knowledge.*" } }
+    YAML
+    x = store.manifest.resolver.resolve("feeds.x").entry
+    expect(x.derived?).to be(true)
+    expect(x.intake?).to be(false)
   end
 end

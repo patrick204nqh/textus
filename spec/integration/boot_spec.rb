@@ -33,7 +33,7 @@ RSpec.describe Textus::Boot do
           zone: knowledge
           nested: true
         - key: artifacts.feed
-          kind: intake
+          kind: produced
           path: artifacts/feed.md
           zone: artifacts
           owner: automation:local
@@ -42,30 +42,28 @@ RSpec.describe Textus::Boot do
             handler: demo-action
             config: { foo: 1 }
         - key: artifacts.report
-          kind: derived
-          path: artifacts/report.md
+          kind: produced
+          path: artifacts/report.json
           zone: artifacts
           owner: automation:auto
           source:
-            from: template
-            template: report.mustache
-            project:
-              select: [knowledge.notes]
-              pluck: "*"
+            from: project
+            select: [knowledge.notes]
+            pluck: "*"
           publish:
-            to: [REPORT.md]
+            - { to: REPORT.md, template: report.mustache }
     YAML
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
 
     File.write(File.join(root, "hooks/exts.rb"), <<~RUBY)
       Textus.hook do |reg|
-        reg.on(:resolve_intake, :"demo-action") { |caps:, config:, args:| { _meta: {}, body: "" } }
-        reg.on(:resolve_intake, :zebra)         { |caps:, config:, args:| { _meta: {}, body: "" } }
-        reg.on(:resolve_intake, :apple)         { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:resolve_handler, :"demo-action") { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:resolve_handler, :zebra)         { |caps:, config:, args:| { _meta: {}, body: "" } }
+        reg.on(:resolve_handler, :apple)         { |caps:, config:, args:| { _meta: {}, body: "" } }
         reg.on(:transform_rows, :rank_by_recency) { |caps:, rows:, config:| rows }
         reg.on(:transform_rows, :alpha)           { |caps:, rows:, config:| rows }
-        reg.on(:build_completed, :stamp_log)        { |**| }
+        reg.on(:entry_produced, :stamp_log)        { |**| }
         reg.on(:validate, :smoke)            { |caps:| [] }
       end
     RUBY
@@ -136,9 +134,9 @@ RSpec.describe Textus::Boot do
     ext = env["hooks"]
     expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
     # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["resolve_intake"]).to include("apple", "demo-action", "zebra")
-    expect(ext["resolve_intake"]).to eq(ext["resolve_intake"].sort)
-    expect(ext["build_completed"]).to eq(["stamp_log"])
+    expect(ext["resolve_handler"]).to include("apple", "demo-action", "zebra")
+    expect(ext["resolve_handler"]).to eq(ext["resolve_handler"].sort)
+    expect(ext["entry_produced"]).to eq(["stamp_log"])
     expect(ext["validate"]).to include("smoke")
   end
 

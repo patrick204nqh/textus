@@ -15,7 +15,7 @@ module Textus
       end
 
       def attach(bus)
-        bus.on(:entry_put, :produce_on_write) do |ctx:, key:, **|
+        bus.on(:entry_written, :produce_on_write) do |ctx:, key:, **|
           call = Textus::Call.build(role: ctx.role, correlation_id: ctx.correlation_id)
           on_write(key: key, call: call)
         end

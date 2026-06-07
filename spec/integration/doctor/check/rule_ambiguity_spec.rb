@@ -66,7 +66,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       entries:
         - { key: knowledge.src, path: knowledge/src.md, zone: knowledge, kind: leaf }
         - { key: artifacts.foo, path: artifacts/foo.json, zone: artifacts,
-            kind: intake, source: { from: handler, handler: noop } }
+            kind: produced, source: { from: handler, handler: noop } }
       rules:
         - match: artifacts.*
           retention: { ttl: 1d, action: drop }

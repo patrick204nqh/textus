@@ -1,115 +1,66 @@
 require "spec_helper"
 
 RSpec.describe Textus::Domain::Policy::Source do
-  describe "from: handler (intake)" do
+  describe "from: project (internal data)" do
     subject(:src) do
-      described_class.new("from" => "handler", "handler" => "calendar_feed",
-                          "config" => { "url" => "u" }, "ttl" => "1h")
+      described_class.new("from" => "project", "select" => ["k.*"],
+                          "pluck" => ["title"], "transform" => "reducer", "on_write" => "sync")
     end
 
-    it "is the intake kind" do
-      expect(src.kind).to eq(:intake)
-    end
-
-    it "exposes handler + config + ttl" do
-      expect(src.handler).to eq("calendar_feed")
-      expect(src.config).to eq("url" => "u")
-      expect(src.ttl_seconds).to eq(3600)
-    end
-
-    it "is never sync (on_write is meaningless for intake)" do
-      expect(src.sync?).to be(false)
-    end
-  end
-
-  describe "from: template (derived projection)" do
-    subject(:src) do
-      described_class.new("from" => "template", "template" => "c.mustache",
-                          "project" => { "select" => "k.*", "pluck" => ["title"] },
-                          "on_write" => "sync", "inject_boot" => true)
-    end
-
-    it "is the derived kind" do
+    it "is derived, observable, not external" do
       expect(src.kind).to eq(:derived)
+      expect(src.projection?).to be(true)
+      expect(src.external?).to be(false)
     end
 
-    it "exposes the projection + flags" do
-      expect(src.template).to eq("c.mustache")
-      expect(src.project).to eq("select" => "k.*", "pluck" => ["title"])
-      expect(src.inject_boot).to be(true)
+    it "exposes flattened projection fields + projection_spec" do
+      expect(src.select).to eq(["k.*"])
+      expect(src.transform).to eq("reducer")
+      expect(src.projection_spec).to eq("select" => ["k.*"], "pluck" => ["title"], "transform" => "reducer")
+    end
+
+    it "reads on_write" do
       expect(src.sync?).to be(true)
     end
+  end
 
-    it "defaults on_write to async, provenance to true" do
-      s = described_class.new("from" => "template", "template" => "c.mustache")
-      expect(s.sync?).to be(false)
-      expect(s.provenance).to be(true)
-    end
+  describe "from: handler (intake)" do
+    subject(:src) { described_class.new("from" => "handler", "handler" => "h", "config" => { "u" => 1 }, "ttl" => "1h") }
 
-    it "exposes projection field accessors" do
-      expect(src.select).to eq("k.*")
-      expect(src.pluck).to eq(["title"])
-      expect(src.sort_by).to be_nil
-      expect(src.transform).to be_nil
-    end
-
-    it "exposes projection_spec as the project hash" do
-      expect(src.projection_spec).to eq("select" => "k.*", "pluck" => ["title"])
+    it "is intake, never sync, exposes handler/config/ttl" do
+      expect(src.kind).to eq(:intake)
+      expect(src.sync?).to be(false)
+      expect(src.handler).to eq("h")
+      expect(src.config).to eq("u" => 1)
+      expect(src.ttl_seconds).to eq(3600)
     end
   end
 
-  describe "from: command (derived external)" do
-    subject(:src) do
-      described_class.new("from" => "command", "command" => "make build",
-                          "sources" => ["src/*"])
-    end
+  describe "from: command (external)" do
+    subject(:src) { described_class.new("from" => "command", "command" => "make", "sources" => ["s/*"]) }
 
-    it "is the derived kind and external" do
+    it "is derived + external" do
       expect(src.kind).to eq(:derived)
       expect(src.external?).to be(true)
-    end
-
-    it "returns nil ttl_seconds when no ttl is set" do
-      expect(src.ttl_seconds).to be_nil
-    end
-
-    it "has nil projection accessors and empty projection_spec when not a template" do
-      expect(src.select).to be_nil
-      expect(src.projection_spec).to eq({})
+      expect(src.command).to eq("make")
+      expect(src.sources).to eq(["s/*"])
     end
   end
 
-  describe "validation" do
-    it "rejects an unknown from" do
-      expect { described_class.new("from" => "psychic") }
+  describe "retired vocabulary" do
+    it "rejects from: template (renamed to project)" do
+      expect { described_class.new("from" => "template", "template" => "c") }
         .to raise_error(Textus::BadManifest, /from must be one of/)
     end
 
-    it "rejects a missing handler for from: handler" do
-      expect { described_class.new("from" => "handler") }
-        .to raise_error(Textus::BadManifest, /handler/)
-    end
-
-    it "rejects an unknown on_write strategy" do
-      expect { described_class.new("from" => "template", "template" => "c", "on_write" => "later") }
+    it "rejects an unknown on_write" do
+      expect { described_class.new("from" => "project", "select" => ["k"], "on_write" => "later") }
         .to raise_error(Textus::BadManifest, /on_write must be one of/)
     end
 
-    it "rejects a from: template with neither template nor project" do
-      expect { described_class.new("from" => "template") }
-        .to raise_error(Textus::BadManifest, /template.*or.*project/)
-    end
-
-    it "accepts a templateless projection (escape hatch) when project: is present" do
-      s = described_class.new("from" => "template", "project" => { "select" => "k.*" })
-      expect(s.template).to be_nil
-      expect(s.projection?).to be(true)
-      expect(s.projection_spec).to eq("select" => "k.*")
-    end
-
-    it "rejects a missing command for from: command" do
-      expect { described_class.new("from" => "command") }
-        .to raise_error(Textus::BadManifest, /command/)
+    it "no longer exposes template/inject_boot/provenance" do
+      src = described_class.new("from" => "project", "select" => ["k"])
+      %i[template inject_boot provenance].each { |m| expect(src).not_to respond_to(m) }
     end
   end
 end

@@ -33,19 +33,16 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
         - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
 
         - key: artifacts.mcp-config
-          kind: derived
+          kind: produced
           path: artifacts/mcp.json
           zone: artifacts
           publish:
-            to:
-              - .mcp.json
+            - { to: .mcp.json }
           source:
-            from: template
-            provenance: false
-            project:
-              select:
-                - knowledge.project
-              transform: mcp_config_reducer
+            from: project
+            select:
+              - knowledge.project
+            transform: mcp_config_reducer
     YAML
 
     File.write(File.join(root, "zones/knowledge/project.md"),
@@ -60,13 +57,14 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
     artifact_path = File.join(root, "zones/artifacts/mcp.json")
     expect(File.exist?(artifact_path)).to be true
 
+    # The STORED artifact is data and carries textus's _meta (ADR 0094);
+    # only the published file is cleaned of it.
     parsed = JSON.parse(File.read(artifact_path))
-    expect(parsed).to eq(
-      "mcpServers" => {
-        "textus" => {
-          "command" => "bundle",
-          "args" => ["exec", "exe/textus", "--root", ".textus", "mcp", "serve"],
-        },
+    expect(parsed).to have_key("_meta")
+    expect(parsed["mcpServers"]).to eq(
+      "textus" => {
+        "command" => "bundle",
+        "args" => ["exec", "exe/textus", "--root", ".textus", "mcp", "serve"],
       },
     )
   end

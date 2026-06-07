@@ -17,7 +17,7 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
           path: knowledge/src.md
           zone: knowledge
         - key: artifacts.catalog
-          kind: derived
+          kind: produced
           path: artifacts/catalog.md
           zone: artifacts
           source:

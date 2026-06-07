@@ -1,9 +1,3 @@
----
-generated:
-  from:
-  - knowledge.project
-  - knowledge.runbooks
----
 <!--
 This file is the orientation any agent (Claude Code, Cursor, etc.) reads on
 session start. It is the projection of textus over `.textus/zones/...`. Do

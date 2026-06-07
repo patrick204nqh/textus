@@ -2,10 +2,10 @@ module Textus
   module Builder
     class Renderer
       class Text < Renderer
-        def call(mentry:, data:)
-          raise TemplateError.new("entry '#{mentry.key}': text build requires a template") unless mentry.template
-
-          body = Mustache.render(@template_loader.call(mentry.template), data)
+        def call(mentry:, data:) # rubocop:disable Lint/UnusedMethodArgument
+          # Text format serializes data as plain-text. Rendering through a
+          # template is a publish concern (ADR 0094) — build emits data only.
+          body = data.is_a?(Hash) ? data.to_s : data.inspect
           Entry.for_format("text").serialize(meta: {}, body: body)
         end
       end

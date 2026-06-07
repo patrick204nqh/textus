@@ -2,8 +2,8 @@ require "spec_helper"
 
 RSpec.describe Textus::Manifest::Entry::Parser do
   describe ".parse_source" do
-    it "builds a Source policy from a template block" do
-      raw = { "source" => { "from" => "template", "template" => "c.mustache" } }
+    it "builds a Source policy from a project block" do
+      raw = { "source" => { "from" => "project", "select" => ["working.a"] } }
       src = described_class.parse_source(raw, "out.catalog")
       expect(src).to be_a(Textus::Domain::Policy::Source)
       expect(src.kind).to eq(:derived)

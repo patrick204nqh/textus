@@ -13,21 +13,21 @@ RSpec.describe "produce-on-write (ADR 0093)" do
                                 entries:
                                   - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                   - key: feeds.catalog
-                                    kind: derived
-                                    path: feeds/catalog.md
+                                    kind: produced
+                                    path: feeds/catalog.json
                                     zone: feeds
                                     source:
-                                      from: template
-                                      template: catalog.mustache
+                                      from: project
                                       on_write: sync
-                                      project: { select: "knowledge", pluck: [title] }
+                                      select: "knowledge"
+                                      pluck: [title]
                               YAML
                               files: { "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}" })
   end
 
   it "sync source: a canon write leaves the dependent derived fresh on return" do
     store.as("human").put("knowledge.a", meta: { "title" => "Apple" }, body: "x\n")
-    expect(File.read(File.join(root, "zones/feeds/catalog.md"))).to include("Apple")
+    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("Apple")
   end
 
   it "recursion guard: a write INTO a derived entry does not fan out" do
@@ -61,13 +61,13 @@ RSpec.describe "produce-on-write (ADR 0093)" do
                                   entries:
                                     - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                     - key: feeds.catalog
-                                      kind: derived
-                                      path: feeds/catalog.md
+                                      kind: produced
+                                      path: feeds/catalog.json
                                       zone: feeds
                                       source:
-                                        from: template
-                                        template: catalog.mustache
-                                        project: { select: "knowledge", pluck: [title] }
+                                        from: project
+                                        select: "knowledge"
+                                        pluck: [title]
                                 YAML
                                 files: { "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}" })
     end
@@ -75,7 +75,7 @@ RSpec.describe "produce-on-write (ADR 0093)" do
     it "async source: enqueues a deferred rebuild that lands fresh after drain" do
       store.as("human").put("knowledge.a", meta: { "title" => "Banana" }, body: "x\n")
       Textus::Maintenance::Produce::AsyncRunner.drain
-      expect(File.read(File.join(root, "zones/feeds/catalog.md"))).to include("Banana")
+      expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("Banana")
     end
   end
 end

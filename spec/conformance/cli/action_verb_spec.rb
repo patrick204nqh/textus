@@ -23,7 +23,7 @@ RSpec.describe "textus action verb" do
       custom_manifest_with_demo!(root)
       File.write(File.join(root, "hooks/sync.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :sync_demo) do |caps:, config:, args:|
+          reg.on(:resolve_handler, :sync_demo) do |caps:, config:, args:|
             _ = caps
             { _meta: { "name" => "demo", "who" => args["who"] || "anon" }, body: "ok" }
           end
@@ -64,7 +64,7 @@ RSpec.describe "textus action verb" do
       Textus::Init.run(root)
       File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :slow) { |caps:, config:, args:| sleep 5 }
+          reg.on(:resolve_handler, :slow) { |caps:, config:, args:| sleep 5 }
         end
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original

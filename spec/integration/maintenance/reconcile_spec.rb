@@ -16,10 +16,12 @@ RSpec.describe Textus::Maintenance::Reconcile do
                                   - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
                                   - { key: feeds.stale, path: feeds/stale.md, zone: feeds, kind: leaf }
                                   - key: feeds.catalog
-                                    kind: derived
-                                    path: feeds/catalog.md
+                                    kind: produced
+                                    path: feeds/catalog.json
                                     zone: feeds
-                                    source: { from: template, template: catalog.mustache, project: { select: "knowledge", pluck: [title] } }
+                                    source: { from: project, select: "knowledge", pluck: [title] }
+                                    publish:
+                                      - { to: CATALOG.md, template: catalog.mustache }
                                 rules:
                                   - { match: "feeds.stale", retention: { ttl: 1d, action: archive } }
                               YAML
@@ -41,7 +43,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
 
   it "produces all derived entries (Phase 1)" do
     expect(result["produced"]).to include("feeds.catalog")
-    expect(File.read(File.join(root, "zones/feeds/catalog.md"))).to include("Apple")
+    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("Apple")
   end
 
   it "archives an aged machine leaf (Phase 2, as the caller)" do
@@ -65,7 +67,7 @@ RSpec.describe Textus::Maintenance::Reconcile do
       expect(scoped["dropped"]).to be_empty
       # the aged leaf that an unscoped pass WOULD archive is untouched
       expect(File.exist?(File.join(root, "zones/feeds/stale.md"))).to be(true)
-      expect(File.exist?(File.join(root, "zones/feeds/catalog.md"))).to be(false)
+      expect(File.exist?(File.join(root, "zones/feeds/catalog.json"))).to be(false)
     end
 
     it "scopes produce to entries under the matching prefix" do

@@ -18,6 +18,6 @@ RSpec.describe Textus::Hooks::Catalog do
   end
 
   it "lists the canonical textus/3 rpc events" do
-    expect(described_class::RPC.keys).to contain_exactly(:resolve_intake, :transform_rows, :validate)
+    expect(described_class::RPC.keys).to contain_exactly(:resolve_handler, :transform_rows, :validate)
   end
 end

@@ -14,11 +14,11 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
 
   let(:hook) { <<~RUBY }
     Textus.hook do |reg|
-      reg.on(:resolve_intake, :machines) do |caps:, config:, args:|
+      reg.on(:resolve_handler, :machines) do |caps:, config:, args:|
         machine = args[:leaf_segments].first
         raise "unknown machine: \#{machine}" unless config.fetch("machines").key?(machine)
         raw = #{probe_json.inspect}                      # stands in for the SSH probe
-        caps.rpc.invoke(:resolve_intake, :json,
+        caps.rpc.invoke(:resolve_handler, :json,
                         caps: caps, config: { "bytes" => raw }, args: args)
       end
     end
@@ -38,7 +38,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
           format: yaml
           nested: true
           tracked: false
-          kind: intake
+          kind: produced
           source:
             from: handler
             handler: machines

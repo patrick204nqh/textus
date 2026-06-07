@@ -4,14 +4,14 @@ RSpec.describe Textus::Hooks::RpcRegistry do
   let(:rpc) { described_class.new }
 
   it "registers and invokes a named RPC callable" do
-    rpc.register(:resolve_intake, :http) { |args:, **| "fetched #{args[:trigger_key]}" }
-    result = rpc.invoke(:resolve_intake, :http, caps: double("caps"), config: {}, args: { trigger_key: "k" }) # rubocop:disable RSpec/VerifiedDoubles
+    rpc.register(:resolve_handler, :http) { |args:, **| "fetched #{args[:trigger_key]}" }
+    result = rpc.invoke(:resolve_handler, :http, caps: double("caps"), config: {}, args: { trigger_key: "k" }) # rubocop:disable RSpec/VerifiedDoubles
     expect(result).to eq("fetched k")
   end
 
   it "raises on duplicate registration" do
-    rpc.register(:resolve_intake, :http) { |**| nil }
-    expect { rpc.register(:resolve_intake, :http) { |**| nil } }
+    rpc.register(:resolve_handler, :http) { |**| nil }
+    expect { rpc.register(:resolve_handler, :http) { |**| nil } }
       .to raise_error(Textus::UsageError, /already registered/)
   end
 
@@ -21,8 +21,8 @@ RSpec.describe Textus::Hooks::RpcRegistry do
   end
 
   it "rejects a pubsub event name" do
-    expect { rpc.register(:entry_put, :x) { |**| nil } }
-      .to raise_error(Textus::UsageError, /entry_put is a pubsub event/)
+    expect { rpc.register(:entry_written, :x) { |**| nil } }
+      .to raise_error(Textus::UsageError, /entry_written is a pubsub event/)
   end
 
   it "rejects every pubsub event in the Catalog (derived, not hard-coded)" do

@@ -5,31 +5,15 @@ module Textus
     class Renderer
       class Yaml < Renderer
         def call(mentry:, data:)
-          content = mentry.template ? parse_rendered_template!(mentry, data) : default_shape(mentry, data)
-          final = InjectMeta.call(content, mentry)
+          content = default_shape(mentry, data)
+          final   = InjectMeta.call(content, mentry)
           Entry.for_format("yaml").serialize(meta: {}, body: "", content: final)
         end
 
         private
 
-        def parse_rendered_template!(mentry, data)
-          rendered = Mustache.render(@template_loader.call(mentry.template), data)
-          begin
-            parsed = ::YAML.safe_load(rendered, permitted_classes: [Date, Time], aliases: false)
-          rescue Psych::SyntaxError, Psych::DisallowedClass, Psych::AliasesNotEnabled => e
-            raise BadRender.new("entry '#{mentry.key}': template did not render valid yaml: #{e.message}", format: "yaml")
-          end
-          unless parsed.is_a?(Hash)
-            raise BadRender.new("entry '#{mentry.key}': template must render a top-level object/mapping",
-                                format: "yaml")
-          end
-
-          parsed
-        end
-
         def default_shape(mentry, data)
-          has_transform = mentry.is_a?(Textus::Manifest::Entry::Derived) &&
-                          mentry.source.projection? &&
+          has_transform = mentry.projection? &&
                           mentry.source.transform
           if has_transform && data.is_a?(Hash) && !data.key?("entries")
             data

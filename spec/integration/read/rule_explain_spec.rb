@@ -72,7 +72,7 @@ RSpec.describe Textus::Read::RuleExplain do
         entries:
           - { key: knowledge.src, path: knowledge/src.md, zone: knowledge, kind: leaf }
           - { key: artifacts.feed, path: artifacts/feed.md, zone: artifacts,
-              kind: intake, source: { from: handler, handler: noop } }
+              kind: produced, source: { from: handler, handler: noop } }
         rules:
           - match: artifacts.feed
             retention: { ttl: 30d, action: archive }

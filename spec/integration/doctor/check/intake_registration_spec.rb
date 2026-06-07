@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.foo
-            kind: intake
+            kind: produced
             path: feeds/foo.md
             zone: feeds
             source:
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       YAML
       File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
         Textus.hook do |reg|
-          reg.on(:resolve_intake, :orphan_handler) { |caps:, config:, args:| { _meta: {}, body: "" } }
+          reg.on(:resolve_handler, :orphan_handler) { |caps:, config:, args:| { _meta: {}, body: "" } }
         end
       RUBY
 

@@ -49,65 +49,70 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 ## Derived entries
 
-A derived entry declares a `compute:` block with a `kind:` discriminator. Two kinds:
+A derived entry declares a `source:` block with a `from:` discriminator (ADR 0093/0094). A `source:` acquires **data** — it never renders; rendering is a publish concern (below). Two `from:` values for derived entries:
 
-**`compute: { kind: projection }`** — textus computes the entry on `textus reconcile` from other store entries. Declarative; nothing shells out.
+**`source: { from: project }`** — textus computes the entry's data on `textus reconcile` from other store entries. Declarative; nothing shells out. Projection fields are flat under `source:`.
 
 ```yaml
-- key: artifacts.catalogs.people
-  path: artifacts/catalogs/people.md
+- key: artifacts.derived.people
+  path: artifacts/derived/people.md
   zone: artifacts
   schema: null
   owner: automation:catalog-people
-  compute:
-    kind: projection
+  source:
+    from: project
     select: knowledge.network.org   # prefix or list of prefixes
     pluck:  [name, relationship, org]
     sort_by: name
-  template: people.mustache         # under .textus/templates/
+    format: json                    # the stored form is data
   publish:
-    to: [docs/people.md]            # optional repo-relative byte-copy targets
+    - { to: docs/people.md, template: people.mustache }   # render the data through a template
 ```
 
-**`compute: { kind: external }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `reconcile` (default: `automation`).
+**`source: { from: command }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `reconcile` (default: `automation`).
 
 ```yaml
-- key: artifacts.catalogs.skills
-  path: artifacts/catalogs/skills.md
+- key: artifacts.derived.skills
+  path: artifacts/derived/skills.md
   zone: artifacts
   owner: automation:catalog-skills
-  compute:
-    kind: external
+  source:
+    from: command
     command: "rake catalog:skills"   # informational; the automation invokes it
     sources: [knowledge.projects, knowledge.network]
 ```
 
-The build automation is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `compute.sources` — same list, recorded twice so a diff proves what was consumed.
+The build automation is responsible for writing the `generated:` frontmatter block (`by`, `at`, `from`) when it produces the file. `generated.from` SHOULD match `source.sources` — same list, recorded twice so a diff proves what was consumed.
 
-Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Transforms (`compute.transform:`) and subtree publishing (`publish: { tree: }`) are also covered there.
+Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../SPEC.md). Data transforms (`source.transform:`) and publishing (a `publish:` list of `{ to, template? }` / `{ tree }` targets — render or copy the data) are covered in §5.2–§5.3.
 
 ## Intake and freshness
 
-External inputs land via `:resolve_intake` hooks, not shell commands. Each intake entry names a registered handler; refresh is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push) — a `get` never refreshes (ADR 0089):
+External inputs land via `:resolve_handler` hooks, not shell commands. Each intake entry declares `source: { from: handler, handler: <name>, ttl: <dur> }`; re-pull is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push) — a `get` never refreshes (ADR 0089):
 
 ```sh
 textus pulse --output=json                             # `stale` lists expired entries; `next_due_at` is the soonest deadline
-textus reconcile --as=automation                       # re-pulls every stale action: refresh entry
+textus reconcile --as=automation                       # re-pulls every intake entry past its source.ttl
 ```
 
-Upkeep budgets live in the top-level `rules:` block, matched by glob. The grammar is read from the keys present: `{ ttl, action, budget_ms }` is the age grammar (intake or stored entries); `{ strategy }` is the dependency grammar (derived entries only):
+The re-pull cadence is the entry's own `source.ttl`. Age-based garbage collection is the orthogonal `retention:` rule slot in the top-level `rules:` block, matched by glob (`{ ttl, action: drop | archive }`); the two compose — re-pull hourly *and* archive at 90 days:
 
 ```yaml
+- key: artifacts.feeds.notion.events
+  kind: produced                # produce-method (intake) read from source.from: handler
+  zone: artifacts
+  source: { from: handler, handler: notion, config: { ... }, ttl: 6h }
+
 rules:
   - match: artifacts.feeds.notion.**
-    upkeep: { ttl: 6h, action: refresh }   # refresh | warn | drop | archive
+    retention: { ttl: 90d, action: archive }
 ```
 
 A typical scheduled integration runs `reconcile` on a cron to re-pull every
 expired feed:
 
 ```sh
-textus reconcile --as=automation   # in cron / CI — refreshes all stale feeds
+textus reconcile --as=automation   # in cron / CI — re-pulls all stale feeds
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.

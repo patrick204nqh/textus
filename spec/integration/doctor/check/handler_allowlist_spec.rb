@@ -17,7 +17,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, kind: machine }
       entries:
         - key: intake.notes
-          kind: intake
+          kind: produced
           path: intake/notes.md
           zone: intake
           source:
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, kind: machine }
       entries:
         - key: intake.notes
-          kind: intake
+          kind: produced
           path: intake/notes.md
           zone: intake
           source:
@@ -70,7 +70,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
         - { name: intake, kind: machine }
       entries:
         - key: intake.notes
-          kind: intake
+          kind: produced
           path: intake/notes.md
           zone: intake
           source:
