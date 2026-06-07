@@ -40,14 +40,14 @@ RSpec.describe "produce-on-write (ADR 0093)" do
     # lookup, so asserting Rdeps is never consulted proves the guard fired
     # (not merely an empty blast radius).
     allow(Textus::Read::Rdeps).to receive(:new).and_call_original
-    allow(Textus::Maintenance::Produce).to receive(:converge)
-    allow(Textus::Maintenance::Produce::AsyncRunner).to receive(:enqueue)
+    allow(Textus::Produce::Engine).to receive(:converge)
+    allow(Textus::Produce::Engine::AsyncRunner).to receive(:enqueue)
 
     subscriber.on_write(key: "feeds.catalog", call: call)
 
     expect(Textus::Read::Rdeps).not_to have_received(:new)
-    expect(Textus::Maintenance::Produce).not_to have_received(:converge)
-    expect(Textus::Maintenance::Produce::AsyncRunner).not_to have_received(:enqueue)
+    expect(Textus::Produce::Engine).not_to have_received(:converge)
+    expect(Textus::Produce::Engine::AsyncRunner).not_to have_received(:enqueue)
   end
 
   describe "async source (default on_write)" do
@@ -74,7 +74,7 @@ RSpec.describe "produce-on-write (ADR 0093)" do
 
     it "async source: enqueues a deferred rebuild that lands fresh after drain" do
       store.as("human").put("knowledge.a", meta: { "title" => "Banana" }, body: "x\n")
-      Textus::Maintenance::Produce::AsyncRunner.drain
+      Textus::Produce::Engine::AsyncRunner.drain
       expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("Banana")
     end
   end

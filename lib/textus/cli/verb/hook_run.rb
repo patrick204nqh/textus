@@ -31,7 +31,7 @@ module Textus
           Role.resolve(flag: as_flag, env: ENV, root: store.root)
 
           begin
-            Textus::Write::IntakeFetch.invoke(
+            Textus::Produce::Acquire::Handler.invoke(
               caps: store.container, handler: name, config: {}, args: args, label: "hook run",
             )
           rescue Textus::Error

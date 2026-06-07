@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::FetchEvents do
+RSpec.describe Textus::Produce::Events do
   def recording_events
     Class.new do
       attr_reader :published

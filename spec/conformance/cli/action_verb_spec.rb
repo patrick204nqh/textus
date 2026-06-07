@@ -69,7 +69,7 @@ RSpec.describe "textus action verb" do
       RUBY
       allow(Timeout).to receive(:timeout).and_call_original
       allow(Timeout).to receive(:timeout)
-        .with(Textus::Write::FetchWorker::FETCH_TIMEOUT_SECONDS)
+        .with(Textus::Produce::Acquire::Handler::FETCH_TIMEOUT_SECONDS)
         .and_raise(Timeout::Error)
       out = StringIO.new
       rc = Textus::CLI.run(

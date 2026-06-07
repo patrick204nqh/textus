@@ -1,9 +1,9 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::DataBuilder do
+RSpec.describe Textus::Produce::Acquire::Projection do
   subject(:data_builder) do
     container = store.container
-    Textus::Write::DataBuilder.new(
+    Textus::Produce::Acquire::Projection.new(
       container: container,
       call: ctx,
     )

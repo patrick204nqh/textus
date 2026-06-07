@@ -1,11 +1,12 @@
 require "spec_helper"
 require "digest"
 
-# spec/mcp/tools_spec.rb — asserts the Tools delegator routes through Catalog
-# (ADR 0039). Tools.call is a thin pass-through; actual dispatch, arg-mapping,
-# and response shaping are all in MCP::Catalog. Tests here verify the end-to-end
-# behavior of that delegation path with a writable store fixture.
-RSpec.describe Textus::MCP::Tools do
+# spec/integration/mcp/catalog_dispatch_spec.rb — end-to-end dispatch coverage
+# for MCP::Catalog.call (ADR 0039). Covers verb behaviors with a writable store
+# fixture that catalog_spec's read-only example project does not exercise.
+# (Was tools_spec.rb; MCP::Tools — a pure pass-through to Catalog — was deleted
+# in ADR 0101, so this suite now describes Catalog directly.)
+RSpec.describe Textus::MCP::Catalog do
   include_context "textus_store_fixture"
 
   let(:manifest_yaml) do
@@ -36,16 +37,6 @@ RSpec.describe Textus::MCP::Tools do
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
-  end
-
-  # ── Delegation path ─────────────────────────────────────────────────────────
-
-  describe "delegation to Catalog" do
-    it "Tools.call produces the same result as Catalog.call for a known verb" do
-      via_tools   = described_class.call("boot", session: session, store: store, args: {})
-      via_catalog = Textus::MCP::Catalog.call("boot", session: session, store: store, args: {})
-      expect(via_tools).to eq(via_catalog)
-    end
   end
 
   # ── Core read/write verbs ────────────────────────────────────────────────────

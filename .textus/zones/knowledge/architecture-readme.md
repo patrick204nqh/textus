@@ -1,12 +1,12 @@
 # Textus architecture
 
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
-> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/fetch paths) · **reviewed** 2026-06 (v0.43)
+> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/produce paths) · **reviewed** 2026-06 (v0.45)
 
 ```mermaid
 flowchart TD
     interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
-    application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ use cases · envelope IO"]
+    application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ · produce/ use cases · envelope IO"]
     domain["Domain — Permission · Freshness<br/>Policy (Guard · GuardFactory · BaseGuards · Evaluation · Fetch · Matcher · Predicates)"]
     infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
     interface --> application
@@ -38,12 +38,11 @@ MCP/Ruby, `view(:cli)` for the operator envelope); declarative `source:`/
 wrap the single dispatch site (`RoleScope#dispatch_bound`) for stateful verbs;
 and `cli_default:` declares a CLI default that diverges from the agent default.
 `CLI::Runner` generates a command per `:cli` contract, dispatching `contract.verb`
-by construction. Only verbs with genuine *behavior* — `put` (fetch
-orchestration), `get` (UnknownKey + resolver suggestions, CLI-only), `build`
-(actor-role resolution + BuildLock), the `fetch`/`fetch_all` workers, and the
-`boot`/`doctor` composite reports — stay hand-authored, plus commands with no
-dispatcher verb (`init`, `hook`, `mcp serve`, `schema diff/init`). Total
-reconciliation specs make name/dispatch/facet drift unrepresentable.
+by construction. Only verbs with genuine *behavior* — `put` (entry persistence),
+`get` (UnknownKey + resolver suggestions, CLI-only), and `doctor` (not yet
+generatable) — stay hand-authored, plus commands with no dispatcher verb (`init`,
+`hook`, `mcp serve`, `schema diff/init`). `boot` is auto-generated from its
+contract. Total reconciliation specs make name/dispatch/facet drift unrepresentable.
 
 **Application**
 
@@ -55,13 +54,13 @@ Dispatcher       (static VERBS table: verb → use-case)
 RoleScope        (Store#as(role) — forwards verb calls)
 
 read/{get,list,where,uid,schema_envelope,
-      deps,rdeps,published,stale,validate_all,boot,doctor,
+      deps,rdeps,published,validate_all,boot,doctor,
       freshness,audit,blame,rule_explain,rule_list,pulse}.rb
-write/{put,delete,mv,accept,reject,build,
-       materializer,intake_fetch,retention_sweep,
-       fetch_worker,fetch_orchestrator,fetch_all}
-maintenance/{migrate,key_mv_prefix,key_delete_prefix,
+write/{put,key_delete,key_mv,accept,reject,propose}.rb
+maintenance/{reconcile,key_mv_prefix,key_delete_prefix,
              zone_mv,rule_lint}.rb
+produce/{engine,events,render,
+         acquire/{intake,handler,projection,serializer}}.rb
 envelope/io/{reader,writer}.rb  (split: parse vs persist)
 projection.rb
 ```
@@ -86,7 +85,7 @@ Storage::FileStore (bytes-only port: read/write/delete/
 Manifest           (Data, Resolver, Policy, Rules)
 Schemas            (eager-load cache)
 Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
-        Fetch::Lock,Fetch::Detached,BuildLock}
+        BuildLock,ProduceOnWriteSubscriber,SentinelStore}
 Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
         Signature,Builtin,ErrorLog}
 Entry::{Markdown,Json,Yaml,Text}  (format strategies)
@@ -124,7 +123,7 @@ reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
 
 Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 
-- `Write::FetchOrchestrator` — composes `FetchWorker` with the freshness `Action` returned by `Domain::Freshness`.
+- `Produce::Engine` — runs `reconcile`'s produce pipeline; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. `AsyncRunner` (nested in `Engine`) enqueues reactive re-produce on `entry_written` events and drains before the process exits.
 - `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
 ## Container
@@ -150,9 +149,9 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 | `Ports::AuditLog` | Append-only structured log (`audit.log`). Owns seq numbering, file-locking, and rotation. |
 | `Ports::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
 | `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
-| `Ports::Fetch::Lock` | Non-blocking `flock`-backed lock per key — prevents concurrent fetch workers from racing on the same entry. |
-| `Ports::Fetch::Detached` | Spawns a background thread for async fetch; the caller receives a `fetch_backgrounded` event instead of blocking. |
-| `Ports::BuildLock` | Process-exclusive `flock` guard over the materializer build pipeline. Raises `BuildInProgress` if a build is already running. |
+| `Ports::BuildLock` | Process-exclusive `flock` guard over the produce pipeline. Raises `BuildInProgress` if a build is already running. |
+| `Ports::ProduceOnWriteSubscriber` | Pub-sub listener on `entry_written`; enqueues keys into `Produce::Engine::AsyncRunner` for reactive re-produce after any write. |
+| `Ports::SentinelStore` | Reads and writes the per-target sentinel file that `Publisher` uses to detect unmanaged overwrites. |
 
 Application use cases access ports only through `Container` fields — never through the raw `Store`.
 
@@ -202,20 +201,28 @@ Because the read is always pure, every caller — interactive reads, dashboards,
 3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
 4. Publishes `:entry_written` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
 
-`Write::{Delete,Mv,Accept,Reject,Build}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Write::{KeyDelete,KeyMv,Accept,Reject,Propose}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
 
-`Write::Mv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
+`Write::KeyMv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
-## Fetch path (`store.fetch(key)`)
+## Produce path (`reconcile` + reactive `entry_written`)
 
-1. CLI `Verb::Fetch` calls `store.fetch(key, role: "automation")`.
-2. `Write::FetchWorker#run(key)`:
-   - Resolves the manifest entry, looks up the intake handler via `container.rpc.callable(:resolve_handler, mentry.handler)`.
-   - Publishes `:entry_fetch_started` with the hook context.
-   - Invokes the handler under a 30s thread-join deadline.
-   - On any error: publishes `:entry_fetch_failed`, then re-raises.
-   - On success: builds `GuardFactory.for(:fetch, key)` and calls `Guard#check!`, then persists via `Envelope::IO::Writer#write` directly (no `Put` round-trip); publishes `:entry_fetched` unless etag is unchanged.
-3. `store.fetch_all(prefix:, zone:)` lists stale entries via `Read::Stale` and runs `FetchWorker#run` per entry; returns `{ fetched:, failed:, skipped: }`.
+The produce pipeline handles two concerns — **acquire** (pull live data via an intake handler) and **render** (template-driven artifact publish) — unified under `Produce::Engine`.
+
+`Produce::Engine.converge(container:, call:, keys:)` is the entry point for both `reconcile` (scheduled batch) and the reactive `AsyncRunner` (triggered on `entry_written` by `Ports::ProduceOnWriteSubscriber`).
+
+For each key, `Engine#produce_one`:
+
+1. **Acquire phase** — `Produce::Acquire::Intake#run(key)`:
+   - Resolves the manifest entry; looks up the intake handler via `container.rpc.callable(:resolve_handler, mentry.handler)`.
+   - Publishes `:entry_fetch_started` via `Produce::Events`.
+   - Invokes the handler under a timeout deadline.
+   - On error: publishes `:entry_fetch_failed`, re-raises.
+   - On success: normalises the handler result via its own `normalize_action_result` (keyed on the entry's format), checks guard, persists via `Envelope::IO::Writer`, publishes `:entry_fetched` unless the etag is unchanged.
+   - `Acquire::Handler` resolves and invokes the RPC callable under the timeout deadline. (The sibling **projection** sub-path — `from: project` entries — instead runs `Acquire::Projection`, which renders data files through `Acquire::Serializer::{Json,Yaml,Text}` before persisting.)
+2. **Render phase** — `entry.publish_via(context)` calls `Produce::Render#bytes_for(target:, data:, boot:)` to expand the Mustache template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
+
+`AsyncRunner` (nested in `Engine`) enqueues reactive produce when `entry_written` fires, then drains before the process exits via an `at_exit` hook. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
 
 ## Hook payload contract
 

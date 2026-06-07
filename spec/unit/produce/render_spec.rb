@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Write::PublishRenderer do
+RSpec.describe Textus::Produce::Render do
   subject(:renderer) { described_class.new(template_loader: ->(_n) { "{{#entries}}{{key}}\n{{/entries}}" }) }
 
   let(:data) { { "entries" => [{ "key" => "k1" }, { "key" => "k2" }] } }

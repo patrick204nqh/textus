@@ -46,10 +46,10 @@ RSpec.describe Textus::Hooks::Context do
     # get itself no longer reads-through; a hook observing a stale entry sees it
     # stale and triggers no ingest. Writing then reading back returns the bytes
     # unchanged, and no fetch worker is constructed.
-    allow(Textus::Write::FetchWorker).to receive(:new).and_call_original
+    allow(Textus::Produce::Acquire::Intake).to receive(:new).and_call_original
     ctx.put("proposals.notes", body: "hello")
     env = ctx.get("proposals.notes")
     expect(env.body.chomp).to eq("hello")
-    expect(Textus::Write::FetchWorker).not_to have_received(:new)
+    expect(Textus::Produce::Acquire::Intake).not_to have_received(:new)
   end
 end

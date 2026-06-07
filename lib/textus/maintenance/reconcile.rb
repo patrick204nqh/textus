@@ -7,7 +7,7 @@ module Textus
     #
     # Phase 1 — Produce (non-destructive): re-render ALL derived entries (cheap,
     # idempotent) plus every intake entry past its source.ttl (stale-only, so
-    # external sources are not hammered). Driven by Maintenance::Produce.
+    # external sources are not hammered). Driven by Produce::Engine.
     #
     # Phase 2 — Retention sweep (destructive): drop or archive entries past their
     # retention ttl. Driven by Domain::Retention::Sweep. The old refresh/warn
@@ -45,10 +45,10 @@ module Textus
         # produce-on-write threads first, both to fold their work in and to free
         # the shared maintenance lock (BuildLock is non-blocking — a thread still
         # holding it would make the acquire below raise BuildInProgress). ADR 0093.
-        Textus::Maintenance::Produce::AsyncRunner.drain
+        Textus::Produce::Engine::AsyncRunner.drain
 
         Textus::Ports::BuildLock.with(root: @container.root) do
-          produced = Textus::Maintenance::Produce.new(container: @container, call: @call).call(keys: produce_keys)
+          produced = Textus::Produce::Engine.new(container: @container, call: @call).call(keys: produce_keys)
           swept = apply(retention_rows)
           publish_failed(swept[:failed]) unless swept[:failed].empty?
           apply_result(produced, swept, health)
@@ -60,13 +60,18 @@ module Textus
       # The full produce scope (ADR 0093): every derived entry (always
       # re-render — cheap, idempotent), every entry that mirrors a publish_tree
       # (the nested-subtree publishers, ADR 0047 — mirrored each pass so a
-      # removed source leaf is swept from the published tree), plus every intake
-      # entry past its source.ttl (re-pull only when due, so external sources
-      # aren't hammered). Ttl-less intake entries (:no_policy) are skipped —
-      # they have no freshness contract and are never auto-re-pulled (ADR 0099).
+      # removed source leaf is swept from the published tree), every authored
+      # leaf with a `publish.to` target (the single-file canon publishers —
+      # docs/README.md, the architecture index, the root README; ADR 0103 —
+      # converged each pass so a stale published copy is rewritten and the
+      # `reconcile`-is-a-no-op check guards them), plus every intake entry past
+      # its source.ttl (re-pull only when due, so external sources aren't
+      # hammered). Ttl-less intake entries (:no_policy) are skipped — they have
+      # no freshness contract and are never auto-re-pulled (ADR 0099). All are
+      # idempotent: publish writes only when the target's content changed.
       def produce_scope(prefix, zone, file_stat)
         publishable = @container.manifest.data.entries
-                                .select { |e| e.derived? || !e.publish_tree.nil? }
+                                .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
                                 .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
         stale_intake = Textus::Domain::Freshness::Evaluator.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,

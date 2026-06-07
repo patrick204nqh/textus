@@ -18,6 +18,11 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0103](../architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
+| [0102](../architecture/decisions/0102-produced-event-catalog.md) | produce the event catalog from the registry | 2026-06-08 | Proposed |
+| [0101](../architecture/decisions/0101-interface-fossils.md) | interface-layer fossils | 2026-06-07 | Accepted |
+| [0100](../architecture/decisions/0100-produce-topology.md) | `produce/` topology + de-fossilized names | 2026-06-07 | Accepted |
+| [0099](../architecture/decisions/0099-one-freshness-evaluator.md) | one `Freshness` evaluator | 2026-06-07 | Accepted |
 | [0098](../architecture/decisions/0098-docs-ssot-cleanup.md) | Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status | 2026-06-07 | Accepted |
 | [0097](../architecture/decisions/0097-produced-reference-docs.md) | Reference docs become produced (projected/introspected, published out) | 2026-06-07 | Accepted |
 | [0096](../architecture/decisions/0096-conformance-tier-boundary.md) | Does the conformance tier earn a distinct category? | 2026-06-07 | Proposed |

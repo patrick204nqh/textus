@@ -4,7 +4,7 @@ RSpec.shared_context "textus_store_fixture" do
   # Drain async derived rebuilds (ADR 0087) before removing the tmpdir so an
   # in-flight rebuild thread cannot race teardown (`ENOTEMPTY` on .textus/zones).
   after do
-    Textus::Maintenance::Produce::AsyncRunner.drain
+    Textus::Produce::Engine::AsyncRunner.drain
     FileUtils.remove_entry(tmp)
   end
 end
@@ -153,12 +153,12 @@ module TextusSpecHelpers
   # are visible through it.
   #
   # `build_worker` (below) drives an internal use-case class the façade does
-  # not expose (Write::FetchWorker). Pass `events:` to swap the bus wholesale
+  # not expose (Produce::Acquire::Intake). Pass `events:` to swap the bus wholesale
   # (e.g. a recording probe) via the immutable Container's #with.
   def build_worker(store, ctx, events: nil)
     container = store.container
     container = container.with(events: events) if events
-    Textus::Write::FetchWorker.new(container: container, call: ctx)
+    Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
   end
 end
 

@@ -7,6 +7,34 @@
   },
   "adrs": [
     {
+      "number": "0103",
+      "title": "the root README is canon, published out",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0103-root-readme-is-canon"
+    },
+    {
+      "number": "0102",
+      "title": "produce the event catalog from the registry",
+      "date": "2026-06-08",
+      "status": "Proposed",
+      "slug": "0102-produced-event-catalog"
+    },
+    {
+      "number": "0101",
+      "title": "interface-layer fossils",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0101-interface-fossils"
+    },
+    {
+      "number": "0100",
+      "title": "`produce/` topology + de-fossilized names",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0100-produce-topology"
+    },
+    {
       "number": "0099",
       "title": "one `Freshness` evaluator",
       "date": "2026-06-07",

@@ -1,10 +1,10 @@
 module Textus
-  module Write
+  module Produce
     # Single home for the fetch lifecycle event vocabulary (ADR 0048 D5).
-    # FetchWorker (the ingest executor driven by reconcile + hook) emits through
+    # Produce::Acquire::Intake (the ingest executor driven by reconcile + hook) emits through
     # this seam so the event names and payload shapes live in one place with one
     # derived hook context.
-    class FetchEvents
+    class Events
       def self.from(container:, call:)
         new(
           events: container.events,

@@ -87,6 +87,14 @@ entries:
     kind: leaf
     publish:
       - { to: docs/architecture/README.md }
+  - key: knowledge.readme
+    path: knowledge/readme.md
+    zone: knowledge
+    schema: null
+    owner: human:self
+    kind: leaf
+    publish:
+      - { to: README.md }
   - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.derived.orientation
