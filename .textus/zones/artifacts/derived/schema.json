@@ -5,21 +5,42 @@
   "schemas": [
     {
       "name": "project",
-      "required": [],
-      "optional": [],
       "fields": [
-        "description",
-        "name",
-        "repo"
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": false,
+          "maintained_by": "human"
+        }
       ]
     },
     {
       "name": "runbook",
-      "required": [],
-      "optional": [],
       "fields": [
-        "description",
-        "name"
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "maintained_by": "human"
+        }
       ]
     }
   ]

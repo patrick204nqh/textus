@@ -6,13 +6,18 @@
 
 ## `project`
 
-**Required:** 
+| Field | Type | Required | Maintained by |
+|---|---|---|---|
+| `description` | string | yes | human |
+| `name` | string | yes | human |
+| `repo` | string | no | human |
 
-**Optional:** 
 
 ## `runbook`
 
-**Required:** 
+| Field | Type | Required | Maintained by |
+|---|---|---|---|
+| `description` | string | yes | human |
+| `name` | string | yes | human |
 
-**Optional:** 
 

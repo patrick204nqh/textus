@@ -6,7 +6,8 @@
 {{#schemas}}
 ## `{{name}}`
 
-**Required:** {{#required}}`{{.}}` {{/required}}
-
-**Optional:** {{#optional}}`{{.}}` {{/optional}}
+| Field | Type | Required | Maintained by |
+|---|---|---|---|
+{{#fields}}| `{{name}}` | {{type}} | {{#required}}yes{{/required}}{{^required}}no{{/required}} | {{maintained_by}} |
+{{/fields}}
 {{/schemas}}

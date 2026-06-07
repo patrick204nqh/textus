@@ -31,14 +31,29 @@ RSpec.describe "schema_registry_handler" do
     expect(rpc.names(:resolve_handler)).to include(:schema)
   end
 
-  it "emits schemas sorted by name with required/optional/fields keys" do
+  it "emits schemas sorted by name, each with a fields list" do
     result = rpc.invoke(:resolve_handler, :schema, caps: caps, config: {}, args: [])
     schema_rows = result["content"]["schemas"]
 
     expect(schema_rows).to be_an(Array)
     names = schema_rows.map { |s| s["name"] }
     expect(names).to eq(names.sort)
-    expect(schema_rows.first.keys).to include("name", "required", "optional", "fields")
+    expect(schema_rows.first.keys).to include("name", "fields")
+  end
+
+  it "normalizes per-field required: true into a per-field required boolean" do
+    # The dogfood schemas carry no top-level required: list — required-ness is
+    # a per-field flag. The doc would be blank if we only read the top-level
+    # list, so this guards that we surface the per-field truth.
+    result = rpc.invoke(:resolve_handler, :schema, caps: caps, config: {}, args: [])
+    project = result["content"]["schemas"].find { |s| s["name"] == "project" }
+    name_field = project["fields"].find { |f| f["name"] == "name" }
+    repo_field = project["fields"].find { |f| f["name"] == "repo" }
+
+    expect(name_field["required"]).to be(true)         # name: { required: true }
+    expect(repo_field["required"]).to be(false)        # repo: no required flag
+    expect(name_field["type"]).to eq("string")
+    expect(name_field["maintained_by"]).to eq("human")
   end
 
   it "includes the dogfood 'project' schema" do
@@ -53,12 +68,15 @@ RSpec.describe "schema_registry_handler" do
     expect(names).to include("runbook")
   end
 
-  it "each schema row has sorted required, optional, and fields arrays" do
+  it "emits fields sorted by name, each with name/type/required/maintained_by" do
     result = rpc.invoke(:resolve_handler, :schema, caps: caps, config: {}, args: [])
     result["content"]["schemas"].each do |row|
-      expect(row["required"]).to eq(row["required"].sort)
-      expect(row["optional"]).to eq(row["optional"].sort)
-      expect(row["fields"]).to eq(row["fields"].sort)
+      field_names = row["fields"].map { |f| f["name"] }
+      expect(field_names).to eq(field_names.sort)
+      row["fields"].each do |f|
+        expect(f.keys).to include("name", "type", "required", "maintained_by")
+        expect(f["required"]).to be(true).or be(false)
+      end
     end
   end
 
