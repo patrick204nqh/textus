@@ -99,7 +99,7 @@ The re-pull cadence is the entry's own `source.ttl`. Age-based garbage collectio
 
 ```yaml
 - key: artifacts.feeds.notion.events
-  kind: intake
+  kind: produced                # produce-method (intake) read from source.from: handler
   zone: artifacts
   source: { from: handler, handler: notion, config: { ... }, ttl: 6h }
 

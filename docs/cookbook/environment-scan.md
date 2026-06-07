@@ -34,7 +34,7 @@ entries:
     format: yaml
     nested: true                              # artifacts.feeds.machines.<name> fans out, one file per host
     tracked: false                            # gitignored — env data is sensitive/noisy
-    kind: intake
+    kind: produced                            # produce-method (intake) from source.from: handler
     source:
       from: handler
       handler: machines

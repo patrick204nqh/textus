@@ -142,19 +142,20 @@ Textus.hook do |reg|
 end
 ```
 
-Manifest references the same name on both sides — the intake entry fetches data via
+Manifest references the same name on both sides — both entries are `kind: produced`;
+the produce-method is read from `source.from`. The intake entry fetches data via
 `source: { from: handler }`, and the derived entry projects + reshapes it via
 `source: { from: project }` (the reducer shapes the data; rendering, if any, is a
 publish target's concern):
 
 ```yaml
 - key: artifacts.feeds.linear.issues
-  kind: intake
+  kind: produced                  # from: handler → intake produce-method
   zone: artifacts
   source: { from: handler, handler: linear, config: { team_id: "ENG" }, ttl: 1h }
 
 - key: artifacts.derived.linear.dashboard
-  kind: derived
+  kind: produced                  # from: project → derived produce-method
   zone: artifacts
   source: { from: project, select: [artifacts.feeds.linear.issues], transform: linear }
 

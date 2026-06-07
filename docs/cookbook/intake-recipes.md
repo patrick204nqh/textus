@@ -33,7 +33,7 @@ entries:
   - key: artifacts.feeds.api.users
     path: artifacts/feeds/api/users.md
     zone: artifacts
-    kind: intake
+    kind: produced                                                                # produce-method from source.from
     source: { from: handler, handler: http_json, ttl: 15m, config: { url: "https://api.example.com/users" } }
 rules:
   - { match: artifacts.feeds.api.**, retention: { ttl: 90d, action: archive } }   # orthogonal GC
@@ -47,8 +47,9 @@ Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every inta
 > wrap it in an object (`{ "items": [...] }`) or keep the entry `format:
 > markdown` (the default), which stores the parsed YAML as the body.
 
-> The recipes below show only the hook — pair each with a `kind: intake` entry whose
-> `source: { from: handler, handler: ..., ttl: ... }` names the handler, exactly like
+> The recipes below show only the hook — pair each with a `kind: produced` entry whose
+> `source: { from: handler, handler: ..., ttl: ... }` names the handler (the produce-method
+> is read from `source.from`), exactly like
 > the HTTP JSON example above (add an orthogonal `retention:` rule if you want GC).
 
 ## RSS feed
