@@ -8,13 +8,12 @@ require "pathname"
 # every projected fact, so a doc cannot silently drift from the code.
 RSpec.describe "reference doc facts cover their projections" do
   let(:repo) { Pathname.new(File.expand_path("../../..", __dir__)) }
+  let(:catalog_events) do
+    (Textus::Hooks::Catalog::PUBSUB.keys + Textus::Hooks::Catalog::RPC.keys).map(&:to_s)
+  end
 
   def read_doc(rel)
     (repo + rel).read
-  end
-
-  let(:catalog_events) do
-    (Textus::Hooks::Catalog::PUBSUB.keys + Textus::Hooks::Catalog::RPC.keys).map(&:to_s)
   end
 
   # `:event`-shaped tokens cited inside markdown table rows (lines starting with
@@ -23,7 +22,7 @@ RSpec.describe "reference doc facts cover their projections" do
   # `:rank_by_recency`), so this stays precise.
   def event_tokens_in_tables(doc)
     doc.lines.select { |l| l.lstrip.start_with?("|") }
-       .flat_map { |l| l.scan(/`:([a-z_]+)`/).flatten }.uniq
+             .flat_map { |l| l.scan(/`:([a-z_]+)`/).flatten }.uniq
   end
 
   it "events.md documents every Hooks::Catalog event" do
