@@ -1,5 +1,3 @@
-require "time"
-
 module Textus
   module Read
     # The one read path — a pure read (ADR 0089, 0093): the on-disk envelope
@@ -42,31 +40,18 @@ module Textus
 
       private
 
-      # Pure read (ADR 0089, 0093) — no lifecycle ACTION at read time, but the
-      # envelope is annotated with a freshness VERDICT: an intake entry past its
-      # source.ttl reads back stale (it is NOT re-pulled — reconcile/hook owns
-      # that). Non-intake entries are always fresh (retention is GC, not content
-      # staleness, and is evaluated only by the reconcile sweep).
       def annotated_envelope(key)
         envelope = read_raw_envelope(key)
         return nil if envelope.nil?
 
         entry = @manifest.resolver.resolve(key).entry
-        ttl = entry.intake? ? entry.source.ttl_seconds : nil
-        return annotate_fresh(envelope) if ttl.nil?
-
-        basis = envelope.meta&.dig("last_fetched_at")
-        basis_time = basis ? Time.parse(basis) : mtime_for(key)
-        stale = !basis_time.nil? && (@call.now - basis_time).to_i > ttl
-        reason = stale ? "ttl exceeded" : nil
-        envelope.with(freshness: Textus::Domain::Freshness.build(stale: stale, reason: reason, fetching: false))
+        envelope.with(freshness: evaluator.verdict(entry))
       end
 
-      def mtime_for(key)
-        path = @manifest.resolver.resolve(key).path
-        @file_stat.exists?(path) ? @file_stat.mtime(path) : nil
-      rescue Textus::Error
-        nil
+      def evaluator
+        @evaluator ||= Textus::Domain::Freshness::Evaluator.new(
+          manifest: @manifest, file_stat: @file_stat, clock: @call,
+        )
       end
 
       def read_raw_envelope(key)
@@ -82,12 +67,6 @@ module Textus
           meta: parsed["_meta"], body: parsed["body"],
           etag: Etag.for_bytes(raw), content: parsed["content"]
         )
-      end
-
-      def annotate_fresh(envelope)
-        envelope.with(freshness: Textus::Domain::Freshness.build(
-          stale: false, reason: nil, fetching: false,
-        ))
       end
     end
   end

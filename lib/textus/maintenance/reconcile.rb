@@ -10,8 +10,8 @@ module Textus
     # external sources are not hammered). Driven by Maintenance::Produce.
     #
     # Phase 2 — Retention sweep (destructive): drop or archive entries past their
-    # retention ttl. Driven by Domain::Retention. The old refresh/warn actions are
-    # gone — intake re-pull is now Produce's responsibility.
+    # retention ttl. Driven by Domain::Retention::Sweep. The old refresh/warn
+    # actions are gone — intake re-pull is now Produce's responsibility.
     class Reconcile
       extend Textus::Contract::DSL
 
@@ -32,7 +32,7 @@ module Textus
 
       def call(prefix: nil, zone: nil, dry_run: false)
         file_stat = Textus::Ports::Storage::FileStat.new
-        retention_rows = Textus::Domain::Retention.new(
+        retention_rows = Textus::Domain::Retention::Sweep.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
         ).call(prefix: prefix, zone: zone)
 
@@ -62,14 +62,15 @@ module Textus
       # (the nested-subtree publishers, ADR 0047 — mirrored each pass so a
       # removed source leaf is swept from the published tree), plus every intake
       # entry past its source.ttl (re-pull only when due, so external sources
-      # aren't hammered).
+      # aren't hammered). Ttl-less intake entries (:no_policy) are skipped —
+      # they have no freshness contract and are never auto-re-pulled (ADR 0099).
       def produce_scope(prefix, zone, file_stat)
         publishable = @container.manifest.data.entries
                                 .select { |e| e.derived? || !e.publish_tree.nil? }
                                 .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
-        stale_intake = Textus::Domain::IntakeStaleness.new(
+        stale_intake = Textus::Domain::Freshness::Evaluator.new(
           manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
-        ).call(prefix: prefix, zone: zone)
+        ).stale_intake_keys(prefix: prefix, zone: zone)
         (publishable + stale_intake).uniq
       end
 

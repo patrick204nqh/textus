@@ -7,7 +7,7 @@
 flowchart TD
     interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
     application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ use cases · envelope IO"]
-    domain["Domain — Permission · Freshness · Staleness<br/>Policy (Guard · GuardFactory · BaseGuards · Evaluation · Fetch · Matcher · Predicates)"]
+    domain["Domain — Permission · Freshness<br/>Policy (Guard · GuardFactory · BaseGuards · Evaluation · Fetch · Matcher · Predicates)"]
     infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
     interface --> application
     application --> domain
@@ -70,8 +70,7 @@ projection.rb
 
 ```
 Permission         (write predicate per zone)
-Freshness::{Policy,Verdict,Evaluator}
-Staleness          (Generator/Intake checks)
+Freshness::{Verdict,Evaluator}
 Action  Outcome  Sentinel
 Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist,
          Predicates::{ZoneWritableBy,SchemaValid,AuthorHeld,TargetIsCanon,EtagMatch,FreshWithin}}

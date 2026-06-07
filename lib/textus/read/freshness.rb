@@ -65,11 +65,8 @@ module Textus
         ttl, action = policy_for(mentry)
         return base_row(mentry, last).merge(status: :no_policy) if ttl.nil?
 
-        basis = basis_time(mentry, last)
-        # A never-recorded entry (no last_fetched_at and no on-disk file) is past
-        # due — it has never been produced. Matches Domain::IntakeStaleness#due?
-        # and the pre-0093 Lifecycle.verdict "never recorded" contract.
-        expired = basis.nil? || (@call.now - basis).to_i > ttl
+        basis = basis_for(mentry)
+        expired = expired?(mentry, basis, ttl)
         base_row(mentry, last).merge(
           ttl_seconds: ttl,
           action: action,
@@ -93,11 +90,29 @@ module Textus
         [nil, nil]
       end
 
-      # Age basis as a Time: last_fetched_at for intake when present, else mtime.
-      def basis_time(mentry, last)
-        return Time.parse(last) if mentry.intake? && last
+      # Intake currency basis comes from the evaluator (single definition);
+      # retention dueness is keyed off file mtime.
+      def basis_for(mentry)
+        return evaluator.intake_basis(mentry) if mentry.intake? && mentry.source.ttl_seconds
 
         mtime_for(mentry.key)
+      end
+
+      def expired?(mentry, basis, ttl)
+        if mentry.intake? && mentry.source.ttl_seconds
+          evaluator.verdict(mentry).stale
+        else
+          # Preserve pre-0099 pulse semantics: a never-recorded retention entry
+          # (no file => nil basis) is past due. Retention::Sweep.expired? alone
+          # returns false on nil mtime (it runs post-exists? in the sweep).
+          basis.nil? || Textus::Domain::Retention::Sweep.expired?(ttl_seconds: ttl, mtime: basis, now: @call.now)
+        end
+      end
+
+      def evaluator
+        @evaluator ||= Textus::Domain::Freshness::Evaluator.new(
+          manifest: @manifest, file_stat: Textus::Ports::Storage::FileStat.new, clock: @call,
+        )
       end
 
       def mtime_for(key)
