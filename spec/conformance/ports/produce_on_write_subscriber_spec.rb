@@ -38,6 +38,16 @@ RSpec.describe "produce-on-write (ADR 0093, async-only)" do
     expect(body["enqueued_by"]).to eq("automation")
   end
 
+  it "a source deletion enqueues materialize for its dependents (ADR 0087 gap closed)" do
+    store.as("human").put("knowledge.a", meta: { "title" => "Apple" }, body: "x\n")
+    queue.purge(:ready) # drop the put's enqueued job; isolate the delete
+
+    store.as("human").key_delete("knowledge.a")
+
+    expect(queue.ready_ids).not_to be_empty
+    expect(queue.ready_ids).to all(start_with("materialize:"))
+  end
+
   it "recursion guard: a write INTO a derived entry does not fan out" do
     store # boot (attaches the subscriber)
     subscriber = Textus::Ports::ProduceOnWriteSubscriber.new(store.container)
