@@ -61,6 +61,14 @@
       ]
     },
     {
+      "name": "drain",
+      "summary": "Converge everything now: seed produce + retention jobs and drain the queue to empty.",
+      "args": [
+        "prefix",
+        "zone"
+      ]
+    },
+    {
       "name": "freshness",
       "summary": "Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).",
       "args": [
@@ -73,6 +81,15 @@
       "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
       "args": [
         "key"
+      ]
+    },
+    {
+      "name": "jobs",
+      "summary": "List queued jobs by state; retry a dead-lettered job or purge a state.",
+      "args": [
+        "action",
+        "job_id",
+        "state"
       ]
     },
     {
