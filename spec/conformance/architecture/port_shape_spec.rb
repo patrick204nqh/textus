@@ -33,7 +33,7 @@ RSpec.describe "port shape convention (ADR 0109)" do
   it "every port is an instantiable class (ADR 0109 single shape)" do
     module_ports = port_files.reject do |f|
       idx, lines = port_declaration(f)
-      next true unless idx
+      next true unless idx  # no class/module declaration: reported by the structural test above
 
       lines[idx] =~ /^\s+class\s/
     end
