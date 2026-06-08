@@ -1,12 +1,7 @@
 RSpec.shared_context "textus_store_fixture" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
-  # Drain async derived rebuilds (ADR 0087) before removing the tmpdir so an
-  # in-flight rebuild thread cannot race teardown (`ENOTEMPTY` on .textus/zones).
-  after do
-    Textus::Produce::Engine::AsyncRunner.drain
-    FileUtils.remove_entry(tmp)
-  end
+  after { FileUtils.remove_entry(tmp) }
 end
 
 module TextusSpecHelpers

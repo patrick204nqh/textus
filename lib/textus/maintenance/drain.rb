@@ -6,8 +6,7 @@ module Textus
     # runs. Single-pass (serial) on purpose: each produce job self-locks via
     # Produce::Engine.converge, so running them in turn keeps the build lock
     # uncontended; a concurrent pool would make all-but-one produce job hit
-    # BuildInProgress and skip. Async produce-on-write threads are drained first
-    # so their work folds in and the lock is free.
+    # BuildInProgress and skip.
     class Drain
       extend Textus::Contract::DSL
 
@@ -24,8 +23,6 @@ module Textus
       end
 
       def call(prefix: nil, zone: nil)
-        Textus::Produce::Engine::AsyncRunner.drain
-
         queue = Textus::Ports::Queue.new(root: @container.root)
         Textus::Jobs::Seeder.new(container: @container, queue: queue, call: @call).seed(prefix: prefix, zone: zone)
 

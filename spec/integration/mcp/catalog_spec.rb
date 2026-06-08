@@ -12,12 +12,7 @@ RSpec.describe Textus::MCP::Catalog do
   end
   let(:session) { store.session(role: "human") }
 
-  # Drain async derived rebuilds (ADR 0087) before removing the tmpdir so an
-  # in-flight rebuild thread cannot race teardown (`ENOTEMPTY` on .textus/zones).
-  after do
-    Textus::Produce::Engine::AsyncRunner.drain
-    FileUtils.remove_entry(tmp)
-  end
+  after { FileUtils.remove_entry(tmp) }
 
   describe ".tool_schemas" do
     it "advertises one entry per MCP-surfaced contract, with derived inputSchema" do
