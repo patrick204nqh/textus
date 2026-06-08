@@ -5,7 +5,7 @@ module Textus
     module Acquire
       # Internal ingest executor for one machine-zone intake entry. No longer a
       # public verb (ADR 0079 collapsed the `fetch` surface): used by the
-      # `reconcile` sweep and `textus hook run` only — ingest is system-pushed
+      # converge sweep (drain/serve) and `textus hook run` only — ingest is system-pushed
       # (ADR 0089 removed the read-through that once also drove it).
       class Intake
         FETCH_TIMEOUT_SECONDS = Textus::Produce::Acquire::Handler::FETCH_TIMEOUT_SECONDS
@@ -96,9 +96,9 @@ module Textus
           normalized = self.class.normalize_action_result(result, format: mentry.format)
           Textus::Domain::Policy::GuardFactory.new(
             manifest: @manifest, schemas: @schemas,
-          ).for(:reconcile, key).check!(
+          ).for(:converge, key).check!(
             Textus::Domain::Policy::Evaluation.new(
-              actor: @call.role, transition: :reconcile, origin: nil,
+              actor: @call.role, transition: :converge, origin: nil,
               target: key, envelope: nil, manifest: @manifest
             ),
           )

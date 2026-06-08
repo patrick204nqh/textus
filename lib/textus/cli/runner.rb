@@ -132,7 +132,7 @@ module Textus
       #           affordance; the agent surface deliberately returns nil)
       #   put   — reads the entry JSON from --stdin (ADR 0089: just stores bytes,
       #           no --fetch transform)
-      # (build removed in ADR 0087: materialization is system-pushed via reconcile)
+      # (build removed in ADR 0087: materialization is system-pushed via drain/serve)
       BEHAVIORAL_HATCHES = %i[get put].freeze
 
       # Contract verbs whose CLI is a plain `< Verb` command, not a projection at
@@ -144,7 +144,7 @@ module Textus
       # the exit_code: res["ok"] ? 0 : 1 behavior — two things the generic
       # projection cannot yet express; kept in ADR 0101 pending a future pass.)
       # (fetch/fetch_all were removed in ADR 0079: Produce::Acquire::Intake is now internal,
-      # driven by the reconcile sweep and hook run — ADR 0089 removed the
+      # driven by the converge sweep (drain/serve) and hook run — ADR 0089 removed the
       # read-through that once also drove it.)
       NON_PROJECTED_CLI = %i[doctor].freeze
 

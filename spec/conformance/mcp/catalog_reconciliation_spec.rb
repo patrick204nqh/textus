@@ -16,9 +16,9 @@ MCP_CATALOG_COMPOSED = [].freeze
 #     nor MCP; ADR 0085); pulse + the hook context consume it directly.
 # accept/reject are NO LONGER here: they are surfaced to MCP and gated by the
 # author_held capability floor, not by transport absence (ADR 0072).
-# build was removed in ADR 0087: materialization is system-pushed via reconcile,
-# not a user-callable verb. The build CAPABILITY remains in the manifest (Task 11
-# will rename it to reconcile).
+# build was removed in ADR 0087: materialization is system-pushed via drain,
+# not a user-callable verb. The converge CAPABILITY remains in the manifest (renamed in ADR 0111
+# ; build was folded away).
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   audit blame uid freshness
   doctor rule_list published

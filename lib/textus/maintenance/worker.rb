@@ -7,6 +7,15 @@ module Textus
     class Worker
       Summary = Struct.new(:completed, :failed, keyword_init: true)
 
+      # The standard convergence worker: the closed handler allow-list plus the
+      # lease TTL from worker_config. Both `drain` and `serve` build it this way.
+      def self.for(container:, queue:)
+        new(
+          queue: queue, registry: Textus::Jobs::Handlers.registry,
+          container: container, lease_ttl: container.manifest.data.worker_config[:lease_ttl]
+        )
+      end
+
       def initialize(queue:, registry:, container:, lease_ttl: 60)
         @queue = queue
         @registry = registry

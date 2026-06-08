@@ -4,7 +4,7 @@ module Textus
   module Maintenance
     module Retention
       # The destructive half of convergence: apply retention rows (drop/archive).
-      # Lifted verbatim from Reconcile#apply/#archive_leaf so reconcile/drain and
+      # Lifted verbatim from the legacy reconcile apply/archive_leaf so drain/serve and
       # the `sweep` job handler share one path. Runs as the caller's role — never
       # self-elevates (ADR 0079/0093: destructiveness decides authority).
       class Apply

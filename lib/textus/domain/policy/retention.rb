@@ -3,7 +3,7 @@ module Textus
     module Policy
       # Garbage collection (ADR 0093). A glob-matched rule slot: when an entry
       # ages past `ttl`, retire it. Destructive only — runs on the full
-      # `reconcile` pass, never on a write (ADR 0079's invariant). Orthogonal to
+      # `converge` pass, never on a write (ADR 0079's invariant). Orthogonal to
       # production (`source:`): an intake entry can re-pull hourly AND archive
       # after 90 days. `warn`/`refresh` are gone (refresh is implied by an
       # intake source; warn never fired after ADR 0089's pure-read get).

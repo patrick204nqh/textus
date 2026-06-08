@@ -15,7 +15,7 @@ RSpec.describe "Boot write-flows — agent-facing write guidance" do
         version: textus/3
         roles:
           - { name: human,      can: [author, propose] }
-          - { name: automation, can: [reconcile] }
+          - { name: automation, can: [converge] }
         zones:
           - { name: identity, kind: canon, desc: "human-only" }
           - { name: intake,   kind: machine }
@@ -59,7 +59,7 @@ RSpec.describe "Boot write-flows — agent-facing write guidance" do
                                   roles:
                                     - { name: human,      can: [author, propose] }
                                     - { name: agent,      can: [propose, keep] }
-                                    - { name: automation, can: [reconcile] }
+                                    - { name: automation, can: [converge] }
                                   zones:
                                     - { name: knowledge, kind: canon }
                                     - { name: notebook,  kind: workspace, owner: agent }

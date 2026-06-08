@@ -11,7 +11,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
-        - { name: automation, can: [reconcile] }
+        - { name: automation, can: [converge] }
       zones:
         - { name: identity, kind: canon }
       entries: []
@@ -31,22 +31,22 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     expect { parse(yaml) }.to raise_error(Textus::BadManifest, /unknown capability 'teleport'/)
   end
 
-  # ADR 0090: the quarantine capability folded into reconcile. A manifest still
+  # ADR 0090: the quarantine capability folded into converge. A manifest still
   # naming the old quarantine capability (`ingest`, or legacy `fetch`) is rejected
-  # with a pointed hint at reconcile.
-  it "rejects the folded quarantine capability with a reconcile hint" do
+  # with a pointed hint at converge.
+  it "rejects the folded quarantine capability with a converge hint" do
     %w[ingest fetch].each do |old|
       yaml = <<~YAML
         version: textus/3
         roles:
-          - { name: automation, can: [#{old}, reconcile] }
+          - { name: automation, can: [#{old}, converge] }
         zones:
           - { name: feeds, kind: machine }
         entries: []
       YAML
       expect { parse(yaml) }.to raise_error(
         Textus::BadManifest,
-        /unknown capability '#{old}'.*folded into 'reconcile' \(ADR 0090\)/m,
+        /unknown capability '#{old}'.*folded into 'converge' \(ADR 0090\)/m,
       )
     end
   end

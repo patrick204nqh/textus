@@ -5,7 +5,7 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
 
   it "is the kind => required-capability function (ADR 0091: quarantine + derived folded into machine)" do
     expect(s::LANES).to eq(
-      "canon" => "author", "workspace" => "keep", "machine" => "reconcile",
+      "canon" => "author", "workspace" => "keep", "machine" => "converge",
       "queue" => "propose"
     )
   end
@@ -14,8 +14,8 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
     expect(s::ZONE_KINDS).to eq(%w[canon workspace machine queue])
   end
 
-  it "derives CAPABILITIES from the lane values, de-duplicated (three: machine requires reconcile)" do
-    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "reconcile")
+  it "derives CAPABILITIES from the lane values, de-duplicated (three: machine requires converge)" do
+    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "converge")
   end
 
   it "derives KIND_REQUIRES_VERB as the lane table itself" do

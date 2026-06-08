@@ -41,7 +41,7 @@ zones:
 `kind:` is required — a manifest with a kind-less zone is rejected at load. The
 kind is authoritative: `textus put` routes proposals to the zone declaring
 `kind: queue` (no name-based guessing). The kind also fixes the capability a
-writer must hold — `canon`⇒`author`, `workspace`⇒`keep`, `machine`⇒`reconcile`, `queue`⇒`propose`. This is a **bijection** — one kind maps to exactly one capability (ADR 0091).
+writer must hold — `canon`⇒`author`, `workspace`⇒`keep`, `machine`⇒`converge`, `queue`⇒`propose`. This is a **bijection** — one kind maps to exactly one capability (ADR 0091).
 Rules: at most one `queue` zone, at most one `machine` zone, and (since `author`
 is the single trust anchor) at most one role may hold it.
 
@@ -67,18 +67,18 @@ zones:
   - { name: research,    kind: canon }      # AI-assisted research notes — still author-gated
   - { name: deliverable, kind: canon }      # human-only client-facing copy
   - { name: archive,     kind: canon }      # read-mostly historical record
-  - { name: artifacts,   kind: machine }    # machine zone: intake feeds + derived outputs — reconcile-holders write
+  - { name: artifacts,   kind: machine }    # machine zone: intake feeds + derived outputs — converge-holders write
 ```
 
 ### Tuning role capabilities
 
-Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed four-verb set (`author`, `propose`, `keep`, `reconcile`), subject to the one rule that at most one role may hold `author`:
+Role **names** are a closed set — `human`, `agent`, `automation` — but each role's **capabilities** are yours to tune. You assign any subset of the closed four-verb set (`author`, `propose`, `keep`, `converge`), subject to the one rule that at most one role may hold `author`:
 
 ```yaml
 roles:
   - { name: human,      can: [author, propose] }   # the trust anchor
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [reconcile] }           # the one machine-maintenance capability
+  - { name: automation, can: [converge] }           # the one machine-maintenance capability
 ```
 
 A manifest need not declare all three — declare the subset you use. Declaring a role whose name is not one of the three is rejected at load. To attribute work to individual people or bots, use the `owner:` field (`owner: human:patrick`, `owner: automation:ci`) — attribution, not authority.
@@ -88,7 +88,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 - **Zone names must be unique.** Duplicates are caught by `textus doctor`.
 - **Every entry must declare a zone that exists.** An entry pointing at an undeclared zone raises `UsageError` at load time.
 - **A zone-kind with no capability holder is read-only at runtime** — if no declared role holds the verb a zone's kind requires, you can still publish into it via `publish` (for `machine` derived entries), but `put --as=anything` will be refused with `write_forbidden`.
-- **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `reconcile`, even a human running `put --as=human` against the `derived` zone is refused.
+- **There is no implicit role hierarchy.** `human` is not a superuser; if only `automation` holds `converge`, even a human running `put --as=human` against the `derived` zone is refused.
 - **At most one role may hold `author`.** The trust anchor is singular; a manifest declaring two `author`-holders is rejected at load.
 
 ---
@@ -227,7 +227,7 @@ A derived entry says **"acquire my data from these sources, then publish me — 
 - key: artifacts.derived.claude-root
   path: artifacts/derived/claude-root.md
   zone: artifacts
-  owner: automation:reconcile
+  owner: automation:converge
   source:
     from: project                                      # project | command (handler = intake)
     select: [knowledge.identity.self, knowledge.notes] # source keys
@@ -246,7 +246,7 @@ Hooks live in Ruby files under `.textus/hooks/`. See [`../how-to/writing-hooks.m
 
 ### What `textus drain` does (Phase 1 — produce)
 
-For every entry in a reconcile-writable zone:
+For every entry in a converge-writable zone:
 
 1. **Acquire** — gather the data per `source.from` (`project`: select the named keys; `handler`: fetch; `command`: already on disk)
 2. **Shape** — pluck fields, run the `:transform_rows` reducer if any (it shapes the data, not its presentation)
@@ -255,7 +255,7 @@ For every entry in a reconcile-writable zone:
 
 Phase 2 sweeps the destructive `retention:` actions (`action: drop|archive`) on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
 
-Derived entries also stay fresh **reactively** between full passes: a canon write enqueues a `materialize` job for each derived entry that depends on it, which a worker converges. Materialization is **async-only** — the write returns immediately and the job is processed by `drain` (the batch/CI pass) or `serve` (the daemon). There is no per-entry write-trigger knob; freshness is re-homed to the drain at the commit/CI gate and to the running daemon. The per-write rebuild is still a narrowed convergence ("reconcile narrowed to `rdeps ∩ derived`") (ADR 0093).
+Derived entries also stay fresh **reactively** between full passes: a canon write enqueues a `materialize` job for each derived entry that depends on it, which a worker converges. Materialization is **async-only** — the write returns immediately and the job is processed by `drain` (the batch/CI pass) or `serve` (the daemon). There is no per-entry write-trigger knob; freshness is re-homed to the drain at the commit/CI gate and to the running daemon. The per-write rebuild is still a narrowed convergence ("converge narrowed to `rdeps ∩ derived`") (ADR 0093).
 
 ### The sentinel guard
 
@@ -275,7 +275,7 @@ version: textus/3
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [reconcile] }
+  - { name: automation, can: [converge] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -298,7 +298,7 @@ entries:
   - key: artifacts.derived.claude-root
     path: artifacts/derived/claude-root.md
     zone: artifacts
-    owner: automation:reconcile
+    owner: automation:converge
     source:
       from: project
       select: [knowledge.identity.self, knowledge.notes]

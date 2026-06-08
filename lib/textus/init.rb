@@ -10,7 +10,7 @@ module Textus
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
-        - { name: automation, can: [reconcile] }
+        - { name: automation, can: [converge] }
       zones:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
@@ -95,7 +95,7 @@ module Textus
 
       Events: :resolve_handler, :transform_rows, :validate (rpc — return value used)
               :entry_written, :entry_deleted, :entry_fetched, :entry_renamed,
-              :entry_produced, :produce_failed, :reconcile_failed,
+              :entry_produced, :produce_failed,
               :proposal_accepted, :proposal_rejected,
               :entry_published, :store_loaded, :session_opened,
               :entry_fetch_started, :entry_fetch_failed (pub-sub — return discarded)

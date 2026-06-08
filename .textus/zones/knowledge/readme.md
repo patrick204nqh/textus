@@ -79,7 +79,7 @@ Without coordination, they overwrite each other and nothing remembers why. textu
 knowledge/   author only        — who you are, what you decide, how you sound (knowledge.identity.* for identity facts)
 notebook/    keep only          — agent's own durable lane (agents keep theirs; bytes climb to knowledge only via propose→accept)
 proposals/   propose (agent + human) — proposals waiting on a human accept
-artifacts/   reconcile only     — machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)
+artifacts/   converge only     — machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)
 ```
 
 An agent that tries to write directly into `knowledge/` gets `write_forbidden`. It writes to `proposals/` (to change authoritative content) or its own `notebook/` (for working memory). You accept the good proposals; textus promotes them, records the move, and audits both halves. Stable per-entry `uid:` means a reorganization doesn't break references. A monotonic audit cursor (`textus pulse --since=N`) means the next session — possibly a different agent, possibly a different model — picks up exactly where the last one left off.
@@ -143,13 +143,13 @@ You get `.textus/` with all four zone directories, baseline schemas, a starter m
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [reconcile] }
+  - { name: automation, can: [converge] }
 
 zones:
   - { name: knowledge, kind: canon }      # author    — canonical truth
   - { name: notebook,  kind: workspace }  # keep      — agent's own durable lane
   - { name: proposals, kind: queue }      # propose   — proposals awaiting accept
-  - { name: artifacts, kind: machine }    # reconcile — external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)
+  - { name: artifacts, kind: machine }    # converge — external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)
 ```
 
 ```
@@ -193,7 +193,7 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`reconcile`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
+- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **`textus doctor`.** Health checks across schemas, hooks, keys, sentinels, and the audit log.
 
@@ -237,7 +237,7 @@ textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectorie
 | `:entry_produced` | a produced entry materializes |
 | `:entry_published` | a produced file is copied to its target |
 | `:proposal_accepted` · `:proposal_rejected` | a proposal is resolved |
-| `:entry_fetch_started` · `:entry_fetch_failed` · `:produce_failed` · `:reconcile_failed` | produce lifecycle |
+| `:entry_fetch_started` · `:entry_fetch_failed` · `:produce_failed` | produce lifecycle |
 | `:store_loaded` · `:session_opened` | the store loads · a role connects |
 
 ```ruby

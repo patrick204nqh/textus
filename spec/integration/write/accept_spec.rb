@@ -82,15 +82,15 @@ RSpec.describe Textus::Write::Accept do
   end
 
   describe "manifest with no role holding the author capability" do
-    # No role holds `author`: agent only proposes, automation only reconciles.
-    # proposals is a queue (propose), feeds is a machine zone (reconcile) so the
+    # No role holds `author`: agent only proposes, automation only converges.
+    # proposals is a queue (propose), feeds is a machine zone (converge) so the
     # manifest still validates — yet accept/reject have no authority to gate.
     let(:store) do
       s = store_from_manifest(root, zones: %w[feeds proposals], manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
-          - { name: automation, can: [reconcile] }
+          - { name: automation, can: [converge] }
         zones:
           - { name: feeds, kind: machine }
           - { name: proposals, kind: queue }

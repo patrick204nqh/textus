@@ -14,7 +14,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
         version: textus/3
         roles:
           - { name: human,      can: [author, propose] }
-          - { name: automation, can: [reconcile] }
+          - { name: automation, can: [converge] }
         zones:
           - { name: identity, kind: canon, desc: "human-only" }
           - { name: intake,   kind: machine }
@@ -44,7 +44,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [reconcile] }
+          - { name: automation, can: [converge] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: feeds,     kind: machine }
@@ -87,7 +87,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
-          - { name: automation, can: [reconcile] }
+          - { name: automation, can: [converge] }
         zones:
           - { name: knowledge, kind: canon }
           - { name: feeds,     kind: machine }

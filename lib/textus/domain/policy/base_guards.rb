@@ -15,7 +15,7 @@ module Textus
           key_mv: %w[zone_writable_by],
           accept: %w[author_held target_is_canon],
           reject: %w[author_held],
-          reconcile: %w[zone_writable_by],
+          converge: %w[zone_writable_by],
         }.freeze
 
         def self.for(transition) = BASE.fetch(transition, [])

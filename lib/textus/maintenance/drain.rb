@@ -2,7 +2,7 @@ module Textus
   module Maintenance
     # Converge-and-exit: seed the full convergence set for the scope, run the
     # worker until the queue is empty, return a health summary. Exits not-ok if
-    # any job dead-lettered. This is what `reconcile` delegates to and what CI
+    # any job dead-lettered. This is the converge entry point and what CI
     # runs. Single-pass (serial) on purpose: each produce job self-locks via
     # Produce::Engine.converge, so running them in turn keeps the build lock
     # uncontended; a concurrent pool would make all-but-one produce job hit
@@ -26,7 +26,7 @@ module Textus
         queue = Textus::Ports::Queue.new(root: @container.root)
         Textus::Jobs::Seeder.new(container: @container, queue: queue, call: @call).seed(prefix: prefix, zone: zone)
 
-        summary = worker(queue).drain
+        summary = Worker.for(container: @container, queue: queue).drain
         health = Read::Doctor.new(container: @container, call: @call).call
 
         {
@@ -36,15 +36,6 @@ module Textus
           "failed" => summary.failed,
           "health" => health,
         }
-      end
-
-      private
-
-      def worker(queue)
-        Textus::Maintenance::Worker.new(
-          queue: queue, registry: Textus::Jobs::Handlers.registry,
-          container: @container, lease_ttl: @container.manifest.data.worker_config[:lease_ttl]
-        )
       end
     end
   end

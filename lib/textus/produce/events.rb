@@ -1,7 +1,7 @@
 module Textus
   module Produce
     # Single home for the fetch lifecycle event vocabulary (ADR 0048 D5).
-    # Produce::Acquire::Intake (the ingest executor driven by reconcile + hook) emits through
+    # Produce::Acquire::Intake (the ingest executor driven by converge + hook) emits through
     # this seam so the event names and payload shapes live in one place with one
     # derived hook context.
     class Events

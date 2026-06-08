@@ -21,7 +21,7 @@ module Textus
       # self-elevates to the build actor internally; the passed call carries
       # only correlation/dry_run plus the stamped role for audit. Engine#call
       # isolates per-key produce errors into its result hash rather than raising,
-      # so surface them as :produce_failed events (the reconcile result hash used
+      # so surface them as :produce_failed events (the converge result hash used
       # to carry them; the worker drops the return, so re-publish here).
       def produce(job:, container:)
         call = call_for(job)

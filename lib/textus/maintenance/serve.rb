@@ -15,7 +15,7 @@ module Textus
       def tick
         Textus::Jobs::Scheduler.new(container: @container, queue: @queue).run_once
         @queue.reclaim(now: Textus::Ports::Clock.new.now)
-        worker.drain
+        Worker.for(container: @container, queue: @queue).drain
       end
 
       def run(poll: nil)
@@ -24,15 +24,6 @@ module Textus
           tick
           sleep(interval)
         end
-      end
-
-      private
-
-      def worker
-        Textus::Maintenance::Worker.new(
-          queue: @queue, registry: Textus::Jobs::Handlers.registry,
-          container: @container, lease_ttl: @container.manifest.data.worker_config[:lease_ttl]
-        )
       end
     end
   end

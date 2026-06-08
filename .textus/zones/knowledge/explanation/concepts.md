@@ -33,12 +33,12 @@ flowchart LR
     artifacts_derived -->|publish| files["shipped files"]
 ```
 
-*Flow at a glance:* automation reconciles the one `machine` zone (`artifacts`) — it pulls external bytes into intake entries (`artifacts.feeds.*`) and produces derived entries' data (`artifacts.derived.*`) from `knowledge` and feeds, both under the one `reconcile` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the produced data as shipped files (copied verbatim, or rendered through a per-target template).
+*Flow at a glance:* automation converges the one `machine` zone (`artifacts`) — it pulls external bytes into intake entries (`artifacts.feeds.*`) and produces derived entries' data (`artifacts.derived.*`) from `knowledge` and feeds, both under the one `converge` capability; humans write `knowledge` directly (the `author` capability); agents maintain their own `notebook` (the `keep` capability) and `propose` into `proposals`; a human `accept` promotes proposals to `knowledge`; automation publishes the produced data as shipped files (copied verbatim, or rendered through a per-target template).
 
 Two ideas do all the work:
 
 - **A zone is a write-authority partition.** Each zone declares its `kind:`; the kind decides which capability a writer must hold. Directory names are convention; the manifest is the source of truth.
-- **A role is a bundle of capabilities.** A role holds verbs from a closed four-element set — `propose`, `author`, `keep`, `reconcile` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→verb table are the SSoT of [`../reference/zones.md`](../reference/zones.md).
+- **A role is a bundle of capabilities.** A role holds verbs from a closed four-element set — `propose`, `author`, `keep`, `converge` — and may write a zone iff it holds the verb that zone's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→verb table are the SSoT of [`../reference/zones.md`](../reference/zones.md).
 
 Everything else — projections, publishing, hooks, schemas — is layered on top of those two ideas.
 

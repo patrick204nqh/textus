@@ -65,7 +65,7 @@ RSpec.describe Textus::Read::RuleExplain do
       # An intake entry in a machine zone can carry a retention (age-GC) rule.
       ret_store = store_from_manifest(root, zones: %w[artifacts knowledge], manifest: <<~YAML)
         version: textus/3
-        roles: [{ name: automation, can: [reconcile] }, { name: human, can: [author] }]
+        roles: [{ name: automation, can: [converge] }, { name: human, can: [author] }]
         zones:
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
