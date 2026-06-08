@@ -124,36 +124,7 @@ module Textus
       # Phase 2: destructive retention only (drop/archive). No refresh — intake
       # re-pull is Produce's job (Phase 1). ADR 0093.
       def apply(rows)
-        out = { dropped: [], archived: [], failed: [] }
-        delete = Write::KeyDelete.new(container: @container, call: @call)
-        rows.each do |row|
-          key = row["key"]
-          begin
-            case row["action"]
-            when "drop"
-              delete.call(key)
-              out[:dropped] << key
-            when "archive"
-              archive_leaf(row)
-              delete.call(key)
-              out[:archived] << key
-            end
-          rescue Textus::Error => e
-            out[:failed] << { "key" => key, "error" => e.message }
-          end
-        end
-        out
-      end
-
-      # Copy the leaf into <store>/archive/<relative-path> before deletion.
-      # (Lifted from the retired RetentionSweep#archive_leaf.)
-      def archive_leaf(row)
-        src  = row["path"]
-        root = @container.root.to_s
-        rel  = src.delete_prefix("#{root}/")
-        dest = File.join(root, "archive", rel)
-        FileUtils.mkdir_p(File.dirname(dest))
-        FileUtils.cp(src, dest)
+        Textus::Maintenance::Retention::Apply.new(container: @container, call: @call).call(rows)
       end
     end
   end
