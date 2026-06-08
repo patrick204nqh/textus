@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0105",
+      "title": "the verb token has one home: route ⟺ contract",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0105-verb-routing-contract-bijection"
+    },
+    {
       "number": "0104",
       "title": "finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift",
       "date": "2026-06-08",
