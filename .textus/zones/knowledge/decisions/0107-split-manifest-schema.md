@@ -1,7 +1,7 @@
 # ADR 0107 — split `manifest/schema.rb`: data vs validation walk
 
 **Date:** 2026-06-08
-**Status:** Accepted
+**Status:** Partially superseded by [ADR 0109](./0109-board-exact-schema-ports.md) (the constants it kept on `Schema` now live in `Schema::Vocabulary`/`Schema::Keys`, re-exported on `Schema`).
 **Refines:** [ADR 0018](./0018-manifest-carving.md) (carved `Manifest` into Data/Resolver/Policy/Rules; this continues that decomposition one level down, separating the schema's *data* from its *validation logic*).
 
 > **One sentence:** `manifest/schema.rb` had grown to 420 lines — ~2× the next-largest file and the *only* file in the codebase carrying a `rubocop:disable Metrics/ModuleLength` — by mixing three concerns that change for different reasons (the coordination **vocabulary** `LANES` + derived, the **key whitelists / `FIELD_REGISTRY`**, and the **validation walk**); this extracts the validation walk into a lexically-nested `Schema::Validator`, leaving the constants on `Schema` so every `Schema::FIELD_REGISTRY` / `Schema::CAPABILITIES` reference keeps working unchanged, and drops the lint waiver.

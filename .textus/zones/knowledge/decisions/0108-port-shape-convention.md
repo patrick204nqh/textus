@@ -1,7 +1,7 @@
 # ADR 0108 — two port shapes, named and documented (not converted)
 
 **Date:** 2026-06-08
-**Status:** Accepted
+**Status:** Superseded by [ADR 0109](./0109-board-exact-schema-ports.md) — every port is now a single shape (an instantiable class); `Clock`/`Publisher` were converted.
 **Touches:** [ADR 0016](./0016-application-ports-value.md) (ports as the application's IO boundary), [ADR 0024](./0024-domain-purity-ports.md) (`FileStat`/`Clock` ports keep the domain pure — this ADR names *why* `Clock` is a module while `FileStore` is a class).
 
 > **One sentence:** `lib/textus/ports/` holds two kinds of port — stateless modules (`Clock`, `Publisher`, `BuildLock`'s `self.with`) and instantiable classes (`FileStore`, `FileStat`, `AuditLog`, `SentinelStore`, the subscribers) — and a review flagged the mixed shapes as a cost ("a newcomer learns each port individually"); rather than mechanically converting the modules to objects (churn for no gain — `Clock` is already injected as data via `Call#now`), this **names the two sanctioned shapes and the rule that picks between them**, documents every port's shape inline, and adds a guard that a new port must declare a shape and say what it is.
