@@ -1,12 +1,12 @@
 require "spec_helper"
 
-# ADR 0108 — ports are the only IO doorway, and they come in two sanctioned
-# shapes: a stateless module (a pure function of its arguments) or an
-# instantiable class (holds collaborators/config). The shapes are both fine; the
-# cost the review flagged is that a newcomer had to learn each port's calling
-# convention one at a time. This guard keeps that learnable: every port declares
-# its type AND carries a doc comment on the declaration that says what it is.
-RSpec.describe "port shape convention (ADR 0108)" do
+# ADR 0109 (supersedes ADR 0108's two-shape allowance) — ports are the only IO
+# doorway and must all share the same single shape: an instantiable class. The
+# earlier ADR 0108 permitted either a stateless module or an instantiable class;
+# ADR 0109 unifies to one shape so every port is constructed, injected, and
+# tested the same way. This guard enforces that every port in lib/textus/ports/
+# is declared as a class (not a bare module) and carries a doc comment.
+RSpec.describe "port shape convention (ADR 0109)" do
   def port_files
     Dir[File.expand_path("../../../lib/textus/ports/**/*.rb", __dir__)]
   end
@@ -30,6 +30,18 @@ RSpec.describe "port shape convention (ADR 0108)" do
                           "#{undeclared.map { |f| f.sub(%r{.*/lib/}, "lib/") }.join("\n  ")}"
   end
 
+  it "every port is an instantiable class (ADR 0109 single shape)" do
+    module_ports = port_files.reject do |f|
+      idx, lines = port_declaration(f)
+      next true unless idx
+
+      lines[idx] =~ /^\s+class\s/
+    end
+    expect(module_ports).to be_empty,
+                            "ADR 0109: every port is an instantiable class; these are still modules:\n  " \
+                            "#{module_ports.map { |f| f.sub(%r{.*/lib/}, "lib/") }.join("\n  ")}"
+  end
+
   it "every port carries a doc comment on its declaration (so its shape is learnable)" do
     undocumented = port_files.reject do |f|
       idx, lines = port_declaration(f)
@@ -48,8 +60,8 @@ RSpec.describe "port shape convention (ADR 0108)" do
     end
 
     expect(undocumented).to be_empty,
-                            "these ports lack a doc comment on their declaration (ADR 0108 — a port " \
-                            "must say what it is and which shape it uses):\n  " \
+                            "these ports lack a doc comment on their declaration (ADR 0108/0109 — a port " \
+                            "must say what it is):\n  " \
                             "#{undocumented.map { |f| f.sub(%r{.*/lib/}, "lib/") }.join("\n  ")}"
   end
 end
