@@ -65,5 +65,13 @@ fires.
   *operation* say `converge`. The transitional `reconcile_drain_parity_spec` and
   the permanently-empty `CLI_RECONCILE_EXEMPT` constant are removed, and the
   duplicated worker builder in `drain`/`serve` is collapsed into `Worker.for`.
-- No `SPEC.md` change (capability vocabulary is manifest/code surface, already
-  governed by ADR 0030/0091).
+- **`SPEC.md` is updated** — and not only for the capability rename. ADR 0110
+  had declared "No `SPEC.md` change", which left the spec still describing the
+  pre-job-queue execution model: a synchronous two-phase `reconcile` *verb* with
+  a `--dry-run` plan and a `produced`/`dropped`/`archived` return, plus inline
+  reactive rebuild and a `reconcile` audit verb. This ADR finishes that
+  deferral: the verb sections become the `drain`/`serve`/`jobs` async job-queue
+  model (correct `{ ok, completed, failed, health }` return, no `--dry-run`,
+  async-only reactive materialize), the audit-verb lists drop `reconcile` (a
+  produce logs as `put`, a sweep as `key_delete` — there is no `drain` audit
+  verb), and the capability/bijection tables move to `converge`.
