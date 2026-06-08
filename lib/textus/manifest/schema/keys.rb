@@ -23,7 +23,7 @@ module Textus
         # `inject_boot`/`provenance` fields are kept here so the schema walk can
         # still emit the migration hint rather than a bare "unknown key".
         SOURCE_KEYS = %w[
-          from handler config template project command sources ttl on_write inject_boot provenance
+          from handler config template project command sources ttl inject_boot provenance
           select pluck sort_by transform
         ].freeze
         # ADR 0093: rule-level GC slot. drop/archive only (refresh gone).

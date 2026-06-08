@@ -255,18 +255,7 @@ For every entry in a reconcile-writable zone:
 
 Phase 2 sweeps the destructive `retention:` actions (`action: drop|archive`) on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
 
-Derived entries also stay fresh **reactively** between full passes: a canon write re-produces the derived entries that depend on it, governed by the entry's own `source.on_write`:
-
-```yaml
-- key: artifacts.derived.claude-root
-  # ...
-  source:
-    from: project
-    select: [knowledge.identity.self, knowledge.notes]
-    on_write: async   # sync | async (default async)
-```
-
-`on_write: sync` rebuilds the entry's data inline under the maintenance lock (the artifact is fresh by the time the write returns); `on_write: async` defers to a background runner. It is meaningful only on observable (`project`) sources — the per-write reactive rebuild is "reconcile narrowed to `rdeps ∩ derived`" (ADR 0093).
+Derived entries also stay fresh **reactively** between full passes: a canon write enqueues a `materialize` job for each derived entry that depends on it, which a worker converges. Materialization is **async-only** — the write returns immediately and the job is processed by `drain` (the batch/CI pass) or `serve` (the daemon). There is no per-entry write-trigger knob; freshness is re-homed to the drain at the commit/CI gate and to the running daemon. The per-write rebuild is still "reconcile narrowed to `rdeps ∩ derived`" (ADR 0093).
 
 ### The sentinel guard
 

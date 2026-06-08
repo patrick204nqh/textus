@@ -7,11 +7,11 @@ module Textus
       #   from: project -> derived  (internal projection; observable -> rdeps staleness)
       #   from: handler -> intake   (external fetch; unobservable -> ttl staleness)
       #   from: command -> external (out-of-band runner; staleness only, textus never runs it)
-      # `on_write` (sync|async, default async) is the write-trigger strategy for
-      # observable (project) sources; meaningless for intake/command.
+      # Materialization is async-only (job-queue model): a write enqueues a
+      # `materialize` job, converged by a worker. There is no per-entry write
+      # trigger knob.
       class Source
-        FROMS      = %w[project handler command].freeze
-        STRATEGIES = %w[async sync].freeze
+        FROMS = %w[project handler command].freeze
 
         attr_reader :from, :handler, :config, :command, :sources
 
@@ -19,11 +19,6 @@ module Textus
           @from = raw["from"].to_s
           unless FROMS.include?(@from)
             raise Textus::BadManifest.new("source.from must be one of #{FROMS.join("|")}, got #{raw["from"].inspect}")
-          end
-
-          @on_write = (raw["on_write"] || "async").to_s
-          unless STRATEGIES.include?(@on_write)
-            raise Textus::BadManifest.new("source.on_write must be one of #{STRATEGIES.join("/")}, got #{@on_write.inspect}")
           end
 
           @ttl = raw["ttl"]
@@ -39,7 +34,6 @@ module Textus
         def kind        = @from == "handler" ? :intake : :derived
         def external?   = @from == "command"
         def projection? = @from == "project"
-        def sync?       = @on_write == "sync"
         def ttl_seconds = @ttl.nil? ? nil : Textus::Domain::Duration.seconds(@ttl)
 
         # Flattened projection accessors (ADR 0094) — read directly off the source

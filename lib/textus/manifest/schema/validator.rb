@@ -168,7 +168,7 @@ module Textus
           hints = {
             "lifecycle" => "age GC moved to the `retention:` rule ({ ttl, action: drop|archive }); " \
                            "intake cadence to the entry's `source: { ttl }`",
-            "materialize" => "moved to the entry's `source: { on_write: sync|async }`",
+            "materialize" => "removed — materialization is automatic (a write enqueues a job; run `drain`)",
           }
           hints.each do |old, hint|
             next unless rule.key?(old)

@@ -4,7 +4,7 @@ RSpec.describe Textus::Domain::Policy::Source do
   describe "from: project (internal data)" do
     subject(:src) do
       described_class.new("from" => "project", "select" => ["k.*"],
-                          "pluck" => ["title"], "transform" => "reducer", "on_write" => "sync")
+                          "pluck" => ["title"], "transform" => "reducer")
     end
 
     it "is derived, observable, not external" do
@@ -18,18 +18,13 @@ RSpec.describe Textus::Domain::Policy::Source do
       expect(src.transform).to eq("reducer")
       expect(src.projection_spec).to eq("select" => ["k.*"], "pluck" => ["title"], "transform" => "reducer")
     end
-
-    it "reads on_write" do
-      expect(src.sync?).to be(true)
-    end
   end
 
   describe "from: handler (intake)" do
     subject(:src) { described_class.new("from" => "handler", "handler" => "h", "config" => { "u" => 1 }, "ttl" => "1h") }
 
-    it "is intake, never sync, exposes handler/config/ttl" do
+    it "is intake, exposes handler/config/ttl" do
       expect(src.kind).to eq(:intake)
-      expect(src.sync?).to be(false)
       expect(src.handler).to eq("h")
       expect(src.config).to eq("u" => 1)
       expect(src.ttl_seconds).to eq(3600)
@@ -51,11 +46,6 @@ RSpec.describe Textus::Domain::Policy::Source do
     it "rejects from: template (renamed to project)" do
       expect { described_class.new("from" => "template", "template" => "c") }
         .to raise_error(Textus::BadManifest, /from must be one of/)
-    end
-
-    it "rejects an unknown on_write" do
-      expect { described_class.new("from" => "project", "select" => ["k"], "on_write" => "later") }
-        .to raise_error(Textus::BadManifest, /on_write must be one of/)
     end
 
     it "no longer exposes template/inject_boot/provenance" do
