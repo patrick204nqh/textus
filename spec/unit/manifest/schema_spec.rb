@@ -131,7 +131,7 @@ RSpec.describe Textus::Manifest::Schema do
     end.not_to raise_error
   end
 
-  describe ".valid_owner? (#135)" do
+  describe Textus::Manifest::Schema::Validator, ".valid_owner? (#135)" do
     it "accepts a bare archetype (the shipped `owner: agent` zone form)" do
       expect(described_class.valid_owner?("agent")).to be(true)
       expect(described_class.valid_owner?("human")).to be(true)
@@ -241,7 +241,7 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   it "rejects the retired upkeep rule key with a retention/source hint (ADR 0093)" do
-    expect { Textus::Manifest::Schema.validate_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
+    expect { Textus::Manifest::Schema::Validator.validate_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
       .to raise_error(Textus::BadManifest, /`upkeep:` was removed.*retention/m)
   end
 
@@ -253,7 +253,7 @@ RSpec.describe Textus::Manifest::Schema do
 
     it "rejects the retired quarantine/derived kinds with a 0091 hint" do
       expect do
-        Textus::Manifest::Schema.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
+        Textus::Manifest::Schema::Validator.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
       end.to raise_error(Textus::BadManifest, /folded into 'machine' \(ADR 0091\)/)
     end
 
@@ -262,7 +262,7 @@ RSpec.describe Textus::Manifest::Schema do
         { "name" => "artifacts", "kind" => "machine" },
         { "name" => "feeds", "kind" => "machine" },
       ] }
-      expect { Textus::Manifest::Schema.validate_single_machine!(raw) }
+      expect { Textus::Manifest::Schema::Validator.validate_single_machine!(raw) }
         .to raise_error(Textus::BadManifest, /at most one zone may declare kind: machine/)
     end
   end
