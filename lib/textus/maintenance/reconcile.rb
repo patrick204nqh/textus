@@ -40,13 +40,6 @@ module Textus
         health = Read::Doctor.new(container: @container, call: @call).call
         return dry_run_result(produce_keys, retention_rows, health) if dry_run
 
-        # reconcile is the authoritative "make everything current now" pass, so
-        # it subsumes any in-flight reactive produce: drain pending async
-        # produce-on-write threads first, both to fold their work in and to free
-        # the shared maintenance lock (BuildLock is non-blocking — a thread still
-        # holding it would make the acquire below raise BuildInProgress). ADR 0093.
-        Textus::Produce::Engine::AsyncRunner.drain
-
         Textus::Ports::BuildLock.with(root: @container.root) do
           produced = Textus::Produce::Engine.new(container: @container, call: @call).call(keys: produce_keys)
           swept = apply(retention_rows)

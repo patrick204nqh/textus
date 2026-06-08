@@ -1,11 +1,10 @@
 module Textus
   module Maintenance
-    # The convergence daemon loop: reclaim crashed leases, drain the queue,
-    # sleep, repeat. `tick` is one iteration (unit-testable); `run` loops
-    # forever. Drains serially for the same reason as Drain — each produce job
-    # self-locks, so running them in turn keeps the build lock uncontended. The
-    # scheduler that seeds TTL re-pull/sweep at the top of each tick lands in
-    # Phase 3.
+    # The convergence daemon loop: seed scheduled work (TTL re-pull + sweep),
+    # reclaim crashed leases, drain the queue, sleep, repeat. `tick` is one
+    # iteration (unit-testable); `run` loops forever. Drains serially for the
+    # same reason as Drain — each produce job self-locks, so running them in turn
+    # keeps the build lock uncontended.
     class Serve
       def initialize(container:, call:)
         @container = container
@@ -14,6 +13,7 @@ module Textus
       end
 
       def tick
+        Textus::Jobs::Scheduler.new(container: @container, queue: @queue).run_once
         @queue.reclaim(now: Textus::Ports::Clock.new.now)
         worker.drain
       end

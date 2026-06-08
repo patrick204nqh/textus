@@ -52,7 +52,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
   end
 
   it "rejects retired lifecycle:/materialize: rule fields with a retention/source hint (ADR 0093)" do
-    hints = { "lifecycle" => /retention/, "materialize" => /on_write/ }
+    hints = { "lifecycle" => /retention/, "materialize" => /automatic|drain/ }
     hints.each do |old, hint|
       yaml = <<~YAML
         version: textus/3
