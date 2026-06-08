@@ -5,7 +5,7 @@ RSpec.describe Textus::Domain::Retention::Sweep do
     described_class.new(
       manifest: store.manifest,
       file_stat: Textus::Ports::Storage::FileStat.new,
-      clock: Textus::Ports::Clock,
+      clock: Textus::Ports::Clock.new,
     ).call
   end
 

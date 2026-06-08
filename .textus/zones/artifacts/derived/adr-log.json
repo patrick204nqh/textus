@@ -7,17 +7,24 @@
   },
   "adrs": [
     {
+      "number": "0109",
+      "title": "board-exact schema split + single port shape",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0109-board-exact-schema-ports"
+    },
+    {
       "number": "0108",
       "title": "two port shapes, named and documented (not converted)",
       "date": "2026-06-08",
-      "status": "Accepted",
+      "status": "Superseded by ADR 0109 — every port is now a single shape (an instantiable class); `Clock`/`Publisher` were converted.",
       "slug": "0108-port-shape-convention"
     },
     {
       "number": "0107",
       "title": "split `manifest/schema.rb`: data vs validation walk",
       "date": "2026-06-08",
-      "status": "Accepted",
+      "status": "Partially superseded by ADR 0109 (the constants it kept on `Schema` now live in `Schema::Vocabulary`/`Schema::Keys`, re-exported on `Schema`).",
       "slug": "0107-split-manifest-schema"
     },
     {

@@ -33,7 +33,7 @@ module Textus
       def call(prefix: nil, zone: nil, dry_run: false)
         file_stat = Textus::Ports::Storage::FileStat.new
         retention_rows = Textus::Domain::Retention::Sweep.new(
-          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
+          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock.new,
         ).call(prefix: prefix, zone: zone)
 
         produce_keys = produce_scope(prefix, zone, file_stat)
@@ -74,7 +74,7 @@ module Textus
                                 .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
                                 .select { |e| in_scope?(e, prefix, zone) }.map(&:key)
         stale_intake = Textus::Domain::Freshness::Evaluator.new(
-          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock,
+          manifest: @container.manifest, file_stat: file_stat, clock: Textus::Ports::Clock.new,
         ).stale_intake_keys(prefix: prefix, zone: zone)
         (publishable + stale_intake).uniq
       end

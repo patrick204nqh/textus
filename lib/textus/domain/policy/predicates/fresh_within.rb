@@ -25,7 +25,7 @@ module Textus
             written = written_at(eval.envelope)
             return true if written.nil?
 
-            now = @now || Textus::Ports::Clock.now
+            now = @now || Textus::Ports::Clock.new.now
             return true if now - written <= @seconds
 
             @reason = "entry older than #{@seconds}s (written #{written.iso8601})"

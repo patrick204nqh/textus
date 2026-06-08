@@ -5,9 +5,11 @@ require "time"
 module Textus
   module Ports
     # Cross-process build lock: a pid/host-stamped lockfile under the store root
-    # that serializes reconcile's produce/sweep. An instantiable class (ADR 0108)
-    # — it holds the root and lock state; `self.with(root:)` is a convenience that
-    # constructs one and runs the block under the held lock.
+    # that serializes reconcile's produce/sweep. An instantiable class — it holds
+    # the root and lock state; `self.with(root:)` is a convenience that constructs
+    # one and runs the block under the held lock. It already satisfied ADR 0109's
+    # single-shape rule (every port is an instantiable class) before that ADR's
+    # Clock/Publisher conversions, so it was unchanged by them.
     class BuildLock
       MAX_HOLDER_BYTES = 512
 

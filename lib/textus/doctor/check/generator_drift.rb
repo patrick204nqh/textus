@@ -11,7 +11,7 @@ module Textus
           gen = Textus::Domain::Freshness::Evaluator.new(
             manifest: manifest,
             file_stat: Textus::Ports::Storage::FileStat.new,
-            clock: Textus::Ports::Clock,
+            clock: Textus::Ports::Clock.new,
           )
           manifest.data.entries.flat_map { |m| gen.drift_rows(m) }.map do |row|
             {
