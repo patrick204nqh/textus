@@ -150,7 +150,7 @@ RSpec.describe Textus::Boot do
     expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
 
     names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("boot", "list", "get", "put", "accept", "reconcile", "doctor", "hook")
+    expect(names).to include("boot", "list", "get", "put", "accept", "drain", "doctor", "hook")
     expect(names).not_to include("build") # build verb removed in ADR 0087
   end
 
@@ -161,7 +161,7 @@ RSpec.describe Textus::Boot do
       block = result["agent_protocol"]
       expect(block).to have_key("envelope_shape")
       expect(block).to have_key("role_resolution")
-      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "reconcile")
+      expect(block["recipes"].keys).to contain_exactly("read", "write", "propose", "drain")
     end
 
     it "does not change the wire protocol field" do

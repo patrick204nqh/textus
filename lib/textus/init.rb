@@ -21,7 +21,7 @@ module Textus
         - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A per-host snapshot, refreshed from its declared intake by `textus reconcile` (scheduled, or on demand).
+        # A per-host snapshot, refreshed from its declared intake by `textus drain` (scheduled, or on demand).
         # Nested so it grows to a fleet — add artifacts.feeds.machines.<host> leaves over SSH
         # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable
@@ -105,7 +105,7 @@ module Textus
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
       # --with-agent profile: project facts + runbooks feed the orientation
-      # projection below, which `textus reconcile` renders to CLAUDE.md/AGENTS.md.
+      # projection below, which `textus drain` renders to CLAUDE.md/AGENTS.md.
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
       - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.derived.orientation

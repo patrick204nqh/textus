@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe "textus reconcile concurrency (build lock)" do
+RSpec.describe "textus drain concurrency (build lock)" do
   include_context "textus_store_fixture"
 
   before do
@@ -32,7 +32,12 @@ RSpec.describe "textus reconcile concurrency (build lock)" do
                "---\nkey: knowledge.note\n---\nbody\n")
   end
 
-  it "second concurrent reconcile exits 75 with build_in_progress code" do
+  # Queue-model contract (replaces the old "second pass exits 75"): drain runs
+  # produce per-job through Produce::Engine.converge, which treats a held build
+  # lock as a SOFT MISS (an in-flight build is already producing fresh output;
+  # ADR 0087 §5) rather than crashing. A concurrent drain degrades gracefully —
+  # it exits 0, never hard-fails with build_in_progress.
+  it "soft-misses gracefully (exit 0) when the build lock is already held" do
     lock_path = Textus::Layout.build_lock(root)
     FileUtils.mkdir_p(File.dirname(lock_path))
     # rubocop:disable Style/FileOpen
@@ -44,15 +49,12 @@ RSpec.describe "textus reconcile concurrency (build lock)" do
 
     stdout = StringIO.new
     stderr = StringIO.new
-    exit_code = Textus::CLI.run(["--root=#{root}", "reconcile"],
+    exit_code = Textus::CLI.run(["--root=#{root}", "drain"],
                                 stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
 
-    expect(exit_code).to eq(75)
+    expect(exit_code).to eq(0)
     envelope = JSON.parse(stdout.string.lines.last)
-    expect(envelope["ok"]).to be false
-    expect(envelope["code"]).to eq("build_in_progress")
-    expect(envelope["details"]["holder"]).to match(/pid=99999/)
-    expect(stderr.string).to include("build_in_progress")
+    expect(envelope["ok"]).to be true
   ensure
     lock_fd&.close
   end

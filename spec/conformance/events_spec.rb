@@ -176,8 +176,12 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")
       File.write(File.join(root, "zones/knowledge/x.md"), "---\nname: x\n---\nhi\n")
+      # `$log ||= []` (not `= []`): the hooks file is loaded more than once — the
+      # store boot loads it, and the doctor's hooks check (run by `drain` for its
+      # health summary) re-loads it. A hard reset would clobber the entry the
+      # produce phase appended before drain's post-convergence doctor pass.
       File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-        $log = []
+        $log ||= []
         Textus.hook do |reg|
           reg.on(:entry_produced, :t) do |key:, sources:, **|
             $log << [:entry_produced, key, sources]
@@ -191,7 +195,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_produced after Builder materializes an artifacts entry" do
       store = Textus::Store.new(root)
-      store.as("automation").reconcile
+      store.as("automation").drain
       expect($log).to include([:entry_produced, "artifacts.summary", ["knowledge"]])
     end
   end

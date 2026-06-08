@@ -42,14 +42,14 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
       # Produced docs (verbs/schema/adr-log) and CLAUDE.md/AGENTS.md/configs are
-      # generated from upstream by `reconcile`. Code edits don't auto-trigger it,
-      # so this gate fails the PR when a reconcile would change a committed file —
+      # generated from upstream by `drain`. Code edits don't auto-trigger it,
+      # so this gate fails the PR when a drain would change a committed file —
       # i.e. someone changed a source without regenerating (ADR 0097).
-      - name: reconcile must be a no-op
+      - name: drain must be a no-op
         run: |
-          bundle exec textus reconcile
+          bundle exec textus drain
           if ! git diff --quiet; then
-            echo "::error::generated files are stale — run 'textus reconcile' and commit the result"
+            echo "::error::generated files are stale — run 'textus drain' and commit the result"
             git --no-pager diff --stat
             exit 1
           fi

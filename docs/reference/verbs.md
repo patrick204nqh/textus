@@ -61,6 +61,14 @@ Run health checks on the textus store and report any issues.
 - `--checks`
 
 
+## `textus drain`
+
+Converge everything now: seed produce + retention jobs and drain the queue to empty.
+
+- `--prefix`
+- `--zone`
+
+
 ## `textus freshness`
 
 Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).
@@ -74,6 +82,15 @@ Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook
 Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
 
 - `--key`
+
+
+## `textus jobs`
+
+List queued jobs by state; retry a dead-lettered job or purge a state.
+
+- `--action`
+- `--job_id`
+- `--state`
 
 
 ## `textus key_delete`
@@ -157,15 +174,6 @@ Create or update an entry. Schema-validated. Returns {uid, etag}.
 List the derived entries that depend on a key (reverse deps / impact set).
 
 - `--key`
-
-
-## `textus reconcile`
-
-Run the convergence pass: produce derived + stale intake, then drop/archive aged entries; report health.
-
-- `--dry_run`
-- `--prefix`
-- `--zone`
 
 
 ## `textus reject`

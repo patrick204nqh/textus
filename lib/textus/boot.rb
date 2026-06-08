@@ -28,7 +28,7 @@ module Textus
       end,
       reconcile: lambda do |_name, manifest|
         machine = zone_label(manifest, :machine, "machine")
-        "'textus reconcile' materializes derived #{machine} entries from their sources and " \
+        "'textus drain' materializes derived #{machine} entries from their sources and " \
           "refreshes stale intake #{machine} entries from their declared source; " \
           "derived files are never hand-edited (reactive on canon writes, or a full pass on demand)"
       end,
@@ -85,12 +85,13 @@ module Textus
       { "name" => "propose" },
       { "name" => "accept" },
       { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
-      { "name" => "reconcile" },
+      { "name" => "drain" },
       { "name" => "audit" },
       { "name" => "blame" },
       { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
       { "name" => "doctor" },
       { "name" => "hook", "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
+      { "name" => "jobs" },
       { "name" => "pulse" },
       { "name" => "capabilities" },
     ].freeze
@@ -172,11 +173,11 @@ module Textus
             "accept #{queue}.KEY — promotes the proposal into its target zone",
           ],
         },
-        "reconcile" => {
+        "drain" => {
           "purpose" => "keep the machine-maintained lanes fresh — re-pull stale intake entries from their declared source",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
-            "reconcile (zone: #{feeds}) — re-pull the stale entries",
+            "drain (zone: #{feeds}) — re-pull the stale entries",
           ],
         },
       }

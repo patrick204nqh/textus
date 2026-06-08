@@ -51,8 +51,8 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
 
   # Since ADR 0089 the reader NEVER ingests. A stale intake entry (past its
   # source.ttl) is observed stale on `get`; machine-zone freshness is system-pushed
-  # via `reconcile` (scheduled sweep) and `hook run` (event push). These examples
-  # pin that contract: a read leaves the intake handler untouched; reconcile is
+  # via `drain` (scheduled sweep) and `hook run` (event push). These examples
+  # pin that contract: a read leaves the intake handler untouched; drain is
   # what re-pulls a stale intake entry (ADR 0093: warn/refresh actions are gone —
   # re-pull is unconditional on the sweep when an intake is past its ttl).
   describe "reader honors intake source.ttl freshness" do
@@ -90,12 +90,12 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
       expect(Thread.current[:fetch_count]).to eq(0)
     end
 
-    it "reconcile re-pulls a stale intake entry" do
+    it "drain re-pulls a stale intake entry" do
       Thread.current[:fetch_count] = 0
       store = intake_store(root, intake_body: counting_hook, ttl: "1s")
       write_stale_feed
 
-      store.as("automation").reconcile
+      store.as("automation").drain
 
       expect(Thread.current[:fetch_count]).to eq(1)
       fresh = store.as("automation").get("feeds.doc")

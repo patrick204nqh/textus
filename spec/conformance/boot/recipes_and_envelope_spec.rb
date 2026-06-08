@@ -22,15 +22,15 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
     end
 
     let(:store) { Textus::Store.new(root) }
-    let(:reconcile_recipe) { Textus::Boot.build(container: store.container)["agent_protocol"]["recipes"]["reconcile"] }
-    let(:steps_text) { reconcile_recipe["steps"].join("\n") }
+    let(:drain_recipe) { Textus::Boot.build(container: store.container)["agent_protocol"]["recipes"]["drain"] }
+    let(:steps_text) { drain_recipe["steps"].join("\n") }
 
     it "the refresh recipe does not call fetch_all" do
       expect(steps_text).not_to include("fetch_all")
     end
 
-    it "the refresh recipe re-pulls stale entries via reconcile" do
-      expect(steps_text).to include("reconcile")
+    it "the refresh recipe re-pulls stale entries via drain" do
+      expect(steps_text).to include("drain")
     end
   end
 
@@ -61,8 +61,8 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
       expect(text).not_to include("review.KEY")
     end
 
-    it "names the live machine zone in the reconcile recipe" do
-      text = recipes["reconcile"]["steps"].join(" ")
+    it "names the live machine zone in the drain recipe" do
+      text = recipes["drain"]["steps"].join(" ")
       expect(text).to include("feeds")
       expect(text).not_to include("intake")
     end
