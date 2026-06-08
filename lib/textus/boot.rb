@@ -86,6 +86,8 @@ module Textus
       { "name" => "accept" },
       { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
       { "name" => "reconcile" },
+      { "name" => "drain" },
+      { "name" => "jobs" },
       { "name" => "audit" },
       { "name" => "blame" },
       { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
