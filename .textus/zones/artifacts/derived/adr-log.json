@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0108",
+      "title": "two port shapes, named and documented (not converted)",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0108-port-shape-convention"
+    },
+    {
       "number": "0105",
       "title": "the verb token has one home: route ⟺ contract",
       "date": "2026-06-08",

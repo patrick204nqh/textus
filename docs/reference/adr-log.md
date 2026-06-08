@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0108](../architecture/decisions/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) | 2026-06-08 | Accepted |
 | [0105](../architecture/decisions/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract | 2026-06-08 | Accepted |
 | [0104](../architecture/decisions/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift | 2026-06-08 | Accepted |
 | [0103](../architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
