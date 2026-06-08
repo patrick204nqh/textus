@@ -14,6 +14,13 @@
       "slug": "0107-split-manifest-schema"
     },
     {
+      "number": "0106",
+      "title": "the layering is executable, not just intended",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0106-executable-layering-invariant"
+    },
+    {
       "number": "0105",
       "title": "the verb token has one home: route ⟺ contract",
       "date": "2026-06-08",

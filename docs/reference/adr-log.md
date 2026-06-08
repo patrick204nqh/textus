@@ -19,6 +19,7 @@ curated, annotated reading guide see
 | # | Title | Date | Status |
 |---|---|---|---|
 | [0107](../architecture/decisions/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk | 2026-06-08 | Accepted |
+| [0106](../architecture/decisions/0106-executable-layering-invariant.md) | the layering is executable, not just intended | 2026-06-08 | Accepted |
 | [0105](../architecture/decisions/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract | 2026-06-08 | Accepted |
 | [0104](../architecture/decisions/0104-root-docs-canon-and-cleanup.md) | finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift | 2026-06-08 | Accepted |
 | [0103](../architecture/decisions/0103-root-readme-is-canon.md) | the root README is canon, published out | 2026-06-08 | Accepted |
