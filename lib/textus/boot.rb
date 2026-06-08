@@ -84,6 +84,7 @@ module Textus
       { "name" => "put" },
       { "name" => "propose" },
       { "name" => "accept" },
+      { "name" => "enqueue" },
       { "name" => "key", "summary" => "key operations: 'key delete', 'key mv', 'key uid'" },
       { "name" => "drain" },
       { "name" => "audit" },

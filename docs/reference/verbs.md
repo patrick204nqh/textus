@@ -69,6 +69,14 @@ Converge everything now: seed produce + retention jobs and drain the queue to em
 - `--zone`
 
 
+## `textus enqueue`
+
+Push a registered job type onto the convergence queue, to be run by drain/serve.
+
+- `--args`
+- `--type`
+
+
 ## `textus freshness`
 
 Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).

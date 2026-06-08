@@ -9,9 +9,11 @@ module Textus
 
       def registry
         reg = Textus::Domain::Jobs::Registry.new
+        # produce is pure (self-elevates) — any caller may request a rematerialize.
         reg.register("materialize", handler: method(:produce))
         reg.register("re-pull",     handler: method(:produce))
-        reg.register("sweep",       handler: method(:sweep))
+        # sweep is destructive — gate ad-hoc enqueue to the automation authority.
+        reg.register("sweep",       handler: method(:sweep), required_role: Textus::Role::AUTOMATION)
         reg
       end
 
