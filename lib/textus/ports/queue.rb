@@ -63,6 +63,29 @@ module Textus
         File.delete(leased.leased_path)
       end
 
+      # Return expired leases to ready/ (the holding worker crashed). Returns the
+      # count reclaimed. At-least-once delivery: a job whose handler actually
+      # finished but whose ack was lost will re-run — handlers must be idempotent.
+      def reclaim(now:)
+        leased_dir = Textus::Layout.queue_state(@root, :leased)
+        count = 0
+        Dir.children(leased_dir).each do |name|
+          src = File.join(leased_dir, name)
+          data = JSON.parse(File.read(src))
+          expires = data.dig("lease", "expires_at")
+          next if expires && Time.parse(expires) > now
+
+          dst = File.join(Textus::Layout.queue_state(@root, :ready), name)
+          data.delete("lease")
+          File.write(src, JSON.pretty_generate(data))
+          File.rename(src, dst)
+          count += 1
+        rescue Errno::ENOENT
+          next # raced with another reclaimer / the worker's ack
+        end
+        count
+      end
+
       private
 
       def stamp_lease(leased_path, worker_id:, expires_at:)

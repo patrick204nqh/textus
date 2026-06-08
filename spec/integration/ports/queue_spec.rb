@@ -68,4 +68,35 @@ RSpec.describe Textus::Ports::Queue do
       expect(Dir.children(Textus::Layout.queue_state(root, :failed)).size).to eq(1)
     end
   end
+
+  describe "concurrency + reclaim" do
+    it "lets exactly one of two threads claim a single job" do
+      queue.enqueue(job)
+      claims = []
+      mutex = Mutex.new
+      threads = 2.times.map do |i|
+        Thread.new do
+          leased = queue.lease(worker_id: "w#{i}", lease_ttl: 60)
+          mutex.synchronize { claims << leased } if leased
+        end
+      end
+      threads.each(&:join)
+      expect(claims.size).to eq(1)
+    end
+
+    it "reclaim returns an expired leased job to ready" do
+      queue.enqueue(job)
+      queue.lease(worker_id: "w1", lease_ttl: -1) # already expired
+      reclaimed = queue.reclaim(now: Time.now.utc)
+      expect(reclaimed).to eq(1)
+      expect(queue.ready_ids.size).to eq(1)
+    end
+
+    it "reclaim leaves a still-valid lease alone" do
+      queue.enqueue(job)
+      queue.lease(worker_id: "w1", lease_ttl: 300)
+      expect(queue.reclaim(now: Time.now.utc)).to eq(0)
+      expect(queue.ready_ids).to be_empty
+    end
+  end
 end
