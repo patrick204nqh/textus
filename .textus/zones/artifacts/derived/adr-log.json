@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0107",
+      "title": "split `manifest/schema.rb`: data vs validation walk",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0107-split-manifest-schema"
+    },
+    {
       "number": "0106",
       "title": "the layering is executable, not just intended",
       "date": "2026-06-08",
