@@ -98,7 +98,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/zones/<zone>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (the `feeds` zone in the default scaffold; any `quarantine` zone, writable by a role with `reconcile`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
+| L2 | **Sources** | Declared external inputs (the `artifacts` machine zone in the default scaffold, under the `artifacts.feeds.*` keys; any `machine` zone, writable by a role with `reconcile`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
 | L3 | **Source** | An entry's `source:` *acquires* **data** — a pure in-process projection from store entries (select/pluck/sort/transform), an external fetch via a handler, or an out-of-band command. Acquire-only: rendering is not a source concern. No shell execution. |
 | L4 | **Publish** | Emits a produced entry's data to repo-relative paths, declared via a **list** of `publish:` targets. A target with no `template:` copies the data verbatim (json/yaml re-serialized without `_meta`; other formats byte-copied); a target with a `template:` renders the data through it. A `{ tree: }` target mirrors a subtree (ADR 0047). Published artifacts are clean content — textus's `_meta` provenance stays in the store. A sentinel under `.textus/.run/sentinels/<target-rel-path>.textus-managed.json` (git-ignored runtime state) records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -139,9 +139,8 @@ The root is `.textus/` at the project working directory. A typical tree:
   zones/                 # ALL user content lives here
     knowledge/           # zone: knowledge (kind: canon — author-holders write; knowledge.identity.* is the identity convention)
     notebook/            # zone: notebook (kind: workspace — keep-holders write; agent's own durable lane)
-    feeds/               # zone: feeds (kind: quarantine — reconcile-holders write)
     proposals/           # zone: proposals (kind: queue — propose-holders write)
-    artifacts/           # zone: artifacts (kind: derived — reconcile-holders write)
+    artifacts/           # zone: artifacts (kind: machine — reconcile-holders write; external inputs artifacts.feeds.* + computed outputs artifacts.derived.*)
 ```
 
 Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `hooks/`) live directly under `.textus/`; disposable runtime state (the audit log, publish `sentinels/`, fetch/build locks, pulse cursors) lives under `.textus/.run/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/zones/`.** Manifest `path:` fields are relative to `.textus/zones/` — they do **not** include the `zones/` prefix. Implementations MUST prepend `zones/` to every `path:` when resolving a key to a filesystem location.
@@ -180,12 +179,10 @@ zones:
     kind: workspace
     owner: agent              # optional, informational — agent's own lane
     desc: "agent's durable working memory; bytes climb to knowledge only via propose→accept"
-  - name: feeds
-    kind: quarantine
   - name: proposals
     kind: queue
   - name: artifacts
-    kind: derived
+    kind: machine            # machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)
 
 entries:
   - key: knowledge.identity.self
@@ -204,10 +201,10 @@ entries:
     path: artifacts/catalogs/people.md
     zone: artifacts
     schema: null
-    owner: automation:build
+    owner: automation:reconcile
 
 rules:
-  - match: feeds.**
+  - match: artifacts.feeds.**
     retention: { ttl: 6h, action: archive }
 
 audit:
@@ -223,10 +220,10 @@ Zone names are conventional — write authority comes from each zone's declared 
 
 | `format`   | Path extension              | `template:`           | `schema:` |
 |------------|-----------------------------|------------------------|-----------|
-| `markdown` | `.md` (or appended if absent) | required for derived | optional  |
+| `markdown` | `.md` (or appended if absent) | required for produced | optional  |
 | `json`     | `.json` required            | optional (escape hatch) | optional (top-level keys) |
 | `yaml`     | `.yaml` or `.yml` required  | optional (escape hatch) | optional (top-level keys) |
-| `text`     | `.txt` or no extension      | required for derived | MUST be null |
+| `text`     | `.txt` or no extension      | required for produced | MUST be null |
 
 For `nested: true`, the recursive glob matches the format's extension (markdown→`**/*.md`, json→`**/*.json`, yaml→`**/*.{yaml,yml}`, text→`**/*.txt`). All files under one nested entry share one format and one schema. Each matching file is enumerated as its own key, with the key segments derived from the path relative to the entry (extension stripped). A nested entry that instead mirrors a whole directory of files to a consumer path — without enumerating any of them as keys — uses a `{ tree: }` publish target (below); its files are opaque payload. (The former `index_filename:` directory-keyed enumeration was removed in 0.43.0 — ADR 0053.)
 
@@ -259,11 +256,10 @@ The kind→verb mapping is closed:
 |---|---|---|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane — bytes never auto-promote; climb to `canon` only via propose→accept. |
-| `quarantine` | `reconcile` | External bytes pending validation. |
+| `machine` | `reconcile` | Machine-maintained: external bytes pending validation + outputs computed from other zones. |
 | `queue` | `propose` | Proposals awaiting promotion. |
-| `derived` | `reconcile` | Computed from other zones. |
 
-This is a **function (zone-kind → capability), not a bijection** (ADR 0090): `quarantine` and `derived` both require `reconcile`, because both are machine-maintained lanes kept current by the same `reconcile` sweep.
+This is a **bijection** (zone-kind ⟺ capability) again (ADR 0091, which folded the former `quarantine` + `derived` kinds — split apart in ADR 0090 — back into one `machine` kind): the single `machine` lane requires `reconcile`, because machine-maintained bytes (external inputs and computed outputs alike) are kept current by the same `reconcile` sweep.
 
 `owner:` on a zone is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a zone is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
 
@@ -273,23 +269,23 @@ Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, 
 |---|---|---|---|---|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. `knowledge.identity.*` is the identity key convention. |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
-| `feeds` | `quarantine` | `reconcile` | `automation` | Declared external inputs (calendar, feeds, scraped pages). Pulled in by the `reconcile` sweep; never by humans or agents directly. |
 | `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `knowledge`. |
-| `artifacts` | `derived` | `reconcile` | `automation` | Computed outputs (catalogs, indexes, published context). Materialized via `textus reconcile`. |
+| `artifacts` | `machine` | `reconcile` | `automation` | Machine-maintained, never by humans or agents directly: declared external inputs (calendar, feeds, scraped pages) under `artifacts.feeds.*` pulled in by the `reconcile` sweep, and computed outputs (catalogs, indexes, published context) under `artifacts.derived.*` materialized via `textus reconcile`. |
 
 A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role does not hold the capability the target zone-kind requires, the write returns `write_forbidden` with the message `writing '<key>' (zone '<zone>') needs capability '<verb>'` and a hint naming the roles that hold it (`held by: <roles>`, or `held by: no declared role` when none do).
 
 Every zone MUST declare a `kind:` describing its role in the data-flow graph.
 The vocabulary is closed: `canon` (authored truth), `workspace` (agent's own
-durable lane), `quarantine` (external bytes pending validation), `queue`
-(proposals awaiting promotion), `derived` (computed from other zones). A
-manifest MUST declare at most one `queue` zone. Because authority is derived, a
-manifest is rejected at load if it declares a zone whose required verb is held
-by **no** declared role (`derived` ⇒ a role with `reconcile`, `queue` ⇒ `propose`,
-`quarantine` ⇒ `reconcile`, `workspace` ⇒ `keep`, `canon` ⇒ `author`). Coordination
-is keyed off the declared kind: a zone is derived only if it declares
-`kind: derived`, and proposals route to the declared `queue` zone — there is no
-name-based fallback. A manifest with a kind-less zone is rejected at load.
+durable lane), `machine` (machine-maintained: external bytes pending validation
++ outputs computed from other zones), `queue` (proposals awaiting promotion). A
+manifest MUST declare at most one `queue` zone and at most one `machine` zone.
+Because authority is derived, a manifest is rejected at load if it declares a
+zone whose required verb is held by **no** declared role (`machine` ⇒ a role with
+`reconcile`, `queue` ⇒ `propose`, `workspace` ⇒ `keep`, `canon` ⇒ `author`).
+Coordination is keyed off the declared kind: a zone is machine-maintained only if
+it declares `kind: machine`, and proposals route to the declared `queue` zone —
+there is no name-based fallback. A manifest with a kind-less zone is rejected at
+load.
 
 ### 5.1 Role resolution
 
@@ -306,7 +302,7 @@ The effective role for any CLI invocation is resolved in this order; the first m
 |---|---|---|
 | `human` | `[author, propose]` | Interactive user at a terminal; the single trust anchor. |
 | `agent` | `[propose]` | Long-running AI or LLM process; stages proposals. |
-| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the machine-maintained lanes current — pull external sources into `quarantine`, materialize `derived` outputs. |
+| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the `machine` lane current — pull external sources in and materialize computed outputs. |
 
 Roles are declared in the manifest's `roles:` block (§5.1.1); the names above are the default mapping when `roles:` is omitted. Unknown role values are rejected with `invalid_role`.
 
@@ -327,20 +323,21 @@ roles:
 ```
 
 Capability allow-list: `propose`, `author`, `keep`, `reconcile`. The mapping from
-zone-kind to its required capability is a **function, not a bijection** (ADR
-0090): `quarantine` and `derived` both require `reconcile`, so a single
-capability can authorize more than one zone-kind:
+zone-kind to its required capability is a **bijection** (ADR 0091, which folded
+the former `quarantine` + `derived` kinds back into one `machine` kind — undoing
+the two-kind split of ADR 0090): each capability authorizes exactly one
+zone-kind:
 
 | Capability | Authorizes writes to zone-kind |
 |---|---|
 | `author` | `canon` |
 | `keep` | `workspace` |
 | `propose` | `queue` |
-| `reconcile` | `quarantine`, `derived` |
+| `reconcile` | `machine` |
 
-A manifest naming the folded quarantine capability — `ingest`, or its pre-0088
+A manifest naming a folded capability — `ingest` or `build`, or the pre-0088
 spelling `fetch` — in a `can:` list is rejected at load with a hint pointing to
-`reconcile` (ADR 0090).
+`reconcile` (ADR 0090, 0091).
 
 `author` is the single **trust anchor**: **at most one role may hold `author`**
 (a manifest declaring two or more is rejected at load). The `accept` and
