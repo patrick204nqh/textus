@@ -54,13 +54,17 @@ module Textus
         File.rename(leased.leased_path, dest)
       end
 
+      # Increment attempts and either requeue (transient) or dead-letter (attempts
+      # exhausted). Returns :requeued or :dead_lettered so the worker can count
+      # terminal failures distinctly from retries.
       def fail(leased, error:)
         job = leased.job
         job.attempts += 1
         job.last_error = error
-        target = job.attempts >= job.max_attempts ? :failed : :ready
-        write_atomic(path(target, job.id), job.to_h)
+        dead = job.attempts >= job.max_attempts
+        write_atomic(path(dead ? :failed : :ready, job.id), job.to_h)
         File.delete(leased.leased_path)
+        dead ? :dead_lettered : :requeued
       end
 
       # Return expired leases to ready/ (the holding worker crashed). Returns the
