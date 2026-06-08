@@ -26,13 +26,13 @@ textus has 17 events: 3 RPC and 14 pub-sub. The 2 `:entry_fetch_*` lifecycle eve
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:resolve_handler` | rpc | Fetch bytes into an `intake` entry (`source: { from: handler }`). Invoked by `textus reconcile` (the scheduled sweep) and `hook run` when re-pulling an entry past its `source.ttl`; never by a `get` (ADR 0089). |
-| `:transform_rows` | rpc | Reshape projection rows for a produced entry (`source: { from: project }`) — it shapes the **data**, not its presentation. Invoked by `textus reconcile` (Phase 1 produce). |
+| `:resolve_handler` | rpc | Fetch bytes into an `intake` entry (`source: { from: handler }`). Invoked by `textus drain` (the scheduled sweep) and `hook run` when re-pulling an entry past its `source.ttl`; never by a `get` (ADR 0089). |
+| `:transform_rows` | rpc | Reshape projection rows for a produced entry (`source: { from: project }`) — it shapes the **data**, not its presentation. Invoked by `textus drain` (Phase 1 produce). |
 | `:validate` | rpc | Contribute a custom rule to `textus doctor`. Returns an array of issues. |
 | `:entry_written` | pubsub | Something just got written. Fires for every successful write (including fetch-driven). Payload: `{ ctx:, key:, envelope: }`. |
 | `:entry_deleted` | pubsub | An entry was just unlinked. Payload: `{ ctx:, key: }`. |
 | `:entry_fetched` | pubsub | Like `:entry_written` but specific to fetch-driven writes. Both fire — `:entry_written` first, then `:entry_fetched`. Payload: `{ ctx:, key:, envelope:, change: }`. |
-| `:entry_produced` | pubsub | One produced entry just finished building its data. Fires once per produced entry per reconcile. Payload: `{ ctx:, key:, envelope:, sources: }`. |
+| `:entry_produced` | pubsub | One produced entry just finished building its data. Fires once per produced entry per drain. Payload: `{ ctx:, key:, envelope:, sources: }`. |
 | `:proposal_accepted` | pubsub | A pending proposal was promoted into its target zone. Payload: `{ ctx:, key:, target_key: }`. |
 | `:entry_published` | pubsub | A produced entry's data was emitted to a repo path. Fires once per file for every publish target (a to-target's copy/render, or each file of a `{ tree: }` mirror). Payload: `{ ctx:, key:, envelope:, source:, target: }`. |
 | `:entry_renamed` | pubsub | A key was renamed in place. Both `:entry_written` and `:entry_deleted` are suppressed — `:entry_renamed` is the sole signal. Payload: `{ ctx:, key:, from_key:, to_key:, envelope: }`. `key:` equals `to_key:` — it's the entry's post-move home, present so `keys:` glob filters route correctly. |
@@ -40,15 +40,15 @@ textus has 17 events: 3 RPC and 14 pub-sub. The 2 `:entry_fetch_*` lifecycle eve
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
 | `:session_opened` | pubsub | Fires when an MCP session is established. Payload: `{ ctx:, role:, cursor: }`. |
 | `:produce_failed` | pubsub | Fires when a **reactive** rebuild (the on-canon-write produce trigger, ADR 0087/0093) raises. Payload: `{ ctx:, keys:, error: }`. Observational; the failing rebuild is already aborted. |
-| `:reconcile_failed` | pubsub | Fires when the **`textus reconcile`** sweep finishes with one or more failed destructive actions. Payload: `{ ctx:, failed: }` where `failed` is `[{ key, error }]` — the same list the verb returns (additive; the event is the bus-side signal). Counterpart to `:produce_failed` so both produce paths report failure uniformly. |
+| `:reconcile_failed` | pubsub | Fires when the **`textus drain`** sweep finishes with one or more failed destructive actions. Payload: `{ ctx:, failed: }` where `failed` is `[{ key, error }]` — the same list the verb returns (additive; the event is the bus-side signal). Counterpart to `:produce_failed` so both produce paths report failure uniformly. |
 
 ### Fetch lifecycle events
 
-Two additional pub-sub events observe the progress of intake fetches during `reconcile` / `hook run`.
+Two additional pub-sub events observe the progress of intake fetches during `drain` / `hook run`.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-| `:entry_fetch_started` | pubsub | Fires immediately before an intake handler is invoked for a re-pull (during `reconcile` or `hook run`). `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
+| `:entry_fetch_started` | pubsub | Fires immediately before an intake handler is invoked for a re-pull (during `drain` or `hook run`). `mode:` is `"refresh"`. Payload: `{ ctx:, key:, mode: }`. |
 | `:entry_fetch_failed` | pubsub | Fires when an intake handler raises. Payload: `{ ctx:, key:, error_class:, error_message: }`. The failing fetch is already aborted; this is observational only. |
 
 ---
@@ -79,10 +79,10 @@ Each timeline reads top-to-bottom. `┃` is the verb's control flow; `─►` is
   ✔ done
 ```
 
-### `textus reconcile` (re-pull of a stale intake entry past `source.ttl`)
+### `textus drain` (re-pull of a stale intake entry past `source.ttl`)
 
 A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushed
-— `reconcile`'s sweep (and `hook run`) re-pull intake entries past their `source.ttl`:
+— `drain`'s sweep (and `hook run`) re-pull intake entries past their `source.ttl`:
 
 ```
   ┃ for each intake entry past source.ttl:
@@ -138,7 +138,7 @@ A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushe
   ✔ store ready for use
 ```
 
-### `textus reconcile` (Phase 1 — produce)
+### `textus drain` (Phase 1 — produce)
 
 ```
   ┃ for each entry in a reconcile-writable zone:
@@ -189,7 +189,7 @@ A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushe
 | Hook event | Failure mode | What gets written |
 |------------|--------------|-------------------|
 | `:resolve_handler` raises | fetch aborts | nothing |
-| `:transform_rows` raises | reconcile aborts (this entry only) | nothing |
+| `:transform_rows` raises | drain aborts (this entry only) | nothing |
 | `:validate` raises | doctor aborts | nothing |
 | `:entry_written` raises | verb still succeeds | `event_error` row in `audit.log` |
 | `:entry_deleted` raises | verb still succeeds | `event_error` row |

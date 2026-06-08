@@ -51,7 +51,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 
 A derived entry declares a `source:` block with a `from:` discriminator (ADR 0093/0094). A `source:` acquires **data** — it never renders; rendering is a publish concern (below). Two `from:` values for derived entries:
 
-**`source: { from: project }`** — textus computes the entry's data on `textus reconcile` from other store entries. Declarative; nothing shells out. Projection fields are flat under `source:`.
+**`source: { from: project }`** — textus computes the entry's data on `textus drain` from other store entries. Declarative; nothing shells out. Projection fields are flat under `source:`.
 
 ```yaml
 - key: artifacts.derived.people
@@ -88,11 +88,11 @@ Full contract for both shapes is in [`../../SPEC.md` §5.2.1 and §5.2.2](../../
 
 ## Intake and freshness
 
-External inputs land via `:resolve_handler` hooks, not shell commands. Each intake entry declares `source: { from: handler, handler: <name>, ttl: <dur> }`; re-pull is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push) — a `get` never refreshes (ADR 0089):
+External inputs land via `:resolve_handler` hooks, not shell commands. Each intake entry declares `source: { from: handler, handler: <name>, ttl: <dur> }`; re-pull is system-pushed via `drain` (scheduled sweep) and `hook run` (event push) — a `get` never refreshes (ADR 0089):
 
 ```sh
 textus pulse --output=json                             # `stale` lists expired entries; `next_due_at` is the soonest deadline
-textus reconcile --as=automation                       # re-pulls every intake entry past its source.ttl
+textus drain --as=automation                       # re-pulls every intake entry past its source.ttl
 ```
 
 The re-pull cadence is the entry's own `source.ttl`. Age-based garbage collection is the orthogonal `retention:` rule slot in the top-level `rules:` block, matched by glob (`{ ttl, action: drop | archive }`); the two compose — re-pull hourly *and* archive at 90 days:
@@ -108,11 +108,11 @@ rules:
     retention: { ttl: 90d, action: archive }
 ```
 
-A typical scheduled integration runs `reconcile` on a cron to re-pull every
+A typical scheduled integration runs `drain` on a cron to re-pull every
 expired feed:
 
 ```sh
-textus reconcile --as=automation   # in cron / CI — re-pulls all stale feeds
+textus drain --as=automation   # in cron / CI — re-pulls all stale feeds
 ```
 
 See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
@@ -123,9 +123,9 @@ There is one public read operation, and it is pure (ADR 0089):
 
 | Operation | Behaviour | Use for |
 |-----------|-----------|---------|
-| `ops.get` | A pure on-disk read annotated with a freshness verdict — it NEVER ingests, regardless of the entry's `action`. A stale `refresh` entry reads back stale until the next `reconcile`. | every caller — interactive reads, dashboards, scripts, and internal pipelines (materializer, projection, schema tooling, accept/reject/publish, uid, validator) |
+| `ops.get` | A pure on-disk read annotated with a freshness verdict — it NEVER ingests, regardless of the entry's `action`. A stale `refresh` entry reads back stale until the next `drain`. | every caller — interactive reads, dashboards, scripts, and internal pipelines (materializer, projection, schema tooling, accept/reject/publish, uid, validator) |
 
-Refreshing a stale entry is `reconcile`'s job (or a `hook run` event), never a read's — so no caller can accidentally trigger network I/O by reading.
+Refreshing a stale entry is `drain`'s job (or a `hook run` event), never a read's — so no caller can accidentally trigger network I/O by reading.
 
 ## Body content
 

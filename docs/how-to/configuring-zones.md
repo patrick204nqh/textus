@@ -95,7 +95,7 @@ A manifest need not declare all three — declare the subset you use. Declaring 
 
 ## Wiring data in — intake and `:resolve_handler` hooks
 
-`intake` entries are populated by `:resolve_handler` hooks. An intake entry declares its handler and re-pull cadence via `source: { from: handler, handler:, ttl: }`; on an entry past its `source.ttl`, `textus reconcile --as=automation` (the scheduled sweep) or a `hook run` event invokes the handler and writes the result. A `get` never invokes the handler — it is a pure read (ADR 0089).
+`intake` entries are populated by `:resolve_handler` hooks. An intake entry declares its handler and re-pull cadence via `source: { from: handler, handler:, ttl: }`; on an entry past its `source.ttl`, `textus drain --as=automation` (the scheduled sweep) or a `hook run` event invokes the handler and writes the result. A `get` never invokes the handler — it is a pure read (ADR 0089).
 
 ```yaml
 entries:
@@ -106,7 +106,7 @@ entries:
     source:
       from: handler
       handler: pull_notes
-      ttl: 1h                    # re-pull cadence; reconcile re-pulls when past ttl
+      ttl: 1h                    # re-pull cadence; drain re-pulls when past ttl
       config: { url: "https://example.com/notes" }
 ```
 
@@ -115,10 +115,10 @@ The re-pull cadence is the entry's own `source.ttl` (ADR 0093). Age-based garbag
 ```yaml
 rules:
   - match: artifacts.feeds.**
-    retention: { ttl: 90d, action: archive }   # drop | archive — destructive, reconcile-sweep only
+    retention: { ttl: 90d, action: archive }   # drop | archive — destructive, drain-sweep only
 ```
 
-A `get` annotates a past-ttl entry with `stale: true` but never re-pulls it; re-pull is `reconcile`'s job (the scheduled sweep) or a `hook run` event. `retention:` is `{ ttl, action: drop | archive }` and applies only on the destructive Phase 2 of the reconcile sweep, never on a write or read (ADR 0079/0093).
+A `get` annotates a past-ttl entry with `stale: true` but never re-pulls it; re-pull is `drain`'s job (the scheduled sweep) or a `hook run` event. `retention:` is `{ ttl, action: drop | archive }` and applies only on the destructive Phase 2 of the drain sweep, never on a write or read (ADR 0079/0093).
 
 ### Built-in `:resolve_handler` handlers
 
@@ -163,7 +163,7 @@ entries:
       config: { page_id: "abc123" }
 ```
 
-On an entry past its `source.ttl`, `textus reconcile --as=automation` (or a `hook run` event) invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
+On an entry past its `source.ttl`, `textus drain --as=automation` (or a `hook run` event) invokes the handler, normalizes the result by the entry's declared format, and writes it through the capability gate just like any other write.
 
 The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the full key being fetched and `args[:leaf_segments]` holds the segments past the parent `intake` entry (for `nested: true` intakes). Handlers over fan-out intakes should scope work to the requested leaf rather than re-running the parent config for every leaf. See [`../reference/events.md` (`:resolve_handler` args)](../reference/events.md#resolve_handler-args).
 
@@ -171,7 +171,7 @@ The third kwarg, `args:`, carries leaf-key context: `args[:trigger_key]` is the 
 
 `textus init` drops a `machine_intake.rb` `:resolve_handler` hook and a **nested**
 `artifacts.feeds.machines` entry (`tracked: false`) with one machine configured — `local`.
-`textus reconcile --as=automation` (when the entry is past its `source.ttl`)
+`textus drain --as=automation` (when the entry is past its `source.ttl`)
 pulls a snapshot of this host into the `artifacts` machine zone:
 
 - **git** — short HEAD, branch, dirty flag, repo root (the *control* host's repo; only meaningful for `local`)
@@ -183,7 +183,7 @@ It is **retrievable via the protocol** (`textus get artifacts.feeds.machines.loc
 **gitignored and never published**, because machine info can be sensitive or
 noisy — the entry's `tracked: false` flag drives the generated `.gitignore`
 (the whole `zones/artifacts/feeds/machines/` subtree). The scan runs **only on a
-`reconcile` re-pull** (never a `get`/`boot`/`pulse` read), and the entry's own
+`drain` re-pull** (never a `get`/`boot`/`pulse` read), and the entry's own
 `source.ttl: 1h` amortizes the cost (a `brew list` count is ~1–3 s) on a long-running server. The hook is a deliberate **allowlist** — versions and counts, no raw
 `env`, no secrets.
 
@@ -206,14 +206,14 @@ rules:
     retention: { ttl: 90d, action: archive }   # move stale external bytes aside
 ```
 
-Then `textus reconcile --as=ROLE` performs the destructive sweep (Phase 2; the role
+Then `textus drain --as=ROLE` performs the destructive sweep (Phase 2; the role
 must be allowed to write the matched zone). `action: drop` deletes the leaf;
 `action: archive` moves it to `.textus/archive/` and then deletes the original.
 `retention:` applies to stored (leaf/nested/intake) entries; a `retention:` rule on a
 `derived` entry is rejected at load (derived entries regenerate — aging them out is
 meaningless). Age is measured from `_meta.last_fetched_at` (intake entries) when
 present, else the leaf's file modification time. Destruction runs **only** on the
-reconcile sweep, never on a write or read (ADR 0079/0093). Preview with `--dry-run`,
+drain sweep, never on a write or read (ADR 0079/0093). Preview with `--dry-run`,
 narrow a sweep with `--prefix` or `--zone`, and inspect what a key is subject to with
 `textus rule explain KEY` — the resolved `retention` appears in the effective output.
 
@@ -244,7 +244,7 @@ One dataset can feed differently-formatted outputs — add a second to-target wi
 
 Hooks live in Ruby files under `.textus/hooks/`. See [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide — for the registration surface, handler signatures, and worked examples. The manifest side (which entries trigger which hooks) is covered by [intake wiring](#wiring-data-in--intake-and-resolve_handler-hooks) and [derived entries](#wiring-data-out--derived-entries-and-publishing) above.
 
-### What `textus reconcile` does (Phase 1 — produce)
+### What `textus drain` does (Phase 1 — produce)
 
 For every entry in a reconcile-writable zone:
 
@@ -255,11 +255,11 @@ For every entry in a reconcile-writable zone:
 
 Phase 2 sweeps the destructive `retention:` actions (`action: drop|archive`) on aged entries. Both phases run under one shared maintenance lock; `--dry-run` prints the plan without executing.
 
-Derived entries also stay fresh **reactively** between full passes: a canon write enqueues a `materialize` job for each derived entry that depends on it, which a worker converges. Materialization is **async-only** — the write returns immediately and the job is processed by `drain` (the batch/CI pass) or `serve` (the daemon). There is no per-entry write-trigger knob; freshness is re-homed to the drain at the commit/CI gate and to the running daemon. The per-write rebuild is still "reconcile narrowed to `rdeps ∩ derived`" (ADR 0093).
+Derived entries also stay fresh **reactively** between full passes: a canon write enqueues a `materialize` job for each derived entry that depends on it, which a worker converges. Materialization is **async-only** — the write returns immediately and the job is processed by `drain` (the batch/CI pass) or `serve` (the daemon). There is no per-entry write-trigger knob; freshness is re-homed to the drain at the commit/CI gate and to the running daemon. The per-write rebuild is still a narrowed convergence ("reconcile narrowed to `rdeps ∩ derived`") (ADR 0093).
 
 ### The sentinel guard
 
-`Textus::Ports::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and `reconcile` will refuse rather than clobber it.
+`Textus::Ports::Publisher` refuses to overwrite any external file textus didn't write itself. The sentinel records which external paths are textus-managed; a missing sentinel means the file is yours, and `drain` will refuse rather than clobber it.
 
 ---
 
@@ -314,13 +314,13 @@ Day-to-day flow:
 ```
 $ textus put knowledge.identity.self --as=human  < new-identity.md   # edit identity
 $ textus put knowledge.notes.kickoff --as=human  < kickoff.md         # add a note
-$ textus reconcile                                                     # produce data + publish CLAUDE.md
+$ textus drain                                                     # produce data + publish CLAUDE.md
 $ git diff CLAUDE.md                                                   # review and commit
 ```
 
 To layer AI proposals in, add a zone with `kind: queue` (e.g. `name: proposals`) and let agents write into it with `--as=agent`, then `textus accept proposals.suggestion.<id> --as=human` promotes the proposal into `knowledge`. Proposals route to whichever zone declares `kind: queue` — the name doesn't matter.
 
-To layer external feeds in, declare intake entries under `artifacts.feeds.*` in the `machine` zone, each with a `source: { from: handler, handler:, ttl: }` pointing at a `:resolve_handler` hook (add an orthogonal `retention:` rule for GC). `textus reconcile --as=automation` (on a schedule) then re-pulls any entry past its `source.ttl` and keeps it current; a `get` reads it but never refreshes (ADR 0089).
+To layer external feeds in, declare intake entries under `artifacts.feeds.*` in the `machine` zone, each with a `source: { from: handler, handler:, ttl: }` pointing at a `:resolve_handler` hook (add an orthogonal `retention:` rule for GC). `textus drain --as=automation` (on a schedule) then re-pulls any entry past its `source.ttl` and keeps it current; a `get` reads it but never refreshes (ADR 0089).
 
 For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: notebook`) writable by a role holding `keep` (e.g. `agent`). Bytes in `notebook` never auto-promote; to persist changes into `knowledge`, the agent proposes and a human accepts.
 

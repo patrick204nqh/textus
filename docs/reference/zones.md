@@ -35,7 +35,7 @@ The four capabilities:
 | `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `reconcile` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `reconcile` sweep (ADR 0089/0091/0093). |
+| `reconcile` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `drain` sweep (ADR 0089/0091/0093). |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -48,7 +48,7 @@ roles:
   - { name: automation, can: [reconcile] }
 ```
 
-Two analogies that usually click for `automation` — both jobs belong to the one `reconcile` capability, because the `reconcile` sweep drives both:
+Two analogies that usually click for `automation` — both jobs belong to the one `reconcile` capability, because the `drain` sweep drives both:
 
 - **the grocery shopper** — goes outside, brings raw ingredients home (into the `machine` zone, as intake entries under `artifacts.feeds.*`).
 - **the chef** — takes ingredients already in the kitchen and cooks the meal (computing derived entries under `artifacts.derived.*` in the same `machine` zone).
@@ -93,7 +93,7 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus reconcile --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `reconcile`.) |
+| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus drain --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `reconcile`.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 
 These four are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).

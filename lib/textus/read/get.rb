@@ -2,16 +2,16 @@ module Textus
   module Read
     # The one read path — a pure read (ADR 0089, 0093): the on-disk envelope
     # annotated with a freshness annotation. It NEVER mutates and NEVER ingests.
-    # Quarantine freshness is system-pushed via `reconcile` (scheduled sweep) and
+    # Quarantine freshness is system-pushed via `drain` (scheduled sweep) and
     # `hook run` (event push). Lifecycle is removed from the get path (ADR 0093):
     # intake cadence lives in `source.ttl`; GC lives in `retention:` rules; both
-    # are evaluated exclusively by the `reconcile` sweep, not by a read.
+    # are evaluated exclusively by the `drain` sweep, not by a read.
     class Get
       extend Textus::Contract::DSL
 
       verb     :get
       summary  "Read one entry — a pure on-disk read annotated with a freshness " \
-               "verdict; never ingests (quarantine freshness is reconcile + hook " \
+               "verdict; never ingests (quarantine freshness is drain + hook " \
                "only, ADR 0089). Returns the envelope (uid, etag, _meta, body, " \
                "freshness)."
       surfaces :cli, :mcp
