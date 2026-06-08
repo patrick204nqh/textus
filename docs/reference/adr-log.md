@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0110](../architecture/decisions/0110-job-queue-and-drain-serve.md) | job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize | 2026-06-08 | Accepted |
 | [0109](../architecture/decisions/0109-board-exact-schema-ports.md) | board-exact schema split + single port shape | 2026-06-08 | Accepted |
 | [0108](../architecture/decisions/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) | 2026-06-08 | Superseded by ADR 0109 — every port is now a single shape (an instantiable class); `Clock`/`Publisher` were converted. |
 | [0107](../architecture/decisions/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk | 2026-06-08 | Partially superseded by ADR 0109 (the constants it kept on `Schema` now live in `Schema::Vocabulary`/`Schema::Keys`, re-exported on `Schema`). |
