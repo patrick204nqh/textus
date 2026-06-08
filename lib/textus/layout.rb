@@ -25,6 +25,14 @@ module Textus
       File.join(run(root), "build.lock")
     end
 
+    def self.queue(root)
+      File.join(run(root), "queue")
+    end
+
+    def self.queue_state(root, state)
+      File.join(queue(root), state.to_s)
+    end
+
     def self.audit_dir(root)
       File.join(run(root), "audit")
     end
