@@ -4,6 +4,10 @@ require "time"
 
 module Textus
   module Ports
+    # Append-only audit log adapter: writes and rotates the on-disk audit JSONL
+    # under the store root. An instantiable class (ADR 0108) — it holds
+    # collaborators (the root path + size/keep config), so each store binds its
+    # own instance.
     class AuditLog
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 5

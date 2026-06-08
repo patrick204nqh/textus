@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0108](../architecture/decisions/0108-port-shape-convention.md) | two port shapes, named and documented (not converted) | 2026-06-08 | Accepted |
 | [0107](../architecture/decisions/0107-split-manifest-schema.md) | split `manifest/schema.rb`: data vs validation walk | 2026-06-08 | Accepted |
 | [0106](../architecture/decisions/0106-executable-layering-invariant.md) | the layering is executable, not just intended | 2026-06-08 | Accepted |
 | [0105](../architecture/decisions/0105-verb-routing-contract-bijection.md) | the verb token has one home: route ⟺ contract | 2026-06-08 | Accepted |
