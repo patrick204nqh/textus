@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0107",
+      "title": "split `manifest/schema.rb`: data vs validation walk",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0107-split-manifest-schema"
+    },
+    {
       "number": "0105",
       "title": "the verb token has one home: route ⟺ contract",
       "date": "2026-06-08",
