@@ -30,12 +30,14 @@ module Textus
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
       capabilities: Textus::Read::Capabilities,
+      jobs: Textus::Read::Jobs,
 
       # Maintenance
       zone_mv: Textus::Maintenance::ZoneMv,
       key_mv_prefix: Textus::Maintenance::KeyMvPrefix,
       key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,
       reconcile: Textus::Maintenance::Reconcile,
+      drain: Textus::Maintenance::Drain,
       rule_lint: Textus::Maintenance::RuleLint,
     }.freeze
 

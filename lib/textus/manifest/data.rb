@@ -10,10 +10,11 @@ module Textus
     # resolution, rules) lives on Manifest::Policy / Resolver / Rules.
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
+      WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
       attr_reader :raw, :root, :entries, :declared_zone_kinds,
                   :zone_descs, :zone_owners,
-                  :audit_config, :role_caps, :policy
+                  :audit_config, :worker_config, :role_caps, :policy
 
       def self.validate_key!(key)
         raise UsageError.new("empty key") if key.nil? || key.empty?
@@ -47,6 +48,7 @@ module Textus
         # future `zone_owners.key?(name)` means "owner declared", not "zone exists".
         @zone_owners = Array(raw["zones"]).to_h { |z| [z["name"], z["owner"]] }.compact
         @audit_config = build_audit_config(raw)
+        @worker_config = build_worker_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])
         # Policy is constructed before entries because Entry validators
         # use the entry's own `derived?` and similar helpers that call into
@@ -64,6 +66,19 @@ module Textus
         {
           max_size: a["max_size"] || AUDIT_DEFAULTS[:max_size],
           keep: a["keep"] || AUDIT_DEFAULTS[:keep],
+        }.freeze
+      end
+
+      # Worker/queue tunables (ADR: job-queue execution model). All optional;
+      # the daemon (serve) and batch drain read these, falling back to defaults
+      # so a manifest with no `worker:` block runs the queue out of the box.
+      def build_worker_config(raw)
+        w = raw["worker"] || {}
+        {
+          pool: w["pool"] || WORKER_DEFAULTS[:pool],
+          poll: w["poll"] || WORKER_DEFAULTS[:poll],
+          lease_ttl: w["lease_ttl"] || WORKER_DEFAULTS[:lease_ttl],
+          max_attempts: w["max_attempts"] || WORKER_DEFAULTS[:max_attempts],
         }.freeze
       end
 
