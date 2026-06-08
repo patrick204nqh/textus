@@ -32,7 +32,7 @@ module Textus
         # The ONE source of truth for the rule-block field set (WS3). Adding a
         # rule field means adding one entry here; everything downstream derives
         # from it so the ~9 enumeration sites the audit found can't drift:
-        #   - Schema::RULE_KEYS and the per-field sub-key walk (this file)
+        #   - Schema::RULE_KEYS and the per-field sub-key walk (Schema::Validator)
         #   - Rules: the RuleSet members, EMPTY_SET, the `for` slots accumulator,
         #     Block's attr_readers, and the parse dispatch
         #   - Doctor::Check::RuleAmbiguity SLOTS (in_ambiguity)

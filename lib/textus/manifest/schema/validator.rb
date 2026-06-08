@@ -1,10 +1,11 @@
 module Textus
   class Manifest
     module Schema
-      # The manifest validation walk. Extracted from Schema (ADR 0107) so the
-      # schema module is its data — the coordination vocabulary (LANES + derived)
-      # and the key whitelists / FIELD_REGISTRY — while the validation *logic*
-      # lives here. Lexically nested under Schema, so bare constant references
+      # The manifest validation walk. Extracted from Schema (ADR 0107); the
+      # schema data now lives in Schema::Vocabulary (coordination vocabulary,
+      # LANES + derived) and Schema::Keys (key whitelists / FIELD_REGISTRY),
+      # re-exported on Schema — while the validation *logic* lives here.
+      # Lexically nested under Schema, so bare constant references
       # (ROOT_KEYS, LANES, FIELD_REGISTRY, …) resolve to Schema's constants.
       module Validator
         module_function
