@@ -2,37 +2,40 @@
 
 module Textus
   module Ports
-    # ADR 0093: on a canon write, converge the derived entries that depend on the
-    # written key (rdeps ∩ derived) by running Produce — scoped + non-destructive.
-    # This IS reconcile narrowed to a write's blast radius; there is no separate
-    # "reactive materialize" subsystem. Per-entry source.on_write (sync|async)
-    # picks inline-under-lock vs deferred. A write INTO a derived entry does not
-    # fan out (recursion guard). Failures never reach the writer (Produce.converge
-    # isolates them). Attached at Store boot, alongside AuditSubscriber.
+    # ADR 0093 / job-queue model: on a canon write, enqueue a `materialize` job
+    # for each derived entry that depends on the written key (rdeps ∩ producible).
+    # Async-only — the write returns immediately; a worker (drain/serve) converges
+    # the jobs. There is no inline `sync` path and no in-process thread: freshness
+    # is re-homed to drain (at the commit/CI gate) and the daemon. A write INTO a
+    # derived entry does not fan out (recursion guard). Produce self-elevates, so
+    # the job is stamped automation. Attached at Store boot, alongside
+    # AuditSubscriber.
     class ProduceOnWriteSubscriber
       def initialize(container)
         @container = container
       end
 
       def attach(bus)
-        bus.on(:entry_written, :produce_on_write) do |ctx:, key:, **|
-          call = Textus::Call.build(role: ctx.role, correlation_id: ctx.correlation_id)
-          on_write(key: key, call: call)
+        bus.on(:entry_written, :produce_on_write) do |key:, **|
+          on_write(key: key)
         end
         self
       end
 
-      def on_write(key:, call:)
+      def on_write(key:)
         return if derived_write?(key) # recursion guard: produce output is not a source change
 
         affected = Textus::Read::Rdeps.new(container: @container).call(key)["rdeps"]
         producible = affected.select { |k| producible?(k) }
         return if producible.empty?
 
-        if any_sync?(producible)
-          Textus::Produce::Engine.converge(container: @container, call: call, keys: producible)
-        else
-          Textus::Produce::Engine::AsyncRunner.enqueue(container: @container, call: call, keys: producible)
+        queue = Textus::Ports::Queue.new(root: @container.root)
+        producible.each do |k|
+          queue.enqueue(
+            Textus::Domain::Jobs::Job.new(
+              type: "materialize", args: { "key" => k }, enqueued_by: Textus::Role::AUTOMATION,
+            ),
+          )
         end
       end
 
@@ -54,15 +57,6 @@ module Textus
         entry.derived? || !entry.publish_tree.nil?
       rescue Textus::Error
         false
-      end
-
-      # Only derived entries carry a source with on_write semantics; a nested
-      # publish_tree entry has no source and defaults to async.
-      def any_sync?(keys)
-        keys.any? do |k|
-          entry = @container.manifest.resolver.resolve(k).entry
-          entry.derived? && entry.source.sync?
-        end
       end
     end
   end
