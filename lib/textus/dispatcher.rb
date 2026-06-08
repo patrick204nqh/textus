@@ -30,6 +30,7 @@ module Textus
       doctor: Textus::Read::Doctor,
       boot: Textus::Read::Boot,
       capabilities: Textus::Read::Capabilities,
+      jobs: Textus::Read::Jobs,
 
       # Maintenance
       zone_mv: Textus::Maintenance::ZoneMv,

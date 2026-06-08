@@ -90,6 +90,24 @@ module Textus
         count
       end
 
+      def list(state)
+        Dir.children(Textus::Layout.queue_state(@root, state.to_sym)).map { |f| File.basename(f, ".json") }
+      end
+
+      def retry_failed(job_id)
+        src = path(:failed, job_id)
+        data = JSON.parse(File.read(src))
+        data["attempts"] = 0
+        data["last_error"] = nil
+        write_atomic(path(:ready, job_id), data)
+        File.delete(src)
+      end
+
+      def purge(state)
+        dir = Textus::Layout.queue_state(@root, state.to_sym)
+        Dir.children(dir).each { |f| File.delete(File.join(dir, f)) }
+      end
+
       private
 
       def stamp_lease(leased_path, worker_id:, expires_at:)
