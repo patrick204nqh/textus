@@ -10,8 +10,10 @@ module Textus
     # under `<store_root>/.run/sentinels/` (runtime, git-ignored — ADR 0070) and
     # mirror the target's repo-relative layout so consumer directories aren't
     # polluted with `.textus-managed.json` siblings.
-    module Publisher
-      def self.publish(source:, target:, store_root:, provenance_source: source)
+    #
+    # An instantiable class (ADR 0109).
+    class Publisher
+      def publish(source:, target:, store_root:, provenance_source: source)
         FileUtils.mkdir_p(File.dirname(target))
         guard_clobber(source, target, store_root)
         File.delete(target) if File.symlink?(target)
@@ -21,13 +23,15 @@ module Textus
 
       # Removes a previously-published file and its sentinel. No-op unless the
       # target is textus-managed — never deletes an unmanaged file.
-      def self.unpublish(target:, store_root:)
+      def unpublish(target:, store_root:)
         return unless managed?(target, store_root)
 
         FileUtils.rm_f(target)
         sentinel = Textus::Ports::SentinelStore.new.sentinel_path(target, store_root)
         FileUtils.rm_f(sentinel)
       end
+
+      private
 
       # Refuse to clobber an unmanaged target — EXCEPT adopt one whose bytes
       # already equal the source (ADR 0050: a migration copies files into the
@@ -36,7 +40,7 @@ module Textus
       # here; the normal publish path below does, and the cp is a content no-op.
       # An unmanaged target whose content DIFFERS, or any unmanaged symlink, is
       # still refused — that is the guard's real job.
-      def self.guard_clobber(source, target, store_root)
+      def guard_clobber(source, target, store_root)
         return unless File.exist?(target) || File.symlink?(target)
         return if managed?(target, store_root)
         return if adoptable?(source, target)
@@ -44,11 +48,11 @@ module Textus
         raise PublishError.new("refusing to clobber unmanaged file at #{target}", target: target)
       end
 
-      def self.adoptable?(source, target)
+      def adoptable?(source, target)
         !File.symlink?(target) && File.file?(target) && FileUtils.identical?(source, target)
       end
 
-      def self.managed?(target, store_root)
+      def managed?(target, store_root)
         File.exist?(Textus::Ports::SentinelStore.new.sentinel_path(target, store_root))
       end
     end

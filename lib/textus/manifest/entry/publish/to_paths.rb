@@ -9,6 +9,11 @@ module Textus
         # ADR 0094: iterates publish_targets (to-targets), rendering through a
         # template when the target declares one, or copying verbatim otherwise.
         class ToPaths < Mode
+          def initialize(entry, publisher: Textus::Ports::Publisher.new)
+            super(entry)
+            @publisher = publisher
+          end
+
           def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument,Metrics/AbcSize
             targets = entry.publish_targets.select(&:to_target?)
             return nil if targets.empty?
@@ -29,7 +34,7 @@ module Textus
               else
                 # opaque / command / non-structured — publish the stored file as-is
                 target_abs = File.join(pctx.repo_root, t.to)
-                Textus::Ports::Publisher.publish(source: data_path, target: target_abs, store_root: pctx.root)
+                @publisher.publish(source: data_path, target: target_abs, store_root: pctx.root)
                 pctx.emit(:entry_published, key: entry.key, envelope: envelope, source: data_path, target: target_abs)
               end
             end
@@ -60,7 +65,7 @@ module Textus
               f.binmode
               f.write(bytes)
               f.flush
-              Textus::Ports::Publisher.publish(
+              @publisher.publish(
                 source: f.path, target: target_abs, store_root: pctx.root, provenance_source: data_path,
               )
             end
