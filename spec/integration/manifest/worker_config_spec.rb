@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "manifest worker config" do
+RSpec.describe Textus::Manifest::Data do # worker config
   include_context "textus_store_fixture"
 
   let(:store) do

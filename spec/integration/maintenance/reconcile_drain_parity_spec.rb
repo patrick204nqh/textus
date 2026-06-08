@@ -6,7 +6,7 @@ require "spec_helper"
 # intentionally different shapes (reconcile: produced/dropped/archived; drain:
 # completed/failed). reconcile itself is left untouched here — it is deleted in
 # Phase 4 — so its own specs keep passing.
-RSpec.describe "reconcile/drain convergence parity" do
+RSpec.describe Textus::Maintenance::Drain do # convergence parity with reconcile
   include_context "textus_store_fixture"
 
   let(:store) do
