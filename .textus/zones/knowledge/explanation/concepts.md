@@ -21,12 +21,12 @@ A textus store is a small **data-flow graph**. Information enters from outside, 
 ```mermaid
 flowchart LR
     ext["external world<br/>APIs · files · feeds"] -->|:resolve_handler hook| artifacts_feeds["artifacts.feeds.*<br/>(intake entries)"]
-    automation(["automation"]) -->|reconcile| artifacts_feeds
+    automation(["automation"]) -->|drain| artifacts_feeds
     human(["human"]) -->|author| knowledge["knowledge<br/>(canon)"]
     agent(["agent"]) -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
     proposals -->|human accept| knowledge
-    automation -->|reconcile| artifacts_derived["artifacts.derived.*<br/>(derived entries)"]
+    automation -->|drain| artifacts_derived["artifacts.derived.*<br/>(derived entries)"]
     artifacts_feeds -.->|projection source| artifacts_derived
     knowledge -.->|projection source| artifacts_derived
     artifacts_feeds & artifacts_derived -.->|one machine zone| artifacts["artifacts<br/>(machine)"]
@@ -59,7 +59,7 @@ Three ideas make this a *trust* path, not just a copy:
 
 - **Two capabilities, never one.** `propose` lets an agent write into the queue zone (`textus propose` auto-prefixes the key with whatever zone declares `kind: queue`). `author` — the single trust anchor, held by at most one role — is what `accept` requires. An agent has no path to `canon` of its own.
 - **`accept` is a transition, not a capability.** It is gated by two floor predicates — **`author_held`** (you hold the anchor) and **`target_is_canon`** (you may only promote *into* a canon zone). A proposal whose `target_key` points elsewhere is refused as `guard_failed`, and `textus doctor`'s `proposal_targets` check flags it ahead of time. The exact predicate set is the SSoT of [`../reference/zones.md`](../reference/zones.md).
-- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` upkeep rule (`upkeep: { ttl: 30d, action: drop }`) swept by `textus reconcile` ages out whatever is never resolved.
+- **The proposal carries its own destination.** `target_key` and `action` (`put` or `delete`) live in the queued entry's `meta.proposal`, so accept is a *replay* of an intended write — including "propose to delete a canon entry," which travels the same gate. Accept copies the body to the target and deletes the pending leaf; reject just deletes it. Neither lingers; a `proposals.**` upkeep rule (`upkeep: { ttl: 30d, action: drop }`) swept by `textus drain` ages out whatever is never resolved.
 
 ## Hooks: RPC vs pub-sub
 

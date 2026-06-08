@@ -85,7 +85,7 @@ talks to multiple textus stores.
 
 That's it. When Claude Code opens your project, it launches
 `textus mcp serve` as a subprocess and the agent gets these tools:
-`boot`, `pulse`, `list`, `get`, `put`, `propose`, `reconcile`,
+`boot`, `pulse`, `list`, `get`, `put`, `propose`, `drain`,
 `schema`, `rules` (plus maintenance tools). The agent
 calls them as MCP tools — no shell strings, no parsing. The MCP tool
 names are the same as the CLI verbs (see [ADR 0036](../architecture/decisions/0036-transports-as-pure-framings.md)); the full
@@ -205,7 +205,7 @@ while session_active:
         ...
 
     if pulse["stale"]:
-        # decide whether to run reconcile (re-pulls stale refresh entries)
+        # decide whether to run drain (re-pulls stale refresh entries)
         # or proceed with stale data — a get never refreshes (ADR 0089)
         ...
 

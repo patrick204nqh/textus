@@ -86,7 +86,7 @@
     },
     {
       "name": "get",
-      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is reconcile + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
+      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
       "args": [
         "key"
       ]

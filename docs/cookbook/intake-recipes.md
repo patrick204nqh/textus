@@ -39,7 +39,7 @@ rules:
   - { match: artifacts.feeds.api.**, retention: { ttl: 90d, action: archive } }   # orthogonal GC
 ```
 
-Run: `textus reconcile --as=automation` (the scheduled sweep re-pulls every intake entry past its `source.ttl`; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
+Run: `textus drain --as=automation` (the scheduled sweep re-pulls every intake entry past its `source.ttl`; `textus get feeds.api.users` is then a pure read of the refreshed bytes)
 
 > **Shape note:** a `format: json|yaml` entry stores parsed *content* and so its
 > top level must be a **mapping** (an object). If your source is a top-level
