@@ -2,6 +2,8 @@ require "spec_helper"
 
 # Top-level commands deliberately NOT surfaced in the agent-facing catalog:
 # internal/maintenance/transport verbs an agent should not be steered toward.
+# `serve` is the long-running convergence daemon — a process, not an agent-facing
+# command — so it is deliberately omitted from the boot catalog.
 BOOT_GUARD_INTENTIONALLY_OMITTED =
   %w[deps rdeps init mcp published reject zone serve].freeze
 

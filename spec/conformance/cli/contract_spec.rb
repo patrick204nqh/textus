@@ -26,7 +26,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
       Textus::CLI.verbs.each_key do |verb|
-        next if verb == "serve" # daemon: blocks forever, no no-op invocation
+        next if verb == "serve" # the daemon blocks forever by design; it has no no-op invocation
 
         code, = run_cli([verb], cwd: root)
         expect(code).to be_an(Integer),
@@ -59,7 +59,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "reject" => Textus::CLI::Verb::GenReject,
       "rule" => Textus::CLI::Group::Rule,
       "schema" => Textus::CLI::Group::Schema,
-      "reconcile" => Textus::CLI::Verb::GenReconcile,
       "drain" => Textus::CLI::Verb::GenDrain,
       "jobs" => Textus::CLI::Verb::GenJobs,
       "serve" => Textus::CLI::Verb::Serve,

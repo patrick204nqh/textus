@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0110",
+      "title": "job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0110-job-queue-and-drain-serve"
+    },
+    {
       "number": "0109",
       "title": "board-exact schema split + single port shape",
       "date": "2026-06-08",

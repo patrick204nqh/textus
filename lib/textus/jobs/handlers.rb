@@ -17,9 +17,22 @@ module Textus
 
       # produce: render derived / re-pull intake for a single key. Engine
       # self-elevates to the build actor internally; the passed call carries
-      # only correlation/dry_run plus the stamped role for audit.
+      # only correlation/dry_run plus the stamped role for audit. Engine#call
+      # isolates per-key produce errors into its result hash rather than raising,
+      # so surface them as :produce_failed events (the reconcile result hash used
+      # to carry them; the worker drops the return, so re-publish here).
       def produce(job:, container:)
-        Textus::Produce::Engine.converge(container: container, call: call_for(job), keys: [job.args["key"]])
+        call = call_for(job)
+        result = Textus::Produce::Engine.converge(container: container, call: call, keys: [job.args["key"]])
+        return unless result.is_a?(Hash)
+
+        Array(result[:failed]).each do |failure|
+          container.events.publish(
+            :produce_failed,
+            ctx: Textus::Hooks::Context.for(container: container, call: call),
+            keys: [failure["key"]], error: failure["error"]
+          )
+        end
       end
 
       # sweep: compute retention rows for the scope, then apply destructively AS

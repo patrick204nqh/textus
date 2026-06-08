@@ -20,12 +20,12 @@ RSpec.describe "publish_tree (ADR 0047)" do
     File.write(abs, contents)
   end
 
-  # Runs a full reconcile pass (ADR 0093 replaced Maintenance::Materialize).
-  # publish_tree mirroring is now a side effect of reconcile's produce phase,
-  # so tests assert on the published files ON DISK rather than a result shape.
+  # Runs a full convergence pass via `drain` (seed + drain-to-empty). publish_tree
+  # mirroring is a side effect of the produce phase, so tests assert on the
+  # published files ON DISK rather than a result shape.
   def materialize(s = Textus::Store.new(root))
     call = Textus::Call.build(role: "automation")
-    Textus::Maintenance::Reconcile.new(container: s.container, call: call).call
+    Textus::Maintenance::Drain.new(container: s.container, call: call).call
   end
 
   describe "manifest wiring" do
@@ -121,12 +121,15 @@ RSpec.describe "publish_tree (ADR 0047)" do
       Y
       write_file("skills/my-skill/commands.md", "# commands\n")
 
-      # ADR 0093 reconcile isolates per-entry produce failures into the result
-      # rather than crashing the whole pass.
-      result = materialize
-      expect(result["ok"]).to be false
-      failure = result["produce_failed"].find { |f| f["key"] == "working.skills" }
-      expect(failure["error"]).to match(/escapes repo root/)
+      # The queue model isolates per-entry produce failures: Produce::Engine.converge
+      # catches the error and publishes a :produce_failed event rather than crashing
+      # the pass (the materialize job still acks). Assert via the event.
+      store = Textus::Store.new(root)
+      errors = []
+      store.container.events.on(:produce_failed, :capture) { |error:, **| errors << error }
+
+      expect { materialize(store) }.not_to raise_error
+      expect(errors.join("\n")).to match(/escapes repo root/)
     end
   end
 
@@ -272,7 +275,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
 
     it "still mirrors the whole subtree, uppercase files included" do
       repo_root = File.dirname(root)
-      opacity_store.as("automation").reconcile
+      opacity_store.as("automation").drain
 
       expect(File.read(File.join(repo_root, "skills/my-skill/SKILL.md"))).to eq("# my skill\n")
       expect(File.read(File.join(repo_root, "skills/my-skill/README.md"))).to eq("# readme\n")

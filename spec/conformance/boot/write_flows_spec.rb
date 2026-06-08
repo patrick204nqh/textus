@@ -29,8 +29,8 @@ RSpec.describe "Boot write-flows — agent-facing write guidance" do
       expect(automation_flow).not_to include("textus fetch")
     end
 
-    it "the automation write-flow points at reconcile for machine zone refresh" do
-      expect(automation_flow).to include("textus reconcile")
+    it "the automation write-flow points at drain for machine zone refresh" do
+      expect(automation_flow).to include("textus drain")
     end
   end
 

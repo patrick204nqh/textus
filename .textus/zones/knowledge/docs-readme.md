@@ -6,7 +6,7 @@
 The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides live here.
 
 > **These files are generated.** The source of truth is `.textus/zones/knowledge/`.
-> Edit there and run `textus reconcile`; do not hand-edit files under `docs/`.
+> Edit there and run `textus drain`; do not hand-edit files under `docs/`.
 
 ## Start here
 

@@ -13,8 +13,8 @@ RSpec.describe "build verb removed (ADR 0087)" do
     expect(Textus::MCP::Catalog.write_verbs).not_to include("build")
   end
 
-  it "exposes reconcile in the dispatcher" do
-    expect(Textus::Dispatcher::VERBS).to have_key(:reconcile)
+  it "exposes drain in the dispatcher" do
+    expect(Textus::Dispatcher::VERBS).to have_key(:drain)
   end
 
   it "does not expose tend in the dispatcher" do

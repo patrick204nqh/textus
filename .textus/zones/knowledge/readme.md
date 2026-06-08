@@ -1,4 +1,4 @@
-<!-- Generated from .textus/zones/knowledge/readme.md — edit there, then run `textus reconcile`. Do not hand-edit README.md (it is clobbered on reconcile and flagged by doctor). ADR 0103. -->
+<!-- Generated from .textus/zones/knowledge/readme.md — edit there, then run `textus drain`. Do not hand-edit README.md (it is clobbered on drain and flagged by doctor). ADR 0103. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">
@@ -38,7 +38,7 @@ flowchart LR
     human -->|author| knowledge["knowledge<br/>(canon)"]
     agent -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
-    automation -->|reconcile| artifacts["artifacts<br/>(machine)"]
+    automation -->|drain| artifacts["artifacts<br/>(machine)"]
 
     proposals ==>|human accept| knowledge
     knowledge -.->|projection source| artifacts
@@ -109,7 +109,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Try it
 
-- **Worked end-to-end store** — the role gate (propose → accept), reconcile/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
+- **Worked end-to-end store** — the role gate (propose → accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
@@ -168,7 +168,7 @@ zones:
     audit/audit.log      # append-only NDJSON event ledger, every write (rotates at ~50 MB)
     state/cursor.<role>  # per-role pulse cursor — where `pulse --since` resumes
     locks/               # per-key produce locks + the produce mutex
-    sentinels/           # publish bookkeeping (target sha) — regenerated on reconcile (ADR 0070)
+    sentinels/           # publish bookkeeping (target sha) — regenerated on drain (ADR 0070)
 ```
 
 Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
@@ -180,14 +180,14 @@ textus get knowledge.notes.org.jane
 textus list --zone=knowledge
 printf '%s' '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
   | textus put knowledge.notes.bob --as=human --stdin
-textus reconcile --as=automation     # re-pull stale inputs + recompute derived outputs
+textus drain --as=automation     # re-pull stale inputs + recompute derived outputs
 textus rule list                     # show every rule block
 textus audit --limit=20              # query the audit log
 ```
 
 (All verbs return JSON envelopes; `--output=json` is the default and the only format in v1.)
 
-For a worked store — knowledge entries, a staged proposal, schemas, a template, and a `reconcile` that publishes `CLAUDE.md` / `AGENTS.md` — see [`examples/project/`](examples/project/).
+For a worked store — knowledge entries, a staged proposal, schemas, a template, and a `drain` that publishes `CLAUDE.md` / `AGENTS.md` — see [`examples/project/`](examples/project/).
 
 ## What's shipped
 
@@ -208,13 +208,13 @@ Every command operates on one store, located in this order: `--root <path>` flag
 
 ## Produce and publish
 
-Produced entries (`kind: produced`) declare how they're acquired in one `source:` block (ADR 0093/0094); `reconcile` materialises them:
+Produced entries (`kind: produced`) declare how they're acquired in one `source:` block (ADR 0093/0094); `drain` materialises them:
 
 - **`source: { from: project, select: [...], pluck:, sort_by:, limit:, transform: name }`** — a *projection*: textus computes the entry's data from other entries, then renders it through a template under `.textus/templates/` (markdown/text) or a templateless path that lets a transform hook shape the output directly (json/yaml). Projections cap at 1000 rows; the vendored Mustache subset caps at depth 8. No partials, no lambdas, no HTML escaping.
-- **`source: { from: handler, handler: name, ttl: 1h, config: {...} }`** — *intake*: an RPC handler pulls external bytes on a `ttl` cadence; `reconcile` re-pulls when the entry goes stale.
+- **`source: { from: handler, handler: name, ttl: 1h, config: {...} }`** — *intake*: an RPC handler pulls external bytes on a `ttl` cadence; `drain` re-pulls when the entry goes stale.
 - **`source: { from: command, sources: [...] }`** — *externally generated*: an out-of-band command writes the file; textus tracks the declared `sources` for staleness.
 
-Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...] }` byte-copies a single produced file to one or more targets. `publish: { tree: "dir" }` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/.run/sentinels/` (git-ignored runtime state, regenerated on reconcile — ADR 0070). See SPEC §5.2, §5.3, §5.12.
+Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...] }` byte-copies a single produced file to one or more targets. `publish: { tree: "dir" }` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/.run/sentinels/` (git-ignored runtime state, regenerated on drain — ADR 0070). See SPEC §5.2, §5.3, §5.12.
 
 ## Extension points
 
@@ -261,13 +261,13 @@ Textus.hook do |reg|
 end
 ```
 
-Stale intake entries are re-pulled by `reconcile`, not by reads — `get` is a pure
+Stale intake entries are re-pulled by `drain`, not by reads — `get` is a pure
 read that annotates the returned envelope with a freshness verdict (ADR 0089).
-`reconcile` re-pulls anything past its `source.ttl` and recomputes derived outputs:
+`drain` re-pulls anything past its `source.ttl` and recomputes derived outputs:
 
 ```sh
-textus reconcile --as=automation                  # re-pull every stale intake + recompute derived
-textus reconcile artifacts.feeds --as=automation  # scope to one prefix
+textus drain --as=automation                  # re-pull every stale intake + recompute derived
+textus drain artifacts.feeds --as=automation  # scope to one prefix
 textus get artifacts.feeds.calendar.events         # a pure read; carries a freshness verdict
 ```
 
@@ -279,7 +279,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 
 ## Examples
 
-[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `reconcile` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
+[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `drain` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
 
 ## Tests
 

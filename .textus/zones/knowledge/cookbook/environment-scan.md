@@ -16,7 +16,7 @@ artifacts.feeds.machines.db-1       → { os, packages, runtimes }   (via: ssh u
 ```
 
 This keeps SPEC §5.4 intact — core makes no network calls; the SSH and the
-shell-outs all live in your hook. The scan runs **only on a `reconcile`
+shell-outs all live in your hook. The scan runs **only on a `drain`
 refresh** of a stale entry (never `get`/`boot`/`pulse`, per ADR 0037 / 0089).
 
 ## 1. Manifest — one nested intake, one config block
@@ -38,7 +38,7 @@ entries:
     source:
       from: handler
       handler: machines
-      ttl: 1h                                 # re-pull cadence; reconcile re-pulls when past ttl
+      ttl: 1h                                 # re-pull cadence; drain re-pulls when past ttl
       config:
         machines:                             # the fleet — NO credentials here (manifest is committed)
           laptop:   { via: local }
@@ -148,8 +148,8 @@ textus pulse --output=json                                        # `stale` list
 git check-ignore .textus/zones/artifacts/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 
-Each `reconcile` refresh honours the `ttl` rule, so on a long-running control node
-a scheduled reconcile re-scans at most hourly; `budget_ms` bounds a wedged SSH.
+Each `drain` refresh honours the `ttl` rule, so on a long-running control node
+a scheduled drain re-scans at most hourly; `budget_ms` bounds a wedged SSH.
 
 The `.gitignore` entry for the subtree should reference the new path:
 
@@ -169,7 +169,7 @@ zones/artifacts/feeds/machines/
   allowlist of versions/counts, not a dump — redact host paths/usernames too.
 - **Bounded + degrading.** Counts and versions, never package manifests; every
   probe guards with `command -v` and degrades to `null` cross-platform.
-- **Pull only on `reconcile`.** The scan is an intake — it runs on a `reconcile`
+- **Pull only on `drain`.** The scan is an intake — it runs on a `drain`
   refresh of a stale entry, never on a `get` or the per-turn `pulse`/`boot`
   path (ADR 0037 / 0089).
 

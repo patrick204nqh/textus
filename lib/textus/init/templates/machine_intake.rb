@@ -1,7 +1,7 @@
 # .textus/hooks/machine_intake.rb
 # Scaffolded by `textus init` — CUSTOMIZE FREELY, or delete the feeds.machines
 # entry from manifest.yaml if you don't want it.
-# Feeds a per-host SNAPSHOT into feeds.machines.<host> on `textus reconcile`
+# Feeds a per-host SNAPSHOT into feeds.machines.<host> on `textus drain`
 # (never on the per-turn boot/pulse path). It is NESTED so it grows to a fleet: the
 # `local` leaf scans THIS host; add ssh hosts with the cookbook recipe
 # (docs/cookbook/environment-scan.md). tracked:false → gitignored. Keep this an

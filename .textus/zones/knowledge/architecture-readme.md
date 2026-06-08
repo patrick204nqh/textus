@@ -57,7 +57,7 @@ read/{get,list,where,uid,schema_envelope,
       deps,rdeps,published,validate_all,boot,doctor,
       freshness,audit,blame,rule_explain,rule_list,pulse}.rb
 write/{put,key_delete,key_mv,accept,reject,propose}.rb
-maintenance/{reconcile,key_mv_prefix,key_delete_prefix,
+maintenance/{drain,serve,worker,key_mv_prefix,key_delete_prefix,
              zone_mv,rule_lint}.rb
 produce/{engine,events,render,
          acquire/{intake,handler,projection,serializer}}.rb
@@ -85,7 +85,7 @@ Storage::FileStore (bytes-only port: read/write/delete/
 Manifest           (Data, Resolver, Policy, Rules)
 Schemas            (eager-load cache)
 Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
-        BuildLock,ProduceOnWriteSubscriber,SentinelStore}
+        BuildLock,Queue,ProduceOnWriteSubscriber,SentinelStore}
 Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
         Signature,Builtin,ErrorLog}
 Entry::{Markdown,Json,Yaml,Text}  (format strategies)
@@ -123,7 +123,7 @@ reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
 
 Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 
-- `Produce::Engine` — runs `reconcile`'s produce pipeline; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. `AsyncRunner` (nested in `Engine`) enqueues reactive re-produce on `entry_written` events and drains before the process exits.
+- `Produce::Engine` — runs the produce pipeline that `drain`/`serve` invoke via the `materialize` job handler; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. Reactive re-produce is enqueued as `materialize` jobs by `Ports::ProduceOnWriteSubscriber` and run by a worker (no in-process thread runner).
 - `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
 ## Container
@@ -150,7 +150,7 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 | `Ports::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
 | `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
 | `Ports::BuildLock` | Process-exclusive `flock` guard over the produce pipeline. Raises `BuildInProgress` if a build is already running. |
-| `Ports::ProduceOnWriteSubscriber` | Pub-sub listener on `entry_written`; enqueues keys into `Produce::Engine::AsyncRunner` for reactive re-produce after any write. |
+| `Ports::ProduceOnWriteSubscriber` | Pub-sub listener on `entry_written`/`entry_deleted`/`entry_renamed`; enqueues `materialize` jobs onto `Ports::Queue` for reactive re-produce after any write/delete/rename. |
 | `Ports::SentinelStore` | Reads and writes the per-target sentinel file that `Publisher` uses to detect unmanaged overwrites. |
 
 Application use cases access ports only through `Container` fields — never through the raw `Store`.
@@ -186,11 +186,11 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 
 ## Read path (`store.get(key)`)
 
-`Read::Get` is the single public read verb. It is a **pure read** (ADR 0089): it resolves the path, reads bytes, parses the envelope, and annotates a freshness verdict — it NEVER ingests and NEVER mutates. The read-through that once refreshed a stale entry in-process (ADR 0062) is removed; quarantine freshness is system-pushed via `reconcile` (scheduled sweep) and `hook run` (event push).
+`Read::Get` is the single public read verb. It is a **pure read** (ADR 0089): it resolves the path, reads bytes, parses the envelope, and annotates a freshness verdict — it NEVER ingests and NEVER mutates. The read-through that once refreshed a stale entry in-process (ADR 0062) is removed; quarantine freshness is system-pushed via `drain` (scheduled sweep) and `hook run` (event push).
 
 1. CLI verb (or MCP tool) calls `store.get(key, role:)` (or `store.as(role).get(key)`).
 2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The verb takes only `key` — there is no `fetch` flag on any surface.
-3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no `upkeep` rule, the envelope is annotated fresh. A stale entry with `upkeep: { ttl:, action: refresh }` is returned **stale** — the read does not refresh it; the next `reconcile` does.
+3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no `upkeep` rule, the envelope is annotated fresh. A stale entry with `upkeep: { ttl:, action: refresh }` is returned **stale** — the read does not refresh it; the next `drain` does.
 
 Because the read is always pure, every caller — interactive reads, dashboards, and the direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) — gets the same orchestrator-free, side-effect-free read. The prior read-through path (`get_or_fetch`, then the `fetch:`-flagged `Read::Get`, ADR 0062) and its `Write::FetchOrchestrator` are gone (ADR 0089).
 
@@ -205,11 +205,11 @@ Because the read is always pure, every caller — interactive reads, dashboards,
 
 `Write::KeyMv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
 
-## Produce path (`reconcile` + reactive `entry_written`)
+## Produce path (`drain`/`serve` + reactive `entry_written`)
 
 The produce pipeline handles two concerns — **acquire** (pull live data via an intake handler) and **render** (template-driven artifact publish) — unified under `Produce::Engine`.
 
-`Produce::Engine.converge(container:, call:, keys:)` is the entry point for both `reconcile` (scheduled batch) and the reactive `AsyncRunner` (triggered on `entry_written` by `Ports::ProduceOnWriteSubscriber`).
+`Produce::Engine.converge(container:, call:, keys:)` is the entry point the `materialize` job handler calls. Both the batch path (`drain`/`serve` seed jobs) and the reactive path (`Ports::ProduceOnWriteSubscriber` enqueues `materialize` jobs on `entry_written`/`entry_deleted`/`entry_renamed`) flow through the queue worker into `converge`.
 
 For each key, `Engine#produce_one`:
 
@@ -222,7 +222,7 @@ For each key, `Engine#produce_one`:
    - `Acquire::Handler` resolves and invokes the RPC callable under the timeout deadline. (The sibling **projection** sub-path — `from: project` entries — instead runs `Acquire::Projection`, which renders data files through `Acquire::Serializer::{Json,Yaml,Text}` before persisting.)
 2. **Render phase** — `entry.publish_via(context)` calls `Produce::Render#bytes_for(target:, data:, boot:)` to expand the Mustache template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
 
-`AsyncRunner` (nested in `Engine`) enqueues reactive produce when `entry_written` fires, then drains before the process exits via an `at_exit` hook. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
+Reactive produce is enqueued as `materialize` jobs onto `Ports::Queue` when `entry_written`/`entry_deleted`/`entry_renamed` fires; a worker (`drain`/`serve`) runs them through `converge`. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
 
 ## Hook payload contract
 

@@ -149,7 +149,7 @@ RSpec.describe "Textus::Init with_agent profile" do
           body: "steps...\n",
         )
 
-        store.as("automation").reconcile
+        store.as("automation").drain
 
         claude = File.join(dir, "CLAUDE.md")
         agents = File.join(dir, "AGENTS.md")
