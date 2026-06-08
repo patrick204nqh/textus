@@ -24,7 +24,7 @@ refresh** of a stale entry (never `get`/`boot`/`pulse`, per ADR 0037 / 0089).
 ```yaml
 # manifest.yaml
 roles:
-  - { name: automation, can: [reconcile] }      # the reconcile capability the machine zone needs
+  - { name: automation, can: [converge] }      # the converge capability the machine zone needs
 zones:
   - { name: artifacts, kind: machine }
 entries:

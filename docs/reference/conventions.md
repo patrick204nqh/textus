@@ -69,7 +69,7 @@ A derived entry declares a `source:` block with a `from:` discriminator (ADR 009
     - { to: docs/people.md, template: people.mustache }   # render the data through a template
 ```
 
-**`source: { from: command }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `reconcile` (default: `automation`).
+**`source: { from: command }`** — an external build tool (rake, just, a shell script) produces the file. textus never executes the `command:`; it only tracks `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the file's `_meta.generated.at`. The role running the build must hold `converge` (default: `automation`).
 
 ```yaml
 - key: artifacts.derived.skills

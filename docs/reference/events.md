@@ -40,7 +40,6 @@ textus has 17 events: 3 RPC and 14 pub-sub. The 2 `:entry_fetch_*` lifecycle eve
 | `:store_loaded` | pubsub | Fires exactly once after `Store#initialize` finishes — hooks are registered, ports are wired. Use for cache warmups or external watcher registration. Payload: `{ ctx: }`. |
 | `:session_opened` | pubsub | Fires when an MCP session is established. Payload: `{ ctx:, role:, cursor: }`. |
 | `:produce_failed` | pubsub | Fires when a **reactive** rebuild (the on-canon-write produce trigger, ADR 0087/0093) raises. Payload: `{ ctx:, keys:, error: }`. Observational; the failing rebuild is already aborted. |
-| `:reconcile_failed` | pubsub | Fires when the **`textus drain`** sweep finishes with one or more failed destructive actions. Payload: `{ ctx:, failed: }` where `failed` is `[{ key, error }]` — the same list the verb returns (additive; the event is the bus-side signal). Counterpart to `:produce_failed` so both produce paths report failure uniformly. |
 
 ### Fetch lifecycle events
 
@@ -141,7 +140,7 @@ A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushe
 ### `textus drain` (Phase 1 — produce)
 
 ```
-  ┃ for each entry in a reconcile-writable zone:
+  ┃ for each entry in a converge-writable zone:
   ┃   ┃ acquire data per source.from (project: select rows; handler: fetch; command: already on disk)
   ┃   ┃ if source.transform: ────────────► :transform_rows  (RPC)
   ┃   ┃                                      returns Array<row> or Hash
@@ -202,7 +201,6 @@ A `get` is a pure read and never appears here (ADR 0089). Ingest is system-pushe
 | `:store_loaded` raises | store still ready | `event_error` row |
 | `:session_opened` raises | session still opens | `event_error` row |
 | `:produce_failed` raises | reactive rebuild already aborted | `event_error` row |
-| `:reconcile_failed` raises | reconcile still returns its result | `event_error` row |
 | `:entry_fetch_started` raises | verb still succeeds | `event_error` row |
 | `:entry_fetch_failed` raises | verb still succeeds | `event_error` row |
 

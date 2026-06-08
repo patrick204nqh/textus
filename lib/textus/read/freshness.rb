@@ -10,7 +10,7 @@ module Textus
     #   - entries matched by a `retention:` rule: `retention.ttl_seconds` is the
     #     GC age; basis = file mtime. Past ttl ⇒ :expired (:action = drop/archive).
     # Intake cadence wins when both apply (freshness is content currency; GC dueness
-    # shows via `reconcile --dry-run`).
+    # shows via `drain --dry-run`).
     # Status is one of :fresh, :expired, or :no_policy; the row also carries
     # :action (:refresh for intake, :drop/:archive for retention).
     #
@@ -78,7 +78,7 @@ module Textus
       # ADR 0093: staleness comes from the intake re-pull cadence (source.ttl)
       # or a retention GC rule (retention.ttl). Intake cadence wins when an entry
       # has both (freshness is about content currency; GC dueness still shows via
-      # `reconcile --dry-run`). Returns [ttl_seconds, action] or [nil, nil].
+      # `drain --dry-run`). Returns [ttl_seconds, action] or [nil, nil].
       def policy_for(mentry)
         if mentry.intake?
           ttl = mentry.source.ttl_seconds

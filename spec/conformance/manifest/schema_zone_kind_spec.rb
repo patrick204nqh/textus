@@ -35,20 +35,20 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
     end.to raise_error(Textus::BadManifest, /at most one zone may declare kind: queue/)
   end
 
-  it "rejects a machine zone when no declared role holds reconcile" do
+  it "rejects a machine zone when no declared role holds converge" do
     roles = <<~ROLES
       roles:
         - { name: human, can: [author, propose] }
     ROLES
     expect { parse("  - { name: artifacts, kind: machine }", roles) }
-      .to raise_error(Textus::BadManifest, /needs a role with capability 'reconcile'/)
+      .to raise_error(Textus::BadManifest, /needs a role with capability 'converge'/)
   end
 
-  it "accepts a machine zone when a declared role holds reconcile" do
+  it "accepts a machine zone when a declared role holds converge" do
     roles = <<~ROLES
       roles:
         - { name: human,      can: [author, propose] }
-        - { name: automation, can: [reconcile] }
+        - { name: automation, can: [converge] }
     ROLES
     expect { parse("  - { name: artifacts, kind: machine }", roles) }.not_to raise_error
   end

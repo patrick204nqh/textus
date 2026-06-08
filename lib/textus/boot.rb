@@ -26,7 +26,7 @@ module Textus
         "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
-      reconcile: lambda do |_name, manifest|
+      converge: lambda do |_name, manifest|
         machine = zone_label(manifest, :machine, "machine")
         "'textus drain' materializes derived #{machine} entries from their sources and " \
           "refreshes stale intake #{machine} entries from their declared source; " \

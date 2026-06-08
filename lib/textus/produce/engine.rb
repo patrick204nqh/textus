@@ -8,14 +8,14 @@ module Textus
     #   derived (from: command)  -> skip the build; publish_via publishes
     #                               existing store bytes via mode resolution
     #                               (None when no targets -> skipped)
-    # Runs as the reconcile build actor (self-elevating); the passed `call`
+    # Runs as the converge build actor (self-elevating); the passed `call`
     # supplies only correlation_id/dry_run. Callers choose the key set: the
-    # write subscriber passes rdeps ∩ derived; reconcile passes
+    # write subscriber passes rdeps ∩ derived; the converge pass passes
     # all-derived + stale-intake.
     class Engine
       # Locked + failure-isolated convergence — the entry point worker handlers
       # call to materialize a key set (ADR 0093 / job-queue model). A held lock
-      # is a soft miss (an in-flight build/reconcile already produces fresh
+      # is a soft miss (an in-flight build/converge already produces fresh
       # output); any other error is republished as :produce_failed and never
       # raised at the caller (ADR 0087 §5 failure isolation, preserved).
       def self.converge(container:, call:, keys:)
@@ -72,10 +72,10 @@ module Textus
       end
 
       def build_actor_call
-        build_role = @manifest.policy.actor_for("reconcile") or
+        build_role = @manifest.policy.actor_for("converge") or
           raise Textus::UsageError.new(
-            "no role holds the 'reconcile' capability",
-            hint: "declare a role with `can: [reconcile]` in .textus/manifest.yaml",
+            "no role holds the 'converge' capability",
+            hint: "declare a role with `can: [converge]` in .textus/manifest.yaml",
           )
         Textus::Call.build(
           role: build_role,

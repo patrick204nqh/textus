@@ -194,10 +194,10 @@ module Textus
             Array(r["can"]).each do |verb|
               next if CAPABILITIES.include?(verb)
 
-              # The quarantine capability folded into reconcile (ADR 0090); a
+              # The quarantine capability folded into the converge capability (ADR 0090); a
               # manifest still naming the old quarantine capability (`ingest`, or
               # legacy `fetch`) gets a pointed hint rather than a bare error.
-              hint = %w[ingest fetch].include?(verb) ? " — the quarantine capability folded into 'reconcile' (ADR 0090)" : ""
+              hint = %w[ingest fetch].include?(verb) ? " — the quarantine capability folded into 'converge' (ADR 0090)" : ""
               raise BadManifest.new(
                 "unknown capability '#{verb}' for role '#{name}' at '#{path}' " \
                 "(known: #{CAPABILITIES.join(", ")})#{hint}",

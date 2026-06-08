@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0111",
+      "title": "rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0111-rename-reconcile-capability-to-converge"
+    },
+    {
       "number": "0110",
       "title": "job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize",
       "date": "2026-06-08",

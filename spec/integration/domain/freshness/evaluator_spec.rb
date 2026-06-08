@@ -51,7 +51,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
     end
   end
 
-  describe "#stale_intake_keys (reconcile scope)" do
+  describe "#stale_intake_keys (converge scope)" do
     it "lists an intake entry past its source.ttl" do
       path = File.join(root, "zones/feeds/doc.md")
       old  = Time.now - (2 * 3600)

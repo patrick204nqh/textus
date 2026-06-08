@@ -25,7 +25,7 @@ RSpec.describe Textus::Write::KeyDelete do
     File.write(File.join(root, "zones", "knowledge", "bar.md"), "---\nkey: knowledge.bar\n---\nbody\n")
 
     # knowledge is a canon zone (needs the 'author' capability); automation
-    # holds only [reconcile], so the delete is genuinely refused.
+    # holds only [converge], so the delete is genuinely refused.
     expect do
       store.as("automation").key_delete("knowledge.bar")
     end.to raise_error(

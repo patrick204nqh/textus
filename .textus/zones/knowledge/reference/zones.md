@@ -26,7 +26,7 @@ A role is a name in the manifest that holds a set of **capabilities** — verbs 
 |------|----------------------|--------------------|
 | `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
 | `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[reconcile]` | Scheduled or one-shot scripts: keep the one `machine` zone current — re-pull intake (`artifacts.feeds.*`) entries and produce derived (`artifacts.derived.*`) entries' data. |
+| `automation` | `[converge]` | Scheduled or one-shot scripts: keep the one `machine` zone current — re-pull intake (`artifacts.feeds.*`) entries and produce derived (`artifacts.derived.*`) entries' data. |
 
 The four capabilities:
 
@@ -35,7 +35,7 @@ The four capabilities:
 | `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
 | `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
 | `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `reconcile` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `drain` sweep (ADR 0089/0091/0093). |
+| `converge` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `drain` sweep (ADR 0089/0091/0093). |
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -45,10 +45,10 @@ Declare roles in the manifest with a `roles:` block; each names the capabilities
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [reconcile] }
+  - { name: automation, can: [converge] }
 ```
 
-Two analogies that usually click for `automation` — both jobs belong to the one `reconcile` capability, because the `drain` sweep drives both:
+Two analogies that usually click for `automation` — both jobs belong to the one `converge` capability, because the `drain` sweep drives both:
 
 - **the grocery shopper** — goes outside, brings raw ingredients home (into the `machine` zone, as intake entries under `artifacts.feeds.*`).
 - **the chef** — takes ingredients already in the kitchen and cooks the meal (computing derived entries under `artifacts.derived.*` in the same `machine` zone).
@@ -65,7 +65,7 @@ Role names are the closed set `human`, `agent`, `automation`; what you customize
 roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [reconcile] }
+  - { name: automation, can: [converge] }
 
 zones:
   - { name: knowledge,  kind: canon }
@@ -82,10 +82,10 @@ Write authority is **derived** — there is no `write_policy:`. Each zone declar
 |-------------|---------------------|---------|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
-| `machine` | `reconcile` | The one machine-maintained zone: holds both intake (`artifacts.feeds.*`) and derived (`artifacts.derived.*`) entries. At most one `machine` zone per manifest. |
+| `machine` | `converge` | The one machine-maintained zone: holds both intake (`artifacts.feeds.*`) and derived (`artifacts.derived.*`) entries. At most one `machine` zone per manifest. |
 | `queue` | `propose` | Proposals awaiting promotion. |
 
-This mapping is a **bijection** (ADR 0091): each zone-kind maps 1:1 to exactly one capability. `machine` is the single kind requiring `reconcile`; the two-kind surjection (`quarantine` + `derived` → `reconcile`) that ADR 0090 introduced is gone.
+This mapping is a **bijection** (ADR 0091): each zone-kind maps 1:1 to exactly one capability. `machine` is the single kind requiring `converge`; the two-kind surjection (`quarantine` + `derived` → the converge capability) that ADR 0090 introduced is gone.
 
 Crossing that table with the default role mapping gives the default writers:
 
@@ -93,7 +93,7 @@ Crossing that table with the default role mapping gives the default writers:
 |------|--------|---------------------|-----------------------|--------------------|
 | `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `artifacts` | `machine` | `reconcile` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus drain --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `reconcile`.) |
+| `artifacts` | `machine` | `converge` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus drain --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `drain`.) |
 | `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
 
 These four are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).

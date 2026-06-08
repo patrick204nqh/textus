@@ -246,8 +246,8 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   describe "ADR 0091 machine kind" do
-    it "accepts kind: machine and maps it to reconcile" do
-      expect(Textus::Manifest::Schema::LANES["machine"]).to eq("reconcile")
+    it "accepts kind: machine and maps it to converge" do
+      expect(Textus::Manifest::Schema::LANES["machine"]).to eq("converge")
       expect(Textus::Manifest::Schema::ZONE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
     end
 

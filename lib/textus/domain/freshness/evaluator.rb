@@ -10,7 +10,7 @@ module Textus
       #     (skipped — a cadence-less handler is not auto-re-pulled).
       #   - derived/external -> DRIFT signal: a source changed since generated.at
       #     (surfaced by the doctor generator_drift check; derived entries annotate
-      #     fresh at read time because reconcile converges them reactively).
+      #     fresh at read time because converge runs them reactively).
       # Replaces Domain::IntakeStaleness and Domain::Staleness::GeneratorCheck and
       # the inline copies in Read::Get / Read::Freshness.
       class Evaluator
@@ -32,7 +32,7 @@ module Textus
           Verdict.build(stale: stale, reason: stale ? "ttl exceeded" : nil, fetching: false)
         end
 
-        # Keys of intake entries past their source.ttl — the reconcile produce
+        # Keys of intake entries past their source.ttl — the converge produce
         # scope (replaces Domain::IntakeStaleness#call). A ttl-less intake entry
         # is :no_policy and skipped; a never-recorded one (with a ttl) is stale.
         def stale_intake_keys(prefix: nil, zone: nil)

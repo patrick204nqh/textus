@@ -98,22 +98,22 @@ RSpec.describe Textus::Produce::Engine do
   end
 
   describe ".converge failure isolation" do
-    # A manifest where no role holds the `reconcile` capability: build_actor_call
+    # A manifest where no role holds the `converge` capability: build_actor_call
     # raises a Textus::UsageError that escapes Produce#call (it is outside the
     # per-key rescue). converge must swallow it and publish :produce_failed.
     it "does not raise and publishes :produce_failed" do
       fired = []
       store.container.events.on(:produce_failed, :probe) { |error:, **| fired << error }
 
-      # Force build_actor_call to fail (no reconcile actor at call time) so a
+      # Force build_actor_call to fail (no converge actor at call time) so a
       # Textus::Error escapes Produce#call — the path .converge must isolate.
-      allow(store.container.manifest.policy).to receive(:actor_for).with("reconcile").and_return(nil)
+      allow(store.container.manifest.policy).to receive(:actor_for).with("converge").and_return(nil)
 
       expect do
         described_class.converge(container: store.container, call: call, keys: ["feeds.catalog"])
       end.not_to raise_error
       expect(fired).not_to be_empty
-      expect(fired.first).to match(/reconcile/)
+      expect(fired.first).to match(/converge/)
     end
   end
 end

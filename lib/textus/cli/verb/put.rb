@@ -14,7 +14,7 @@ module Textus
           role = resolved_role(store)
 
           # put only stores the stdin JSON (ADR 0089): no transform-on-write.
-          # Ingest (running a handler over bytes) is system-pushed via reconcile
+          # Ingest (running a handler over bytes) is system-pushed via drain/serve
           # and hook run, never a put flag.
           payload = JSON.parse(@stdin.read)
 

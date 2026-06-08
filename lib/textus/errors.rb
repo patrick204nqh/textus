@@ -166,9 +166,9 @@ module Textus
     def initialize(m, format: nil)
       hint =
         if format
-          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running reconcile"
+          "the template rendered invalid #{format}; try rendering with mock data and parsing the output before re-running drain"
         else
-          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running reconcile"
+          "the template rendered invalid content; try rendering with mock data and parsing the output before re-running drain"
         end
       super("bad_render", m, hint: hint)
     end

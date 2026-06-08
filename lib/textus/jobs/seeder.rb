@@ -3,7 +3,7 @@ module Textus
     # Enqueues the full convergence set for a scope: a produce job per derived /
     # publish_tree / publish.to entry, a re-pull job per stale intake key, and a
     # single sweep job for the scope. The scope logic mirrors
-    # Reconcile#produce_scope so `drain` and `reconcile` converge identically.
+    # the converge scope (Produce::Engine) so `drain` and `serve` converge identically.
     # Produce jobs self-elevate (stamped automation); the sweep job carries the
     # caller's role (destructive runs as caller).
     class Seeder
@@ -32,7 +32,7 @@ module Textus
         Textus::Domain::Jobs::Job.new(type: type, args: args, enqueued_by: role)
       end
 
-      # Mirrors Reconcile#produce_scope (the publishable arm).
+      # Mirrors the converge scope (the publishable arm).
       def producible_keys(prefix, zone)
         @manifest.data.entries
                  .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
