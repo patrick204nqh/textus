@@ -208,6 +208,11 @@
       ]
     },
     {
+      "name": "validate_all",
+      "summary": "Internal store-wide schema + role-authority validation; backs doctor's schema_violations check. No public surface (ADR 0105).",
+      "args": []
+    },
+    {
       "name": "where",
       "summary": "Resolve a key to its zone, owner, and path without reading the body.",
       "args": [

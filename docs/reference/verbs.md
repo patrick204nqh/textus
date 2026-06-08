@@ -210,6 +210,12 @@ Return the stable UID of an entry without reading its body.
 - `--key`
 
 
+## `textus validate_all`
+
+Internal store-wide schema + role-authority validation; backs doctor's schema_violations check. No public surface (ADR 0105).
+
+
+
 ## `textus where`
 
 Resolve a key to its zone, owner, and path without reading the body.
