@@ -44,6 +44,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "capabilities" => Textus::CLI::Verb::GenCapabilities,
       "deps" => Textus::CLI::Verb::GenDeps,
       "doctor" => Textus::CLI::Verb::Doctor,
+      "enqueue" => Textus::CLI::Verb::GenEnqueue,
       "get" => Textus::CLI::Verb::Get,
       "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,

@@ -48,6 +48,17 @@ RSpec.describe Textus::Maintenance::Worker do
     expect(seen).to equal(container)
   end
 
+  it "dead-letters a hand-planted job of an unregistered type (defence in depth)" do
+    FileUtils.mkdir_p(Textus::Layout.queue_state(root, :ready))
+    File.write(
+      File.join(Textus::Layout.queue_state(root, :ready), "rogue:abc.json"),
+      JSON.pretty_generate({ "type" => "rogue", "args" => {}, "attempts" => 0, "max_attempts" => 1 }),
+    )
+    summary = worker.drain
+    expect(summary.failed).to eq(1)
+    expect(Dir.children(Textus::Layout.queue_state(root, :failed)).size).to eq(1)
+  end
+
   it "drains with a pool of N threads, each job running exactly once" do
     mutex = Mutex.new
     ran = []

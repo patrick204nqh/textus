@@ -11,6 +11,7 @@ module Textus
       key_mv: Textus::Write::KeyMv,
       accept: Textus::Write::Accept,
       reject: Textus::Write::Reject,
+      enqueue: Textus::Write::Enqueue,
       # Read
       get: Textus::Read::Get,
       list: Textus::Read::List,

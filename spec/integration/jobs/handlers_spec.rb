@@ -20,6 +20,11 @@ RSpec.describe Textus::Jobs::Handlers do
     end
   end
 
+  it "gates ad-hoc sweep enqueue to automation; produce is open to any caller" do
+    expect(registry.lookup("sweep").required_role).to eq("automation")
+    expect(registry.lookup("materialize").required_role).to be_nil
+  end
+
   it "materialize runs Produce::Engine.converge for the job's key" do
     allow(Textus::Produce::Engine).to receive(:converge)
     job = Textus::Domain::Jobs::Job.new(type: "materialize", args: { "key" => "k.x" }, enqueued_by: "automation")

@@ -25,4 +25,11 @@ RSpec.describe Textus::Domain::Jobs::Registry do
     registry.register("re-pull", handler: ->(**) {})
     expect(registry.lookup("re-pull").max_attempts).to eq(3)
   end
+
+  it "stores a required_role per entry, defaulting to nil (any caller)" do
+    registry.register("sweep", handler: ->(**) {}, required_role: "automation")
+    registry.register("open", handler: ->(**) {})
+    expect(registry.lookup("sweep").required_role).to eq("automation")
+    expect(registry.lookup("open").required_role).to be_nil
+  end
 end
