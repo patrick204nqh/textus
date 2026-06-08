@@ -47,4 +47,17 @@ RSpec.describe Textus::Maintenance::Worker do
     worker.drain
     expect(seen).to equal(container)
   end
+
+  it "drains with a pool of N threads, each job running exactly once" do
+    mutex = Mutex.new
+    ran = []
+    registry.register("ok", handler: ->(job:, **) { mutex.synchronize { ran << job.id } })
+    20.times { |i| enqueue(type: "ok", args: { "n" => i.to_s }) }
+
+    summary = worker.drain_pool(pool: 4)
+
+    expect(summary.completed).to eq(20)
+    expect(ran.uniq.size).to eq(20) # no double-run
+    expect(queue.ready_ids).to be_empty
+  end
 end

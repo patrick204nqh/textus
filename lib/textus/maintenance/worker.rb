@@ -30,6 +30,22 @@ module Textus
         Summary.new(completed: completed, failed: failed)
       end
 
+      def drain_pool(pool: 4)
+        summaries = []
+        mutex = Mutex.new
+        threads = Array.new(pool) do |i|
+          Thread.new do
+            s = drain(worker_id: "pool-#{Process.pid}-#{i}")
+            mutex.synchronize { summaries << s }
+          end
+        end
+        threads.each(&:join)
+        Summary.new(
+          completed: summaries.sum(&:completed),
+          failed: summaries.sum(&:failed),
+        )
+      end
+
       private
 
       # Returns :completed on ack, or the queue's failure verdict (:requeued |
