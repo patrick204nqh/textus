@@ -9,6 +9,18 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.52.0 — 2026-06-09 — The authority model is a produced reference doc (ADR 0112)
+
+The "who may write what" tables stop being hand-copied across the canon docs and become a fourth generated reference doc, projected from the source of truth on every `drain`.
+
+### Added
+
+- **`docs/reference/authority.md` is a produced reference doc** (ADR 0112). A new `authority` registry handler projects the `artifacts.derived.authority` entry — the zone-kind↔capability bijection (from `Schema::Vocabulary::LANES`), this manifest's zones, and its roles with the zone-kinds each can write — rendered through `authority.mustache`. It joins `verbs.md` / `schema.md` / `adr-log.md` on the ADR 0097/0102 produced-docs pattern; `GeneratorDrift` + `HandlerAllowlist` guard it (no new doctor check).
+
+### Changed
+
+- **The authority model's SSoT splits along the produce/guard seam** (ADR 0112, refining ADR 0098). The *current-values* tables move to the generated `authority.md`; `reference/zones.md` drops its three hand-maintained tables, keeps what each capability *means* as prose, and links to the generated values. `explanation/concepts.md` and the docs index re-point accordingly; the orientation template now names four generated reference docs.
+
 ## 0.51.0 — 2026-06-08 — The reconcile era: one engine for produce + sweep, `source`/`retention`, produced reference docs (ADR 0087, 0090–0095, 0097)
 
 `build` folds into `reconcile`, materialization becomes system-pushed, the producer kinds and machine zones collapse onto one `source` + `retention` grammar, and the machine-derivable reference docs graduate to produced artifacts.

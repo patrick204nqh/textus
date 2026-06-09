@@ -1,0 +1,82 @@
+{
+  "_meta": {
+    "uid": "9924b3fbd33b59ac"
+  },
+  "lanes": [
+    {
+      "kind": "canon",
+      "capability": "author"
+    },
+    {
+      "kind": "workspace",
+      "capability": "keep"
+    },
+    {
+      "kind": "machine",
+      "capability": "converge"
+    },
+    {
+      "kind": "queue",
+      "capability": "propose"
+    }
+  ],
+  "zones": [
+    {
+      "name": "knowledge",
+      "kind": "canon",
+      "capability": "author",
+      "desc": "the maintained source of truth about the repo (project + runbooks)"
+    },
+    {
+      "name": "notebook",
+      "kind": "workspace",
+      "capability": "keep",
+      "desc": "the agent's own durable working notes across sessions"
+    },
+    {
+      "name": "proposals",
+      "kind": "queue",
+      "capability": "propose",
+      "desc": "changes awaiting a human accept"
+    },
+    {
+      "name": "artifacts",
+      "kind": "machine",
+      "capability": "converge",
+      "desc": "machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs"
+    }
+  ],
+  "roles": [
+    {
+      "name": "human",
+      "can": [
+        "author",
+        "propose"
+      ],
+      "writes_kinds": [
+        "canon",
+        "queue"
+      ]
+    },
+    {
+      "name": "agent",
+      "can": [
+        "propose",
+        "keep"
+      ],
+      "writes_kinds": [
+        "queue",
+        "workspace"
+      ]
+    },
+    {
+      "name": "automation",
+      "can": [
+        "converge"
+      ],
+      "writes_kinds": [
+        "machine"
+      ]
+    }
+  ]
+}

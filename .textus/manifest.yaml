@@ -24,7 +24,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -167,6 +167,14 @@ entries:
     publish:
       - { to: docs/reference/adr-log.md, template: adr-log.mustache }
     kind: produced
+  - key: artifacts.derived.authority
+    path: artifacts/derived/authority.json
+    zone: artifacts
+    format: json
+    source: { from: handler, handler: authority }
+    publish:
+      - { to: docs/reference/authority.md, template: authority.mustache }
+    kind: produced
 
 
 rules:
@@ -174,3 +182,5 @@ rules:
     intake_handler_allowlist: [verbs]
   - match: artifacts.derived.schema
     intake_handler_allowlist: [schema]
+  - match: artifacts.derived.authority
+    intake_handler_allowlist: [authority]
