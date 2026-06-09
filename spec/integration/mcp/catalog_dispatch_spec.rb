@@ -118,7 +118,7 @@ RSpec.describe Textus::MCP::Catalog do
           "_meta" => {
             "name" => leaf,
             "proposal" => { "target_key" => "knowledge.note", "action" => "put" },
-            "frontmatter" => { "name" => "note" },
+            "_meta" => { "name" => "note" },
           },
           "body" => "draft\n",
         }

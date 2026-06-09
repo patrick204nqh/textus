@@ -24,7 +24,7 @@ RSpec.describe Textus::Doctor::Check::ProposalTargets do
     store.as("agent").put("proposals.notes.#{name}",
                           meta: { "name" => name,
                                   "proposal" => { "target_key" => target_key, "action" => "put" },
-                                  "frontmatter" => { "name" => name } },
+                                  "_meta" => { "name" => name } },
                           body: "x\n")
   end
 

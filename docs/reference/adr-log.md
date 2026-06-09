@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0113](../architecture/decisions/0113-proposal-block-meta-key.md) | the proposal block speaks `_meta`, not `frontmatter` | 2026-06-09 | Accepted |
 | [0112](../architecture/decisions/0112-produced-authority-reference.md) | the authority model is a produced reference doc | 2026-06-09 | Accepted |
 | [0111](../architecture/decisions/0111-rename-reconcile-capability-to-converge.md) | rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event | 2026-06-08 | Accepted |
 | [0110](../architecture/decisions/0110-job-queue-and-drain-serve.md) | job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize | 2026-06-08 | Accepted |

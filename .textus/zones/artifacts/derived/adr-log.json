@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0113",
+      "title": "the proposal block speaks `_meta`, not `frontmatter`",
+      "date": "2026-06-09",
+      "status": "Accepted",
+      "slug": "0113-proposal-block-meta-key"
+    },
+    {
       "number": "0112",
       "title": "the authority model is a produced reference doc",
       "date": "2026-06-09",

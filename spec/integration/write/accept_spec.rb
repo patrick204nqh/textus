@@ -21,7 +21,7 @@ RSpec.describe Textus::Write::Accept do
       meta: {
         "name" => "2026-05-19-add-bob",
         "proposal" => { "target_key" => "knowledge.network.org.bob", "action" => "put" },
-        "frontmatter" => { "name" => "bob", "org" => "acme" },
+        "_meta" => { "name" => "bob", "org" => "acme" },
       },
       body: "Proposed",
     )
@@ -41,7 +41,7 @@ RSpec.describe Textus::Write::Accept do
       meta: {
         "name" => "foo",
         "proposal" => { "target_key" => "knowledge.network.org.x", "action" => "put" },
-        "frontmatter" => { "name" => "x" },
+        "_meta" => { "name" => "x" },
       },
       body: "",
     )
@@ -56,7 +56,7 @@ RSpec.describe Textus::Write::Accept do
       meta: {
         "name" => "p1",
         "proposal" => { "target_key" => "knowledge.network.org.alice", "action" => "put" },
-        "frontmatter" => { "name" => "alice" },
+        "_meta" => { "name" => "alice" },
       },
       body: "Alice content",
     )
@@ -101,7 +101,7 @@ RSpec.describe Textus::Write::Accept do
       YAML
       s.as("agent").put(
         "proposals.p",
-        meta: { "name" => "p", "proposal" => { "target_key" => "feeds.n", "action" => "put" }, "frontmatter" => { "name" => "n" } },
+        meta: { "name" => "p", "proposal" => { "target_key" => "feeds.n", "action" => "put" }, "_meta" => { "name" => "n" } },
         body: "b",
       )
       s
@@ -156,7 +156,7 @@ RSpec.describe Textus::Write::Accept do
           meta: {
             "name" => "valid-proposal",
             "proposal" => { "target_key" => "knowledge.network.org.carol", "action" => "put" },
-            "frontmatter" => { "name" => "carol", "org" => "acme" },
+            "_meta" => { "name" => "carol", "org" => "acme" },
           },
           body: "Proposed",
         )
@@ -171,7 +171,7 @@ RSpec.describe Textus::Write::Accept do
           meta: {
             "name" => "bad-proposal",
             "proposal" => { "target_key" => "knowledge.network.org.dave", "action" => "put" },
-            "frontmatter" => { "name" => "dave" }, # missing required 'org'
+            "_meta" => { "name" => "dave" }, # missing required 'org'
           },
           body: "Proposed",
         )
@@ -204,7 +204,7 @@ RSpec.describe Textus::Write::Accept do
           meta: {
             "name" => "ha-proposal",
             "proposal" => { "target_key" => "knowledge.network.org.eve", "action" => "put" },
-            "frontmatter" => { "name" => "eve" },
+            "_meta" => { "name" => "eve" },
           },
           body: "Proposed",
         )
