@@ -1,7 +1,9 @@
 # Zones — reference
 
 > **Reference** · for integrators · **read when** you need the exact zone, role, and entry semantics
-> **SSoT for** zone semantics, the role/capability model, entry fields, and doctor enforcement · **reviewed** 2026-06 (v0.43)
+> **SSoT for** zone semantics, what each capability *means*, entry fields, and doctor enforcement · **reviewed** 2026-06 (v0.43)
+
+The *current-values* tables — the role→capability sets, the zone-kind↔capability bijection, and which roles write which zone-kinds — are projected from the live manifest into the generated [`authority.md`](authority.md) (ADR 0112). This doc owns their *meaning*; link there for the tables rather than restating them.
 
 The exact semantics of textus zones: the roles and capabilities that govern who may write, the five default zones, the fields an entry declares, and what `textus doctor` enforces.
 
@@ -20,22 +22,18 @@ This is the configuration reference. For the wire protocol, see [`../../SPEC.md`
 
 ## Roles and capabilities — who is allowed to write
 
-A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed four-element set. Write authority is *derived*: a role may write a zone iff it holds the capability the zone's kind requires (see [The five default zones](#the-five-default-zones)). The default mapping, applied when the manifest omits a `roles:` block:
+A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed four-element set. Write authority is *derived*: a role may write a zone iff it holds the capability the zone's kind requires (see [The four default zones](#the-four-default-zones)). **The current roles, their `can:` sets, and which zone-kinds each may write are the projected [`authority.md`](authority.md) tables** (generated from this manifest; never hand-maintained). What each role represents:
 
-| Role | Capabilities (`can`) | What it represents |
-|------|----------------------|--------------------|
-| `human` | `[author, propose]` | A person at a terminal; the single trust anchor. |
-| `agent` | `[propose, keep]` | An autonomous agent: stages proposals and maintains its own `notebook` workspace. |
-| `automation` | `[converge]` | Scheduled or one-shot scripts: keep the one `machine` zone current — re-pull intake (`artifacts.feeds.*`) entries and produce derived (`artifacts.derived.*`) entries' data. |
+- **`human`** — a person at a terminal; the single trust anchor.
+- **`agent`** — an autonomous agent: stages proposals and maintains its own `notebook` workspace.
+- **`automation`** — scheduled or one-shot scripts: keep the one `machine` zone current — re-pull intake (`artifacts.feeds.*`) entries and produce derived (`artifacts.derived.*`) entries' data.
 
-The four capabilities:
+What each of the four capabilities **means** (the capability ↔ zone-kind mapping itself is the bijection projected into [`authority.md`](authority.md#lanes--the-zone-kind--capability-bijection)):
 
-| Capability | Authorizes writes to zone-kind | What it represents |
-|------------|--------------------------------|--------------------|
-| `author` | `canon` | Authoring canonical truth — the **single trust anchor** (at most one role holds it). |
-| `keep` | `workspace` | Writing to an agent's own durable lane (`notebook`). Bytes never auto-promote. |
-| `propose` | `queue` | Staging a proposal awaiting promotion. |
-| `converge` | `machine` | Keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `drain` sweep (ADR 0089/0091/0093). |
+- **`author`** (writes `canon`) — authoring canonical truth; the **single trust anchor** (at most one role holds it).
+- **`keep`** (writes `workspace`) — writing to an agent's own durable lane (`notebook`); bytes never auto-promote.
+- **`propose`** (writes `queue`) — staging a proposal awaiting promotion.
+- **`converge`** (writes `machine`) — keeping the one machine zone current: re-pulling intake entries (`artifacts.feeds.*`) and producing derived entries' data (`artifacts.derived.*`). Both are system-pushed by the `drain` sweep (ADR 0089/0091/0093).
 
 Note: `accept` and `reject` are **transition verbs** (CLI commands), not capabilities. Both require the `author` capability. As of 0.35, `accept` also refuses a proposal whose `target_key` is not a `canon` zone (floor predicate `target_is_canon`, surfaced as `guard_failed`); `textus doctor`'s `proposal_targets` check flags queued proposals with non-canon or unresolvable targets.
 
@@ -76,25 +74,14 @@ zones:
 
 `owner:` on a zone is **optional, informational** metadata — not enforced in 0.33.0 (owner-scoped enforcement is deferred). `desc:` is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
 
-Write authority is **derived** — there is no `write_policy:`. Each zone declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→verb mapping is closed:
+Write authority is **derived** — there is no `write_policy:`. Each zone declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→capability mapping is a **bijection** (ADR 0091): each zone-kind maps 1:1 to exactly one capability — the projected table is [`authority.md`](authority.md#lanes--the-zone-kind--capability-bijection). `machine` is the single kind requiring `converge`; the two-kind surjection (`quarantine` + `derived` → the converge capability) that ADR 0090 introduced is gone.
 
-| Zone `kind` | Required capability | Meaning |
-|-------------|---------------------|---------|
-| `canon` | `author` | Authored truth — only the trust anchor writes directly. |
-| `workspace` | `keep` | Agent's own durable lane; bytes never auto-promote. |
-| `machine` | `converge` | The one machine-maintained zone: holds both intake (`artifacts.feeds.*`) and derived (`artifacts.derived.*`) entries. At most one `machine` zone per manifest. |
-| `queue` | `propose` | Proposals awaiting promotion. |
+Crossing that bijection with the manifest's roles gives the default writers — the projected [`authority.md`](authority.md#roles-this-manifest) table. What each default zone is *for*, and how long its bytes live:
 
-This mapping is a **bijection** (ADR 0091): each zone-kind maps 1:1 to exactly one capability. `machine` is the single kind requiring `converge`; the two-kind surjection (`quarantine` + `derived` → the converge capability) that ADR 0090 introduced is gone.
-
-Crossing that table with the default role mapping gives the default writers:
-
-| Zone | `kind` | Required capability | Writable by (default) | Purpose / lifetime |
-|------|--------|---------------------|-----------------------|--------------------|
-| `knowledge` | `canon` | `author` | `human` | Authored truth: identity (`knowledge.identity.*`), voice, decisions, network. (Long-lived.) |
-| `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. (Until promoted.) |
-| `artifacts` | `machine` | `converge` | `automation` | The one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus drain --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited. (Re-pulled/produced on `drain`.) |
-| `proposals` | `queue` | `propose` | `agent`, `human` | AI proposals awaiting human review. (Until `accept` or rejection.) |
+- **`knowledge`** (`canon`, written by `human`) — authored truth: identity (`knowledge.identity.*`), voice, decisions, network. Long-lived.
+- **`notebook`** (`workspace`, written by `agent`) — the agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. Lives until promoted.
+- **`artifacts`** (`machine`, written by `automation`) — the one machine-maintained zone: intake entries under `artifacts.feeds.*` are re-pulled by `textus drain --as=automation` (per their `source.ttl`); derived entries under `artifacts.derived.*` produce their data from projections. Never hand-edited; re-pulled/produced on `drain`.
+- **`proposals`** (`queue`, written by `agent` + `human`) — AI proposals awaiting human review. Lives until `accept` or rejection.
 
 These four are a **starter template**, not a closed set. Rename them, add to them, remove the ones you don't need — see [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md).
 

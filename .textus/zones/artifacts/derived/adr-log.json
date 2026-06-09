@@ -7,6 +7,13 @@
   },
   "adrs": [
     {
+      "number": "0112",
+      "title": "the authority model is a produced reference doc",
+      "date": "2026-06-09",
+      "status": "Accepted",
+      "slug": "0112-produced-authority-reference"
+    },
+    {
       "number": "0111",
       "title": "rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event",
       "date": "2026-06-08",
