@@ -28,7 +28,7 @@ RSpec.describe Textus::Write::Accept do
         meta: {
           "name" => "2026-05-19-add-bob",
           "proposal" => { "target_key" => "knowledge.network.org.bob", "action" => "put" },
-          "frontmatter" => { "name" => "bob", "org" => "acme" },
+          "_meta" => { "name" => "bob", "org" => "acme" },
         },
         body: "Proposed",
       )
@@ -45,7 +45,7 @@ RSpec.describe Textus::Write::Accept do
         meta: {
           "name" => "foo",
           "proposal" => { "target_key" => "knowledge.network.org.x", "action" => "put" },
-          "frontmatter" => { "name" => "x" },
+          "_meta" => { "name" => "x" },
         },
         body: "",
       )

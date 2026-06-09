@@ -52,6 +52,7 @@
   - [16.1 Breaking changes in 0.31.0 (capability-based roles)](#161-breaking-changes-in-0310-capability-based-roles)
   - [16.2 Breaking changes in 0.33.0 (workspace/keep + Setup-1 scaffold)](#162-breaking-changes-in-0330-workspacekeep--setup-1-scaffold)
   - [16.3 Breaking changes in 0.35.0 (proposal target-canon + `author_held`)](#163-breaking-changes-in-0350-proposal-target-canon--author_held)
+  - [16.4 Breaking change: proposal payload key `frontmatter` → `_meta`](#164-breaking-change-proposal-payload-key-frontmatter--_meta)
 
 ---
 
@@ -516,7 +517,7 @@ Proposal entries are full patches authored into the `proposals` queue zone (writ
 proposal:
   target_key: working.network.org.bob
   action: put
-frontmatter:
+_meta:
   name: bob
   relationship: peer
   org: acme
@@ -524,7 +525,7 @@ frontmatter:
 Proposed body content.
 ```
 
-`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The remaining frontmatter and body are the proposed new content. A proposal's `target_key` MUST resolve to a `canon` zone; `accept` refuses any other target (`target_is_canon`, ADR 0035).
+`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The sibling `_meta` block and the body are the proposed new content — a proposal carries the same `{ _meta, body }` envelope shape it intends `accept` to write (ADR 0113). A proposal's `target_key` MUST resolve to a `canon` zone; `accept` refuses any other target (`target_is_canon`, ADR 0035).
 
 `textus accept <proposal-key>` is a **transition** (not a capability) that requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. The `reject` transition likewise requires `author`. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept or reject.
 
@@ -1158,6 +1159,16 @@ A manifest declaring `kind: origin` or capability `accept` (in a `can:` list) is
 | `doctor` check `proposal_targets` | Warns on queued proposals whose `target_key` is non-canon (`proposal.target_not_canon`) or unresolvable (`proposal.target_unresolved`). |
 
 A `rules[].guard` block referencing the predicate by its old name `author_signed` is rejected at load (unknown predicate).
+
+### 16.4 Breaking change: proposal payload key `frontmatter` → `_meta`
+
+A proposal entry's proposed payload metadata moved from the top-level
+`frontmatter:` key to `_meta:` (ADR 0113), so a proposal now carries the exact
+`{ _meta, body }` envelope shape `accept` replays. There is no shim: a proposal
+authored with the old `frontmatter:` key accepts with empty metadata and fails
+schema validation if the target schema requires fields. Proposals are transient
+`queue` entries — re-author any in-flight proposal with `_meta:`. The `proposal:`
+directive block (`target_key`, `action`) is unchanged.
 
 ---
 

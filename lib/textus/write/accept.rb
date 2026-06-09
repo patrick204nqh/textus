@@ -32,7 +32,7 @@ module Textus
 
         case action
         when "put"
-          put_op.call(target, meta: env.meta["frontmatter"] || {}, body: env.body)
+          put_op.call(target, meta: env.meta["_meta"] || {}, body: env.body)
         when "delete"
           delete_op.call(target)
         else

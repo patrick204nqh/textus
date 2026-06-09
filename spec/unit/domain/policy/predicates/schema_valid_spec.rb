@@ -26,14 +26,14 @@ RSpec.describe Textus::Domain::Policy::Predicates::SchemaValid do
 
   it "passes when the proposal frontmatter satisfies the target schema" do
     allow(schema).to receive(:validate!).and_return(true)
-    env = instance_double(Textus::Envelope, meta: { "frontmatter" => { "name" => "Pat" } })
+    env = instance_double(Textus::Envelope, meta: { "_meta" => { "name" => "Pat" } })
     expect(described_class.new(schemas: schemas).call(eval_with(envelope: env))).to be(true)
   end
 
   it "fails and humanizes missing required fields" do
     allow(schema).to receive(:validate!)
       .and_raise(Textus::SchemaViolation.new({ "missing" => ["name"] }))
-    env = instance_double(Textus::Envelope, meta: { "frontmatter" => {} })
+    env = instance_double(Textus::Envelope, meta: { "_meta" => {} })
     pred = described_class.new(schemas: schemas)
     expect(pred.call(eval_with(envelope: env))).to be(false)
     expect(pred.reason).to eq("missing required fields: name")

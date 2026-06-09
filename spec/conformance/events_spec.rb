@@ -222,7 +222,7 @@ RSpec.describe "Lifecycle events" do
         proposal:
           target_key: knowledge.bob
           action: put
-        frontmatter:
+        _meta:
           name: bob
         ---
         proposed body

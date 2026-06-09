@@ -9,6 +9,12 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## [Unreleased]
+
+### Changed (breaking)
+
+- **The proposal payload key `frontmatter` → `_meta`** ([ADR 0113](docs/architecture/decisions/0113-proposal-block-meta-key.md)). A proposal entry's proposed metadata moved from the top-level `frontmatter:` key to `_meta:`, so a proposal now carries the exact `{ _meta, body }` envelope shape `accept` replays — retiring the only place the on-disk word "frontmatter" appeared as a runtime data key. `accept` reads `env.meta["_meta"]` and the `schema_valid` special case shrinks to a dig-with-fallback. No shim (house style): a proposal authored with the old key accepts with empty metadata and fails schema validation loudly. **Migration:** re-author any in-flight proposal with `_meta:` instead of `frontmatter:` — proposals are transient `queue` entries, not durable canon.
+
 ## 0.52.0 — 2026-06-09 — The authority model is a produced reference doc (ADR 0112)
 
 The "who may write what" tables stop being hand-copied across the canon docs and become a fourth generated reference doc, projected from the source of truth on every `drain`.

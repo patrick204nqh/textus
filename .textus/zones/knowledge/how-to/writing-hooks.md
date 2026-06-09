@@ -203,9 +203,14 @@ end
 Textus.hook do |reg|
   reg.on(:validate, :no_drafts_in_identity) do |caps:|
     call = Textus::Call.new(role: "doctor")
-    Textus::Read::List.new(container: caps, call: call).call(zone: "identity")
-      .select { |e| e["frontmatter"]["status"] == "draft" }
-      .map    { |e| { "code" => "draft_in_identity", "key" => e["key"] } }
+    list = Textus::Read::List.new(container: caps, call: call)
+    get  = Textus::Read::Get.new(container: caps, call: call)
+    # list rows are {key, zone, path} — get each entry to read its _meta
+    list.call(zone: "identity").filter_map do |row|
+      env = get.call(row["key"])
+      next unless env.meta["status"] == "draft"
+      { "code" => "draft_in_identity", "key" => row["key"] }
+    end
   end
 end
 ```

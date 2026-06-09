@@ -11,4 +11,4 @@ fields:
     fields:
       target_key:  { type: string, required: true }
       action:      { type: enum, values: [put, delete] }
-      frontmatter: { type: hash }
+      _meta:       { type: hash }

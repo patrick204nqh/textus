@@ -4,9 +4,9 @@ module Textus
   module Domain
     module Policy
       module Predicates
-        # Predicate: the entry's effective frontmatter satisfies the schema
-        # bound to the target key. For accept, the frontmatter lives under
-        # envelope.meta["frontmatter"]; for a direct put it is envelope.meta.
+        # Predicate: the entry's effective metadata satisfies the schema
+        # bound to the target key. For accept, the metadata lives under
+        # envelope.meta["_meta"]; for a direct put it is envelope.meta.
         class SchemaValid
           attr_reader :reason
 
@@ -31,7 +31,7 @@ module Textus
             return true unless schema
 
             frontmatter =
-              eval.envelope.meta&.dig("frontmatter") || eval.envelope.meta || {}
+              eval.envelope.meta&.dig("_meta") || eval.envelope.meta || {}
             begin
               schema.validate!(frontmatter)
               true

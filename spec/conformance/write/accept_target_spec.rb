@@ -24,7 +24,7 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
     store.as("agent").put("proposals.notes.p1",
                           meta: { "name" => "p1",
                                   "proposal" => { "target_key" => target_key, "action" => "put" },
-                                  "frontmatter" => { "name" => "p1" } },
+                                  "_meta" => { "name" => "p1" } },
                           body: "please add\n")
   end
 
