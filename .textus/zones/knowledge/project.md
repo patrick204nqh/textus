@@ -2,6 +2,13 @@
 name: textus
 description: A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.
 repo: https://github.com/patrick204nqh/textus
+commands:
+  test: bundle exec rspec
+  lint: bundle exec rubocop
+  lint-fix: bundle exec rubocop -A
+  setup: bundle install
+  help: bundle exec exe/textus --help
+  drain: bundle exec exe/textus drain --as=automation
 ---
 
 textus is a Ruby gem (≥ 3.3) implementing the `textus/3` wire protocol: a

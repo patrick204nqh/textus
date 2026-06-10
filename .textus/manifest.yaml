@@ -125,7 +125,6 @@ entries:
       transform: orientation_reducer
     publish:
       - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
-      - { to: OPENCODE.md, template: orientation.mustache, inject_boot: true }
       - { to: AGENTS.md, template: orientation.mustache }
     kind: produced
   - key: artifacts.derived.mcp-config

@@ -10,6 +10,8 @@ Textus.hook do |reg|
       "project" => {
         "name" => project_row["name"],
         "description" => project_row["description"],
+        "commands" => (project_row["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
+        "has_commands" => !project_row["commands"].nil? && !project_row["commands"].empty?,
       },
       "runbooks" => runbook_rows.map { |r| { "name" => r["name"], "description" => r["description"] } },
     }
