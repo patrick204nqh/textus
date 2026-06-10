@@ -19,8 +19,8 @@ module Textus
         @audit_log = audit_log
       end
 
-      def attach(bus)
-        bus.on_error do |event:, hook:, key:, kwargs:, error:|
+      def attach(registry)
+        registry.on_error do |event:, hook:, key:, kwargs:, error:|
           record_error(event: event, hook: hook, key: key, kwargs: kwargs, error: error)
         end
         self
