@@ -40,6 +40,8 @@ module Textus
 
       def pubsub_handlers(event) = @pubsub[event.to_sym]
 
+      def pubsub_handlers_names = @pubsub.values.flatten.map { |h| h[:name] }
+
       def publish(event, strict: false, **kwargs)
         key = kwargs[:key] || "-"
         fired = []
