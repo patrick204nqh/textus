@@ -19,7 +19,8 @@ RSpec.describe Textus::Step::Registry do
   it "injects caps only when the step declares it" do
     received = nil
     klass = Class.new(Textus::Step::Transform) do
-      define_method(:call) do |caps:, rows:, _config:, **|
+      define_method(:call) do |caps:, rows:, config:, **|
+        _ = config
         received = caps
         rows
       end
