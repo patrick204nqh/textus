@@ -1,5 +1,22 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "lsp": {
+    "ruby": {
+      "type": "local",
+      "command": [
+        "bundle",
+        "exec",
+        "ruby-lsp"
+      ],
+      "enabled": true,
+      "extensions": [
+        ".rb",
+        ".rake",
+        ".gemspec",
+        ".ru"
+      ]
+    }
+  },
   "mcp": {
     "textus": {
       "type": "local",
@@ -11,7 +28,13 @@
       "enabled": true
     }
   },
+  "plugin": [
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "superpowers-ruby@git+https://github.com/lucianghinda/superpowers-ruby.git",
+    "ecc-universal@git+https://github.com/affaan-m/ECC.git",
+    "textus@git+https://github.com/patrick204nqh/textus.git"
+  ],
   "instructions": [
-    "OPENCODE.md"
+    "AGENTS.md"
   ]
 }

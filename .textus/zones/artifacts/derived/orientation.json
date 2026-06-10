@@ -8,7 +8,9 @@
   },
   "project": {
     "name": "textus",
-    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor."
+    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.",
+    "commands": "- **test**: `bundle exec rspec`\n- **lint**: `bundle exec rubocop`\n- **lint-fix**: `bundle exec rubocop -A`\n- **setup**: `bundle install`\n- **help**: `bundle exec exe/textus --help`\n- **drain**: `bundle exec exe/textus drain --as=automation`",
+    "has_commands": true
   },
   "runbooks": [
     {

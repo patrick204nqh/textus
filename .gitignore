@@ -1,6 +1,7 @@
 .env
 .envrc
 .claude/settings.local.json
+opencode.local.json
 
 # Ruby
 /.bundle/

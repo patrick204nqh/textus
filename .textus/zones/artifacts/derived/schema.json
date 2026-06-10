@@ -7,6 +7,12 @@
       "name": "project",
       "fields": [
         {
+          "name": "commands",
+          "type": "map",
+          "required": false,
+          "maintained_by": "human"
+        },
+        {
           "name": "description",
           "type": "string",
           "required": true,

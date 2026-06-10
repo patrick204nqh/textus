@@ -1,0 +1,5 @@
+export GH_TOKEN="ghp_..."
+export GIT_AUTHOR_NAME="someone"
+export GIT_AUTHOR_EMAIL="someone@example.com"
+
+export OPENCODE_CONFIG="$PWD/opencode.local.json"

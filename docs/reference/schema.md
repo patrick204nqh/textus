@@ -8,6 +8,7 @@
 
 | Field | Type | Required | Maintained by |
 |---|---|---|---|
+| `commands` | map | no | human |
 | `description` | string | yes | human |
 | `name` | string | yes | human |
 | `repo` | string | no | human |
