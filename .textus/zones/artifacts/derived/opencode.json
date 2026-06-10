@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "from": [
+      "knowledge.project"
+    ],
+    "reduce": "opencode_config_reducer"
+  },
+  "mcp": {
+    "textus": {
+      "type": "local",
+      "command": [
+        "textus",
+        "mcp",
+        "serve"
+      ],
+      "enabled": true
+    }
+  },
+  "instructions": [
+    "OPENCODE.md"
+  ]
+}

@@ -125,6 +125,7 @@ entries:
       transform: orientation_reducer
     publish:
       - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
+      - { to: OPENCODE.md, template: orientation.mustache, inject_boot: true }
       - { to: AGENTS.md, template: orientation.mustache }
     kind: produced
   - key: artifacts.derived.mcp-config
@@ -138,6 +139,12 @@ entries:
     zone: artifacts
     source: { from: project, select: [knowledge.project], transform: plugin_manifest_reducer }
     publish: [{ to: .claude-plugin/plugin.json }]
+    kind: produced
+  - key: artifacts.derived.opencode-config
+    path: artifacts/derived/opencode.json
+    zone: artifacts
+    source: { from: project, select: [knowledge.project], transform: opencode_config_reducer }
+    publish: [{ to: opencode.json }]
     kind: produced
   - key: artifacts.derived.verbs
     path: artifacts/derived/verbs.json
