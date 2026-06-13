@@ -169,4 +169,4 @@ If doctor passes, your declared shape and your on-disk reality agree. If it fail
 - [`../how-to/configuring-zones.md`](../how-to/configuring-zones.md) — the zone-setup procedures (declare/rename zones, intake wiring, derived + publishing, worked example)
 - [`../architecture/README.md`](../architecture/README.md) — how the Ruby implementation is laid out
 - [`conventions.md`](conventions.md) — store location, transport wrappers, multi-store patterns
-- [`../../examples/project/`](../../examples/project/) — a complete worked example
+- [`../../.textus/`](../../.textus/) — a complete worked example

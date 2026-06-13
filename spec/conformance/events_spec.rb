@@ -7,7 +7,7 @@ RSpec.describe "Lifecycle events" do
   describe "entry put/delete hooks" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-      FileUtils.mkdir_p(File.join(root, "hooks"))
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones: [{ name: knowledge, kind: canon }]
@@ -15,11 +15,24 @@ RSpec.describe "Lifecycle events" do
           - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
       YAML
-      File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+      File.write(File.join(root, "steps/observe/log_written.rb"), <<~RUBY)
         $textus_event_log ||= []
-        Textus.hook do |reg|
-          reg.on(:entry_written, :log_put)    { |key:, **| $textus_event_log << [:entry_written, key] }
-          reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
+        Class.new(Textus::Step::Observe) do
+          on :entry_written
+
+          def call(key:, **)
+            $textus_event_log << [:entry_written, key]
+          end
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/log_deleted.rb"), <<~RUBY)
+        $textus_event_log ||= []
+        Class.new(Textus::Step::Observe) do
+          on :entry_deleted
+
+          def call(key:, **)
+            $textus_event_log << [:entry_deleted, key]
+          end
         end
       RUBY
       $textus_event_log = []
@@ -42,9 +55,14 @@ RSpec.describe "Lifecycle events" do
     end
 
     it "logs hook errors to audit log but does not abort the write" do
-      File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:entry_written, :boom) { |key:, **| raise "bang" }
+      File.write(File.join(root, "steps/observe/boom.rb"), <<~RUBY)
+        Class.new(Textus::Step::Observe) do
+          on :entry_written
+
+          def call(key:, **)
+            _ = key
+            raise "bang"
+          end
         end
       RUBY
       store = Textus::Store.new(root)
@@ -59,7 +77,8 @@ RSpec.describe "Lifecycle events" do
   describe "fetch event" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/intake"))
-      FileUtils.mkdir_p(File.join(root, "hooks"))
+      FileUtils.mkdir_p(File.join(root, "steps/fetch"))
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones: [{ name: intake, kind: machine }]
@@ -70,11 +89,24 @@ RSpec.describe "Lifecycle events" do
             zone: intake
             source: { from: handler, handler: f }
       YAML
-      File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-        $log = []
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
+      File.write(File.join(root, "steps/fetch/f.rb"), <<~RUBY)
+        Class.new(Textus::Step::Fetch) do
+          def call(config:, args:, **)
+            _ = config
+            _ = args
+            { _meta: { "name" => "x" }, body: "v1" }
+          end
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/fetched_tap.rb"), <<~RUBY)
+        $log ||= []
+
+        Class.new(Textus::Step::Observe) do
+          on :entry_fetched
+
+          def call(key:, change:, **)
+            $log << [key, change]
+          end
         end
       RUBY
       $log = []
@@ -99,11 +131,13 @@ RSpec.describe "Lifecycle events" do
     it "fires :entry_fetched with change=:updated when body differs from previous" do
       store = Textus::Store.new(root)
       fetch_via(store)
-      File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-        $log ||= []
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v2" } }
-          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
+      File.write(File.join(root, "steps/fetch/f.rb"), <<~RUBY)
+        Class.new(Textus::Step::Fetch) do
+          def call(config:, args:, **)
+            _ = config
+            _ = args
+            { _meta: { "name" => "x" }, body: "v2" }
+          end
         end
       RUBY
       # Re-instantiate to reload hook file from disk (fresh registry)
@@ -117,11 +151,13 @@ RSpec.describe "Lifecycle events" do
       fetch_via(store)
       # Rewrite hook with same body so the log is preserved
       # across reload (using ||=) instead of being reset to [].
-      File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
-        $log ||= []
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v1" } }
-          reg.on(:entry_fetched, :tap) { |key:, change:, **| $log << [key, change] }
+      File.write(File.join(root, "steps/fetch/f.rb"), <<~RUBY)
+        Class.new(Textus::Step::Fetch) do
+          def call(config:, args:, **)
+            _ = config
+            _ = args
+            { _meta: { "name" => "x" }, body: "v1" }
+          end
         end
       RUBY
       # Re-instantiate to reload hook file from disk
@@ -132,13 +168,34 @@ RSpec.describe "Lifecycle events" do
       expect($log).to eq([["intake.x", :created]])
     end
 
-    it "does NOT double-fire :entry_written when fetch writes (suppress_events:)" do
-      File.write(File.join(root, "hooks/ext.rb"), <<~RUBY)
+    it "does NOT double-fire :entry_written when fetch writes (suppress_events:)" do # rubocop:disable RSpec/ExampleLength
+      File.write(File.join(root, "steps/fetch/f.rb"), <<~RUBY)
+        Class.new(Textus::Step::Fetch) do
+          def call(config:, args:, **)
+            _ = config
+            _ = args
+            { _meta: { "name" => "x" }, body: "v" }
+          end
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/fetch_write_log.rb"), <<~RUBY)
         $log = []
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :f) { |caps:, config:, args:| { _meta: { "name" => "x" }, body: "v" } }
-          reg.on(:entry_written, :p) { |key:, **| $log << [:entry_written, key] }
-          reg.on(:entry_fetched, :r) { |key:, change:, **| $log << [:entry_fetched, key, change] }
+        Class.new(Textus::Step::Observe) do
+          on :entry_written
+
+          def call(key:, **)
+            $log << [:entry_written, key]
+          end
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/fetch_fetched_log.rb"), <<~RUBY)
+        $log = []
+        Class.new(Textus::Step::Observe) do
+          on :entry_fetched
+
+          def call(key:, change:, **)
+            $log << [:entry_fetched, key, change]
+          end
         end
       RUBY
       $log = []
@@ -153,7 +210,7 @@ RSpec.describe "Lifecycle events" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
-      FileUtils.mkdir_p(File.join(root, "hooks"))
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -180,10 +237,12 @@ RSpec.describe "Lifecycle events" do
       # store boot loads it, and the doctor's hooks check (run by `drain` for its
       # health summary) re-loads it. A hard reset would clobber the entry the
       # produce phase appended before drain's post-convergence doctor pass.
-      File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+      File.write(File.join(root, "steps/observe/entry_produced_log.rb"), <<~RUBY)
         $log ||= []
-        Textus.hook do |reg|
-          reg.on(:entry_produced, :t) do |key:, sources:, **|
+        Class.new(Textus::Step::Observe) do
+          on :entry_produced
+
+          def call(key:, sources:, **)
             $log << [:entry_produced, key, sources]
           end
         end
@@ -204,7 +263,7 @@ RSpec.describe "Lifecycle events" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
       FileUtils.mkdir_p(File.join(root, "zones/proposals"))
-      FileUtils.mkdir_p(File.join(root, "hooks"))
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -227,10 +286,12 @@ RSpec.describe "Lifecycle events" do
         ---
         proposed body
       MD
-      File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+      File.write(File.join(root, "steps/observe/proposal_accepted_log.rb"), <<~RUBY)
         $log = []
-        Textus.hook do |reg|
-          reg.on(:proposal_accepted, :t) do |key:, target_key:, **|
+        Class.new(Textus::Step::Observe) do
+          on :proposal_accepted
+
+          def call(key:, target_key:, **)
             $log << [:proposal_accepted, key, target_key]
           end
         end
@@ -247,9 +308,15 @@ RSpec.describe "Lifecycle events" do
     end
 
     it "records both target_key and key when a :proposal_accepted hook fails" do
-      File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:proposal_accepted, :boom) { |key:, target_key:, **| raise "bang" }
+      File.write(File.join(root, "steps/observe/proposal_accepted_log.rb"), <<~RUBY)
+        Class.new(Textus::Step::Observe) do
+          on :proposal_accepted
+
+          def call(key:, target_key:, **)
+            _ = key
+            _ = target_key
+            raise "bang"
+          end
         end
       RUBY
       store = Textus::Store.new(root)

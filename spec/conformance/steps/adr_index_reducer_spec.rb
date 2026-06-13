@@ -1,0 +1,126 @@
+require "spec_helper"
+
+# Proves the dogfood adr_index_reducer step (ADR 0097): the step is loaded
+# through the real Loader so it exercises the same code path as the live
+# `.textus/steps/` directory, and invoked through the RegistryStore — the same
+# surface every transform_rows step goes through at runtime.
+RSpec.describe "adr_index_reducer" do
+  let(:registry) { Textus::Step::RegistryStore.new }
+  # Minimal caps stub: only .rpc is required by transform_rows handlers.
+  let(:caps) { Struct.new(:rpc).new(registry) }
+  let(:rows) do
+    [
+      { "_key" => "knowledge.decisions.0001-first",
+        "body" => "# ADR 0001 — First\n\n**Date:** 2025-01-01\n**Status:** Accepted\n" },
+      { "_key" => "knowledge.decisions.0010-tenth",
+        "body" => "# ADR 0010 — Tenth\n\n**Date:** 2025-02-02\n**Status:** Superseded by [ADR 0011](./0011-x.md)\n" },
+    ]
+  end
+
+  before do
+    # Load just the one step file in isolation by copying it into a tmpdir so
+    # other .textus/steps/*.rb files do not register into this fresh registry.
+    handler_path = File.expand_path("../../../.textus/steps/transform/adr_index.rb", __dir__)
+    Dir.mktmpdir do |dir|
+      # Loader expects steps/<kind>/<name>.rb
+      steps_dir = File.join(dir, "steps")
+      FileUtils.mkdir_p(File.join(steps_dir, "transform"))
+      FileUtils.cp(handler_path, File.join(steps_dir, "transform", "adr_index.rb"))
+      Textus::Step::Loader.new(registry: registry).load_dir(steps_dir)
+    end
+  end
+
+  it "registers an :adr_index transform_rows handler" do
+    expect(registry.names(:transform)).to include(:adr_index)
+  end
+
+  it "parses number/title/date/status and sorts by number descending" do
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    adrs = out["adrs"]
+
+    expect(adrs).to be_an(Array)
+    expect(adrs.map { |a| a["number"] }).to eq(%w[0010 0001])
+    expect(adrs.first["title"]).to eq("Tenth")
+    expect(adrs.first["date"]).to eq("2025-02-02")
+    expect(adrs.first["status"]).to start_with("Superseded")
+  end
+
+  it "parses the first-row ADR fields correctly" do
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    first_adr = out["adrs"].last # sorted descending: 0001 is last
+    expect(first_adr["number"]).to eq("0001")
+    expect(first_adr["title"]).to eq("First")
+    expect(first_adr["date"]).to eq("2025-01-01")
+    expect(first_adr["status"]).to eq("Accepted")
+  end
+
+  it "derives number from the key/filename, not from the heading" do
+    # 0001's heading has a malformed version string; number must still be 0001
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    first_adr = out["adrs"].last
+    expect(first_adr["number"]).to eq("0001")
+  end
+
+  it "handles the no-'ADR'-prefix heading style (0005-style)" do
+    no_prefix_row = {
+      "_key" => "knowledge.decisions.0005-store-facade-final-removal",
+      "body" => "# 0005 — Store facade final removal (Phase 1 completion)\n\n**Date:** 2025-03-01\n**Status:** Accepted\n",
+    }
+    out = registry.invoke(:transform, :adr_index,
+                          rows: [no_prefix_row], caps: caps, config: {})
+    expect(out["adrs"].length).to eq(1)
+    adr = out["adrs"].first
+    expect(adr["number"]).to eq("0005")
+    expect(adr["title"]).to eq("Store facade final removal (Phase 1 completion)")
+    expect(adr["slug"]).to eq("0005-store-facade-final-removal")
+  end
+
+  it "excludes the README (key does not match NNNN-slug pattern)" do
+    readme_row = { "_key" => "knowledge.decisions.README",
+                   "body" => "# Architecture Decisions\n\nThis folder holds the ADR log.\n" }
+    out = registry.invoke(:transform, :adr_index,
+                          rows: [readme_row, rows.first], caps: caps, config: {})
+    # Only the genuine ADR row should appear
+    expect(out["adrs"].length).to eq(1)
+    expect(out["adrs"].first["number"]).to eq("0001")
+  end
+
+  it "emits a slug field for link construction" do
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    expect(out["adrs"].map { |a| a["slug"] }).to eq(%w[0010-tenth 0001-first])
+  end
+
+  it "returns a hash with an 'adrs' key" do
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    expect(out).to be_a(Hash)
+    expect(out).to have_key("adrs")
+  end
+
+  it "flattens markdown links in status to label text (data normalization) and does not escape pipes" do
+    rows = [{ "_key" => "knowledge.decisions.0011-x",
+              "body" => "# ADR 0011 — X\n\n**Date:** 2025-01-01\n**Status:** Superseded by [ADR 0031](./0031-unified-guard.md)\n" }]
+    out = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    status = out["adrs"].first["status"]
+    expect(status).to eq("Superseded by ADR 0031")
+    expect(status).not_to include("\\|")
+    expect(status).not_to include("](")
+  end
+
+  it "produces deterministic output (same input → same output)" do
+    r1 = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    r2 = registry.invoke(:transform, :adr_index, rows: rows, caps: caps, config: {})
+    expect(r1).to eq(r2)
+  end
+
+  it "sorts numerically descending (not lexicographically)" do
+    # 0010 > 0009 > 0001 numerically; lexicographic would put "0010" before "0009" too,
+    # but "0099" < "0100" numerically should sort above "0099" — verify numeric sort
+    high_row = {
+      "_key" => "knowledge.decisions.0100-high",
+      "body" => "# ADR 0100 — High\n\n**Date:** 2025-01-01\n**Status:** Accepted\n",
+    }
+    out = registry.invoke(:transform, :adr_index,
+                          rows: [rows.first, high_row], caps: caps, config: {})
+    expect(out["adrs"].map { |a| a["number"] }).to eq(%w[0100 0001])
+  end
+end

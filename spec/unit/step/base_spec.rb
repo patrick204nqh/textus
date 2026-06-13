@@ -1,7 +1,7 @@
 # spec/unit/step/base_spec.rb
 require "spec_helper"
 
-RSpec.describe "Textus::Step kinds" do
+RSpec.describe Textus::Step::Base do
   it "exposes kind and required_kwargs per subclass" do
     expect(Textus::Step::Fetch.kind).to eq(:fetch)
     expect(Textus::Step::Fetch.required_kwargs).to eq(%i[config args])

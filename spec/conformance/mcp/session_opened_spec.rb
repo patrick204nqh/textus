@@ -9,17 +9,19 @@ RSpec.describe "MCP :session_opened event" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+    FileUtils.mkdir_p(File.join(root, "steps/observe"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
       entries:
         - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }
     YAML
-    File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+    File.write(File.join(root, "steps/observe/log_opened.rb"), <<~RUBY)
       $textus_session_log ||= []
-      Textus.hook do |reg|
-        reg.on(:session_opened, :log_opened) do |role:, cursor:, **|
+      class LogOpenedObserve < Textus::Step::Observe
+        on :session_opened
+
+        def call(role:, cursor:, **)
           $textus_session_log << [role.to_s, cursor]
         end
       end

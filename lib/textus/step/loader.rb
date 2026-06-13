@@ -18,7 +18,12 @@ module Textus
       def load_dir(dir)
         return unless File.directory?(dir)
 
+        loaded_paths = Set.new
         Dir.glob(File.join(dir, "**/*.rb")).sort.each do |path| # rubocop:disable Lint/RedundantDirGlobSort
+          real_path = File.realpath(path)
+          next if loaded_paths.include?(real_path)
+
+          loaded_paths << real_path
           load_one(dir, path)
         end
       end
@@ -27,7 +32,7 @@ module Textus
 
       def load_one(dir, path)
         disc = Discovery.parse(path, base: dir)
-        klass = capture_defined_class(path)
+        klass = capture_defined_class(path, disc)
         validate!(disc, klass, path, dir)
 
         step = klass.new
@@ -40,14 +45,35 @@ module Textus
       end
 
       # Load the file and return the Step::Base subclass it newly defined.
-      def capture_defined_class(path)
+      def capture_defined_class(path, disc)
         before = descendants
         load(path)
         defined = descendants - before
-        raise UsageError.new("step #{path} defined no Textus::Step subclass") if defined.empty?
+        return defined.first if defined.length == 1
         raise UsageError.new("step #{path} defined more than one Textus::Step subclass") if defined.length > 1
 
-        defined.first
+        fallback = find_existing_class_for(disc)
+        return fallback if fallback
+
+        raise UsageError.new("step #{path} defined no Textus::Step subclass")
+      end
+
+      def find_existing_class_for(disc)
+        expected = inferred_class_name_for(disc)
+        candidates = descendants.select do |klass|
+          klass < BASE_FOR.fetch(disc.kind) && klass.name&.split("::")&.last == expected
+        end
+        return nil if candidates.empty?
+        return candidates.first if candidates.length == 1
+
+        namespaced = candidates.find { |klass| klass.name == "Textus::Step::#{expected}" }
+        namespaced || candidates.first
+      end
+
+      def inferred_class_name_for(disc)
+        stem = disc.name.to_s.split(/[-_]/).map(&:capitalize).join
+        suffix = { fetch: "Fetch", transform: "Transform", validate: "Validate", observe: "Observe" }.fetch(disc.kind)
+        "#{stem}#{suffix}"
       end
 
       def validate!(disc, klass, path, dir)
@@ -57,7 +83,7 @@ module Textus
           raise UsageError.new("#{rel(dir, path)} defines a #{actual_kind || "non-step"} step but lives under #{disc.kind}/")
         end
 
-        sig = Hooks::Signature.new(klass.instance_method(:call))
+        sig = Step::Signature.new(klass.instance_method(:call))
         missing = sig.missing(klass.required_kwargs)
         return if missing.empty?
 

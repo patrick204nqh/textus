@@ -34,7 +34,7 @@ module Textus
           end
         end
 
-        Deps = Data.define(:manifest, :reader, :lister, :rpc, :transform_context)
+        Deps = Data.define(:manifest, :reader, :lister, :steps, :transform_context)
 
         def self.renderers
           @renderers ||= {
@@ -49,7 +49,7 @@ module Textus
           @call       = call
           @manifest   = container.manifest
           @file_store = container.file_store
-          @rpc        = container.rpc
+          @steps      = container.steps
           @root       = container.root
         end
 
@@ -72,7 +72,7 @@ module Textus
               manifest: @manifest,
               reader: reader.method(:call),
               lister: lister,
-              rpc: @rpc,
+              steps: @steps,
               transform_context: @container,
             ),
           )
@@ -95,7 +95,7 @@ module Textus
               reader: deps.reader,
               spec: mentry.source.projection_spec,
               lister: deps.lister,
-              rpc: deps.rpc,
+              steps: deps.steps,
               transform_context: deps.transform_context,
             ).run
 

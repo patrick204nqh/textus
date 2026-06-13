@@ -7,11 +7,11 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   let(:store) do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+    FileUtils.mkdir_p(File.join(root, "steps/transform"))
 
-    File.write(File.join(root, "hooks/mcp_config_reducer.rb"), <<~RUBY)
-      Textus.hook do |reg|
-        reg.on(:transform_rows, :mcp_config_reducer) do |**|
+    File.write(File.join(root, "steps/transform/mcp_config_reducer.rb"), <<~RUBY)
+      class McpConfigReducerTransform < Textus::Step::Transform
+        def call(**)
           {
             "mcpServers" => {
               "textus" => {

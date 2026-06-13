@@ -12,6 +12,7 @@ opencode.local.json
 .ruby-lsp/
 docs/plans/
 docs/specs/
+docs/handoffs/
 docs/superpowers/
 .worktrees/
 **/.textus/.run/

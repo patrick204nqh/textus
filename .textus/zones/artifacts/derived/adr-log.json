@@ -3,7 +3,7 @@
     "from": [
       "knowledge.decisions"
     ],
-    "reduce": "adr_index_reducer"
+    "reduce": "adr_index"
   },
   "adrs": [
     {

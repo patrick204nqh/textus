@@ -15,7 +15,7 @@ module Textus
           @call         = call
           @manifest     = container.manifest
           @schemas      = container.schemas
-          @rpc          = container.rpc
+          @steps          = container.steps
         end
 
         # call(key) is the primary entry; run is kept as an alias for

@@ -67,22 +67,22 @@ RSpec.describe Textus::Doctor do
     expect(res["ok"]).to be false
   end
 
-  it "reports hook.load_failed for broken hook files" do
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+  it "reports step.load_failed for broken step files" do
+    FileUtils.mkdir_p(File.join(root, "steps", "fetch"))
     # Store#load_hooks also loads from hooks/ and raises on load error,
     # so we move the broken file out of the way during Store.new, then move
     # it back before doctor runs.
-    File.write(File.join(root, "hooks/broken.rb"), <<~RUBY)
-      raise "boom from broken hook"
+    File.write(File.join(root, "steps", "fetch", "broken.rb"), <<~RUBY)
+      raise "boom from broken step"
     RUBY
-    File.rename(File.join(root, "hooks"), File.join(root, "hooks.disabled"))
+    File.rename(File.join(root, "steps"), File.join(root, "steps.disabled"))
     store = Textus::Store.new(root)
-    File.rename(File.join(root, "hooks.disabled"), File.join(root, "hooks"))
+    File.rename(File.join(root, "steps.disabled"), File.join(root, "steps"))
     res = described_class.build(container: store.container)
-    issue = res["issues"].find { |i| i["code"] == "hook.load_failed" }
+    issue = res["issues"].find { |i| i["code"] == "step.load_failed" }
     expect(issue).not_to be_nil
     expect(issue["level"]).to eq("error")
-    expect(issue["subject"]).to eq("broken.rb")
+    expect(issue["subject"]).to eq("steps")
     expect(issue["message"]).to include("boom")
   end
 
@@ -156,18 +156,20 @@ RSpec.describe Textus::Doctor do
     expect(res["ok"]).to be true
   end
 
-  it "reports hook.check_failed with a fix hint pointing to .textus/hooks/" do
-    FileUtils.mkdir_p(File.join(root, "hooks"))
-    File.write(File.join(root, "hooks/bad_check.rb"), <<~RUBY)
-      Textus.hook do |reg|
-        reg.on(:validate, :bad_check) { |caps:| raise "boom in check" }
+  it "reports doctor_check.failed with a fix hint pointing to .textus/steps/validate/" do
+    FileUtils.mkdir_p(File.join(root, "steps", "validate"))
+    File.write(File.join(root, "steps", "validate", "bad_check.rb"), <<~RUBY)
+      class BadCheckValidate < Textus::Step::Validate
+        def call(caps:)
+          raise "boom in check"
+        end
       end
     RUBY
     store = Textus::Store.new(root)
     res = described_class.build(container: store.container)
     issue = res["issues"].find { |i| i["code"] == "doctor_check.failed" }
     expect(issue).not_to be_nil
-    expect(issue["fix"]).to include(".textus/hooks/")
+    expect(issue["fix"]).to include(".textus/steps/validate/")
     expect(issue["fix"]).not_to include(".textus/extensions/")
   end
 

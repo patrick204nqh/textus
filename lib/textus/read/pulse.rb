@@ -22,7 +22,7 @@ module Textus
         @file_store = container.file_store
         @audit_log  = container.audit_log
         @root       = container.root
-        @events     = container.events
+        @steps = container.steps
       end
 
       def call(since: 0)
@@ -81,7 +81,7 @@ module Textus
       end
 
       def hook_errors_since(seq)
-        @events.error_log.since(seq).map do |r|
+        @steps.error_log.since(seq).map do |r|
           {
             "seq" => r[:seq],
             "event" => r[:event].to_s,

@@ -1,18 +1,29 @@
 require "spec_helper"
 
 RSpec.describe Textus::MCP::Catalog do
-  # Use a tmpdir copy of examples/project so put/get round-trips do not
-  # mutate the committed example store (established pattern in spec/mcp/).
-  let(:tmp)  { Dir.mktmpdir }
-  let(:root) { File.join(tmp, ".textus") }
+  include_context "textus_store_fixture"
+
   let(:store) do
-    src = File.expand_path("../../../examples/project/.textus", __dir__)
-    FileUtils.cp_r(src, root)
-    Textus::Store.new(root)
+    store_from_manifest(root, zones: %w[knowledge notebook proposals artifacts], schemas: {
+                          "project" => File.read(File.expand_path("../../../.textus/schemas/project.yaml", __dir__)),
+                        }, manifest: <<~YAML)
+                          version: textus/3
+                          roles:
+                            - { name: human,      can: [author, propose] }
+                            - { name: agent,      can: [propose, keep] }
+                            - { name: automation, can: [converge] }
+                          zones:
+                            - { name: knowledge, kind: canon }
+                            - { name: notebook,  kind: workspace }
+                            - { name: proposals, kind: queue }
+                            - { name: artifacts, kind: machine }
+                          entries:
+                            - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, kind: leaf }
+                            - { key: notebook.notes, path: notebook/notes, zone: notebook, kind: nested, nested: true }
+                            - { key: proposals.notes, path: proposals/notes, zone: proposals, kind: nested, nested: true }
+                        YAML
   end
   let(:session) { store.session(role: "human") }
-
-  after { FileUtils.remove_entry(tmp) }
 
   describe ".tool_schemas" do
     it "advertises one entry per MCP-surfaced contract, with derived inputSchema" do

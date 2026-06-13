@@ -44,7 +44,7 @@ end
 RSpec.shared_examples "an event-emitting action" do |event_name|
   it "fires #{event_name} with the key and correlation id" do
     seen = []
-    store.events.register(event_name, :spec_probe) do |ctx:, key:, **|
+    store.steps.on(event_name, :spec_probe) do |ctx:, key:, **|
       seen << [event_name, key, ctx.correlation_id]
     end
     emit.call

@@ -37,7 +37,6 @@ module Textus
             built = true
             pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
           end
-
           emitted = publish_mode.publish(pctx, prefix: prefix)
           return emitted if emitted
           return nil unless built

@@ -24,7 +24,7 @@ RSpec.describe Textus::Write::Reject do
 
   it "deletes the proposal and fires :proposal_rejected" do
     events = []
-    store.events.register(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
+    store.steps.on(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
 
     res = store.as("human").reject("proposals.draft")
 

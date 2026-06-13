@@ -11,7 +11,7 @@ RSpec.describe Textus::Projection do
       reader: ops.method(:get),
       spec: spec,
       lister: ops.method(:list),
-      rpc: store.rpc,
+      steps: store.steps,
       transform_context: store,
     )
   end
@@ -59,17 +59,21 @@ RSpec.describe Textus::Projection do
   end
 
   it "applies a reducer before sort/limit" do
-    store.rpc.register(:transform_rows, :score) do |caps:, rows:, config:|
-      _ = config
-      _ = caps
-      rows.map { |r| r.merge("score" => r["name"].length) }
+    klass = Class.new(Textus::Step::Transform) do
+      define_method(:call) do |caps:, rows:, config:|
+        _ = config
+        _ = caps
+        rows.map { |r| r.merge("score" => r["name"].length) }
+      end
     end
+    store.steps.register(klass.new.tap { |s| s.name = :score })
     proj = build_projection(
       "select" => "knowledge.people",
       "pluck" => ["name"],
       "transform" => "score",
       "sort_by" => "score",
     )
+
     out = proj.run
     expect(out["entries"].map { |r| r["score"] }).to eq([3, 5])
   end
@@ -95,16 +99,20 @@ RSpec.describe Textus::Projection do
   end
 
   it "raises UsageError when a reducer exceeds 2s timeout" do
-    store.rpc.register(:transform_rows, :slow) do |caps:, rows:, config:|
-      _ = rows
-      _ = config
-      _ = caps
-      sleep 5
+    klass = Class.new(Textus::Step::Transform) do
+      define_method(:call) do |caps:, rows:, config:|
+        _ = rows
+        _ = config
+        _ = caps
+        sleep 5
+      end
     end
+    store.steps.register(klass.new.tap { |s| s.name = :slow })
     proj = build_projection(
       "select" => "knowledge.people",
       "transform" => "slow",
     )
-    expect { proj.run }.to raise_error(Textus::UsageError, /transform_rows 'slow' exceeded 2s timeout/)
+
+    expect { proj.run }.to raise_error(Textus::UsageError, /transform 'slow' exceeded 2s timeout/)
   end
 end

@@ -2,7 +2,7 @@
 require "spec_helper"
 
 RSpec.describe Textus::Step::Builtin do
-  let(:registry) { Textus::Step::Registry.new }
+  let(:registry) { Textus::Step::RegistryStore.new }
 
   before { described_class.register_all(registry) }
 

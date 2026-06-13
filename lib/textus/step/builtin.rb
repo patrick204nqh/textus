@@ -4,7 +4,7 @@ module Textus
   module Step
     # Registers the framework-provided fetch steps (json/csv/markdown-links/
     # ical-events/rss) into a registry at Store construction. The successor to
-    # Hooks::Builtin.register_all.
+    # Step::Builtin.register_all.
     module Builtin
       STEPS = [
         JsonFetch, CsvFetch, MarkdownLinksFetch, IcalEventsFetch, RssFetch

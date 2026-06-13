@@ -18,7 +18,7 @@ module Textus
 
         def invoke(caps:, handler:, config:, args:, label:, timeout: FETCH_TIMEOUT_SECONDS)
           Timeout.timeout(timeout) do
-            caps.rpc.invoke(:resolve_handler, handler, caps: caps, config: config, args: args)
+            caps.steps.invoke(:fetch, handler, caps: caps, config: config, args: args)
           end
         rescue Timeout::Error
           raise Textus::UsageError.new("#{label} '#{handler}' exceeded #{timeout}s timeout")

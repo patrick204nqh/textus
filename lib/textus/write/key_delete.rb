@@ -18,7 +18,7 @@ module Textus
         @container    = container
         @call         = call
         @manifest     = container.manifest
-        @events       = container.events
+        @steps = container.steps
       end
 
       def call(key, if_etag: nil, suppress_events: false)
@@ -30,9 +30,9 @@ module Textus
         writer.delete(key, mentry: mentry, if_etag: if_etag)
 
         unless suppress_events
-          @events.publish(:entry_deleted,
-                          ctx: hook_context,
-                          key: key)
+          @steps.publish(:entry_deleted,
+                         ctx: hook_context,
+                         key: key)
         end
 
         { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
@@ -54,7 +54,7 @@ module Textus
       end
 
       def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+        @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)
       end
 
       def writer

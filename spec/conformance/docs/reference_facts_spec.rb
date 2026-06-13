@@ -9,7 +9,7 @@ require "pathname"
 RSpec.describe "reference doc facts cover their projections" do
   let(:repo) { Pathname.new(File.expand_path("../../..", __dir__)) }
   let(:catalog_events) do
-    (Textus::Hooks::Catalog::PUBSUB.keys + Textus::Hooks::Catalog::RPC.keys).map(&:to_s)
+    (Textus::Step::Catalog::PUBSUB.keys + Textus::Step::Catalog::RPC.keys).map(&:to_s)
   end
 
   def read_doc(rel)
@@ -25,22 +25,22 @@ RSpec.describe "reference doc facts cover their projections" do
              .flat_map { |l| l.scan(/`:([a-z_]+)`/).flatten }.uniq
   end
 
-  it "events.md documents every Hooks::Catalog event" do
+  it "events.md documents every Step::Catalog event" do
     doc = read_doc("docs/reference/events.md")
     missing = catalog_events.reject { |n| doc.include?(n) }
     expect(missing).to be_empty, "events.md missing: #{missing.join(", ")}"
   end
 
-  it "events.md cites no event absent from Hooks::Catalog (no stale rows)" do
+  it "events.md cites no event absent from Step::Catalog (no stale rows)" do
     stale = event_tokens_in_tables(read_doc("docs/reference/events.md")) - catalog_events
     expect(stale).to be_empty,
-                     "events.md tables cite events not in Hooks::Catalog: #{stale.join(", ")}"
+                     "events.md tables cite events not in Step::Catalog: #{stale.join(", ")}"
   end
 
-  it "the README hook tables cite only real Hooks::Catalog events" do
+  it "the README hook tables cite only real Step::Catalog events" do
     stale = event_tokens_in_tables(read_doc("README.md")) - catalog_events
     expect(stale).to be_empty,
-                     "README cites events not in Hooks::Catalog: #{stale.join(", ")}"
+                     "README cites events not in Step::Catalog: #{stale.join(", ")}"
   end
 
   it "zones.md documents every manifest zone" do

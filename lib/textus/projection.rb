@@ -10,13 +10,13 @@ module Textus
     #   read on every path (ADR 0089): it annotates freshness but never ingests,
     #   so materialization and any other reader share the same side-effect-free read.
     # `lister` — a callable `->(prefix:) { [ { "key" => ... }, ... ] }`.
-    # `rpc` — a `Hooks::RpcRegistry` used to dispatch `transform_rows` callables.
+    # `rpc` — a `Step::RpcRegistry` used to dispatch `transform_rows` callables.
     # `transform_context` — capability object handed to transform reducers as `caps:`.
-    def initialize(reader:, spec:, lister:, rpc:, transform_context:)
+    def initialize(reader:, spec:, lister:, steps:, transform_context:)
       @reader            = reader
       @spec              = spec || {}
       @lister            = lister
-      @rpc               = rpc
+      @steps             = steps
       @transform_context = transform_context
       @limit = (@spec["limit"] || MAX_LIMIT).to_i
       raise InvalidProjection.new("limit #{@limit} exceeds max #{MAX_LIMIT}") if @limit > MAX_LIMIT
@@ -55,13 +55,13 @@ module Textus
     def apply_reducer(rows)
       name = @spec["transform"] or return rows
       Timeout.timeout(REDUCER_TIMEOUT_SECONDS) do
-        @rpc.invoke(:transform_rows, name,
-                    caps: @transform_context,
-                    rows: rows,
-                    config: @spec["transform_config"] || {})
+        @steps.invoke(:transform, name,
+                      caps: @transform_context,
+                      rows: rows,
+                      config: @spec["transform_config"] || {})
       end
     rescue Timeout::Error
-      raise UsageError.new("transform_rows '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
+      raise UsageError.new("transform '#{name}' exceeded #{REDUCER_TIMEOUT_SECONDS}s timeout")
     end
 
     def collect_keys

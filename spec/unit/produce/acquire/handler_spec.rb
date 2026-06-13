@@ -2,11 +2,11 @@ require "spec_helper"
 
 RSpec.describe Textus::Produce::Acquire::Handler do
   describe ".invoke" do
-    it "invokes :resolve_handler through caps.rpc, passing caps through to the handler" do
+    it "invokes :fetch through caps.steps, passing caps through to the handler" do
       result = { _meta: { "name" => "repos" }, body: "hello" }
-      rpc = instance_double(Textus::Hooks::RpcRegistry)
-      allow(rpc).to receive(:invoke).and_return(result)
-      caps = instance_double(Textus::Container, rpc: rpc)
+      steps = instance_double(Textus::Step::RegistryStore)
+      allow(steps).to receive(:invoke).and_return(result)
+      caps = instance_double(Textus::Container, steps: steps)
 
       returned = described_class.invoke(
         caps: caps, handler: "h",
@@ -14,15 +14,15 @@ RSpec.describe Textus::Produce::Acquire::Handler do
       )
 
       expect(returned).to eq(result)
-      expect(rpc).to have_received(:invoke).with(
-        :resolve_handler, "h",
+      expect(steps).to have_received(:invoke).with(
+        :fetch, "h",
         caps: caps, config: { "word" => "hi" }, args: { "who" => "patrick" }
       )
     end
 
     it "maps Timeout::Error to a UsageError naming the label, handler and timeout" do
-      rpc = instance_double(Textus::Hooks::RpcRegistry)
-      caps = instance_double(Textus::Container, rpc: rpc)
+      steps = instance_double(Textus::Step::RegistryStore)
+      caps = instance_double(Textus::Container, steps: steps)
       allow(Timeout).to receive(:timeout).and_raise(Timeout::Error)
 
       expect do

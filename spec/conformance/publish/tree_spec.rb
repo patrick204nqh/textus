@@ -126,7 +126,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       # the pass (the materialize job still acks). Assert via the event.
       store = Textus::Store.new(root)
       errors = []
-      store.container.events.on(:produce_failed, :capture) { |error:, **| errors << error }
+      store.container.steps.on(:produce_failed, :capture) { |error:, **| errors << error }
 
       expect { materialize(store) }.not_to raise_error
       expect(errors.join("\n")).to match(/escapes repo root/)

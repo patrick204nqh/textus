@@ -78,10 +78,10 @@ module TextusSpecHelpers
   end
 
   # Preset: a machine "feeds" zone with one intake entry (key feeds.doc) wired
-  # to a `test_intake` handler. Pass the handler's hook body and the source ttl.
+  # to a `test_intake` fetch step. Pass the step method body and the source ttl.
   # Optionally pass a `retention:` hash (e.g. `{ ttl: "30d", action: "drop" }`)
   # to add a retention rule; omit for intake-only freshness (ADR 0093).
-  # Writes the hook into the store's hooks/ dir. Defaults to machine; pass
+  # Writes the step class into the store's steps/fetch dir. Defaults to machine; pass
   # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
   # follow the kind via LANE_ZONE.
   def intake_store(root, intake_body:, ttl: "1h", retention: nil, kind_zone: "machine")
@@ -101,7 +101,13 @@ module TextusSpecHelpers
     store_from_manifest(
       root,
       zones: [zone],
-      files: { "hooks/test_intake.rb" => intake_body },
+      files: {
+        "steps/fetch/test_intake.rb" => <<~RUBY,
+          class TestIntakeFetch < Textus::Step::Fetch
+          #{intake_body}
+          end
+        RUBY
+      },
       manifest: manifest,
     )
   end
@@ -143,16 +149,17 @@ module TextusSpecHelpers
   #
   #   store.as(role, correlation_id:, dry_run:).put("working.foo", meta:, body:)
   #
-  # `store.as` reuses the Store's container, whose EventBus is the *same*
-  # object as `store.events` — so in-place `store.events.register(...)` probes
+  # `store.as` reuses the Store's container, whose observe dispatcher is the
+  # same object as `store.steps` for pub/sub registration, so in-place
+  # `store.steps.register(...)` probes
   # are visible through it.
   #
   # `build_worker` (below) drives an internal use-case class the façade does
   # not expose (Produce::Acquire::Intake). Pass `events:` to swap the bus wholesale
   # (e.g. a recording probe) via the immutable Container's #with.
-  def build_worker(store, ctx, events: nil)
+  def build_worker(store, ctx, steps: nil)
     container = store.container
-    container = container.with(events: events) if events
+    container = container.with(steps: steps) if steps
     Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
   end
 end

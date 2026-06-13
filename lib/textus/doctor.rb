@@ -56,12 +56,12 @@ module Textus
     end
 
     def run_registered_checks(container)
-      container.rpc.names(:validate).flat_map { |name| invoke_registered_check(container, name) }
+      container.steps.names(:validate).flat_map { |name| invoke_registered_check(container, name) }
     end
 
     def invoke_registered_check(container, name)
       result = Timeout.timeout(DOCTOR_CHECK_TIMEOUT_SECONDS) do
-        container.rpc.invoke(:validate, name, caps: container)
+        container.steps.invoke(:validate, name, caps: container)
       end
       return result.map { |h| h.transform_keys(&:to_s) } if result.is_a?(Array)
 
@@ -75,7 +75,7 @@ module Textus
     rescue StandardError => e
       [fail_issue(name, code: "doctor_check.failed",
                         message: "#{e.class}: #{e.message}",
-                        fix: "fix the :validate hook in .textus/hooks/")]
+                        fix: "fix the :validate step in .textus/steps/validate/")]
     end
 
     def fail_issue(name, code:, message:, fix:)

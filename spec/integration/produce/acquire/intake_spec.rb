@@ -2,29 +2,19 @@ require "spec_helper"
 
 RSpec.describe Textus::Produce::Acquire::Intake do
   # A simple test events object that records published events, delegating nothing.
-  def make_test_events
-    Class.new do
-      attr_reader :events
-
-      def initialize
-        @events = []
-      end
-
-      def publish(event, **payload)
-        @events << [event, payload]
-        Textus::Hooks::FireReport.new(fired: [], errored: [], timed_out: [])
-      end
-
-      def error_log
-        Textus::Hooks::ErrorLog.new
-      end
-    end.new
+  def make_test_events(registry)
+    events = []
+    allow(registry).to receive(:publish) do |event, **payload|
+      events << [event, payload]
+      Textus::Step::FireReport.new(fired: [], errored: [], timed_out: [])
+    end
+    Struct.new(:events).new(events)
   end
 
   def build_store(root, intake_body:)
     textus = File.join(root, ".textus")
     FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
-    FileUtils.mkdir_p(File.join(textus, "hooks"))
+    FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -38,7 +28,21 @@ RSpec.describe Textus::Produce::Acquire::Intake do
           source: { from: handler, handler: test_intake }
     YAML
 
-    File.write(File.join(textus, "hooks", "test_intake.rb"), intake_body)
+    # Use a unique class name for each store to avoid collisions across tests
+    unique_id = SecureRandom.hex(4)
+    # But wait, the handler name in manifest is 'test_intake'.
+    # The loader derives the name from the filename, not the class name.
+    # So the class name doesn't matter as long as it's a Step::Base subclass.
+
+    # Let's just wrap the provided body in a uniquely named class.
+    # We need to make sure the body doesn't already contain 'class ...'
+
+    # Actually, the simplest way is to just write the body as provided,
+    # but ensure it's a unique class.
+
+    # Let's modify the tests to provide only the method definitions.
+    File.write(File.join(textus, "steps", "fetch", "test_intake.rb"),
+               "class TestIntakeFetch#{unique_id} < Textus::Step::Fetch\n#{intake_body}\nend")
 
     Textus::Store.new(textus)
   end
@@ -46,15 +50,15 @@ RSpec.describe Textus::Produce::Acquire::Intake do
   it "persists the envelope and fires :entry_fetch_started and :entry_fetched events on success" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "item" }, body: "hello" } }
+        def call(config:, args:, **)
+          { _meta: { "name" => "item" }, body: "hello" }
         end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      test_events = make_test_events
+      test_events = make_test_events(store.container.steps)
       ctx = test_ctx(role: "automation")
-      worker = build_worker(store, ctx, events: test_events)
+      worker = build_worker(store, ctx)
 
       envelope = worker.run("intake.item")
 
@@ -74,15 +78,15 @@ RSpec.describe Textus::Produce::Acquire::Intake do
   it "fires :entry_fetch_failed and raises UsageError when the intake handler raises StandardError" do
     Dir.mktmpdir do |root|
       hook_body = <<~RUBY
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :test_intake) { |caps:, config:, args:| raise "something went wrong" }
+        def call(config:, args:, **)
+          raise "something went wrong"
         end
       RUBY
 
       store = build_store(root, intake_body: hook_body)
-      test_events = make_test_events
+      test_events = make_test_events(store.container.steps)
       ctx = test_ctx(role: "automation")
-      worker = build_worker(store, ctx, events: test_events)
+      worker = build_worker(store, ctx)
 
       expect do
         worker.run("intake.item")
@@ -150,9 +154,11 @@ RSpec.describe Textus::Produce::Acquire::Intake do
             source: { from: handler, handler: capturing_intake }
       YAML
 
-      File.write(File.join(textus, "hooks", "capturing_intake.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :capturing_intake) do |caps:, config:, args:|
+      unique_id = SecureRandom.hex(4)
+      FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
+      File.write(File.join(textus, "steps", "fetch", "capturing_intake.rb"), <<~RUBY)
+        class CapturingIntakeFetch#{unique_id} < Textus::Step::Fetch
+          def call(config:, args:, **)
             Thread.current[:captured_args] = args
             { _meta: { "name" => "agent-eval" }, body: "x" }
           end

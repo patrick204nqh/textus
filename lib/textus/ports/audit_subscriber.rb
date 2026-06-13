@@ -3,9 +3,9 @@
 module Textus
   module Ports
     # Writes an "event_error" audit row when a user hook raises during
-    # Hooks::EventBus publish. Attached at Store boot.
+    # Step::EventBus publish. Attached at Store boot.
     #
-    # Integration: uses Hooks::EventBus#on_error callback (chosen over a
+    # Integration: uses Step::EventBus#on_error callback (chosen over a
     # synthetic :hook_error event because the bus already owns the
     # rescue and the failure is a bus-internal concern, not a domain
     # event subscribers should be able to filter by key glob).

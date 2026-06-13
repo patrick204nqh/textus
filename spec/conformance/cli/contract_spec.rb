@@ -46,7 +46,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "doctor" => Textus::CLI::Verb::Doctor,
       "enqueue" => Textus::CLI::Verb::GenEnqueue,
       "get" => Textus::CLI::Verb::Get,
-      "hook" => Textus::CLI::Group::Hook,
       "init" => Textus::CLI::Verb::Init,
       "boot" => Textus::CLI::Verb::GenBoot,
       "key" => Textus::CLI::Group::Key,
@@ -75,10 +74,6 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   end
 
   it "group subcommand tables are auto-derived from parent_group" do
-    expect(Textus::CLI::Group::Hook.subcommands).to eq(
-      "list" => Textus::CLI::Verb::Hooks,
-      "run" => Textus::CLI::Verb::HookRun,
-    )
     expect(Textus::CLI::Group::Key.subcommands).to eq(
       "delete" => Textus::CLI::Verb::GenKeyDelete,
       "delete-prefix" => Textus::CLI::Verb::GenKeyDeletePrefix,

@@ -91,7 +91,6 @@ module Textus
       { "name" => "blame" },
       { "name" => "rule", "summary" => "inspect effective rules: 'rule list', 'rule explain KEY'" },
       { "name" => "doctor" },
-      { "name" => "hook", "summary" => "list and run registered hooks: 'hook list', 'hook run NAME'" },
       { "name" => "jobs" },
       { "name" => "pulse" },
       { "name" => "capabilities" },
@@ -221,7 +220,7 @@ module Textus
         "agent_protocol" => agent_protocol(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
         "contract_etag" => etag,
-        "docs" => { "spec" => "SPEC.md", "example" => "examples/project/" },
+        "docs" => { "spec" => "SPEC.md", "example" => ".textus/" },
       }
     end
 
@@ -254,16 +253,21 @@ module Textus
     end
 
     def self.hooks_for_container(container)
-      hooks_for_container_internal(rpc: container.rpc, events: container.events)
+      hooks_for_container_internal(steps: container.steps)
     end
 
-    def self.hooks_for_container_internal(rpc:, events:)
+    def self.hooks_for_container_internal(steps:)
       sections = {}
-      Hooks::Catalog::RPC.each_key do |event|
-        sections[event.to_s] = rpc.names(event).map(&:to_s).sort
+      rpc_kind_map = {
+        resolve_handler: :fetch,
+        transform_rows: :transform,
+        validate: :validate,
+      }
+      Step::Catalog::RPC.each_key do |event|
+        sections[event.to_s] = steps.names(rpc_kind_map.fetch(event)).map(&:to_s).sort
       end
-      Hooks::Catalog::PUBSUB.each_key do |event|
-        sections[event.to_s] = events.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
+      Step::Catalog::PUBSUB.each_key do |event|
+        sections[event.to_s] = steps.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
       end
       sections
     end

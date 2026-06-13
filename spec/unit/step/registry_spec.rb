@@ -1,7 +1,7 @@
 # spec/unit/step/registry_spec.rb
 require "spec_helper"
 
-RSpec.describe Textus::Step::Registry do
+RSpec.describe Textus::Step::RegistryStore do
   let(:registry) { described_class.new }
 
   def fetch_step(step_name)
@@ -61,7 +61,7 @@ RSpec.describe Textus::Step::Registry do
   end
 
   it "exposes the shared error_log" do
-    expect(registry.error_log).to be_a(Textus::Hooks::ErrorLog)
+    expect(registry.error_log).to be_a(Textus::Step::ErrorLog)
   end
 
   it "supports built-in observers registered via #on (internal subscribers)" do

@@ -3,7 +3,7 @@
     "from": [
       "knowledge.project"
     ],
-    "reduce": "mcp_config_reducer"
+    "reduce": "mcp_config"
   },
   "mcpServers": {
     "textus": {

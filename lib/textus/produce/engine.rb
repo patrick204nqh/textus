@@ -25,9 +25,9 @@ module Textus
       rescue Textus::BuildInProgress
         nil
       rescue Textus::Error => e
-        container.events.publish(
+        container.steps.publish(
           :produce_failed,
-          ctx: Textus::Hooks::Context.for(container: container, call: call),
+          ctx: Textus::Step::Context.for(container: container, call: call),
           keys: keys, error: e.message
         )
       end
