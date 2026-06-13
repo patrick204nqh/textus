@@ -7,11 +7,12 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   let(:store) do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+    FileUtils.mkdir_p(File.join(root, "steps/transform"))
 
-    File.write(File.join(root, "hooks/plugin_manifest_reducer.rb"), <<~RUBY)
-      Textus.hook do |reg|
-        reg.on(:transform_rows, :plugin_manifest_reducer) do |rows:, **|
+    File.write(File.join(root, "steps/transform/plugin_manifest.rb"), <<~RUBY)
+      Class.new(Textus::Step::Transform) do
+        def call(rows:, config:, **)
+          _ = config
           project = rows.find { |r| r["_key"] == "knowledge.project" } || {}
           repo = project["repo"]
           command = { "type" => "command", "command" => "textus boot --lean" }
@@ -46,13 +47,13 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
           kind: produced
           path: artifacts/plugin.json
           zone: artifacts
-          publish:
-            - { to: .claude-plugin/plugin.json }
           source:
             from: project
             select:
               - knowledge.project
-            transform: plugin_manifest_reducer
+            transform: plugin_manifest
+          publish:
+            - { to: .claude-plugin/plugin.json }
     YAML
 
     File.write(File.join(root, "zones/knowledge/project.md"),

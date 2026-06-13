@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe "Read::SchemaEnvelope MCP contract (ADR 0039)" do
-  let(:store) { Textus::Store.discover(File.expand_path("../../../examples/project", __dir__)) }
+  let(:store) { Textus::Store.new(File.expand_path("../../../.textus", __dir__)) }
 
   it "is exposed on MCP under the name 'schema_show', keyed by entry key" do
     c = Textus::Read::SchemaEnvelope.contract

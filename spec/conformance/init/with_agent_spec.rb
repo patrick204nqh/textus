@@ -20,7 +20,7 @@ RSpec.describe "Textus::Init with_agent profile" do
     dir, root, = init(with_agent: true)
     manifest = File.read(File.join(root, "manifest.yaml"))
     expect(manifest).to include("key: artifacts.derived.orientation")
-    expect(manifest).to include("transform: orientation_reducer")
+    expect(manifest).to include("transform: orientation")
     expect(manifest).to include("to: CLAUDE.md").and include("to: AGENTS.md")
     # base entries still present (additive superset)
     expect(manifest).to include("key: knowledge.identity")
@@ -55,10 +55,10 @@ RSpec.describe "Textus::Init with_agent profile" do
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
 
-  it "scaffolds the orientation template + reducer hook under --with-agent" do
+  it "scaffolds the orientation template + reducer step under --with-agent" do
     dir, root, = init(with_agent: true)
     expect(File.read(File.join(root, "templates", "orientation.mustache"))).to include("{{project.name}}")
-    expect(File.read(File.join(root, "hooks", "orientation_reducer.rb"))).to include(":transform_rows, :orientation_reducer")
+    expect(File.read(File.join(root, "steps", "transform", "orientation.rb"))).to include("class OrientationTransform < Transform")
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end

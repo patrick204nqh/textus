@@ -10,13 +10,27 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       root,
       zones: %w[identity proposals],
       files: {
-        "hooks/log.rb" => <<~RUBY,
+        "steps/observe/log_reject.rb" => <<~RUBY,
           $textus_event_log ||= []
-          Textus.hook do |reg|
-            reg.on(:proposal_rejected, :log_reject) do |key:, target_key:, **|
+
+          Class.new(Textus::Step::Observe) do
+            on :proposal_rejected
+
+            def call(key:, target_key:, **)
               $textus_event_log << [:proposal_rejected, key, target_key]
             end
-            reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
+
+          end
+        RUBY
+
+        "steps/observe/log_delete.rb" => <<~RUBY,
+          $textus_event_log ||= []
+          Class.new(Textus::Step::Observe) do
+            on :entry_deleted
+
+            def call(key:, **)
+              $textus_event_log << [:entry_deleted, key]
+            end
           end
         RUBY
       },

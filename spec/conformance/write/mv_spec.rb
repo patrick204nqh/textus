@@ -103,7 +103,7 @@ RSpec.describe "textus mv" do
   describe ":entry_renamed event" do
     before do
       FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-      FileUtils.mkdir_p(File.join(root, "hooks"))
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones: [{ name: knowledge, kind: canon }]
@@ -113,14 +113,37 @@ RSpec.describe "textus mv" do
           - { key: knowledge.b, path: knowledge/b.md, zone: knowledge, kind: leaf}
 
       YAML
-      File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+      File.write(File.join(root, "steps/observe/log_mv.rb"), <<~RUBY)
         $textus_event_log ||= []
-        Textus.hook do |reg|
-          reg.on(:entry_renamed, :log_mv) do |from_key:, to_key:, envelope:, **|
+
+        Class.new(Textus::Step::Observe) do
+          on :entry_renamed
+
+          def call(from_key:, to_key:, envelope:, **)
             $textus_event_log << [:entry_renamed, from_key, to_key, envelope.uid]
           end
-          reg.on(:entry_written, :log_put)    { |key:, **| $textus_event_log << [:entry_written, key] }
-          reg.on(:entry_deleted, :log_delete) { |key:, **| $textus_event_log << [:entry_deleted, key] }
+
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/log_put.rb"), <<~RUBY)
+        $textus_event_log ||= []
+        Class.new(Textus::Step::Observe) do
+          on :entry_written
+
+          def call(key:, **)
+            $textus_event_log << [:entry_written, key]
+          end
+
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/log_delete.rb"), <<~RUBY)
+        $textus_event_log ||= []
+        Class.new(Textus::Step::Observe) do
+          on :entry_deleted
+
+          def call(key:, **)
+            $textus_event_log << [:entry_deleted, key]
+          end
         end
       RUBY
       $textus_event_log = []
@@ -156,12 +179,29 @@ RSpec.describe "textus mv" do
       expect($textus_event_log).to be_empty
     end
 
-    it "routes :entry_renamed hooks via keys: glob against the destination key" do
-      File.write(File.join(root, "hooks/scoped.rb"), <<~RUBY)
+    it "routes :entry_renamed hooks via keys: glob against the destination key" do # rubocop:disable RSpec/ExampleLength
+      File.write(File.join(root, "steps/observe/scoped.rb"), <<~RUBY)
         $textus_scoped_log ||= []
-        Textus.hook do |reg|
-          reg.on(:entry_renamed, :scoped_match,    keys: ["knowledge.b"]) { |to_key:, **| $textus_scoped_log << [:match, to_key] }
-          reg.on(:entry_renamed, :scoped_no_match, keys: ["other.*"])   { |to_key:, **| $textus_scoped_log << [:no_match, to_key] }
+
+        Class.new(Textus::Step::Observe) do
+          on :entry_renamed
+          match "knowledge.b"
+
+          def call(to_key:, **)
+            $textus_scoped_log << [:match, to_key]
+          end
+
+        end
+      RUBY
+      File.write(File.join(root, "steps/observe/scoped_no_match.rb"), <<~RUBY)
+        $textus_scoped_log ||= []
+        Class.new(Textus::Step::Observe) do
+          on :entry_renamed
+          match "other.*"
+
+          def call(to_key:, **)
+            $textus_scoped_log << [:no_match, to_key]
+          end
         end
       RUBY
       $textus_scoped_log = []

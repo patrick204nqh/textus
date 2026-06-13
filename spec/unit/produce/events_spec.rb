@@ -9,12 +9,12 @@ RSpec.describe Textus::Produce::Events do
 
       def publish(event, **payload)
         @published << [event, payload]
-        Textus::Hooks::FireReport.new(fired: [], errored: [], timed_out: [])
+        Textus::Step::FireReport.new(fired: [], errored: [], timed_out: [])
       end
     end.new
   end
 
-  subject(:fe) { described_class.new(events: bus, hook_context: ctx) }
+  subject(:fe) { described_class.new(steps: bus, hook_context: ctx) }
 
   let(:bus) { recording_events }
   let(:ctx) { :stub_ctx }

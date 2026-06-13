@@ -1,16 +1,29 @@
 require "spec_helper"
 
 RSpec.describe Textus::Write::Propose do
-  # Use a tmpdir copy of examples/project so propose writes do not mutate the
-  # committed example store (same pattern as spec/mcp/catalog_spec.rb).
-  let(:tmp) { Dir.mktmpdir }
-  let(:store) do
-    src = File.expand_path("../../../examples/project/.textus", __dir__)
-    FileUtils.cp_r(src, File.join(tmp, ".textus"))
-    Textus::Store.new(File.join(tmp, ".textus"))
-  end
+  include_context "textus_store_fixture"
 
-  after { FileUtils.remove_entry(tmp) }
+  let(:store) do
+    store_from_manifest(root, zones: %w[knowledge notebook proposals artifacts], schemas: {
+                          "project" => File.read(File.expand_path("../../../.textus/schemas/project.yaml", __dir__)),
+                        }, manifest: <<~YAML)
+                          version: textus/3
+                          roles:
+                            - { name: human,      can: [author, propose] }
+                            - { name: agent,      can: [propose, keep] }
+                            - { name: automation, can: [converge] }
+                          zones:
+                            - { name: knowledge, kind: canon }
+                            - { name: notebook,  kind: workspace }
+                            - { name: proposals, kind: queue }
+                            - { name: artifacts, kind: machine }
+                          entries:
+                            - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, kind: leaf }
+                            - { key: notebook.notes, path: notebook/notes, zone: notebook, kind: nested, nested: true }
+                            - { key: proposals.notes, path: proposals/notes, zone: proposals, kind: nested, nested: true }
+                            - { key: proposals.decisions, path: proposals/decisions, zone: proposals, kind: nested, nested: true }
+                        YAML
+  end
 
   it "prefixes the key with the role's propose_zone and writes there" do
     env = store.as("agent").propose("decisions.adopt-x", meta: { "name" => "adopt-x" }, body: "yes\n")

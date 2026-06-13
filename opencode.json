@@ -29,9 +29,6 @@
     }
   },
   "plugin": [
-    "superpowers@git+https://github.com/obra/superpowers.git",
-    "superpowers-ruby@git+https://github.com/lucianghinda/superpowers-ruby.git",
-    "ecc-universal@git+https://github.com/affaan-m/ECC.git",
     "textus@git+https://github.com/patrick204nqh/textus.git"
   ],
   "instructions": [

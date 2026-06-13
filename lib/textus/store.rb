@@ -45,7 +45,7 @@ module Textus
     def initialize(root)
       @container = build_container(File.expand_path(root))
       bootstrap_hooks
-      events.publish(:store_loaded, ctx: Hooks::Context.new(scope: as(Role::DEFAULT)))
+      steps.publish(:store_loaded, ctx: Step::Context.new(scope: as(Role::DEFAULT)))
     end
 
     # Build an agent Session oriented at the current cursor/manifest — the
@@ -83,16 +83,15 @@ module Textus
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         ),
-        events: Hooks::EventBus.new,
-        rpc: Hooks::RpcRegistry.new,
+        steps: Textus::Step::RegistryStore.new,
       )
     end
 
     def bootstrap_hooks
-      Ports::AuditSubscriber.new(audit_log).attach(events)
-      Ports::ProduceOnWriteSubscriber.new(container).attach(events)
-      Hooks::Builtin.register_all(events: events, rpc: rpc)
-      Hooks::Loader.new(events: events, rpc: rpc).load_dir(File.join(root, "hooks"))
+      Ports::AuditSubscriber.new(audit_log).attach(steps)
+      Ports::ProduceOnWriteSubscriber.new(container).attach(steps)
+      Textus::Step::Builtin.register_all(steps)
+      Textus::Step::Loader.new(registry: steps).load_dir(File.join(root, "steps"))
     end
   end
 end

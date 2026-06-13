@@ -14,7 +14,7 @@ module Textus
         @call      = call
         @manifest  = container.manifest
         @schemas   = container.schemas
-        @events    = container.events
+        @steps = container.steps
       end
 
       def call(pending_key)
@@ -40,7 +40,7 @@ module Textus
         end
 
         delete_op.call(pending_key)
-        @events.publish(:proposal_accepted, ctx: hook_context, key: pending_key, target_key: target)
+        @steps.publish(:proposal_accepted, ctx: hook_context, key: pending_key, target_key: target)
         { "protocol" => PROTOCOL, "accepted" => pending_key, "target_key" => target, "action" => action }
       end
 
@@ -50,7 +50,7 @@ module Textus
         @guard ||= Textus::Domain::Policy::GuardFactory.new(manifest: @manifest, schemas: @schemas)
       end
 
-      def hook_context = @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+      def hook_context = @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)
       def put_op       = @put_op ||= Textus::Write::Put.new(container: @container, call: @call)
       def delete_op    = @delete_op ||= Textus::Write::KeyDelete.new(container: @container, call: @call)
     end

@@ -60,18 +60,6 @@ RSpec.describe "CLI subcommand groups" do
     end
   end
 
-  # ── hook group ────────────────────────────────────────────────────────────
-
-  describe "textus hook list" do
-    it "lists hooks and prints no deprecation warning" do
-      rc = run(%w[hook list])
-      expect(rc).to eq(0)
-      payload = JSON.parse(stdout.string)
-      expect(payload).to have_key("hooks")
-      expect(stderr.string).to be_empty
-    end
-  end
-
   # ── missing subcommand errors ─────────────────────────────────────────────
 
   describe "textus key (no subcommand)" do

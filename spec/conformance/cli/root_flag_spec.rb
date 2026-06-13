@@ -45,12 +45,20 @@ RSpec.describe "textus --root" do
     expect(JSON.parse(stdout).fetch("entries")).to eq([])
   end
 
-  it "accepts --root after a group subcommand (textus hook list --root=PATH)" do
+  it "accepts --root after a group subcommand (textus key uid --root=PATH)" do
     custom = store_with_manifest
-    FileUtils.mkdir_p(File.join(custom, "hooks"))
-    stdout, _stderr, status = run_cli("hook", "list", "--root=#{custom}", "--output=json")
+    FileUtils.mkdir_p(File.join(custom, "zones/knowledge"))
+    File.write(File.join(custom, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      zones:
+        - { name: knowledge, kind: canon }
+      entries:
+        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
+    YAML
+    File.write(File.join(custom, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
+    stdout, _stderr, status = run_cli("key", "uid", "knowledge.note", "--root=#{custom}", "--output=json")
     expect(status.exitstatus).to eq(0)
-    expect(JSON.parse(stdout)).to have_key("hooks")
+    expect(JSON.parse(stdout).fetch("uid")).to eq("abc123")
   end
 
   it "accepts the space form --root PATH after the verb" do

@@ -122,7 +122,7 @@ entries:
       select:
         - knowledge.project
         - knowledge.runbooks
-      transform: orientation_reducer
+      transform: orientation
     publish:
       - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
       - { to: AGENTS.md, template: orientation.mustache }
@@ -130,19 +130,22 @@ entries:
   - key: artifacts.derived.mcp-config
     path: artifacts/derived/mcp.json
     zone: artifacts
-    source: { from: project, select: [knowledge.project], transform: mcp_config_reducer }
+    source: { from: project, select: [knowledge.project], transform: mcp_config }
     publish: [{ to: .mcp.json }]
     kind: produced
   - key: artifacts.derived.claude-plugin
     path: artifacts/derived/plugin.json
     zone: artifacts
-    source: { from: project, select: [knowledge.project], transform: plugin_manifest_reducer }
+    source:
+      from: project
+      select: [knowledge.project]
+      transform: plugin_manifest
     publish: [{ to: .claude-plugin/plugin.json }]
     kind: produced
   - key: artifacts.derived.opencode-config
     path: artifacts/derived/opencode.json
     zone: artifacts
-    source: { from: project, select: [knowledge.project], transform: opencode_config_reducer }
+    source: { from: project, select: [knowledge.project], transform: opencode_config }
     publish: [{ to: opencode.json }]
     kind: produced
   - key: artifacts.derived.verbs
@@ -168,7 +171,7 @@ entries:
     source:
       from: project
       select: [knowledge.decisions]
-      transform: adr_index_reducer
+      transform: adr_index
       pluck: [body, _key]
     publish:
       - { to: docs/reference/adr-log.md, template: adr-log.mustache }

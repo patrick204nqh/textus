@@ -1,4 +1,0 @@
-fields:
-  name:        { type: string, required: true }
-  description: { type: string, required: true }
-  oncall_only: { type: boolean }

@@ -109,7 +109,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Try it
 
-- **Worked end-to-end store** — the role gate (propose → accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`examples/project/`](examples/project/)
+- **Worked end-to-end store** — the role gate (propose → accept), drain/publish (`CLAUDE.md` / `AGENTS.md` generated from knowledge entries), schemas, templates, and a hook: [`.textus/`](.textus/)
 - **Wire textus into Claude Code via MCP** — 4 steps, ~5 minutes: [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md)
 
 ## Protocol, not just a gem
@@ -187,7 +187,7 @@ textus audit --limit=20              # query the audit log
 
 (All verbs return JSON envelopes; `--output=json` is the default and the only format in v1.)
 
-For a worked store — knowledge entries, a staged proposal, schemas, a template, and a `drain` that publishes `CLAUDE.md` / `AGENTS.md` — see [`examples/project/`](examples/project/).
+For a worked store — knowledge entries, a staged proposal, schemas, a template, and a `drain` that publishes `CLAUDE.md` / `AGENTS.md` — see [`.textus/`](.textus/).
 
 ## What's shipped
 
@@ -279,7 +279,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 
 ## Examples
 
-[`examples/project/`](examples/project/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `drain` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
+[`.textus/`](.textus/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `drain` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
 
 ## Tests
 

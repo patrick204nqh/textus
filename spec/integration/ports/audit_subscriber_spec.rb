@@ -5,7 +5,7 @@ require "spec_helper"
 RSpec.describe Textus::Ports::AuditSubscriber do
   let(:tmpdir)    { Dir.mktmpdir }
   let(:audit_log) { Textus::Ports::AuditLog.new(tmpdir) }
-  let(:bus)       { Textus::Hooks::EventBus.new }
+  let(:bus)       { Textus::Step::EventBus.new }
   let(:ctx)       { double("ctx") } # rubocop:disable RSpec/VerifiedDoubles
 
   after { FileUtils.remove_entry(tmpdir) }
@@ -45,7 +45,7 @@ RSpec.describe Textus::Ports::AuditSubscriber do
   it "appends an event_error row when a hook times out" do
     described_class.new(audit_log).attach(bus)
     # Override the deadline so the test runs fast.
-    stub_const("Textus::Hooks::EventBus::HOOK_TIMEOUT_SECONDS", 0.05)
+    stub_const("Textus::Step::EventBus::HOOK_TIMEOUT_SECONDS", 0.05)
     bus.register(:entry_written, :slow) { |**| sleep 1 }
     bus.publish(:entry_written, key: "k", envelope: {}, ctx: ctx)
 
@@ -59,7 +59,7 @@ RSpec.describe Textus::Ports::AuditSubscriber do
       "event" => "entry_written",
       "hook" => "slow",
     )
-    expect(row.dig("extras", "error")).to start_with("Textus::Hooks::EventBus::HookTimeout:")
+    expect(row.dig("extras", "error")).to start_with("Textus::Step::EventBus::HookTimeout:")
   end
 
   it "matches the canonical row format (key ordering and field set)" do

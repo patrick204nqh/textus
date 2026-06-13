@@ -7,7 +7,7 @@ RSpec.describe ":store_loaded event" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+    FileUtils.mkdir_p(File.join(root, "steps/observe"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones: [{ name: knowledge, kind: canon }]
@@ -15,14 +15,25 @@ RSpec.describe ":store_loaded event" do
         - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
 
     YAML
-    File.write(File.join(root, "hooks/log.rb"), <<~RUBY)
+    File.write(File.join(root, "steps/observe/log_loaded.rb"), <<~RUBY)
       $textus_event_log ||= []
-      Textus.hook do |reg|
-        reg.on(:store_loaded, :log_loaded) do |ctx:|
+      Class.new(Textus::Step::Observe) do
+        on :store_loaded
+
+        def call(ctx:, **)
           list = ctx.list
           $textus_event_log << [:store_loaded, list.length]
         end
-        reg.on(:entry_written, :log_put) { |key:, **| $textus_event_log << [:entry_written, key] }
+      end
+    RUBY
+    File.write(File.join(root, "steps/observe/log_put.rb"), <<~RUBY)
+      $textus_event_log ||= []
+      Class.new(Textus::Step::Observe) do
+        on :entry_written
+
+        def call(key:, **)
+          $textus_event_log << [:entry_written, key]
+        end
       end
     RUBY
     $textus_event_log = []

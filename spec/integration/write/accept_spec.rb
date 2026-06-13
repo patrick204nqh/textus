@@ -62,7 +62,7 @@ RSpec.describe Textus::Write::Accept do
     )
 
     events = []
-    store.events.register(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
+    store.steps.on(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
       events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
     end
 

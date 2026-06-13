@@ -331,4 +331,4 @@ For agent workspace memory, add a zone with `kind: workspace` (e.g. `name: noteb
 - [`../reference/zones.md`](../reference/zones.md) — the exact zone, role, and entry semantics
 - [`../../SPEC.md`](../../SPEC.md) — the normative wire-protocol spec
 - [`../how-to/writing-hooks.md`](writing-hooks.md) — the hook-author's guide
-- [`../../examples/project/`](../../examples/project/) — a complete worked example
+- [`../../.textus/`](../../.textus/) — a complete worked example

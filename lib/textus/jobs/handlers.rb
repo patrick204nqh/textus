@@ -29,9 +29,9 @@ module Textus
         return unless result.is_a?(Hash)
 
         Array(result[:failed]).each do |failure|
-          container.events.publish(
+          container.steps.publish(
             :produce_failed,
-            ctx: Textus::Hooks::Context.for(container: container, call: call),
+            ctx: Textus::Step::Context.for(container: container, call: call),
             keys: [failure["key"]], error: failure["error"]
           )
         end

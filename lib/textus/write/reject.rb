@@ -14,7 +14,7 @@ module Textus
         @call         = call
         @manifest     = container.manifest
         @schemas      = container.schemas
-        @events       = container.events
+        @steps = container.steps
       end
 
       def call(pending_key)
@@ -40,10 +40,10 @@ module Textus
 
         delete_op.call(pending_key, suppress_events: true)
 
-        @events.publish(:proposal_rejected,
-                        ctx: hook_context,
-                        key: pending_key,
-                        target_key: target_key)
+        @steps.publish(:proposal_rejected,
+                       ctx: hook_context,
+                       key: pending_key,
+                       target_key: target_key)
 
         { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
       end
@@ -55,7 +55,7 @@ module Textus
       end
 
       def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+        @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)
       end
 
       def delete_op

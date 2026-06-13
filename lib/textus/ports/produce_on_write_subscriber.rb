@@ -15,17 +15,17 @@ module Textus
         @container = container
       end
 
-      def attach(bus)
-        bus.on(:entry_written, :produce_on_write) do |key:, **|
+      def attach(registry)
+        registry.on(:entry_written, :produce_on_write) do |key:, **|
           on_write(key: key)
         end
         # Closes the ADR 0087 gap: a delete/rename of a source must re-materialize
         # its orphaned dependents too, not just a write. These fire distinct
         # events (:entry_deleted / :entry_renamed), so subscribe to each.
-        bus.on(:entry_deleted, :produce_on_delete) do |key:, **|
+        registry.on(:entry_deleted, :produce_on_delete) do |key:, **|
           on_write(key: key)
         end
-        bus.on(:entry_renamed, :produce_on_rename) do |from_key:, to_key:, **|
+        registry.on(:entry_renamed, :produce_on_rename) do |from_key:, to_key:, **|
           on_write(key: from_key)
           on_write(key: to_key)
         end

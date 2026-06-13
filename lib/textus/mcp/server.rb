@@ -65,9 +65,9 @@ module Textus
         # ADR 0075: announce the connection to connect-time hooks with the
         # resolved role. Distinct from :store_loaded (fired at Store.new under
         # the default role, before any connection's role is known).
-        @store.events.publish(
+        @store.steps.publish(
           :session_opened,
-          ctx: Hooks::Context.new(scope: @store.as(@role)),
+          ctx: Step::Context.new(scope: @store.as(@role)),
           role: @role,
           cursor: @session.cursor,
         )

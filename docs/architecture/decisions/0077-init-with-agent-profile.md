@@ -14,13 +14,13 @@
 But a freshly-init'd store is **inert to an agent**. Two things stand between `init` and a working agent session, and today both are manual:
 
 1. **MCP wiring.** Nothing tells an agent harness how to reach the store. A user must hand-author a `.mcp.json` pointing at `textus … mcp serve` — exactly what textus itself did by hand in ADR 0041, and what every user currently copies from the README.
-2. **Orientation.** The agent-readable `CLAUDE.md`/`AGENTS.md` that projects the store's `knowledge.*` into a session-start brief doesn't exist until someone builds it. The *proven* configuration for this — an `artifacts.orientation` derived entry with a projection template + reducer — already lives in `examples/project/.textus/`, but it is not reachable from `init`.
+2. **Orientation.** The agent-readable `CLAUDE.md`/`AGENTS.md` that projects the store's `knowledge.*` into a session-start brief doesn't exist until someone builds it. The *proven* configuration for this — an `artifacts.orientation` derived entry with a projection template + reducer — already lives in `.textus/`, but it is not reachable from `init`.
 
 **The tension.** `CLAUDE.md`, `AGENTS.md`, and `.mcp.json` are vendor-shaped filenames. Does scaffolding them couple the store to a vendor and betray the neutrality thesis? **No — provided two conditions hold:** the files are (a) *opt-in*, not forced on the neutral default, and (b) *downstream projections*, not canon. ADR 0073 already names `:cli`/`:mcp` "external projections"; `CLAUDE.md`/`AGENTS.md` are derived artifacts — deletable, rebuildable, with the source of truth staying in `knowledge.*`. So shipping an opt-in *profile* of vendor projections is on-thesis; baking them into the *default* would not be. That distinction is the whole design.
 
 ## Decision
 
-1. **Add `textus init --with-agent`, a pure additive superset of the default manifest.** With the flag, `init` appends (never replaces) three entries — `knowledge.project` and `knowledge.runbooks` (with their `project`/`runbook` schemas) and an `artifacts.orientation` derived entry that projects them, via a template + reducer, to `CLAUDE.md` and `AGENTS.md`. The entry, schemas, template, and reducer are copied **verbatim** from the proven `examples/project/.textus/` configuration. Every existing default-`init` entry is untouched, so the base path stays byte-identical.
+1. **Add `textus init --with-agent`, a pure additive superset of the default manifest.** With the flag, `init` appends (never replaces) three entries — `knowledge.project` and `knowledge.runbooks` (with their `project`/`runbook` schemas) and an `artifacts.orientation` derived entry that projects them, via a template + reducer, to `CLAUDE.md` and `AGENTS.md`. The entry, schemas, template, and reducer are copied **verbatim** from the proven `.textus/` configuration. Every existing default-`init` entry is untouched, so the base path stays byte-identical.
 
 2. **The default `init` (no flag) is unchanged and stays vendor-neutral.** Batteries are opt-in. The boundary between "create a durable store" and "wire it to a vendor" stays explicit — a user who wants the neutral core gets exactly that.
 

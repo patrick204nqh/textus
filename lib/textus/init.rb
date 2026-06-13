@@ -35,7 +35,7 @@ module Textus
           kind: produced
           source:
             from: handler
-            handler: machines
+            handler: machine-intake
             ttl: 1h # cadence on a long-running server
             config:
               machines:
@@ -43,57 +43,40 @@ module Textus
       rules: []
     YAML
 
-    HOOKS_README = <<~MD
-      # Hooks
+    STEPS_README = <<~MD
+      # Steps
 
-      Drop one Ruby file per hook. All hooks register through one DSL.
-      Files anywhere under `.textus/hooks/` (including subdirectories) are loaded at
-      startup in alphabetical order by full path. Subdirectory names are organizational
-      only — the registered event and name come from the DSL call, not the file path.
+      Drop one Ruby file per step. Steps are discovered by convention.
+      Files under `.textus/steps/<kind>/<name>.rb` are loaded at
+      startup and registered.
 
-      ## DSL
+      ## Conventions
+
+      The directory name (`<kind>`) must be one of:
+      - `fetch`: Acquires data from outside the store.
+      - `transform`: Reshapes projection rows.
+      - `validate`: Validates data before writing.
+      - `observe`: Listens to store events.
+
+      The filename (`<name>.rb`) defines the step name. The class defined
+      in the file must be a subclass of `Textus::Step::<Kind>` (e.g.
+      `Textus::Step::Fetch`) and be wrapped in the `Textus::Step` module.
+
+      ## Example
 
       ```ruby
-      Textus.hook do |reg|
-        reg.on(:resolve_handler, :my_source) do |config:, args:, **|
-          { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "…" }
-        end
-
-        reg.on(:transform_rows, :my_source) { |rows:, **| rows.map { |r| r.merge(processed: true) } }
-        reg.on(:validate,       :my_check)  { |caps:, **| [] }
-        reg.on(:entry_written,      :my_listener, keys: ["knowledge.*"]) { |key:, envelope:, **| }
-
-        # Run a side-effect every time textus writes a file to your repo:
-        reg.on(:entry_published, :notify) do |key:, target:, **|
-          warn "wrote \#{target} (from \#{key})"
+      module Textus
+        module Step
+          class MyFetch < Fetch
+            def call(config:, args:, caps:, **)
+              { content: { "foo" => "bar" } }
+            end
+          end
         end
       end
       ```
 
-      The intake handler above is paired with a manifest entry whose
-      `source:` block declares the handler and its refresh cadence
-      (`ttl`). Age GC (drop/archive) lives in a top-level `retention:`
-      rule, not on the entry:
-
-      ```yaml
-      entries:
-        - key: artifacts.feeds.foo
-          kind: produced
-          path: artifacts/feeds/foo.md
-          zone: artifacts
-          source:
-            from: handler
-            handler: my_source
-            ttl: 10m        # refresh cadence for this intake
-
-      rules:
-        - match: artifacts.feeds.foo
-          retention:
-            ttl: 30d
-            action: archive   # drop | archive (age GC of stored rows)
-      ```
-
-      Events: :resolve_handler, :transform_rows, :validate (rpc — return value used)
+      Events: :fetch, :transform, :validate (rpc — return value used)
               :entry_written, :entry_deleted, :entry_fetched, :entry_renamed,
               :entry_produced, :produce_failed,
               :proposal_accepted, :proposal_rejected,
@@ -104,8 +87,6 @@ module Textus
     MD
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
-      # --with-agent profile: project facts + runbooks feed the orientation
-      # projection below, which `textus drain` renders to CLAUDE.md/AGENTS.md.
       - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
       - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.derived.orientation
@@ -119,25 +100,29 @@ module Textus
           select:
           - knowledge.project
           - knowledge.runbooks
-          transform: orientation_reducer
+          transform: orientation
         kind: produced
     YAML
 
-    def self.run(target_root, with_agent: false)
+    def self.run(target_root, with_agent: false) # rubocop:disable Metrics/AbcSize
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
 
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
-      FileUtils.mkdir_p(File.join(target_root, "hooks"))
+      FileUtils.mkdir_p(File.join(target_root, "steps/fetch"))
+      FileUtils.mkdir_p(File.join(target_root, "steps/transform"))
+      FileUtils.mkdir_p(File.join(target_root, "steps/validate"))
+      FileUtils.mkdir_p(File.join(target_root, "steps/observe"))
       ZONES.each do |z|
         dir = File.join(target_root, "zones", z)
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
-      File.write(File.join(target_root, "hooks", "README.md"), HOOKS_README)
+      File.write(File.join(target_root, "steps/README.md"), STEPS_README)
       scaffold_dir = File.expand_path("init/templates", __dir__)
-      File.write(File.join(target_root, "hooks", "machine_intake.rb"),
+      File.write(File.join(target_root, "steps/fetch/machine-intake.rb"),
                  File.read(File.join(scaffold_dir, "machine_intake.rb")))
+
       File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
       mcp_status = nil
       if with_agent
@@ -168,7 +153,7 @@ module Textus
         "project.schema.yaml" => File.join("schemas", "project.yaml"),
         "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
         "orientation.mustache" => File.join("templates", "orientation.mustache"),
-        "orientation_reducer.rb" => File.join("hooks", "orientation_reducer.rb"),
+        "orientation_reducer.rb" => File.join("steps/transform", "orientation.rb"),
       }.each do |src, dest|
         File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
       end

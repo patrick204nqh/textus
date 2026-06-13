@@ -60,19 +60,19 @@ module Textus
         # Minimal context object passed into entry `publish_via` hooks.
         # Everything beyond the three primitives is derived. Data.define
         # instances are frozen, so we recompute per-call rather than
-        # memoizing — RoleScope/Hooks::Context construction is cheap.
+        # memoizing — RoleScope/Step::Context construction is cheap.
         PublishContext = ::Data.define(:container, :call, :reader) do
           def manifest   = container.manifest
           def root       = container.root
           def repo_root  = File.dirname(container.root)
-          def events     = container.events
+          def steps      = container.steps
 
           def hook_context
-            Textus::Hooks::Context.new(scope: scope_for_hooks)
+            Textus::Step::Context.new(scope: scope_for_hooks)
           end
 
           def emit(event, **payload)
-            events.publish(event, ctx: hook_context, **payload)
+            steps.publish(event, ctx: hook_context, **payload)
           end
 
           # Read a named template from the store's templates/ directory.

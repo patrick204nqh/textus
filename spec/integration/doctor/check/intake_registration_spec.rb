@@ -32,16 +32,18 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
-      FileUtils.mkdir_p(File.join(textus, "hooks"))
+      FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
           - { name: knowledge, kind: canon }
         entries: []
       YAML
-      File.write(File.join(textus, "hooks", "orphan.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :orphan_handler) { |caps:, config:, args:| { _meta: {}, body: "" } }
+      File.write(File.join(textus, "steps", "fetch", "orphan_handler.rb"), <<~RUBY)
+        class OrphanHandlerFetch < Textus::Step::Fetch
+          def call(config:, args:, **)
+            { _meta: {}, body: "" }
+          end
         end
       RUBY
 

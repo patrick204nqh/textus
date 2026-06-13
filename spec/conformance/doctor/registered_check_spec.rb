@@ -10,9 +10,10 @@ RSpec.describe "registered doctor_check invocation" do
   it "merges registered check issues into the doctor report" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "hooks/org_rules.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:validate, :org_rules) do |caps:|
+      FileUtils.mkdir_p(File.join(root, "steps", "validate"))
+      File.write(File.join(root, "steps", "validate", "org_rules.rb"), <<~RUBY)
+        class OrgRulesValidate < Textus::Step::Validate
+          def call(caps:)
             [{ "code" => "org.bad_naming", "level" => "warning",
                "subject" => "test", "message" => "fake issue", "fix" => "n/a" }]
           end
@@ -30,9 +31,12 @@ RSpec.describe "registered doctor_check invocation" do
   it "captures a check that raises as an error-level issue without aborting" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "hooks/boom.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:validate, :boom) { |caps:| raise "kaboom" }
+      FileUtils.mkdir_p(File.join(root, "steps", "validate"))
+      File.write(File.join(root, "steps", "validate", "boom.rb"), <<~RUBY)
+        class BoomValidate < Textus::Step::Validate
+          def call(caps:)
+            raise "kaboom"
+          end
         end
       RUBY
 
@@ -48,9 +52,12 @@ RSpec.describe "registered doctor_check invocation" do
   it "captures a check that times out" do
     Dir.mktmpdir do |dir|
       root = init_store(dir)
-      File.write(File.join(root, "hooks/slow.rb"), <<~RUBY)
-        Textus.hook do |reg|
-          reg.on(:validate, :slow) { |caps:| :unreached }
+      FileUtils.mkdir_p(File.join(root, "steps", "validate"))
+      File.write(File.join(root, "steps", "validate", "slow.rb"), <<~RUBY)
+        class SlowValidate < Textus::Step::Validate
+          def call(caps:)
+            :unreached
+          end
         end
       RUBY
 

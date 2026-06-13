@@ -60,12 +60,10 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
 
     let(:counting_hook) do
       <<~RUBY
-        Textus.hook do |reg|
-          reg.on(:resolve_handler, :test_intake) do |caps:, config:, args:|
-            Thread.current[:fetch_count] ||= 0
-            Thread.current[:fetch_count] += 1
-            { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh body" }
-          end
+        def call(config:, args:, **)
+          Thread.current[:fetch_count] ||= 0
+          Thread.current[:fetch_count] += 1
+          { _meta: { "last_fetched_at" => Time.now.utc.iso8601 }, body: "fresh body" }
         end
       RUBY
     end

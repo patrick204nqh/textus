@@ -29,7 +29,7 @@ module Textus
     end
 
     def hook_context
-      @hook_context ||= Textus::Hooks::Context.new(scope: self)
+      @hook_context ||= Textus::Step::Context.new(scope: self)
     end
 
     def with_dry_run

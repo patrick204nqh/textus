@@ -9,7 +9,7 @@ RSpec.describe Textus::Write::KeyMv do
       ops.put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
       events = []
-      store.events.register(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
+      store.steps.on(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
 
       result = store.as("human").key_mv("knowledge.notes.alpha",
                                         "knowledge.notes.beta")

@@ -12,7 +12,7 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 | If you want to… | Read |
 |---|---|
-| Learn by doing | [`tutorials/`](tutorials/README.md) → [`../examples/project/`](../examples/project/) |
+| Learn by doing | [`tutorials/`](tutorials/README.md) → [`../.textus/`](../.textus/) |
 | Understand the mental model | [`explanation/concepts.md`](explanation/concepts.md) |
 | Wire an agent via MCP | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) |
 

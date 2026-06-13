@@ -9,7 +9,6 @@ loader.inflector.inflect(
   "cli" => "CLI",
   "json" => "Json",
   "yaml" => "Yaml",
-  "hook_dsl_scanner" => "HookDSLScanner",
   "io" => "IO",
   "mcp" => "MCP",
   "mcp_serve" => "MCPServe",
@@ -18,8 +17,8 @@ loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp.rb", __dir__))
 loader.ignore(File.expand_path("textus/mcp/errors.rb", __dir__))
 # Scaffold sources copied verbatim into user stores by `textus init`. They are
-# file templates (one calls `Textus.hook` at load time), not gem constants —
-# Zeitwerk must not manage or eager-load them (ADR 0043).
+# templates for user-owned step classes, not gem constants — Zeitwerk must not
+# manage or eager-load them.
 loader.ignore(File.expand_path("textus/init/templates", __dir__))
 loader.setup
 loader.eager_load
@@ -29,20 +28,4 @@ loader.eager_load
 Textus::Boot::CLI_VERBS = Textus::Boot.build_cli_verbs.freeze
 
 module Textus
-  @hook_mutex  = Mutex.new
-  @hook_blocks = []
-
-  def self.hook(&blk)
-    raise UsageError.new("hook block required") unless blk
-
-    @hook_mutex.synchronize { @hook_blocks << blk }
-  end
-
-  def self.drain_hook_blocks
-    @hook_mutex.synchronize do
-      blocks = @hook_blocks
-      @hook_blocks = []
-      blocks
-    end
-  end
 end

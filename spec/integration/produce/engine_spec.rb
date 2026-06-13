@@ -103,7 +103,7 @@ RSpec.describe Textus::Produce::Engine do
     # per-key rescue). converge must swallow it and publish :produce_failed.
     it "does not raise and publishes :produce_failed" do
       fired = []
-      store.container.events.on(:produce_failed, :probe) { |error:, **| fired << error }
+      store.container.steps.on(:produce_failed, :probe) { |error:, **| fired << error }
 
       # Force build_actor_call to fail (no converge actor at call time) so a
       # Textus::Error escapes Produce#call — the path .converge must isolate.

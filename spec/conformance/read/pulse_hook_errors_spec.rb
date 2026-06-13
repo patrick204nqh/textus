@@ -4,7 +4,7 @@ RSpec.describe "Pulse hook_errors" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/knowledge schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[zones/knowledge schemas].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -24,7 +24,7 @@ RSpec.describe "Pulse hook_errors" do
   end
 
   it "includes a row when a hook errors" do
-    store.events.error_log.record(
+    store.steps.error_log.record(
       seq: 1, event: :entry_written, hook: :sample,
       key: "knowledge.note", error_class: "RuntimeError", error_message: "boom"
     )
@@ -34,8 +34,8 @@ RSpec.describe "Pulse hook_errors" do
   end
 
   it "filters by since seq" do
-    store.events.error_log.record(seq: 1, event: :x, hook: :a, key: nil, error_class: "E", error_message: "m")
-    store.events.error_log.record(seq: 5, event: :x, hook: :b, key: nil, error_class: "E", error_message: "m")
+    store.steps.error_log.record(seq: 1, event: :x, hook: :a, key: nil, error_class: "E", error_message: "m")
+    store.steps.error_log.record(seq: 5, event: :x, hook: :b, key: nil, error_class: "E", error_message: "m")
     result = store.as("human").pulse(since: 3)
     expect(result["hook_errors"].map { |r| r["seq"] }).to eq([5])
   end

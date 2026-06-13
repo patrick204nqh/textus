@@ -26,7 +26,7 @@ module Textus
 
       def root     = @container.root
       def manifest = @container.manifest
-      def rpc      = @container.rpc
+      def steps    = @container.steps
 
       # Dispatch a verb through the single use-case invocation seam (ADR 0026).
       def dispatch(verb, *args, **kwargs)

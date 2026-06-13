@@ -16,6 +16,7 @@ module Textus
 
           def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument,Metrics/AbcSize
             targets = entry.publish_targets.select(&:to_target?)
+
             return nil if targets.empty?
 
             data_path = pctx.manifest.resolver.resolve(entry.key).path

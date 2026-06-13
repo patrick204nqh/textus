@@ -1,4 +1,4 @@
-# Wraps the `intake_store` preset + the `resolve_handler` hook heredoc that ~15
+# Wraps the `intake_store` preset + the fetch-step method body heredoc that ~15
 # specs re-author by hand. Include alongside "textus_store_fixture" (which
 # provides `root`); override the knobs via `let` where a spec needs them:
 #
@@ -12,8 +12,8 @@ RSpec.shared_context "intake doc" do
   let(:intake_kind_zone) { "machine" }
   let(:intake_body) do
     <<~RUBY
-      Textus.hook do |reg|
-        reg.on(:resolve_handler, :test_intake) { |caps:, config:, args:| { _meta: { "name" => "doc" }, body: "fresh" } }
+      def call(config:, args:, **)
+        { _meta: { "name" => "doc" }, body: "fresh" }
       end
     RUBY
   end

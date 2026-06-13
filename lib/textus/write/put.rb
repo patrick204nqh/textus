@@ -22,7 +22,7 @@ module Textus
         @container    = container
         @call         = call
         @manifest     = container.manifest
-        @events       = container.events
+        @steps = container.steps
       end
 
       def call(key, meta: nil, body: nil, content: nil, if_etag: nil)
@@ -39,10 +39,10 @@ module Textus
           if_etag: if_etag,
         )
 
-        @events.publish(:entry_written,
-                        ctx: hook_context,
-                        key: key,
-                        envelope: envelope)
+        @steps.publish(:entry_written,
+                       ctx: hook_context,
+                       key: key,
+                       envelope: envelope)
 
         envelope
       end
@@ -63,7 +63,7 @@ module Textus
       end
 
       def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+        @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)
       end
 
       def writer

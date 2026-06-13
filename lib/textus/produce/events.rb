@@ -7,29 +7,29 @@ module Textus
     class Events
       def self.from(container:, call:)
         new(
-          events: container.events,
-          hook_context: Textus::Hooks::Context.for(container: container, call: call),
+          steps: container.steps,
+          hook_context: Textus::Step::Context.for(container: container, call: call),
         )
       end
 
-      def initialize(events:, hook_context:)
-        @events = events
+      def initialize(steps:, hook_context:)
+        @steps = steps
         @hook_context = hook_context
       end
 
       def started(key, mode: :sync)
-        @events.publish(:entry_fetch_started, ctx: @hook_context, key: key, mode: mode)
+        @steps.publish(:entry_fetch_started, ctx: @hook_context, key: key, mode: mode)
       end
 
       def failed(key, error)
-        @events.publish(:entry_fetch_failed, ctx: @hook_context, key: key,
-                                             error_class: error.class.name, error_message: error.message)
+        @steps.publish(:entry_fetch_failed, ctx: @hook_context, key: key,
+                                            error_class: error.class.name, error_message: error.message)
       end
 
       def fetched(key, envelope, change)
         return if change == :unchanged
 
-        @events.publish(:entry_fetched, ctx: @hook_context, key: key, envelope: envelope, change: change)
+        @steps.publish(:entry_fetched, ctx: @hook_context, key: key, envelope: envelope, change: change)
       end
     end
   end

@@ -7,7 +7,7 @@ RSpec.describe Textus::Store do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "hooks"))
+    FileUtils.mkdir_p(File.join(root, "steps"))
     FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -29,8 +29,7 @@ RSpec.describe Textus::Store do
       expect(store.schemas).to be_a(Textus::Schemas)
       expect(store.file_store).to be_a(Textus::Ports::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Ports::AuditLog)
-      expect(store.events).to be_a(Textus::Hooks::EventBus)
-      expect(store.rpc).to be_a(Textus::Hooks::RpcRegistry)
+      expect(store.steps).to be_a(Textus::Step::RegistryStore)
     end
 
     it "no longer responds to reader/writer/schema_for" do
@@ -74,12 +73,20 @@ RSpec.describe Textus::Store do
     end
   end
 
-  describe "hook bootstrapping" do
-    it "loads hook files from <root>/hooks at construction time" do
-      File.write(File.join(root, "hooks/marker.rb"), <<~RUBY)
-        $textus_store_spec_seen = []
-        Textus.hook do |reg|
-          reg.on(:store_loaded, :marker) { |**| $textus_store_spec_seen << :loaded }
+  describe "step bootstrapping" do
+    it "loads step files from <root>/steps at construction time" do
+      FileUtils.mkdir_p(File.join(root, "steps/observe"))
+      File.write(File.join(root, "steps/observe/marker.rb"), <<~RUBY)
+        module Textus
+          module Step
+            class MarkerObserve < Observe
+              def self.event = :store_loaded
+              def self.match = nil
+              def call(ctx:, **)
+                $textus_store_spec_seen = [$textus_store_spec_seen, :loaded].compact
+              end
+            end
+          end
         end
       RUBY
       $textus_store_spec_seen = nil

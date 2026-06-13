@@ -12,20 +12,20 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
   # (object), so a format:yaml entry stores queryable content.
   let(:probe_json) { %({"os":"darwin24","packages":{"brew":42},"runtimes":{"ruby":"3.3.9","node":"20.11"}}) }
 
-  let(:hook) { <<~RUBY }
-    Textus.hook do |reg|
-      reg.on(:resolve_handler, :machines) do |caps:, config:, args:|
+  let(:machines_step) { <<~RUBY }
+    class MachinesFetch < Textus::Step::Fetch
+      def call(caps:, config:, args:, **)
         machine = args[:leaf_segments].first
         raise "unknown machine: \#{machine}" unless config.fetch("machines").key?(machine)
         raw = #{probe_json.inspect}                      # stands in for the SSH probe
-        caps.rpc.invoke(:resolve_handler, :json,
-                        caps: caps, config: { "bytes" => raw }, args: args)
+        caps.steps.invoke(:fetch, :json,
+                          caps: caps, config: { "bytes" => raw }, args: args)
       end
     end
   RUBY
 
   let(:store) do
-    store_from_manifest(root, zones: %w[feeds], files: { "hooks/machines.rb" => hook }, manifest: <<~YAML)
+    store_from_manifest(root, zones: %w[feeds], files: { "steps/fetch/machines.rb" => machines_step }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: automation, can: [converge] }

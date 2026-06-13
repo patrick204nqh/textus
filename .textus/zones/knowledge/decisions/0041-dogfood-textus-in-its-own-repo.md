@@ -3,13 +3,13 @@
 **Date:** 2026-05-31
 **Status:** Accepted
 **Refines:** [ADR 0040](./0040-mcp-connection-role-and-two-channels.md) (the MCP connection acts as `agent` and pins its root), [ADR 0038](./0038-runtime-artifacts-under-run-and-layout.md) (runtime artifacts under `.run/`; `role` is tracked config), [ADR 0036](./0036-transports-as-pure-framings.md) (MCP is one framing over the verb vocabulary)
-**Touches:** [ADR 0015](./0015-agent-gate-mcp.md) (the agent gate is MCP-shaped), [ADR 0030](./0030-capability-based-roles.md) (capability roles), [`docs/how-to/agents-mcp.md`](../../how-to/agents-mcp.md) (the end-user Claude Code wiring guide), [`examples/project/`](../../../examples/project/) (the worked store this mirrors)
+**Touches:** [ADR 0015](./0015-agent-gate-mcp.md) (the agent gate is MCP-shaped), [ADR 0030](./0030-capability-based-roles.md) (capability roles), [`docs/how-to/agents-mcp.md`](../../how-to/agents-mcp.md) (the end-user Claude Code wiring guide), [`.textus/`](../../../.textus/) (the worked store this mirrors)
 
 ## Context
 
 textus exists to wire a durable, multi-writer context store into Claude Code
 and other MCP agents (`docs/how-to/agents-mcp.md`). The repo documents that integration
-and ships a worked `examples/project/` store — but **the textus repo did not run
+and ships a worked `.textus/` store — but **the textus repo did not run
 textus on its own development.** A `.textus/` skeleton existed, uncommitted and
 empty (only `.gitkeep`s); there was no `.mcp.json`, no projected `CLAUDE.md`. A
 tool whose entire pitch is "wire me in for durable agent memory" was not wired
@@ -39,7 +39,7 @@ Two facts make the gap worth closing deliberately rather than by copy-paste:
 
 `.textus/` is committed (its `.run/` runtime tree stays git-ignored, ADR 0038).
 The store is shaped to dogfood the full build/publish path, mirroring
-`examples/project/`: humans author `knowledge.project` + `knowledge.runbooks`
+`.textus/`: humans author `knowledge.project` + `knowledge.runbooks`
 (canon), the agent keeps durable `notebook` notes and `propose`s, automation
 `build`s an `artifacts.orientation` projection that publishes to `CLAUDE.md` and
 `AGENTS.md` at the repo root. The role/capability split is the standard one

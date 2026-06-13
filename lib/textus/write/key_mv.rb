@@ -21,7 +21,7 @@ module Textus
         @container    = container
         @call         = call
         @manifest     = container.manifest
-        @events       = container.events
+        @steps = container.steps
       end
 
       def call(old_key, new_key, dry_run: false)
@@ -40,7 +40,7 @@ module Textus
       private
 
       def hook_context
-        @hook_context ||= Textus::Hooks::Context.for(container: @container, call: @call)
+        @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)
       end
 
       def prepare(old_key, new_key)
@@ -88,12 +88,12 @@ module Textus
       end
 
       def publish_renamed(old_key, new_key, envelope)
-        @events.publish(:entry_renamed,
-                        ctx: hook_context,
-                        key: new_key,
-                        from_key: old_key,
-                        to_key: new_key,
-                        envelope: envelope)
+        @steps.publish(:entry_renamed,
+                       ctx: hook_context,
+                       key: new_key,
+                       from_key: old_key,
+                       to_key: new_key,
+                       envelope: envelope)
       end
 
       def dry_run_result(old_key, new_key, old_res, new_res)

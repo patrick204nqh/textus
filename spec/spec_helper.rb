@@ -36,4 +36,20 @@ RSpec.configure do |c|
   c.define_derived_metadata(file_path: %r{/spec/unit/})        { |m| m[:unit]        = true }
   c.define_derived_metadata(file_path: %r{/spec/integration/}) { |m| m[:integration] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/}) { |m| m[:conformance] = true }
+
+  # Specs that exercise actively-changing internals are marked volatile so
+  # contract-focused suites can exclude them by policy.
+  c.define_derived_metadata(file_path: %r{/spec/conformance/events_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/loaded_event_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/publish/tree_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/plugin_manifest_build_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/init/scaffold_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/write/mv_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/write/reject_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/cli/(hook_verbs|action_verb|groups|contract|root_flag)_spec\.rb$}) do |m|
+    m[:volatile] = true
+  end
+  c.define_derived_metadata(file_path: %r{/spec/unit/produce/events_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/unit/spec_layout_spec\.rb$}) { |m| m[:volatile] = true }
+  c.define_derived_metadata(file_path: %r{/spec/conformance/boot/cli_verbs_spec\.rb$}) { |m| m[:volatile] = true }
 end
