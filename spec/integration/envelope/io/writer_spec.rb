@@ -26,7 +26,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
 
       env = writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "hi"))
       expect(env).to be_a(Textus::Envelope)
-      path = File.join(root, "zones", "knowledge", "foo.md")
+      path = File.join(root, "data", "knowledge", "foo.md")
       expect(File.binread(path)).to include("hi")
 
       expect(store).to have_audit_verb("put").with_correlation("corr-put")
@@ -52,7 +52,7 @@ RSpec.describe Textus::Envelope::IO::Writer do
 
       writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "x"))
       writer.delete("knowledge.foo", mentry: mentry)
-      path = File.join(root, "zones", "knowledge", "foo.md")
+      path = File.join(root, "data", "knowledge", "foo.md")
       expect(File.exist?(path)).to be(false)
 
       last = File.read(audit_log_path(root)).lines.last
@@ -85,8 +85,8 @@ RSpec.describe Textus::Envelope::IO::Writer do
       )
       env = writer.move(from_key: "knowledge.foo", to_key: "knowledge.bar", new_mentry: new_mentry)
 
-      old_path = File.join(root, "zones", "knowledge", "foo.md")
-      new_path = File.join(root, "zones", "knowledge", "bar.md")
+      old_path = File.join(root, "data", "knowledge", "foo.md")
+      new_path = File.join(root, "data", "knowledge", "bar.md")
       expect(File.exist?(old_path)).to be(false)
       expect(File.exist?(new_path)).to be(true)
       expect(env.key).to eq("knowledge.bar")

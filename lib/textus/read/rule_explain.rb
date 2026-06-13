@@ -52,6 +52,7 @@ module Textus
       def lean_value(field, value)
         case field
         when :retention then retention_hash(value, string_keys: true)
+        when :react then value.to_h
         else value
         end
       end
@@ -81,6 +82,7 @@ module Textus
 
         case field
         when :retention         then retention_hash(value, string_keys: false)
+        when :react             then value.to_h
         when :handler_allowlist then value.handlers
         else value
         end

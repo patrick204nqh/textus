@@ -15,7 +15,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
   end
 
   def write_file(rel, contents)
-    abs = File.join(root, "zones/working", rel)
+    abs = File.join(root, "data/working", rel)
     FileUtils.mkdir_p(File.dirname(abs))
     File.write(abs, contents)
   end
@@ -155,7 +155,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       materialize(store)
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be true
 
-      File.delete(File.join(root, "zones/working/skills/my-skill/references/foo.md"))
+      File.delete(File.join(root, "data/working/skills/my-skill/references/foo.md"))
       materialize(store)
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
@@ -253,9 +253,9 @@ RSpec.describe "publish_tree (ADR 0047)" do
 
     let(:opacity_files) do
       {
-        "zones/working/skills/my-skill/SKILL.md" => "# my skill\n",
-        "zones/working/skills/my-skill/README.md" => "# readme\n",
-        "zones/working/skills/my-skill/references/algo.md" => "notes\n",
+        "data/working/skills/my-skill/SKILL.md" => "# my skill\n",
+        "data/working/skills/my-skill/README.md" => "# readme\n",
+        "data/working/skills/my-skill/references/algo.md" => "notes\n",
       }
     end
 
@@ -297,7 +297,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       YAML
       plain_store = store_from_manifest(
         root, zones: %w[working], manifest: plain,
-              files: { "zones/working/notes/Bad_Dir/note.md" => "x\n" }
+              files: { "data/working/notes/Bad_Dir/note.md" => "x\n" }
       )
       issues = Textus::Doctor::Check::IllegalKeys.new(plain_store.container).call
       expect(issues).to include(hash_including("code" => "key.illegal"))

@@ -5,7 +5,7 @@ RSpec.describe Textus::Doctor do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -87,7 +87,7 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports key.illegal for nested entries with bad filenames" do
-    File.write(File.join(root, "zones/knowledge/notes/Bad_Name.md"), "---\n---\nx\n")
+    File.write(File.join(root, "data/knowledge/notes/Bad_Name.md"), "---\n---\nx\n")
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "key.illegal" }
     expect(issue).not_to be_nil
@@ -181,7 +181,7 @@ RSpec.describe Textus::Doctor do
     it "surfaces validate_all role_authority violations as error-level issues" do
       ra_root = File.join(tmp2, ".textus")
       FileUtils.mkdir_p(File.join(ra_root, "schemas"))
-      FileUtils.mkdir_p(File.join(ra_root, "zones/knowledge/people"))
+      FileUtils.mkdir_p(File.join(ra_root, "data/knowledge/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
         version: textus/3

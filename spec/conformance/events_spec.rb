@@ -6,7 +6,7 @@ RSpec.describe "Lifecycle events" do
 
   describe "entry put/delete hooks" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -76,7 +76,7 @@ RSpec.describe "Lifecycle events" do
 
   describe "fetch event" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/intake"))
+      FileUtils.mkdir_p(File.join(root, "data/intake"))
       FileUtils.mkdir_p(File.join(root, "steps/fetch"))
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -208,8 +208,8 @@ RSpec.describe "Lifecycle events" do
 
   describe "build and accept events" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-      FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/artifacts"))
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -232,7 +232,7 @@ RSpec.describe "Lifecycle events" do
       YAML
       FileUtils.mkdir_p(File.join(root, "templates"))
       File.write(File.join(root, "templates/summary.mustache"), "{{#rows}}- {{name}}\n{{/rows}}")
-      File.write(File.join(root, "zones/knowledge/x.md"), "---\nname: x\n---\nhi\n")
+      File.write(File.join(root, "data/knowledge/x.md"), "---\nname: x\n---\nhi\n")
       # `$log ||= []` (not `= []`): the hooks file is loaded more than once — the
       # store boot loads it, and the doctor's hooks check (run by `drain` for its
       # health summary) re-loads it. A hard reset would clobber the entry the
@@ -261,8 +261,8 @@ RSpec.describe "Lifecycle events" do
 
   describe "accept event" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-      FileUtils.mkdir_p(File.join(root, "zones/proposals"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/proposals"))
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -275,7 +275,7 @@ RSpec.describe "Lifecycle events" do
           - { key: proposals.bob,  path: proposals/bob.md,  zone: proposals, kind: leaf}
 
       YAML
-      File.write(File.join(root, "zones/proposals/bob.md"), <<~MD)
+      File.write(File.join(root, "data/proposals/bob.md"), <<~MD)
         ---
         name: bob
         proposal:

@@ -23,7 +23,7 @@ RSpec.describe "publish per target (ADR 0094)" do
                                         - { to: out.json }
                                 YAML
                                 files: {
-                                  "zones/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
+                                  "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
                                   "templates/rows.mustache" => "{{#entries}}{{_key}}\n{{/entries}}",
                                 })
     end
@@ -41,7 +41,7 @@ RSpec.describe "publish per target (ADR 0094)" do
       published = JSON.parse(File.read(File.join(tmp, "out.json")))
       expect(published).not_to have_key("_meta")
       expect(published).to have_key("entries")
-      expect(JSON.parse(File.read(File.join(root, "zones/artifacts/cat.json")))).to have_key("_meta")
+      expect(JSON.parse(File.read(File.join(root, "data/artifacts/cat.json")))).to have_key("_meta")
     end
   end
 
@@ -61,7 +61,7 @@ RSpec.describe "publish per target (ADR 0094)" do
                                         - { to: out.json }
                                 YAML
                                 files: {
-                                  "zones/knowledge/cfg.json" => %({"_meta":{"key":"knowledge.cfg"},"content":{"a":1}}\n),
+                                  "data/knowledge/cfg.json" => %({"_meta":{"key":"knowledge.cfg"},"content":{"a":1}}\n),
                                 })
     end
 

@@ -32,8 +32,8 @@ RSpec.describe Textus::Write::KeyMv do
       result = store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta", dry_run: true)
 
       expect(result["dry_run"]).to be(true)
-      expect(File.exist?(File.join(tmp, ".textus/zones/knowledge/notes/alpha.md"))).to be(true)
-      expect(File.exist?(File.join(tmp, ".textus/zones/knowledge/notes/beta.md"))).to be(false)
+      expect(File.exist?(File.join(tmp, ".textus/data/knowledge/notes/alpha.md"))).to be(true)
+      expect(File.exist?(File.join(tmp, ".textus/data/knowledge/notes/beta.md"))).to be(false)
     end
   end
 

@@ -30,7 +30,7 @@ RSpec.describe Textus::MCP::ToolSchemas do
     it "exposes the maintenance tools" do
       names = described_class.all.map { |t| t[:name] }
       expect(names).to include("key_mv_prefix", "key_delete_prefix",
-                               "zone_mv", "rule_lint", "drain")
+                               "data_mv", "rule_lint", "drain")
     end
 
     it "marks key-required tools' inputSchema with required: ['key']" do

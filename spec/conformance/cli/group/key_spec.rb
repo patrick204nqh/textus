@@ -8,8 +8,8 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/working/archive"))
+    FileUtils.mkdir_p(File.join(root, "data/working/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/working/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -18,8 +18,8 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
         - { key: working.notes, path: working/notes, zone: working, owner: human:self, kind: nested, nested: true }
         - { key: working.archive, path: working/archive, zone: working, owner: human:self, kind: nested, nested: true }
     YAML
-    File.write(File.join(root, "zones/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
-    File.write(File.join(root, "zones/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")
+    File.write(File.join(root, "data/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
+    File.write(File.join(root, "data/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
   end
@@ -29,8 +29,8 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
     expect(payload).to include("ok" => true, "key" => "working.notes.a", "deleted" => true)
-    expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(false)
-    expect(File.exist?(File.join(root, "zones/working/notes/b.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(false)
+    expect(File.exist?(File.join(root, "data/working/notes/b.md"))).to be(true)
   end
 
   it "`key delete-prefix PREFIX` dispatches :key_delete_prefix and APPLIES by default" do
@@ -38,14 +38,14 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
     expect(payload["steps"].map { |s| s["op"] }).to all(eq("delete"))
-    expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(false)
-    expect(File.exist?(File.join(root, "zones/working/notes/b.md"))).to be(false)
+    expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(false)
+    expect(File.exist?(File.join(root, "data/working/notes/b.md"))).to be(false)
   end
 
   it "`key delete-prefix PREFIX --dry-run` plans without deleting" do
     rc = run(["--root=#{root}", "key", "delete-prefix", "working.notes", "--as=human", "--dry-run"])
     expect(rc).to eq(0), "stderr: #{stderr.string}"
-    expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(true)
   end
 
   it "`key mv OLD NEW` dispatches :mv and applies by default" do
@@ -53,8 +53,8 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
     expect(payload).to include("ok" => true, "from_key" => "working.notes.a", "to_key" => "working.notes.c")
-    expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(false)
-    expect(File.exist?(File.join(root, "zones/working/notes/c.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(false)
+    expect(File.exist?(File.join(root, "data/working/notes/c.md"))).to be(true)
   end
 
   it "`key mv-prefix FROM TO` dispatches :key_mv_prefix and APPLIES by default" do
@@ -62,6 +62,6 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
     expect(payload["steps"].map { |s| s["op"] }).to all(eq("mv"))
-    expect(File.exist?(File.join(root, "zones/working/archive/a.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/working/archive/a.md"))).to be(true)
   end
 end

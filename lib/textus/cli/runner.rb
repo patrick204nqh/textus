@@ -70,7 +70,7 @@ module Textus
 
       # Fill CLI-specific defaults (cli_default:) for args the operator did not
       # pass, where the CLI default diverges from the contract default the agent
-      # surfaces use — e.g. migrate/zone_mv apply by default on the CLI but plan
+      # surfaces use — e.g. migrate/data_mv apply by default on the CLI but plan
       # by default for agents (ADR 0068). The divergence is legible in the
       # contract, not hidden in a hand class.
       def apply_cli_defaults(spec, inputs)
@@ -93,7 +93,7 @@ module Textus
       # operator-facing default diverges from the contract default the agent
       # surfaces use, else the contract `default`. This drives boolean flag
       # polarity so a verb that applies-by-default on the CLI but plans-by-default
-      # for agents (migrate, zone_mv) gets a `--dry-run` flag, not `--no-dry-run`.
+      # for agents (migrate, data_mv) gets a `--dry-run` flag, not `--no-dry-run`.
       def effective_default(arg)
         arg.cli_default == :__unset ? arg.default : arg.cli_default
       end

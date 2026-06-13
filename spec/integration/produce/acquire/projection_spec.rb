@@ -15,8 +15,8 @@ RSpec.describe Textus::Produce::Acquire::Projection do
   let(:ctx)   { test_ctx(role: "automation") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/people"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -34,9 +34,9 @@ RSpec.describe Textus::Produce::Acquire::Projection do
           source: { from: project, select: [knowledge.people], pluck: [name, org], sort_by: name }
     YAML
 
-    File.write(File.join(root, "zones/knowledge/people/alice.md"),
+    File.write(File.join(root, "data/knowledge/people/alice.md"),
                "---\nname: alice\norg: x\n---\n")
-    File.write(File.join(root, "zones/knowledge/people/bob.md"),
+    File.write(File.join(root, "data/knowledge/people/bob.md"),
                "---\nname: bob\norg: y\n---\n")
   end
 

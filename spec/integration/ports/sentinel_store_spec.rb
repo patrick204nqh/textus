@@ -7,7 +7,7 @@ RSpec.describe Textus::Ports::SentinelStore do
   let(:tmp)        { Dir.mktmpdir("textus-sentinel-store") }
   let(:repo_root)  { tmp }
   let(:store_root) { File.join(tmp, ".textus") }
-  let(:src_abs)    { File.join(store_root, "zones", "output", "out.md") }
+  let(:src_abs)    { File.join(store_root, "data", "output", "out.md") }
   let(:dst_abs)    { File.join(tmp, "dst.md") }
   let(:sentinel_path) do
     File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json")
@@ -27,7 +27,7 @@ RSpec.describe Textus::Ports::SentinelStore do
       store.write!(target: dst_abs, source: src_abs, store_root: store_root)
       data = JSON.parse(File.read(sentinel_path))
       expect(data["target"]).to eq("dst.md")
-      expect(data["source"]).to eq(".textus/zones/output/out.md")
+      expect(data["source"]).to eq(".textus/data/output/out.md")
       expect(data["sha256"]).to eq(Digest::SHA256.hexdigest("hello\n"))
       expect(data["mode"]).to eq("copy")
     end

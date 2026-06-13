@@ -10,7 +10,7 @@ RSpec.describe Textus::Produce::Engine do
       root,
       zones: %w[knowledge feeds],
       files: {
-        "zones/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
+        "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
         "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
       },
       manifest: <<~YAML,
@@ -44,7 +44,7 @@ RSpec.describe Textus::Produce::Engine do
   it "produces a derived projection (data to store, render to publish target)" do
     result = produce.call(keys: ["feeds.catalog"])
     expect(result[:produced]).to include("feeds.catalog")
-    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("A")
+    expect(File.read(File.join(root, "data/feeds/catalog.json"))).to include("A")
     expect(File.read(File.join(tmp, "CATALOG.md"))).to include("A")
   end
 
@@ -60,8 +60,8 @@ RSpec.describe Textus::Produce::Engine do
         root,
         zones: %w[working],
         files: {
-          "zones/working/skills/s/commands.md" => "# c\n",
-          "zones/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
+          "data/working/skills/s/commands.md" => "# c\n",
+          "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
           "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
         },
         manifest: <<~YAML,

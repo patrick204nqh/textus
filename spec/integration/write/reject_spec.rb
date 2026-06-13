@@ -7,8 +7,8 @@ RSpec.describe Textus::Write::Reject do
     store_from_manifest(
       root,
       files: {
-        "zones/target.md" => "---\nname: target\n---\nbody\n",
-        "zones/draft.md" => "---\nname: draft\nproposal:\n  target_key: identity.target\n---\nbody\n",
+        "data/target.md" => "---\nname: target\n---\nbody\n",
+        "data/draft.md" => "---\nname: draft\nproposal:\n  target_key: identity.target\n---\nbody\n",
       },
       manifest: <<~YAML,
         version: textus/3

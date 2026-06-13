@@ -4,7 +4,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -16,7 +16,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
   end
 
   it "returns empty array when the declared leaf file exists" do
-    File.write(File.join(root, "zones/knowledge/note.md"), "hi\n")
+    File.write(File.join(root, "data/knowledge/note.md"), "hi\n")
     store = Textus::Store.new(root)
     expect(described_class.new(store.container).call).to eq([])
   end

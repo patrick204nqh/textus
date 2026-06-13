@@ -82,6 +82,13 @@ module Textus
             in_pick: true, in_ambiguity: true,
             in_rule_list: true, in_rule_explain: %i[lean detail]
           },
+          react: {
+            yaml_key: "react",
+            policy_class: Textus::Domain::Policy::React,
+            validation: :immediate, sub_keys: nil, arg_key: :raw,
+            in_pick: true, in_ambiguity: true,
+            in_rule_list: true, in_rule_explain: %i[lean detail]
+          },
         }.freeze
 
         RULE_KEYS = (["match"] + FIELD_REGISTRY.values.map { |m| m[:yaml_key] }).freeze

@@ -12,7 +12,7 @@ RSpec.describe "textus/3 conformance — store#validate_all" do
     end
 
     it "reports schema violations and bad frontmatter" do
-      File.write(File.join(root, "zones/knowledge/network/org/broken.md"),
+      File.write(File.join(root, "data/knowledge/network/org/broken.md"),
                  "---\nname: broken\n---\n")
       res = store.as(Textus::Role::DEFAULT).validate_all
       expect(res["ok"]).to be false

@@ -4,8 +4,8 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   def with_store(manifest_yaml, extra_zones: [])
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
-      extra_zones.each { |z| FileUtils.mkdir_p(File.join(textus, "zones", z)) }
+      FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
+      extra_zones.each { |z| FileUtils.mkdir_p(File.join(textus, "data", z)) }
       File.write(File.join(textus, "manifest.yaml"), manifest_yaml)
       yield Textus::Store.new(textus)
     end

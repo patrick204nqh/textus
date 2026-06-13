@@ -8,7 +8,7 @@ RSpec.describe "MCP :session_opened event" do
   let(:root) { File.join(tmp, ".textus") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     FileUtils.mkdir_p(File.join(root, "steps/observe"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3

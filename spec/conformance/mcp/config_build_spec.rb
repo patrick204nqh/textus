@@ -5,8 +5,8 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     FileUtils.mkdir_p(File.join(root, "steps/transform"))
 
     File.write(File.join(root, "steps/transform/mcp_config_reducer.rb"), <<~RUBY)
@@ -45,7 +45,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
             transform: mcp_config_reducer
     YAML
 
-    File.write(File.join(root, "zones/knowledge/project.md"),
+    File.write(File.join(root, "data/knowledge/project.md"),
                "---\nname: testproject\ndescription: test\n---\n")
 
     s
@@ -54,7 +54,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   it "builds the in-store artifact with the expected MCP server config" do
     store.as("automation").drain
 
-    artifact_path = File.join(root, "zones/artifacts/mcp.json")
+    artifact_path = File.join(root, "data/artifacts/mcp.json")
     expect(File.exist?(artifact_path)).to be true
 
     # The STORED artifact is data and carries textus's _meta (ADR 0094);

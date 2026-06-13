@@ -14,7 +14,7 @@ RSpec.describe Textus::Dispatcher do
     let(:call)      { test_ctx(role: "human") }
 
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:

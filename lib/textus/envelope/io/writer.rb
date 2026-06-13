@@ -155,7 +155,7 @@ module Textus
         # The zone directory under which `path` lives (`<root>/zones/<zone>`),
         # or nil if `path` is not under the store's zones tree.
         def zone_floor(path)
-          zones_root = File.join(@manifest.data.root, "zones")
+          zones_root = File.join(@manifest.data.root, "data")
           prefix = "#{zones_root}/"
           return nil unless path.start_with?(prefix)
 

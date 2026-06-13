@@ -4,7 +4,7 @@ RSpec.describe Textus::Domain::Sentinel do
   let(:tmp)        { Dir.mktmpdir("textus-sentinel") }
   let(:repo_root)  { tmp }
   let(:store_root) { File.join(tmp, ".textus") }
-  let(:src_abs)    { File.join(store_root, "zones", "output", "out.md") }
+  let(:src_abs)    { File.join(store_root, "data", "output", "out.md") }
   let(:dst_abs)    { File.join(tmp, "dst.md") }
   let(:sentinel_path) do
     File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json")

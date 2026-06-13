@@ -22,7 +22,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
   end
 
   def write_file(rel, contents)
-    abs = File.join(root, "zones/knowledge", rel)
+    abs = File.join(root, "data/knowledge", rel)
     FileUtils.mkdir_p(File.dirname(abs))
     File.write(abs, contents)
   end
@@ -34,7 +34,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     store.as("automation").drain
 
     # Whole-leaf removal: delete the source dir; per-entry build won't revisit it.
-    FileUtils.rm_rf(File.join(root, "zones/knowledge/skills/my-skill"))
+    FileUtils.rm_rf(File.join(root, "data/knowledge/skills/my-skill"))
 
     issues = described_class.new(store.container).call
     subjects = issues.map { |i| i["subject"] }

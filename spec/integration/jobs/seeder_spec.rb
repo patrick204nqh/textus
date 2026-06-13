@@ -22,7 +22,7 @@ RSpec.describe Textus::Jobs::Seeder do
                     - { to: CATALOG.md, template: catalog.mustache }
             YAML
             files: {
-              "zones/knowledge/a.md" => "---\ntitle: Apple\n---\nx\n",
+              "data/knowledge/a.md" => "---\ntitle: Apple\n---\nx\n",
               "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
             }
     )

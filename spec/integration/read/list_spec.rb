@@ -8,9 +8,9 @@ RSpec.describe Textus::Read::List do
       root,
       zones: %w[knowledge notes],
       files: {
-        "zones/knowledge/alpha.md" => "---\nname: alpha\n---\nbody\n",
-        "zones/knowledge/beta.md" => "---\nname: beta\n---\nbody\n",
-        "zones/notes/report.md" => "---\nname: report\n---\nbody\n",
+        "data/knowledge/alpha.md" => "---\nname: alpha\n---\nbody\n",
+        "data/knowledge/beta.md" => "---\nname: beta\n---\nbody\n",
+        "data/notes/report.md" => "---\nname: report\n---\nbody\n",
       },
       manifest: <<~YAML,
         version: textus/3

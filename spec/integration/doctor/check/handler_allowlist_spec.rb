@@ -4,7 +4,7 @@ RSpec.describe Textus::Doctor::Check::HandlerAllowlist do
   def with_store(manifest_yaml)
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
+      FileUtils.mkdir_p(File.join(textus, "data", "intake"))
       File.write(File.join(textus, "manifest.yaml"), manifest_yaml)
       yield Textus::Store.new(textus)
     end

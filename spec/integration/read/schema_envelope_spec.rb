@@ -15,7 +15,7 @@ RSpec.describe Textus::Read::SchemaEnvelope do
         YAML
       },
       files: {
-        "zones/knowledge/person.md" => "---\nfull_name: Alice\n---\nbody\n",
+        "data/knowledge/person.md" => "---\nfull_name: Alice\n---\nbody\n",
       },
       manifest: <<~YAML,
         version: textus/3

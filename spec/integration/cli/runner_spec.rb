@@ -5,7 +5,7 @@ RSpec.describe Textus::CLI::Runner do
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -13,7 +13,7 @@ RSpec.describe Textus::CLI::Runner do
       entries:
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
     YAML
-    File.write(File.join(root, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
+    File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
 
   it "generates a top-level Verb subclass for the where contract" do
@@ -40,7 +40,7 @@ RSpec.describe Textus::CLI::Runner do
       "key" => "knowledge.note",
       "zone" => "knowledge",
     )
-    expect(payload["path"]).to end_with("zones/knowledge/note.md")
+    expect(payload["path"]).to end_with("data/knowledge/note.md")
     expect(payload).to have_key("owner")
     expect(stderr.string).to be_empty
   end

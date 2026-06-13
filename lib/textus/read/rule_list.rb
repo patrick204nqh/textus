@@ -38,6 +38,8 @@ module Textus
         case field
         when :retention
           serialize_retention(value)
+        when :react
+          value.to_h
         when :handler_allowlist
           value.handlers
         else

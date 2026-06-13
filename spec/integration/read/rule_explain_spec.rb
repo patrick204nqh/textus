@@ -16,6 +16,9 @@ RSpec.describe Textus::Read::RuleExplain do
       rules:
         - match: "knowledge.*"
           retention: { ttl: 1h, action: archive }
+          react:
+            on: [entry.written]
+            do: materialize
         - match: knowledge.doc
           retention: { ttl: 5m, action: drop }
           intake_handler_allowlist: [src_a, src_b]
@@ -37,9 +40,10 @@ RSpec.describe Textus::Read::RuleExplain do
     it "returns only the effective {retention, guard} winners" do
       result = store.as("human").rule_explain("knowledge.doc")
       expect(result).to be_a(Hash)
-      expect(result.keys - %w[retention guard]).to be_empty
+      expect(result.keys - %w[retention guard react]).to be_empty
       expect(result["retention"]["ttl_seconds"]).to eq(300)
       expect(result["retention"]["action"]).to eq(:drop)
+      expect(result["react"]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
   end
 
@@ -59,6 +63,7 @@ RSpec.describe Textus::Read::RuleExplain do
       expect(result[:effective][:retention][:ttl_seconds]).to eq(300)
       expect(result[:effective][:retention][:action]).to eq(:drop)
       expect(result[:effective][:handler_allowlist]).to eq(%w[src_a src_b])
+      expect(result[:effective][:react]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
     it "surfaces a retention rule in matched_blocks and effective (ADR 0093)" do

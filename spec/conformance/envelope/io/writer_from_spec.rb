@@ -28,7 +28,7 @@ RSpec.describe "Textus::Envelope::IO::Writer.from" do
     )
 
     expect(env).to be_a(Textus::Envelope)
-    path = File.join(root, "zones", "knowledge", "foo.md")
+    path = File.join(root, "data", "knowledge", "foo.md")
     expect(File.binread(path)).to include("hello")
 
     # The internally-built reader is wired correctly: reading back the entry

@@ -9,7 +9,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
     include_context "textus_store_fixture"
 
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/intake"))
+      FileUtils.mkdir_p(File.join(root, "data/intake"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         roles:

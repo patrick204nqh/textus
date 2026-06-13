@@ -4,7 +4,7 @@ RSpec.describe "Pulse hook_errors" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/knowledge schemas].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[data/knowledge schemas].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:

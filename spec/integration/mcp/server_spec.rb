@@ -5,9 +5,9 @@ RSpec.describe Textus::MCP::Server do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
+    FileUtils.mkdir_p(File.join(root, "data/identity"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)

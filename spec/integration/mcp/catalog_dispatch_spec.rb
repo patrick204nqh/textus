@@ -29,9 +29,9 @@ RSpec.describe Textus::MCP::Catalog do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/identity"))
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
+    FileUtils.mkdir_p(File.join(root, "data/identity"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
@@ -190,26 +190,26 @@ RSpec.describe Textus::MCP::Catalog do
     end
   end
 
-  describe ".call('zone_mv', ...) — applies by default (#161 F6, reverses ADR 0060)" do
-    it "applies the zone move when dry_run is omitted" do
-      result = described_class.call("zone_mv", session: session, store: store,
+  describe ".call('data_mv', ...) — applies by default (#161 F6, reverses ADR 0060)" do
+    it "applies the data lane move when dry_run is omitted" do
+      result = described_class.call("data_mv", session: session, store: store,
                                                args: { "from" => "knowledge", "to" => "renamed" })
       expect(result).to include("steps", "warnings")
-      # F6: omitting dry_run now mutates — the manifest reflects the renamed zone.
+      # F6: omitting dry_run now mutates — the manifest reflects the renamed lane.
       manifest = YAML.safe_load_file(File.join(root, "manifest.yaml"))
-      zone_names = manifest.fetch("zones").map { |z| z["name"] }
-      expect(zone_names).to include("renamed")
-      expect(zone_names).not_to include("knowledge")
+      lane_names = manifest.fetch("zones").map { |z| z["name"] }
+      expect(lane_names).to include("renamed")
+      expect(lane_names).not_to include("knowledge")
     end
 
     it "returns a Plan without mutating when dry_run: true is passed" do
-      result = described_class.call("zone_mv", session: session, store: store,
+      result = described_class.call("data_mv", session: session, store: store,
                                                args: { "from" => "knowledge", "to" => "renamed", "dry_run" => true })
       expect(result).to include("steps", "warnings")
-      zone_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
+      lane_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
                        .fetch("zones").map { |z| z["name"] }
-      expect(zone_names).to include("knowledge")
-      expect(zone_names).not_to include("renamed")
+      expect(lane_names).to include("knowledge")
+      expect(lane_names).not_to include("renamed")
     end
   end
 

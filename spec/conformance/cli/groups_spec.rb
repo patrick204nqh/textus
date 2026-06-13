@@ -5,8 +5,8 @@ RSpec.describe "CLI subcommand groups" do
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/archive"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -16,7 +16,7 @@ RSpec.describe "CLI subcommand groups" do
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
 
     YAML
-    File.write(File.join(root, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
+    File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
 
   # ── key group ─────────────────────────────────────────────────────────────

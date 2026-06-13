@@ -6,8 +6,8 @@ RSpec.describe "textus mv" do
   let(:store) { Textus::Store.new(root) }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/identity/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -32,8 +32,8 @@ RSpec.describe "textus mv" do
     res = store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
     expect(res["ok"]).to be true
     expect(res["uid"]).to eq(uid)
-    expect(File.exist?(File.join(root, "zones/knowledge/notes/alpha.md"))).to be false
-    expect(File.exist?(File.join(root, "zones/knowledge/notes/beta.md"))).to be true
+    expect(File.exist?(File.join(root, "data/knowledge/notes/alpha.md"))).to be false
+    expect(File.exist?(File.join(root, "data/knowledge/notes/beta.md"))).to be true
     expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(uid)
   end
 
@@ -73,7 +73,7 @@ RSpec.describe "textus mv" do
   end
 
   it "mints a uid if the source had none, so the audit row carries it" do
-    src = File.join(root, "zones/knowledge/notes/alpha.md")
+    src = File.join(root, "data/knowledge/notes/alpha.md")
     File.write(src, "---\nname: alpha\n---\nbody\n")
     expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.alpha").uid).to be_nil
 
@@ -102,7 +102,7 @@ RSpec.describe "textus mv" do
   # rubocop:disable Style/GlobalVars
   describe ":entry_renamed event" do
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3

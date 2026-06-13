@@ -5,8 +5,8 @@ RSpec.describe "textus drain concurrency (build lock)" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
@@ -28,7 +28,7 @@ RSpec.describe "textus drain concurrency (build lock)" do
     YAML
 
     File.write(File.join(root, "templates/echo.mustache"), "hello {{key}}\n")
-    File.write(File.join(root, "zones/knowledge/note.md"),
+    File.write(File.join(root, "data/knowledge/note.md"),
                "---\nkey: knowledge.note\n---\nbody\n")
   end
 

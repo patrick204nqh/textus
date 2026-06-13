@@ -5,7 +5,7 @@ RSpec.describe "textus audit (generated via coerce:since + cli view, ADR 0068)" 
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:

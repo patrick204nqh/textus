@@ -11,9 +11,9 @@ RSpec.describe Textus::Jobs::Scheduler do
     described_class.new(container: store.container, queue: queue).run_once
   end
 
-  it "enqueues a re-pull job for each stale intake key" do
+  it "enqueues a refresh_data job for each stale intake key" do
     run_once
-    expect(queue.ready_ids).to include(a_string_starting_with("re-pull:"))
+    expect(queue.ready_ids).to include(a_string_starting_with("refresh_data:"))
   end
 
   it "enqueues a single sweep job per run" do

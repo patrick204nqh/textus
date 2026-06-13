@@ -7,7 +7,7 @@ RSpec.describe Textus::Read::Where do
     store_from_manifest(
       root,
       zones: %w[knowledge],
-      files: { "zones/knowledge/doc.md" => "---\nname: doc\n---\nbody\n" },
+      files: { "data/knowledge/doc.md" => "---\nname: doc\n---\nbody\n" },
       manifest: <<~YAML,
         version: textus/3
         zones:

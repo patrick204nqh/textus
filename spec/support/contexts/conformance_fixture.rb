@@ -5,11 +5,11 @@ RSpec.shared_context "textus/3 conformance fixture" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/network/org"))
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/projects"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts/catalogs"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts/feeds/calendar"))
-    FileUtils.mkdir_p(File.join(root, "zones/identity"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/network/org"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/projects"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts/catalogs"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts/feeds/calendar"))
+    FileUtils.mkdir_p(File.join(root, "data/identity"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -54,7 +54,7 @@ RSpec.shared_context "textus/3 conformance fixture" do
         notes:        { type: string, max: 2000 }
     YAML
 
-    File.write(File.join(root, "zones/knowledge/network/org/jane.md"), <<~MD)
+    File.write(File.join(root, "data/knowledge/network/org/jane.md"), <<~MD)
       ---
       name: jane
       relationship: peer

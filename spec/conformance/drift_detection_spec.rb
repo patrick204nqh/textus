@@ -6,7 +6,7 @@ RSpec.describe "textus/3 conformance — Fixture D: generator drift detection" d
 
   describe "Fixture D — generator drift detection (via doctor)" do
     it "flags artifacts entries with sources newer than generated.at without executing" do
-      artifacts_path = File.join(root, "zones/artifacts/catalogs/skills.md")
+      artifacts_path = File.join(root, "data/artifacts/catalogs/skills.md")
       File.write(artifacts_path, <<~MD)
         ---
         generated:
@@ -18,7 +18,7 @@ RSpec.describe "textus/3 conformance — Fixture D: generator drift detection" d
         catalog body
       MD
 
-      project_path = File.join(root, "zones/knowledge/projects/acme.md")
+      project_path = File.join(root, "data/knowledge/projects/acme.md")
       File.write(project_path, "---\nname: acme\n---\nproject body\n")
       File.utime(Time.now, Time.now, project_path)
 

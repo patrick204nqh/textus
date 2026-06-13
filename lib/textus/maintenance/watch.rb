@@ -1,11 +1,6 @@
 module Textus
   module Maintenance
-    # The convergence daemon loop: seed scheduled work (TTL re-pull + sweep),
-    # reclaim crashed leases, drain the queue, sleep, repeat. `tick` is one
-    # iteration (unit-testable); `run` loops forever. Drains serially for the
-    # same reason as Drain — each produce job self-locks, so running them in turn
-    # keeps the build lock uncontended.
-    class Serve
+    class Watch
       def initialize(container:, call:)
         @container = container
         @call = call

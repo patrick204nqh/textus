@@ -9,7 +9,7 @@ RSpec.describe Textus::Read::Rdeps do
       zones: %w[knowledge artifacts],
       files: {
         "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
-        "zones/knowledge/people/alice.md" => "---\nname: alice\n---\n",
+        "data/knowledge/people/alice.md" => "---\nname: alice\n---\n",
       },
       manifest: <<~YAML,
         version: textus/3

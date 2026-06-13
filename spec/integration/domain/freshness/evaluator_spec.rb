@@ -20,8 +20,8 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
         - { key: feeds.nocadence, kind: produced, path: feeds/nocadence.md, zone: feeds, source: { from: handler, handler: h } }
     YAML
                               files: {
-                                "zones/feeds/doc.md" => "---\n---\nbody\n",
-                                "zones/feeds/nocadence.md" => "---\n---\nbody\n",
+                                "data/feeds/doc.md" => "---\n---\nbody\n",
+                                "data/feeds/nocadence.md" => "---\n---\nbody\n",
                               })
   end
 
@@ -35,7 +35,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
     end
 
     it "is stale for an intake entry past its source.ttl" do
-      path = File.join(root, "zones/feeds/doc.md")
+      path = File.join(root, "data/feeds/doc.md")
       old  = Time.now - (2 * 3600)
       File.utime(old, old, path)
       v = evaluator.verdict(mentry)
@@ -44,7 +44,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
     end
 
     it "is fresh for a ttl-less intake entry (no declared cadence)" do
-      path = File.join(root, "zones/feeds/nocadence.md")
+      path = File.join(root, "data/feeds/nocadence.md")
       old  = Time.now - (100 * 3600)
       File.utime(old, old, path)
       expect(evaluator.verdict(mentry("feeds.nocadence")).stale).to be(false)
@@ -53,7 +53,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
 
   describe "#stale_intake_keys (converge scope)" do
     it "lists an intake entry past its source.ttl" do
-      path = File.join(root, "zones/feeds/doc.md")
+      path = File.join(root, "data/feeds/doc.md")
       old  = Time.now - (2 * 3600)
       File.utime(old, old, path)
       expect(evaluator.stale_intake_keys).to eq(["feeds.doc"])
@@ -64,14 +64,14 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
     end
 
     it "skips a ttl-less intake entry even when old (:no_policy)" do
-      path = File.join(root, "zones/feeds/nocadence.md")
+      path = File.join(root, "data/feeds/nocadence.md")
       old  = Time.now - (100 * 3600)
       File.utime(old, old, path)
       expect(evaluator.stale_intake_keys).not_to include("feeds.nocadence")
     end
 
     it "treats a never-recorded intake entry (file missing, ttl set) as stale" do
-      File.delete(File.join(root, "zones/feeds/doc.md"))
+      File.delete(File.join(root, "data/feeds/doc.md"))
       expect(evaluator.stale_intake_keys).to include("feeds.doc")
     end
   end
@@ -115,7 +115,7 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
               sources: ["#{src_dir}"]
       YAML
                                 files: {
-                                  "zones/artifacts/report.md" => <<~MD,
+                                  "data/artifacts/report.md" => <<~MD,
                                     ---
                                     generated:
                                       by: "make report"

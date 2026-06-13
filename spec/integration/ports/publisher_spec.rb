@@ -5,7 +5,7 @@ RSpec.describe Textus::Ports::Publisher do
   let(:publisher) { described_class.new }
   let(:tmp) { Dir.mktmpdir }
   let(:store_root) { File.join(tmp, ".textus") }
-  let(:src) { File.join(store_root, "zones", "output", "out.md") }
+  let(:src) { File.join(store_root, "data", "output", "out.md") }
   let(:dst) { File.join(tmp, "dst.md") }
   let(:sentinel) { File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json") }
 
@@ -27,7 +27,7 @@ RSpec.describe Textus::Ports::Publisher do
     expect(File.exist?(sentinel)).to be true
 
     data = JSON.parse(File.read(sentinel))
-    expect(data["source"]).to eq(".textus/zones/output/out.md")
+    expect(data["source"]).to eq(".textus/data/output/out.md")
     expect(data["target"]).to eq("dst.md")
     expect(data["sha256"]).to eq(Digest::SHA256.hexdigest(File.binread(dst)))
     expect(data["mode"]).to eq("copy")

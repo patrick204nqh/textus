@@ -18,13 +18,13 @@ RSpec.describe Textus::Domain::Retention::Sweep do
       entries: [{ key: review.old, path: review/old.md, zone: review, kind: leaf }]
       rules: [{ match: "review.*", retention: { ttl: 1d, action: archive } }]
     YAML
-                              files: { "zones/review/old.md" => "---\n---\nbody\n" })
+                              files: { "data/review/old.md" => "---\n---\nbody\n" })
   end
 
   before { store }
 
   it "returns an archive row for an aged leaf" do
-    path = File.join(root, "zones/review/old.md")
+    path = File.join(root, "data/review/old.md")
     old  = Time.now - (2 * 24 * 3600)
     File.utime(old, old, path)
     expect(rows).to contain_exactly(include("key" => "review.old", "action" => "archive"))

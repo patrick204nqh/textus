@@ -17,7 +17,7 @@ RSpec.describe Textus::Projection do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/people"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/people"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -26,9 +26,9 @@ RSpec.describe Textus::Projection do
         - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
 
     YAML
-    File.write(File.join(root, "zones/knowledge/people/alice.md"),
+    File.write(File.join(root, "data/knowledge/people/alice.md"),
                "---\nname: alice\norg: x\n---\n")
-    File.write(File.join(root, "zones/knowledge/people/bob.md"),
+    File.write(File.join(root, "data/knowledge/people/bob.md"),
                "---\nname: bob\norg: y\n---\n")
   end
 
@@ -79,7 +79,7 @@ RSpec.describe Textus::Projection do
   end
 
   it "includes body in rows when 'body' is in the pluck list" do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/docs"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/docs"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -87,7 +87,7 @@ RSpec.describe Textus::Projection do
       entries:
         - { key: knowledge.docs, path: knowledge/docs, zone: knowledge, owner: human:self, kind: nested, schema: null}
     YAML
-    File.write(File.join(root, "zones/knowledge/docs/readme.md"),
+    File.write(File.join(root, "data/knowledge/docs/readme.md"),
                "# Hello World\n\nSome content here.\n")
     proj = build_projection(
       "select" => "knowledge.docs",

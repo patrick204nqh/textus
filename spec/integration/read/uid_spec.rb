@@ -8,7 +8,7 @@ RSpec.describe Textus::Read::Uid do
       root,
       zones: %w[knowledge],
       files: {
-        "zones/knowledge/doc.md" => <<~MD,
+        "data/knowledge/doc.md" => <<~MD,
           ---
           uid: "abc123def456"
           name: doc

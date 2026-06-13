@@ -12,24 +12,13 @@ module Textus
       end
 
       def run_once
-        stale_intake.each do |key|
-          @queue.enqueue(job("re-pull", { "key" => key }))
-        end
-        @queue.enqueue(job("sweep", { "scope" => { "prefix" => nil, "zone" => nil } }))
-      end
-
-      private
-
-      def stale_intake
-        Textus::Domain::Freshness::Evaluator.new(
-          manifest: @container.manifest,
-          file_stat: Textus::Ports::Storage::FileStat.new,
-          clock: Textus::Ports::Clock.new,
-        ).stale_intake_keys(prefix: nil, zone: nil)
-      end
-
-      def job(type, args)
-        Textus::Domain::Jobs::Job.new(type: type, args: args, enqueued_by: Textus::Role::AUTOMATION)
+        planner = Textus::Jobs::Planner.new(container: @container)
+        jobs = planner.plan(
+          triggers: [{ "type" => "schedule.tick" }],
+          scope: { "prefix" => nil, "zone" => nil },
+          role: Textus::Role::AUTOMATION,
+        )
+        jobs.each { |j| @queue.enqueue(j) }
       end
     end
   end

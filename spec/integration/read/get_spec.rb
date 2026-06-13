@@ -34,7 +34,7 @@ RSpec.describe Textus::Read::Get do
 
   def write_doc(zone: "knowledge", last_fetched_at: nil)
     meta_line = last_fetched_at ? "last_fetched_at: '#{last_fetched_at}'" : "name: doc"
-    File.write(File.join(root, "zones", zone, "doc.md"), <<~MD)
+    File.write(File.join(root, "data", zone, "doc.md"), <<~MD)
       ---
       #{meta_line}
       ---
@@ -47,7 +47,7 @@ RSpec.describe Textus::Read::Get do
   it "returns the on-disk envelope, observing staleness without ingesting" do
     store = build_store_with_intake(ttl: "1s")
     write_doc(last_fetched_at: "2020-01-01T00:00:00Z")
-    leaf = File.join(root, "zones", "knowledge", "doc.md")
+    leaf = File.join(root, "data", "knowledge", "doc.md")
     before = File.read(leaf)
     ctx = test_ctx(role: "automation")
 
@@ -69,7 +69,7 @@ RSpec.describe Textus::Read::Get do
 
   it "annotates as fresh when no source.ttl applies (non-intake leaf)" do
     store = build_store_no_intake
-    File.write(File.join(root, "zones", "feeds", "doc.md"), "---\nname: doc\n---\nbody\n")
+    File.write(File.join(root, "data", "feeds", "doc.md"), "---\nname: doc\n---\nbody\n")
     call = Textus::Call.build(role: "automation")
     env = described_class.new(container: store.container, call: call).call("feeds.doc")
     expect(env.freshness.stale).to be(false)
@@ -96,7 +96,7 @@ RSpec.describe Textus::Read::Get do
   it "uses file mtime as basis when last_fetched_at is absent" do
     store = build_store_with_intake(ttl: "1s")
     write_doc # no last_fetched_at
-    leaf = File.join(root, "zones", "knowledge", "doc.md")
+    leaf = File.join(root, "data", "knowledge", "doc.md")
     aged = Time.now - 10
     File.utime(aged, aged, leaf)
     ctx = test_ctx(role: "automation")

@@ -8,7 +8,7 @@ RSpec.describe Textus::Read::Blame do
   # For tests that need isolated git repos we create subdirs under `tmp`.
 
   def make_store_at(textus_dir)
-    FileUtils.mkdir_p(File.join(textus_dir, "zones", "knowledge"))
+    FileUtils.mkdir_p(File.join(textus_dir, "data", "knowledge"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -21,7 +21,7 @@ RSpec.describe Textus::Read::Blame do
   end
 
   def write_doc(textus_dir, body)
-    path = File.join(textus_dir, "zones", "knowledge", "doc.md")
+    path = File.join(textus_dir, "data", "knowledge", "doc.md")
     File.write(path, "---\nname: doc\n---\n#{body}\n")
     path
   end

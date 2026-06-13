@@ -5,7 +5,7 @@ RSpec.describe "Pulse next_due_at" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[data/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -21,7 +21,7 @@ RSpec.describe "Pulse next_due_at" do
             ttl: 3600s
     YAML
     File.write(
-      File.join(root, "zones/intake/feed.md"),
+      File.join(root, "data/intake/feed.md"),
       "---\nkey: intake.feed\nlast_fetched_at: \"#{Time.now.utc.iso8601}\"\n---\nhi\n",
     )
     FileUtils.mkdir_p(audit_dir_path(root))

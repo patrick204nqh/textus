@@ -31,8 +31,8 @@ RSpec.describe Textus::Write::Accept do
     expect(result["target_key"]).to eq("knowledge.network.org.bob")
     expect(result["action"]).to eq("put")
     expect(result["accepted"]).to eq("proposals.2026-05-19-add-bob")
-    expect(File.exist?(File.join(root, "zones/knowledge/network/org/bob.md"))).to be(true)
-    expect(File.exist?(File.join(root, "zones/proposals/2026-05-19-add-bob.md"))).to be(false)
+    expect(File.exist?(File.join(root, "data/knowledge/network/org/bob.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/proposals/2026-05-19-add-bob.md"))).to be(false)
   end
 
   it "refuses a non-authority actor with guard_failed naming the predicate" do

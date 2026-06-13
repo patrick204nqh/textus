@@ -25,8 +25,8 @@ RSpec.describe "Textus::Manifest grammar" do
           - { key: identity.self, path: identity/self.md, zone: identity, owner: human:patrick, kind: leaf}
 
       YAML
-      FileUtils.mkdir_p(File.join(root, "zones/identity"))
-      File.write(File.join(root, "zones/identity/self.md"), "---\nname: self\n---\n")
+      FileUtils.mkdir_p(File.join(root, "data/identity"))
+      File.write(File.join(root, "data/identity/self.md"), "---\nname: self\n---\n")
       m = Textus::Manifest.load(root)
       # canon requires author; only human holds it under the default mapping.
       expect(m.policy.zone_writers("identity")).to eq(["human"])

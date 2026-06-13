@@ -34,7 +34,7 @@ module Textus
       jobs: Textus::Read::Jobs,
 
       # Maintenance
-      zone_mv: Textus::Maintenance::ZoneMv,
+      data_mv: Textus::Maintenance::DataMv,
       key_mv_prefix: Textus::Maintenance::KeyMvPrefix,
       key_delete_prefix: Textus::Maintenance::KeyDeletePrefix,
       drain: Textus::Maintenance::Drain,

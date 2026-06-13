@@ -3,13 +3,13 @@ require "spec_helper"
 Textus::CLI.verbs # trigger Runner.install! so the Gen* verb classes exist
 
 RSpec.describe "restructure CLI verbs" do
-  it "registers Group::Zone with command_name 'zone'" do
-    expect(Textus::CLI::Group::Zone.command_name).to eq("zone")
+  it "registers Group::Data with command_name 'data'" do
+    expect(Textus::CLI::Group::Data.command_name).to eq("data")
   end
 
-  it "registers the generated zone mv verb under the zone group" do
-    expect(Textus::CLI::Verb::GenZoneMv.command_name).to eq("mv")
-    expect(Textus::CLI::Verb::GenZoneMv.parent_group).to eq(Textus::CLI::Group::Zone)
+  it "registers the generated data mv verb under the data group" do
+    expect(Textus::CLI::Verb::GenDataMv.command_name).to eq("mv")
+    expect(Textus::CLI::Verb::GenDataMv.parent_group).to eq(Textus::CLI::Group::Data)
   end
 
   it "registers the generated rule lint verb under the rule group" do
