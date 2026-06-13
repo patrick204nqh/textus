@@ -6,7 +6,7 @@ RSpec.describe "Textus UID" do
   let(:store) { Textus::Store.new(root) }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -39,7 +39,7 @@ RSpec.describe "Textus UID" do
   end
 
   it "shows nil uid for existing files that have none, then mints on put" do
-    path = File.join(root, "zones/knowledge/md.md")
+    path = File.join(root, "data/knowledge/md.md")
     File.write(path, "---\nname: md\n---\nhand-rolled\n")
     expect(store.as(Textus::Role::DEFAULT).get("knowledge.md").uid).to be_nil
 

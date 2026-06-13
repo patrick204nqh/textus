@@ -13,7 +13,7 @@ RSpec.describe Textus::Produce::Acquire::Intake do
 
   def build_store(root, intake_body:)
     textus = File.join(root, ".textus")
-    FileUtils.mkdir_p(File.join(textus, "zones", "intake"))
+    FileUtils.mkdir_p(File.join(textus, "data", "intake"))
     FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
@@ -101,7 +101,7 @@ RSpec.describe Textus::Produce::Acquire::Intake do
   it "raises UsageError immediately when the key has no intake handler" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "plain"))
+      FileUtils.mkdir_p(File.join(textus, "data", "plain"))
       FileUtils.mkdir_p(File.join(textus, "hooks"))
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
@@ -138,7 +138,7 @@ RSpec.describe Textus::Produce::Acquire::Intake do
   it "passes trigger_key and leaf_segments in args (issue #59 follow-up: Bug 2)" do # rubocop:disable RSpec/ExampleLength
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "intake", "vendor"))
+      FileUtils.mkdir_p(File.join(textus, "data", "intake", "vendor"))
       FileUtils.mkdir_p(File.join(textus, "hooks"))
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)

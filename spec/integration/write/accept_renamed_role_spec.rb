@@ -22,7 +22,7 @@ RSpec.describe Textus::Write::Accept do
 
   context "with the author capability on human" do
     it "lets the renamed author-capability role accept proposals" do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge/network/org"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge/network/org"))
       store.as("agent").put(
         "proposals.2026-05-19-add-bob",
         meta: {

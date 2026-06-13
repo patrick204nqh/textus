@@ -4,7 +4,7 @@ RSpec.describe "Key grammar enforcement" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/working"))
+    FileUtils.mkdir_p(File.join(root, "data/working"))
   end
 
   def write_manifest(entries_yaml)
@@ -70,9 +70,9 @@ RSpec.describe "Key grammar enforcement" do
       write_manifest(<<~YAML)
         - { key: working.notes, path: working/notes, zone: working, kind: nested }
       YAML
-      FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
+      FileUtils.mkdir_p(File.join(root, "data/working/notes"))
       %w[alpha beta gamma].each do |n|
-        File.write(File.join(root, "zones/working/notes/#{n}.md"), "---\nname: #{n}\n---\nx\n")
+        File.write(File.join(root, "data/working/notes/#{n}.md"), "---\nname: #{n}\n---\nx\n")
       end
       store = Textus::Store.new(root)
       begin
@@ -92,9 +92,9 @@ RSpec.describe "Key grammar enforcement" do
       write_manifest(<<~YAML)
         - { key: working.notes, path: working/notes, zone: working, kind: nested }
       YAML
-      FileUtils.mkdir_p(File.join(root, "zones/working/notes"))
-      File.write(File.join(root, "zones/working/notes/Bad_Name.md"), "---\n---\nx")
-      File.write(File.join(root, "zones/working/notes/good-name.md"), "---\n---\nx")
+      FileUtils.mkdir_p(File.join(root, "data/working/notes"))
+      File.write(File.join(root, "data/working/notes/Bad_Name.md"), "---\n---\nx")
+      File.write(File.join(root, "data/working/notes/good-name.md"), "---\n---\nx")
 
       manifest = Textus::Manifest.load(root)
       rows = nil

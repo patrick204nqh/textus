@@ -8,7 +8,7 @@ module Textus
             next unless entry.nested?
             next if entry.publish_mode.keyless? # publish_tree files are opaque payload, never keys (ADR 0047)
 
-            base = File.join(root, "zones", entry.path)
+            base = File.join(root, "data", entry.path)
             next unless File.directory?(base)
 
             check_all_paths(entry, base, out)

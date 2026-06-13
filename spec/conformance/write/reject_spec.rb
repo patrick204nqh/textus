@@ -136,8 +136,8 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   # 0.30.0 made the declared kind authoritative.)
   describe "declared-kind proposal-zone detection" do
     it "accepts a proposal in a zone declaring kind: queue (named 'proposals')" do
-      FileUtils.mkdir_p(File.join(root, "zones/identity"))
-      FileUtils.mkdir_p(File.join(root, "zones/proposals"))
+      FileUtils.mkdir_p(File.join(root, "data/identity"))
+      FileUtils.mkdir_p(File.join(root, "data/proposals"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -166,8 +166,8 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     it "refuses: a zone declaring kind: canon is not a proposal zone (even if named 'pending')" do
       # Declared-kind check: the zone is not kind: queue, so it is not a proposal
       # zone and reject must refuse — regardless of the zone's name.
-      FileUtils.mkdir_p(File.join(root, "zones/identity"))
-      FileUtils.mkdir_p(File.join(root, "zones/pending"))
+      FileUtils.mkdir_p(File.join(root, "data/identity"))
+      FileUtils.mkdir_p(File.join(root, "data/pending"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:

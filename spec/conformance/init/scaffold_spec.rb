@@ -24,7 +24,7 @@ RSpec.describe "init scaffolds machine surfaces" do
     it "gitignores the whole nested subtree (and still the run subtree)" do
       ignore = File.read(".textus/.gitignore")
       expect(ignore).to include("#{Textus::Layout::RUN}/")
-      expect(ignore).to include("zones/artifacts/feeds/machines/")
+      expect(ignore).to include("data/artifacts/feeds/machines/")
     end
   end
 

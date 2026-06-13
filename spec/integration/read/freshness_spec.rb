@@ -28,7 +28,7 @@ RSpec.describe Textus::Read::Freshness do
   end
 
   def write_envelope(rel, last_fetched_at:)
-    path = File.join(root, "zones", rel)
+    path = File.join(root, "data", rel)
     File.write(path, <<~MD)
       ---
       name: doc

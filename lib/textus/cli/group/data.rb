@@ -1,8 +1,8 @@
 module Textus
   class CLI
     class Group
-      class Zone < Group
-        command_name "zone"
+      class Data < Group
+        command_name "data"
       end
     end
   end

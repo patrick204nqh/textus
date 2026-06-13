@@ -23,7 +23,7 @@ module TextusSpecHelpers
   # `schemas` maps name => YAML body (written to schemas/<name>.yaml);
   # `files` maps a path relative to the .textus dir => contents.
   def store_from_manifest(textus_dir, manifest:, zones: [], schemas: {}, files: {})
-    zones.each { |z| FileUtils.mkdir_p(File.join(textus_dir, "zones", z)) }
+    zones.each { |z| FileUtils.mkdir_p(File.join(textus_dir, "data", z)) }
     schemas.each do |name, body|
       FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
       File.write(File.join(textus_dir, "schemas", "#{name}.yaml"), body)

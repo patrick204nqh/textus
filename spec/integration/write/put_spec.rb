@@ -19,7 +19,7 @@ RSpec.describe Textus::Write::Put do
       "feeds.foo", meta: { "key" => "feeds.foo" }, body: "hello"
     )
     expect(envelope.body || envelope.content).to include("hello")
-    expect(File.exist?(File.join(root, "zones/feeds/foo.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/feeds/foo.md"))).to be(true)
   end
 
   it "raises WriteForbidden when role lacks the capability the zone-kind requires" do

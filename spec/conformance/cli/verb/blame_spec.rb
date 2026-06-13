@@ -8,7 +8,7 @@ RSpec.describe "blame CLI (generated, ADR 0065)" do
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -17,7 +17,7 @@ RSpec.describe "blame CLI (generated, ADR 0065)" do
         - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
 
     YAML
-    File.write(File.join(root, "zones/knowledge/doc.md"), "---\nname: doc\n---\nbody\n")
+    File.write(File.join(root, "data/knowledge/doc.md"), "---\nname: doc\n---\nbody\n")
     FileUtils.mkdir_p(audit_dir_path(root))
     File.open(audit_log_path(root), "w") do |f|
       f.puts JSON.generate({ "ts" => "2026-05-01T00:00:00Z", "role" => "human",

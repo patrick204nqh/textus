@@ -19,7 +19,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
     end
 
     it "marks a feeds entry past its TTL expired" do
-      feeds_path = File.join(root, "zones/artifacts/feeds/calendar/events.md")
+      feeds_path = File.join(root, "data/artifacts/feeds/calendar/events.md")
       # Well past the 300s TTL. Wide margin keeps this deterministic regardless of
       # iso8601 second-truncation in last_fetched_at.
       stale_time = (Time.now - 3600).utc.iso8601
@@ -36,7 +36,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
     end
 
     it "marks a feeds entry within its TTL fresh" do
-      feeds_path = File.join(root, "zones/artifacts/feeds/calendar/events.md")
+      feeds_path = File.join(root, "data/artifacts/feeds/calendar/events.md")
       fresh_time = Time.now.utc.iso8601
       File.write(feeds_path, <<~MD)
         ---
@@ -70,7 +70,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
 
     def write_stale_feed
       File.write(
-        File.join(root, "zones", "feeds", "doc.md"),
+        File.join(root, "data", "feeds", "doc.md"),
         "---\nkey: feeds.doc\nlast_fetched_at: \"2020-01-01T00:00:00Z\"\n---\nold body\n",
       )
     end
@@ -141,7 +141,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
       expect(content).not_to have_key("env")
       expect(content.to_s).not_to include(ENV.fetch("HOME", "/Users/nobody"))
 
-      expect(`git check-ignore .textus/zones/artifacts/feeds/machines/local.yaml`.strip).not_to be_empty
+      expect(`git check-ignore .textus/data/artifacts/feeds/machines/local.yaml`.strip).not_to be_empty
     end
 
     it "rejects an unknown machine leaf with a clear error" do

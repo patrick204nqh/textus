@@ -6,7 +6,7 @@ RSpec.describe "session contract" do
     let(:root) { File.join(tmp, ".textus") }
 
     before do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
@@ -44,7 +44,7 @@ RSpec.describe "session contract" do
     include_context "textus_store_fixture"
 
     before do
-      %w[zones/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+      %w[data/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -59,8 +59,8 @@ RSpec.describe "session contract" do
     let(:store) { Textus::Store.new(root) }
     let(:sess)  { store.as("human") }
 
-    it "exposes key_mv_prefix, key_delete_prefix, zone_mv, rule_lint" do
-      %i[key_mv_prefix key_delete_prefix zone_mv rule_lint].each do |m|
+    it "exposes key_mv_prefix, key_delete_prefix, data_mv, rule_lint" do
+      %i[key_mv_prefix key_delete_prefix data_mv rule_lint].each do |m|
         expect(sess).to respond_to(m)
       end
     end

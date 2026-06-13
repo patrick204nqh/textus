@@ -8,8 +8,8 @@ RSpec.describe Textus::Read::Freshness do
   let!(:store) do
     store_from_manifest(root, zones: %w[feeds review],
                               files: {
-                                "zones/feeds/doc.md" => "---\n---\nx\n",
-                                "zones/review/old.md" => "---\n---\nx\n",
+                                "data/feeds/doc.md" => "---\n---\nx\n",
+                                "data/review/old.md" => "---\n---\nx\n",
                               },
                               manifest: <<~YAML)
                                 version: textus/3
@@ -25,14 +25,14 @@ RSpec.describe Textus::Read::Freshness do
   end
 
   it "marks an intake entry past source.ttl as expired" do
-    File.utime(Time.now - 7200, Time.now - 7200, File.join(root, "zones/feeds/doc.md"))
+    File.utime(Time.now - 7200, Time.now - 7200, File.join(root, "data/feeds/doc.md"))
     row = rows.find { |r| r[:key] == "feeds.doc" }
     expect(row[:status]).to eq(:expired)
     expect(row[:action]).to eq(:refresh)
   end
 
   it "marks an entry past its retention ttl as expired with the GC action" do
-    File.utime(Time.now - (2 * 86_400), Time.now - (2 * 86_400), File.join(root, "zones/review/old.md"))
+    File.utime(Time.now - (2 * 86_400), Time.now - (2 * 86_400), File.join(root, "data/review/old.md"))
     row = rows.find { |r| r[:key] == "review.old" }
     expect(row[:status]).to eq(:expired)
     expect(row[:action]).to eq(:archive)

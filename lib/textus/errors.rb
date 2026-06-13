@@ -177,7 +177,7 @@ module Textus
   class PublishError < Error
     def initialize(m, target: nil)
       hint =
-        ("file at #{target} wasn't published by textus; back it up and delete it, or move it under .textus/zones/" if target)
+        ("file at #{target} wasn't published by textus; back it up and delete it, or move it under .textus/data/" if target)
       super("publish_error", m, details: target ? { "target" => target } : {}, hint: hint)
     end
   end

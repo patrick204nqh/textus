@@ -4,8 +4,8 @@ RSpec.describe "Manifest format: field validation" do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
   end
 
   def write_manifest(entries_yaml)
@@ -72,7 +72,7 @@ RSpec.describe "Manifest format: field validation" do
     write_manifest(<<~YAML)
       - { key: knowledge.cfg, path: knowledge/cfg, zone: knowledge, format: yaml, kind: nested }
     YAML
-    base = File.join(root, "zones/knowledge/cfg")
+    base = File.join(root, "data/knowledge/cfg")
     FileUtils.mkdir_p(base)
     File.write(File.join(base, "alpha.yaml"), "k: 1\n")
     File.write(File.join(base, "beta.yml"), "k: 2\n")
@@ -88,6 +88,6 @@ RSpec.describe "Manifest format: field validation" do
     YAML
     manifest = Textus::Manifest.load(root)
     path = manifest.resolver.resolve("knowledge.cfg.alpha").path
-    expect(path).to end_with("zones/knowledge/cfg/alpha.json")
+    expect(path).to end_with("data/knowledge/cfg/alpha.json")
   end
 end

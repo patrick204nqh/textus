@@ -28,7 +28,7 @@ RSpec.describe "produce-on-write (ADR 0093, async-only)" do
     expect(queue.ready_ids).to all(start_with("materialize:"))
 
     store.as("automation").drain
-    expect(File.read(File.join(root, "zones/feeds/catalog.json"))).to include("Apple")
+    expect(File.read(File.join(root, "data/feeds/catalog.json"))).to include("Apple")
   end
 
   it "stamps automation authority on the enqueued job (produce self-elevates)" do

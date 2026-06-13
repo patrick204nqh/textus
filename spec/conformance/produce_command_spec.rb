@@ -23,7 +23,7 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
                                     zone: artifacts
                                     source: { from: command, command: "true", sources: ["src/*"] }
                               YAML
-                              files: { "zones/artifacts/bundle.json" => "{\"ok\":true}\n" })
+                              files: { "data/artifacts/bundle.json" => "{\"ok\":true}\n" })
   end
 
   let(:produce) { Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation")) }

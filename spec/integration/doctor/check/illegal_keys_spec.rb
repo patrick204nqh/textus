@@ -30,8 +30,8 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
       issues = issues_for(
         manifest: manifest,
         files: {
-          "zones/knowledge/notes/ok.md" => "# ok\n",
-          "zones/knowledge/notes/dist/Build_Junk.md" => "# generated\n",
+          "data/knowledge/notes/ok.md" => "# ok\n",
+          "data/knowledge/notes/dist/Build_Junk.md" => "# generated\n",
         },
       )
       subjects = issues.map { |i| i["subject"] }
@@ -41,7 +41,7 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
     it "still flags a genuinely illegal in-scope segment" do
       issues = issues_for(
         manifest: manifest,
-        files: { "zones/knowledge/notes/Bad_Dir/note.md" => "# nope\n" },
+        files: { "data/knowledge/notes/Bad_Dir/note.md" => "# nope\n" },
       )
       expect(issues).to include(hash_including("code" => "key.illegal"))
     end

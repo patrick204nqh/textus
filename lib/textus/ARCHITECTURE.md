@@ -1,5 +1,5 @@
 <!-- The architecture map for `lib/textus/`. The why lives in ADR 0106
-     (.textus/zones/knowledge/decisions/0106-executable-layering-invariant.md);
+     (.textus/data/knowledge/decisions/0106-executable-layering-invariant.md);
      the enforcement lives in spec/conformance/architecture/layering_spec.rb. -->
 
 # textus internal architecture

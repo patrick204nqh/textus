@@ -4,7 +4,7 @@ RSpec.describe Textus::Key::Path do
   include_context "textus_store_fixture"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones"))
+    FileUtils.mkdir_p(File.join(root, "data"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones: [{ name: working, kind: canon }]
@@ -19,7 +19,7 @@ RSpec.describe Textus::Key::Path do
   it "resolves leaf entries by appending the primary extension when missing" do
     manifest = Textus::Manifest.load(root)
     entry = manifest.resolver.resolve("working.x").entry
-    expect(Textus::Key::Path.resolve(manifest.data, entry)).to eq(File.join(root, "zones/working/x.md"))
+    expect(Textus::Key::Path.resolve(manifest.data, entry)).to eq(File.join(root, "data/working/x.md"))
   end
 
   it "honors paths that already carry an extension" do

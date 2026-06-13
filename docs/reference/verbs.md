@@ -47,6 +47,15 @@ Machine-readable contract surface: every verb, its transports, and arg schema.
 - `--verb`
 
 
+## `textus data_mv`
+
+Rename a data lane — manifest + files. Refuses if destination exists.
+
+- `--dry_run`
+- `--from`
+- `--to`
+
+
 ## `textus deps`
 
 List the keys a derived entry depends on (its projection/external sources).
@@ -237,14 +246,5 @@ Internal store-wide schema + role-authority validation; backs doctor's schema_vi
 Resolve a key to its zone, owner, and path without reading the body.
 
 - `--key`
-
-
-## `textus zone_mv`
-
-Rename a zone — manifest + files. Refuses if destination exists.
-
-- `--dry_run`
-- `--from`
-- `--to`
 
 

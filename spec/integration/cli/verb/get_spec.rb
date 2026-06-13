@@ -40,7 +40,7 @@ RSpec.describe Textus::CLI::Verb::Get do
             source: { from: handler, handler: test_intake, ttl: 1s }
       YAML
     )
-    File.write(File.join(root, "zones", "feeds", "doc.md"), <<~MD)
+    File.write(File.join(root, "data", "feeds", "doc.md"), <<~MD)
       ---
       key: feeds.doc
       last_fetched_at: "2020-01-01T00:00:00Z"

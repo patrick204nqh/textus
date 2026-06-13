@@ -4,7 +4,7 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/working/notes schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[data/working/notes schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -12,8 +12,8 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
       entries:
         - { key: working.notes, path: working/notes, zone: working, owner: human:self, kind: nested, nested: true }
     YAML
-    File.write(File.join(root, "zones/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
-    File.write(File.join(root, "zones/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")
+    File.write(File.join(root, "data/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
+    File.write(File.join(root, "data/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
   end
@@ -37,19 +37,19 @@ RSpec.describe Textus::Maintenance::KeyDeletePrefix do
       "working.notes", dry_run: true
     )
     expect(plan.steps.map { |s| s["key"] }).to contain_exactly("working.notes.a", "working.notes.b")
-    expect(File.exist?(File.join(root, "zones/working/notes/a.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(true)
   end
 
   it "deletes when dry_run: false" do
     build_key_delete_prefix.call(
       "working.notes", dry_run: false
     )
-    expect(Dir.glob(File.join(root, "zones/working/notes/*.md"))).to be_empty
+    expect(Dir.glob(File.join(root, "data/working/notes/*.md"))).to be_empty
   end
 
   it "prunes the now-empty parent directory after the last leaf is deleted (F3)" do
     build_key_delete_prefix.call("working.notes", dry_run: false)
-    expect(File.directory?(File.join(root, "zones/working/notes"))).to be(false)
-    expect(File.directory?(File.join(root, "zones/working"))).to be(true)
+    expect(File.directory?(File.join(root, "data/working/notes"))).to be(false)
+    expect(File.directory?(File.join(root, "data/working"))).to be(true)
   end
 end

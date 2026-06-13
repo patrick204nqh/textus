@@ -10,7 +10,7 @@ RSpec.describe "textus --root" do
   it "uses the --root path for store discovery" do
     custom = File.join(tmp, "store")
     FileUtils.mkdir_p(File.join(custom, "schemas"))
-    FileUtils.mkdir_p(File.join(custom, "zones"))
+    FileUtils.mkdir_p(File.join(custom, "data"))
     File.write(File.join(custom, "manifest.yaml"),
                "version: textus/3\nzones:\n  - { name: knowledge, kind: canon }\nentries: []\n")
 
@@ -27,7 +27,7 @@ RSpec.describe "textus --root" do
   def store_with_manifest
     custom = File.join(tmp, "store")
     FileUtils.mkdir_p(File.join(custom, "schemas"))
-    FileUtils.mkdir_p(File.join(custom, "zones"))
+    FileUtils.mkdir_p(File.join(custom, "data"))
     File.write(File.join(custom, "manifest.yaml"),
                "version: textus/3\nzones:\n  - { name: knowledge, kind: canon }\nentries: []\n")
     custom
@@ -47,7 +47,7 @@ RSpec.describe "textus --root" do
 
   it "accepts --root after a group subcommand (textus key uid --root=PATH)" do
     custom = store_with_manifest
-    FileUtils.mkdir_p(File.join(custom, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(custom, "data/knowledge"))
     File.write(File.join(custom, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -55,7 +55,7 @@ RSpec.describe "textus --root" do
       entries:
         - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
     YAML
-    File.write(File.join(custom, "zones/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
+    File.write(File.join(custom, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
     stdout, _stderr, status = run_cli("key", "uid", "knowledge.note", "--root=#{custom}", "--output=json")
     expect(status.exitstatus).to eq(0)
     expect(JSON.parse(stdout).fetch("uid")).to eq("abc123")

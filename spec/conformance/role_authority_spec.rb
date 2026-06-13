@@ -7,7 +7,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "zones/proposals/people"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals/people"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -61,7 +61,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
     before do
       FileUtils.mkdir_p(File.join(root, "schemas"))
-      FileUtils.mkdir_p(File.join(root, "zones/proposals/people"))
+      FileUtils.mkdir_p(File.join(root, "data/proposals/people"))
 
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3

@@ -4,7 +4,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
   it "reports an error when manifest references an unregistered handler" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
+      FileUtils.mkdir_p(File.join(textus, "data", "feeds"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -31,7 +31,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
   it "reports a warning for orphan handlers (registered, not in manifest)" do
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "feeds"))
+      FileUtils.mkdir_p(File.join(textus, "data", "feeds"))
       FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3

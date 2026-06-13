@@ -58,8 +58,8 @@ RSpec.describe Textus::Init do
     manifest = File.read(File.join(target, "manifest.yaml"))
     %w[knowledge notebook proposals artifacts].each do |z|
       expect(manifest).to include("name: #{z}"), "manifest should declare zone #{z}"
-      expect(File.directory?(File.join(target, "zones", z))).to be(true), "zones/#{z}/ should exist"
-      expect(File.exist?(File.join(target, "zones", z, ".gitkeep"))).to be true
+      expect(File.directory?(File.join(target, "data", z))).to be(true), "data/#{z}/ should exist"
+      expect(File.exist?(File.join(target, "data", z, ".gitkeep"))).to be true
     end
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
@@ -81,7 +81,7 @@ RSpec.describe Textus::Init do
     Dir.mktmpdir do |root|
       target = File.join(root, ".textus")
       Textus::Init.run(target)
-      expect(File.directory?(File.join(target, "zones", "inbox"))).to be false
+      expect(File.directory?(File.join(target, "data", "inbox"))).to be false
       expect(File.read(File.join(target, "manifest.yaml"))).not_to include("inbox")
     end
   end

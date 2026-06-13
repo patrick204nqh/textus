@@ -18,13 +18,13 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
                                     zone: artifacts
                                     source: { from: project, select: [knowledge.a], pluck: [key] }
                               YAML
-                              files: { "zones/knowledge/a.md" => "---\ntitle: A\n---\nbody\n" })
+                              files: { "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n" })
   end
 
   it "stores the projection data as json (no template consulted)" do
     Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
                            .call(keys: ["artifacts.data"])
-    raw = File.read(File.join(root, "zones/artifacts/data.json"))
+    raw = File.read(File.join(root, "data/artifacts/data.json"))
     expect(raw).to include("knowledge.a")
     expect { JSON.parse(raw) }.not_to raise_error
   end

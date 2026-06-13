@@ -13,7 +13,7 @@ RSpec.describe Textus::Maintenance::Drain do
               entries:
                 - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
             YAML
-            files: { "zones/knowledge/a.md" => "---\n---\nx\n" }
+            files: { "data/knowledge/a.md" => "---\n---\nx\n" }
     )
   end
 

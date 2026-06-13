@@ -4,8 +4,8 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
   include_context "textus_store_fixture"
 
   def write_fixture!(generated_at:)
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -25,8 +25,8 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
             command: "rake catalog"
             sources: [knowledge.src]
     YAML
-    File.write(File.join(root, "zones/knowledge/src.md"), "---\nname: src\n---\nbody\n")
-    File.write(File.join(root, "zones/artifacts/catalog.md"), <<~MD)
+    File.write(File.join(root, "data/knowledge/src.md"), "---\nname: src\n---\nbody\n")
+    File.write(File.join(root, "data/artifacts/catalog.md"), <<~MD)
       ---
       generated:
         by: "rake catalog"
@@ -36,7 +36,7 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
       ---
       catalog
     MD
-    File.utime(Time.now, Time.now, File.join(root, "zones/knowledge/src.md"))
+    File.utime(Time.now, Time.now, File.join(root, "data/knowledge/src.md"))
   end
 
   def issues

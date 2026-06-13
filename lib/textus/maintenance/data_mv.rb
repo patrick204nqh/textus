@@ -2,18 +2,24 @@ require "yaml"
 
 module Textus
   module Maintenance
-    # Rename a zone — rewrites the manifest's zones[] entry, rewrites
-    # the `zone:` field on every entry under the old zone, and moves
+    # Rename a data lane — rewrites the manifest's zones[] entry, rewrites
+    # the `zone:` field on every entry under the old lane, and moves
     # every file from zones/<old>/ to zones/<new>/.
-    class ZoneMv
+    class DataMv
       extend Textus::Contract::DSL
 
-      verb     :zone_mv
-      summary  "Rename a zone — manifest + files. Refuses if destination exists."
+      verb     :data_mv
+      summary  "Rename a data lane — manifest + files. Refuses if destination exists."
       surfaces :cli, :mcp
-      cli      "zone mv"
-      arg :from,    String, required: true, positional: true, description: "current zone name"
-      arg :to,      String, required: true, positional: true, description: "new zone name; refused if a zone by this name already exists"
+      cli      "data mv"
+      arg :from, String,
+          required: true,
+          positional: true,
+          description: "current data lane name"
+      arg :to, String,
+          required: true,
+          positional: true,
+          description: "new data lane name; refused if a lane by this name already exists"
       arg :dry_run, :boolean, default: false,
                               description: "when true, returns the planned zone move without applying it; " \
                                            "defaults to false, so omitting it applies the move immediately"
@@ -28,10 +34,10 @@ module Textus
 
       def call(from, to, dry_run: false)
         raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
-        raise UsageError.new("zone '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
+        raise UsageError.new("data lane '#{from}' not declared") unless @manifest.data.declared_zone_kinds.key?(from)
 
-        dest_dir = File.join(@root, "zones", to)
-        raise UsageError.new("destination 'zones/#{to}' already exists") if File.exist?(dest_dir)
+        dest_dir = File.join(@root, "data", to)
+        raise UsageError.new("destination 'data/#{to}' already exists") if File.exist?(dest_dir)
 
         affected_keys = @manifest.data.entries.select { |e| e.zone == from }.map(&:key)
 
@@ -42,7 +48,7 @@ module Textus
         return plan if dry_run
 
         rewrite_manifest!(from, to)
-        FileUtils.mv(File.join(@root, "zones", from), dest_dir)
+        FileUtils.mv(File.join(@root, "data", from), dest_dir)
         plan
       end
 

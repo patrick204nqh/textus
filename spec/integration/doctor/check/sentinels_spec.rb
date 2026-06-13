@@ -7,7 +7,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
   let(:sentinels_dir) { File.join(root, ".run", "sentinels") }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -32,7 +32,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
 
   it "emits sentinel.orphan when the target is missing" do
     File.write(File.join(sentinels_dir, "missing.md.textus-managed.json"), JSON.generate(
-                                                                             "source" => ".textus/zones/output/out.md",
+                                                                             "source" => ".textus/data/output/out.md",
                                                                              "target" => "missing.md",
                                                                              "sha256" => "deadbeef",
                                                                              "mode" => "copy",
@@ -48,7 +48,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
     File.binwrite(target, "original\n")
     sha = Digest::SHA256.hexdigest("original\n")
     File.write(File.join(sentinels_dir, "drifted.md.textus-managed.json"), JSON.generate(
-                                                                             "source" => ".textus/zones/output/out.md",
+                                                                             "source" => ".textus/data/output/out.md",
                                                                              "target" => "drifted.md",
                                                                              "sha256" => sha,
                                                                              "mode" => "copy",
@@ -64,7 +64,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
     target = File.join(repo_root, "ok.md")
     File.binwrite(target, "ok\n")
     File.write(File.join(sentinels_dir, "ok.md.textus-managed.json"), JSON.generate(
-                                                                        "source" => ".textus/zones/output/out.md",
+                                                                        "source" => ".textus/data/output/out.md",
                                                                         "target" => "ok.md",
                                                                         "sha256" => Digest::SHA256.hexdigest("ok\n"),
                                                                         "mode" => "copy",

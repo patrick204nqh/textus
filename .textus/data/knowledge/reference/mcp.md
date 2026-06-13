@@ -70,7 +70,7 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 |---|---|---|
 | `key_mv_prefix` | Plan (default) or applied move | `from_prefix, to_prefix, dry_run?=true` |
 | `key_delete_prefix` | Plan (default) or applied delete | `prefix, dry_run?=true` |
-| `zone_mv` | Plan (default) or renamed zone (manifest + files) | `from, to, dry_run?=true` |
+| `data_mv` | Plan (default) or renamed data lane (manifest + files) | `from, to, dry_run?=true` |
 | `drain` | Converge everything now: seed produce + retention jobs and drain the queue to empty; reports health | `prefix?, zone?` |
 | `enqueue` | Push a registered job type (allow-list) onto the convergence queue, run by drain/serve | `type, args?` |
 | `jobs` | Inspect the convergence queue by state; retry a dead-lettered job or purge a state | `state?=ready, action?, job_id?` |

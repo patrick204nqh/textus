@@ -5,7 +5,7 @@ RSpec.describe "textus rule group" do
   include_context "cli invocation"
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -17,6 +17,7 @@ RSpec.describe "textus rule group" do
         # ADR 0093: age-GC is the `retention:` rule ({ ttl, action: drop|archive }).
         - match: "knowledge.*"
           retention: { ttl: 1h, action: archive }
+          react: { on: [entry.written], do: materialize }
         - match: knowledge.doc
           retention: { ttl: 5m, action: drop }
           intake_handler_allowlist: [src_a]
@@ -33,10 +34,11 @@ RSpec.describe "textus rule group" do
       expect(payload["policies"].map { |b| b["match"] }).to eq(["knowledge.*", "knowledge.doc"])
       expect(payload["policies"].first["retention"]["ttl_seconds"]).to eq(3600)
       expect(payload["policies"].first["retention"]["action"]).to eq("archive")
+      expect(payload["policies"].first["react"]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
     it "serializes a retention rule as a plain hash with integer seconds" do
-      FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+      FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -64,9 +66,10 @@ RSpec.describe "textus rule group" do
       expect(rc).to eq(0)
       payload = JSON.parse(stdout.string)
       expect(payload["verb"]).to eq("rule_explain")
-      expect(payload.keys - %w[protocol verb retention guard]).to be_empty
+      expect(payload.keys - %w[protocol verb retention guard react]).to be_empty
       expect(payload["retention"]["ttl_seconds"]).to eq(300)
       expect(payload["retention"]["action"]).to eq("drop")
+      expect(payload["react"]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
     it "with --detail returns matched blocks and effective values for a key" do
@@ -79,6 +82,7 @@ RSpec.describe "textus rule group" do
       expect(payload["effective"]["retention"]["ttl_seconds"]).to eq(300)
       expect(payload["effective"]["retention"]["action"]).to eq("drop")
       expect(payload["effective"]["handler_allowlist"]).to eq(["src_a"])
+      expect(payload["effective"]["react"]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
     it "raises UsageError when no key is supplied" do

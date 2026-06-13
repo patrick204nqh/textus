@@ -5,8 +5,8 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
-    FileUtils.mkdir_p(File.join(root, "zones/artifacts"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     FileUtils.mkdir_p(File.join(root, "steps/transform"))
 
     File.write(File.join(root, "steps/transform/plugin_manifest.rb"), <<~RUBY)
@@ -56,7 +56,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
             - { to: .claude-plugin/plugin.json }
     YAML
 
-    File.write(File.join(root, "zones/knowledge/project.md"),
+    File.write(File.join(root, "data/knowledge/project.md"),
                "---\nname: testproject\nrepo: https://example.com/testproject\n---\n")
 
     s
@@ -65,7 +65,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   it "builds the in-store artifact with the expected plugin manifest structure" do
     store.as("automation").drain
 
-    artifact_path = File.join(root, "zones/artifacts/plugin.json")
+    artifact_path = File.join(root, "data/artifacts/plugin.json")
     expect(File.exist?(artifact_path)).to be true
 
     parsed = JSON.parse(File.read(artifact_path))

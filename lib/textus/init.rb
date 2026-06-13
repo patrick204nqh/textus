@@ -114,7 +114,7 @@ module Textus
       FileUtils.mkdir_p(File.join(target_root, "steps/validate"))
       FileUtils.mkdir_p(File.join(target_root, "steps/observe"))
       ZONES.each do |z|
-        dir = File.join(target_root, "zones", z)
+        dir = File.join(target_root, "data", z)
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
@@ -178,8 +178,8 @@ module Textus
       manifest = Textus::Manifest.load(target_root)
       root = Pathname.new(target_root)
       untracked = manifest.data.entries.reject(&:tracked?).map do |e|
-        if e.nested? # a whole subtree of leaf files (artifacts.feeds.machines.* → zones/artifacts/feeds/machines/)
-          "#{File.join("zones", e.path)}/"
+        if e.nested? # a whole subtree of leaf files (artifacts.feeds.machines.* → data/artifacts/feeds/machines/)
+          "#{File.join("data", e.path)}/"
         else
           Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
         end

@@ -5,7 +5,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
-      FileUtils.mkdir_p(File.join(textus, "zones", "knowledge"))
+      FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
         zones:
@@ -26,7 +26,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
       Textus::CLI.verbs.each_key do |verb|
-        next if verb == "serve" # the daemon blocks forever by design; it has no no-op invocation
+        next if verb == "watch" # the daemon blocks forever by design; it has no no-op invocation
 
         code, = run_cli([verb], cwd: root)
         expect(code).to be_an(Integer),
@@ -48,6 +48,7 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "get" => Textus::CLI::Verb::Get,
       "init" => Textus::CLI::Verb::Init,
       "boot" => Textus::CLI::Verb::GenBoot,
+      "data" => Textus::CLI::Group::Data,
       "key" => Textus::CLI::Group::Key,
       "list" => Textus::CLI::Verb::GenList,
       "mcp" => Textus::CLI::Group::MCP,
@@ -61,9 +62,8 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "schema" => Textus::CLI::Group::Schema,
       "drain" => Textus::CLI::Verb::GenDrain,
       "jobs" => Textus::CLI::Verb::GenJobs,
-      "serve" => Textus::CLI::Verb::Serve,
+      "watch" => Textus::CLI::Verb::Watch,
       "where" => Textus::CLI::Verb::GenWhere,
-      "zone" => Textus::CLI::Group::Zone,
     }
     expect(actual).to eq(expected)
   end
@@ -86,8 +86,8 @@ RSpec.describe "Textus::CLI verb return-value contract" do
       "lint" => Textus::CLI::Verb::GenRuleLint,
       "list" => Textus::CLI::Verb::GenRuleList,
     )
-    expect(Textus::CLI::Group::Zone.subcommands).to eq(
-      "mv" => Textus::CLI::Verb::GenZoneMv,
+    expect(Textus::CLI::Group::Data.subcommands).to eq(
+      "mv" => Textus::CLI::Verb::GenDataMv,
     )
     expect(Textus::CLI::Group::Schema.subcommands).to eq(
       "diff" => Textus::CLI::Verb::SchemaDiff,

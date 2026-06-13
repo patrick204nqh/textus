@@ -48,8 +48,8 @@ RSpec.describe Textus::Manifest::Schema do
       expect(meta[:in_rule_explain]).to include(:lean, :detail)
     end
 
-    it "is the only cadence/GC field (the retired policy fields are gone)" do
-      expect(registry.keys).to eq(%i[handler_allowlist guard retention])
+    it "keeps retention as the only cadence/GC field while allowing reaction policy" do
+      expect(registry.keys).to eq(%i[handler_allowlist guard retention react])
     end
   end
 end

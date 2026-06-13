@@ -7,7 +7,7 @@ RSpec.describe Textus::Manifest::Resolver do
   let(:resolver) { described_class.new(manifest.data) }
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       zones:
@@ -21,7 +21,7 @@ RSpec.describe Textus::Manifest::Resolver do
   it "resolves a leaf key to a Resolution" do
     res = resolver.resolve("knowledge.notes")
     expect(res).to be_a(Textus::Manifest::Resolver::Resolution)
-    expect(res.path).to end_with("/zones/knowledge/notes.md")
+    expect(res.path).to end_with("/data/knowledge/notes.md")
   end
 
   it "raises UnknownKey for missing entries with suggestions" do
@@ -52,8 +52,8 @@ RSpec.describe Textus::Manifest::Resolver do
                 - "**/build/**"
         YAML
         files: {
-          "zones/knowledge/skills/alpha/intro.md" => "# alpha\n",
-          "zones/knowledge/skills/alpha/build/generated.md" => "# generated\n",
+          "data/knowledge/skills/alpha/intro.md" => "# alpha\n",
+          "data/knowledge/skills/alpha/build/generated.md" => "# generated\n",
         },
       )
     end
@@ -91,7 +91,7 @@ RSpec.describe Textus::Manifest::Resolver do
                 - { tree: docs/decisions }
         YAML
         files: {
-          "zones/knowledge/decisions/0001-first.md" => "# ADR 0001 — First\n",
+          "data/knowledge/decisions/0001-first.md" => "# ADR 0001 — First\n",
         },
       )
     end

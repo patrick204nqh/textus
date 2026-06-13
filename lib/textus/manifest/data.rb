@@ -39,7 +39,7 @@ module Textus
         # Write authority is derived from capabilities × zone-kind (ADR 0030),
         # not a per-zone writer list. "Which zones are declared" lives in the
         # one kind-keyed map below (declared_zone_kinds); membership checks by
-        # read-side callers (boot, maintenance/zone_mv) use its keyset (ADR 0034).
+        # read-side callers (boot, maintenance/data_mv) use its keyset (ADR 0034).
         @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
           [z["name"], z["kind"]&.to_sym]
         end

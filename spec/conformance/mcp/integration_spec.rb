@@ -9,7 +9,7 @@ RSpec.describe "MCP end-to-end" do
   include_context "textus_store_fixture"
 
   before do
-    %w[zones/identity zones/knowledge zones/proposals schemas hooks].each do |d|
+    %w[data/identity zones/knowledge zones/proposals schemas hooks].each do |d|
       FileUtils.mkdir_p(File.join(root, d))
     end
     File.write(File.join(root, "manifest.yaml"), <<~YAML)

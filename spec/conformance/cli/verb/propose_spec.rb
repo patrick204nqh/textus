@@ -43,8 +43,8 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   end
 
   before do
-    FileUtils.mkdir_p(File.join(root, "zones/knowledge/notes"))
-    FileUtils.mkdir_p(File.join(root, "zones/proposals"))
+    FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
+    FileUtils.mkdir_p(File.join(root, "data/proposals"))
     File.write(File.join(root, "manifest.yaml"), manifest_yaml)
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -60,7 +60,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     result = JSON.parse(stdout.string)
     expected_key = "#{propose_zone}.notes.oncall"
     expect(result["key"]).to eq(expected_key)
-    expect(File.exist?(File.join(root, "zones/#{propose_zone}/notes/oncall.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/#{propose_zone}/notes/oncall.md"))).to be(true)
   end
 
   it "emits the full wire envelope (uid, etag, key) from a single self-shaping view" do

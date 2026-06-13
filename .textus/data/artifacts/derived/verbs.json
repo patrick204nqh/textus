@@ -47,6 +47,15 @@
       ]
     },
     {
+      "name": "data_mv",
+      "summary": "Rename a data lane — manifest + files. Refuses if destination exists.",
+      "args": [
+        "dry_run",
+        "from",
+        "to"
+      ]
+    },
+    {
       "name": "deps",
       "summary": "List the keys a derived entry depends on (its projection/external sources).",
       "args": [
@@ -233,15 +242,6 @@
       "summary": "Resolve a key to its zone, owner, and path without reading the body.",
       "args": [
         "key"
-      ]
-    },
-    {
-      "name": "zone_mv",
-      "summary": "Rename a zone — manifest + files. Refuses if destination exists.",
-      "args": [
-        "dry_run",
-        "from",
-        "to"
       ]
     }
   ]

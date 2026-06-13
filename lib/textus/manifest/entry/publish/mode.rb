@@ -36,7 +36,7 @@ module Textus
 
           # Store-side directory this entry's tree lives under.
           def store_base(pctx)
-            File.join(pctx.root, "zones", entry.path)
+            File.join(pctx.root, "data", entry.path)
           end
         end
       end

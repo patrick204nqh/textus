@@ -22,8 +22,8 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
               - "**/node_modules/**"
       YAML
       files: {
-        "zones/knowledge/skills/alpha/intro.md" => "# alpha\n",
-        "zones/knowledge/skills/alpha/node_modules/dep/intro.md" => "# vendored\n",
+        "data/knowledge/skills/alpha/intro.md" => "# alpha\n",
+        "data/knowledge/skills/alpha/node_modules/dep/intro.md" => "# vendored\n",
       },
     )
   end

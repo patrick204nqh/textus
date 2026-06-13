@@ -11,9 +11,9 @@ module Textus
       def self.resolve(data, mentry)
         primary_ext = Entry.for_format(mentry.format).extensions.first
         if File.extname(mentry.path) == ""
-          File.join(data.root, "zones", mentry.path + primary_ext)
+          File.join(data.root, "data", mentry.path + primary_ext)
         else
-          File.join(data.root, "zones", mentry.path)
+          File.join(data.root, "data", mentry.path)
         end
       end
     end
