@@ -2,7 +2,7 @@ module Textus
   module Doctor
     class Check
       # Flags entries whose key is matched by two or more rule blocks of the
-      # SAME specificity in the same slot (lifecycle / handler_allowlist /
+      # SAME specificity in the same slot (lifecycle / handler_permit /
       # guard / materialize). Ties are non-deterministic in the parser's pick step, so
       # they're a configuration smell — surface them.
       class RuleAmbiguity < Check
@@ -26,7 +26,7 @@ module Textus
           carriers = matches.select { |b| b.public_send(slot) }
           return [] if carriers.length < 2
 
-          by_specificity = carriers.group_by { |b| Textus::Domain::Policy::Matcher.specificity(b.match) }
+          by_specificity = carriers.group_by { |b| Textus::Manifest::Policy::Matcher.specificity(b.match) }
           tied = by_specificity.values.select { |group| group.length > 1 }
           tied.map { |group| issue_for(mentry, slot, group) }
         end

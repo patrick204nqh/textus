@@ -5,13 +5,13 @@
 #   lanes — the zone-kind ↔ capability BIJECTION, verbatim from
 #           Schema::Vocabulary::LANES (canon→author, workspace→keep,
 #           machine→converge, queue→propose).
-#   zones — this manifest's declared zones: name, kind, the capability that
+#   lanes — this manifest's declared lanes: name, kind, the capability that
 #           kind requires (derived via LANES), and the optional desc.
 #   roles — this manifest's declared roles: name, the can-set, and the
 #           zone-kinds each role can write (the inverse of LANES over its can).
 #
 # Acquire-only (ADR 0094) — the publish template renders it. Reads from
-# caps.manifest (roles/zones) and the vocabulary constant (the bijection).
+# caps.manifest (roles/lanes) and the vocabulary constant (the bijection).
 module Textus
   module Step
     class AuthorityFetch < Fetch
@@ -23,7 +23,7 @@ module Textus
 
         lanes = lanes_map.map { |kind, capability| { "kind" => kind, "capability" => capability } }
 
-        zones = Array(raw["zones"]).map do |z|
+        lanes_declared = Array(raw["lanes"]).map do |z|
           kind = z["kind"].to_s
           {
             "name" => z["name"].to_s,
@@ -40,7 +40,7 @@ module Textus
           { "name" => r["name"].to_s, "can" => can, "writes_kinds" => writes_kinds }
         end
 
-        { "content" => { "lanes" => lanes, "zones" => zones, "roles" => roles } }
+        { "content" => { "lanes" => lanes, "zones" => lanes_declared, "roles" => roles } }
       end
     end
   end

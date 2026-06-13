@@ -2,7 +2,7 @@
 
 module Textus
   Envelope = Data.define(
-    :protocol, :key, :zone, :owner, :path, :format,
+    :protocol, :key, :lane, :owner, :path, :format,
     :uid, :etag, :schema_ref, :meta, :body, :content, :freshness
   ) do
     # rubocop:disable Metrics/ParameterLists
@@ -11,7 +11,7 @@ module Textus
       new(
         protocol: Textus::PROTOCOL,
         key: key,
-        zone: mentry.zone,
+        lane: mentry.lane,
         owner: mentry.owner,
         path: path,
         format: mentry.format,
@@ -34,7 +34,7 @@ module Textus
       h = {
         "protocol" => protocol,
         "key" => key,
-        "zone" => zone,
+        "lane" => lane,
         "owner" => owner,
         "path" => path,
         "format" => format,
@@ -48,6 +48,8 @@ module Textus
       freshness&.to_h_for_wire&.each { |k, v| h[k] = v }
       h
     end
+
+    alias_method :zone, :lane
 
     def stale?
       return false if freshness.nil?

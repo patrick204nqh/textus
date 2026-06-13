@@ -7,10 +7,10 @@ RSpec.describe Textus::Maintenance::RuleLint do
     %w[data/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: intake, kind: machine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, zone: intake, owner: automation:self, kind: produced, source: { from: handler, handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, lane: intake, owner: automation:self, kind: produced, source: { from: fetch, handler: noop } }
       rules:
         - { match: "intake.*", retention: { ttl: 600, action: drop } }
     YAML

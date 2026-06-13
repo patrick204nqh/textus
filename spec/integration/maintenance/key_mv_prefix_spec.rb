@@ -4,14 +4,14 @@ RSpec.describe Textus::Maintenance::KeyMvPrefix do
   include_context "textus_store_fixture"
 
   before do
-    %w[data/working/old zones/working/new schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
+    %w[data/working/old data/working/new schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: working, kind: canon }
       entries:
-        - { key: working.old, path: working/old, zone: working, owner: human:self, kind: nested, nested: true }
-        - { key: working.new, path: working/new, zone: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.old, path: working/old, lane: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.new, path: working/new, lane: working, owner: human:self, kind: nested, nested: true }
     YAML
     FileUtils.mkdir_p(File.join(root, "data/working/old"))
     File.write(File.join(root, "data/working/old/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nbody-a\n")

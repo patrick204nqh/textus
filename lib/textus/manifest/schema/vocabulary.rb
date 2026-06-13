@@ -15,7 +15,7 @@ module Textus
           "queue" => "propose",
         }.freeze
 
-        ZONE_KINDS         = LANES.keys.freeze
+        LANE_KINDS         = LANES.keys.freeze
         CAPABILITIES       = LANES.values.uniq.freeze
         KIND_REQUIRES_VERB = LANES
       end

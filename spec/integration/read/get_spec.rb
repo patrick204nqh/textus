@@ -11,20 +11,20 @@ RSpec.describe Textus::Read::Get do
     "Textus.hook { |reg| reg.on(:resolve_handler, :test_intake) { |**| { body: \"x\" } } }\n"
   end
 
-  def build_store_with_intake(ttl:, zone: "knowledge")
+  def build_store_with_intake(ttl:, lane: "knowledge")
     store_from_manifest(root,
-                        zones: [zone],
+                        lanes: [lane],
                         files: { "hooks/test_intake.rb" => intake_hook_rb },
                         manifest: <<~YAML)
                           version: textus/3
-                          zones:
-                            - { name: #{zone}, kind: canon }
+                          lanes:
+                            - { name: #{lane}, kind: canon }
                           entries:
-                            - key: #{zone}.doc
+                            - key: #{lane}.doc
                               kind: produced
-                              path: #{zone}/doc.md
-                              zone: #{zone}
-                              source: { from: handler, handler: test_intake, ttl: #{ttl} }
+                              path: data/#{lane}/doc.md
+                              lane: #{lane}
+                              source: { from: fetch, handler: test_intake, ttl: #{ttl} }
                         YAML
   end
 
@@ -32,9 +32,9 @@ RSpec.describe Textus::Read::Get do
     minimal_store(root, kind_zone: "machine", key: "feeds.doc", path: "feeds/doc.md")
   end
 
-  def write_doc(zone: "knowledge", last_fetched_at: nil)
+  def write_doc(lane: "knowledge", last_fetched_at: nil)
     meta_line = last_fetched_at ? "last_fetched_at: '#{last_fetched_at}'" : "name: doc"
-    File.write(File.join(root, "data", zone, "doc.md"), <<~MD)
+    File.write(File.join(root, "data", lane, "doc.md"), <<~MD)
       ---
       #{meta_line}
       ---

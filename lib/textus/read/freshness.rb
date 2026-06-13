@@ -25,7 +25,7 @@ module Textus
       verb     :freshness
       summary  "Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085)."
       arg :prefix, String, required: false, description: "filter to keys with this prefix"
-      arg :zone,   String, required: false, description: "filter to entries in this zone"
+      arg :lane,   String, required: false, description: "filter to entries in this lane"
 
       def initialize(container:, call:)
         @container  = container
@@ -36,8 +36,8 @@ module Textus
 
       # Returns the soonest `next_due_at` across all entries with a fetch
       # policy, as an ISO-8601 string, or nil if none.
-      def soonest_due(prefix: nil, zone: nil)
-        times = call(prefix: prefix, zone: zone)
+      def soonest_due(prefix: nil, lane: nil)
+        times = call(prefix: prefix, lane: lane)
                 .map { |r| r[:next_due_at] }
                 .compact
                 .map { |t| Time.parse(t) }
@@ -46,11 +46,11 @@ module Textus
         times.min.utc.iso8601
       end
 
-      def call(prefix: nil, zone: nil)
+      def call(prefix: nil, lane: nil)
         rows = []
         @manifest.data.entries.each do |mentry|
           next if prefix && !mentry.key.start_with?(prefix)
-          next if zone && mentry.zone != zone
+          next if lane && mentry.lane != lane
 
           rows << row_for(mentry)
         end
@@ -105,12 +105,12 @@ module Textus
           # Preserve pre-0099 pulse semantics: a never-recorded retention entry
           # (no file => nil basis) is past due. Retention::Sweep.expired? alone
           # returns false on nil mtime (it runs post-exists? in the sweep).
-          basis.nil? || Textus::Domain::Retention::Sweep.expired?(ttl_seconds: ttl, mtime: basis, now: @call.now)
+          basis.nil? || Textus::Core::Retention::Sweep.expired?(ttl_seconds: ttl, mtime: basis, now: @call.now)
         end
       end
 
       def evaluator
-        @evaluator ||= Textus::Domain::Freshness::Evaluator.new(
+        @evaluator ||= Textus::Core::Freshness::Evaluator.new(
           manifest: @manifest, file_stat: Textus::Ports::Storage::FileStat.new, clock: @call,
         )
       end
@@ -125,7 +125,7 @@ module Textus
       def base_row(mentry, last)
         {
           key: mentry.key,
-          zone: mentry.zone,
+          lane: mentry.lane,
           last_fetched_at: last,
           age_seconds: last ? (@call.now - Time.parse(last)).to_i : nil,
         }

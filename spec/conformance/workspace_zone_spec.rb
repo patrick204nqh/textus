@@ -1,20 +1,20 @@
 require "spec_helper"
 
-RSpec.describe "workspace zone-kind + keep capability (ADR 0033)" do
+RSpec.describe "workspace lane-kind + keep capability (ADR 0033)" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge notebook proposals], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge notebook proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose, keep] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: notebook,  kind: workspace, owner: agent }
         - { name: proposals, kind: queue }
       entries:
-        - { key: notebook.notes, path: notebook/notes, zone: notebook, owner: agent:self, kind: nested }
+        - { key: notebook.notes, path: data/notebook/notes, lane: notebook, owner: agent:self, kind: nested }
     YAML
   end
 
@@ -29,10 +29,11 @@ RSpec.describe "workspace zone-kind + keep capability (ADR 0033)" do
     end.to raise_error(Textus::WriteForbidden, /capability 'keep'/)
   end
 
-  it "requires some role to hold keep when a workspace zone is declared" do
+  it "requires some role to hold keep when a workspace lane is declared" do
     bad = { "version" => "textus/3",
             "roles" => [{ "name" => "human", "can" => ["author"] }],
-            "zones" => [{ "name" => "notebook", "kind" => "workspace" }] }
+            "lanes" => [{ "name" => "notebook", "kind" => "workspace" }],
+            "entries" => [] }
     expect { Textus::Manifest::Schema.validate!(bad) }
       .to raise_error(Textus::BadManifest, /needs a role with capability 'keep'/)
   end

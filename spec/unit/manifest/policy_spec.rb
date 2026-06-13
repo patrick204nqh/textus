@@ -9,28 +9,20 @@ RSpec.describe Textus::Manifest::Policy do
       roles:
         - { name: human,      can: [author, propose] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: review,  kind: machine }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
   let(:data) { Textus::Manifest::Data.parse(raw, root: ".") }
 
-  it "returns Domain::Permission for #permission_for" do
-    expect(policy.permission_for("knowledge")).to be_a(Textus::Domain::Permission)
-  end
-
-  it "raises UsageError on undeclared zone" do
-    expect { policy.zone_writers("nope") }.to raise_error(Textus::UsageError)
-  end
-
-  describe "#verb_for_zone" do
+  describe "#verb_for_lane" do
     it "maps each zone to the capability its kind requires" do
-      expect(policy.verb_for_zone("knowledge")).to eq("author")
-      expect(policy.verb_for_zone("review")).to eq("converge")
+      expect(policy.verb_for_lane("knowledge")).to eq("author")
+      expect(policy.verb_for_lane("review")).to eq("converge")
     end
   end
 
@@ -42,14 +34,6 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
-  describe "#zone_writers" do
-    it "returns roles holding the verb the zone-kind requires" do
-      # canon requires author → human; derived requires converge → automation
-      expect(policy.zone_writers("knowledge")).to eq(["human"])
-      expect(policy.zone_writers("review")).to eq(["automation"])
-    end
-  end
-
   describe "#proposer_role" do
     it "prefers a non-author proposer over an author+propose role" do
       # default-style: human=[author,propose], agent=[propose] → agent wins
@@ -58,7 +42,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
         entries: []
@@ -72,7 +56,7 @@ RSpec.describe Textus::Manifest::Policy do
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
         entries: []
@@ -86,7 +70,7 @@ RSpec.describe Textus::Manifest::Policy do
         version: textus/3
         roles:
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: artifacts, kind: machine }
         entries: []
       YAML
@@ -107,7 +91,7 @@ RSpec.describe Textus::Manifest::Policy do
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
         entries: []
@@ -121,7 +105,7 @@ RSpec.describe Textus::Manifest::Policy do
         version: textus/3
         roles:
           - { name: agent, can: [propose, converge] }
-        zones:
+        lanes:
           - { name: review, kind: queue }
           - { name: artifacts, kind: machine }
         entries: []
@@ -135,7 +119,7 @@ RSpec.describe Textus::Manifest::Policy do
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries: []
       YAML
@@ -144,7 +128,7 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
-  describe "#propose_zone_for" do
+  describe "#propose_lane_for" do
     context "when the role writes the declared kind: queue zone" do
       let(:yaml) do
         <<~YAML
@@ -152,16 +136,16 @@ RSpec.describe Textus::Manifest::Policy do
           roles:
             - { name: human,      can: [author, propose] }
             - { name: automation, can: [converge] }
-          zones:
+          lanes:
             - { name: review, kind: queue }
             - { name: draft,  kind: machine }
           entries:
-            - { key: review.notes, path: review/notes.md, zone: review, owner: human:self, kind: leaf }
+            - { key: review.notes, path: review/notes.md, lane: review, owner: human:self, kind: leaf }
         YAML
       end
 
       it "returns that zone name" do
-        expect(policy.propose_zone_for("human")).to eq("review")
+        expect(policy.propose_lane_for("human")).to eq("review")
       end
     end
 
@@ -170,30 +154,29 @@ RSpec.describe Textus::Manifest::Policy do
         raw2 = YAML.safe_load(<<~YAML, aliases: false)
           version: textus/3
           roles: [{ name: human, can: [author, propose] }]
-          zones: [{ name: review, kind: canon }]
+          lanes: [{ name: review, kind: canon }]
           entries: []
         YAML
         p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-        expect(p2.propose_zone_for("human")).to be_nil
+        expect(p2.propose_lane_for("human")).to be_nil
       end
     end
 
-    context "when the role writes only non-queue zones" do
+    context "when no queue lane is declared" do
       it "returns nil" do
-        # default fixture: human writes 'knowledge' (kind: canon), not a queue
-        expect(policy.propose_zone_for("human")).to be_nil
+        expect(policy.propose_lane_for("human")).to be_nil
       end
     end
 
     context "when the role is nil" do
       it "returns nil" do
-        expect(policy.propose_zone_for(nil)).to be_nil
+        expect(policy.propose_lane_for(nil)).to be_nil
       end
     end
 
     context "when the role is unknown (not a writer of any zone)" do
       it "returns nil" do
-        expect(policy.propose_zone_for("ghost")).to be_nil
+        expect(policy.propose_lane_for("ghost")).to be_nil
       end
     end
 
@@ -203,17 +186,17 @@ RSpec.describe Textus::Manifest::Policy do
           version: textus/3
           roles:
             - { name: human, can: [author, propose] }
-          zones:
+          lanes:
             - { name: knowledge, kind: canon }
             - { name: review,  kind: queue }
           entries:
-            - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
-            - { key: review.notes,  path: review/notes.md,  zone: review,  owner: human:self, kind: leaf }
+            - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf }
+            - { key: review.notes,  path: review/notes.md,  lane: review,  owner: human:self, kind: leaf }
         YAML
       end
 
       it "returns the queue zone, skipping the non-queue zone declared first" do
-        expect(policy.propose_zone_for("human")).to eq("review")
+        expect(policy.propose_lane_for("human")).to eq("review")
       end
     end
   end
@@ -226,7 +209,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
           - { name: artifacts,  kind: machine }
@@ -240,11 +223,11 @@ RSpec.describe Textus::Manifest::Policy do
     end
 
     it "finds the queue zone by declared kind" do
-      expect(policy.queue_zone).to eq("review")
+      expect(policy.queue_lane).to eq("review")
     end
 
-    it "treats a kind: machine zone as the generator zone (machine_zone)" do
-      expect(policy.machine_zone).to eq("artifacts")
+    it "treats a kind: machine zone as the generator zone (machine_lane)" do
+      expect(policy.machine_lane).to eq("artifacts")
       expect(policy.declared_kind("knowledge")).not_to eq(:machine)
     end
 
@@ -252,11 +235,11 @@ RSpec.describe Textus::Manifest::Policy do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
         version: textus/3
         roles: [{ name: human, can: [author, propose] }]
-        zones: [{ name: out, kind: canon }]
+        lanes: [{ name: out, kind: canon }]
         entries: []
       YAML
       p2 = described_class.new(Textus::Manifest::Data.parse(raw2, root: "."))
-      expect(p2.machine_zone).to be_nil
+      expect(p2.machine_lane).to be_nil
     end
 
     it "lists author-holders via roles_with_capability" do
@@ -264,14 +247,14 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
-  describe "#propose_zone_for with declared queue" do
+  describe "#propose_lane_for with declared queue" do
     let(:yaml) do
       <<~YAML
         version: textus/3
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: inbox,   kind: queue }
         entries: []
@@ -279,12 +262,12 @@ RSpec.describe Textus::Manifest::Policy do
     end
 
     it "returns the kind: queue zone even when its name is not 'review'" do
-      expect(policy.propose_zone_for("agent")).to eq("inbox")
+      expect(policy.propose_lane_for("agent")).to eq("inbox")
     end
 
     it "returns the queue zone for any role that can write it, and nil for a non-writer" do
-      expect(policy.propose_zone_for("human")).to eq("inbox")
-      expect(policy.propose_zone_for("nobody")).to be_nil
+      expect(policy.propose_lane_for("human")).to eq("inbox")
+      expect(policy.propose_lane_for("nobody")).to be_nil
     end
   end
 
@@ -292,10 +275,10 @@ RSpec.describe Textus::Manifest::Policy do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
       roles: [{ name: automation, can: [converge] }]
-      zones: [{ name: artifacts, kind: machine }]
+      lanes: [{ name: artifacts, kind: machine }]
       entries:
-        - { key: artifacts.x, path: artifacts/x.json, zone: artifacts, owner: automation:auto, kind: produced,
-            source: { from: project, select: [knowledge.notes], pluck: "*" } }
+        - { key: artifacts.x, path: data/artifacts/x.json, lane: artifacts, owner: automation:auto, kind: produced,
+            source: { from: derive, select: [knowledge.notes], pluck: "*" } }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     entry = d2.entries.first
@@ -310,7 +293,7 @@ RSpec.describe Textus::Manifest::Policy do
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: queue }
           - { name: artifacts,  kind: machine }
@@ -318,14 +301,14 @@ RSpec.describe Textus::Manifest::Policy do
       YAML
     end
 
-    it "exposes declared_zone_kinds keyed by zone name with symbol values" do
-      expect(data.declared_zone_kinds).to eq(
+    it "exposes declared_lane_kinds keyed by zone name with symbol values" do
+      expect(data.declared_lane_kinds).to eq(
         "knowledge" => :canon, "review" => :queue, "artifacts" => :machine,
       )
     end
 
     it "rejects a manifest whose zone declares no kind" do
-      raw2 = YAML.safe_load("version: textus/3\nzones:\n  - { name: w }\nentries: []\n", aliases: false)
+      raw2 = YAML.safe_load("version: textus/3\nlanes:\n  - { name: w }\nentries: []\n", aliases: false)
       expect { Textus::Manifest::Data.parse(raw2, root: ".") }
         .to raise_error(Textus::BadManifest, /must declare a kind/)
     end
@@ -335,11 +318,11 @@ RSpec.describe Textus::Manifest::Policy do
     raw2 = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
       roles: [{ name: automation, can: [converge] }]
-      zones: [{ name: artifacts, kind: machine }]
+      lanes: [{ name: artifacts, kind: machine }]
       entries:
-        - { key: artifacts.feeds.cal, path: feeds/cal.json, zone: artifacts, kind: produced, source: { from: handler, handler: noop } }
-        - { key: artifacts.derived.idx, path: idx.json, zone: artifacts, owner: automation:auto, kind: produced,
-            format: json, source: { from: project, select: ["x.*"] } }
+        - { key: artifacts.feeds.cal, path: data/feeds/cal.json, lane: artifacts, kind: produced, source: { from: fetch, handler: noop } }
+        - { key: artifacts.derived.idx, path: idx.json, lane: artifacts, owner: automation:auto, kind: produced,
+            format: json, source: { from: derive, select: ["x.*"] } }
     YAML
     d2 = Textus::Manifest::Data.parse(raw2, root: ".")
     policy2 = d2.policy

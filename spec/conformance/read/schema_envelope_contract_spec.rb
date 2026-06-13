@@ -12,8 +12,8 @@ RSpec.describe "Read::SchemaEnvelope MCP contract (ADR 0039)" do
 
   it "the MCP catalog dispatches schema by key" do
     session = store.session(role: "human")
-    out = Textus::MCP::Catalog.call("schema_show", session: session, store: store,
-                                                   args: { "key" => "knowledge.project" })
+    out = Textus::Surfaces::MCP::Catalog.call("schema_show", session: session, store: store,
+                                                             args: { "key" => "knowledge.project" })
     expect(out["key"]).to eq("knowledge.project")
     expect(out).to have_key("schema")
   end

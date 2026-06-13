@@ -4,12 +4,12 @@ RSpec.describe Textus::Write::Enqueue do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
   let(:queue) { Textus::Ports::Queue.new(root: root) }

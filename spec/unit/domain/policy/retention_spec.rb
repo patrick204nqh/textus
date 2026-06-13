@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::Retention do
+RSpec.describe Textus::Manifest::Policy::Retention do
   it "parses ttl + a destructive action" do
     r = described_class.new("ttl" => "90d", "action" => "archive")
     expect(r.action).to eq(:archive)

@@ -4,11 +4,11 @@ module Textus
       # The manifest's key whitelists and the rule-field registry — the schema's
       # data tables (ADR 0109; the vocabulary lives in Schema::Vocabulary).
       module Keys
-        ROOT_KEYS  = %w[version roles zones entries rules audit].freeze
+        ROOT_KEYS  = %w[version roles lanes entries rules audit].freeze
         ROLE_KEYS  = %w[name can].freeze
-        ZONE_KEYS  = %w[name kind owner desc].freeze
+        LANE_KEYS  = %w[name kind owner desc].freeze
         ENTRY_KEYS = %w[
-          key path zone kind schema owner nested format
+          key path lane kind schema owner nested format
           source publish
           events ignore tracked
         ].freeze
@@ -40,12 +40,11 @@ module Textus
         #     (in_rule_list / in_rule_explain)
         #
         # Per field:
-        #   yaml_key     manifest key (handler_allowlist's intake_ prefix
-        #                disambiguates from entry-level intake:, ADR 0059)
-        #   policy_class the Domain::Policy backing the field (nil = raw value)
+        #   yaml_key     manifest key used in a rule block
+        #   policy_class the Manifest::Policy backing the field (nil = raw value)
         #   validation   :immediate (instantiate the policy at parse, surfacing
         #                shape errors eagerly), :deferred (shape-check + carry
-        #                the raw Hash; guard predicates validate at GuardFactory
+        #                the raw Hash; guard predicates validate at Dispatch::Auth
         #                build time, ADR 0031), or :tagged (pass the raw Hash to a
         #                tagged-union policy that dispatches on its discriminator
         #                field, e.g. upkeep's on:)
@@ -61,9 +60,9 @@ module Textus
         # Key order here fixes the order of RULE_KEYS (after match), the slots,
         # the RuleSet members, and the doctor SLOTS.
         FIELD_REGISTRY = {
-          handler_allowlist: {
-            yaml_key: "intake_handler_allowlist",
-            policy_class: Textus::Domain::Policy::HandlerAllowlist,
+          handler_permit: {
+            yaml_key: "handler_permit",
+            policy_class: Textus::Manifest::Policy::HandlerPermit,
             validation: :immediate, sub_keys: nil, arg_key: :handlers,
             in_pick: true, in_ambiguity: true,
             in_rule_list: true, in_rule_explain: %i[detail]
@@ -77,14 +76,14 @@ module Textus
           },
           retention: {
             yaml_key: "retention",
-            policy_class: Textus::Domain::Policy::Retention,
+            policy_class: Textus::Manifest::Policy::Retention,
             validation: :tagged, sub_keys: RETENTION_KEYS, arg_key: nil,
             in_pick: true, in_ambiguity: true,
             in_rule_list: true, in_rule_explain: %i[lean detail]
           },
           react: {
             yaml_key: "react",
-            policy_class: Textus::Domain::Policy::React,
+            policy_class: Textus::Manifest::Policy::React,
             validation: :immediate, sub_keys: nil, arg_key: :raw,
             in_pick: true, in_ambiguity: true,
             in_rule_list: true, in_rule_explain: %i[lean detail]

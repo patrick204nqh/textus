@@ -8,17 +8,17 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   let(:manifest_yaml) do
     <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
-        - { key: proposals, path: proposals, zone: proposals, owner: agent, kind: nested }
+        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, owner: human:self, kind: nested }
+        - { key: proposals, path: proposals, lane: proposals, owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }
-  let(:propose_zone) do
-    store.manifest.policy.propose_zone_for(store.manifest.policy.proposer_role)
+  let(:propose_lane) do
+    store.manifest.policy.propose_lane_for(store.manifest.policy.proposer_role)
   end
   let(:payload) do
     JSON.generate({
@@ -33,7 +33,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   let(:stderr) { StringIO.new }
 
   def run(argv, stdin_body: "")
-    Textus::CLI.run(
+    Textus::Surfaces::CLI.run(
       argv,
       stdin: StringIO.new(stdin_body),
       stdout: stdout,
@@ -50,7 +50,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     File.write(audit_log_path(root), "")
   end
 
-  it "lands the entry under the propose_zone (key becomes <propose_zone>.notes.oncall) and exits 0" do
+  it "lands the entry under the propose_lane (key becomes <propose_lane>.notes.oncall) and exits 0" do
     rc = run(
       ["--root=#{root}", "propose", "notes.oncall", "--as=agent", "--stdin"],
       stdin_body: payload,
@@ -58,9 +58,9 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     expect(rc).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
 
     result = JSON.parse(stdout.string)
-    expected_key = "#{propose_zone}.notes.oncall"
+    expected_key = "#{propose_lane}.notes.oncall"
     expect(result["key"]).to eq(expected_key)
-    expect(File.exist?(File.join(root, "data/#{propose_zone}/notes/oncall.md"))).to be(true)
+    expect(File.exist?(File.join(root, "data/#{propose_lane}/notes/oncall.md"))).to be(true)
   end
 
   it "emits the full wire envelope (uid, etag, key) from a single self-shaping view" do
@@ -80,17 +80,17 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     rc = run(["--root=#{root}", "propose", "notes.x", "--as=agent"])
     expect(rc).to eq(0), "stderr: #{stderr.string}\nstdout: #{stdout.string}"
     result = JSON.parse(stdout.string)
-    expect(result["key"]).to eq("#{propose_zone}.notes.x")
+    expect(result["key"]).to eq("#{propose_lane}.notes.x")
   end
 
-  it "raises UsageError mentioning propose_zone when the acting role cannot write the queue" do
-    # `automation` has only `fetch`/`build` caps — propose_zone_for("automation") => nil
+  it "raises UsageError mentioning propose_lane when the acting role cannot write the queue" do
+    # `automation` has only `fetch`/`build` caps — propose_lane_for("automation") => nil
     rc = run(
       ["--root=#{root}", "propose", "notes.x", "--as=automation", "--stdin"],
       stdin_body: payload,
     )
     expect(rc).not_to eq(0)
     output = JSON.parse(stdout.string)
-    expect(output["message"]).to match(/propose_zone/)
+    expect(output["message"]).to match(/propose_lane/)
   end
 end

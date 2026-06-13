@@ -7,7 +7,7 @@ module Textus
     # Persistence adapter for sentinel files. Owns the on-disk JSON shape, the
     # path layout (<store_root>/.run/sentinels/<target-rel-to-repo>.textus-managed.json
     # — runtime, git-ignored, ADR 0070), and all File/FileUtils I/O.
-    # Domain::Sentinel is a pure value object that depends on this port for
+    # Core::Sentinel is a pure value object that depends on this port for
     # reads and writes.
     class SentinelStore
       SUFFIX = ".textus-managed.json".freeze
@@ -26,7 +26,7 @@ module Textus
 
       def load(path, repo_root)
         raw = JSON.parse(File.read(path))
-        Textus::Domain::Sentinel.new(
+        Textus::Core::Sentinel.new(
           target: absolutize(raw["target"], repo_root),
           source: absolutize(raw["source"], repo_root),
           sha256: raw["sha256"],

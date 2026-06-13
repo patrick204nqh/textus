@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Freshness::Verdict do
+RSpec.describe Textus::Core::Freshness::Verdict do
   describe ".build / .new" do
     it "constructs with defaults via .build" do
       v = described_class.build(stale: false)

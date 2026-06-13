@@ -11,6 +11,13 @@ RSpec.describe Textus::Step::Base do
     expect(Textus::Step::Observe.kind).to eq(:observe)
   end
 
+  it "derives kind from Base instead of per-subclass .kind methods" do
+    expect(Textus::Step::Fetch.singleton_class.instance_methods(false)).not_to include(:kind)
+    expect(Textus::Step::Transform.singleton_class.instance_methods(false)).not_to include(:kind)
+    expect(Textus::Step::Validate.singleton_class.instance_methods(false)).not_to include(:kind)
+    expect(Textus::Step::Observe.singleton_class.instance_methods(false)).not_to include(:kind)
+  end
+
   it "lets a subclass override its registered name (for hyphenated built-ins)" do
     klass = Class.new(Textus::Step::Fetch) { step_name "markdown-links" }
     expect(klass.step_name).to eq("markdown-links")

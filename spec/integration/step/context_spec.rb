@@ -11,10 +11,10 @@ RSpec.describe Textus::Step::Context do
     FileUtils.mkdir_p(File.join(root, "data/proposals"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: proposals, kind: queue }
       entries:
-        - { key: proposals.notes, path: proposals/notes.md, zone: proposals, owner: agent, kind: leaf}
+        - { key: proposals.notes, path: data/proposals/notes.md, lane: proposals, owner: agent, kind: leaf}
 
     YAML
   end

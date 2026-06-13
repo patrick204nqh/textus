@@ -17,13 +17,13 @@ RSpec.describe "authority_handler" do
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon,     desc: "the truth" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "agent notes" }
         - { name: artifacts, kind: machine,   desc: "computed outputs" }
         - { name: proposals, kind: queue,     desc: "awaiting accept" }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf }
     YAML
   end
   let(:caps) { Struct.new(:rpc, :manifest).new(registry, manifest) }
@@ -50,7 +50,7 @@ RSpec.describe "authority_handler" do
     expect(lanes).to eq(Textus::Manifest::Schema::Vocabulary::LANES)
   end
 
-  it "projects this manifest's zones with their derived capability" do
+  it "projects this manifest's lanes with their derived capability" do
     knowledge = invoke["content"]["zones"].find { |z| z["name"] == "knowledge" }
     expect(knowledge).to include(
       "kind" => "canon", "capability" => "author", "desc" => "the truth",

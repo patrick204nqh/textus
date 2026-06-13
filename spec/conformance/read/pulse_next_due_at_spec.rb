@@ -8,15 +8,15 @@ RSpec.describe "Pulse next_due_at" do
     %w[data/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: intake, kind: machine }
       entries:
         - key: intake.feed
           path: intake/feed.md
-          zone: intake
+          lane: intake
           kind: produced
           source:
-            from: handler
+            from: fetch
             handler: noop
             ttl: 3600s
     YAML
@@ -39,15 +39,15 @@ RSpec.describe "Pulse next_due_at" do
   it "next_due_at is nil when no entries have a fetch policy with last_fetched_at" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: intake, kind: machine }
       entries:
         - key: intake.feed
           path: intake/feed.md
-          zone: intake
+          lane: intake
           kind: produced
           source:
-            from: handler
+            from: fetch
             handler: noop
     YAML
     # Reinitialize store with fresh manifest (no rules)

@@ -1,14 +1,14 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe "Textus::CLI verb return-value contract" do
+RSpec.describe "Textus::Surfaces::CLI verb return-value contract" do
   def with_store
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries: []
       YAML
@@ -19,13 +19,13 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   def run_cli(argv, cwd:)
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
+    code = Textus::Surfaces::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
     [code, out.string, err.string]
   end
 
   it "every registered verb returns an Integer from a no-op invocation" do
     with_store do |root|
-      Textus::CLI.verbs.each_key do |verb|
+      Textus::Surfaces::CLI.verbs.each_key do |verb|
         next if verb == "watch" # the daemon blocks forever by design; it has no no-op invocation
 
         code, = run_cli([verb], cwd: root)
@@ -36,64 +36,64 @@ RSpec.describe "Textus::CLI verb return-value contract" do
   end
 
   it "the auto-derived verb table matches the prior surface exactly" do # rubocop:disable RSpec/ExampleLength
-    actual = Textus::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
+    actual = Textus::Surfaces::CLI.verbs # triggers Runner.install! so Verb::GenWhere exists
     expected = {
-      "accept" => Textus::CLI::Verb::GenAccept,
-      "audit" => Textus::CLI::Verb::GenAudit,
-      "blame" => Textus::CLI::Verb::GenBlame,
-      "capabilities" => Textus::CLI::Verb::GenCapabilities,
-      "deps" => Textus::CLI::Verb::GenDeps,
-      "doctor" => Textus::CLI::Verb::Doctor,
-      "enqueue" => Textus::CLI::Verb::GenEnqueue,
-      "get" => Textus::CLI::Verb::Get,
-      "init" => Textus::CLI::Verb::Init,
-      "boot" => Textus::CLI::Verb::GenBoot,
-      "data" => Textus::CLI::Group::Data,
-      "key" => Textus::CLI::Group::Key,
-      "list" => Textus::CLI::Verb::GenList,
-      "mcp" => Textus::CLI::Group::MCP,
-      "published" => Textus::CLI::Verb::GenPublished,
-      "pulse" => Textus::CLI::Verb::GenPulse,
-      "propose" => Textus::CLI::Verb::GenPropose,
-      "put" => Textus::CLI::Verb::Put,
-      "rdeps" => Textus::CLI::Verb::GenRdeps,
-      "reject" => Textus::CLI::Verb::GenReject,
-      "rule" => Textus::CLI::Group::Rule,
-      "schema" => Textus::CLI::Group::Schema,
-      "drain" => Textus::CLI::Verb::GenDrain,
-      "jobs" => Textus::CLI::Verb::GenJobs,
-      "watch" => Textus::CLI::Verb::Watch,
-      "where" => Textus::CLI::Verb::GenWhere,
+      "accept" => Textus::Surfaces::CLI::Verb::GenAccept,
+      "audit" => Textus::Surfaces::CLI::Verb::GenAudit,
+      "blame" => Textus::Surfaces::CLI::Verb::GenBlame,
+      "capabilities" => Textus::Surfaces::CLI::Verb::GenCapabilities,
+      "deps" => Textus::Surfaces::CLI::Verb::GenDeps,
+      "doctor" => Textus::Surfaces::CLI::Verb::Doctor,
+      "enqueue" => Textus::Surfaces::CLI::Verb::GenEnqueue,
+      "get" => Textus::Surfaces::CLI::Verb::Get,
+      "init" => Textus::Surfaces::CLI::Verb::Init,
+      "boot" => Textus::Surfaces::CLI::Verb::GenBoot,
+      "data" => Textus::Surfaces::CLI::Group::Data,
+      "key" => Textus::Surfaces::CLI::Group::Key,
+      "list" => Textus::Surfaces::CLI::Verb::GenList,
+      "mcp" => Textus::Surfaces::CLI::Group::MCP,
+      "published" => Textus::Surfaces::CLI::Verb::GenPublished,
+      "pulse" => Textus::Surfaces::CLI::Verb::GenPulse,
+      "propose" => Textus::Surfaces::CLI::Verb::GenPropose,
+      "put" => Textus::Surfaces::CLI::Verb::Put,
+      "rdeps" => Textus::Surfaces::CLI::Verb::GenRdeps,
+      "reject" => Textus::Surfaces::CLI::Verb::GenReject,
+      "rule" => Textus::Surfaces::CLI::Group::Rule,
+      "schema" => Textus::Surfaces::CLI::Group::Schema,
+      "drain" => Textus::Surfaces::CLI::Verb::GenDrain,
+      "jobs" => Textus::Surfaces::CLI::Verb::GenJobs,
+      "watch" => Textus::Surfaces::CLI::Verb::Watch,
+      "where" => Textus::Surfaces::CLI::Verb::GenWhere,
     }
     expect(actual).to eq(expected)
   end
 
   it "verb ordering is stable (alphabetical by command_name)" do
-    keys = Textus::CLI.verbs.keys
+    keys = Textus::Surfaces::CLI.verbs.keys
     expect(keys).to eq(keys.sort)
   end
 
   it "group subcommand tables are auto-derived from parent_group" do
-    expect(Textus::CLI::Group::Key.subcommands).to eq(
-      "delete" => Textus::CLI::Verb::GenKeyDelete,
-      "delete-prefix" => Textus::CLI::Verb::GenKeyDeletePrefix,
-      "mv" => Textus::CLI::Verb::GenKeyMv,
-      "mv-prefix" => Textus::CLI::Verb::GenKeyMvPrefix,
-      "uid" => Textus::CLI::Verb::GenUid,
+    expect(Textus::Surfaces::CLI::Group::Key.subcommands).to eq(
+      "delete" => Textus::Surfaces::CLI::Verb::GenKeyDelete,
+      "delete-prefix" => Textus::Surfaces::CLI::Verb::GenKeyDeletePrefix,
+      "mv" => Textus::Surfaces::CLI::Verb::GenKeyMv,
+      "mv-prefix" => Textus::Surfaces::CLI::Verb::GenKeyMvPrefix,
+      "uid" => Textus::Surfaces::CLI::Verb::GenUid,
     )
-    expect(Textus::CLI::Group::Rule.subcommands).to eq(
-      "explain" => Textus::CLI::Verb::GenRuleExplain,
-      "lint" => Textus::CLI::Verb::GenRuleLint,
-      "list" => Textus::CLI::Verb::GenRuleList,
+    expect(Textus::Surfaces::CLI::Group::Rule.subcommands).to eq(
+      "explain" => Textus::Surfaces::CLI::Verb::GenRuleExplain,
+      "lint" => Textus::Surfaces::CLI::Verb::GenRuleLint,
+      "list" => Textus::Surfaces::CLI::Verb::GenRuleList,
     )
-    expect(Textus::CLI::Group::Data.subcommands).to eq(
-      "mv" => Textus::CLI::Verb::GenDataMv,
+    expect(Textus::Surfaces::CLI::Group::Data.subcommands).to eq(
+      "mv" => Textus::Surfaces::CLI::Verb::GenDataMv,
     )
-    expect(Textus::CLI::Group::Schema.subcommands).to eq(
-      "diff" => Textus::CLI::Verb::SchemaDiff,
-      "init" => Textus::CLI::Verb::SchemaInit,
-      "migrate" => Textus::CLI::Verb::SchemaMigrate,
-      "show" => Textus::CLI::Verb::GenSchemaShow,
+    expect(Textus::Surfaces::CLI::Group::Schema.subcommands).to eq(
+      "diff" => Textus::Surfaces::CLI::Verb::SchemaDiff,
+      "init" => Textus::Surfaces::CLI::Verb::SchemaInit,
+      "migrate" => Textus::Surfaces::CLI::Verb::SchemaMigrate,
+      "show" => Textus::Surfaces::CLI::Verb::GenSchemaShow,
     )
   end
 end

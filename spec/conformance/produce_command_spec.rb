@@ -6,22 +6,22 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[artifacts],
+    store_from_manifest(root, lanes: %w[artifacts],
                               manifest: <<~YAML,
                                 version: textus/3
-                                zones: [{ name: artifacts, kind: machine }]
+                                lanes: [{ name: artifacts, kind: machine }]
                                 entries:
                                   - key: artifacts.bundle
                                     kind: produced
-                                    path: artifacts/bundle.json
-                                    zone: artifacts
-                                    source: { from: command, command: "true", sources: ["src/*"] }
+                                    path: data/artifacts/bundle.json
+                                    lane: artifacts
+                                    source: { from: external, command: "true", sources: ["src/*"] }
                                     publish: [{ to: dist/bundle.json }]
                                   - key: artifacts.signal
                                     kind: produced
-                                    path: artifacts/signal.json
-                                    zone: artifacts
-                                    source: { from: command, command: "true", sources: ["src/*"] }
+                                    path: data/artifacts/signal.json
+                                    lane: artifacts
+                                    source: { from: external, command: "true", sources: ["src/*"] }
                               YAML
                               files: { "data/artifacts/bundle.json" => "{\"ok\":true}\n" })
   end

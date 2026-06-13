@@ -4,7 +4,7 @@ RSpec.describe Textus::Envelope do
   let(:mentry) do
     instance_double(
       Textus::Manifest::Entry::Base,
-      zone: "working", owner: "human:self", format: "markdown", schema: "note",
+      lane: "working", owner: "human:self", format: "markdown", schema: "note",
     )
   end
 
@@ -20,7 +20,7 @@ RSpec.describe Textus::Envelope do
         expect(env).to be_a(Textus::Envelope)
         expect(env.protocol).to eq(Textus::PROTOCOL)
         expect(env.key).to eq("working.foo")
-        expect(env.zone).to eq("working")
+        expect(env.lane).to eq("working")
         expect(env.owner).to eq("human:self")
         expect(env.path).to eq("/x/foo.md")
         expect(env.format).to eq("markdown")
@@ -73,7 +73,7 @@ RSpec.describe Textus::Envelope do
         expect(h.keys).to all(be_a(String))
         expect(h["protocol"]).to eq(Textus::PROTOCOL)
         expect(h["key"]).to eq("working.foo")
-        expect(h["zone"]).to eq("working")
+        expect(h["lane"]).to eq("working")
         expect(h["owner"]).to eq("human:self")
         expect(h["path"]).to eq("/x/foo.md")
         expect(h["format"]).to eq("markdown")
@@ -97,7 +97,7 @@ RSpec.describe Textus::Envelope do
       env = described_class.build(
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
-      ).with(freshness: Textus::Domain::Freshness::Verdict.build(
+      ).with(freshness: Textus::Core::Freshness::Verdict.build(
         stale: true, fetching: false, reason: "ttl exceeded",
       ))
       h = env.to_h_for_wire
@@ -113,7 +113,7 @@ RSpec.describe Textus::Envelope do
       env = described_class.build(
         key: "k", mentry: mentry, path: "/x/y",
         meta: {}, body: "x", etag: "e"
-      ).with(freshness: Textus::Domain::Freshness::Verdict.build(
+      ).with(freshness: Textus::Core::Freshness::Verdict.build(
         stale: false, fetching: false,
         checked_at: Time.utc(2026, 1, 1), ttl_remaining_ms: 1234
       ))
@@ -131,8 +131,8 @@ RSpec.describe Textus::Envelope do
       )
       expect(env.freshness).to be_nil
 
-      env2 = env.with(freshness: Textus::Domain::Freshness::Verdict.build(stale: false))
-      expect(env2.freshness).to be_a(Textus::Domain::Freshness::Verdict)
+      env2 = env.with(freshness: Textus::Core::Freshness::Verdict.build(stale: false))
+      expect(env2.freshness).to be_a(Textus::Core::Freshness::Verdict)
       expect(env2.freshness).not_to be_a(Hash)
     end
   end
@@ -150,7 +150,7 @@ RSpec.describe Textus::Envelope do
     end
 
     it "stale? returns true when freshness.stale is true" do
-      env = base_env.with(freshness: Textus::Domain::Freshness::Verdict.build(stale: true))
+      env = base_env.with(freshness: Textus::Core::Freshness::Verdict.build(stale: true))
       expect(env.stale?).to be true
     end
 
@@ -159,7 +159,7 @@ RSpec.describe Textus::Envelope do
     end
 
     it "fetching? returns the boolean fetching flag" do
-      env = base_env.with(freshness: Textus::Domain::Freshness::Verdict.build(stale: true, fetching: true))
+      env = base_env.with(freshness: Textus::Core::Freshness::Verdict.build(stale: true, fetching: true))
       expect(env.fetching?).to be true
     end
   end

@@ -15,27 +15,46 @@ module Textus
       surfaces :cli, :mcp
       cli      "drain"
       arg :prefix, String, description: "restrict convergence to keys under this dotted prefix"
-      arg :zone,   String, description: "restrict convergence to entries in this zone"
+      arg :lane,   String, description: "restrict convergence to entries in this lane"
 
       def initialize(container:, call:)
         @container = container
         @call = call
       end
 
-      def call(prefix: nil, zone: nil)
-        queue = Textus::Ports::Queue.new(root: @container.root)
-        Textus::Jobs::Seeder.new(container: @container, queue: queue, call: @call).seed(prefix: prefix, zone: zone)
+      def call(prefix: nil, lane: nil)
+        _ = prefix
+        _ = lane
 
-        summary = Worker.for(container: @container, queue: queue).drain
-        health = Read::Doctor.new(container: @container, call: @call).call
+        queue = Textus::Ports::Queue.new(root: @container.root)
+        completed = 0
+        failed = 0
+
+        while (leased = queue.lease(worker_id: "drain", lease_ttl: 60))
+          begin
+            run_queued_job(leased)
+            queue.ack(leased)
+            completed += 1
+          rescue StandardError => e
+            outcome = queue.fail(leased, error: e.message)
+            failed += 1 if outcome == :dead_lettered
+          end
+        end
 
         {
           "protocol" => Textus::PROTOCOL,
-          "ok" => summary.failed.zero?,
-          "completed" => summary.completed,
-          "failed" => summary.failed,
-          "health" => health,
+          "ok" => failed.zero?,
+          "completed" => completed,
+          "failed" => failed,
         }
+      end
+
+      private
+
+      def run_queued_job(leased)
+        job = leased.job
+        entry = Textus::Jobs::Handlers.registry.lookup(job.type)
+        entry.handler.call(job: job, container: @container)
       end
     end
   end

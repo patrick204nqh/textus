@@ -5,7 +5,7 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
   include TextusSpecHelpers
 
   def issues_for(manifest:, files:)
-    store = store_from_manifest(root, zones: %w[knowledge], manifest: manifest, files: files)
+    store = store_from_manifest(root, lanes: %w[knowledge], manifest: manifest, files: files)
     described_class.new(store.container).call
   end
 
@@ -13,12 +13,12 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
     let(:manifest) do
       <<~YAML
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
           - key: notes
-            path: knowledge/notes
-            zone: knowledge
+            path: data/knowledge/notes
+            lane: knowledge
             owner: human:self
             kind: nested
             ignore:

@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::MCP::Server do
+RSpec.describe Textus::Surfaces::MCP::Server do
   include_context "textus_store_fixture"
 
   before do
@@ -12,12 +12,12 @@ RSpec.describe Textus::MCP::Server do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -64,7 +64,7 @@ RSpec.describe Textus::MCP::Server do
     call_resp = responses.find { |r| r["id"] == 2 }
     expect(call_resp["result"]["isError"]).to be(false)
     body = JSON.parse(call_resp["result"]["content"][0]["text"])
-    expect(body).to include("zones", "agent_quickstart")
+    expect(body).to include("lanes", "agent_quickstart")
   end
 
   it "returns ContractDrift JSON-RPC error for a write verb when manifest changes between calls" do
@@ -93,7 +93,7 @@ RSpec.describe Textus::MCP::Server do
     lines = output.string.lines.map { |l| JSON.parse(l) }
     drift = lines.find { |r| r["id"] == 2 && r["error"] }
     expect(drift).not_to be_nil
-    expect(drift["error"]["code"]).to eq(Textus::MCP::ContractDrift::JSONRPC_CODE)
+    expect(drift["error"]["code"]).to eq(Textus::Surfaces::MCP::ContractDrift::JSONRPC_CODE)
   end
 
   # ADR 0083 — contract-drift guard gates write verbs only

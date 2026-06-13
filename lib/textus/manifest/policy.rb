@@ -1,23 +1,23 @@
 module Textus
   class Manifest
-    # Authority over zones and roles derived from a Manifest::Data snapshot.
+    # Authority over lanes and roles derived from a Manifest::Data snapshot.
     # Encapsulates the lookups previously living on Manifest itself
-    # (zone_writers, permission_for). Write authority is derived from
-    # capabilities × zone-kind (ADR 0030): each zone-kind requires one verb
-    # (Schema::KIND_REQUIRES_VERB) and a role may write a zone iff its caps
-    # include that verb (verb_for_zone, roles_with_capability). Derived /
+    # (lane_writers, permission_for). Write authority is derived from
+    # capabilities x lane-kind (ADR 0030): each lane-kind requires one verb
+    # (Schema::KIND_REQUIRES_VERB) and a role may write a lane iff its caps
+    # include that verb (verb_for_lane, roles_with_capability). Derived /
     # proposal-queue status is authoritative via the declared-kind family
-    # (declared_kind, derived_entry?, queue_zone?, queue_zone).
+    # (declared_kind, derived_entry?, queue_lane?, queue_lane).
     class Policy
       def initialize(data)
         @data = data
       end
 
-      # The capability a zone's kind requires to be written, or nil if the
-      # zone declares no kind. declared_kind returns a Symbol; the table is
+      # The capability a lane's kind requires to be written, or nil if the
+      # lane declares no kind. declared_kind returns a Symbol; the table is
       # keyed by String.
-      def verb_for_zone(zone_name)
-        kind = declared_kind(zone_name)
+      def verb_for_lane(lane_name)
+        kind = declared_kind(lane_name)
         kind && Schema::KIND_REQUIRES_VERB[kind.to_s]
       end
 
@@ -41,39 +41,24 @@ module Textus
         roles_with_capability(verb).first
       end
 
-      # The roles authorized to write `zone_name`: those holding the verb its
-      # kind requires. Raises on an undeclared zone.
-      def zone_writers(zone_name)
-        raise UsageError.new("undeclared zone '#{zone_name}'") unless @data.declared_zone_kinds.key?(zone_name)
-
-        roles_with_capability(verb_for_zone(zone_name))
+      # The kind declared on a lane in the manifest, or nil if undeclared.
+      def declared_kind(lane_name)
+        @data.declared_lane_kinds[lane_name]
       end
 
-      def permission_for(zone_name)
-        Textus::Domain::Permission.new(
-          zone: zone_name,
-          writers: zone_writers(zone_name),
-        )
+      # Lane names declaring `kind` (a Symbol), in manifest order. Lets callers
+      # (boot) name a kind's live lane instance(s) instead of hardcoding names.
+      def lanes_of_kind(kind)
+        @data.declared_lane_kinds.select { |_name, k| k == kind }.keys
       end
 
-      # The kind declared on a zone in the manifest, or nil if undeclared.
-      def declared_kind(zone_name)
-        @data.declared_zone_kinds[zone_name]
+      # The single lane declaring `kind: queue`, or nil. Schema guarantees <=1.
+      def queue_lane
+        @data.declared_lane_kinds.key(:queue)
       end
 
-      # Zone names declaring `kind` (a Symbol), in manifest order. Lets callers
-      # (boot) name a kind's live zone instance(s) instead of hardcoding names.
-      def zones_of_kind(kind)
-        @data.declared_zone_kinds.select { |_name, k| k == kind }.keys
-      end
-
-      # The single zone declaring `kind: queue`, or nil. Schema guarantees <=1.
-      def queue_zone
-        @data.declared_zone_kinds.key(:queue)
-      end
-
-      # ADR 0091: derived-ness is a property of the ENTRY, not its zone (one
-      # machine zone holds both intake and derived entries). Resolve the entry
+      # ADR 0091: derived-ness is a property of the ENTRY, not its lane (one
+      # machine lane holds both intake and derived entries). Resolve the entry
       # and ask it directly. Returns false if entries are not yet built
       # (validator phase during Data#initialize) — validators must not rely on
       # cross-entry state during construction.
@@ -84,24 +69,27 @@ module Textus
         entry.derived?
       end
 
-      # The single zone declaring kind: machine, or nil.
-      def machine_zone
-        @data.declared_zone_kinds.key(:machine)
+      # The single lane declaring kind: machine, or nil.
+      def machine_lane
+        @data.declared_lane_kinds.key(:machine)
       end
 
-      # A zone is a proposal queue iff it declares kind: queue.
-      def queue_zone?(zone_name)
-        declared_kind(zone_name) == :queue
+      # A lane is a proposal queue iff it declares kind: queue.
+      def queue_lane?(lane_name)
+        declared_kind(lane_name) == :queue
       end
 
-      # The zone a proposer role writes proposals into: the single zone that
+      # The lane a proposer role writes proposals into: the single lane that
       # declares kind: queue, when the role can write it. Returns nil if there
-      # is no queue zone or the role cannot write it.
-      def propose_zone_for(role)
+      # is no queue lane or the role cannot write it.
+      def propose_lane_for(role)
         return nil if role.nil?
 
-        q = queue_zone
-        return nil unless q && zone_writers(q).include?(role)
+        q = queue_lane
+        return nil unless q
+
+        q_verb = verb_for_lane(q)
+        return nil unless roles_with_capability(q_verb).include?(role)
 
         q
       end

@@ -16,7 +16,7 @@ RSpec.describe "Boot write-flows — agent-facing write guidance" do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: identity, kind: canon, desc: "human-only" }
           - { name: intake,   kind: machine }
       YAML
@@ -53,14 +53,14 @@ RSpec.describe "Boot write-flows — agent-facing write guidance" do
     include_context "textus_store_fixture"
 
     let(:store) do
-      store_from_manifest(root, zones: %w[knowledge notebook artifacts proposals],
+      store_from_manifest(root, lanes: %w[knowledge notebook artifacts proposals],
                                 manifest: <<~YAML)
                                   version: textus/3
                                   roles:
                                     - { name: human,      can: [author, propose] }
                                     - { name: agent,      can: [propose, keep] }
                                     - { name: automation, can: [converge] }
-                                  zones:
+                                  lanes:
                                     - { name: knowledge, kind: canon }
                                     - { name: notebook,  kind: workspace, owner: agent }
                                     - { name: artifacts, kind: machine }

@@ -64,7 +64,7 @@ module Textus
           resolver = @manifest.resolver
           lister = lambda do |prefix:|
             resolver.enumerate(prefix: prefix, include_keyless: true)
-                    .map { |row| { "key" => row[:key], "zone" => row[:manifest_entry].zone, "path" => row[:path] } }
+                    .map { |row| { "key" => row[:key], "lane" => row[:manifest_entry].lane, "path" => row[:path] } }
           end
           self.class.pipeline_run(
             mentry: mentry,

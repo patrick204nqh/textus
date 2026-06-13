@@ -6,26 +6,26 @@ require "digest"
 # fixture that catalog_spec's read-only example project does not exercise.
 # (Was tools_spec.rb; MCP::Tools — a pure pass-through to Catalog — was deleted
 # in ADR 0101, so this suite now describes Catalog directly.)
-RSpec.describe Textus::MCP::Catalog do
+RSpec.describe Textus::Surfaces::MCP::Catalog do
   include_context "textus_store_fixture"
 
   let(:manifest_yaml) do
     <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: identity.self,   path: identity/self.md, zone: identity, owner: human:self, kind: leaf }
-        - { key: knowledge.note,    path: knowledge/note.md,  zone: knowledge,  owner: human:self, kind: leaf }
-        - { key: proposals.proposal, path: proposals/proposal,  zone: proposals,   owner: agent, kind: nested }
+        - { key: identity.self,   path: identity/self.md, lane: identity, owner: human:self, kind: leaf }
+        - { key: knowledge.note,    path: data/knowledge/note.md,  lane: knowledge,  owner: human:self, kind: leaf }
+        - { key: proposals.proposal, path: data/proposals/proposal,  lane: proposals,   owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }
   let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
   let(:session) do
-    Textus::MCP::Session.new(role: "agent", cursor: 0, propose_zone: "proposals", contract_etag: etag)
+    Textus::Surfaces::MCP::Session.new(role: "agent", cursor: 0, propose_lane: "proposals", contract_etag: etag)
   end
 
   before do
@@ -44,14 +44,14 @@ RSpec.describe Textus::MCP::Catalog do
   describe ".call('boot', ...)" do
     it "returns the Boot.run envelope" do
       result = described_class.call("boot", session: session, store: store, args: {})
-      expect(result).to include("zones", "entries", "agent_quickstart")
+      expect(result).to include("lanes", "entries", "agent_quickstart")
       expect(result["protocol"]).to eq(Textus::PROTOCOL)
     end
   end
 
   describe ".call('list', ...)" do
     it "lists keys filtered by zone" do
-      result = described_class.call("list", session: session, store: store, args: { "zone" => "knowledge" })
+      result = described_class.call("list", session: session, store: store, args: { "lane" => "knowledge" })
       expect(result).to be_an(Array)
     end
   end
@@ -60,7 +60,7 @@ RSpec.describe Textus::MCP::Catalog do
     it "raises ToolError for an unknown key" do
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
-      end.to raise_error(Textus::MCP::ToolError)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError)
     end
   end
 
@@ -73,8 +73,8 @@ RSpec.describe Textus::MCP::Catalog do
 
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
-      human_session = Textus::MCP::Session.new(
-        role: "human", cursor: 0, propose_zone: "proposals", contract_etag: etag,
+      human_session = Textus::Surfaces::MCP::Session.new(
+        role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag,
       )
       result = described_class.call(
         "put",
@@ -105,7 +105,7 @@ RSpec.describe Textus::MCP::Catalog do
 
   describe ".call('accept' / 'reject', ...) — capability-gated on MCP (ADR 0072 F7)" do
     let(:human_session) do
-      Textus::MCP::Session.new(role: "human", cursor: 0, propose_zone: "proposals", contract_etag: etag)
+      Textus::Surfaces::MCP::Session.new(role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag)
     end
 
     # Queue a proposal as the agent, returning its full key (proposals.proposal.<leaf>).
@@ -127,7 +127,7 @@ RSpec.describe Textus::MCP::Catalog do
     end
 
     it "accept is exposed in the derived catalog" do
-      expect(Textus::MCP::Catalog.names).to include("accept", "reject")
+      expect(Textus::Surfaces::MCP::Catalog.names).to include("accept", "reject")
     end
 
     it "refuses accept for a default agent connection (lacks author)" do
@@ -135,7 +135,7 @@ RSpec.describe Textus::MCP::Catalog do
       expect do
         described_class.call("accept", session: session, store: store,
                                        args: { "pending_key" => pending_key })
-      end.to raise_error(Textus::MCP::ToolError, /author/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /author/)
     end
 
     it "allows accept for a human-role connection" do
@@ -151,7 +151,7 @@ RSpec.describe Textus::MCP::Catalog do
       expect do
         described_class.call("reject", session: session, store: store,
                                        args: { "pending_key" => pending_key })
-      end.to raise_error(Textus::MCP::ToolError, /author/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /author/)
     end
 
     it "allows reject for a human-role connection" do
@@ -166,13 +166,13 @@ RSpec.describe Textus::MCP::Catalog do
     it "raises ToolError when the required key arg is missing" do
       expect do
         described_class.call("schema_show", session: session, store: store, args: {})
-      end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for an unknown key" do
       expect do
         described_class.call("schema_show", session: session, store: store, args: { "key" => "no.such.key" })
-      end.to raise_error(Textus::MCP::ToolError)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError)
     end
   end
 
@@ -197,7 +197,7 @@ RSpec.describe Textus::MCP::Catalog do
       expect(result).to include("steps", "warnings")
       # F6: omitting dry_run now mutates — the manifest reflects the renamed lane.
       manifest = YAML.safe_load_file(File.join(root, "manifest.yaml"))
-      lane_names = manifest.fetch("zones").map { |z| z["name"] }
+      lane_names = manifest.fetch("lanes").map { |z| z["name"] }
       expect(lane_names).to include("renamed")
       expect(lane_names).not_to include("knowledge")
     end
@@ -207,7 +207,7 @@ RSpec.describe Textus::MCP::Catalog do
                                                args: { "from" => "knowledge", "to" => "renamed", "dry_run" => true })
       expect(result).to include("steps", "warnings")
       lane_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
-                       .fetch("zones").map { |z| z["name"] }
+                       .fetch("lanes").map { |z| z["name"] }
       expect(lane_names).to include("knowledge")
       expect(lane_names).not_to include("renamed")
     end
@@ -216,7 +216,7 @@ RSpec.describe Textus::MCP::Catalog do
   describe ".call('where', ...) — graph-read now on MCP (ADR 0060)" do
     it "resolves a key's zone and path" do
       result = described_class.call("where", session: session, store: store, args: { "key" => "knowledge.note" })
-      expect(result["zone"]).to eq("knowledge")
+      expect(result["lane"]).to eq("knowledge")
     end
   end
 
@@ -238,7 +238,7 @@ RSpec.describe Textus::MCP::Catalog do
     it "raises ToolError" do
       expect do
         described_class.call("nope", session: session, store: store, args: {})
-      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
     end
   end
 end

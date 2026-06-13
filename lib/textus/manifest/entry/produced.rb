@@ -17,6 +17,8 @@ module Textus
         def derived?    = @source.kind == :derived
         def external?   = @source.external?
         def projection? = @source.projection?
+        def fetch?      = @source.fetch?
+        def derive?     = @source.derive?
         def nested?     = !!@raw["nested"]
         def handler     = @source.handler
         def config      = @source.config

@@ -94,14 +94,7 @@ module Textus
 
         def persist_and_notify(key, mentry, result, before_etag)
           normalized = self.class.normalize_action_result(result, format: mentry.format)
-          Textus::Domain::Policy::GuardFactory.new(
-            manifest: @manifest, schemas: @schemas,
-          ).for(:converge, key).check!(
-            Textus::Domain::Policy::Evaluation.new(
-              actor: @call.role, transition: :converge, origin: nil,
-              target: key, envelope: nil, manifest: @manifest
-            ),
-          )
+          auth.check!(action: :converge, actor: @call.role, key: key)
           envelope = writer.put(
             key,
             mentry: mentry,
@@ -123,6 +116,10 @@ module Textus
 
         def writer
           @writer ||= Textus::Envelope::IO::Writer.from(container: @container, call: @call)
+        end
+
+        def auth
+          @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @schemas)
         end
       end
     end

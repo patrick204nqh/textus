@@ -47,15 +47,15 @@ RSpec.describe "Schema evolution" do
     include_context "textus_store_fixture"
 
     let(:store_with_roles) do
-      store_from_manifest(root, zones: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
+      store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: human,  can: [author, propose] }
           - { name: agent,  can: [propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, schema: note, kind: leaf }
+          - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, schema: note, kind: leaf }
       YAML
     end
 
@@ -81,14 +81,14 @@ RSpec.describe "Schema evolution" do
     end
 
     it "migrate raises UsageError when roles: is declared but no author kind exists" do
-      store = store_from_manifest(root, zones: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
+      store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
-        zones:
+        lanes:
           - { name: proposals, kind: queue }
         entries:
-          - { key: proposals.note, path: proposals/note.md, zone: proposals, schema: note, kind: leaf }
+          - { key: proposals.note, path: data/proposals/note.md, lane: proposals, schema: note, kind: leaf }
       YAML
 
       expect do

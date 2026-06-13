@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::Matcher do
+RSpec.describe Textus::Manifest::Policy::Matcher do
   describe "#matches?" do
     it "matches exact dotted keys" do
       expect(described_class.matches?("intake.news.hn", "intake.news.hn")).to be(true)

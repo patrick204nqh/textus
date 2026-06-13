@@ -8,7 +8,7 @@ module Textus
       module_function
 
       def registry
-        reg = Textus::Domain::Jobs::Registry.new
+        reg = Textus::Core::Jobs::Registry.new
         # produce is pure (self-elevates) — any caller may request a rematerialize.
         reg.register("materialize", handler: method(:produce))
         reg.register("refresh_data", handler: method(:produce))
@@ -44,11 +44,11 @@ module Textus
       def sweep(job:, container:)
         call = call_for(job)
         scope = job.args["scope"]
-        rows = Textus::Domain::Retention::Sweep.new(
+        rows = Textus::Core::Retention::Sweep.new(
           manifest: container.manifest,
           file_stat: Textus::Ports::Storage::FileStat.new,
           clock: Textus::Ports::Clock.new,
-        ).call(prefix: scope_prefix(scope), zone: scope_zone(scope))
+        ).call(prefix: scope_prefix(scope), lane: scope_lane(scope))
         Textus::Maintenance::Retention::Apply.new(container: container, call: call).call(rows)
       end
 
@@ -56,9 +56,9 @@ module Textus
         Textus::Call.build(role: job.enqueued_by || Textus::Role::AUTOMATION)
       end
 
-      # A scope is `{ "prefix" => ..., "zone" => ... }` or nil (whole store).
+      # A scope is `{ "prefix" => ..., "lane" => ... }` or nil (whole store).
       def scope_prefix(scope) = scope.is_a?(Hash) ? scope["prefix"] : nil
-      def scope_zone(scope)   = scope.is_a?(Hash) ? scope["zone"]   : nil
+      def scope_lane(scope)   = scope.is_a?(Hash) ? scope["lane"]   : nil
     end
   end
 end

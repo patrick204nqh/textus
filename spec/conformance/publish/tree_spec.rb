@@ -7,7 +7,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
     FileUtils.mkdir_p(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: working, kind: canon }
       entries:
       #{entries_yaml}
@@ -20,12 +20,12 @@ RSpec.describe "publish_tree (ADR 0047)" do
     File.write(abs, contents)
   end
 
-  # Runs a full convergence pass via `drain` (seed + drain-to-empty). publish_tree
+  # Runs a full convergence pass (`converge_now`: explicit seed + queue-burn drain).
+  # publish_tree
   # mirroring is a side effect of the produce phase, so tests assert on the
   # published files ON DISK rather than a result shape.
   def materialize(s = Textus::Store.new(root))
-    call = Textus::Call.build(role: "automation")
-    Textus::Maintenance::Drain.new(container: s.container, call: call).call
+    converge_now(s)
   end
 
   describe "manifest wiring" do
@@ -34,7 +34,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -53,7 +53,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -91,7 +91,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -113,7 +113,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -139,7 +139,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -189,7 +189,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -211,7 +211,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
         - key: working.skills
           kind: nested
           path: working/skills
-          zone: working
+          lane: working
           schema: null
           nested: true
           publish:
@@ -237,12 +237,12 @@ RSpec.describe "publish_tree (ADR 0047)" do
     let(:opacity_manifest) do
       <<~YAML
         version: textus/3
-        zones:
+        lanes:
           - { name: working, kind: canon }
         entries:
           - key: working.published
             path: working/skills
-            zone: working
+            lane: working
             owner: human:self
             kind: nested
             nested: true
@@ -260,7 +260,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
     end
 
     let(:opacity_store) do
-      store_from_manifest(root, zones: %w[working], manifest: opacity_manifest, files: opacity_files)
+      store_from_manifest(root, lanes: %w[working], manifest: opacity_manifest, files: opacity_files)
     end
 
     it "does not flag uppercase filenames under a publish_tree entry (doctor green)" do
@@ -275,7 +275,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
 
     it "still mirrors the whole subtree, uppercase files included" do
       repo_root = File.dirname(root)
-      opacity_store.as("automation").drain
+      converge_now(opacity_store)
 
       expect(File.read(File.join(repo_root, "skills/my-skill/SKILL.md"))).to eq("# my skill\n")
       expect(File.read(File.join(repo_root, "skills/my-skill/README.md"))).to eq("# readme\n")
@@ -285,18 +285,18 @@ RSpec.describe "publish_tree (ADR 0047)" do
     it "still flags illegal segments on a non-publish nested entry (guard not over-broad)" do
       plain = <<~YAML
         version: textus/3
-        zones:
+        lanes:
           - { name: working, kind: canon }
         entries:
           - key: working.notes
             path: working/notes
-            zone: working
+            lane: working
             owner: human:self
             kind: nested
             nested: true
       YAML
       plain_store = store_from_manifest(
-        root, zones: %w[working], manifest: plain,
+        root, lanes: %w[working], manifest: plain,
               files: { "data/working/notes/Bad_Dir/note.md" => "x\n" }
       )
       issues = Textus::Doctor::Check::IllegalKeys.new(plain_store.container).call

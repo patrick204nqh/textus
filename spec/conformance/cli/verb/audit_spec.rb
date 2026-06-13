@@ -8,10 +8,10 @@ RSpec.describe "textus audit (generated via coerce:since + cli view, ADR 0068)" 
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
 
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))

@@ -97,7 +97,7 @@ module Textus
         else
           "no declared role"
         end
-      details = { "key" => k, "zone" => z }
+      details = { "key" => k, "lane" => z }
       details["verb"] = verb if verb
       details["holders"] = holders if holders
       super(

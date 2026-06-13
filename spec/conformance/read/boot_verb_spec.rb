@@ -8,10 +8,10 @@ RSpec.describe "boot verb dispatch" do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -22,7 +22,7 @@ RSpec.describe "boot verb dispatch" do
   it "dispatches store.boot to Read::Boot and returns the contract envelope" do
     res = store.boot
     expect(res["protocol"]).to eq(Textus::PROTOCOL)
-    expect(res).to include("zones", "entries", "agent_quickstart", "cli_verbs")
+    expect(res).to include("lanes", "entries", "agent_quickstart", "cli_verbs")
   end
 
   it "is reachable via the role-scoped facade" do

@@ -8,7 +8,7 @@ RSpec.describe "textus/3 conformance — CLI surface" do
   describe "CLI" do
     it "emits a textus/3 envelope for `get`" do
       out = StringIO.new
-      rc = Textus::CLI.run(
+      rc = Textus::Surfaces::CLI.run(
         ["get", "knowledge.network.org.jane", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
@@ -20,7 +20,7 @@ RSpec.describe "textus/3 conformance — CLI surface" do
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
-      rc = Textus::CLI.run(
+      rc = Textus::Surfaces::CLI.run(
         ["put", "knowledge.network.org.jane", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
                               "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
@@ -38,7 +38,7 @@ RSpec.describe "textus/3 conformance — CLI surface" do
   describe "CLI delete" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
-      rc = Textus::CLI.run(
+      rc = Textus::Surfaces::CLI.run(
         ["key", "delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
@@ -49,8 +49,8 @@ RSpec.describe "textus/3 conformance — CLI surface" do
     it "validate-all verb is removed in v0.5; doctor --check=schema_violations replaces it" do
       out = StringIO.new
       err = StringIO.new
-      rc = Textus::CLI.run(["validate-all", "--output=json"],
-                           stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
+      rc = Textus::Surfaces::CLI.run(["validate-all", "--output=json"],
+                                     stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
       expect(rc).not_to eq(0)
       expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")
     end
@@ -58,7 +58,7 @@ RSpec.describe "textus/3 conformance — CLI surface" do
 
   describe "--zone filter on list" do
     it "returns only entries in the named zone" do
-      expect(store.as(Textus::Role::DEFAULT).list(zone: "knowledge").map { |r| r["zone"] }.uniq).to eq(["knowledge"])
+      expect(store.as(Textus::Role::DEFAULT).list(lane: "knowledge").map { |r| r["lane"] }.uniq).to eq(["knowledge"])
     end
   end
 

@@ -12,10 +12,10 @@ RSpec.describe "textus data mv (generated, ADR 0068)" do
     FileUtils.mkdir_p(File.join(root, "data/scratch"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: scratch, kind: canon }
       entries:
-        - { key: scratch.note, path: scratch/note.md, zone: scratch, owner: human:self, kind: leaf }
+        - { key: scratch.note, path: scratch/note.md, lane: scratch, owner: human:self, kind: leaf }
     YAML
     File.write(File.join(root, "data/scratch/note.md"), "---\n_meta: {name: note, uid: nnnnnnnnnnnnnnnn}\n---\nN\n")
     FileUtils.mkdir_p(audit_dir_path(root))

@@ -4,9 +4,15 @@ module Textus
   module Step
     class Base
       class << self
-        # The step kind — set once per kind subclass. Drives discovery and
-        # which registry table the step lands in.
-        def kind = raise NotImplementedError.new("#{self} must define .kind")
+        # The step kind is derived from class hierarchy.
+        def kind
+          return :fetch if defined?(Step::Fetch) && self <= Step::Fetch
+          return :transform if defined?(Step::Transform) && self <= Step::Transform
+          return :validate if defined?(Step::Validate) && self <= Step::Validate
+          return :observe if defined?(Step::Observe) && self <= Step::Observe
+
+          raise NotImplementedError.new("#{self} is not a known step kind")
+        end
 
         # Required #call kwargs the loader validates against the subclass.
         def required_kwargs = []

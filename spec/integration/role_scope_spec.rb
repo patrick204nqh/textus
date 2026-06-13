@@ -1,13 +1,13 @@
 require "spec_helper"
 
-RSpec.describe Textus::RoleScope do
+RSpec.describe Textus::Surfaces::RoleScope do
   include_context "textus_store_fixture"
 
   let(:store) { minimal_store(root) }
 
   it "Store#as(role) returns a RoleScope bound to that role" do
     scope = store.as("human")
-    expect(scope).to be_a(Textus::RoleScope)
+    expect(scope).to be_a(Textus::Surfaces::RoleScope)
     expect(scope.role).to eq("human")
   end
 
@@ -47,13 +47,13 @@ RSpec.describe Textus::RoleScope do
 
   it "#with_role returns a new RoleScope with the given role" do
     scope = store.as("human").with_role("automation")
-    expect(scope).to be_a(Textus::RoleScope)
+    expect(scope).to be_a(Textus::Surfaces::RoleScope)
     expect(scope.role).to eq("automation")
   end
 
   it "#with_dry_run returns a RoleScope with dry_run=true" do
     scope = store.as("human").with_dry_run
-    expect(scope).to be_a(Textus::RoleScope)
+    expect(scope).to be_a(Textus::Surfaces::RoleScope)
     expect(scope.dry_run?).to be(true)
   end
 

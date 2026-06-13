@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Rules do
   let(:raw) do
     [
-      { "match" => "intake.**",       "intake_handler_allowlist" => ["http_get"] },
+      { "match" => "intake.**",       "handler_permit" => ["http_get"] },
       { "match" => "intake.news.*",   "retention" => { "ttl" => "6h", "action" => "drop" } },
       { "match" => "review.**", "guard" => { "accept" => ["schema_valid"] } },
     ]
@@ -16,15 +16,15 @@ RSpec.describe Textus::Manifest::Rules do
       set = rules.for("intake.news.hn")
       expect(set.retention.ttl_seconds).to eq(6 * 3600)
       expect(set.retention.action).to eq(:drop)
-      expect(set.handler_allowlist).to be_a(Textus::Domain::Policy::HandlerAllowlist)
-      expect(set.handler_allowlist.allows?("http_get")).to be(true)
+      expect(set.handler_permit).to be_a(Textus::Manifest::Policy::HandlerPermit)
+      expect(set.handler_permit.permits?("http_get")).to be(true)
       expect(set.guard).to be_nil
     end
 
     it "returns an empty set for keys not matched by any rule" do
       set = rules.for("identity.something")
       expect(set.retention).to be_nil
-      expect(set.handler_allowlist).to be_nil
+      expect(set.handler_permit).to be_nil
       expect(set.guard).to be_nil
     end
 
@@ -38,11 +38,11 @@ RSpec.describe Textus::Manifest::Rules do
       expect(set.retention.action).to eq(:drop)
     end
 
-    describe "intake_handler_allowlist" do
-      it "reads intake_handler_allowlist: from rule hash" do
-        raw = [{ "match" => "intake.x.*", "intake_handler_allowlist" => ["ical-events"] }]
+    describe "handler_permit" do
+      it "reads handler_permit: from rule hash" do
+        raw = [{ "match" => "intake.x.*", "handler_permit" => ["ical-events"] }]
         set = described_class.parse(raw).for("intake.x.cal")
-        expect(set.handler_allowlist.allows?("ical-events")).to be true
+        expect(set.handler_permit.permits?("ical-events")).to be true
       end
     end
 

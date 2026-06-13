@@ -8,7 +8,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
   before do
     store_from_manifest(
       root,
-      zones: %w[identity proposals],
+      lanes: %w[identity proposals],
       files: {
         "steps/observe/log_reject.rb" => <<~RUBY,
           $textus_event_log ||= []
@@ -36,13 +36,13 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
         entries:
-          - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+          - { key: identity.target, path: identity/target.md, lane: identity, kind: leaf}
 
-          - { key: proposals.draft,    path: proposals/draft.md,    zone: proposals, kind: leaf}
+          - { key: proposals.draft,    path: data/proposals/draft.md,    lane: proposals, kind: leaf}
 
       YAML
     )
@@ -94,16 +94,16 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(cli_dir)
       store_from_manifest(
         cli_root,
-        zones: %w[identity proposals],
+        lanes: %w[identity proposals],
         manifest: <<~YAML,
           version: textus/3
-          zones:
+          lanes:
             - { name: identity, kind: canon }
             - { name: proposals,   kind: queue }
           entries:
-            - { key: identity.t, path: identity/t.md, zone: identity, kind: leaf}
+            - { key: identity.t, path: identity/t.md, lane: identity, kind: leaf}
 
-            - { key: proposals.d,   path: proposals/d.md,   zone: proposals, kind: leaf}
+            - { key: proposals.d,   path: data/proposals/d.md,   lane: proposals, kind: leaf}
 
         YAML
       )
@@ -117,7 +117,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       )
       stdout = StringIO.new
       stderr = StringIO.new
-      exit_code = Textus::CLI.run(
+      exit_code = Textus::Surfaces::CLI.run(
         ["--root=#{cli_root}", "reject", "proposals.d", "--as=human"],
         stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: cli_dir,
       )
@@ -140,13 +140,13 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "data/proposals"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
         entries:
-          - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+          - { key: identity.target, path: identity/target.md, lane: identity, kind: leaf}
 
-          - { key: proposals.draft,    path: proposals/draft.md,    zone: proposals, kind: leaf}
+          - { key: proposals.draft,    path: data/proposals/draft.md,    lane: proposals, kind: leaf}
 
       YAML
 
@@ -170,13 +170,13 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "data/pending"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: pending,  kind: canon }
         entries:
-          - { key: identity.target, path: identity/target.md, zone: identity, kind: leaf}
+          - { key: identity.target, path: identity/target.md, lane: identity, kind: leaf}
 
-          - { key: pending.draft,   path: pending/draft.md,   zone: pending, kind: leaf}
+          - { key: pending.draft,   path: pending/draft.md,   lane: pending, kind: leaf}
 
       YAML
 

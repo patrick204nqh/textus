@@ -6,9 +6,9 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Entry::Validators::Publish do
   def entry(raw)
     common = {
-      raw: raw, key: raw["key"], path: raw["path"], zone: raw["zone"],
+      raw: raw, key: raw["key"], path: raw["path"], lane: raw["lane"],
       schema: nil, owner: nil, format: "markdown",
-      publish_targets: Array(raw["publish"]).map { |t| Textus::Domain::Policy::PublishTarget.new(t) }
+      publish_targets: Array(raw["publish"]).map { |t| Textus::Manifest::Policy::PublishTarget.new(t) }
     }
     Textus::Manifest::Entry::Nested.from_raw(common, raw)
   end
@@ -16,7 +16,7 @@ RSpec.describe Textus::Manifest::Entry::Validators::Publish do
   def validate(raw) = described_class.call(entry(raw), policy: nil)
 
   let(:base) do
-    { "key" => "working.skills", "path" => "working/skills", "zone" => "working", "nested" => true }
+    { "key" => "working.skills", "path" => "working/skills", "lane" => "working", "nested" => true }
   end
 
   it "passes a well-formed publish.tree entry" do
@@ -28,9 +28,9 @@ RSpec.describe Textus::Manifest::Entry::Validators::Publish do
   end
 
   it "rejects publish.tree on a non-nested entry" do
-    common = { raw: { "publish" => [{ "tree" => "x" }] }, key: "k", path: "p", zone: "working",
+    common = { raw: { "publish" => [{ "tree" => "x" }] }, key: "k", path: "p", lane: "working",
                schema: nil, owner: nil, format: "markdown",
-               publish_targets: [Textus::Domain::Policy::PublishTarget.new("tree" => "x")] }
+               publish_targets: [Textus::Manifest::Policy::PublishTarget.new("tree" => "x")] }
     leaf = Textus::Manifest::Entry::Leaf.new(**common)
     expect { described_class.call(leaf, policy: nil) }
       .to raise_error(Textus::UsageError, /publish\.tree requires nested: true/)

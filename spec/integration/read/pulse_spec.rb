@@ -12,7 +12,7 @@ RSpec.describe Textus::Read::Pulse do
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries: []

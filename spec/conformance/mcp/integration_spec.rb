@@ -14,12 +14,12 @@ RSpec.describe "MCP end-to-end" do
     end
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -29,7 +29,7 @@ RSpec.describe "MCP end-to-end" do
     store = Textus::Store.new(root)
     payload = requests_arr.map { |r| JSON.dump(r.merge(jsonrpc: "2.0")) }.join("\n") + "\n"
     out = StringIO.new
-    Textus::MCP::Server.new(store: store, stdin: StringIO.new(payload), stdout: out).run
+    Textus::Surfaces::MCP::Server.new(store: store, stdin: StringIO.new(payload), stdout: out).run
     out.string.lines.map { |l| JSON.parse(l) }
   end
 
@@ -58,7 +58,7 @@ RSpec.describe "MCP end-to-end" do
                                   "deps", "rdeps", "where")
     expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     # Self-updating: must equal the catalog's authoritative name list
-    expect(tool_names.sort).to eq(Textus::MCP::Catalog.names.sort)
+    expect(tool_names.sort).to eq(Textus::Surfaces::MCP::Catalog.names.sort)
   end
 
   it "pulse cursor advances: no-since pulse after put returns only the new entry; second no-since pulse returns empty changed" do
@@ -123,13 +123,13 @@ RSpec.describe "MCP end-to-end" do
     # Extend the manifest with a second entry so mv has a valid manifest target
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: knowledge.note,    path: knowledge/note.md,    zone: knowledge, owner: human:self, kind: leaf }
-        - { key: knowledge.renamed, path: knowledge/renamed.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note,    path: data/knowledge/note.md,    lane: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.renamed, path: data/knowledge/renamed.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
 
     responses = run_session([

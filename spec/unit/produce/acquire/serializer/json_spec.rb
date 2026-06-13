@@ -8,8 +8,8 @@ RSpec.describe Textus::Produce::Acquire::Serializer::Json do
       format: "json",
       derived?: true,
       projection?: true,
-      source: Textus::Domain::Policy::Source.new(
-        "from" => "project",
+      source: Textus::Manifest::Policy::Source.new(
+        "from" => "derive",
         "select" => ["working.a"],
         "transform" => transform,
       ),

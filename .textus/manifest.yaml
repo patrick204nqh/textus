@@ -9,17 +9,17 @@ roles:
   - { name: human,      can: [author, propose] }
   - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [converge] }
-zones:
+lanes:
   - { name: knowledge, kind: canon,      desc: "the maintained source of truth about the repo (project + runbooks)" }
   - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes across sessions" }
   - { name: proposals, kind: queue,      desc: "changes awaiting a human accept" }
   - { name: artifacts, kind: machine,    desc: "machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs" }
 entries:
-  - { key: knowledge.project,  path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
-  - { key: knowledge.runbooks, path: knowledge/runbooks,   zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+  - { key: knowledge.project,  path: data/knowledge/project.md, lane: knowledge, schema: project, owner: human:self, kind: leaf }
+  - { key: knowledge.runbooks, path: data/knowledge/runbooks,   lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
   - key: knowledge.reference
-    path: knowledge/reference
-    zone: knowledge
+    path: data/knowledge/reference
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -28,8 +28,8 @@ entries:
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
-    path: knowledge/how-to
-    zone: knowledge
+    path: data/knowledge/how-to
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -37,8 +37,8 @@ entries:
     publish:
       - { tree: docs/how-to }
   - key: knowledge.explanation
-    path: knowledge/explanation
-    zone: knowledge
+    path: data/knowledge/explanation
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -46,8 +46,8 @@ entries:
     publish:
       - { tree: docs/explanation }
   - key: knowledge.cookbook
-    path: knowledge/cookbook
-    zone: knowledge
+    path: data/knowledge/cookbook
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -55,8 +55,8 @@ entries:
     publish:
       - { tree: docs/cookbook }
   - key: knowledge.tutorials
-    path: knowledge/tutorials
-    zone: knowledge
+    path: data/knowledge/tutorials
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -64,8 +64,8 @@ entries:
     publish:
       - { tree: docs/tutorials }
   - key: knowledge.decisions
-    path: knowledge/decisions
-    zone: knowledge
+    path: data/knowledge/decisions
+    lane: knowledge
     schema: null
     owner: human:self
     nested: true
@@ -73,52 +73,52 @@ entries:
     publish:
       - { tree: docs/architecture/decisions }
   - key: knowledge.docs-index
-    path: knowledge/docs-readme.md
-    zone: knowledge
+    path: data/knowledge/docs-readme.md
+    lane: knowledge
     schema: null
     owner: human:self
     kind: leaf
     publish:
       - { to: docs/README.md }
   - key: knowledge.architecture-index
-    path: knowledge/architecture-readme.md
-    zone: knowledge
+    path: data/knowledge/architecture-readme.md
+    lane: knowledge
     schema: null
     owner: human:self
     kind: leaf
     publish:
       - { to: docs/architecture/README.md }
   - key: knowledge.readme
-    path: knowledge/readme.md
-    zone: knowledge
+    path: data/knowledge/readme.md
+    lane: knowledge
     schema: null
     owner: human:self
     kind: leaf
     publish:
       - { to: README.md }
   - key: knowledge.contributing
-    path: knowledge/contributing.md
-    zone: knowledge
+    path: data/knowledge/contributing.md
+    lane: knowledge
     schema: null
     owner: human:self
     kind: leaf
     publish:
       - { to: CONTRIBUTING.md }
   - key: knowledge.security
-    path: knowledge/security.md
-    zone: knowledge
+    path: data/knowledge/security.md
+    lane: knowledge
     schema: null
     owner: human:self
     kind: leaf
     publish:
       - { to: SECURITY.md }
-  - { key: notebook.notes,     path: notebook/notes,       zone: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
-  - { key: proposals.notes,    path: proposals/notes,      zone: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
+  - { key: notebook.notes,     path: data/notebook/notes,       lane: notebook,  schema: null,    owner: agent:self, nested: true, kind: nested }
+  - { key: proposals.notes,    path: data/proposals/notes,      lane: proposals, schema: null,    owner: agent:self, nested: true, kind: nested }
   - key: artifacts.derived.orientation
-    path: artifacts/derived/orientation.json
-    zone: artifacts
+    path: data/artifacts/derived/orientation.json
+    lane: artifacts
     source:
-      from: project
+      from: derive
       select:
         - knowledge.project
         - knowledge.runbooks
@@ -128,48 +128,48 @@ entries:
       - { to: AGENTS.md, template: orientation.mustache }
     kind: produced
   - key: artifacts.derived.mcp-config
-    path: artifacts/derived/mcp.json
-    zone: artifacts
-    source: { from: project, select: [knowledge.project], transform: mcp_config }
+    path: data/artifacts/derived/mcp.json
+    lane: artifacts
+    source: { from: derive, select: [knowledge.project], transform: mcp_config }
     publish: [{ to: .mcp.json }]
     kind: produced
   - key: artifacts.derived.claude-plugin
-    path: artifacts/derived/plugin.json
-    zone: artifacts
+    path: data/artifacts/derived/plugin.json
+    lane: artifacts
     source:
-      from: project
+      from: derive
       select: [knowledge.project]
       transform: plugin_manifest
     publish: [{ to: .claude-plugin/plugin.json }]
     kind: produced
   - key: artifacts.derived.opencode-config
-    path: artifacts/derived/opencode.json
-    zone: artifacts
-    source: { from: project, select: [knowledge.project], transform: opencode_config }
+    path: data/artifacts/derived/opencode.json
+    lane: artifacts
+    source: { from: derive, select: [knowledge.project], transform: opencode_config }
     publish: [{ to: opencode.json }]
     kind: produced
   - key: artifacts.derived.verbs
-    path: artifacts/derived/verbs.json
-    zone: artifacts
+    path: data/artifacts/derived/verbs.json
+    lane: artifacts
     format: json
-    source: { from: handler, handler: verbs }
+    source: { from: fetch, handler: verbs }
     publish:
       - { to: docs/reference/verbs.md, template: verbs.mustache }
     kind: produced
   - key: artifacts.derived.schema
-    path: artifacts/derived/schema.json
-    zone: artifacts
+    path: data/artifacts/derived/schema.json
+    lane: artifacts
     format: json
-    source: { from: handler, handler: schema }
+    source: { from: fetch, handler: schema }
     publish:
       - { to: docs/reference/schema.md, template: schema.mustache }
     kind: produced
   - key: artifacts.derived.adr-log
-    path: artifacts/derived/adr-log.json
-    zone: artifacts
+    path: data/artifacts/derived/adr-log.json
+    lane: artifacts
     format: json
     source:
-      from: project
+      from: derive
       select: [knowledge.decisions]
       transform: adr_index
       pluck: [body, _key]
@@ -177,10 +177,10 @@ entries:
       - { to: docs/reference/adr-log.md, template: adr-log.mustache }
     kind: produced
   - key: artifacts.derived.authority
-    path: artifacts/derived/authority.json
-    zone: artifacts
+    path: data/artifacts/derived/authority.json
+    lane: artifacts
     format: json
-    source: { from: handler, handler: authority }
+    source: { from: fetch, handler: authority }
     publish:
       - { to: docs/reference/authority.md, template: authority.mustache }
     kind: produced
@@ -188,8 +188,8 @@ entries:
 
 rules:
   - match: artifacts.derived.verbs
-    intake_handler_allowlist: [verbs]
+    handler_permit: [verbs]
   - match: artifacts.derived.schema
-    intake_handler_allowlist: [schema]
+    handler_permit: [schema]
   - match: artifacts.derived.authority
-    intake_handler_allowlist: [authority]
+    handler_permit: [authority]

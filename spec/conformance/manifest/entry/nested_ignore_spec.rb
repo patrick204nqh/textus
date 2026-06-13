@@ -3,14 +3,14 @@ require "spec_helper"
 RSpec.describe "Textus::Manifest::Entry::Nested ignore parsing" do
   def nested(raw)
     common = {
-      raw: raw, key: raw["key"], path: raw["path"], zone: raw["zone"],
+      raw: raw, key: raw["key"], path: raw["path"], lane: raw["lane"],
       schema: nil, owner: "human:self", format: "markdown", publish_targets: []
     }
     Textus::Manifest::Entry::Nested.from_raw(common, raw)
   end
 
   let(:base_raw) do
-    { "key" => "skills", "path" => "skills", "zone" => "knowledge",
+    { "key" => "skills", "path" => "skills", "lane" => "knowledge",
       "kind" => "nested", "nested" => true }
   end
 
@@ -33,8 +33,8 @@ RSpec.describe "Textus::Manifest::Entry::Nested ignore parsing" do
   end
 
   it "Base entries report ignored? false" do
-    raw = { "key" => "n", "path" => "notes.md", "zone" => "working", "kind" => "leaf" }
-    common = { raw: raw, key: "n", path: "notes.md", zone: "working",
+    raw = { "key" => "n", "path" => "notes.md", "lane" => "working", "kind" => "leaf" }
+    common = { raw: raw, key: "n", path: "notes.md", lane: "working",
                schema: nil, owner: "human:self", format: "markdown", publish_targets: [] }
     leaf = Textus::Manifest::Entry::Leaf.from_raw(common, raw)
     expect(leaf.ignored?("anything/SKILL.md")).to be(false)

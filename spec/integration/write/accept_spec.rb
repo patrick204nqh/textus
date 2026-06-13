@@ -4,14 +4,14 @@ RSpec.describe Textus::Write::Accept do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
+    store_from_manifest(root, lanes: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries:
-        - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, owner: human:self, kind: nested }
-        - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
+        - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
+        - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
     YAML
   end
 
@@ -86,17 +86,17 @@ RSpec.describe Textus::Write::Accept do
     # proposals is a queue (propose), feeds is a machine zone (converge) so the
     # manifest still validates — yet accept/reject have no authority to gate.
     let(:store) do
-      s = store_from_manifest(root, zones: %w[feeds proposals], manifest: <<~YAML)
+      s = store_from_manifest(root, lanes: %w[feeds proposals], manifest: <<~YAML)
         version: textus/3
         roles:
           - { name: agent, can: [propose] }
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: feeds, kind: machine }
           - { name: proposals, kind: queue }
         entries:
-          - { key: feeds.n, path: feeds/n.md, zone: feeds, owner: human:self, kind: leaf }
-          - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
+          - { key: feeds.n, path: data/feeds/n.md, lane: feeds, owner: human:self, kind: leaf }
+          - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
         rules: []
       YAML
       s.as("agent").put(
@@ -132,16 +132,16 @@ RSpec.describe Textus::Write::Accept do
       let(:store) do
         store_from_manifest(
           root,
-          zones: ["knowledge/network/org", "proposals"],
+          lanes: ["knowledge/network/org", "proposals"],
           schemas: { "org-member" => org_member_schema },
           manifest: <<~YAML,
             version: textus/3
-            zones:
+            lanes:
               - { name: knowledge, kind: canon }
               - { name: proposals,  kind: queue }
             entries:
-              - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, schema: org-member, owner: human:self, kind: nested }
-              - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
+              - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, schema: org-member, owner: human:self, kind: nested }
+              - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
             rules:
               - match: "knowledge.network.org.**"
                 guard:
@@ -183,14 +183,14 @@ RSpec.describe Textus::Write::Accept do
 
     context "with an author_held guard" do
       let(:store) do
-        store_from_manifest(root, zones: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
+        store_from_manifest(root, lanes: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
           version: textus/3
-          zones:
+          lanes:
             - { name: knowledge, kind: canon }
             - { name: proposals,  kind: queue }
           entries:
-            - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, owner: human:self, kind: nested }
-            - { key: proposals, path: proposals, zone: proposals, owner: human:self, kind: nested }
+            - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
+            - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
           rules:
             - match: "knowledge.network.org.**"
               guard:

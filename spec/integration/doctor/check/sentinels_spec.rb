@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries: []
     YAML

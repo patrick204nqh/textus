@@ -8,7 +8,7 @@ RSpec.describe "textus audit --seq-since" do
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: knowledge, kind: canon }]
+        lanes: [{ name: knowledge, kind: canon }]
         entries: []
       YAML
       yield root, textus
@@ -18,7 +18,7 @@ RSpec.describe "textus audit --seq-since" do
   def run_cli(argv, cwd:)
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
+    code = Textus::Surfaces::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
     [code, out.string, err.string]
   end
 

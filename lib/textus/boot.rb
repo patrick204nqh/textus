@@ -1,7 +1,7 @@
 module Textus
   # Read-only "what's in this store and how do I use it" envelope.
   # A single call gives an agent the working model of a textus-managed
-  # project: zones and their write authority, entries and their flags,
+  # project: lanes and their write authority, entries and their flags,
   # registered hooks, write flows, and the CLI verb catalog.
   #
   # Boot is side-effect-free.
@@ -10,24 +10,24 @@ module Textus
 
     # Per-capability write-flow templates. Each lambda receives the user-facing
     # role name and the manifest, and returns guidance for that verb with the
-    # live zone named by kind (ADR 0034). A role holding multiple verbs gets one
+    # live lane named by kind (ADR 0034). A role holding multiple verbs gets one
     # joined string; roles whose verbs have no template are omitted.
     WRITE_FLOW_TEMPLATES = {
       author: lambda do |name, manifest|
-        "edit files in #{zone_label(manifest, :canon, "your canon zone")}, " \
+        "edit files in #{lane_label(manifest, :canon, "your canon lane")}, " \
           "then 'textus put KEY --as=#{name}'"
       end,
       keep: lambda do |name, manifest|
-        "keep durable notes in #{zone_label(manifest, :workspace, "your workspace")}: " \
+        "keep durable notes in #{lane_label(manifest, :workspace, "your workspace")}: " \
           "'textus put KEY --as=#{name}' (no accept needed)"
       end,
       propose: lambda do |name, manifest|
         authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
-        "propose changes by writing #{manifest.policy.queue_zone}.* entries with --as=#{name} " \
+        "propose changes by writing #{manifest.policy.queue_lane}.* entries with --as=#{name} " \
           "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
       end,
       converge: lambda do |_name, manifest|
-        machine = zone_label(manifest, :machine, "machine")
+        machine = lane_label(manifest, :machine, "machine")
         "'textus drain' materializes derived #{machine} entries from their sources and " \
           "refreshes stale intake #{machine} entries from their declared source; " \
           "derived files are never hand-edited (reactive on canon writes, or a full pass on demand)"
@@ -44,17 +44,17 @@ module Textus
       end
     end
 
-    # Human-readable name(s) for the live zone(s) of a given kind, or `fallback`
+    # Human-readable name(s) for the live lane(s) of a given kind, or `fallback`
     # when the manifest declares none. Lets write-flow guidance name the live
-    # zone by kind instead of a hardcoded instance name (ADR 0034).
-    def self.zone_label(manifest, kind, fallback)
-      zones = manifest.policy.zones_of_kind(kind)
-      zones.empty? ? fallback : zones.join(", ")
+    # lane by kind instead of a hardcoded instance name (ADR 0034).
+    def self.lane_label(manifest, kind, fallback)
+      lanes = manifest.policy.lanes_of_kind(kind)
+      lanes.empty? ? fallback : lanes.join(", ")
     end
 
     # Static, store-independent parts of the agent-facing protocol. The
     # `recipes` and `role_resolution` blocks are derived per-manifest in
-    # agent_protocol(...) because zone and role names are user-configurable.
+    # agent_protocol(...) because lane and role names are user-configurable.
     AGENT_PROTOCOL_TEMPLATE = {
       "envelope_shape" => {
         "summary" => "every read/write payload is a JSON envelope with _meta, body, uid, and etag",
@@ -118,11 +118,15 @@ module Textus
     def self.agent_quickstart(manifest, audit_log)
       agent_role = manifest.policy.proposer_role
 
-      writable_zones = manifest.data.declared_zone_kinds.keys.each_with_object([]) do |zname, acc|
-        acc << zname if agent_role && manifest.policy.zone_writers(zname).include?(agent_role)
+      writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |lane_name, acc|
+        next unless agent_role
+
+        verb = manifest.policy.verb_for_lane(lane_name)
+        writers = manifest.policy.roles_with_capability(verb)
+        acc << lane_name if writers.include?(agent_role)
       end
 
-      propose_zone = manifest.policy.propose_zone_for(agent_role)
+      propose_lane = manifest.policy.propose_lane_for(agent_role)
 
       {
         # Both verb lists derive from the MCP catalog (ADR 0056, ADR 0057): the
@@ -132,11 +136,11 @@ module Textus
         # internal scan, ADR 0085) nor omit one it can
         # (schema_show/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
         # framing (role is connection-resolved over MCP; there is no stdin).
-        # writable_zones / propose_zone below carry the agent's write authority.
-        "read_verbs" => Textus::MCP::Catalog.read_verbs,
-        "write_verbs" => agent_role ? Textus::MCP::Catalog.write_verbs : [],
-        "writable_zones" => writable_zones,
-        "propose_zone" => propose_zone,
+        # writable_lanes / propose_lane below carry the agent's write authority.
+        "read_verbs" => Textus::Surfaces::MCP::Catalog.read_verbs,
+        "write_verbs" => agent_role ? Textus::Surfaces::MCP::Catalog.write_verbs : [],
+        "writable_lanes" => writable_lanes,
+        "propose_lane" => propose_lane,
         "latest_seq" => audit_log.latest_seq,
       }
     end
@@ -146,13 +150,13 @@ module Textus
     # `textus get KEY`, MCP as the `get` tool) or is a plain materialize step. This
     # keeps shell lines out of the surface an MCP agent reads.
     def self.recipes(manifest)
-      queue = manifest.policy.queue_zone
-      feeds = zone_label(manifest, :machine, "the machine zone")
+      queue = manifest.policy.queue_lane
+      feeds = lane_label(manifest, :machine, "the machine lane")
       {
         "read" => {
           "purpose" => "find and read an entry",
           "steps" => [
-            "list (zone:, prefix:) — discover keys without reading bodies",
+            "list (lane:, prefix:) — discover keys without reading bodies",
             "get KEY — returns the entry envelope",
           ],
         },
@@ -167,17 +171,17 @@ module Textus
         "propose" => {
           "purpose" => "agent suggests a change for human review",
           "agent_steps" => [
-            "propose KEY — writes the change into the #{queue} zone for review",
+            "propose KEY — writes the change into the #{queue} lane for review",
           ],
           "human_steps" => [
-            "accept #{queue}.KEY — promotes the proposal into its target zone",
+            "accept #{queue}.KEY — promotes the proposal into its target lane",
           ],
         },
         "drain" => {
           "purpose" => "keep the machine-maintained lanes fresh — re-pull stale intake entries from their declared source",
           "steps" => [
             "pulse — its `stale` list names entries past their ttl",
-            "drain (zone: #{feeds}) — re-pull the stale entries",
+            "drain (lane: #{feeds}) — re-pull the stale entries",
           ],
         },
       }
@@ -203,7 +207,7 @@ module Textus
         return {
           "protocol" => PROTOCOL_ID,
           "store_root" => container.root,
-          "zones" => zones_for(manifest),
+          "lanes" => lanes_for(manifest),
           "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
           "contract_etag" => etag,
         }
@@ -212,7 +216,7 @@ module Textus
       {
         "protocol" => PROTOCOL_ID,
         "store_root" => container.root,
-        "zones" => zones_for(manifest),
+        "lanes" => lanes_for(manifest),
         "entries" => entries_for(manifest),
         "hooks" => hooks_for_container(container),
         "write_flows" => write_flows_for(manifest),
@@ -224,12 +228,13 @@ module Textus
       }
     end
 
-    def self.zones_for(manifest)
-      manifest.data.declared_zone_kinds.keys.map do |name|
-        row = { "name" => name, "writers" => manifest.policy.zone_writers(name) }
+    def self.lanes_for(manifest)
+      manifest.data.declared_lane_kinds.keys.map do |name|
+        verb = manifest.policy.verb_for_lane(name)
+        row = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
         kind = manifest.policy.declared_kind(name)
         row["kind"] = kind.to_s if kind
-        purpose = manifest.data.zone_descs[name]
+        purpose = manifest.data.lane_descs[name]
         row["purpose"] = purpose if purpose && !purpose.empty?
         row
       end
@@ -240,7 +245,7 @@ module Textus
         derived = e.derived?
         {
           "key" => e.key,
-          "zone" => e.zone,
+          "lane" => e.lane,
           "schema" => e.schema,
           "nested" => e.is_a?(Textus::Manifest::Entry::Nested),
           "owner" => e.owner,

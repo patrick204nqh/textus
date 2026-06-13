@@ -10,10 +10,10 @@ RSpec.describe Textus::Manifest::Resolver do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf}
+        - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf}
 
     YAML
   end
@@ -37,15 +37,15 @@ RSpec.describe Textus::Manifest::Resolver do
       # rule, not by incidental segment-illegality.
       store_from_manifest(
         root,
-        zones: %w[knowledge],
+        lanes: %w[knowledge],
         manifest: <<~YAML,
           version: textus/3
-          zones:
+          lanes:
             - { name: knowledge, kind: canon }
           entries:
             - key: skills
-              path: knowledge/skills
-              zone: knowledge
+              path: data/knowledge/skills
+              lane: knowledge
               owner: human:self
               kind: nested
               ignore:
@@ -76,15 +76,15 @@ RSpec.describe Textus::Manifest::Resolver do
       # include_keyless: override permits without exposing them to `list`.
       store_from_manifest(
         root,
-        zones: %w[knowledge],
+        lanes: %w[knowledge],
         manifest: <<~YAML,
           version: textus/3
-          zones:
+          lanes:
             - { name: knowledge, kind: canon }
           entries:
             - key: decisions
-              path: knowledge/decisions
-              zone: knowledge
+              path: data/knowledge/decisions
+              lane: knowledge
               owner: human:self
               kind: nested
               publish:

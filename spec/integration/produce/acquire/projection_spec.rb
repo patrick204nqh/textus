@@ -20,18 +20,18 @@ RSpec.describe Textus::Produce::Acquire::Projection do
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested }
+        - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, owner: human:self, kind: nested }
 
         - key: artifacts.catalogs.people
           kind: produced
-          path: artifacts/catalogs/people.json
-          zone: artifacts
+          path: data/artifacts/catalogs/people.json
+          lane: artifacts
           owner: automation:auto
-          source: { from: project, select: [knowledge.people], pluck: [name, org], sort_by: name }
+          source: { from: derive, select: [knowledge.people], pluck: [name, org], sort_by: name }
     YAML
 
     File.write(File.join(root, "data/knowledge/people/alice.md"),

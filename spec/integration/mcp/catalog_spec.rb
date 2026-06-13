@@ -1,10 +1,10 @@
 require "spec_helper"
 
-RSpec.describe Textus::MCP::Catalog do
+RSpec.describe Textus::Surfaces::MCP::Catalog do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge notebook proposals artifacts], schemas: {
+    store_from_manifest(root, lanes: %w[knowledge notebook proposals artifacts], schemas: {
                           "project" => File.read(File.expand_path("../../../.textus/schemas/project.yaml", __dir__)),
                         }, manifest: <<~YAML)
                           version: textus/3
@@ -12,15 +12,15 @@ RSpec.describe Textus::MCP::Catalog do
                             - { name: human,      can: [author, propose] }
                             - { name: agent,      can: [propose, keep] }
                             - { name: automation, can: [converge] }
-                          zones:
+                          lanes:
                             - { name: knowledge, kind: canon }
                             - { name: notebook,  kind: workspace }
                             - { name: proposals, kind: queue }
                             - { name: artifacts, kind: machine }
                           entries:
-                            - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, kind: leaf }
-                            - { key: notebook.notes, path: notebook/notes, zone: notebook, kind: nested, nested: true }
-                            - { key: proposals.notes, path: proposals/notes, zone: proposals, kind: nested, nested: true }
+                            - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, kind: leaf }
+                            - { key: notebook.notes, path: data/notebook/notes, lane: notebook, kind: nested, nested: true }
+                            - { key: proposals.notes, path: data/proposals/notes, lane: proposals, kind: nested, nested: true }
                         YAML
   end
   let(:session) { store.session(role: "human") }
@@ -81,32 +81,32 @@ RSpec.describe Textus::MCP::Catalog do
           "put", session: session, store: store,
                  args: { "key" => "knowledge.project", "_meta" => { "name" => 123, "description" => "d" }, "body" => "x\n" }
         )
-      end.to raise_error(Textus::MCP::ToolError, /name/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /name/)
     end
 
     it "raises ToolError for an unknown tool" do
       expect do
         described_class.call("nope", session: session, store: store, args: {})
-      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
     end
 
     it "raises ToolError for a missing required arg" do
       expect do
         described_class.call("get", session: session, store: store, args: {})
-      end.to raise_error(Textus::MCP::ToolError, /missing.*key/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. audit)" do
       expect do
         described_class.call("audit", session: session, store: store, args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
     end
 
     it "re-raises ContractDrift unmodified (not wrapped in ToolError)" do
-      allow(store).to receive(:as).and_raise(Textus::MCP::ContractDrift.new("boom"))
+      allow(store).to receive(:as).and_raise(Textus::Surfaces::MCP::ContractDrift.new("boom"))
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::MCP::ContractDrift, /boom/)
+      end.to raise_error(Textus::Surfaces::MCP::ContractDrift, /boom/)
     end
   end
 
@@ -123,7 +123,7 @@ RSpec.describe Textus::MCP::Catalog do
     # new cursor so session.cursor > 0.
     let(:advanced_session) do
       store.as("human").put("knowledge.project",
-                            meta: { "name" => "project", "zone" => "knowledge" }, body: "seed\n")
+                            meta: { "name" => "project", "lane" => "knowledge" }, body: "seed\n")
       store.session(role: "human")
     end
 

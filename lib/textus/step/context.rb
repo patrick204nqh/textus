@@ -9,7 +9,7 @@ module Textus
       attr_reader :role, :correlation_id
 
       def self.for(container:, call:)
-        scope = Textus::RoleScope.new(
+        scope = Textus::Surfaces::RoleScope.new(
           container: container,
           role: call.role,
           correlation_id: call.correlation_id,

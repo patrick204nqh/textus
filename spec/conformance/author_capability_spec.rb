@@ -4,17 +4,17 @@ RSpec.describe "author capability (ADR 0033)" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge proposals], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
-        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
+        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, owner: human:self, kind: nested }
+        - { key: proposals.notes, path: data/proposals/notes, lane: proposals, owner: agent:self, kind: nested }
     YAML
   end
 
@@ -26,7 +26,8 @@ RSpec.describe "author capability (ADR 0033)" do
   it "rejects the retired `accept` capability at load" do
     bad = { "version" => "textus/3",
             "roles" => [{ "name" => "human", "can" => ["accept"] }],
-            "zones" => [{ "name" => "knowledge", "kind" => "canon" }] }
+            "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
+            "entries" => [] }
     expect { Textus::Manifest::Schema.validate!(bad) }
       .to raise_error(Textus::BadManifest, /unknown capability 'accept'/)
   end

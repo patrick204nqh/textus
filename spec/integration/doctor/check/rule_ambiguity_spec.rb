@@ -1,11 +1,11 @@
 require "spec_helper"
 
 RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
-  def with_store(manifest_yaml, extra_zones: [])
+  def with_store(manifest_yaml, extra_lanes: [])
     Dir.mktmpdir do |root|
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
-      extra_zones.each { |z| FileUtils.mkdir_p(File.join(textus, "data", z)) }
+      extra_lanes.each { |z| FileUtils.mkdir_p(File.join(textus, "data", z)) }
       File.write(File.join(textus, "manifest.yaml"), manifest_yaml)
       yield Textus::Store.new(textus)
     end
@@ -14,10 +14,10 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   it "returns no issues when each slot has a single winner" do
     manifest = <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.foo
@@ -33,10 +33,10 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     # Both globs (`knowledge.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
     manifest = <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.*
@@ -60,13 +60,13 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
     manifest = <<~YAML
       version: textus/3
       roles: [{ name: automation, can: [converge] }, { name: human, can: [author] }]
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.src, path: knowledge/src.md, zone: knowledge, kind: leaf }
-        - { key: artifacts.foo, path: artifacts/foo.json, zone: artifacts,
-            kind: produced, source: { from: handler, handler: noop } }
+        - { key: knowledge.src, path: data/knowledge/src.md, lane: knowledge, kind: leaf }
+        - { key: artifacts.foo, path: data/artifacts/foo.json, lane: artifacts,
+            kind: produced, source: { from: fetch, handler: noop } }
       rules:
         - match: artifacts.*
           retention: { ttl: 1d, action: drop }
@@ -74,7 +74,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
           retention: { ttl: 2d, action: archive }
     YAML
 
-    with_store(manifest, extra_zones: ["artifacts"]) do |store|
+    with_store(manifest, extra_lanes: ["artifacts"]) do |store|
       issues = described_class.new(store.container).call
       ambig = issues.find { |i| i["code"] == "rule.ambiguity" && i["message"].include?("retention") }
       expect(ambig).not_to be_nil
@@ -85,10 +85,10 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   it "does not warn when one block dominates by specificity" do
     manifest = <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.*

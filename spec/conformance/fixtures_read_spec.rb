@@ -12,7 +12,7 @@ RSpec.describe "textus/3 conformance — Fixture A: resolve and read" do
       aggregate_failures do
         expect(env.protocol).to eq("textus/3")
         expect(env.key).to eq("knowledge.network.org.jane")
-        expect(env.zone).to eq("knowledge")
+        expect(env.lane).to eq("knowledge")
         expect(env.owner).to eq("human:patrick")
         expect(File.absolute_path?(env.path)).to be true
         expect(env.path).to end_with("knowledge/network/org/jane.md")

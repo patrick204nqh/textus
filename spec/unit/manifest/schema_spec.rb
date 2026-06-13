@@ -9,16 +9,32 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "machine" }],
+        "lanes" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [],
       )
     end.not_to raise_error
   end
 
+  it "rejects a manifest with no lanes:" do
+    raw = { "version" => "textus/3" }
+    expect { Textus::Manifest::Schema.validate!(raw) }
+      .to raise_error(Textus::BadManifest, /lanes/)
+  end
+
+  it "accepts lanes: with valid entries" do
+    raw = {
+      "version" => "textus/3",
+      "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
+      "entries" => [{ "key" => "knowledge.foo", "lane" => "knowledge",
+                      "path" => "data/knowledge/foo.md", "kind" => "leaf" }],
+    }
+    expect { Textus::Manifest::Schema.validate!(raw) }.not_to raise_error
+  end
+
   it "rejects an unknown key at the root with path-prefixed message" do
     expect do
-      validate!("version" => "textus/3", "zones" => [], "entries" => [], "garbage" => 1)
+      validate!("version" => "textus/3", "lanes" => [], "entries" => [], "garbage" => 1)
     end.to raise_error(Textus::BadManifest, /unknown key 'garbage' at '\$'/)
   end
 
@@ -26,17 +42,17 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "machine", "ohno" => 1 }],
+        "lanes" => [{ "name" => "intake", "kind" => "machine", "ohno" => 1 }],
         "entries" => [],
       )
-    end.to raise_error(Textus::BadManifest, /unknown key 'ohno' at '\$\.zones\[0\]'/)
+    end.to raise_error(Textus::BadManifest, /unknown key 'ohno' at '\$\.lanes\[0\]'/)
   end
 
   it "rejects writable_by (legacy alias) via the generic path" do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "machine", "writable_by" => ["automation"] }],
+        "lanes" => [{ "name" => "intake", "kind" => "machine", "writable_by" => ["automation"] }],
         "entries" => [],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'writable_by'/)
@@ -46,8 +62,8 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "machine" }],
-        "entries" => [{ "key" => "x", "zone" => "output", "path" => "x.json", "projection" => {} }],
+        "lanes" => [{ "name" => "output", "kind" => "machine" }],
+        "entries" => [{ "key" => "x", "lane" => "output", "path" => "x.json", "projection" => {} }],
       )
     end.to raise_error(Textus::BadManifest, /unknown key 'projection' at '\$\.entries\[0\]'/)
   end
@@ -56,9 +72,9 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "output", "kind" => "machine" }],
+        "lanes" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
-          "key" => "x", "zone" => "output", "path" => "x.json", "kind" => "produced",
+          "key" => "x", "lane" => "output", "path" => "x.json", "kind" => "produced",
           "source" => { "from" => "template", "template" => "t.mustache", "reduce" => "f" }
         }],
       )
@@ -69,7 +85,7 @@ RSpec.describe Textus::Manifest::Schema do
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "intake", "kind" => "machine" }],
+        "lanes" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [{ "match" => "intake.x.*", "handler_allowlist" => ["h"] }],
       )
@@ -78,16 +94,16 @@ RSpec.describe Textus::Manifest::Schema do
 
   it "rejects policies: at root via the generic path" do
     expect do
-      validate!("version" => "textus/3", "zones" => [], "entries" => [], "policies" => [])
+      validate!("version" => "textus/3", "lanes" => [], "entries" => [], "policies" => [])
     end.to raise_error(Textus::BadManifest, /unknown key 'policies' at '\$'/)
   end
 
   def entry_manifest(extra)
     {
       "version" => "textus/3",
-      "zones" => [{ "name" => "knowledge", "kind" => "canon" }],
+      "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
       "entries" => [
-        { "key" => "knowledge.skills", "path" => "knowledge/skills", "zone" => "knowledge",
+        { "key" => "knowledge.skills", "path" => "knowledge/skills", "lane" => "knowledge",
           "kind" => "nested", "nested" => true }.merge(extra),
       ],
     }
@@ -118,21 +134,21 @@ RSpec.describe Textus::Manifest::Schema do
     end
   end
 
-  it "accepts 'inbox' zone structurally (schema validates keys not values)" do
-    # The schema walker validates KEYS, not values. An 'inbox' zone is structurally
-    # legal here; nothing in the codebase actually creates zone directories under that name.
+  it "accepts 'inbox' lane structurally (schema validates keys not values)" do
+    # The schema walker validates KEYS, not values. An 'inbox' lane is structurally
+    # legal here; nothing in the codebase actually creates lane directories under that name.
     # This is intentional — one error format per concern.
     expect do
       validate!(
         "version" => "textus/3",
-        "zones" => [{ "name" => "inbox", "kind" => "machine" }],
+        "lanes" => [{ "name" => "inbox", "kind" => "machine" }],
         "entries" => [],
       )
     end.not_to raise_error
   end
 
   describe Textus::Manifest::Schema::Validator, ".valid_owner? (#135)" do
-    it "accepts a bare archetype (the shipped `owner: agent` zone form)" do
+    it "accepts a bare archetype (the shipped `owner: agent` lane form)" do
       expect(described_class.valid_owner?("agent")).to be(true)
       expect(described_class.valid_owner?("human")).to be(true)
       expect(described_class.valid_owner?("automation")).to be(true)
@@ -165,34 +181,34 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   describe "owner-subject validation (#135)" do
-    it "accepts a bare archetype owner on a zone (shipped `owner: agent`)" do
+    it "accepts a bare archetype owner on a lane (shipped `owner: agent`)" do
       expect do
         validate!(
           "version" => "textus/3",
-          # roles: present only so the workspace zone clears validate_zone_kind_consistency! (needs `keep`); unrelated to owner validation
+          # roles: present only so the workspace lane clears validate_lane_kind_consistency! (needs `keep`); unrelated to owner validation
           "roles" => [{ "name" => "agent", "can" => ["keep"] }],
-          "zones" => [{ "name" => "notebook", "kind" => "workspace", "owner" => "agent" }],
+          "lanes" => [{ "name" => "notebook", "kind" => "workspace", "owner" => "agent" }],
           "entries" => [],
         )
       end.not_to raise_error
     end
 
-    it "accepts <archetype>:<subject> on a zone and an entry" do
+    it "accepts <archetype>:<subject> on a lane and an entry" do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "knowledge", "kind" => "canon", "owner" => "human:self" }],
+          "lanes" => [{ "name" => "knowledge", "kind" => "canon", "owner" => "human:self" }],
           "entries" => [{ "key" => "knowledge.identity", "path" => "knowledge/identity.md",
-                          "zone" => "knowledge", "kind" => "leaf", "owner" => "human:self" }],
+                          "lane" => "knowledge", "kind" => "leaf", "owner" => "human:self" }],
         )
       end.not_to raise_error
     end
 
-    it "accepts a zone with no owner declared" do
+    it "accepts a lane with no owner declared" do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "intake", "kind" => "machine" }],
+          "lanes" => [{ "name" => "intake", "kind" => "machine" }],
           "entries" => [],
         )
       end.not_to raise_error
@@ -202,17 +218,17 @@ RSpec.describe Textus::Manifest::Schema do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => "compiler:whoever" }],
+          "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => "compiler:whoever" }],
           "entries" => [],
         )
-      end.to raise_error(Textus::BadManifest, /invalid owner 'compiler:whoever' at '\$\.zones\[0\]'/)
+      end.to raise_error(Textus::BadManifest, /invalid owner 'compiler:whoever' at '\$\.lanes\[0\]'/)
     end
 
     it "rejects a garbage bare token" do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => "garbage" }],
+          "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => "garbage" }],
           "entries" => [],
         )
       end.to raise_error(Textus::BadManifest, /invalid owner 'garbage'/)
@@ -222,8 +238,8 @@ RSpec.describe Textus::Manifest::Schema do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "z", "kind" => "canon" }],
-          "entries" => [{ "key" => "z.x", "path" => "z/x.md", "zone" => "z",
+          "lanes" => [{ "name" => "z", "kind" => "canon" }],
+          "entries" => [{ "key" => "z.x", "path" => "z/x.md", "lane" => "z",
                           "kind" => "leaf", "owner" => "human:" }],
         )
       end.to raise_error(Textus::BadManifest, /invalid owner 'human:' at '\$\.entries\[0\]'/)
@@ -233,10 +249,10 @@ RSpec.describe Textus::Manifest::Schema do
       expect do
         validate!(
           "version" => "textus/3",
-          "zones" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
+          "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
           "entries" => [],
         )
-      end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.zones\[0\]'/)
+      end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.lanes\[0\]'/)
     end
   end
 
@@ -248,22 +264,22 @@ RSpec.describe Textus::Manifest::Schema do
   describe "ADR 0091 machine kind" do
     it "accepts kind: machine and maps it to converge" do
       expect(Textus::Manifest::Schema::LANES["machine"]).to eq("converge")
-      expect(Textus::Manifest::Schema::ZONE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
+      expect(Textus::Manifest::Schema::LANE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
     end
 
     it "rejects the retired quarantine/derived kinds with a 0091 hint" do
       expect do
-        Textus::Manifest::Schema::Validator.validate_zones!([{ "name" => "feeds", "kind" => "quarantine" }])
+        Textus::Manifest::Schema::Validator.validate_lanes!([{ "name" => "feeds", "kind" => "quarantine" }])
       end.to raise_error(Textus::BadManifest, /folded into 'machine' \(ADR 0091\)/)
     end
 
-    it "rejects a manifest with two machine zones" do
-      raw = { "zones" => [
+    it "rejects a manifest with two machine lanes" do
+      raw = { "lanes" => [
         { "name" => "artifacts", "kind" => "machine" },
         { "name" => "feeds", "kind" => "machine" },
       ] }
       expect { Textus::Manifest::Schema::Validator.validate_single_machine!(raw) }
-        .to raise_error(Textus::BadManifest, /at most one zone may declare kind: machine/)
+        .to raise_error(Textus::BadManifest, /at most one lane may declare kind: machine/)
     end
   end
 end

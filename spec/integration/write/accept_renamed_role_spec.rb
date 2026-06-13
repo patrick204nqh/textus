@@ -4,18 +4,18 @@ RSpec.describe Textus::Write::Accept do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge proposals], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries:
-        - { key: knowledge.network.org, path: knowledge/network/org, zone: knowledge, owner: human:self, kind: nested}
+        - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested}
 
-        - { key: proposals,             path: proposals,             zone: proposals, owner: human:self, kind: nested}
+        - { key: proposals,             path: proposals,             lane: proposals, owner: human:self, kind: nested}
 
     YAML
   end

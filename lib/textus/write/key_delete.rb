@@ -25,7 +25,7 @@ module Textus
         Textus::Manifest::Data.validate_key!(key)
         mentry = @manifest.resolver.resolve(key).entry
 
-        guard_for(:key_delete, key, if_etag: if_etag).check!(eval_for(:key_delete, target_key: key))
+        auth.check!(action: :key_delete, actor: @call.role, key: key, extra: { if_etag: if_etag })
 
         writer.delete(key, mentry: mentry, if_etag: if_etag)
 
@@ -40,17 +40,8 @@ module Textus
 
       private
 
-      def guard_for(transition, key, if_etag: nil)
-        Textus::Domain::Policy::GuardFactory.new(
-          manifest: @manifest, schemas: @container.schemas, extra: { if_etag: if_etag },
-        ).for(transition, key)
-      end
-
-      def eval_for(transition, target_key:, envelope: nil)
-        Textus::Domain::Policy::Evaluation.new(
-          actor: @call.role, transition: transition, origin: nil,
-          target: target_key, envelope: envelope, manifest: @manifest
-        )
+      def auth
+        @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @container.schemas)
       end
 
       def hook_context

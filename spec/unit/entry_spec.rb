@@ -22,14 +22,14 @@ RSpec.describe Textus::Entry do
     def build_leaf(extra = {})
       Textus::Manifest::Entry::Leaf.new(
         raw: {}, key: "working.x", path: "x.md",
-        zone: "working", schema: nil, owner: "human:self", format: "markdown",
+        lane: "working", schema: nil, owner: "human:self", format: "markdown",
         **extra
       )
     end
 
     it "exposes publish_to on Base (not just on subclasses)" do
       expect(build_leaf.publish_to).to eq([])
-      target = Textus::Domain::Policy::PublishTarget.new("to" => "A.md")
+      target = Textus::Manifest::Policy::PublishTarget.new("to" => "A.md")
       expect(build_leaf(publish_targets: [target]).publish_to).to eq(["A.md"])
     end
 

@@ -11,10 +11,10 @@ RSpec.describe "blame CLI (generated, ADR 0065)" do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "data/knowledge/doc.md"), "---\nname: doc\n---\nbody\n")

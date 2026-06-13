@@ -7,13 +7,13 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     FileUtils.mkdir_p(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
         - key: knowledge.skills
           kind: nested
-          path: knowledge/skills
-          zone: knowledge
+          path: data/knowledge/skills
+          lane: knowledge
           schema: null
           nested: true
           publish:
@@ -31,7 +31,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     write_manifest
     write_file("skills/my-skill/SKILL.md", "---\nname: my-skill\n---\nbody\n")
     store = Textus::Store.new(root)
-    store.as("automation").drain
+    converge_now(store)
 
     # Whole-leaf removal: delete the source dir; per-entry build won't revisit it.
     FileUtils.rm_rf(File.join(root, "data/knowledge/skills/my-skill"))
@@ -46,7 +46,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
     write_manifest
     write_file("skills/my-skill/SKILL.md", "---\nname: my-skill\n---\nbody\n")
     store = Textus::Store.new(root)
-    store.as("automation").drain
+    converge_now(store)
 
     expect(described_class.new(store.container).call).to eq([])
   end

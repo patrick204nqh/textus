@@ -10,8 +10,8 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
     )
   end
 
-  it "derives ZONE_KINDS from the lane keys (order preserved for the error message)" do
-    expect(s::ZONE_KINDS).to eq(%w[canon workspace machine queue])
+  it "derives LANE_KINDS from the lane keys (order preserved for the error message)" do
+    expect(s::LANE_KINDS).to eq(%w[canon workspace machine queue])
   end
 
   it "derives CAPABILITIES from the lane values, de-duplicated (three: machine requires converge)" do
@@ -20,13 +20,13 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
 
   it "derives KIND_REQUIRES_VERB as the lane table itself" do
     expect(s::KIND_REQUIRES_VERB).to eq(s::LANES)
-    expect(s::ZONE_KINDS.map { |k| s::KIND_REQUIRES_VERB.fetch(k) })
-      .to eq(s::ZONE_KINDS.map { |k| s::LANES.fetch(k) })
+    expect(s::LANE_KINDS.map { |k| s::KIND_REQUIRES_VERB.fetch(k) })
+      .to eq(s::LANE_KINDS.map { |k| s::LANES.fetch(k) })
   end
 
   it "keeps the lane table and its derivations frozen" do
     expect(s::LANES).to be_frozen
-    expect(s::ZONE_KINDS).to be_frozen
+    expect(s::LANE_KINDS).to be_frozen
     expect(s::CAPABILITIES).to be_frozen
   end
 end

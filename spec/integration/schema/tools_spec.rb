@@ -8,10 +8,10 @@ RSpec.describe Textus::Schema::Tools do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
+        - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, owner: human:self, kind: nested}
 
     YAML
   end

@@ -10,11 +10,11 @@ RSpec.describe Textus::Maintenance::Worker do
   before { FileUtils.mkdir_p(root) }
 
   let(:queue) { Textus::Ports::Queue.new(root: root) }
-  let(:registry) { Textus::Domain::Jobs::Registry.new }
+  let(:registry) { Textus::Core::Jobs::Registry.new }
   let(:container) { Object.new }
 
   def enqueue(type:, args: {}, max_attempts: 3)
-    queue.enqueue(Textus::Domain::Jobs::Job.new(type: type, args: args, max_attempts: max_attempts))
+    queue.enqueue(Textus::Core::Jobs::Job.new(type: type, args: args, max_attempts: max_attempts))
   end
 
   it "runs each ready job's handler and acks it" do

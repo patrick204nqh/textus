@@ -11,18 +11,18 @@ RSpec.describe "textus drain concurrency (build lock)" do
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf}
 
         - key: artifacts.note
           kind: produced
-          path: artifacts/note.json
-          zone: artifacts
+          path: data/artifacts/note.json
+          lane: artifacts
           owner: automation:auto
-          source: { from: project, select: knowledge.note }
+          source: { from: derive, select: knowledge.note }
           publish:
             - { to: NOTE.md, template: echo.mustache }
     YAML
@@ -49,8 +49,8 @@ RSpec.describe "textus drain concurrency (build lock)" do
 
     stdout = StringIO.new
     stderr = StringIO.new
-    exit_code = Textus::CLI.run(["--root=#{root}", "drain"],
-                                stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
+    exit_code = Textus::Surfaces::CLI.run(["--root=#{root}", "drain"],
+                                          stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
 
     expect(exit_code).to eq(0)
     envelope = JSON.parse(stdout.string.lines.last)

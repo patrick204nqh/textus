@@ -10,9 +10,9 @@ RSpec.describe ":store_loaded event" do
     FileUtils.mkdir_p(File.join(root, "steps/observe"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: knowledge, kind: canon }]
+      lanes: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "steps/observe/log_loaded.rb"), <<~RUBY)

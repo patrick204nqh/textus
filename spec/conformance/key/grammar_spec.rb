@@ -10,7 +10,7 @@ RSpec.describe "Key grammar enforcement" do
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: working, kind: canon }
       entries:
       #{entries_yaml}
@@ -19,42 +19,42 @@ RSpec.describe "Key grammar enforcement" do
 
   describe "manifest load — declared keys" do
     it "rejects an underscore in a declared key" do
-      write_manifest("  - { key: working.bad_key, path: working/bad_key.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: working.bad_key, path: working/bad_key.md, lane: working, kind: leaf }")
       expect { Textus::Manifest.load(root) }.to raise_error(Textus::UsageError, /invalid key segment 'bad_key'/)
     end
 
     it "rejects uppercase in a declared key" do
-      write_manifest("  - { key: working.Foo, path: working/Foo.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: working.Foo, path: working/Foo.md, lane: working, kind: leaf }")
       expect { Textus::Manifest.load(root) }.to raise_error(Textus::UsageError, /invalid key segment 'Foo'/)
     end
 
     it "rejects a slash inside a segment (slashes split into a key with empty segments)" do
-      write_manifest("  - { key: 'working./bad', path: working/bad.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: 'working./bad', path: working/bad.md, lane: working, kind: leaf }")
       expect { Textus::Manifest.load(root) }.to raise_error(Textus::UsageError)
     end
 
     it "rejects more than 8 segments" do
       key = (1..9).map { |i| "s#{i}" }.join(".")
-      write_manifest("  - { key: #{key}, path: working/x.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: #{key}, path: working/x.md, lane: working, kind: leaf }")
       # zone won't match working but key validation runs first via initialize
       expect { Textus::Manifest.load(root) }.to raise_error(Textus::UsageError, /max 8/)
     end
 
     it "rejects a segment longer than 64 chars" do
       long = "a" * 65
-      write_manifest("  - { key: working.#{long}, path: working/x.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: working.#{long}, path: working/x.md, lane: working, kind: leaf }")
       expect { Textus::Manifest.load(root) }.to raise_error(Textus::UsageError, /exceeds 64 chars/)
     end
 
     it "accepts internal hyphens and digits" do
-      write_manifest("  - { key: working.foo-bar-2, path: working/foo-bar-2.md, zone: working, kind: leaf }")
+      write_manifest("  - { key: working.foo-bar-2, path: working/foo-bar-2.md, lane: working, kind: leaf }")
       expect { Textus::Manifest.load(root) }.not_to raise_error
     end
   end
 
   describe "Store#put — runtime validation" do
     before do
-      write_manifest("  - { key: working.foo, path: working/foo.md, zone: working, nested: false, kind: leaf }")
+      write_manifest("  - { key: working.foo, path: working/foo.md, lane: working, nested: false, kind: leaf }")
     end
 
     it "rejects illegal key at put time before any write" do
@@ -68,7 +68,7 @@ RSpec.describe "Key grammar enforcement" do
   describe "UnknownKey suggestions" do
     it "attaches ranked suggestions when a near-miss key is requested" do
       write_manifest(<<~YAML)
-        - { key: working.notes, path: working/notes, zone: working, kind: nested }
+        - { key: working.notes, path: working/notes, lane: working, kind: nested }
       YAML
       FileUtils.mkdir_p(File.join(root, "data/working/notes"))
       %w[alpha beta gamma].each do |n|
@@ -90,7 +90,7 @@ RSpec.describe "Key grammar enforcement" do
   describe "Manifest#enumerate — illegal filenames" do
     it "warns and skips illegal nested filenames rather than raising" do
       write_manifest(<<~YAML)
-        - { key: working.notes, path: working/notes, zone: working, kind: nested }
+        - { key: working.notes, path: working/notes, lane: working, kind: nested }
       YAML
       FileUtils.mkdir_p(File.join(root, "data/working/notes"))
       File.write(File.join(root, "data/working/notes/Bad_Name.md"), "---\n---\nx")
