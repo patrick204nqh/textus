@@ -29,7 +29,6 @@ module Textus
       rule_list: Textus::Dispatch::Actions::RuleList,
       published: Textus::Dispatch::Actions::Published,
       schema_show: Textus::Dispatch::Actions::SchemaEnvelope,
-      validate_all: Textus::Dispatch::Actions::ValidateAll,
       doctor: Textus::Dispatch::Actions::Doctor,
       boot: Textus::Dispatch::Actions::Boot,
       jobs: Textus::Dispatch::Actions::Jobs,
