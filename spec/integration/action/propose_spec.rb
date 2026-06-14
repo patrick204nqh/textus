@@ -5,7 +5,7 @@ RSpec.describe Textus::Action::Propose do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge notebook proposals artifacts], schemas: {
-                          "project" => File.read(File.expand_path("../../../../.textus/schemas/project.yaml", __dir__)),
+                          "project" => File.read(File.expand_path("../../../.textus/schemas/project.yaml", __dir__)),
                         }, manifest: <<~YAML)
                           version: textus/3
                           roles:
