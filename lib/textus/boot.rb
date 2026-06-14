@@ -93,7 +93,6 @@ module Textus
       { "name" => "doctor" },
       { "name" => "jobs" },
       { "name" => "pulse" },
-      { "name" => "capabilities" },
     ].freeze
 
     # verb token => contract.summary, for every Dispatcher verb that carries a

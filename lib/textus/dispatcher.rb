@@ -30,7 +30,6 @@ module Textus
       validate_all: Textus::Dispatch::Actions::ValidateAll,
       doctor: Textus::Dispatch::Actions::Doctor,
       boot: Textus::Dispatch::Actions::Boot,
-      capabilities: Textus::Dispatch::Actions::Capabilities,
       jobs: Textus::Dispatch::Actions::Jobs,
 
       # Maintenance
