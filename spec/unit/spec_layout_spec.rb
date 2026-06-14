@@ -82,7 +82,7 @@ RSpec.describe SpecLayout do
     end
 
     it "passes an integration spec mirrored below its category" do
-      expect(described_class.categorized_placement_error("Textus::Action::Get", %w[integration dispatch actions])).to be_nil
+      expect(described_class.categorized_placement_error("Textus::Action::Get", %w[integration action get])).to be_nil
     end
 
     it "flags a spec sitting at the spec root (no category)" do

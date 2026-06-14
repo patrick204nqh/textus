@@ -80,6 +80,40 @@ RSpec.describe Textus::Ports::AuditLog do
       expect(issues).to contain_exactly(hash_including("lineno" => 2, "reason" => "invalid_json"))
     end
 
+    it "detects a seq gap (missing row)" do
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
+      path = Textus::Layout.audit_log(root)
+      File.open(path, "a") do |f|
+        row = { "seq" => 1, "ts" => "2026-01-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "k.x", "etag_before" => nil,
+                "etag_after" => "abc" }
+        f.puts(JSON.generate(row))
+        row["seq"] = 3
+        f.puts(JSON.generate(row))
+      end
+      violations = log.verify_integrity
+      expect(violations.length).to eq(1)
+      expect(violations.first["reason"]).to eq("seq_gap")
+      expect(violations.first["detail"]).to match(/expected 2, got 3/)
+    end
+
+    it "detects a seq regression (row out of order or overwritten)" do
+      FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
+      path = Textus::Layout.audit_log(root)
+      File.open(path, "a") do |f|
+        row = { "seq" => 1, "ts" => "2026-01-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "k.x", "etag_before" => nil,
+                "etag_after" => "abc" }
+        f.puts(JSON.generate(row))
+        row["seq"] = 2
+        f.puts(JSON.generate(row))
+        row["seq"] = 1
+        f.puts(JSON.generate(row))
+      end
+      violations = log.verify_integrity
+      expect(violations.length).to eq(1)
+      expect(violations.first["reason"]).to eq("seq_gap")
+      expect(violations.first["detail"]).to match(/expected 3, got 1/)
+    end
+
     it "skips empty lines silently" do
       FileUtils.mkdir_p(Textus::Layout.audit_dir(root))
       File.write(audit_log_path(root), "\n\n")
