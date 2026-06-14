@@ -5,6 +5,6 @@ module Textus
   # so this `Data.define` is the single source of truth for the field set.
   Container = Data.define(
     :manifest, :file_store, :schemas, :root,
-    :audit_log, :steps
+    :audit_log, :steps, :gate
   )
 end
