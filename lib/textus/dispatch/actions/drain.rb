@@ -67,8 +67,17 @@ module Textus
 
         def run_queued_job(leased, container)
           job = leased.job
-          entry = Textus::Dispatch::Planner::Handlers.registry.lookup(job.type)
-          entry.handler.call(job: job, container: container)
+          klass = Textus::Dispatcher.fetch(job.type.to_sym)
+          action = if klass.instance_method(:initialize).parameters.any?
+                     klass.new(**job.args.transform_keys(&:to_sym))
+                   else
+                     klass.new
+                   end
+          call = Textus::Call.build(
+            role: job.enqueued_by || Textus::Role::AUTOMATION,
+            correlation_id: SecureRandom.uuid,
+          )
+          action.call(container: container, call: call)
         end
       end
     end
