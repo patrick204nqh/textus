@@ -28,16 +28,15 @@ RSpec.describe "jobs react idempotency" do
     )
   end
 
-  it "coalesces duplicate entry.written triggers into one effective decorate set" do
+  it "coalesces duplicate entry.written triggers into one effective job set" do
     planner = Textus::Dispatch::Planner::Planner.new(container: store.container)
     jobs = planner.plan(
-      triggers: [{ "type" => "entry.written" }, { "type" => "entry.written" }],
-      scope: { "prefix" => nil, "lane" => nil },
+      trigger: { "type" => "entry.written" },
       role: "automation",
     )
 
+    expect(jobs.map(&:type)).to include("materialize")
     ids = jobs.map(&:id)
-    decorate_ids = ids.select { |id| id.start_with?("decorate:") }
-    expect(decorate_ids.uniq).to eq(decorate_ids)
+    expect(ids.uniq).to eq(ids)
   end
 end

@@ -30,7 +30,7 @@ RSpec.describe Textus::Dispatch::Planner::Seeder do
   let(:queue) { Textus::Ports::Queue.new(root: root) }
 
   def seed(role: "human")
-    described_class.new(container: store.container, queue: queue, call: test_ctx(role: role)).seed(prefix: nil, lane: nil)
+    described_class.new(container: store.container, queue: queue, call: test_ctx(role: role)).seed
   end
 
   it "enqueues a materialize job per producible key plus a sweep job" do

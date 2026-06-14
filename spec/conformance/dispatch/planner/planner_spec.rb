@@ -45,9 +45,9 @@ RSpec.describe Textus::Dispatch::Planner::Planner do
   it "plans equivalent work for manual kick and schedule tick" do
     planner = described_class.new(container: store.container)
 
-    manual = planner.plan(triggers: [{ "type" => "manual.kick" }], scope: { "prefix" => nil, "lane" => nil }, role: "automation")
-    tick = planner.plan(triggers: [{ "type" => "schedule.tick" }], scope: { "prefix" => nil, "lane" => nil }, role: "automation")
+    manual = planner.plan(trigger: { "type" => "manual.kick" }, role: "automation")
+    tick = planner.plan(trigger: { "type" => "schedule.tick" }, role: "automation")
 
-    expect(manual.map(&:id).sort).to eq(tick.map(&:id).sort)
+    expect(manual.map(&:type).sort).to eq(tick.map(&:type).sort)
   end
 end

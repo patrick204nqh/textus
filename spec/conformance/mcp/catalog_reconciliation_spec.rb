@@ -20,8 +20,9 @@ MCP_CATALOG_COMPOSED = [].freeze
 # not a user-callable verb. The converge CAPABILITY remains in the manifest (renamed in ADR 0111
 # ; build was folded away).
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
-  audit blame uid freshness
+  audit blame uid
   doctor rule_list published
+  materialize refresh_data sweep
   validate_all
 ].freeze
 
