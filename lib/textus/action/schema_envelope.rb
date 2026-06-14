@@ -19,10 +19,6 @@ module Textus
         @key = key
       end
 
-      def args
-        { key: @key }
-      end
-
       def call(container:, **)
         manifest = container.manifest
         schemas = container.schemas

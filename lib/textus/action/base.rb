@@ -29,7 +29,14 @@ module Textus
         raise NotImplementedError.new("#{self.class}#call")
       end
 
-      def args = {}
+      def args
+        params = self.class.instance_method(:initialize).parameters
+        names = params.select { |t,| %i[key keyreq].include?(t) }.map(&:last)
+        names.each_with_object({}) do |name, h|
+          val = instance_variable_get(:"@#{name}")
+          h[name] = val unless val.nil?
+        end
+      end
     end
   end
 end

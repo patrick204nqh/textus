@@ -20,8 +20,6 @@ module Textus
         @lane   = lane
       end
 
-      def args = { prefix: @prefix, lane: @lane }.compact
-
       def call(container:, call:)
         queue = Textus::Ports::Queue.new(root: container.root)
         Textus::Background::Planner::Plan.seed(

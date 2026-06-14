@@ -18,10 +18,6 @@ module Textus
         @lean = lean
       end
 
-      def args
-        { lean: @lean }.compact
-      end
-
       def call(container:, **)
         Textus::Boot.build(container: container, lean: !@lean.nil?)
       end

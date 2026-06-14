@@ -22,8 +22,6 @@ module Textus
         @key = key
       end
 
-      def args = { key: @key }
-
       def call(container:, call:, file_stat: Textus::Ports::Storage::FileStat.new)
         @container = container
         @call = call

@@ -28,14 +28,6 @@ module Textus
         @dry_run = dry_run
       end
 
-      def args
-        {
-          from: @from,
-          to: @to,
-          dry_run: @dry_run,
-        }
-      end
-
       def call(container:, **)
         manifest = container.manifest
         root = container.root

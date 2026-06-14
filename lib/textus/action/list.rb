@@ -22,8 +22,6 @@ module Textus
         @lane = lane
       end
 
-      def args = { prefix: @prefix, lane: @lane }.compact
-
       def call(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         rows = manifest.resolver.enumerate(prefix: @prefix)

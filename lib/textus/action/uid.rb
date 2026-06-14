@@ -19,8 +19,6 @@ module Textus
         @key = key
       end
 
-      def args = { key: @key }
-
       def call(container:, call:)
         Textus::Action::Get.new(key: @key).call(container: container, call: call).uid
       end

@@ -22,10 +22,6 @@ module Textus
         @candidate_yaml = candidate_yaml
       end
 
-      def args
-        { candidate_yaml: @candidate_yaml }
-      end
-
       def call(container:, **)
         root = container.root
         live_rules = current_rules(root)

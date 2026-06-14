@@ -27,14 +27,6 @@ module Textus
         @dry_run = dry_run
       end
 
-      def args
-        {
-          old_key: @old_key,
-          new_key: @new_key,
-          dry_run: @dry_run,
-        }
-      end
-
       def call(container:, call:)
         run_with_cascade(cascade_target_key, container:, call:) do
           execute_move(container, call)

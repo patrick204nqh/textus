@@ -31,16 +31,6 @@ module Textus
         @if_etag = if_etag
       end
 
-      def args
-        {
-          key: @key,
-          meta: @meta,
-          body: @body,
-          content: @content,
-          if_etag: @if_etag,
-        }.compact
-      end
-
       def call(container:, call:)
         run_with_cascade(@key, container:, call:) do
           Textus::Manifest::Data.validate_key!(@key)

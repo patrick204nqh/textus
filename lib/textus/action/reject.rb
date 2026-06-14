@@ -18,10 +18,6 @@ module Textus
         @pending_key = pending_key
       end
 
-      def args
-        { pending_key: @pending_key }
-      end
-
       def call(container:, call:)
         run_with_cascade(@pending_key, container:, call:) do
           auth = Textus::Gate::Auth.new(container)
