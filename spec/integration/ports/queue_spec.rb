@@ -8,7 +8,7 @@ RSpec.describe Textus::Ports::Queue do
   before { FileUtils.mkdir_p(root) }
 
   def job(type: "materialize", args: { "key" => "x" }, **rest)
-    Textus::Core::Jobs::Job.new(type: type, args: args, **rest)
+    Textus::Ports::Queue::Job.new(type: type, args: args, **rest)
   end
 
   describe "#enqueue" do

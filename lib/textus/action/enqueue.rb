@@ -41,7 +41,7 @@ module Textus
           )
         end
 
-        job = Textus::Core::Jobs::Job.new(
+        job = Textus::Ports::Queue::Job.new(
           type: @type,
           args: @job_args,
           enqueued_by: call.role,

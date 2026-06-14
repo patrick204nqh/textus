@@ -42,7 +42,7 @@ module Textus
           rescue Errno::ENOENT
             next # another worker won this one
           end
-          job = Textus::Core::Jobs::Job.from_h(JSON.parse(File.read(dst)))
+          job = Job.from_h(JSON.parse(File.read(dst)))
           stamp_lease(dst, worker_id: worker_id, expires_at: Time.now.utc + lease_ttl)
           return Leased.new(job: job, leased_path: dst)
         end

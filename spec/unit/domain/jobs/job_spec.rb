@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Core::Jobs::Job do
+RSpec.describe Textus::Ports::Queue::Job do
   it "derives a stable id from type + args, independent of arg order" do
     a = described_class.new(type: "materialize", args: { "key" => "x", "lane" => "k" })
     b = described_class.new(type: "materialize", args: { "lane" => "k", "key" => "x" })
