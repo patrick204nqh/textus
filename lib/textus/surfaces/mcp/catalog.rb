@@ -9,6 +9,14 @@ module Textus
       module Catalog
         module_function
 
+        WRITE_VERBS = %i[
+          put propose key_delete key_mv accept reject enqueue
+        ].freeze
+
+        MAINTENANCE_VERBS = %i[
+          data_mv key_mv_prefix key_delete_prefix drain rule_lint
+        ].freeze
+
         # Contracts of every MCP-surfaced verb, in Dispatcher order.
         def specs
           Textus::Dispatcher::VERBS.values
@@ -29,10 +37,12 @@ module Textus
         # MCP-surfaced read verbs, by Dispatcher class namespace — the agent's
         # real read/discovery surface. `boot.agent_quickstart.read_verbs` derives
         # from this so it can never advertise a verb the agent cannot call, nor
-        # omit one it can (ADR 0056). Excludes Write/Maintenance.
+        # omit one it can (ADR 0056). Excludes write/maintenance verbs by verb
+        # identity (routing may be legacy UseCases or Dispatch::Actions).
         def read_verbs
           Textus::Dispatcher::VERBS
-            .select { |_verb, klass| mcp_surfaced?(klass) && klass.name.start_with?("Textus::Read::") }
+            .reject { |verb, _klass| WRITE_VERBS.include?(verb) || MAINTENANCE_VERBS.include?(verb) }
+            .select { |_verb, klass| mcp_surfaced?(klass) }
             .keys.map(&:to_s)
         end
 
@@ -43,7 +53,7 @@ module Textus
         # (ADR 0056, ADR 0057).
         def write_verbs
           Textus::Dispatcher::VERBS
-            .select { |_verb, klass| mcp_surfaced?(klass) && klass.name.start_with?("Textus::Write::") }
+            .select { |verb, klass| WRITE_VERBS.include?(verb) && mcp_surfaced?(klass) }
             .keys.map(&:to_s)
         end
 

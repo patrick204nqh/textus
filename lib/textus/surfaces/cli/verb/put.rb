@@ -3,7 +3,7 @@ module Textus
     class CLI
       class Verb
         class Put < Runner::Base
-          self.spec = Textus::Write::Put.contract
+          self.spec = Textus::Dispatch::Actions::Put.contract
 
           option :as_flag, "--as=ROLE"
           option :use_stdin, "--stdin"

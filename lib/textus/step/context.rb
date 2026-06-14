@@ -58,14 +58,16 @@ module Textus
       private
 
       def pure_reader
-        @pure_reader ||= Textus::Read::Get.new(
-          container: @scope.container,
-          call: Textus::Call.build(
-            role: @scope.role,
-            correlation_id: @scope.correlation_id,
-            dry_run: @scope.dry_run?,
-          ),
-        )
+        @pure_reader ||= lambda do |key|
+          Textus::Dispatch::Actions::Get.new(key: key).call(
+            container: @scope.container,
+            call: Textus::Call.build(
+              role: @scope.role,
+              correlation_id: @scope.correlation_id,
+              dry_run: @scope.dry_run?,
+            ),
+          )
+        end
       end
     end
   end

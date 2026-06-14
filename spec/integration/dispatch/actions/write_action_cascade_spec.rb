@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Dispatch::Actions::WriteAction do
+RSpec.describe Textus::Dispatch::Actions::Put do
   describe "write cascade through gate" do
     include_context "textus_store_fixture"
 

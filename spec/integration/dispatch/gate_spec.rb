@@ -41,7 +41,7 @@ RSpec.describe Textus::Dispatch::Gate do
       end
 
       def call(container:, call:)
-        Textus::Write::Put.new(container: container, call: call).call(@key, body: "x")
+        Textus::Dispatch::Actions::Put.new(key: @key, body: "x").call(container: container, call: call)
       end
 
       def args = { key: @key }

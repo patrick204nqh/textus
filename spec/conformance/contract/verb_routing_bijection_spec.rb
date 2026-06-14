@@ -12,9 +12,13 @@ RSpec.describe "verb routing bijection (ADR 0105)" do
   # the full set. Restricted to real `Textus::` constants to exclude anonymous
   # or test-defined contract classes a sibling spec might have left behind.
   def contract_use_cases
+    routed_actions = Textus::Dispatcher::VERBS.values.select { |klass| klass <= Textus::Dispatch::Actions::Base }
+
     ObjectSpace.each_object(Class).select do |klass|
       klass.name&.start_with?("Textus::") &&
         klass.respond_to?(:contract?) && klass.contract?
+    end.reject do |klass|
+      routed_actions.any? { |action| action.contract.verb == klass.contract.verb && action != klass }
     end
   end
 

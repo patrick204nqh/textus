@@ -14,6 +14,22 @@ Textus::Surfaces::CLI.verbs # trigger Runner.install! so Gen* exist
 CONTRACT_SIGNATURE_EXEMPT = %i[key_delete audit].freeze
 
 RSpec.describe "contract reconciliation" do
+  def verb_signature_for(klass)
+    if klass <= Textus::Dispatch::Actions::Base
+      klass.instance_method(:initialize).parameters
+    else
+      klass.instance_method(:call).parameters
+    end
+  end
+
+  def positional_param_kind?(klass, kind)
+    if klass <= Textus::Dispatch::Actions::Base
+      kind == :keyreq
+    else
+      %i[req opt].include?(kind)
+    end
+  end
+
   # Guard (ADR 0039): a verb's declared `arg` names must match its use-case
   # #call parameters exactly. This is the link that makes the derived MCP schema
   # honest — rename a kwarg and forget the contract, and this fails.
@@ -28,7 +44,7 @@ RSpec.describe "contract reconciliation" do
       end
 
       it "#{verb}: declared args == #call parameters" do
-        params = klass.instance_method(:call).parameters
+        params = verb_signature_for(klass)
         call_names = params.map { |_kind, name| name }.compact.sort
         declared   = klass.contract.args.map(&:name).sort
         next if CONTRACT_SIGNATURE_EXEMPT.include?(verb)
@@ -38,9 +54,13 @@ RSpec.describe "contract reconciliation" do
       end
 
       it "#{verb}: positional contract args are positional in #call" do
-        params = klass.instance_method(:call).parameters.to_h { |kind, name| [name, kind] }
+        params = verb_signature_for(klass).to_h { |kind, name| [name, kind] }
         klass.contract.args.each do |a|
-          expected_positional = %i[req opt].include?(params[a.name])
+          expected_positional = if klass <= Textus::Dispatch::Actions::Base
+                                  a.positional ? %i[keyreq key].include?(params[a.name]) : a.positional
+                                else
+                                  positional_param_kind?(klass, params[a.name])
+                                end
           expect(a.positional).to eq(expected_positional),
                                   "#{verb}: arg #{a.name} positional=#{a.positional} but #call has it as #{params[a.name]}"
         end

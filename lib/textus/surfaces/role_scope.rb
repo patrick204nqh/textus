@@ -8,8 +8,6 @@ module Textus
     # exposes #as(role) to get a RoleScope, and Store#put / Store#get / etc
     # delegate to RoleScope under the default role.
     class RoleScope
-      WRITE_VERBS = %i[put accept reject key_delete key_mv propose enqueue].freeze
-
       attr_reader :container, :role, :correlation_id
 
       def dry_run?
@@ -65,7 +63,7 @@ module Textus
 
       def build_event(verb, klass, spec, effective_inputs, session)
         args, kwargs = bind_inputs(spec, effective_inputs, session)
-        action = action_for(verb, klass, args, kwargs)
+        action = action_for(verb, klass, spec, args, kwargs)
         event_name = Textus::Dispatch::Catalog::Events::VERB_EVENT.fetch(verb, "entry.#{verb}")
 
         Textus::Dispatch::Event.new(
@@ -84,9 +82,16 @@ module Textus
         Textus::Contract::Binder.bind(spec, effective_inputs, session: session)
       end
 
-      def action_for(verb, klass, args, kwargs)
-        action_class = WRITE_VERBS.include?(verb) ? Textus::Dispatch::Actions::WriteAction : Textus::Dispatch::Actions::UseCaseAction
-        action_class.new(klass, bound_args: args, bound_kwargs: kwargs)
+      def action_for(verb, klass, spec, args, kwargs)
+        raise Textus::UsageError.new("verb :#{verb} is not routed to a dispatch action") unless klass <= Textus::Dispatch::Actions::Base
+
+        init_kwargs = kwargs.dup
+        if spec && !args.empty?
+          spec.args.select(&:positional).zip(args).each do |arg_spec, value|
+            init_kwargs[arg_spec.name] = value unless init_kwargs.key?(arg_spec.name)
+          end
+        end
+        klass.new(**init_kwargs)
       end
 
       public

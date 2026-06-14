@@ -15,17 +15,16 @@ module Textus
 
         def call(rows)
           out = { dropped: [], archived: [], failed: [] }
-          delete = Write::KeyDelete.new(container: @container, call: @call)
           rows.each do |row|
             key = row["key"]
             begin
               case row["action"]
               when "drop"
-                delete.call(key)
+                delete(key)
                 out[:dropped] << key
               when "archive"
                 archive_leaf(row)
-                delete.call(key)
+                delete(key)
                 out[:archived] << key
               end
             rescue Textus::Error => e
@@ -45,6 +44,10 @@ module Textus
           dest = File.join(root, "archive", rel)
           FileUtils.mkdir_p(File.dirname(dest))
           FileUtils.cp(src, dest)
+        end
+
+        def delete(key)
+          Textus::Dispatch::Actions::KeyDelete.new(key: key).call(container: @container, call: @call)
         end
       end
     end

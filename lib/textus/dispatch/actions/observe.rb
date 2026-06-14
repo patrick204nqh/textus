@@ -11,6 +11,7 @@ module Textus
 
         def initialize(event_name:, key:, envelope: nil)
           super()
+          super()
           @event_name = event_name
           @key = key
           @envelope = envelope

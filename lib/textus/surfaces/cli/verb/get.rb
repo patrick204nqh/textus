@@ -3,7 +3,7 @@ module Textus
     class CLI
       class Verb
         class Get < Runner::Base
-          self.spec = Textus::Read::Get.contract
+          self.spec = Textus::Dispatch::Actions::Get.contract
           option :as_flag, "--as=ROLE"
 
           def invoke(store)

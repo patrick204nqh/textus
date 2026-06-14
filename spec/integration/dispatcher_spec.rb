@@ -28,7 +28,7 @@ RSpec.describe Textus::Dispatcher do
     it "dispatches a positional arg to the verb's use case (round-trip with Read::Get pure)" do
       # Equivalence holds because the fixture key has no fetch rule, so the
       # read-through Read::Get degrades to a pure read — identical result.
-      direct = Textus::Read::Get.new(container: container, call: call).call("knowledge.notes.alpha")
+      direct = Textus::Dispatch::Actions::Get.new(key: "knowledge.notes.alpha").call(container: container, call: call)
       via_invoke = described_class.invoke(
         :get, container: container, call: call, args: ["knowledge.notes.alpha"]
       )

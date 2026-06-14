@@ -36,10 +36,9 @@ module Textus
           target: nil,
           payload: {},
           actions: [
-            Textus::Dispatch::Actions::UseCaseAction.new(
-              Textus::Write::Enqueue,
-              bound_args: ["sweep", { "scope" => { "prefix" => nil, "lane" => nil } }],
-              bound_kwargs: {},
+            Textus::Dispatch::Actions::Enqueue.new(
+              type: "sweep",
+              args: { "scope" => { "prefix" => nil, "lane" => nil } },
             ),
           ],
           correlation_id: SecureRandom.uuid,

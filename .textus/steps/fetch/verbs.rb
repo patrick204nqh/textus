@@ -8,7 +8,7 @@ module Textus
       def call(config:, args:, **)
         _ = config
         _ = args
-        projection = Textus::Read::Capabilities.new.call["verbs"]
+        projection = Textus::Dispatch::Actions::Capabilities.new.call(container: nil, call: nil)["verbs"]
         verbs = projection.map do |row|
           {
             "name" => row["verb"],

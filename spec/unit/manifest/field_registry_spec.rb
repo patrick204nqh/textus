@@ -28,7 +28,7 @@ RSpec.describe Textus::Manifest::Schema do
     end
 
     it "drives Read::RuleList field membership (the in_rule_list fields)" do
-      expect(Textus::Read::RuleList::LIST_FIELDS).to eq(
+      expect(Textus::Dispatch::Actions::RuleList::LIST_FIELDS).to eq(
         registry.select { |_, m| m[:in_rule_list] }.keys,
       )
     end

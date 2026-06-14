@@ -56,7 +56,9 @@ module Textus
         # Runs the projection pipeline for `mentry` and returns the on-disk
         # target_path string.
         def run(mentry)
-          reader   = Textus::Read::Get.new(container: @container, call: @call)
+          reader = lambda do |key|
+            Textus::Dispatch::Actions::Get.new(key: key).call(container: @container, call: @call)
+          end
           # Projections must be able to read source data from any nested entry,
           # including keyless (publish_tree) ones like knowledge.decisions.
           # The `include_keyless: true` option makes the resolver walk those dirs
@@ -70,7 +72,7 @@ module Textus
             mentry: mentry,
             deps: Deps.new(
               manifest: @manifest,
-              reader: reader.method(:call),
+              reader: reader,
               lister: lister,
               steps: @steps,
               transform_context: @container,

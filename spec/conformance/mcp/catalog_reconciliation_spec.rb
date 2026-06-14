@@ -48,7 +48,7 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   end
 
   it "maps the public `get` verb to the read-through use-case (ADR 0062)" do
-    expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Read::Get)
+    expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Dispatch::Actions::Get)
     expect(Textus::Dispatcher::VERBS).not_to have_key(:get_or_fetch)
   end
 
