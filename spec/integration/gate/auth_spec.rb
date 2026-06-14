@@ -70,4 +70,20 @@ RSpec.describe Textus::Gate::Auth do
       expect { store.as("human").accept("proposals.bar") }.not_to raise_error
     end
   end
+
+  describe "Doctor::Check#dispatch role threading" do
+    it "dispatches as the caller's role, not always human" do
+      recorded = []
+      check_class = Class.new(Textus::Doctor::Check) do
+        define_method(:call) do
+          dispatch(:list, prefix: nil, lane: nil)
+          recorded << @role
+          []
+        end
+      end
+      check = check_class.new(store.container, role: "agent")
+      check.call
+      expect(recorded).to eq(["agent"])
+    end
+  end
 end
