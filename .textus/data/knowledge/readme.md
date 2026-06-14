@@ -73,7 +73,7 @@ TRANSIENT     │  artifacts.feeds.*       │  proposals  (queue)           │
 
 *(The `machine` lane's other half, `artifacts.derived.*`, isn't on this grid — it's a computed **output** projected from the lanes, not an input climbing toward trust.)*
 
-Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — called a **zone** in the manifest and CLI, the term used everywhere technical from here on — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**. The lanes are enforced at the protocol level, not by convention.
+Without coordination, they overwrite each other and nothing remembers why. textus gives each actor a **lane** — enforced at the protocol level, not by convention — routes everything they can't write directly through a **proposals queue**, and writes every successful change to an **append-only audit log**.
 
 ```
 knowledge/   author only        — who you are, what you decide, how you sound (knowledge.identity.* for identity facts)
@@ -137,7 +137,7 @@ bundle exec exe/textus --help
 
 ## What `textus init` gives you
 
-You get `.textus/` with all four zone directories, baseline schemas, a starter manifest, and a gitignored `.run/` for disposable runtime state (the audit log, per-role cursors, produce locks). Roles declare capabilities; each zone declares a `kind:`, and write authority is derived from the role's capabilities crossed with the zone's kind:
+You get `.textus/` with all four lane directories under `data/`, baseline schemas, a starter manifest, and a gitignored `.run/` for disposable runtime state (the audit log, per-role cursors, produce locks). Roles declare capabilities; each lane declares a `kind:`, and write authority is derived from the role's capabilities crossed with the lane's kind:
 
 ```yaml
 roles:
@@ -145,7 +145,7 @@ roles:
   - { name: agent,      can: [propose, keep] }
   - { name: automation, can: [converge] }
 
-zones:
+lanes:
   - { name: knowledge, kind: canon }      # author    — canonical truth
   - { name: notebook,  kind: workspace }  # keep      — agent's own durable lane
   - { name: proposals, kind: queue }      # propose   — proposals awaiting accept
@@ -154,12 +154,12 @@ zones:
 
 ```
 .textus/
-  manifest.yaml          # role capabilities + zone kinds + key-to-path mapping
+  manifest.yaml          # role capabilities + lane kinds + key-to-path mapping
   schemas/               # YAML field shapes per entry family
   templates/             # mustache templates for derived entries
-  hooks/                 # one .rb per hook
+  steps/                 # step subclasses: fetch/, transform/, observe/
   .gitignore             # generated — ignores .run/ and any tracked:false entries
-  zones/                 # one dir per zone; kinds + capabilities are in the manifest above
+  data/                  # one dir per lane; kinds + capabilities are in the manifest above
     knowledge/           # e.g. identity (knowledge.identity.*), voice, decisions, notes
     notebook/
     proposals/
@@ -171,13 +171,13 @@ zones:
     sentinels/           # publish bookkeeping (target sha) — regenerated on drain (ADR 0070)
 ```
 
-Manifest `path:` fields are relative to `.textus/zones/`. So `knowledge.notes.org.jane` lives at `.textus/zones/knowledge/notes/org/jane.md`.
+Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/notes/org/jane.md`.
 
 Read and write:
 
 ```sh
 textus get knowledge.notes.org.jane
-textus list --zone=knowledge
+textus list --lane=knowledge
 printf '%s' '{"_meta":{"name":"bob","org":"acme"},"body":"hi\n"}' \
   | textus put knowledge.notes.bob --as=human --stdin
 textus drain --as=automation     # re-pull stale inputs + recompute derived outputs
@@ -193,18 +193,18 @@ For a worked store — knowledge entries, a staged proposal, schemas, a template
 
 - **Per-entry formats & publish.** `format: markdown|json|yaml|text` per entry; a typed `publish:` block (`to:` for file fan-out, `tree:` for a whole-subtree mirror) byte-copies derived files to their consumer paths. ([SPEC §5.2–5.3](SPEC.md))
 - **Stable identity.** Auto-minted `uid:` survives writes and `textus key mv`; reorganising never breaks references.
-- **Capability × zone-kind gate.** Writes carry `--as=<role>`; a role may write a zone iff it holds the capability the zone's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
+- **Capability × lane-kind gate.** Writes carry `--as=<role>`; a role may write a lane iff it holds the capability the lane's `kind:` requires (`canon`→`author`, `workspace`→`keep`, `machine`→`converge`, `queue`→`propose`). The wrong role gets `write_forbidden` naming the capability needed and the roles that hold it. ([SPEC §5](SPEC.md))
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, stale keys, pending proposals). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
-- **`textus doctor`.** Health checks across schemas, hooks, keys, sentinels, and the audit log.
+- **`textus doctor`.** Health checks across schemas, step registrations, keys, sentinels, and the audit log.
 
-## CLI and zones
+## CLI and lanes
 
 Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` ([SPEC §3.1](SPEC.md)). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` ([SPEC §5.1](SPEC.md)). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md).
 
 - Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
-- Zone semantics and the capability × zone-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
+- Lane semantics and the capability × lane-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
 
-`textus boot` prints the same information for the current store: zones, entry families with schemas, registered hooks, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
+`textus boot` prints the same information for the current store: lanes, entry families with schemas, registered steps, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 
 ## Produce and publish
 
@@ -218,48 +218,58 @@ Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...]
 
 ## Extension points
 
-textus exposes a hook DSL. Drop `.rb` files into `.textus/hooks/` (subdirectories are fine; files load alphabetically by full path). There are two kinds:
+textus extends through **steps** — subclass the right base, place the file in `.textus/steps/<kind>/`, and `drain` discovers it. Three kinds:
 
-**RPC hooks** — one handler, the framework uses what you return:
-
-| Event | Fires when | You return |
-|---|---|---|
-| `:resolve_handler` | an intake needs bytes | `{_meta:, body:}` |
-| `:transform_rows` | a projection builds | the reshaped rows |
-| `:validate` | `textus doctor` runs | doctor issues (or none) |
-
-**Pub-sub hooks** — 0..N handlers, fire-and-react (no return value):
-
-| Event(s) | Fires when |
-|---|---|
-| `:entry_written` · `:entry_deleted` · `:entry_renamed` | a write lands |
-| `:entry_fetched` | an intake-driven write lands |
-| `:entry_produced` | a produced entry materializes |
-| `:entry_published` | a produced file is copied to its target |
-| `:proposal_accepted` · `:proposal_rejected` | a proposal is resolved |
-| `:entry_fetch_started` · `:entry_fetch_failed` · `:produce_failed` | produce lifecycle |
-| `:store_loaded` · `:session_opened` | the store loads · a role connects |
+**`Step::Fetch`** — acquires bytes for an intake entry (`from: fetch`). One class per named handler; `drain` invokes it when the entry is stale.
 
 ```ruby
-# Inside .textus/hooks/local_file.rb
-Textus.hook do |reg|
-  reg.on(:resolve_handler, :local_file) do |config:, args:, **|
-    path = config["path"] or raise "local-file requires source.config.path"
-    {
-      _meta: { "last_fetched_at" => Time.now.utc.iso8601, "source_path" => path },
-      body: File.read(File.expand_path(path)),
-    }
+# .textus/steps/fetch/local_file.rb
+module Textus
+  module Step
+    class LocalFileFetch < Fetch
+      def call(config:, args:, **)
+        path = config["path"] or raise "local-file requires source.config.path"
+        { "_meta" => { "last_fetched_at" => Time.now.utc.iso8601 },
+          "body"  => File.read(File.expand_path(path)) }
+      end
+    end
   end
 end
 ```
 
+**`Step::Transform`** — reshapes projected rows for a `from: derive` entry.
+
 ```ruby
-Textus.hook do |reg|
-  reg.on(:transform_rows, :rank_by_recency) do |rows:, **|
-    rows.sort_by { |r| r["updated_at"].to_s }.reverse
+# .textus/steps/transform/rank_by_recency.rb
+module Textus
+  module Step
+    class RankByRecencyTransform < Transform
+      def call(rows:, config:, **)
+        rows.sort_by { |r| r["updated_at"].to_s }.reverse
+      end
+    end
   end
 end
 ```
+
+**`Step::Observe`** — reacts to lifecycle events (fire-and-forget, 0..N per event):
+
+```ruby
+# .textus/steps/observe/log_writes.rb
+module Textus
+  module Step
+    class LogWritesObserve < Observe
+      on :entry_written
+
+      def call(key:, envelope:, **)
+        $textus_event_log << [key, envelope.etag]
+      end
+    end
+  end
+end
+```
+
+Observable events include `:entry_written`, `:entry_deleted`, `:entry_fetched`, `:entry_fetch_started`, `:entry_fetch_failed`, `:produce_failed`, `:store_loaded`.
 
 Stale intake entries are re-pulled by `drain`, not by reads — `get` is a pure
 read that annotates the returned envelope with a freshness verdict (ADR 0089).
@@ -268,10 +278,8 @@ read that annotates the returned envelope with a freshness verdict (ADR 0089).
 ```sh
 textus drain --as=automation                  # re-pull every stale intake + recompute derived
 textus drain artifacts.feeds --as=automation  # scope to one prefix
-textus get artifacts.feeds.calendar.events         # a pure read; carries a freshness verdict
+textus get artifacts.feeds.calendar.events    # a pure read; carries a freshness verdict
 ```
-
-See SPEC.md §5.10 for the full hook contract.
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
 
@@ -279,7 +287,7 @@ See [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md) for the agent boot 
 
 ## Examples
 
-[`.textus/`](.textus/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `:transform_rows` hook, and a `drain` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
+[`.textus/`](.textus/) — textus as a project's own context store (a fictional Rails service, `ledger`). Human-authored `knowledge/` (project facts, runbooks), a staged ADR in `proposals/` showing the agent-propose / human-accept loop, schemas validating each family, a mustache template plus a `Step::Transform` step, and a `drain` that publishes the `artifacts.derived.orientation` projection to `CLAUDE.md` and `AGENTS.md`. Includes a copy-paste adoption recipe for your own repo.
 
 ## Tests
 
