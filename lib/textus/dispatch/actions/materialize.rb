@@ -10,6 +10,7 @@ module Textus
 
         def initialize(key:)
           super()
+          super()
           @key = key
         end
 
