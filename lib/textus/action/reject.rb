@@ -48,12 +48,6 @@ module Textus
           { "protocol" => PROTOCOL, "rejected" => @pending_key, "target_key" => target_key }
         end
       end
-
-      private
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
-      end
     end
   end
 end

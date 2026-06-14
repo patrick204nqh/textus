@@ -68,16 +68,6 @@ module Textus
           envelope
         end
       end
-
-      private
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
-      end
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
-      end
     end
   end
 end

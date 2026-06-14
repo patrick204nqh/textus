@@ -146,18 +146,6 @@ module Textus
           "uid" => pre_env.uid,
         }
       end
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
-      end
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
-      end
-
-      def reader(container)
-        Textus::Envelope::IO::Reader.from(container: container)
-      end
     end
   end
 end

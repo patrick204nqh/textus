@@ -45,16 +45,6 @@ module Textus
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => @key, "deleted" => true }
         end
       end
-
-      private
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
-      end
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
-      end
     end
   end
 end
