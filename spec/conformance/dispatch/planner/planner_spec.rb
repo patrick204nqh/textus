@@ -42,12 +42,9 @@ RSpec.describe Textus::Background::Planner::Planner do
     )
   end
 
-  it "plans equivalent work for manual kick and schedule tick" do
-    planner = described_class.new(container: store.container)
-
-    manual = planner.plan(trigger: { "type" => "manual.kick" }, role: "automation")
-    tick = planner.plan(trigger: { "type" => "schedule.tick" }, role: "automation")
-
-    expect(manual.map(&:type).sort).to eq(tick.map(&:type).sort)
+  it "plans convergence work via .seed" do
+    queue = Textus::Ports::Queue.new(root: store.root)
+    described_class.seed(container: store.container, queue: queue, role: "automation")
+    expect(queue.ready_ids).not_to be_empty
   end
 end

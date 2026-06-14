@@ -5,12 +5,11 @@ module Textus
     module Planner
       class Planner
         ACTIONS_BY_TRIGGER = {
-          "manual.kick" => %w[materialize refresh sweep],
-          "schedule.tick" => %w[materialize refresh sweep],
-          "entry.written" => %w[materialize decorate],
+          "convergence" => %w[materialize refresh sweep],
+          "entry.written" => %w[materialize],
           "entry.deleted" => %w[materialize],
           "entry.moved" => %w[materialize],
-          "proposal.accepted" => %w[materialize decorate],
+          "proposal.accepted" => %w[materialize],
           "proposal.rejected" => %w[materialize],
         }.freeze
 
@@ -18,8 +17,15 @@ module Textus
           "materialize" => :producible_keys,
           "refresh" => :stale_intake_keys,
           "sweep" => :lane_keys,
-          "decorate" => :producible_keys,
         }.freeze
+
+        def self.seed(container:, queue:, role:)
+          jobs = new(container: container).plan(
+            trigger: { "type" => "convergence" },
+            role: role,
+          )
+          jobs.each { |j| queue.enqueue(j) }
+        end
 
         def initialize(container:)
           @container = container
