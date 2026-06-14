@@ -115,28 +115,6 @@
       ]
     },
     {
-      "name": "materialize",
-      "summary": "Materialize derived entry by converging its pipeline",
-      "args": [
-        "key"
-      ]
-    },
-    {
-      "name": "refresh_data",
-      "summary": "Refresh intake data by converging through the pipeline",
-      "args": [
-        "key"
-      ]
-    },
-    {
-      "name": "sweep",
-      "summary": "Apply retention policy — drop expired entries from the store",
-      "args": [
-        "key",
-        "scope"
-      ]
-    },
-    {
       "name": "deps",
       "summary": "List the keys a derived entry depends on (its projection/external sources).",
       "args": [
@@ -233,7 +211,7 @@
     },
     {
       "name": "drain",
-      "summary": "Converge everything now: seed produce + retention jobs and drain the queue to empty.",
+      "summary": "Seed refresh + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.",
       "args": [
         "lane",
         "prefix"

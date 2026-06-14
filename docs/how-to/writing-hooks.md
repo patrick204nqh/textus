@@ -43,7 +43,7 @@ Multiple `reg.on` calls can share one `Textus.hook` block, or you can split them
 
 Every pubsub event receives `ctx:` (a `Textus::Hooks::Context`) instead of the raw store. Use it to read entries (`ctx.get(key)`, `ctx.list(...)`, `ctx.deps(key)`), write entries (`ctx.put(key, body: ...)`, `ctx.delete(key)`), append custom audit rows (`ctx.audit("my_verb", key: key, etag_before: nil, etag_after: nil)`), or fan out follow-up events (`ctx.publish_followup(:entry_written, key: key, envelope: env)`). The `ctx.role` and `ctx.correlation_id` accessors expose the originating request context.
 
-All writes via `ctx` route through the use-case dispatch (`store.gate.dispatch(cmd)`) so authorization, schema validation, and audit logging always fire — there are no bypass paths.
+All writes via `ctx` route through the use-case dispatch (`store.as(role)` → `RoleScope` → `Dispatcher`) so authorization, schema validation, and audit logging always fire — there are no bypass paths.
 
 RPC events (`:resolve_handler`, `:transform_rows`, `:validate`) are gem-internal and receive `caps:` instead of `ctx:` — a `Textus::Container` record (the wired ports + manifest). A block that declares legacy `store:` but not `caps:` is rejected at registration time: the required `caps:` kwarg comes back missing from the signature check.
 
