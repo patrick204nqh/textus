@@ -50,7 +50,7 @@ module Textus
             file_stat: Textus::Ports::Storage::FileStat.new,
             clock: Textus::Ports::Clock.new,
           ).call(prefix: scope_prefix(scope), lane: scope_lane(scope))
-          Textus::Maintenance::Retention::Apply.new(container: container, call: call).call(rows)
+          Textus::Dispatch::Runtime::Retention::Apply.new(container: container, call: call).call(rows)
         end
 
         def call_for(job)

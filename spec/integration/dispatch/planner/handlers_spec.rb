@@ -35,9 +35,9 @@ RSpec.describe Textus::Dispatch::Planner::Handlers do
   it "sweep runs as the job's stamped role, not self-elevated" do
     job = Textus::Core::Jobs::Job.new(type: "sweep", args: { "scope" => nil }, enqueued_by: "human")
     captured = nil
-    allow(Textus::Maintenance::Retention::Apply).to receive(:new) do |call:, **|
+    allow(Textus::Dispatch::Runtime::Retention::Apply).to receive(:new) do |call:, **|
       captured = call.role
-      instance_double(Textus::Maintenance::Retention::Apply, call: { dropped: [], archived: [], failed: [] })
+      instance_double(Textus::Dispatch::Runtime::Retention::Apply, call: { dropped: [], archived: [], failed: [] })
     end
     registry.lookup("sweep").handler.call(job: job, container: store.container)
     expect(captured).to eq("human")

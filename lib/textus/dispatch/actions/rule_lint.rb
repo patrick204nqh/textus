@@ -52,7 +52,7 @@ module Textus
             }
           end
 
-          Textus::Maintenance::Plan.new(steps: steps, warnings: [])
+          Textus::Dispatch::Runtime::Plan.new(steps: steps, warnings: [])
         end
 
         private
