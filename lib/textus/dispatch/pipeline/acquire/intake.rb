@@ -62,8 +62,18 @@ module Textus
 
           private
 
-          def fetch_events
-            @fetch_events ||= Textus::Dispatch::Pipeline::Events.from(container: @container, call: @call)
+          def gate
+            @gate ||= Textus::Dispatch::Gate.new(@container)
+          end
+
+          def fire_event(name, target:, payload: {})
+            gate.fire(
+              Textus::Dispatch::Event.new(
+                name: name, actor: Textus::Role::AUTOMATION,
+                target: target, payload: payload,
+                actions: [], correlation_id: @call.correlation_id
+              ),
+            )
           end
 
           # ADR 0079: a per-rule fetch_timeout_seconds override was an accepted loss
@@ -74,7 +84,7 @@ module Textus
           end
 
           def fetch_with_events(key, mentry, remaining)
-            fetch_events.started(key)
+            fire_event(Textus::Dispatch::Catalog::Events::ENTRY_FETCHED, target: key, payload: { change: :started })
             call_intake(key, mentry, remaining)
           end
 
@@ -86,10 +96,10 @@ module Textus
               label: "intake", timeout: fetch_timeout_for(key)
             )
           rescue Textus::Error => e
-            fetch_events.failed(key, e)
+            fire_event(Textus::Dispatch::Catalog::Events::PIPELINE_FAILED, target: key, payload: { error: e.message })
             raise
           rescue StandardError => e
-            fetch_events.failed(key, e)
+            fire_event(Textus::Dispatch::Catalog::Events::PIPELINE_FAILED, target: key, payload: { error: e.message })
             raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
           end
 
@@ -104,7 +114,10 @@ module Textus
               ),
             )
             change = detect_change(before_etag, envelope)
-            fetch_events.fetched(key, envelope, change)
+            unless change == :unchanged
+              fire_event(Textus::Dispatch::Catalog::Events::ENTRY_FETCHED, target: key,
+                                                                           payload: { change: change, etag: envelope.etag })
+            end
             envelope
           end
 

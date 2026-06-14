@@ -28,6 +28,7 @@ module Textus
         ENTRY_DERIVED = "entry.derived"
         ENTRY_VALIDATED = "entry.validated"
         ENTRY_PUBLISHED = "entry.published"
+        PIPELINE_FAILED = "pipeline.failed"
 
         # Step events
         STEP_FETCH_COMPLETE = "step.fetch.complete"

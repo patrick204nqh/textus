@@ -5,11 +5,16 @@ module Textus
     module Actions
       # Materializes one derived/intake entry when a dependency changes.
       class Materialize < Base
+        extend Textus::Contract::DSL
+
+        verb :materialize
+        summary "Materialize derived entry by converging its pipeline"
+        arg :key, String, required: true, description: "entry key to materialize"
+
         TYPE = "materialize"
         BURN = :async
 
         def initialize(key:)
-          super()
           super()
           @key = key
         end

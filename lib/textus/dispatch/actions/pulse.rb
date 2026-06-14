@@ -34,7 +34,7 @@ module Textus
           @root = container.root
           @steps = container.steps
 
-          freshness_rows = Textus::Dispatch::Actions::Freshness.new.call(container: container, call: call)
+          freshness_rows = Pulse::Scanner.new.call(container: container, call: call)
           {
             "cursor" => @audit_log.latest_seq,
             "changed" => Textus::Dispatch::Actions::Audit.new(seq_since: @since).call(container: container),
