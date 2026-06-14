@@ -32,42 +32,15 @@ module Textus
         end
 
         def put(key, mentry:, payload:, if_etag: nil)
-          path = @manifest.resolver.resolve(key).path
-
-          meta = payload.meta || {}
-
-          existing_uid = @reader.existing_uid(key)
-          meta, content = ensure_uid(mentry.format, meta, payload.content, existing_uid)
-
-          bytes, eff_meta, eff_body, eff_content = serialize_for_put(
-            mentry: mentry, path: path,
-            meta: meta, body: payload.body, content: content
-          )
-
+          path = resolve_path(key)
+          meta, content = prepare_uid(mentry, payload, key)
+          bytes, eff_meta, eff_body, eff_content = serialize_entry(mentry, path, meta, payload, content)
           enforce_name_match!(path, eff_meta, mentry.format)
-
-          schema = @schemas.fetch_or_nil(mentry.schema)
-          if schema
-            Entry.for_format(mentry.format).validate_against(
-              schema,
-              { "_meta" => eff_meta, "content" => eff_content },
-            )
-          end
-
-          etag_before = @file_store.exists?(path) ? @file_store.etag(path) : nil
-          raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && (etag_before != if_etag)
-
-          @file_store.write(path, bytes)
-          etag_after = Etag.for_bytes(bytes)
-          envelope = Textus::Envelope.build(
-            key: key, mentry: mentry, path: path,
-            meta: eff_meta, body: eff_body, etag: etag_after, content: eff_content
-          )
-          @audit_log.append(
-            role: @call.role, verb: "put", key: key,
-            etag_before: etag_before, etag_after: etag_after,
-            extras: @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
-          )
+          validate_schema(mentry, eff_meta, eff_content)
+          etag_before = check_etag!(path, key, if_etag)
+          write_bytes(path, bytes)
+          envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content)
+          audit_put(key, etag_before, envelope.etag)
           envelope
         end
 
@@ -174,6 +147,62 @@ module Textus
         def serialize_for_put(mentry:, path:, meta:, body:, content:)
           Textus::Entry.for_format(mentry.format).serialize_for_put(
             meta: meta, body: body, content: content, path: path,
+          )
+        end
+
+        def resolve_path(key)
+          @manifest.resolver.resolve(key).path
+        end
+
+        def prepare_uid(mentry, payload, key)
+          meta = payload.meta || {}
+          existing_uid = @reader.existing_uid(key)
+          ensure_uid(mentry.format, meta, payload.content, existing_uid)
+        end
+
+        def serialize_entry(mentry, path, meta, payload, content)
+          serialize_for_put(
+            mentry: mentry, path: path,
+            meta: meta, body: payload.body, content: content
+          )
+        end
+
+        def validate_schema(mentry, eff_meta, eff_content)
+          schema = @schemas.fetch_or_nil(mentry.schema)
+          return unless schema
+
+          Entry.for_format(mentry.format).validate_against(
+            schema,
+            { "_meta" => eff_meta, "content" => eff_content },
+          )
+        end
+
+        def check_etag!(path, key, if_etag)
+          etag_before = @file_store.exists?(path) ? @file_store.etag(path) : nil
+          raise EtagMismatch.new(key, if_etag, etag_before) if if_etag && (etag_before != if_etag)
+
+          etag_before
+        end
+
+        def write_bytes(path, bytes)
+          @file_store.write(path, bytes)
+        end
+
+        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content)
+          Textus::Envelope.build(
+            key: key, mentry: mentry, path: path,
+            meta: eff_meta, body: eff_body,
+            etag: Etag.for_bytes(@file_store.read(path)),
+            content: eff_content
+          )
+        end
+
+        def audit_put(key, etag_before, etag_after)
+          extras = @call.correlation_id ? { "correlation_id" => @call.correlation_id } : nil
+          @audit_log.append(
+            role: @call.role, verb: "put", key: key,
+            etag_before: etag_before, etag_after: etag_after,
+            extras: extras
           )
         end
       end
