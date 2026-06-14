@@ -88,10 +88,22 @@ module Textus
           end
           kwargs = defaults.merge(inputs)
           kwargs[:role] = role if cmd_class.members.include?(:role) && !inputs.key?(:role) && spec.verb != :audit
-          missing = cmd_class.members - kwargs.keys
-          raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) }) unless missing.empty?
+          check_missing_args!(spec, cmd_class, kwargs)
 
           cmd_class.new(**kwargs.slice(*cmd_class.members))
+        end
+
+        def check_missing_args!(spec, cmd_class, kwargs)
+          params = cmd_class.instance_method(:initialize).parameters
+          required = if params == [[:rest]]
+                       cmd_class.members
+                     else
+                       params.select { |t,| t == :keyreq }.map(&:last)
+                     end
+          missing = required - kwargs.keys
+          return if missing.empty?
+
+          raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) })
         end
 
         # Fill CLI-specific defaults (cli_default:) for args the operator did not

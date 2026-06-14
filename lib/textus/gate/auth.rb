@@ -7,8 +7,11 @@ module Textus
         put: %w[lane_writable_by],
         key_delete: %w[lane_writable_by],
         key_mv: %w[lane_writable_by],
-        accept: %w[author_held target_is_canon],
+        accept: %w[author_held],
         reject: %w[author_held],
+        propose: %w[lane_writable_by],
+        key_mv_prefix: %w[lane_writable_by],
+        key_delete_prefix: %w[lane_writable_by],
       }.freeze
 
       AuthContext = Struct.new(
@@ -33,7 +36,6 @@ module Textus
         return unless key
 
         action_sym = command_to_action(cmd)
-        return if %i[propose accept].include?(action_sym)
 
         mentry = @manifest.resolver.resolve(key).entry
         lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)

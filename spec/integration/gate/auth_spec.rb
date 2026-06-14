@@ -37,4 +37,37 @@ RSpec.describe Textus::Gate::Auth do
         .not_to raise_error
     end
   end
+
+  describe "propose auth via Gate" do
+    it "blocks a role without propose capability" do
+      expect { store.as("automation").propose("decisions.x", body: "hi") }
+        .to raise_error(Textus::Error)
+    end
+
+    it "permits a role with propose capability" do
+      expect { store.as("agent").propose("decisions.x", body: "hi") }
+        .not_to raise_error
+    end
+  end
+
+  describe "accept FLOOR check" do
+    it "blocks a role without author capability (author_held from FLOOR)" do
+      store.as("agent").put(
+        "proposals.foo",
+        meta: { "proposal" => { "target_key" => "knowledge.doc", "action" => "put" } },
+        body: "proposed",
+      )
+      expect { store.as("agent").accept("proposals.foo") }
+        .to fail_guard_with("author_held")
+    end
+
+    it "permits a role with author capability" do
+      store.as("agent").put(
+        "proposals.bar",
+        meta: { "proposal" => { "target_key" => "knowledge.doc", "action" => "put" } },
+        body: "proposed",
+      )
+      expect { store.as("human").accept("proposals.bar") }.not_to raise_error
+    end
+  end
 end

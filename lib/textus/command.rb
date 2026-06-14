@@ -2,7 +2,11 @@ module Textus
   module Command
     Get             = Data.define(:key, :role)
     Put             = Data.define(:key, :meta, :body, :content, :if_etag, :role)
-    Propose         = Data.define(:key, :meta, :body, :content, :role)
+    Propose         = Data.define(:key, :meta, :body, :content, :role, :pending_key) do
+      def initialize(key:, role:, meta: nil, body: nil, content: nil, pending_key: nil)
+        super
+      end
+    end
     KeyDelete       = Data.define(:key, :if_etag, :role)
     KeyMv           = Data.define(:old_key, :new_key, :dry_run, :role)
     Accept          = Data.define(:pending_key, :role)
