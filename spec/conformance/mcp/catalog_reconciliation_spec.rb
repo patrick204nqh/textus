@@ -22,7 +22,6 @@ MCP_CATALOG_COMPOSED = [].freeze
 MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
   audit blame uid
   doctor rule_list published
-  materialize refresh sweep
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do

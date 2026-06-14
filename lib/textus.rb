@@ -38,9 +38,7 @@ Textus::Action::VERBS = {
   uid: Textus::Action::Uid,
   blame: Textus::Action::Blame,
   audit: Textus::Action::Audit,
-  materialize: Textus::Action::Background::Materialize,
-  refresh: Textus::Action::Background::Refresh,
-  sweep: Textus::Action::Background::Sweep,
+  # materialize, refresh, sweep are Worker-only — not in VERBS
   deps: Textus::Action::Deps,
   rdeps: Textus::Action::Rdeps,
   pulse: Textus::Action::Pulse,
