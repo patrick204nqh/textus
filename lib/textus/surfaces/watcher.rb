@@ -13,7 +13,7 @@ module Textus
       def tick
         self.class.seed_scheduled_jobs(@container, @queue)
         @queue.reclaim(now: Textus::Ports::Clock.new.now)
-        Textus::Dispatch::Runtime::Worker.for(container: @container, queue: @queue).drain
+        Textus::Background::Worker.for(container: @container, queue: @queue).drain
       end
 
       def run(poll: nil)

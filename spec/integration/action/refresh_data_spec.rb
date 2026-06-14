@@ -6,8 +6,8 @@ RSpec.describe Textus::Action::Background::Refresh do
   it "converges the intake key via Pipeline::Engine" do
     key = "artifacts.intake.test"
     call = test_ctx
-    spy = class_spy(Textus::Dispatch::Pipeline::Engine)
-    stub_const("Textus::Dispatch::Pipeline::Engine", spy)
+    spy = class_spy(Textus::Pipeline::Engine)
+    stub_const("Textus::Pipeline::Engine", spy)
 
     action = described_class.new(key: key)
     action.call(container: store.container, call: call)

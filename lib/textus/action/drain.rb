@@ -26,7 +26,7 @@ module Textus
         queue = Textus::Ports::Queue.new(root: container.root)
         Textus::Surfaces::Watcher.seed_scheduled_jobs(container, queue)
         queue.reclaim(now: Textus::Ports::Clock.new.now)
-        summary = Textus::Dispatch::Runtime::Worker.for(container:, queue:).drain
+        summary = Textus::Background::Worker.for(container:, queue:).drain
         {
           "protocol" => Textus::PROTOCOL,
           "ok" => summary.failed.zero?,

@@ -21,7 +21,7 @@ module Textus
         def args = { key: @key }
 
         def call(container:, call:)
-          Textus::Dispatch::Pipeline::Engine.converge(
+          Textus::Pipeline::Engine.converge(
             container: container, call: call, keys: [@key],
           )
         end

@@ -5,8 +5,8 @@ RSpec.describe Textus::Action::Background::Sweep do
 
   it "calls Runtime::Retention::Apply with the scope" do
     scope = { "prefix" => nil, "lane" => nil }
-    instance = instance_double(Textus::Dispatch::Runtime::Retention::Apply, call: nil)
-    allow(Textus::Dispatch::Runtime::Retention::Apply).to receive(:new).and_return(instance)
+    instance = instance_double(Textus::Background::Retention::Apply, call: nil)
+    allow(Textus::Background::Retention::Apply).to receive(:new).and_return(instance)
 
     action = described_class.new(scope: scope)
     action.call(container: store.container, call: test_ctx)

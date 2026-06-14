@@ -74,13 +74,9 @@ module Textus
           defaults = {}
           spec.args.each do |a|
             next if a.default == :__unset || inputs.key?(a.name)
-            if a.default.nil? && a.required
-              next
-            elsif a.default.nil? && a.type == :boolean
-              defaults[a.name] = false
-            else
-              defaults[a.name] = a.default
-            end
+            next if a.default.nil? && a.required
+
+            defaults[a.name] = a.default
           end
           kwargs = defaults.merge(inputs).merge(role:)
           missing = cmd_class.members - kwargs.keys

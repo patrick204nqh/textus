@@ -21,11 +21,12 @@ module Textus
         producible.each do |dep_key|
           Textus::Action::Background::Materialize.new(key: dep_key).call(container:, call:)
         end
-        Textus::Action::Observe.new(
-          event_name: Textus::Events::ENTRY_WRITTEN,
+        container.steps.publish(
+          :entry_written,
+          ctx: Textus::Step::Context.for(container: container, call: call),
           key: key,
           envelope: nil,
-        ).call(container:, call:)
+        )
       end
 
       def derived_write?(key, container)

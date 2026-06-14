@@ -21,7 +21,7 @@ module Textus
         def args = { key: @key }
 
         def call(container:, call:)
-          result = Textus::Dispatch::Pipeline::Engine.converge(container: container, call: call, keys: [@key])
+          result = Textus::Pipeline::Engine.converge(container: container, call: call, keys: [@key])
           return unless result.is_a?(Hash)
 
           Array(result[:failed]).each do |failure|

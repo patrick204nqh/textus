@@ -99,7 +99,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
       allow(verb_instance).to receive(:flag_values).and_return({})
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
-      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, store, spec)
+      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, textus_store, spec)
       expect(emitted).to be_a(Hash)
     end
 

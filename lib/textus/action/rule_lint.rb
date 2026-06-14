@@ -51,7 +51,7 @@ module Textus
           }
         end
 
-        Textus::Dispatch::Runtime::Plan.new(steps: steps, warnings: [])
+        Textus::Background::Plan.new(steps: steps, warnings: [])
       end
 
       private

@@ -31,7 +31,7 @@ module Textus
             file_stat: Textus::Ports::Storage::FileStat.new,
             clock: Textus::Ports::Clock.new,
           ).call(prefix: prefix, lane: lane)
-          Textus::Dispatch::Runtime::Retention::Apply.new(
+          Textus::Background::Retention::Apply.new(
             container: container, call: call,
           ).call(rows)
         end
