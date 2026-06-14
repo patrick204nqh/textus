@@ -66,14 +66,24 @@ Textus::Action::VERBS.each_key do |verb|
   end
 
   Textus::Surfaces::RoleScope.define_method(verb) do |*args, **kwargs|
-    klass = Textus::Action::VERBS[verb]
-    inputs =
-      if klass.respond_to?(:contract?) && klass.contract?
-        Textus::Contract::Binder.inputs_from_ordered(klass.contract, args, kwargs)
-      else
-        kwargs
-      end
-    dispatch_bound(verb, inputs).first
+    klass     = Textus::Action::VERBS[verb]
+    cmd_class = Textus::Gate::VERB_COMMAND[verb]
+    inputs    = if klass.respond_to?(:contract?) && klass.contract?
+                  Textus::Contract::Binder.inputs_from_ordered(klass.contract, args, kwargs)
+                else
+                  kwargs.transform_keys(&:to_sym)
+                end
+
+    if cmd_class
+      role_filter = klass.respond_to?(:contract?) && klass.contract? &&
+                    klass.contract.args.any? { |a| a.name == :role }
+      role_value  = role_filter ? inputs[:role] : @role
+      filled = cmd_class.members.to_h { |m| [m, inputs.merge(role: role_value)[m]] }
+      @container.gate.dispatch(cmd_class.new(**filled), container: @container, correlation_id: @correlation_id)
+    else
+      call = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
+      klass.new(**inputs).call(container: @container, call: call)
+    end
   end
 end
 

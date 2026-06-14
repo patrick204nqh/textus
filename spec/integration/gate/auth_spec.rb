@@ -76,6 +76,24 @@ RSpec.describe Textus::Gate::Auth do
     end
   end
 
+  describe "RoleScope verb dispatch" do
+    it "dispatches through Gate when called via store.as(role).verb" do
+      expect { store.as("human").put("knowledge.doc", meta: {}, body: "x") }
+        .not_to raise_error
+    end
+
+    it "preserves correlation_id across verb calls on the same scope" do
+      scope = store.as("human", correlation_id: "test-corr-id")
+      scope.put("knowledge.doc", meta: {}, body: "first")
+      expect(scope.correlation_id).to eq("test-corr-id")
+    end
+
+    it "does not pass pending_key through to Action::Propose" do
+      expect { store.as("agent").propose("decisions.x", body: "hi") }
+        .not_to raise_error(ArgumentError)
+    end
+  end
+
   describe "Doctor::Check#dispatch role threading" do
     it "dispatches as the caller's role, not always human" do
       recorded = []
