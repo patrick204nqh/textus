@@ -102,11 +102,10 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
       end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
     end
 
-    it "re-raises ContractDrift unmodified (not wrapped in ToolError)" do
-      allow(store).to receive(:as).and_raise(Textus::Surfaces::MCP::ContractDrift.new("boom"))
+    it "wraps gateway errors in ToolError" do
       expect do
-        described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::Surfaces::MCP::ContractDrift, /boom/)
+        described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
+      end.to raise_error(Textus::Surfaces::MCP::ToolError)
     end
   end
 

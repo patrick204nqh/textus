@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "securerandom"
-
 module Textus
   class Gate
     VERB_COMMAND = {
@@ -66,13 +64,6 @@ module Textus
       Command::Drain => [Textus::Action::Drain],
     }.freeze
 
-    READ_COMMANDS = %i[
-      get list where uid blame audit
-      deps rdeps pulse
-      rule_explain rule_list rule_lint
-      published schema_show doctor boot jobs
-    ].freeze
-
     def initialize(container)
       @container = container
     end
@@ -91,13 +82,16 @@ module Textus
     private
 
     def run_action(klass, cmd, container, call_obj)
-      action = klass.new(**extract_kwargs(cmd))
-      record_audit(cmd, call_obj, container)
+      action = klass.new(**extract_kwargs(klass, cmd))
       action.call(container:, call: call_obj)
     end
 
-    def extract_kwargs(cmd)
-      cmd.members.reject { |m| m == :role }.each_with_object({}) do |m, h|
+    def extract_kwargs(klass, cmd)
+      params = klass.instance_method(:initialize).parameters
+      accepts_role = params.any? { |t, n| n == :role && %i[keyreq key].include?(t) } || params.any? { |t, _| t == :keyrest }
+      cmd.members.each_with_object({}) do |m, h|
+        next if m == :role && !accepts_role
+
         val = cmd.public_send(m)
         h[m] = val unless val.nil?
       end
@@ -106,27 +100,6 @@ module Textus
     def build_call(cmd)
       dry_run = cmd.respond_to?(:dry_run) ? !cmd.dry_run.nil? : false
       Textus::Call.build(role: cmd.role, dry_run:)
-    end
-
-    def record_audit(cmd, call_obj, container)
-      verb = cmd.class.name.split("::").last.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
-      return if READ_COMMANDS.include?(verb.to_sym)
-
-      key = if cmd.respond_to?(:pending_key)
-              cmd.pending_key
-            else
-              (cmd.respond_to?(:key) ? cmd.key : nil)
-            end
-      container.audit_log.append(
-        role: cmd.role,
-        verb:,
-        key:,
-        etag_before: nil,
-        etag_after: nil,
-        extras: { "correlation_id" => call_obj.correlation_id }.compact,
-      )
-    rescue StandardError => e
-      warn "[Textus::Gate] audit write failed: #{e.message}"
     end
   end
 end

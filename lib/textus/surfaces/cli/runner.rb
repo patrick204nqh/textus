@@ -58,13 +58,21 @@ module Textus
           inputs = Textus::Contract::Sources.acquire(spec, inputs)
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
-          begin
-            cmd = build_command(spec, inputs, role)
-            result = store.gate.dispatch(cmd, container: store.container)
-          rescue Textus::Contract::MissingArgs => e
-            raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
+
+          invoke = lambda do |effective_inputs|
+            cmd = build_command(spec, effective_inputs, role)
+            store.gate.dispatch(cmd, container: store.container)
           end
+
+          result = if spec.around
+                     scope = store.as(role)
+                     Textus::Contract::Around.with(spec.around, scope: scope, inputs: inputs, session: nil, &invoke)
+                   else
+                     invoke.call(inputs)
+                   end
           verb_instance.emit(shape(spec, result, inputs))
+        rescue Textus::Contract::MissingArgs => e
+          raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
 
         def build_command(spec, inputs, role)
@@ -78,7 +86,8 @@ module Textus
 
             defaults[a.name] = a.default
           end
-          kwargs = defaults.merge(inputs).merge(role:)
+          kwargs = defaults.merge(inputs)
+          kwargs[:role] = role if cmd_class.members.include?(:role) && !inputs.key?(:role) && spec.verb != :audit
           missing = cmd_class.members - kwargs.keys
           raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) }) unless missing.empty?
 

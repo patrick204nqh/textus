@@ -12,7 +12,7 @@ module Textus
     Where           = Data.define(:key, :role)
     Uid             = Data.define(:key, :role)
     Blame           = Data.define(:key, :limit, :role)
-    Audit           = Data.define(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit)
+    Audit           = Data.define(:key, :lane, :verb, :since, :seq_since, :correlation_id, :limit, :role)
     Deps            = Data.define(:key, :role)
     Rdeps           = Data.define(:key, :role)
     Pulse           = Data.define(:since, :role)
