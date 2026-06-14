@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Retention::Sweep do
+RSpec.describe Textus::Core::Retention::Sweep do
   subject(:rows) do
     described_class.new(
       manifest: store.manifest,
@@ -12,10 +12,10 @@ RSpec.describe Textus::Domain::Retention::Sweep do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[review], manifest: <<~YAML,
+    store_from_manifest(root, lanes: %w[review], manifest: <<~YAML,
       version: textus/3
-      zones: [{ name: review, kind: canon }]
-      entries: [{ key: review.old, path: review/old.md, zone: review, kind: leaf }]
+      lanes: [{ name: review, kind: canon }]
+      entries: [{ key: review.old, path: review/old.md, lane: review, kind: leaf }]
       rules: [{ match: "review.*", retention: { ttl: 1d, action: archive } }]
     YAML
                               files: { "data/review/old.md" => "---\n---\nbody\n" })

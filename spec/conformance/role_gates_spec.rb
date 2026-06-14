@@ -12,7 +12,7 @@ RSpec.describe "textus/3 conformance — Fixture B: role gate on write" do
       end.to raise_error(Textus::WriteForbidden) do |err|
         env = err.to_envelope
         expect(env["code"]).to eq("write_forbidden")
-        expect(env["details"]["zone"]).to eq("identity")
+        expect(env["details"]["lane"]).to eq("identity")
       end
     end
   end

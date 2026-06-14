@@ -45,14 +45,14 @@ RSpec.describe "reference doc facts cover their projections" do
 
   it "zones.md documents every manifest zone" do
     doc = read_doc("docs/reference/zones.md")
-    zones = Textus::Manifest.load((repo + ".textus").to_s).data.declared_zone_kinds.keys
+    zones = Textus::Manifest.load((repo + ".textus").to_s).data.declared_lane_kinds.keys
     missing = zones.map(&:to_s).reject { |z| doc.include?(z) }
     expect(missing).to be_empty, "zones.md missing: #{missing.join(", ")}"
   end
 
   it "mcp.md documents every MCP tool" do
     doc = read_doc("docs/reference/mcp.md")
-    tools = Textus::MCP::ToolSchemas.all.map { |t| (t[:name] || t["name"]).to_s }
+    tools = Textus::Surfaces::MCP::ToolSchemas.all.map { |t| (t[:name] || t["name"]).to_s }
     missing = tools.reject { |t| t.empty? || doc.include?(t) }
     expect(missing).to be_empty, "mcp.md missing: #{missing.join(", ")}"
   end

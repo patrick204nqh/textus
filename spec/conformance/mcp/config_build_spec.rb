@@ -24,22 +24,22 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
       end
     RUBY
 
-    s = store_from_manifest(root, zones: %w[knowledge artifacts], manifest: <<~YAML)
+    s = store_from_manifest(root, lanes: %w[knowledge artifacts], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.mcp-config
           kind: produced
-          path: artifacts/mcp.json
-          zone: artifacts
+          path: data/artifacts/mcp.json
+          lane: artifacts
           publish:
             - { to: .mcp.json }
           source:
-            from: project
+            from: derive
             select:
               - knowledge.project
             transform: mcp_config_reducer
@@ -52,7 +52,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "builds the in-store artifact with the expected MCP server config" do
-    store.as("automation").drain
+    converge_now(store)
 
     artifact_path = File.join(root, "data/artifacts/mcp.json")
     expect(File.exist?(artifact_path)).to be true
@@ -70,7 +70,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "publishes to .mcp.json at the project root with no _meta key" do
-    store.as("automation").drain
+    converge_now(store)
 
     published_path = File.join(tmp, ".mcp.json")
     expect(File.exist?(published_path)).to be true
@@ -85,11 +85,11 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
   end
 
   it "build is idempotent — repeated builds produce no content change" do
-    store.as("automation").drain
+    converge_now(store)
     published_path = File.join(tmp, ".mcp.json")
     sha_first = Digest::SHA256.file(published_path).hexdigest
 
-    store.as("automation").drain
+    converge_now(store)
     sha_second = Digest::SHA256.file(published_path).hexdigest
 
     expect(sha_second).to eq(sha_first)

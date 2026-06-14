@@ -6,16 +6,16 @@ RSpec.describe Textus::Read::Audit do
 
   let!(:store) do
     store_from_manifest(root,
-                        zones: %w[knowledge identity],
+                        lanes: %w[knowledge identity],
                         manifest: <<~YAML)
                           version: textus/3
-                          zones:
+                          lanes:
                             - { name: knowledge, kind: canon }
                             - { name: identity,   kind: canon }
                           entries:
-                            - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+                            - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
 
-                            - { key: identity.note,  path: identity/note.md,  zone: identity, kind: leaf}
+                            - { key: identity.note,  path: identity/note.md,  lane: identity, kind: leaf}
 
                         YAML
   end
@@ -82,7 +82,7 @@ RSpec.describe Textus::Read::Audit do
                 { "ts" => "2026-05-02T00:00:00Z", "role" => "human", "verb" => "put", "key" => "identity.note" },
               ])
     ops = store.as("human")
-    rows = ops.audit(zone: "identity")
+    rows = ops.audit(lane: "identity")
     expect(rows.map { |r| r["key"] }).to eq(["identity.note"])
   end
 

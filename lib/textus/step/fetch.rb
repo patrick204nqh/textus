@@ -7,7 +7,6 @@ module Textus
     # text). Replaces the :resolve_handler RPC. `caps:` is injected by the
     # registry only if #call declares it.
     class Fetch < Base
-      def self.kind = :fetch
       def self.required_kwargs = %i[config args]
     end
   end

@@ -886,15 +886,15 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
 | `key uid K` | read | any |
 
-**`textus boot` envelope extras.** In addition to zones, entries, hooks, write flows, and the `cli_verbs` catalog, the boot envelope includes an `agent_quickstart` block synthesized from the manifest's role capabilities:
+**`textus boot` envelope extras.** In addition to lanes, entries, hooks, write flows, and the `cli_verbs` catalog, the boot envelope includes an `agent_quickstart` block synthesized from the manifest's role capabilities:
 
 ```json
 {
   "agent_quickstart": {
     "read_verbs":     ["get", "list", "pulse", "schema_show", "boot", "rule_explain", "where", "deps", "rdeps"],
     "write_verbs":    ["accept", "key_delete", "key_mv", "propose", "put", "reject"],
-    "writable_zones": ["proposals"],
-    "propose_zone":   "proposals",
+    "writable_lanes": ["proposals"],
+    "propose_lane":   "proposals",
     "latest_seq":     1842
   }
 }

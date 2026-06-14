@@ -6,25 +6,25 @@ RSpec.describe Textus::Read::Published do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge artifacts],
+      lanes: %w[knowledge artifacts],
       files: {
         "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
         "data/knowledge/people/alice.md" => "---\nname: alice\n---\n",
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
         entries:
-          - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
+          - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, owner: human:self, kind: nested}
 
           - key: artifacts.catalogs.people
             kind: produced
-            path: artifacts/catalogs/people.json
-            zone: artifacts
+            path: data/artifacts/catalogs/people.json
+            lane: artifacts
             owner: automation:auto
-            source: { from: project, select: knowledge.people }
+            source: { from: derive, select: knowledge.people }
             publish:
               - { to: PEOPLE.md, template: people.mustache }
       YAML

@@ -12,12 +12,12 @@ RSpec.describe Textus::Write::Reject do
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: proposals, kind: queue }
         entries:
-          - { key: identity.target, path: target.md, zone: identity, owner: human:self, kind: leaf }
-          - { key: proposals.draft, path: draft.md, zone: proposals, owner: human:self, kind: leaf }
+          - { key: identity.target, path: target.md, lane: identity, owner: human:self, kind: leaf }
+          - { key: proposals.draft, path: draft.md, lane: proposals, owner: human:self, kind: leaf }
       YAML
     )
   end

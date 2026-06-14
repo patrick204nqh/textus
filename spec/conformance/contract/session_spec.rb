@@ -10,9 +10,9 @@ RSpec.describe "session contract" do
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: knowledge, kind: canon }]
+        lanes: [{ name: knowledge, kind: canon }]
         entries:
-          - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }
+          - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf }
       YAML
       File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| }\n")
     end
@@ -30,7 +30,7 @@ RSpec.describe "session contract" do
       File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| } # edited\n")
 
       expect { session.check_etag!(observed(store)) }
-        .to raise_error(Textus::MCP::ContractDrift, %r{manifest/hooks/schemas})
+        .to raise_error(Textus::Surfaces::MCP::ContractDrift, %r{manifest/hooks/schemas})
     end
 
     it "does not raise when nothing changed" do
@@ -47,10 +47,10 @@ RSpec.describe "session contract" do
       %w[data/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: working, kind: canon }
         entries:
-          - { key: working.note, path: working/note.md, zone: working, owner: human:self, kind: leaf }
+          - { key: working.note, path: working/note.md, lane: working, owner: human:self, kind: leaf }
       YAML
       FileUtils.mkdir_p(audit_dir_path(root))
       File.write(audit_log_path(root), "")

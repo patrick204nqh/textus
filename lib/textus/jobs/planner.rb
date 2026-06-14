@@ -21,26 +21,26 @@ module Textus
         return [] if types.empty?
 
         prefix = scope_prefix(scope)
-        zone = scope_zone(scope)
+        lane = scope_lane(scope)
         jobs = []
         actions = coalesced_actions(types)
 
         if actions.include?("materialize")
-          producible_keys(prefix, zone).each do |key|
+          producible_keys(prefix, lane).each do |key|
             jobs << job("materialize", { "key" => key }, Textus::Role::AUTOMATION)
           end
         end
 
         if actions.include?("refresh_data")
-          stale_intake_keys(prefix, zone).each do |key|
+          stale_intake_keys(prefix, lane).each do |key|
             jobs << job("refresh_data", { "key" => key }, Textus::Role::AUTOMATION)
           end
         end
 
-        jobs << job("sweep", { "scope" => { "prefix" => prefix, "zone" => zone } }, role) if actions.include?("sweep")
+        jobs << job("sweep", { "scope" => { "prefix" => prefix, "lane" => lane } }, role) if actions.include?("sweep")
 
         if actions.include?("decorate")
-          producible_keys(prefix, zone).each do |key|
+          producible_keys(prefix, lane).each do |key|
             jobs << job("decorate", { "key" => key }, Textus::Role::AUTOMATION)
           end
         end
@@ -51,26 +51,26 @@ module Textus
       private
 
       def job(type, args, enqueued_by)
-        Textus::Domain::Jobs::Job.new(type: type, args: args, enqueued_by: enqueued_by)
+        Textus::Core::Jobs::Job.new(type: type, args: args, enqueued_by: enqueued_by)
       end
 
-      def producible_keys(prefix, zone)
+      def producible_keys(prefix, lane)
         @manifest.data.entries
                  .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
-                 .select { |e| in_scope?(e, prefix, zone) }
+                 .select { |e| in_scope?(e, prefix, lane) }
                  .map(&:key)
       end
 
-      def stale_intake_keys(prefix, zone)
-        Textus::Domain::Freshness::Evaluator.new(
+      def stale_intake_keys(prefix, lane)
+        Textus::Core::Freshness::Evaluator.new(
           manifest: @manifest,
           file_stat: Textus::Ports::Storage::FileStat.new,
           clock: Textus::Ports::Clock.new,
-        ).stale_intake_keys(prefix: prefix, zone: zone)
+        ).stale_intake_keys(prefix: prefix, lane: lane)
       end
 
-      def in_scope?(entry, prefix, zone)
-        return false if zone && entry.zone != zone
+      def in_scope?(entry, prefix, lane)
+        return false if lane && entry.lane != lane
         return false if prefix && !entry.key.start_with?(prefix)
 
         true
@@ -80,8 +80,8 @@ module Textus
         scope.is_a?(Hash) ? (scope["prefix"] || scope[:prefix]) : nil
       end
 
-      def scope_zone(scope)
-        scope.is_a?(Hash) ? (scope["zone"] || scope[:zone]) : nil
+      def scope_lane(scope)
+        scope.is_a?(Hash) ? (scope["lane"] || scope[:lane]) : nil
       end
 
       def coalesced_actions(types)

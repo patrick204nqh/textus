@@ -9,16 +9,16 @@ RSpec.describe "Textus UID" do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.md,   path: knowledge/md.md,   zone: knowledge, kind: leaf}
+        - { key: knowledge.md,   path: data/knowledge/md.md,   lane: knowledge, kind: leaf}
 
-        - { key: knowledge.j,    path: knowledge/j.json,  zone: knowledge, kind: leaf}
+        - { key: knowledge.j,    path: data/knowledge/j.json,  lane: knowledge, kind: leaf}
 
-        - { key: knowledge.y,    path: knowledge/y.yaml,  zone: knowledge, kind: leaf}
+        - { key: knowledge.y,    path: data/knowledge/y.yaml,  lane: knowledge, kind: leaf}
 
-        - { key: knowledge.t,    path: knowledge/t.txt,   zone: knowledge, kind: leaf}
+        - { key: knowledge.t,    path: data/knowledge/t.txt,   lane: knowledge, kind: leaf}
 
     YAML
   end

@@ -105,12 +105,13 @@ RSpec.describe Textus::Schemas do
     it "accepts kind: canon and rejects the retired kind: origin" do
       canon = { "version" => "textus/3",
                 "roles" => [{ "name" => "human", "can" => ["author"] }],
-                "zones" => [{ "name" => "knowledge", "kind" => "canon" }] }
+                "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
+                "entries" => [] }
       expect { Textus::Manifest::Schema.validate!(canon) }.not_to raise_error
 
-      origin = canon.merge("zones" => [{ "name" => "knowledge", "kind" => "origin" }])
+      origin = canon.merge("lanes" => [{ "name" => "knowledge", "kind" => "origin" }])
       expect { Textus::Manifest::Schema.validate!(origin) }
-        .to raise_error(Textus::BadManifest, /unknown zone kind 'origin'/)
+        .to raise_error(Textus::BadManifest, /unknown lane kind 'origin'/)
     end
   end
 end

@@ -10,13 +10,13 @@ RSpec.describe "textus mv" do
     FileUtils.mkdir_p(File.join(root, "data/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: identity,   kind: canon }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, kind: nested}
+        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, kind: nested}
 
-        - { key: identity.notes,   path: identity/notes,   zone: identity,   kind: nested}
+        - { key: identity.notes,   path: identity/notes,   lane: identity,   kind: nested}
 
     YAML
   end
@@ -89,7 +89,7 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.alpha")
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(
+    code = Textus::Surfaces::CLI.run(
       ["key", "mv", "knowledge.notes.alpha", "knowledge.notes.beta", "--as=human", "--output=json"],
       stdin: StringIO.new, stdout: out, stderr: err, cwd: File.dirname(root),
     )
@@ -106,11 +106,11 @@ RSpec.describe "textus mv" do
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: knowledge, kind: canon }]
+        lanes: [{ name: knowledge, kind: canon }]
         entries:
-          - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf}
 
-          - { key: knowledge.b, path: knowledge/b.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.b, path: data/knowledge/b.md, lane: knowledge, kind: leaf}
 
       YAML
       File.write(File.join(root, "steps/observe/log_mv.rb"), <<~RUBY)

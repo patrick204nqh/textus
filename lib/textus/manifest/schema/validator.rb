@@ -14,34 +14,36 @@ module Textus
           raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
           walk(raw, ROOT_KEYS, "$")
+          raise BadManifest.new("manifest must declare lanes:") if Array(raw["lanes"]).empty?
+
           validate_roles!(raw["roles"])
-          validate_zones!(raw["zones"])
+          validate_lanes!(raw["lanes"])
           validate_entries!(raw["entries"])
-          validate_owners!(raw["zones"], raw["entries"])
+          validate_owners!(raw["lanes"], raw["entries"])
           validate_rules!(raw["rules"])
           walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
           validate_single_queue!(raw)
           validate_single_machine!(raw)
-          validate_zone_kind_consistency!(raw)
+          validate_lane_kind_consistency!(raw)
         end
 
-        def validate_zones!(zones)
-          Array(zones).each_with_index do |z, i|
-            walk(z, ZONE_KEYS, "$.zones[#{i}]")
+        def validate_lanes!(lanes)
+          Array(lanes).each_with_index do |z, i|
+            walk(z, LANE_KEYS, "$.lanes[#{i}]")
             if z["kind"].nil?
-              raise BadManifest.new("zone '#{z["name"]}' at '$.zones[#{i}]' must declare a kind (one of: #{ZONE_KINDS.join(", ")})")
+              raise BadManifest.new("lane '#{z["name"]}' at '$.lanes[#{i}]' must declare a kind (one of: #{LANE_KINDS.join(", ")})")
             end
-            next if ZONE_KINDS.include?(z["kind"])
+            next if LANE_KINDS.include?(z["kind"])
 
             if %w[quarantine derived].include?(z["kind"])
               raise BadManifest.new(
-                "zone kind '#{z["kind"]}' at '$.zones[#{i}]' was folded into 'machine' (ADR 0091) — " \
+                "lane kind '#{z["kind"]}' at '$.lanes[#{i}]' was folded into 'machine' (ADR 0091) — " \
                 "use `kind: machine`",
               )
             end
 
             raise BadManifest.new(
-              "unknown zone kind '#{z["kind"]}' at '$.zones[#{i}]' (known: #{ZONE_KINDS.join(", ")})",
+              "unknown lane kind '#{z["kind"]}' at '$.lanes[#{i}]' (known: #{LANE_KINDS.join(", ")})",
             )
           end
         end
@@ -217,9 +219,9 @@ module Textus
         # (ADR 0045 D1) so attribution can't bypass the closed-name guarantee.
         # Applies to both zone owners and entry owners; owner is optional, so a
         # nil owner is not an error.
-        def validate_owners!(zones, entries)
-          Array(zones).each_with_index do |z, i|
-            check_owner!(z["owner"], "$.zones[#{i}]")
+        def validate_owners!(lanes, entries)
+          Array(lanes).each_with_index do |z, i|
+            check_owner!(z["owner"], "$.lanes[#{i}]")
           end
           Array(entries).each_with_index do |e, i|
             check_owner!(e["owner"], "$.entries[#{i}]")
@@ -265,20 +267,20 @@ module Textus
         end
 
         def validate_single_queue!(raw)
-          queues = Array(raw["zones"]).select { |z| z["kind"] == "queue" }.map { |z| z["name"] }
+          queues = Array(raw["lanes"]).select { |z| z["kind"] == "queue" }.map { |z| z["name"] }
           return if queues.size <= 1
 
           raise BadManifest.new(
-            "at most one zone may declare kind: queue (found: #{queues.join(", ")})",
+            "at most one lane may declare kind: queue (found: #{queues.join(", ")})",
           )
         end
 
         def validate_single_machine!(raw)
-          machines = Array(raw["zones"]).select { |z| z["kind"] == "machine" }.map { |z| z["name"] }
+          machines = Array(raw["lanes"]).select { |z| z["kind"] == "machine" }.map { |z| z["name"] }
           return if machines.size <= 1
 
           raise BadManifest.new(
-            "at most one zone may declare kind: machine (found: #{machines.join(", ")})",
+            "at most one lane may declare kind: machine (found: #{machines.join(", ")})",
           )
         end
 
@@ -300,20 +302,20 @@ module Textus
           end
         end
 
-        # Write authority is derived from capabilities (ADR 0030): a zone of a
+        # Write authority is derived from capabilities (ADR 0030): a lane of a
         # given kind can only be written by a role that holds the kind's required
-        # verb. Reject a manifest declaring a zone whose required verb is held by
+        # verb. Reject a manifest declaring a lane whose required verb is held by
         # no role. Capabilities.resolve returns the defaults when `roles:` is nil,
         # so the capability union is all four verbs and every kind is satisfied.
-        def validate_zone_kind_consistency!(raw)
+        def validate_lane_kind_consistency!(raw)
           held = Capabilities.resolve(raw["roles"]).values.flatten.uniq
 
-          Array(raw["zones"]).each_with_index do |z, i|
+          Array(raw["lanes"]).each_with_index do |z, i|
             verb = KIND_REQUIRES_VERB[z["kind"]]
             next if verb.nil? || held.include?(verb)
 
             raise BadManifest.new(
-              "zone '#{z["name"]}' (#{z["kind"]}) at '$.zones[#{i}]' " \
+              "lane '#{z["name"]}' (#{z["kind"]}) at '$.lanes[#{i}]' " \
               "needs a role with capability '#{verb}'; none declared",
             )
           end

@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::Uid do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge],
+      lanes: %w[knowledge],
       files: {
         "data/knowledge/doc.md" => <<~MD,
           ---
@@ -18,10 +18,10 @@ RSpec.describe Textus::Read::Uid do
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
 
       YAML
     )

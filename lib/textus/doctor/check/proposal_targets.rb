@@ -8,10 +8,10 @@ module Textus
       # corruption (the accept gate already refuses them).
       class ProposalTargets < Check
         def call
-          queue = manifest.policy.queue_zone
+          queue = manifest.policy.queue_lane
           return [] unless queue
 
-          dispatch(:list, zone: queue).filter_map { |row| issue_for(row["key"]) }
+          dispatch(:list, lane: queue).filter_map { |row| issue_for(row["key"]) }
         end
 
         private
@@ -20,7 +20,7 @@ module Textus
           target = dispatch(:get, key).meta&.dig("proposal", "target_key")
           return nil if target.nil? # not a proposal entry — skip
 
-          zone = manifest.resolver.resolve(target).entry.zone
+          zone = manifest.resolver.resolve(target).entry.lane
           return nil if manifest.policy.declared_kind(zone.to_s) == :canon
 
           {

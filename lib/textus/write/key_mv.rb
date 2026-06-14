@@ -53,17 +53,17 @@ module Textus
         raise UnknownKey.new(old_key) unless reader.exists?(old_key)
 
         validate_zone_and_format!(old_res.entry, new_res.entry)
-        guard_for(:key_mv, old_key).check!(eval_for(:key_mv, target_key: old_key))
-        guard_for(:key_mv, new_key).check!(eval_for(:key_mv, target_key: new_key))
+        auth.check!(action: :key_mv, actor: @call.role, key: old_key)
+        auth.check!(action: :key_mv, actor: @call.role, key: new_key)
         raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if reader.exists?(new_key)
 
         [old_res, new_res]
       end
 
       def validate_zone_and_format!(old_mentry, new_mentry)
-        if old_mentry.zone != new_mentry.zone
+        if old_mentry.lane != new_mentry.lane
           raise UsageError.new(
-            "mv: cross-zone move refused (#{old_mentry.zone} → #{new_mentry.zone}). " \
+            "mv: cross-zone move refused (#{old_mentry.lane} → #{new_mentry.lane}). " \
             "Use put+delete for cross-zone moves.",
           )
         end
@@ -116,17 +116,8 @@ module Textus
         }
       end
 
-      def guard_for(transition, key, if_etag: nil)
-        Textus::Domain::Policy::GuardFactory.new(
-          manifest: @manifest, schemas: @container.schemas, extra: { if_etag: if_etag },
-        ).for(transition, key)
-      end
-
-      def eval_for(transition, target_key:, envelope: nil)
-        Textus::Domain::Policy::Evaluation.new(
-          actor: @call.role, transition: transition, origin: nil,
-          target: target_key, envelope: envelope, manifest: @manifest
-        )
+      def auth
+        @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @container.schemas)
       end
 
       def writer

@@ -23,12 +23,7 @@ module Textus
         target = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
         action = proposal["action"] || "put"
 
-        guard.for(:accept, target).check!(
-          Textus::Domain::Policy::Evaluation.new(
-            actor: @call.role, transition: :accept, origin: pending_key,
-            target: target, envelope: env, manifest: @manifest
-          ),
-        )
+        auth.check!(action: :accept, actor: @call.role, key: target, envelope: env)
 
         case action
         when "put"
@@ -46,8 +41,8 @@ module Textus
 
       private
 
-      def guard
-        @guard ||= Textus::Domain::Policy::GuardFactory.new(manifest: @manifest, schemas: @schemas)
+      def auth
+        @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @schemas)
       end
 
       def hook_context = @hook_context ||= Textus::Step::Context.for(container: @container, call: @call)

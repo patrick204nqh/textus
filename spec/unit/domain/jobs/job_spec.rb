@@ -1,9 +1,9 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Jobs::Job do
+RSpec.describe Textus::Core::Jobs::Job do
   it "derives a stable id from type + args, independent of arg order" do
-    a = described_class.new(type: "materialize", args: { "key" => "x", "zone" => "k" })
-    b = described_class.new(type: "materialize", args: { "zone" => "k", "key" => "x" })
+    a = described_class.new(type: "materialize", args: { "key" => "x", "lane" => "k" })
+    b = described_class.new(type: "materialize", args: { "lane" => "k", "key" => "x" })
     expect(a.id).to eq(b.id)
     expect(a.id).to start_with("materialize:")
   end

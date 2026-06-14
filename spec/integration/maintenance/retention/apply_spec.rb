@@ -5,13 +5,13 @@ RSpec.describe Textus::Maintenance::Retention::Apply do
 
   let(:store) do
     store_from_manifest(
-      root, zones: %w[knowledge],
+      root, lanes: %w[knowledge],
             manifest: <<~YAML,
               version: textus/3
-              zones:
+              lanes:
                 - { name: knowledge, kind: canon }
               entries:
-                - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
+                - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf }
             YAML
             files: { "data/knowledge/note.md" => "---\n---\nbody\n" }
     )

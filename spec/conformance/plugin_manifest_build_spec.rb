@@ -35,20 +35,20 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
       end
     RUBY
 
-    s = store_from_manifest(root, zones: %w[knowledge artifacts], manifest: <<~YAML)
+    s = store_from_manifest(root, lanes: %w[knowledge artifacts], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.claude-plugin
           kind: produced
-          path: artifacts/plugin.json
-          zone: artifacts
+          path: data/artifacts/plugin.json
+          lane: artifacts
           source:
-            from: project
+            from: derive
             select:
               - knowledge.project
             transform: plugin_manifest
@@ -63,7 +63,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "builds the in-store artifact with the expected plugin manifest structure" do
-    store.as("automation").drain
+    converge_now(store)
 
     artifact_path = File.join(root, "data/artifacts/plugin.json")
     expect(File.exist?(artifact_path)).to be true
@@ -77,7 +77,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "publishes to .claude-plugin/plugin.json at the project root with no _meta key" do
-    store.as("automation").drain
+    converge_now(store)
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     expect(File.exist?(published_path)).to be true
@@ -89,7 +89,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "includes the SessionStart hooks with startup, clear, compact matchers" do
-    store.as("automation").drain
+    converge_now(store)
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     parsed = JSON.parse(File.read(published_path))
@@ -101,7 +101,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "includes the inline mcpServers stanza pointing to the installed binary" do
-    store.as("automation").drain
+    converge_now(store)
 
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     parsed = JSON.parse(File.read(published_path))
@@ -111,11 +111,11 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
   end
 
   it "build is idempotent — repeated builds produce no content change" do
-    store.as("automation").drain
+    converge_now(store)
     published_path = File.join(tmp, ".claude-plugin", "plugin.json")
     sha_first = Digest::SHA256.file(published_path).hexdigest
 
-    store.as("automation").drain
+    converge_now(store)
     sha_second = Digest::SHA256.file(published_path).hexdigest
 
     expect(sha_second).to eq(sha_first)

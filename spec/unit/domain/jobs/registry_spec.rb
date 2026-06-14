@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Jobs::Registry do
+RSpec.describe Textus::Core::Jobs::Registry do
   subject(:registry) { described_class.new }
 
   it "registers and looks up a handler by type" do

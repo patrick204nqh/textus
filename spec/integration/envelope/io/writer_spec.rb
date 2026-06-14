@@ -4,13 +4,13 @@ RSpec.describe Textus::Envelope::IO::Writer do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: knowledge/foo.md, zone: knowledge, kind: leaf}
-        - { key: knowledge.bar, path: knowledge/bar.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.bar, path: data/knowledge/bar.md, lane: knowledge, kind: leaf}
     YAML
   end
 

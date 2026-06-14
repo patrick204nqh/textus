@@ -1,23 +1,23 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb do
+RSpec.describe Textus::Surfaces::CLI::Verb do
   let(:io) { { stdin: StringIO.new, stdout: StringIO.new, stderr: StringIO.new } }
 
   it "subclasses declare options and receive parsed values" do
     klass = Class.new(described_class) do
       def self.name = "DummyVerb"
       option :prefix, "--prefix=KEY"
-      option :zone,   "--zone=Z"
+      option :lane,   "--zone=Z"
       def call(_store)
-        { "prefix" => prefix, "zone" => zone }
+        { "prefix" => prefix, "lane" => lane }
       end
     end
 
     v = klass.new(**io)
     v.parse(["--prefix=a.b", "--zone=working", "--output=json"])
     result = v.call(:fake_store)
-    expect(result).to eq("prefix" => "a.b", "zone" => "working")
+    expect(result).to eq("prefix" => "a.b", "lane" => "working")
   end
 
   it "rejects --output values other than json" do

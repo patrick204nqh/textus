@@ -5,19 +5,19 @@ RSpec.describe "jobs react idempotency" do
 
   let(:store) do
     store_from_manifest(
-      root, zones: %w[knowledge feeds],
+      root, lanes: %w[knowledge feeds],
             manifest: <<~YAML,
               version: textus/3
-              zones:
+              lanes:
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }
               entries:
-                - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+                - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
                 - key: feeds.catalog
                   kind: produced
-                  path: feeds/catalog.json
-                  zone: feeds
-                  source: { from: project, select: "knowledge", pluck: [title] }
+                  path: data/feeds/catalog.json
+                  lane: feeds
+                  source: { from: derive, select: "knowledge", pluck: [title] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
             YAML
@@ -32,7 +32,7 @@ RSpec.describe "jobs react idempotency" do
     planner = Textus::Jobs::Planner.new(container: store.container)
     jobs = planner.plan(
       triggers: [{ "type" => "entry.written" }, { "type" => "entry.written" }],
-      scope: { "prefix" => nil, "zone" => nil },
+      scope: { "prefix" => nil, "lane" => nil },
       role: "automation",
     )
 

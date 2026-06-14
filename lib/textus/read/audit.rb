@@ -3,18 +3,18 @@ require "time"
 
 module Textus
   module Read
-    # Queries .textus/.run/audit/audit.log. Filters: key, zone, role, verb, since,
+    # Queries .textus/.run/audit/audit.log. Filters: key, lane, role, verb, since,
     # correlation_id, limit. Reads the log file as JSON-Lines (legacy TSV
     # rows produce nil and are skipped).
     class Audit
       # Value object that carries all filter parameters for an audit query.
       # `matches?` checks the manifest-independent predicates so the loop body
-      # only needs to handle the zone check (which requires manifest access).
-      Query = Data.define(:key, :zone, :role, :verb, :since, :seq_since, :correlation_id, :limit) do
+      # only needs to handle the lane check (which requires manifest access).
+      Query = Data.define(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit) do
         # rubocop:disable Metrics/ParameterLists
-        def self.build(key: nil, zone: nil, role: nil, verb: nil,
+        def self.build(key: nil, lane: nil, role: nil, verb: nil,
                        since: nil, seq_since: nil, correlation_id: nil, limit: nil)
-          new(key:, zone:, role:, verb:, since:, seq_since:, correlation_id:, limit:)
+          new(key:, lane:, role:, verb:, since:, seq_since:, correlation_id:, limit:)
         end
         # rubocop:enable Metrics/ParameterLists
 
@@ -38,7 +38,7 @@ module Textus
       cli      "audit"
       # #call(**filters) — args map to Query.build keyword params (ADR 0063)
       arg :key,            String,  required: false, description: "filter to rows for this key"
-      arg :zone,           String,  required: false, description: "filter to keys in this zone"
+      arg :lane,           String,  required: false, description: "filter to keys in this lane"
       arg :role,           String,  required: false, description: "filter to rows written under this role"
       arg :verb,           String,  required: false, description: "filter to rows for this verb"
       arg :since,          String,  required: false,
@@ -69,7 +69,7 @@ module Textus
             parsed = parse_row(line.chomp)
             next unless parsed
             next unless query.matches?(parsed)
-            next if query.zone && !key_in_zone?(parsed["key"], query.zone)
+            next if query.lane && !key_in_lane?(parsed["key"], query.lane)
 
             rows << parsed
             break if limit_reached?(rows, query)
@@ -119,9 +119,9 @@ module Textus
         nil
       end
 
-      def key_in_zone?(key, zone)
+      def key_in_lane?(key, lane)
         mentry = @manifest.resolver.resolve(key).entry
-        mentry && mentry.zone == zone
+        mentry && mentry.lane == lane
       rescue Textus::Error
         false
       end

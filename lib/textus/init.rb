@@ -11,30 +11,30 @@ module Textus
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon,     desc: "the maintained source of truth (identity.* lives here)" }
         - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
         - { name: proposals, kind: queue,     desc: "changes awaiting your accept" }
         - { name: artifacts, kind: machine,   desc: "machine-maintained: external inputs (artifacts.feeds.*) + computed outputs (artifacts.derived.*)" }
       entries:
-        - { key: knowledge.identity, path: knowledge/identity.md, zone: knowledge, schema: null, owner: human:self, kind: leaf }
-        - { key: knowledge.notes,    path: knowledge/notes,       zone: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
-        - { key: notebook.notes,     path: notebook/notes,        zone: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
-        - { key: proposals.notes,    path: proposals/notes,       zone: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: knowledge.identity, path: data/knowledge/identity.md, lane: knowledge, schema: null, owner: human:self, kind: leaf }
+        - { key: knowledge.notes,    path: data/knowledge/notes,       lane: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
+        - { key: notebook.notes,     path: data/notebook/notes,        lane: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
+        - { key: proposals.notes,    path: data/proposals/notes,       lane: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
         # A per-host snapshot, refreshed from its declared intake by `textus drain` (scheduled, or on demand).
         # Nested so it grows to a fleet — add artifacts.feeds.machines.<host> leaves over SSH
         # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable
         # via `textus get artifacts.feeds.machines.local`. Delete to opt out. (ADR 0043)
         - key: artifacts.feeds.machines
-          path: artifacts/feeds/machines
-          zone: artifacts
+          path: data/artifacts/feeds/machines
+          lane: artifacts
           format: yaml
           nested: true
           tracked: false
           kind: produced
           source:
-            from: handler
+            from: fetch
             handler: machine-intake
             ttl: 1h # cadence on a long-running server
             config:
@@ -87,16 +87,16 @@ module Textus
     MD
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
-      - { key: knowledge.project, path: knowledge/project.md, zone: knowledge, schema: project, owner: human:self, kind: leaf }
-      - { key: knowledge.runbooks, path: knowledge/runbooks, zone: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+      - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, owner: human:self, kind: leaf }
+      - { key: knowledge.runbooks, path: data/knowledge/runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
       - key: artifacts.derived.orientation
-        path: artifacts/derived/orientation.json
-        zone: artifacts
+        path: data/artifacts/derived/orientation.json
+        lane: artifacts
         publish:
         - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
         - { to: AGENTS.md, template: orientation.mustache, inject_boot: true }
         source:
-          from: project
+          from: derive
           select:
           - knowledge.project
           - knowledge.runbooks
@@ -179,7 +179,8 @@ module Textus
       root = Pathname.new(target_root)
       untracked = manifest.data.entries.reject(&:tracked?).map do |e|
         if e.nested? # a whole subtree of leaf files (artifacts.feeds.machines.* → data/artifacts/feeds/machines/)
-          "#{File.join("data", e.path)}/"
+          rel = e.path.start_with?("data/") ? e.path : File.join("data", e.path)
+          "#{rel}/"
         else
           Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
         end

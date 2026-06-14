@@ -15,15 +15,15 @@ module TextusSpecHelpers
   # dir) and tmp cleanup, to drop the per-spec build_store/mktmpdir boilerplate:
   #
   #   include_context "textus_store_fixture"
-  #   let(:store) { store_from_manifest(root, zones: %w[knowledge], manifest: <<~YAML) }
+  #   let(:store) { store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML) }
   #     version: textus/3
   #     ...
   #   YAML
   #
   # `schemas` maps name => YAML body (written to schemas/<name>.yaml);
   # `files` maps a path relative to the .textus dir => contents.
-  def store_from_manifest(textus_dir, manifest:, zones: [], schemas: {}, files: {})
-    zones.each { |z| FileUtils.mkdir_p(File.join(textus_dir, "data", z)) }
+  def store_from_manifest(textus_dir, manifest:, lanes: [], schemas: {}, files: {})
+    lanes.each { |lane| FileUtils.mkdir_p(File.join(textus_dir, "data", lane)) }
     schemas.each do |name, body|
       FileUtils.mkdir_p(File.join(textus_dir, "schemas"))
       File.write(File.join(textus_dir, "schemas", "#{name}.yaml"), body)
@@ -52,13 +52,13 @@ module TextusSpecHelpers
   #   let(:store) { minimal_store(root) }                       # knowledge.foo leaf
   #   let(:store) { minimal_store(root, key: "knowledge.doc",   # custom key/path
   #                                     path: "knowledge/doc.md") }
-  def minimal_store(root, kind_zone: "canon", zone: LANE_ZONE.fetch(kind_zone), key: "#{zone}.foo", path: "#{zone}/foo.md")
-    store_from_manifest(root, zones: [zone], manifest: <<~YAML)
+  def minimal_store(root, kind_zone: "canon", lane: LANE_ZONE.fetch(kind_zone), key: "#{lane}.foo", path: "#{lane}/foo.md")
+    store_from_manifest(root, lanes: [lane], manifest: <<~YAML)
       version: textus/3
-      zones:
-        - { name: #{zone}, kind: #{kind_zone} }
+      lanes:
+        - { name: #{lane}, kind: #{kind_zone} }
       entries:
-        - { key: #{key}, path: #{path}, zone: #{zone}, kind: leaf }
+        - { key: #{key}, path: #{path}, lane: #{lane}, kind: leaf }
     YAML
   end
 
@@ -66,14 +66,14 @@ module TextusSpecHelpers
   # leaf. The standard write-path shape (untrusted intake in machine, owned
   # content in canon). Used by put/delete/mv/accept/reject specs.
   def machine_store(root)
-    store_from_manifest(root, zones: %w[feeds knowledge], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[feeds knowledge], manifest: <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: feeds, kind: machine }
         - { name: knowledge, kind: canon }
       entries:
-        - { key: feeds.foo, path: feeds/foo.md, zone: feeds, kind: leaf }
-        - { key: knowledge.bar, path: knowledge/bar.md, zone: knowledge, kind: leaf }
+        - { key: feeds.foo, path: data/feeds/foo.md, lane: feeds, kind: leaf }
+        - { key: knowledge.bar, path: data/knowledge/bar.md, lane: knowledge, kind: leaf }
     YAML
   end
 
@@ -88,19 +88,19 @@ module TextusSpecHelpers
     zone = LANE_ZONE.fetch(kind_zone)
     manifest = <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: #{zone}, kind: #{kind_zone} }
       entries:
         - key: #{zone}.doc
           kind: produced
           path: #{zone}/doc.md
-          zone: #{zone}
-          source: { from: handler, handler: test_intake, ttl: #{ttl} }
+          lane: #{zone}
+          source: { from: fetch, handler: test_intake, ttl: #{ttl} }
     YAML
     manifest << "rules:\n  - { match: #{zone}.doc, retention: #{retention} }\n" if retention
     store_from_manifest(
       root,
-      zones: [zone],
+      lanes: [zone],
       files: {
         "steps/fetch/test_intake.rb" => <<~RUBY,
           class TestIntakeFetch < Textus::Step::Fetch
@@ -161,6 +161,15 @@ module TextusSpecHelpers
     container = store.container
     container = container.with(steps: steps) if steps
     Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
+  end
+
+  # Seed convergence jobs for the given scope and then burn the queue through
+  # Maintenance::Drain (which is queue-burn only).
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION)
+    queue = Textus::Ports::Queue.new(root: store.root)
+    call = Textus::Call.build(role: role)
+    Textus::Jobs::Seeder.new(container: store.container, queue: queue, call: call).seed(prefix: prefix, lane: lane)
+    Textus::Maintenance::Drain.new(container: store.container, call: call).call
   end
 end
 

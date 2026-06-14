@@ -2,14 +2,14 @@ module Textus
   class Manifest
     class Entry
       class Base < Entry
-        attr_reader :raw, :key, :path, :zone, :schema, :owner, :format, :publish_targets
+        attr_reader :raw, :key, :path, :lane, :schema, :owner, :format, :publish_targets
 
         # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
-        def initialize(raw:, key:, path:, zone:, schema:, owner:, format:, publish_targets: [])
+        def initialize(raw:, key:, path:, lane:, schema:, owner:, format:, publish_targets: [])
           @raw = raw
           @key = key
           @path = path
-          @zone = zone
+          @lane = lane
           @schema = schema
           @owner = owner
           @format = format
@@ -17,13 +17,14 @@ module Textus
         end
         # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
 
-        def zone_writers(policy)
-          policy.zone_writers(@zone)
+        def lane_writers(policy)
+          verb = policy.verb_for_lane(@lane)
+          policy.roles_with_capability(verb)
         rescue UsageError => e
           raise UsageError.new("entry '#{@key}': #{e.message}")
         end
 
-        def in_proposal_zone?(policy) = policy.queue_zone?(@zone)
+        def in_proposal_lane?(policy) = policy.queue_lane?(@lane)
 
         def nested?  = false
         def derived? = false
@@ -35,6 +36,9 @@ module Textus
         # its source. Lets publish modes call these without a `respond_to?` guard.
         def external?   = false
         def projection? = false
+
+        alias zone lane
+        alias in_proposal_zone? in_proposal_lane?
 
         # Whether git should track this entry's file. Default true; an entry
         # marked `tracked: false` in the manifest stays protocol-readable but is
@@ -91,7 +95,7 @@ module Textus
           private
 
           def scope_for_hooks
-            Textus::RoleScope.new(
+            Textus::Surfaces::RoleScope.new(
               container: container, role: call.role, dry_run: call.dry_run,
             )
           end

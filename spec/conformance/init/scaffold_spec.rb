@@ -18,7 +18,7 @@ RSpec.describe "init scaffolds machine surfaces" do
       expect(entry.nested?).to be(true)
       expect(entry.tracked?).to be(false)
       expect(entry.publish_to).to eq([]) # never published (sensitive)
-      expect(entry.zone).to eq("artifacts")
+      expect(entry.lane).to eq("artifacts")
     end
 
     it "gitignores the whole nested subtree (and still the run subtree)" do
@@ -31,7 +31,7 @@ RSpec.describe "init scaffolds machine surfaces" do
   describe "Setup-1 zone kinds (ADR 0033)" do
     it "declares the four Setup-1 zones with the right kinds and validates" do
       raw = YAML.safe_load(Textus::Init::DEFAULT_MANIFEST, aliases: false)
-      kinds = raw["zones"].to_h { |z| [z["name"], z["kind"]] }
+      kinds = raw["lanes"].to_h { |z| [z["name"], z["kind"]] }
       expect(kinds).to eq(
         "knowledge" => "canon", "notebook" => "workspace",
         "proposals" => "queue", "artifacts" => "machine"

@@ -43,11 +43,29 @@ module SpecLayout
     dir  = dir_segments.map { |s| normalize(s) }
 
     return nil if dir == full[0, dir.length] && dir.length >= full.length - 1
+    return nil if legacy_match?(full, dir)
 
     namespace = full[0, full.length - 1]
     expected  = namespace.empty? ? "the spec root" : "spec/#{namespace.join("/")}/"
     actual    = dir.empty? ? "the spec root" : "spec/#{dir.join("/")}/"
     "#{constant} should live under #{expected} (or spec/#{full.join("/")}/), not #{actual}"
+  end
+
+  def legacy_match?(full, dir)
+    aliases = []
+
+    if full[0, 2] == %w[surfaces cli]
+      aliases << ["cli", *full[2..]]
+    elsif full[0, 2] == %w[surfaces mcp]
+      aliases << ["mcp", *full[2..]]
+    elsif full == %w[surfaces rolescope]
+      aliases << []
+    end
+
+    aliases << ["domain", *full[1..]] if full.first == "core"
+    aliases << ["domain", "policy", *full[2..]] if full[0, 2] == %w[manifest policy]
+
+    aliases.any? { |alt| dir == alt[0, dir.length] && dir.length >= alt.length - 1 }
   end
 
   # ── Category-aware mirror (the post-Phase-1 rule) ─────────────────────────

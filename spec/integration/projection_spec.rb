@@ -20,10 +20,10 @@ RSpec.describe Textus::Projection do
     FileUtils.mkdir_p(File.join(root, "data/knowledge/people"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.people, path: knowledge/people, zone: knowledge, owner: human:self, kind: nested}
+        - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, owner: human:self, kind: nested}
 
     YAML
     File.write(File.join(root, "data/knowledge/people/alice.md"),
@@ -82,10 +82,10 @@ RSpec.describe Textus::Projection do
     FileUtils.mkdir_p(File.join(root, "data/knowledge/docs"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.docs, path: knowledge/docs, zone: knowledge, owner: human:self, kind: nested, schema: null}
+        - { key: knowledge.docs, path: data/knowledge/docs, lane: knowledge, owner: human:self, kind: nested, schema: null}
     YAML
     File.write(File.join(root, "data/knowledge/docs/readme.md"),
                "# Hello World\n\nSome content here.\n")

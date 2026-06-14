@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec.describe Textus::Session do
   subject(:session) do
-    described_class.new(role: :agent, cursor: 10, propose_zone: "proposals",
+    described_class.new(role: :agent, cursor: 10, propose_lane: "proposals",
                         contract_etag: "sha256:aaaa")
   end
 

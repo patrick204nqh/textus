@@ -5,7 +5,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
     raw = YAML.safe_load(<<~YAML, aliases: false)
       version: textus/3
       #{roles_yaml}
-      zones:
+      lanes:
       #{zones_yaml}
       entries: []
     YAML
@@ -16,26 +16,26 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
     expect { parse("  - { name: review, kind: queue }") }.not_to raise_error
   end
 
-  it "rejects a zone with no kind (kind is required)" do
+  it "rejects a lane with no kind (kind is required)" do
     expect { parse("  - { name: knowledge }") }
-      .to raise_error(Textus::BadManifest, /zone 'knowledge' at '\$\.zones\[0\]' must declare a kind/)
+      .to raise_error(Textus::BadManifest, /lane 'knowledge' at '\$\.lanes\[0\]' must declare a kind/)
   end
 
   it "rejects an unknown kind" do
     expect { parse("  - { name: review, kind: mailbox }") }
-      .to raise_error(Textus::BadManifest, /unknown zone kind 'mailbox'.*canon, workspace, machine, queue/m)
+      .to raise_error(Textus::BadManifest, /unknown lane kind 'mailbox'.*canon, workspace, machine, queue/m)
   end
 
-  it "rejects two queue zones" do
+  it "rejects two queue lanes" do
     expect do
       parse(<<~Z)
         - { name: review,  kind: queue }
         - { name: triage,  kind: queue }
       Z
-    end.to raise_error(Textus::BadManifest, /at most one zone may declare kind: queue/)
+    end.to raise_error(Textus::BadManifest, /at most one lane may declare kind: queue/)
   end
 
-  it "rejects a machine zone when no declared role holds converge" do
+  it "rejects a machine lane when no declared role holds converge" do
     roles = <<~ROLES
       roles:
         - { name: human, can: [author, propose] }
@@ -44,7 +44,7 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
       .to raise_error(Textus::BadManifest, /needs a role with capability 'converge'/)
   end
 
-  it "accepts a machine zone when a declared role holds converge" do
+  it "accepts a machine lane when a declared role holds converge" do
     roles = <<~ROLES
       roles:
         - { name: human,      can: [author, propose] }

@@ -13,25 +13,25 @@ RSpec.shared_context "textus/3 conformance fixture" do
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: identity,  kind: canon }
         - { name: knowledge,   kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: identity.self,         path: identity/self,         zone: identity,   owner: human:patrick, kind: leaf}
+        - { key: identity.self,         path: identity/self,         lane: identity,   owner: human:patrick, kind: leaf}
 
-        - { key: knowledge.network.org,   path: knowledge/network/org,   zone: knowledge,  schema: person, owner: human:patrick, kind: nested}
+        - { key: knowledge.network.org,   path: data/knowledge/network/org,   lane: knowledge,  schema: person, owner: human:patrick, kind: nested}
 
-        - { key: knowledge.projects,      path: knowledge/projects,      zone: knowledge,    owner: human:patrick, kind: nested}
+        - { key: knowledge.projects,      path: data/knowledge/projects,      lane: knowledge,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, zone: artifacts, owner: automation:catalog, kind: produced, source: { from: command, command: "rake catalog:skills", sources: [knowledge.projects] } }
+        - { key: artifacts.catalogs.skills, path: data/artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: artifacts.feeds.calendar.events
           kind: produced
-          path: artifacts/feeds/calendar/events
-          zone: artifacts
+          path: data/artifacts/feeds/calendar/events
+          lane: artifacts
           owner: automation:cron
           source:
-            from: handler
+            from: fetch
             handler: http_json
             config: { url: "https://example.com/calendar.ics" }
             ttl: 300s

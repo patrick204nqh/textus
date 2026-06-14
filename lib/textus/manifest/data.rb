@@ -5,15 +5,15 @@ module Textus
   class Manifest
     # Immutable, parsed view of a manifest YAML document.
     #
-    # Holds raw structural data (zones, entries, audit_config, role_caps)
-    # but no behaviour beyond accessors. Behaviour (zone authority, key
+    # Holds raw structural data (lanes, entries, audit_config, role_caps)
+    # but no behaviour beyond accessors. Behaviour (lane authority, key
     # resolution, rules) lives on Manifest::Policy / Resolver / Rules.
     class Data
       AUDIT_DEFAULTS = { max_size: 10_485_760, keep: 5 }.freeze
       WORKER_DEFAULTS = { pool: 4, poll: 5, lease_ttl: 60, max_attempts: 3 }.freeze
 
-      attr_reader :raw, :root, :entries, :declared_zone_kinds,
-                  :zone_descs, :zone_owners,
+      attr_reader :raw, :root, :entries, :declared_lane_kinds,
+                  :lane_descs, :lane_owners,
                   :audit_config, :worker_config, :role_caps, :policy
 
       def self.validate_key!(key)
@@ -27,7 +27,7 @@ module Textus
       def validate_key!(key) = self.class.validate_key!(key)
 
       def self.parse(raw, root:)
-        raise BadFrontmatter.new(File.join(root.to_s, "manifest.yaml"), "manifest must declare zones:") if Array(raw["zones"]).empty?
+        raise BadFrontmatter.new(File.join(root.to_s, "manifest.yaml"), "manifest must declare lanes:") if Array(raw["lanes"]).empty?
 
         Schema.validate!(raw)
         new(raw: raw, root: root)
@@ -36,17 +36,17 @@ module Textus
       def initialize(raw:, root:)
         @raw = raw
         @root = root
-        # Write authority is derived from capabilities × zone-kind (ADR 0030),
-        # not a per-zone writer list. "Which zones are declared" lives in the
-        # one kind-keyed map below (declared_zone_kinds); membership checks by
+        # Write authority is derived from capabilities × lane-kind (ADR 0030),
+        # not a per-lane writer list. "Which lanes are declared" lives in the
+        # one kind-keyed map below (declared_lane_kinds); membership checks by
         # read-side callers (boot, maintenance/data_mv) use its keyset (ADR 0034).
-        @declared_zone_kinds = Array(raw["zones"]).to_h do |z|
+        @declared_lane_kinds = Array(raw["lanes"]).to_h do |z|
           [z["name"], z["kind"]&.to_sym]
         end
-        @zone_descs  = Array(raw["zones"]).to_h { |z| [z["name"], z["desc"]] }
-        # Only zones that actually declare an owner — keep nil-tombstones out so a
-        # future `zone_owners.key?(name)` means "owner declared", not "zone exists".
-        @zone_owners = Array(raw["zones"]).to_h { |z| [z["name"], z["owner"]] }.compact
+        @lane_descs  = Array(raw["lanes"]).to_h { |z| [z["name"], z["desc"]] }
+        # Only lanes that actually declare an owner — keep nil-tombstones out so a
+        # future `lane_owners.key?(name)` means "owner declared", not "lane exists".
+        @lane_owners = Array(raw["lanes"]).to_h { |z| [z["name"], z["owner"]] }.compact
         @audit_config = build_audit_config(raw)
         @worker_config = build_worker_config(raw)
         @role_caps = Capabilities.resolve(raw["roles"])

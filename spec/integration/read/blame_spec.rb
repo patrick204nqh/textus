@@ -11,10 +11,10 @@ RSpec.describe Textus::Read::Blame do
     FileUtils.mkdir_p(File.join(textus_dir, "data", "knowledge"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: knowledge/doc.md, zone: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
 
     YAML
     Textus::Store.new(textus_dir)

@@ -5,7 +5,7 @@ module Textus
         def self.call(raw)
           key = raw["key"] or raise UsageError.new("manifest entry missing key")
           path = raw["path"] or raise UsageError.new("manifest entry '#{key}' missing path")
-          zone = raw["zone"] or raise UsageError.new("manifest entry '#{key}' missing zone")
+          lane = raw["lane"] or raise UsageError.new("manifest entry '#{key}' missing lane")
 
           raw_kind = raw["kind"] or raise BadManifest.new("entry '#{key}' missing required `kind:` (#{Entry::REGISTRY.keys.join("|")})")
           kind = raw_kind.to_sym
@@ -19,7 +19,7 @@ module Textus
 
           common = {
             raw: raw,
-            key: key, path: path, zone: zone,
+            key: key, path: path, lane: lane,
             schema: raw["schema"], owner: raw["owner"],
             format: format,
             publish_targets: publish_targets(raw)
@@ -31,12 +31,12 @@ module Textus
         end
 
         # ADR 0093: an entry's production block is the unified `source:`. Returns a
-        # Domain::Policy::Source; kind (intake/derived) is read from source.from.
+        # Manifest::Policy::Source; kind (intake/derived) is read from source.from.
         def self.parse_source(raw, key)
           block = raw["source"] or
-            raise BadManifest.new("entry '#{key}' requires a source: { from: project|handler|command, ... }")
+            raise BadManifest.new("entry '#{key}' requires a source: { from: derive|fetch|external, ... }")
 
-          Textus::Domain::Policy::Source.new(block)
+          Textus::Manifest::Policy::Source.new(block)
         end
 
         # ADR 0094: `publish:` is a LIST of target objects — to-targets
@@ -52,7 +52,7 @@ module Textus
               "[{to:, template:?} | {tree:}] (ADR 0094); the `publish: { … }` map form was retired",
             )
           end
-          block.map { |t| Textus::Domain::Policy::PublishTarget.new(t) }
+          block.map { |t| Textus::Manifest::Policy::PublishTarget.new(t) }
         end
 
         def self.resolve_format(raw, path)

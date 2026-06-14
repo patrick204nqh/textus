@@ -40,7 +40,7 @@ module Textus
           serialize_retention(value)
         when :react
           value.to_h
-        when :handler_allowlist
+        when :handler_permit
           value.handlers
         else
           value

@@ -1,14 +1,14 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::CLI::Verb::Get do
+RSpec.describe Textus::Surfaces::CLI::Verb::Get do
   include_context "textus_store_fixture"
 
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
   def run(argv)
-    Textus::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
+    Textus::Surfaces::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
   end
 
   # A stale intake entry whose source carries a short ttl. Since ADR 0089 `get`
@@ -26,18 +26,18 @@ RSpec.describe Textus::CLI::Verb::Get do
 
     store_from_manifest(
       root,
-      zones: %w[feeds],
+      lanes: %w[feeds],
       files: { "hooks/test_intake.rb" => hook_body },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.doc
             kind: produced
-            path: feeds/doc.md
-            zone: feeds
-            source: { from: handler, handler: test_intake, ttl: 1s }
+            path: data/feeds/doc.md
+            lane: feeds
+            source: { from: fetch, handler: test_intake, ttl: 1s }
       YAML
     )
     File.write(File.join(root, "data", "feeds", "doc.md"), <<~MD)

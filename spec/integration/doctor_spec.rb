@@ -10,17 +10,17 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, schema: note, kind: nested}
+        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, schema: note, kind: nested}
 
         - key: artifacts.summary
-          path: artifacts/summary.json
-          zone: artifacts
+          path: data/artifacts/summary.json
+          lane: artifacts
           kind: produced
-          source: { from: project, select: [knowledge.notes] }
+          source: { from: derive, select: [knowledge.notes] }
           publish:
             - { to: summary.md, template: summary.mustache }
 
@@ -185,10 +185,10 @@ RSpec.describe Textus::Doctor do
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: proposals, kind: queue }
         entries:
-          - { key: proposals.people, path: proposals/people, zone: proposals, schema: person, owner: human:patrick, kind: nested}
+          - { key: proposals.people, path: data/proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

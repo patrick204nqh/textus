@@ -7,15 +7,15 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       FileUtils.mkdir_p(File.join(textus, "data", "feeds"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: feeds, kind: machine }
         entries:
           - key: feeds.foo
             kind: produced
-            path: feeds/foo.md
-            zone: feeds
+            path: data/feeds/foo.md
+            lane: feeds
             source:
-              from: handler
+              from: fetch
               handler: nonexistent_handler
       YAML
 
@@ -35,7 +35,7 @@ RSpec.describe Textus::Doctor::Check::IntakeRegistration do
       FileUtils.mkdir_p(File.join(textus, "steps", "fetch"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries: []
       YAML

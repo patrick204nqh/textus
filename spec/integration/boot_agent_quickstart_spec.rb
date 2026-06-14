@@ -12,7 +12,7 @@ RSpec.describe Textus::Boot do
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries: []
@@ -20,7 +20,7 @@ RSpec.describe Textus::Boot do
   end
 
   describe ".run / agent_quickstart" do
-    it "exposes agent_quickstart with read_verbs, write_verbs, writable_zones, propose_zone, latest_seq", :aggregate_failures do
+    it "exposes agent_quickstart with read_verbs, write_verbs, writable_lanes, propose_lane, latest_seq", :aggregate_failures do
       out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs).to be_a(Hash)
@@ -38,8 +38,8 @@ RSpec.describe Textus::Boot do
       # at call time — the boundary is self-documenting, not hidden by absence.
       expect(qs["write_verbs"]).to include("put", "propose", "accept", "reject")
       expect(qs["write_verbs"]).not_to include(a_string_matching(/--as=|--stdin/))
-      expect(qs["writable_zones"]).to include("proposals")
-      expect(qs["propose_zone"]).to eq("proposals")
+      expect(qs["writable_lanes"]).to include("proposals")
+      expect(qs["propose_lane"]).to eq("proposals")
       expect(qs).to have_key("latest_seq")
       expect(qs["latest_seq"]).to be_a(Integer)
     end
@@ -55,15 +55,15 @@ RSpec.describe Textus::Boot do
         version: textus/3
         roles:
           - { name: human, can: [author] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries: []
       YAML
       out = described_class.build(container: Textus::Store.new(root).container)
       qs = out["agent_quickstart"]
       expect(qs["write_verbs"]).to eq([])
-      expect(qs["writable_zones"]).to eq([])
-      expect(qs["propose_zone"]).to be_nil
+      expect(qs["writable_lanes"]).to eq([])
+      expect(qs["propose_lane"]).to be_nil
     end
   end
 end

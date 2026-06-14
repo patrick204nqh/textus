@@ -12,11 +12,11 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     FileUtils.mkdir_p(File.join(root, "data/working/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: working, kind: canon }
       entries:
-        - { key: working.notes, path: working/notes, zone: working, owner: human:self, kind: nested, nested: true }
-        - { key: working.archive, path: working/archive, zone: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.notes, path: working/notes, lane: working, owner: human:self, kind: nested, nested: true }
+        - { key: working.archive, path: working/archive, lane: working, owner: human:self, kind: nested, nested: true }
     YAML
     File.write(File.join(root, "data/working/notes/a.md"), "---\n_meta: {name: a, uid: aaaaaaaaaaaaaaaa}\n---\nA\n")
     File.write(File.join(root, "data/working/notes/b.md"), "---\n_meta: {name: b, uid: bbbbbbbbbbbbbbbb}\n---\nB\n")

@@ -13,6 +13,11 @@ RSpec.describe Textus::Layout do
     expect(described_class.audit_log(root)).to eq("/tmp/store/.textus/.run/audit/audit.log")
   end
 
+  it "exposes data paths under .textus/data" do
+    expect(described_class.data(root)).to eq("/tmp/store/.textus/data")
+    expect(described_class.data_lane(root, "knowledge")).to eq("/tmp/store/.textus/data/knowledge")
+  end
+
   it "exposes a .gitignore body that ignores the run subtree" do
     expect(described_class::GITIGNORE).to include(".run/\n")
     expect(described_class.gitignore_body).to include(".run/\n")

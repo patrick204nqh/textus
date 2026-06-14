@@ -8,20 +8,20 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
     FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts,  kind: machine }
       entries:
         - key: knowledge.src
           kind: leaf
-          path: knowledge/src.md
-          zone: knowledge
+          path: data/knowledge/src.md
+          lane: knowledge
         - key: artifacts.catalog
           kind: produced
-          path: artifacts/catalog.md
-          zone: artifacts
+          path: data/artifacts/catalog.md
+          lane: artifacts
           source:
-            from: command
+            from: external
             command: "rake catalog"
             sources: [knowledge.src]
     YAML

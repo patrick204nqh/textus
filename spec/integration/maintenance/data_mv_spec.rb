@@ -7,10 +7,10 @@ RSpec.describe Textus::Maintenance::DataMv do
     %w[data/scratch schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: scratch, kind: canon }
       entries:
-        - { key: scratch.note, path: scratch/note.md, zone: scratch, owner: human:self, kind: leaf }
+        - { key: scratch.note, path: scratch/note.md, lane: scratch, owner: human:self, kind: leaf }
     YAML
     File.write(File.join(root, "data/scratch/note.md"), "---\n_meta: {name: note, uid: nnnnnnnnnnnnnnnn}\n---\nN\n")
     FileUtils.mkdir_p(audit_dir_path(root))
@@ -47,9 +47,9 @@ RSpec.describe Textus::Maintenance::DataMv do
   it "applies the rename and rewrites manifest" do
     build_data_mv.call("scratch", "sandbox", dry_run: false)
     raw = YAML.safe_load_file(File.join(root, "manifest.yaml"))
-    zone_names = raw["zones"].map { |z| z["name"] }
-    expect(zone_names).to include("sandbox")
-    expect(zone_names).not_to include("scratch")
+    lane_names = raw["lanes"].map { |z| z["name"] }
+    expect(lane_names).to include("sandbox")
+    expect(lane_names).not_to include("scratch")
     expect(File.exist?(File.join(root, "data/sandbox/note.md"))).to be(true)
   end
 end

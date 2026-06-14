@@ -17,10 +17,10 @@ RSpec.describe Textus::Dispatcher do
       FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, kind: nested}
+          - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, kind: nested}
       YAML
       store.as("human").put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
     end
@@ -37,13 +37,13 @@ RSpec.describe Textus::Dispatcher do
       expect(via_invoke.body).to eq(direct.body)
     end
 
-    it "forwards kwargs to the verb's use case (Read::List#call(zone:))" do
+    it "forwards kwargs to the verb's use case (Read::List#call(lane:))" do
       rows = described_class.invoke(
-        :list, container: container, call: call, kwargs: { zone: "knowledge" }
+        :list, container: container, call: call, kwargs: { lane: "knowledge" }
       )
 
       expect(rows.map { |r| r["key"] }).to include("knowledge.notes.alpha")
-      expect(rows).to all(include("zone" => "knowledge"))
+      expect(rows).to all(include("lane" => "knowledge"))
     end
 
     it "raises UsageError for an unknown verb (delegated through fetch)" do

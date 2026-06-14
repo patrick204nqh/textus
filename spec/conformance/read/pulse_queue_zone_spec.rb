@@ -4,16 +4,16 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge proposals], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author] }
         - { name: agent, can: [propose] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: proposals.p1, path: proposals/p1.md, zone: proposals, owner: agent:self, kind: leaf }
+        - { key: proposals.p1, path: data/proposals/p1.md, lane: proposals, owner: agent:self, kind: leaf }
     YAML
   end
 
@@ -26,10 +26,10 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
   end
 
   it "returns [] cleanly when no queue zone is declared" do
-    s = store_from_manifest(File.join(tmp, "no-queue", ".textus"), zones: %w[knowledge], manifest: <<~YAML)
+    s = store_from_manifest(File.join(tmp, "no-queue", ".textus"), lanes: %w[knowledge], manifest: <<~YAML)
       version: textus/3
       roles: [{ name: human, can: [author] }]
-      zones: [{ name: knowledge, kind: canon }]
+      lanes: [{ name: knowledge, kind: canon }]
       entries: []
     YAML
     expect(s.as("human").pulse["pending_review"]).to eq([])

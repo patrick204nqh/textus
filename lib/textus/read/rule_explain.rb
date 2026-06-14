@@ -21,7 +21,6 @@ module Textus
 
       def initialize(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         @manifest = container.manifest
-        @schemas  = container.schemas
       end
 
       REGISTRY = Textus::Manifest::Schema::FIELD_REGISTRY
@@ -63,16 +62,16 @@ module Textus
       def explain(key)
         matching = @manifest.rules.explain(key)
         winners  = @manifest.rules.for(key)
-        factory  = Textus::Domain::Policy::GuardFactory.new(manifest: @manifest, schemas: @schemas)
-
         {
           key: key,
           matched_blocks: matching.map do |b|
             { match: b.match }.merge(DETAIL_FIELDS.to_h { |f| [f, !b.public_send(f).nil?] })
           end,
           effective: EFFECTIVE_FIELDS.to_h { |f| [f, effective_value(f, winners.public_send(f))] },
-          guards: Textus::Domain::Policy::BaseGuards::BASE.keys.to_h do |transition|
-            [transition, factory.for(transition, key).predicates.map(&:name)]
+          guards: Textus::Dispatch::Auth::FLOOR.keys.to_h do |action|
+            floor = Textus::Dispatch::Auth::FLOOR.fetch(action, [])
+            rule = Array(@manifest.rules.for(key).guard&.dig(action.to_s))
+            [action, { floor: floor, rule: rule }]
           end,
         }
       end
@@ -83,7 +82,7 @@ module Textus
         case field
         when :retention         then retention_hash(value, string_keys: false)
         when :react             then value.to_h
-        when :handler_allowlist then value.handlers
+        when :handler_permit then value.handlers
         else value
         end
       end

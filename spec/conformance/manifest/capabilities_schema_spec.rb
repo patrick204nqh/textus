@@ -12,7 +12,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: identity, kind: canon }
       entries: []
     YAML
@@ -24,7 +24,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       version: textus/3
       roles:
         - { name: human, can: [teleport] }
-      zones:
+      lanes:
         - { name: identity, kind: canon }
       entries: []
     YAML
@@ -40,7 +40,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
         version: textus/3
         roles:
           - { name: automation, can: [#{old}, converge] }
-        zones:
+        lanes:
           - { name: feeds, kind: machine }
         entries: []
       YAML
@@ -56,8 +56,8 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
     hints.each do |old, hint|
       yaml = <<~YAML
         version: textus/3
-        zones: [{ name: knowledge, kind: canon }]
-        entries: [{ key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }]
+        lanes: [{ name: knowledge, kind: canon }]
+        entries: [{ key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf }]
         rules:
           - { match: knowledge.x, #{old}: {} }
       YAML
@@ -72,7 +72,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       roles:
         - { name: human, can: [author] }
         - { name: agent, can: [author] }
-      zones:
+      lanes:
         - { name: identity, kind: canon }
       entries: []
     YAML
@@ -84,7 +84,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       version: textus/3
       roles:
         - { name: human, can: [author], color: blue }
-      zones:
+      lanes:
         - { name: identity, kind: canon }
       entries: []
     YAML
@@ -96,7 +96,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
       version: textus/3
       roles:
         - { name: importer, can: [ingest] }
-      zones:
+      lanes:
         - { name: feeds, kind: machine }
       entries: []
     YAML
@@ -107,7 +107,7 @@ RSpec.describe "Textus::Manifest::Schema role + capability declarations" do
   it "still parses manifests with no roles: block (defaults apply)" do
     yaml = <<~YAML
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
       entries: []
     YAML

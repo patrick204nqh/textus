@@ -49,7 +49,7 @@ module Textus
       end
 
       def evaluator
-        @evaluator ||= Textus::Domain::Freshness::Evaluator.new(
+        @evaluator ||= Textus::Core::Freshness::Evaluator.new(
           manifest: @manifest, file_stat: @file_stat, clock: @call,
         )
       end

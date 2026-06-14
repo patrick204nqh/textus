@@ -85,7 +85,7 @@ Storage::FileStore (bytes-only port: read/write/delete/
 Manifest           (Data, Resolver, Policy, Rules)
 Schemas            (eager-load cache)
 Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
-        BuildLock,Queue,ProduceOnWriteSubscriber,SentinelStore}
+        BuildLock,Queue,SentinelStore,WatcherLock}
 Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
         Signature,Builtin,ErrorLog}
 Entry::{Markdown,Json,Yaml,Text}  (format strategies)
@@ -123,7 +123,7 @@ reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
 
 Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
 
-- `Produce::Engine` — runs the produce pipeline that `drain`/`serve` invoke via the `materialize` job handler; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. Reactive re-produce is enqueued as `materialize` jobs by `Ports::ProduceOnWriteSubscriber` and run by a worker (no in-process thread runner).
+- `Produce::Engine` — runs the produce pipeline that `drain`/`serve` invoke via the `materialize` job handler; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. Reactive re-produce is emitted by dispatch write actions (`Dispatch::Actions::WriteAction`) as queued `materialize` jobs and run by a worker (no in-process thread runner).
 - `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
 ## Container
@@ -150,8 +150,9 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 | `Ports::Clock` | Supplies `Time.now` — a module-function so tests can swap it without dependency injection boilerplate. |
 | `Ports::Publisher` | Copies a built artifact to a repo-relative consumer path and writes a sentinel so the next publish can confirm the target is managed. |
 | `Ports::BuildLock` | Process-exclusive `flock` guard over the produce pipeline. Raises `BuildInProgress` if a build is already running. |
-| `Ports::ProduceOnWriteSubscriber` | Pub-sub listener on `entry_written`/`entry_deleted`/`entry_renamed`; enqueues `materialize` jobs onto `Ports::Queue` for reactive re-produce after any write/delete/rename. |
+| `Ports::Queue` | Persistent job queue used by `drain`/`watch` workers; tracks ready/leased/done/failed jobs and powers async dispatch actions (`materialize`, `observe`). |
 | `Ports::SentinelStore` | Reads and writes the per-target sentinel file that `Publisher` uses to detect unmanaged overwrites. |
+| `Ports::WatcherLock` | Single-watcher `flock` guard used by `Maintenance::Watch` to ensure only one watcher loop is active per store root. |
 
 Application use cases access ports only through `Container` fields — never through the raw `Store`.
 
@@ -209,7 +210,7 @@ Because the read is always pure, every caller — interactive reads, dashboards,
 
 The produce pipeline handles two concerns — **acquire** (pull live data via an intake handler) and **render** (template-driven artifact publish) — unified under `Produce::Engine`.
 
-`Produce::Engine.converge(container:, call:, keys:)` is the entry point the `materialize` job handler calls. Both the batch path (`drain`/`serve` seed jobs) and the reactive path (`Ports::ProduceOnWriteSubscriber` enqueues `materialize` jobs on `entry_written`/`entry_deleted`/`entry_renamed`) flow through the queue worker into `converge`.
+`Produce::Engine.converge(container:, call:, keys:)` is the entry point the `materialize` job handler calls. Both the batch path (`drain`/`serve` seed jobs) and the reactive path (dispatch write actions enqueue `materialize` jobs on `entry.written`) flow through the queue worker into `converge`.
 
 For each key, `Engine#produce_one`:
 

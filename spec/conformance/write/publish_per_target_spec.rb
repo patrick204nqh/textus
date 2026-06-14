@@ -5,19 +5,19 @@ RSpec.describe "publish per target (ADR 0094)" do
 
   describe "one publish path renders per target" do
     let(:store) do
-      store_from_manifest(root, zones: %w[knowledge artifacts],
+      store_from_manifest(root, lanes: %w[knowledge artifacts],
                                 manifest: <<~YAML,
                                   version: textus/3
-                                  zones:
+                                  lanes:
                                     - { name: knowledge, kind: canon }
                                     - { name: artifacts, kind: machine }
                                   entries:
-                                    - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+                                    - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
                                     - key: artifacts.cat
                                       kind: produced
-                                      path: artifacts/cat.json
-                                      zone: artifacts
-                                      source: { from: project, select: [knowledge.a] }
+                                      path: data/artifacts/cat.json
+                                      lane: artifacts
+                                      source: { from: derive, select: [knowledge.a] }
                                       publish:
                                         - { to: OUT.md, template: rows.mustache }
                                         - { to: out.json }
@@ -47,16 +47,16 @@ RSpec.describe "publish per target (ADR 0094)" do
 
   describe "json leaf verbatim publish (Base#external?)" do
     let(:store) do
-      store_from_manifest(root, zones: %w[knowledge],
+      store_from_manifest(root, lanes: %w[knowledge],
                                 manifest: <<~YAML,
                                   version: textus/3
-                                  zones:
+                                  lanes:
                                     - { name: knowledge, kind: canon }
                                   entries:
                                     - key: knowledge.cfg
                                       kind: leaf
-                                      path: knowledge/cfg.json
-                                      zone: knowledge
+                                      path: data/knowledge/cfg.json
+                                      lane: knowledge
                                       publish:
                                         - { to: out.json }
                                 YAML

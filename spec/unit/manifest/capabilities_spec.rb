@@ -61,7 +61,7 @@ RSpec.describe Textus::Manifest::Capabilities do
     it "flows the default mapping into Data#role_caps" do
       m = parse(<<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
           - { name: artifacts,   kind: machine }
@@ -80,7 +80,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         roles:
           - { name: human,      can: [author, propose] }
           - { name: automation, can: [converge] }
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: artifacts,   kind: machine }
         entries: []
@@ -96,7 +96,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         version: textus/3
         roles:
           - { name: human, can: [author, teleport] }
-        zones:
+        lanes:
           - { name: identity, kind: canon }
         entries: []
       YAML
@@ -108,7 +108,7 @@ RSpec.describe Textus::Manifest::Capabilities do
         version: textus/3
         roles:
           - { name: human, can: [propose, author, keep, converge] }
-        zones:
+        lanes:
           - { name: identity, kind: canon }
         entries: []
       YAML

@@ -54,7 +54,8 @@ module Textus
           raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
           primary_ext = Textus::Entry.for_format(entry.format).extensions.first
-          path = File.join(@data.root, "data", entry.path, *remaining) + primary_ext
+          base = Textus::Key::Path.normalize_relative_path(entry.path)
+          path = File.join(@data.root, base, *remaining) + primary_ext
           Resolution.new(entry: entry, path: path, remaining: remaining)
         end
       end
@@ -73,7 +74,7 @@ module Textus
         # addressable store keys in the public `list` surface.
         return [] if entry.publish_mode.keyless? && !include_keyless
 
-        base = File.join(@data.root, "data", entry.path)
+        base = File.join(@data.root, Textus::Key::Path.normalize_relative_path(entry.path))
         return [] unless File.directory?(base)
 
         Dir.glob(File.join(base, nested_glob(entry.format)))

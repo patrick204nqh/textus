@@ -6,19 +6,19 @@ RSpec.describe Textus::Read::Freshness do
   include_context "textus_store_fixture"
 
   let!(:store) do
-    store_from_manifest(root, zones: %w[feeds review],
+    store_from_manifest(root, lanes: %w[feeds review],
                               files: {
                                 "data/feeds/doc.md" => "---\n---\nx\n",
                                 "data/review/old.md" => "---\n---\nx\n",
                               },
                               manifest: <<~YAML)
                                 version: textus/3
-                                zones:
+                                lanes:
                                   - { name: feeds, kind: machine }
                                   - { name: review, kind: canon }
                                 entries:
-                                  - { key: feeds.doc, kind: produced, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
-                                  - { key: review.old, path: review/old.md, zone: review, kind: leaf }
+                                  - { key: feeds.doc, kind: produced, path: data/feeds/doc.md, lane: feeds, source: { from: fetch, handler: h, ttl: 1h } }
+                                  - { key: review.old, path: review/old.md, lane: review, kind: leaf }
                                 rules:
                                   - { match: "review.*", retention: { ttl: 1d, action: archive } }
                               YAML

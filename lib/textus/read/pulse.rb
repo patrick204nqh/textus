@@ -59,10 +59,10 @@ module Textus
       def review_keys
         # The single queue zone (kind: queue; schema guarantees ≤1), derived
         # from the manifest rather than a hardcoded zone name (ADR 0034 / D1).
-        queue = @manifest.policy.queue_zone
+        queue = @manifest.policy.queue_lane
         return [] unless queue
 
-        rows = Read::List.new(container: @container).call(zone: queue)
+        rows = Read::List.new(container: @container).call(lane: queue)
         rows.map { |r| r.is_a?(Hash) ? (r["key"] || r[:key]) : r }
       end
 

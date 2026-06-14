@@ -15,7 +15,7 @@ module Textus
         planner = Textus::Jobs::Planner.new(container: @container)
         jobs = planner.plan(
           triggers: [{ "type" => "schedule.tick" }],
-          scope: { "prefix" => nil, "zone" => nil },
+          scope: { "prefix" => nil, "lane" => nil },
           role: Textus::Role::AUTOMATION,
         )
         jobs.each { |j| @queue.enqueue(j) }

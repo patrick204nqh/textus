@@ -22,35 +22,35 @@ RSpec.describe Textus::Boot do
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: identity,  kind: canon,   desc: "slow-changing identity; human-only writes" }
         - { name: knowledge, kind: canon,   desc: "active project state; humans, AI, and scripts share this surface" }
         - { name: artifacts, kind: machine, desc: "computed outputs + external feeds" }
         - { name: proposals, kind: queue }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, owner: human:self, kind: leaf}
+        - { key: identity.self, path: identity/self.md, lane: identity, owner: human:self, kind: leaf}
 
         - key: knowledge.notes
           kind: nested
-          path: knowledge/notes
-          zone: knowledge
+          path: data/knowledge/notes
+          lane: knowledge
           nested: true
         - key: artifacts.feed
           kind: produced
-          path: artifacts/feed.md
-          zone: artifacts
+          path: data/artifacts/feed.md
+          lane: artifacts
           owner: automation:local
           source:
-            from: handler
+            from: fetch
             handler: demo-action
             config: { foo: 1 }
         - key: artifacts.report
           kind: produced
-          path: artifacts/report.json
-          zone: artifacts
+          path: data/artifacts/report.json
+          lane: artifacts
           owner: automation:auto
           source:
-            from: project
+            from: derive
             select: [knowledge.notes]
             pluck: "*"
           publish:
@@ -129,38 +129,38 @@ RSpec.describe Textus::Boot do
     expect(env["store_root"]).to eq(root)
   end
 
-  it "lists zones with writers and purposes derived from manifest desc:" do
+  it "lists lanes with writers and purposes derived from manifest desc:" do
     env = described_class.build(container: store.container)
-    names = env["zones"].map { |z| z["name"] }
+    names = env["lanes"].map { |z| z["name"] }
     expect(names).to contain_exactly("identity", "knowledge", "artifacts", "proposals")
-    identity = env["zones"].find { |z| z["name"] == "identity" }
+    identity = env["lanes"].find { |z| z["name"] == "identity" }
     expect(identity["writers"]).to eq(["human"])
     expect(identity["purpose"]).to include("human-only")
 
-    knowledge = env["zones"].find { |z| z["name"] == "knowledge" }
+    knowledge = env["lanes"].find { |z| z["name"] == "knowledge" }
     expect(knowledge["writers"]).to eq(["human"])
     expect(knowledge).to have_key("purpose")
 
-    proposals = env["zones"].find { |z| z["name"] == "proposals" }
+    proposals = env["lanes"].find { |z| z["name"] == "proposals" }
     expect(proposals["writers"]).to contain_exactly("human", "agent")
 
-    artifacts = env["zones"].find { |z| z["name"] == "artifacts" }
+    artifacts = env["lanes"].find { |z| z["name"] == "artifacts" }
     expect(artifacts["writers"]).to eq(["automation"])
   end
 
-  it "omits purpose for unknown zone names" do
+  it "omits purpose for unknown lane names" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: identity, kind: canon }
         - { name: weird,    kind: canon }
       entries:
-        - { key: identity.self, path: identity/self.md, zone: identity, kind: leaf}
+        - { key: identity.self, path: identity/self.md, lane: identity, kind: leaf}
 
     YAML
     s = Textus::Store.new(root)
     env = described_class.build(container: s.container)
-    weird = env["zones"].find { |z| z["name"] == "weird" }
+    weird = env["lanes"].find { |z| z["name"] == "weird" }
     expect(weird).not_to have_key("purpose")
   end
 
@@ -234,7 +234,7 @@ RSpec.describe Textus::Boot do
       result = Textus::Boot.build(container: store.container)
       expect(result["protocol"]).to be_a(String).and eq("textus/3")
       expect(result["store_root"]).to be_a(String)
-      expect(result["zones"]).to be_a(Array)
+      expect(result["lanes"]).to be_a(Array)
       expect(result["entries"]).to be_a(Array)
       expect(result["hooks"]).to be_a(Hash)
       expect(result["write_flows"]).to be_a(Hash)
@@ -251,7 +251,7 @@ RSpec.describe Textus::Boot do
 
     it "lean keeps orientation essentials and drops the heavy sections" do
       out = Textus::Boot.build(container: store.container, lean: true)
-      expect(out).to include("protocol", "store_root", "zones", "agent_quickstart", "contract_etag")
+      expect(out).to include("protocol", "store_root", "lanes", "agent_quickstart", "contract_etag")
       expect(out).not_to include("entries", "hooks", "cli_verbs", "agent_protocol", "write_flows")
     end
   end
@@ -260,7 +260,7 @@ RSpec.describe Textus::Boot do
     it "falls back to default role names when roles: block is omitted" do
       yaml = <<~YAML
         version: textus/3
-        zones:
+        lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
           - { name: artifacts,   kind: machine }
@@ -279,20 +279,20 @@ RSpec.describe Textus::Boot do
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(["boot", "--output=json"],
-                           stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
+    code = Textus::Surfaces::CLI.run(["boot", "--output=json"],
+                                     stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
     expect(parsed["protocol"]).to eq("textus/3")
-    expect(parsed["zones"].length).to eq(4)
+    expect(parsed["lanes"].length).to eq(4)
     expect(parsed["cli_verbs"]).to be_an(Array)
   end
 
   it "the CLI --lean flag yields the lean envelope" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(["boot", "--lean", "--output=json"],
-                           stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
+    code = Textus::Surfaces::CLI.run(["boot", "--lean", "--output=json"],
+                                     stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
     expect(parsed).to include("agent_quickstart", "contract_etag")

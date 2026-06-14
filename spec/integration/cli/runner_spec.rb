@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::CLI::Runner do
+RSpec.describe Textus::Surfaces::CLI::Runner do
   include_context "textus_store_fixture"
   include_context "cli invocation"
 
@@ -8,25 +8,25 @@ RSpec.describe Textus::CLI::Runner do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: knowledge/note.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf }
     YAML
     File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
   end
 
   it "generates a top-level Verb subclass for the where contract" do
-    klass = Textus::CLI.verbs["where"]
-    expect(klass).to be < Textus::CLI::Verb
+    klass = Textus::Surfaces::CLI.verbs["where"]
+    expect(klass).to be < Textus::Surfaces::CLI::Verb
     expect(klass.command_name).to eq("where")
     expect(klass.parent_group).to be_nil
   end
 
   it "is idempotent — repeated CLI.verbs calls do not create duplicate where commands" do
-    Textus::CLI.verbs
-    Textus::CLI.verbs
-    wheres = Textus::CLI::Verb.descendants.select do |k|
+    Textus::Surfaces::CLI.verbs
+    Textus::Surfaces::CLI.verbs
+    wheres = Textus::Surfaces::CLI::Verb.descendants.select do |k|
       k.command_name == "where" && k.parent_group.nil?
     end
     expect(wheres.size).to eq(1)
@@ -38,7 +38,7 @@ RSpec.describe Textus::CLI::Runner do
     payload = JSON.parse(stdout.string)
     expect(payload).to include(
       "key" => "knowledge.note",
-      "zone" => "knowledge",
+      "lane" => "knowledge",
     )
     expect(payload["path"]).to end_with("data/knowledge/note.md")
     expect(payload).to have_key("owner")
@@ -52,19 +52,19 @@ RSpec.describe Textus::CLI::Runner do
 
   describe "command_name derivation (ADR 0064)" do
     it "derives command_name from the contract cli_leaf when not set explicitly" do
-      klass = Class.new(Textus::CLI::Runner::Base)
+      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
       klass.spec = Textus::Read::Get.contract # cli_path "get"
       expect(klass.command_name).to eq("get")
     end
 
     it "derives the leaf for a grouped verb" do
-      klass = Class.new(Textus::CLI::Runner::Base)
+      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
       klass.spec = Textus::Read::Uid.contract # cli "key uid"
       expect(klass.command_name).to eq("uid")
     end
 
     it "still honors an explicit command_name" do
-      klass = Class.new(Textus::CLI::Runner::Base)
+      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
       klass.spec = Textus::Read::Get.contract
       klass.command_name "custom"
       expect(klass.command_name).to eq("custom")
@@ -95,7 +95,7 @@ RSpec.describe Textus::CLI::Runner do
       allow(verb_instance).to receive(:flag_values).and_return({})
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
-      Textus::CLI::Runner.dispatch(verb_instance, nil, spec)
+      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
       expect(emitted).to eq({ "cli_shaped" => "raw_value" })
     end
 
@@ -121,7 +121,7 @@ RSpec.describe Textus::CLI::Runner do
       allow(verb_instance).to receive(:flag_values).and_return({})
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
-      Textus::CLI::Runner.dispatch(verb_instance, nil, spec)
+      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
       expect(emitted).to eq({ "from_default" => "raw_value" })
     end
     # rubocop:enable RSpec/VerifiedDoubles
@@ -147,17 +147,17 @@ RSpec.describe Textus::CLI::Runner do
 
     it "passes the result to a one-parameter :cli view (inputs ignored)" do
       spec = spec_with(cli: ->(r, _i) { { "wrapped" => r } })
-      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("wrapped" => "X")
+      expect(Textus::Surfaces::CLI::Runner.shape(spec, "X", {})).to eq("wrapped" => "X")
     end
 
     it "passes (result, inputs) to a two-parameter :cli view, keyed by arg name" do
       spec = spec_with(cli: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
-      expect(Textus::CLI::Runner.shape(spec, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
+      expect(Textus::Surfaces::CLI::Runner.shape(spec, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
     end
 
     it "falls back to the default view when there is no :cli view" do
       spec = spec_with(cli: nil)
-      expect(Textus::CLI::Runner.shape(spec, "X", {})).to eq("X")
+      expect(Textus::Surfaces::CLI::Runner.shape(spec, "X", {})).to eq("X")
     end
   end
 
@@ -170,7 +170,7 @@ RSpec.describe Textus::CLI::Runner do
     end
 
     it "no longer keeps a hand-authored uid class" do
-      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
+      expect(Textus::Surfaces::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
     end
   end
 
@@ -185,7 +185,7 @@ RSpec.describe Textus::CLI::Runner do
     end
 
     it "no longer keeps a hand-authored blame class" do
-      expect(Textus::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
+      expect(Textus::Surfaces::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
     end
   end
 end

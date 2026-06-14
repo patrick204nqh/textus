@@ -7,15 +7,15 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge],
+      lanes: %w[knowledge],
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
           - key: skills
-            path: knowledge/skills
-            zone: knowledge
+            path: data/knowledge/skills
+            lane: knowledge
             owner: human:self
             kind: nested
             ignore:

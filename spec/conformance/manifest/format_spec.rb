@@ -11,7 +11,7 @@ RSpec.describe "Manifest format: field validation" do
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
@@ -20,34 +20,34 @@ RSpec.describe "Manifest format: field validation" do
   end
 
   it "rejects .md path with format: json" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, format: json, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, format: json, kind: leaf }")
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /does not match declared format/)
   end
 
   it "infers format: json from .json extension when not declared" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.json, zone: knowledge, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.json, lane: knowledge, kind: leaf }")
     m = Textus::Manifest.load(root)
     expect(m.data.entries.first.format).to eq("json")
   end
 
   it "infers format: yaml from .yaml" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.yaml, zone: knowledge, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.yaml, lane: knowledge, kind: leaf }")
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("yaml")
   end
 
   it "infers format: yaml from .yml" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.yml, zone: knowledge, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.yml, lane: knowledge, kind: leaf }")
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("yaml")
   end
 
   it "infers format: text from .txt" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.txt, zone: knowledge, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.txt, lane: knowledge, kind: leaf }")
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("text")
   end
 
   it "defaults to markdown when no extension on leaf" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x, zone: knowledge, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x, lane: knowledge, kind: leaf }")
     expect(Textus::Manifest.load(root).data.entries.first.format).to eq("markdown")
   end
 
@@ -55,22 +55,22 @@ RSpec.describe "Manifest format: field validation" do
     write_manifest(<<~YAML)
       - key: artifacts.x
         kind: produced
-        path: artifacts/x.json
-        zone: artifacts
-        source: { from: project, select: [knowledge] }
+        path: data/artifacts/x.json
+        lane: artifacts
+        source: { from: derive, select: [knowledge] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error
   end
 
   it "rejects text format with a schema" do
-    write_manifest("  - { key: knowledge.x, path: knowledge/x.txt, zone: knowledge, format: text, schema: foo, kind: leaf }")
+    write_manifest("  - { key: knowledge.x, path: data/knowledge/x.txt, lane: knowledge, format: text, schema: foo, kind: leaf }")
     expect { Textus::Manifest.load(root) }
       .to raise_error(Textus::UsageError, /text format must not declare a schema/)
   end
 
   it "globs both .yaml and .yml for nested yaml entries" do
     write_manifest(<<~YAML)
-      - { key: knowledge.cfg, path: knowledge/cfg, zone: knowledge, format: yaml, kind: nested }
+      - { key: knowledge.cfg, path: data/knowledge/cfg, lane: knowledge, format: yaml, kind: nested }
     YAML
     base = File.join(root, "data/knowledge/cfg")
     FileUtils.mkdir_p(base)
@@ -84,7 +84,7 @@ RSpec.describe "Manifest format: field validation" do
 
   it "resolves nested json paths with .json extension" do
     write_manifest(<<~YAML)
-      - { key: knowledge.cfg, path: knowledge/cfg, zone: knowledge, format: json, kind: nested }
+      - { key: knowledge.cfg, path: data/knowledge/cfg, lane: knowledge, format: json, kind: nested }
     YAML
     manifest = Textus::Manifest.load(root)
     path = manifest.resolver.resolve("knowledge.cfg.alpha").path

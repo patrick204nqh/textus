@@ -4,42 +4,42 @@ RSpec.describe Textus::Manifest::Entry::Parser do
   describe ".call" do
     it "extracts the required fields" do
       entry = described_class.call(
-        { "key" => "working.foo", "path" => "foo.md", "zone" => "working", "kind" => "leaf" },
+        { "key" => "working.foo", "path" => "foo.md", "lane" => "working", "kind" => "leaf" },
       )
       expect(entry.key).to eq("working.foo")
       expect(entry.path).to eq("foo.md")
-      expect(entry.zone).to eq("working")
+      expect(entry.lane).to eq("working")
       expect(entry).to be_a(Textus::Manifest::Entry::Leaf)
       expect(entry.format).to eq("markdown")
     end
 
     it "raises when key is missing" do
-      expect { described_class.call({ "path" => "foo.md", "zone" => "working" }) }
+      expect { described_class.call({ "path" => "foo.md", "lane" => "working" }) }
         .to raise_error(Textus::UsageError, /manifest entry missing key/)
     end
 
     it "raises when path is missing" do
-      expect { described_class.call({ "key" => "working.foo", "zone" => "working" }) }
+      expect { described_class.call({ "key" => "working.foo", "lane" => "working" }) }
         .to raise_error(Textus::UsageError, /missing path/)
     end
 
-    it "raises when zone is missing" do
+    it "raises when lane is missing" do
       expect { described_class.call({ "key" => "working.foo", "path" => "foo.md" }) }
-        .to raise_error(Textus::UsageError, /missing zone/)
+        .to raise_error(Textus::UsageError, /missing lane/)
     end
 
     it "raises when kind is missing" do
       expect do
-        described_class.call({ "key" => "working.foo", "path" => "foo.md", "zone" => "working" })
+        described_class.call({ "key" => "working.foo", "path" => "foo.md", "lane" => "working" })
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
 
     it "extracts source: from project (projection)" do
       entry = described_class.call(
         {
-          "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+          "key" => "output.foo", "path" => "foo.md", "lane" => "output",
           "kind" => "produced",
-          "source" => { "from" => "project", "select" => ["working.bar"] }
+          "source" => { "from" => "derive", "select" => ["working.bar"] }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Produced)
@@ -50,9 +50,9 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     it "extracts source: from command (external)" do
       entry = described_class.call(
         {
-          "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+          "key" => "output.foo", "path" => "foo.md", "lane" => "output",
           "kind" => "produced",
-          "source" => { "from" => "command", "command" => "echo hi" }
+          "source" => { "from" => "external", "command" => "echo hi" }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Produced)
@@ -63,7 +63,7 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       expect do
         described_class.call(
           {
-            "key" => "output.foo", "path" => "foo.md", "zone" => "output",
+            "key" => "output.foo", "path" => "foo.md", "lane" => "output",
             "kind" => "produced",
             "source" => { "from" => "weird" }
           },
@@ -74,9 +74,9 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     it "extracts source: from handler config" do
       entry = described_class.call(
         {
-          "key" => "intake.foo", "path" => "foo.md", "zone" => "intake",
+          "key" => "intake.foo", "path" => "foo.md", "lane" => "intake",
           "kind" => "produced",
-          "source" => { "from" => "handler", "handler" => "pull_foo", "config" => { "url" => "x" } }
+          "source" => { "from" => "fetch", "handler" => "pull_foo", "config" => { "url" => "x" } }
         },
       )
       expect(entry).to be_a(Textus::Manifest::Entry::Produced)
@@ -85,32 +85,32 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     end
 
     it "parses an explicit leaf row" do
-      e = described_class.call({ "key" => "z.a", "path" => "z/a.md", "zone" => "z", "kind" => "leaf" })
+      e = described_class.call({ "key" => "z.a", "path" => "z/a.md", "lane" => "z", "kind" => "leaf" })
       expect(e).to be_a(Textus::Manifest::Entry::Leaf)
     end
 
     it "parses an explicit nested row" do
-      e = described_class.call({ "key" => "z.n", "path" => "z/n", "zone" => "z", "kind" => "nested" })
+      e = described_class.call({ "key" => "z.n", "path" => "z/n", "lane" => "z", "kind" => "nested" })
       expect(e).to be_a(Textus::Manifest::Entry::Nested)
     end
 
     it "parses an explicit derived/projection row" do
-      e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "kind" => "produced",
-                                 "source" => { "from" => "project", "select" => "z.n" } })
+      e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "lane" => "o", "kind" => "produced",
+                                 "source" => { "from" => "derive", "select" => "z.n" } })
       expect(e).to be_a(Textus::Manifest::Entry::Produced)
       expect(e).to be_projection
     end
 
     it "parses an explicit intake row" do
-      e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "zone" => "i", "kind" => "produced",
-                                 "source" => { "from" => "handler", "handler" => "h" } })
+      e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "lane" => "i", "kind" => "produced",
+                                 "source" => { "from" => "fetch", "handler" => "h" } })
       expect(e).to be_a(Textus::Manifest::Entry::Produced)
       expect(e.handler).to eq("h")
     end
 
     it "raises on unknown kind" do
       expect do
-        described_class.call({ "key" => "z.a", "path" => "z/a.md", "zone" => "z", "kind" => "bogus" })
+        described_class.call({ "key" => "z.a", "path" => "z/a.md", "lane" => "z", "kind" => "bogus" })
       end.to raise_error(Textus::BadManifest, /unknown kind/)
     end
   end
@@ -118,15 +118,15 @@ RSpec.describe Textus::Manifest::Entry::Parser do
   describe "kind: is now required (no inference fallback)" do
     it "raises BadManifest when kind: is absent, regardless of other fields" do
       expect do
-        described_class.call({ "key" => "z.n", "path" => "z/n", "zone" => "z", "nested" => true })
+        described_class.call({ "key" => "z.n", "path" => "z/n", "lane" => "z", "nested" => true })
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
 
       expect do
-        described_class.call({ "key" => "o.x", "path" => "o/x.md", "zone" => "o", "template" => "t.mustache" })
+        described_class.call({ "key" => "o.x", "path" => "o/x.md", "lane" => "o", "template" => "t.mustache" })
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
 
       expect do
-        described_class.call({ "key" => "z.a", "path" => "z/a.md", "zone" => "z" })
+        described_class.call({ "key" => "z.a", "path" => "z/a.md", "lane" => "z" })
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
   end

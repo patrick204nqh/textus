@@ -6,7 +6,6 @@ module Textus
     # (the structured payload base) or an Array of rows. Replaces the
     # :transform_rows RPC. (Phase 2 will widen `rows:` to a named `inputs:` map.)
     class Transform < Base
-      def self.kind = :transform
       def self.required_kwargs = %i[rows config]
     end
   end

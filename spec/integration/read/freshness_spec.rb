@@ -10,19 +10,19 @@ RSpec.describe Textus::Read::Freshness do
   let!(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge identity],
+      lanes: %w[knowledge identity],
       files: { "hooks/noop.rb" => "" },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: machine }
           - { name: identity,   kind: canon }
         entries:
-          - { key: knowledge.doc,   path: knowledge/doc.md,   zone: knowledge, kind: produced, source: { from: handler, handler: noop, ttl: 1h } }
+          - { key: knowledge.doc,   path: data/knowledge/doc.md,   lane: knowledge, kind: produced, source: { from: fetch, handler: noop, ttl: 1h } }
 
-          - { key: knowledge.stale, path: knowledge/stale.md, zone: knowledge, kind: produced, source: { from: handler, handler: noop, ttl: 1s } }
+          - { key: knowledge.stale, path: data/knowledge/stale.md, lane: knowledge, kind: produced, source: { from: fetch, handler: noop, ttl: 1s } }
 
-          - { key: identity.note,    path: identity/note.md,    zone: identity, kind: leaf}
+          - { key: identity.note,    path: identity/note.md,    lane: identity, kind: leaf}
       YAML
     )
   end
@@ -38,7 +38,7 @@ RSpec.describe Textus::Read::Freshness do
     MD
   end
 
-  it "returns one row per manifest entry with :status, :key, :zone" do
+  it "returns one row per manifest entry with :status, :key, :lane" do
     write_envelope("knowledge/doc.md",   last_fetched_at: Time.now.utc.iso8601)
     write_envelope("knowledge/stale.md", last_fetched_at: (Time.now.utc - 3600).iso8601)
 
@@ -48,7 +48,7 @@ RSpec.describe Textus::Read::Freshness do
     keys = rows.map { |r| r[:key] }
     expect(keys).to contain_exactly("knowledge.doc", "knowledge.stale", "identity.note")
 
-    expect(rows).to all(include(:status, :key, :zone))
+    expect(rows).to all(include(:status, :key, :lane))
 
     by_key = rows.to_h { |r| [r[:key], r] }
     expect(by_key["knowledge.doc"][:status]).to eq(:fresh)
@@ -58,7 +58,7 @@ RSpec.describe Textus::Read::Freshness do
 
   it "filters by zone" do
     ops = store.as("human")
-    rows = ops.freshness(zone: "identity")
+    rows = ops.freshness(lane: "identity")
 
     expect(rows.map { |r| r[:key] }).to eq(["identity.note"])
   end

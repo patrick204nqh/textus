@@ -4,19 +4,19 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge artifacts],
+    store_from_manifest(root, lanes: %w[knowledge artifacts],
                               manifest: <<~YAML,
                                 version: textus/3
-                                zones:
+                                lanes:
                                   - { name: knowledge, kind: canon }
                                   - { name: artifacts, kind: machine }
                                 entries:
-                                  - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+                                  - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
                                   - key: artifacts.data
                                     kind: produced
-                                    path: artifacts/data.json
-                                    zone: artifacts
-                                    source: { from: project, select: [knowledge.a], pluck: [key] }
+                                    path: data/artifacts/data.json
+                                    lane: artifacts
+                                    source: { from: derive, select: [knowledge.a], pluck: [key] }
                               YAML
                               files: { "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n" })
   end

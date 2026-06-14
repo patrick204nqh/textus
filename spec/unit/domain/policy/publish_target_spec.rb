@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::PublishTarget do
+RSpec.describe Textus::Manifest::Policy::PublishTarget do
   it "parses a to-target with a template + inject_boot" do
     t = described_class.new("to" => "CLAUDE.md", "template" => "c.mustache", "inject_boot" => true)
     expect(t.to_target?).to be(true)

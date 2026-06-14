@@ -8,33 +8,33 @@ RSpec.describe Textus::Produce::Engine do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge feeds],
+      lanes: %w[knowledge feeds],
       files: {
         "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
         "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: feeds, kind: machine }
         entries:
-          - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+          - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
           - key: feeds.catalog
             kind: produced
-            path: feeds/catalog.json
-            zone: feeds
+            path: data/feeds/catalog.json
+            lane: feeds
             source:
-              from: project
+              from: derive
               select: "knowledge"
               pluck: [title]
             publish:
               - { to: CATALOG.md, template: catalog.mustache }
           - key: feeds.ext
             kind: produced
-            path: feeds/ext.md
-            zone: feeds
-            source: { from: command, command: "true", sources: ["knowledge.*"] }
+            path: data/feeds/ext.md
+            lane: feeds
+            source: { from: external, command: "true", sources: ["knowledge.*"] }
       YAML
     )
   end
@@ -58,7 +58,7 @@ RSpec.describe Textus::Produce::Engine do
     let(:store) do
       store_from_manifest(
         root,
-        zones: %w[working],
+        lanes: %w[working],
         files: {
           "data/working/skills/s/commands.md" => "# c\n",
           "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
@@ -66,25 +66,25 @@ RSpec.describe Textus::Produce::Engine do
         },
         manifest: <<~YAML,
           version: textus/3
-          zones:
+          lanes:
             - { name: working, kind: canon }
             - { name: knowledge, kind: canon }
             - { name: feeds, kind: machine }
           entries:
-            - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+            - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
             - key: working.bad
               kind: nested
               path: working/skills
-              zone: working
+              lane: working
               schema: null
               nested: true
               publish:
                 - { tree: "../outside" }
             - key: feeds.catalog
               kind: produced
-              path: feeds/catalog.json
-              zone: feeds
-              source: { from: project, select: "knowledge", pluck: [title] }
+              path: data/feeds/catalog.json
+              lane: feeds
+              source: { from: derive, select: "knowledge", pluck: [title] }
         YAML
       )
     end

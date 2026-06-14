@@ -12,9 +12,9 @@ RSpec.describe "MCP :session_opened event" do
     FileUtils.mkdir_p(File.join(root, "steps/observe"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones: [{ name: knowledge, kind: canon }]
+      lanes: [{ name: knowledge, kind: canon }]
       entries:
-        - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf }
+        - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf }
     YAML
     File.write(File.join(root, "steps/observe/log_opened.rb"), <<~RUBY)
       $textus_session_log ||= []
@@ -37,7 +37,7 @@ RSpec.describe "MCP :session_opened event" do
   def run_server(role:, messages:)
     store  = Textus::Store.new(root)
     stdin  = StringIO.new(messages.map { |m| JSON.dump(m) }.join("\n") + "\n")
-    Textus::MCP::Server.new(store: store, stdin: stdin, stdout: StringIO.new, role: role).run
+    Textus::Surfaces::MCP::Server.new(store: store, stdin: stdin, stdout: StringIO.new, role: role).run
   end
 
   it "fires :session_opened once at initialize with the resolved role and cursor" do

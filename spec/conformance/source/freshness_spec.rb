@@ -8,7 +8,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
     include_context "textus/3 conformance fixture"
 
     def feeds_row
-      store.as(Textus::Role::DEFAULT).freshness(zone: "artifacts")
+      store.as(Textus::Role::DEFAULT).freshness(lane: "artifacts")
            .find { |r| r[:key] == "artifacts.feeds.calendar.events" }
     end
 
@@ -93,7 +93,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
       store = intake_store(root, intake_body: counting_hook, ttl: "1s")
       write_stale_feed
 
-      store.as("automation").drain
+      converge_now(store)
 
       expect(Thread.current[:fetch_count]).to eq(1)
       fresh = store.as("automation").get("feeds.doc")

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Sentinel do
+RSpec.describe Textus::Core::Sentinel do
   let(:tmp)        { Dir.mktmpdir("textus-sentinel") }
   let(:repo_root)  { tmp }
   let(:store_root) { File.join(tmp, ".textus") }

@@ -9,25 +9,25 @@ RSpec.describe Textus::Manifest::Data do
       roles:
         - { name: human, can: [author, propose] }
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: review,  kind: machine }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes.md, zone: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }
 
   it "exposes zones, entries, audit_config, role_caps" do
-    expect(data.declared_zone_kinds).to be_a(Hash)
+    expect(data.declared_lane_kinds).to be_a(Hash)
     expect(data.entries).to all(be_a(Textus::Manifest::Entry::Base))
     expect(data.audit_config).to include(:max_size, :keep)
     expect(data.role_caps).to eq("human" => %w[author propose], "automation" => %w[converge])
   end
 
-  it "derives zone writers from capability × zone-kind" do
-    expect(data.policy.zone_writers("knowledge")).to eq(["human"])
-    expect(data.policy.zone_writers("review")).to eq(["automation"])
+  it "derives lane writers from capability x lane-kind" do
+    expect(data.policy.roles_with_capability(data.policy.verb_for_lane("knowledge"))).to eq(["human"])
+    expect(data.policy.roles_with_capability(data.policy.verb_for_lane("review"))).to eq(["automation"])
   end
 
   it "exposes roles holding a capability" do

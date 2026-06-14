@@ -18,16 +18,11 @@ module Textus
       end
 
       def call(pending_key)
-        guard.for(:reject, pending_key).check!(
-          Textus::Domain::Policy::Evaluation.new(
-            actor: @call.role, transition: :reject, origin: pending_key,
-            target: pending_key, envelope: nil, manifest: @manifest
-          ),
-        )
+        auth.check!(action: :reject, actor: @call.role, key: pending_key)
 
         mentry = @manifest.resolver.resolve(pending_key).entry
         unless mentry.in_proposal_zone?(@manifest.policy)
-          raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.zone})")
+          raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
         end
 
         env = Textus::Read::Get.new(
@@ -50,8 +45,8 @@ module Textus
 
       private
 
-      def guard
-        @guard ||= Textus::Domain::Policy::GuardFactory.new(manifest: @manifest, schemas: @schemas)
+      def auth
+        @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @schemas)
       end
 
       def hook_context

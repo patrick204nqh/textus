@@ -18,14 +18,14 @@ RSpec.describe Textus::Produce::Acquire::Intake do
 
     File.write(File.join(textus, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: intake, kind: machine }
       entries:
         - key: intake.item
           kind: produced
           path: intake/item.md
-          zone: intake
-          source: { from: handler, handler: test_intake }
+          lane: intake
+          source: { from: fetch, handler: test_intake }
     YAML
 
     # Use a unique class name for each store to avoid collisions across tests
@@ -106,10 +106,10 @@ RSpec.describe Textus::Produce::Acquire::Intake do
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: plain, kind: canon }
         entries:
-          - { key: plain.doc, path: plain/doc.md, zone: plain, kind: leaf}
+          - { key: plain.doc, path: plain/doc.md, lane: plain, kind: leaf}
 
       YAML
 
@@ -143,15 +143,15 @@ RSpec.describe Textus::Produce::Acquire::Intake do
 
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: intake, kind: machine }
         entries:
           - key: intake.vendor
             kind: produced
             path: intake/vendor
-            zone: intake
+            lane: intake
             nested: true
-            source: { from: handler, handler: capturing_intake }
+            source: { from: fetch, handler: capturing_intake }
       YAML
 
       unique_id = SecureRandom.hex(4)

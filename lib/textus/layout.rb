@@ -4,6 +4,15 @@ module Textus
   # tracked/disposable boundary is a directory boundary. ADR 0038.
   module Layout
     RUN = ".run"
+    DATA = "data"
+
+    def self.data(root)
+      File.join(root, DATA)
+    end
+
+    def self.data_lane(root, lane_name)
+      File.join(data(root), lane_name)
+    end
 
     def self.run(root)
       File.join(root, RUN)
@@ -23,6 +32,10 @@ module Textus
 
     def self.build_lock(root)
       File.join(run(root), "build.lock")
+    end
+
+    def self.watcher_lock(root)
+      File.join(run(root), "watcher.lock")
     end
 
     def self.queue(root)

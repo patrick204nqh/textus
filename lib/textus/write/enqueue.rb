@@ -25,7 +25,7 @@ module Textus
         entry = Textus::Jobs::Handlers.registry.lookup(type) # raises UsageError for unregistered types
         authorize!(entry)
 
-        job = Textus::Domain::Jobs::Job.new(
+        job = Textus::Core::Jobs::Job.new(
           type: type, args: args, enqueued_by: @call.role, max_attempts: entry.max_attempts,
         )
         Textus::Ports::Queue.new(root: @container.root).enqueue(job)

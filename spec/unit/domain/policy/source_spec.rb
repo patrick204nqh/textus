@@ -1,9 +1,9 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Policy::Source do
-  describe "from: project (internal data)" do
+RSpec.describe Textus::Manifest::Policy::Source do
+  describe "from: derive (internal data)" do
     subject(:src) do
-      described_class.new("from" => "project", "select" => ["k.*"],
+      described_class.new("from" => "derive", "select" => ["k.*"],
                           "pluck" => ["title"], "transform" => "reducer")
     end
 
@@ -20,8 +20,8 @@ RSpec.describe Textus::Domain::Policy::Source do
     end
   end
 
-  describe "from: handler (intake)" do
-    subject(:src) { described_class.new("from" => "handler", "handler" => "h", "config" => { "u" => 1 }, "ttl" => "1h") }
+  describe "from: fetch (intake)" do
+    subject(:src) { described_class.new("from" => "fetch", "handler" => "h", "config" => { "u" => 1 }, "ttl" => "1h") }
 
     it "is intake, exposes handler/config/ttl" do
       expect(src.kind).to eq(:intake)
@@ -31,11 +31,11 @@ RSpec.describe Textus::Domain::Policy::Source do
     end
   end
 
-  describe "from: command (external)" do
-    subject(:src) { described_class.new("from" => "command", "command" => "make", "sources" => ["s/*"]) }
+  describe "from: external (external)" do
+    subject(:src) { described_class.new("from" => "external", "command" => "make", "sources" => ["s/*"]) }
 
-    it "is derived + external" do
-      expect(src.kind).to eq(:derived)
+    it "is external" do
+      expect(src.kind).to eq(:external)
       expect(src.external?).to be(true)
       expect(src.command).to eq("make")
       expect(src.sources).to eq(["s/*"])
@@ -43,13 +43,13 @@ RSpec.describe Textus::Domain::Policy::Source do
   end
 
   describe "retired vocabulary" do
-    it "rejects from: template (renamed to project)" do
-      expect { described_class.new("from" => "template", "template" => "c") }
-        .to raise_error(Textus::BadManifest, /from must be one of/)
+    it "rejects from: handler (renamed to fetch)" do
+      expect { described_class.new("from" => "handler", "handler" => "h") }
+        .to raise_error(Textus::BadManifest, /fetch/)
     end
 
     it "no longer exposes template/inject_boot/provenance" do
-      src = described_class.new("from" => "project", "select" => ["k"])
+      src = described_class.new("from" => "derive", "select" => ["k"])
       %i[template inject_boot provenance].each { |m| expect(src).not_to respond_to(m) }
     end
   end

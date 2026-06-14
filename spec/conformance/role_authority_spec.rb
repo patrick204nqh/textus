@@ -11,10 +11,10 @@ RSpec.describe "Role authority via schema.maintained_by" do
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
-      zones:
+      lanes:
         - { name: proposals, kind: queue }
       entries:
-        - { key: proposals.people, path: proposals/people, zone: proposals, schema: person, owner: human:patrick, kind: nested}
+        - { key: proposals.people, path: data/proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
 
     YAML
 
@@ -68,10 +68,10 @@ RSpec.describe "Role authority via schema.maintained_by" do
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.people, path: knowledge/people, zone: knowledge, schema: person, owner: human:patrick, kind: nested}
+          - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

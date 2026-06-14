@@ -4,19 +4,19 @@ RSpec.describe Textus::Doctor::Check::ProposalTargets do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[knowledge notebook proposals], manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[knowledge notebook proposals], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose, keep] }
-      zones:
+      lanes:
         - { name: knowledge, kind: canon }
         - { name: notebook,  kind: workspace, owner: agent }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: knowledge/notes, zone: knowledge, owner: human:self, kind: nested }
-        - { key: notebook.notes,  path: notebook/notes,  zone: notebook,  owner: agent:self, kind: nested }
-        - { key: proposals.notes, path: proposals/notes, zone: proposals, owner: agent:self, kind: nested }
+        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, owner: human:self, kind: nested }
+        - { key: notebook.notes,  path: data/notebook/notes,  lane: notebook,  owner: agent:self, kind: nested }
+        - { key: proposals.notes, path: data/proposals/notes, lane: proposals, owner: agent:self, kind: nested }
     YAML
   end
 

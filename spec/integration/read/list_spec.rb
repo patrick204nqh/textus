@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::List do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge notes],
+      lanes: %w[knowledge notes],
       files: {
         "data/knowledge/alpha.md" => "---\nname: alpha\n---\nbody\n",
         "data/knowledge/beta.md" => "---\nname: beta\n---\nbody\n",
@@ -14,15 +14,15 @@ RSpec.describe Textus::Read::List do
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: notes,   kind: canon }
         entries:
-          - { key: knowledge.alpha, path: knowledge/alpha.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.alpha, path: data/knowledge/alpha.md, lane: knowledge, kind: leaf}
 
-          - { key: knowledge.beta,  path: knowledge/beta.md,  zone: knowledge, kind: leaf}
+          - { key: knowledge.beta,  path: data/knowledge/beta.md,  lane: knowledge, kind: leaf}
 
-          - { key: notes.report,  path: notes/report.md,  zone: notes, kind: leaf}
+          - { key: notes.report,  path: notes/report.md,  lane: notes, kind: leaf}
 
       YAML
     )
@@ -44,7 +44,7 @@ RSpec.describe Textus::Read::List do
 
   it "filters by zone" do
     ops = store.as("human")
-    rows = ops.list(zone: "notes")
+    rows = ops.list(lane: "notes")
     expect(rows.map { |r| r["key"] }).to eq(["notes.report"])
   end
 end

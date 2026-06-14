@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Freshness::Evaluator do
+RSpec.describe Textus::Core::Freshness::Evaluator do
   subject(:evaluator) do
     described_class.new(
       manifest: store.manifest,
@@ -12,12 +12,12 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
   include_context "textus_store_fixture"
 
   let(:store) do
-    store_from_manifest(root, zones: %w[feeds], manifest: <<~YAML,
+    store_from_manifest(root, lanes: %w[feeds], manifest: <<~YAML,
       version: textus/3
-      zones: [{ name: feeds, kind: machine }]
+      lanes: [{ name: feeds, kind: machine }]
       entries:
-        - { key: feeds.doc, kind: produced, path: feeds/doc.md, zone: feeds, source: { from: handler, handler: h, ttl: 1h } }
-        - { key: feeds.nocadence, kind: produced, path: feeds/nocadence.md, zone: feeds, source: { from: handler, handler: h } }
+        - { key: feeds.doc, kind: produced, path: data/feeds/doc.md, lane: feeds, source: { from: fetch, handler: h, ttl: 1h } }
+        - { key: feeds.nocadence, kind: produced, path: data/feeds/nocadence.md, lane: feeds, source: { from: fetch, handler: h } }
     YAML
                               files: {
                                 "data/feeds/doc.md" => "---\n---\nbody\n",
@@ -100,17 +100,17 @@ RSpec.describe Textus::Domain::Freshness::Evaluator do
         File.utime(future, future, f)
       end
 
-      store_from_manifest(root, zones: %w[artifacts], manifest: <<~YAML,
+      store_from_manifest(root, lanes: %w[artifacts], manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: artifacts, kind: machine }
         entries:
           - key: artifacts.report
             kind: produced
-            path: artifacts/report.md
-            zone: artifacts
+            path: data/artifacts/report.md
+            lane: artifacts
             source:
-              from: command
+              from: external
               command: "make report"
               sources: ["#{src_dir}"]
       YAML

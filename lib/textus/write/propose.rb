@@ -1,6 +1,6 @@
 module Textus
   module Write
-    # Queue a proposal: resolve the acting role's propose_zone, prefix the key,
+    # Queue a proposal: resolve the acting role's propose_lane, prefix the key,
     # and write there via the Put verb. Was inlined in the MCP `propose` tool
     # and the CLI propose verb; promoted to a first-class verb so all three
     # transports share one implementation (ADR 0036, ADR 0039).
@@ -8,11 +8,11 @@ module Textus
       extend Textus::Contract::DSL
 
       verb     :propose
-      summary  "Write a proposal to the role's propose_zone. Auto-prefixes the key."
+      summary  "Write a proposal to the role's propose_lane. Auto-prefixes the key."
       surfaces :cli, :mcp
       cli_stdin :json
       arg :key,     String, required: true, positional: true,
-                            description: "key relative to propose_zone, e.g. 'decisions.feature-x'"
+                            description: "key relative to propose_lane, e.g. 'decisions.feature-x'"
       arg :meta,    Hash,   required: false, wire_name: :_meta,
                             description: "frontmatter; reads back as `_meta` from `get`. Include a 'proposal:' block naming the target_key"
       arg :body,    String,
@@ -33,11 +33,11 @@ module Textus
 
       # if_etag is intentionally absent: a proposal is always a fresh queue write.
       def call(key, meta: nil, body: nil, content: nil)
-        zone = @manifest.policy.propose_zone_for(@call.role)
+        zone = @manifest.policy.propose_lane_for(@call.role)
         unless zone
           raise Textus::Error.new(
             "propose_forbidden",
-            "role '#{@call.role}' has no writable propose_zone",
+            "role '#{@call.role}' has no writable propose_lane",
             details: { "role" => @call.role },
             hint: "the manifest must define a queue zone and '#{@call.role}' must hold the 'propose' capability",
           )

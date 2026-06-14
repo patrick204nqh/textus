@@ -7,13 +7,13 @@ module Textus
     module Schema
       # Re-export the vocabulary.
       LANES              = Vocabulary::LANES
-      ZONE_KINDS         = Vocabulary::ZONE_KINDS
+      LANE_KINDS         = Vocabulary::LANE_KINDS
       CAPABILITIES       = Vocabulary::CAPABILITIES
       KIND_REQUIRES_VERB = Vocabulary::KIND_REQUIRES_VERB
       # Re-export the keys + registry.
       ROOT_KEYS             = Keys::ROOT_KEYS
       ROLE_KEYS             = Keys::ROLE_KEYS
-      ZONE_KEYS             = Keys::ZONE_KEYS
+      LANE_KEYS             = Keys::LANE_KEYS
       ENTRY_KEYS            = Keys::ENTRY_KEYS
       PUBLISH_KEYS          = Keys::PUBLISH_KEYS
       SOURCE_KEYS           = Keys::SOURCE_KEYS

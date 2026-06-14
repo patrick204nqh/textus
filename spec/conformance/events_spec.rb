@@ -10,9 +10,9 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: knowledge, kind: canon }]
+        lanes: [{ name: knowledge, kind: canon }]
         entries:
-          - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf}
 
       YAML
       File.write(File.join(root, "steps/observe/log_written.rb"), <<~RUBY)
@@ -81,13 +81,13 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones: [{ name: intake, kind: machine }]
+        lanes: [{ name: intake, kind: machine }]
         entries:
           - key: intake.x
             kind: produced
             path: intake/x.md
-            zone: intake
-            source: { from: handler, handler: f }
+            lane: intake
+            source: { from: fetch, handler: f }
       YAML
       File.write(File.join(root, "steps/fetch/f.rb"), <<~RUBY)
         Class.new(Textus::Step::Fetch) do
@@ -213,18 +213,18 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: artifacts,  kind: machine }
         entries:
-          - { key: knowledge.x, path: knowledge/x.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf}
 
           - key: artifacts.summary
             kind: produced
-            path: artifacts/summary.json
-            zone: artifacts
+            path: data/artifacts/summary.json
+            lane: artifacts
             source:
-              from: project
+              from: derive
               select: [knowledge]
               pluck: [name]
             publish:
@@ -254,7 +254,7 @@ RSpec.describe "Lifecycle events" do
 
     it "fires :entry_produced after Builder materializes an artifacts entry" do
       store = Textus::Store.new(root)
-      store.as("automation").drain
+      converge_now(store)
       expect($log).to include([:entry_produced, "artifacts.summary", ["knowledge"]])
     end
   end
@@ -266,13 +266,13 @@ RSpec.describe "Lifecycle events" do
       FileUtils.mkdir_p(File.join(root, "steps/observe"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: proposals,  kind: queue }
         entries:
-          - { key: knowledge.bob, path: knowledge/bob.md, zone: knowledge, kind: leaf}
+          - { key: knowledge.bob, path: data/knowledge/bob.md, lane: knowledge, kind: leaf}
 
-          - { key: proposals.bob,  path: proposals/bob.md,  zone: proposals, kind: leaf}
+          - { key: proposals.bob,  path: data/proposals/bob.md,  lane: proposals, kind: leaf}
 
       YAML
       File.write(File.join(root, "data/proposals/bob.md"), <<~MD)

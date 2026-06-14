@@ -7,8 +7,6 @@ module Textus
     # Declares its event with `on :event_name` and an optional key filter with
     # `match "glob.**"`. Replaces user pub/sub subscribers.
     class Observe < Base
-      def self.kind = :observe
-
       def self.on(event = :__read__)
         if event == :__read__
           @event

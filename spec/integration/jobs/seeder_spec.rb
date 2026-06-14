@@ -5,19 +5,19 @@ RSpec.describe Textus::Jobs::Seeder do
 
   let(:store) do
     store_from_manifest(
-      root, zones: %w[knowledge feeds],
+      root, lanes: %w[knowledge feeds],
             manifest: <<~YAML,
               version: textus/3
-              zones:
+              lanes:
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }
               entries:
-                - { key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }
+                - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
                 - key: feeds.catalog
                   kind: produced
-                  path: feeds/catalog.json
-                  zone: feeds
-                  source: { from: project, select: "knowledge", pluck: [title] }
+                  path: data/feeds/catalog.json
+                  lane: feeds
+                  source: { from: derive, select: "knowledge", pluck: [title] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
             YAML
@@ -30,7 +30,7 @@ RSpec.describe Textus::Jobs::Seeder do
   let(:queue) { Textus::Ports::Queue.new(root: root) }
 
   def seed(role: "human")
-    described_class.new(container: store.container, queue: queue, call: test_ctx(role: role)).seed(prefix: nil, zone: nil)
+    described_class.new(container: store.container, queue: queue, call: test_ctx(role: role)).seed(prefix: nil, lane: nil)
   end
 
   it "enqueues a materialize job per producible key plus a sweep job" do

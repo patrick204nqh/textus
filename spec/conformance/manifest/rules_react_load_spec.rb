@@ -4,14 +4,14 @@ RSpec.describe "rules.react manifest load" do
   include_context "textus_store_fixture"
 
   def load(manifest)
-    store_from_manifest(root, zones: %w[knowledge], manifest: manifest).manifest
+    store_from_manifest(root, lanes: %w[knowledge], manifest: manifest).manifest
   end
 
   it "loads react with allowed keys" do
     manifest = load(<<~YAML)
       version: textus/3
-      zones: [{ name: knowledge, kind: canon }]
-      entries: [{ key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }]
+      lanes: [{ name: knowledge, kind: canon }]
+      entries: [{ key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:
         - match: "knowledge.*"
           react:
@@ -25,15 +25,15 @@ RSpec.describe "rules.react manifest load" do
     YAML
 
     react = manifest.rules.for("knowledge.a").react
-    expect(react).to be_a(Textus::Domain::Policy::React)
+    expect(react).to be_a(Textus::Manifest::Policy::React)
     expect(react.to_h["do"]).to eq("materialize")
   end
 
   it "rejects react.ttl to avoid ttl conflicts" do
     expect { load(<<~YAML) }.to raise_error(Textus::BadManifest, /react\.ttl.*invalid/i)
       version: textus/3
-      zones: [{ name: knowledge, kind: canon }]
-      entries: [{ key: knowledge.a, path: knowledge/a.md, zone: knowledge, kind: leaf }]
+      lanes: [{ name: knowledge, kind: canon }]
+      entries: [{ key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:
         - match: "knowledge.*"
           react: { on: [schedule.tick], do: refresh_data, ttl: 5m }

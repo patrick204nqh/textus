@@ -25,22 +25,22 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
   RUBY
 
   let(:store) do
-    store_from_manifest(root, zones: %w[feeds], files: { "steps/fetch/machines.rb" => machines_step }, manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[feeds], files: { "steps/fetch/machines.rb" => machines_step }, manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: automation, can: [converge] }
-      zones:
+      lanes:
         - { name: feeds, kind: machine }
       entries:
         - key: feeds.machines
-          path: feeds/machines
-          zone: feeds
+          path: data/feeds/machines
+          lane: feeds
           format: yaml
           nested: true
           tracked: false
           kind: produced
           source:
-            from: handler
+            from: fetch
             handler: machines
             ttl: 1h
             config:

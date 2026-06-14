@@ -22,7 +22,7 @@ module Textus
       def for(key)
         slots = PICK_FIELDS.to_h { |f| [f, []] }
         @blocks.each do |b|
-          next unless Textus::Domain::Policy::Matcher.matches?(b.match, key)
+          next unless Textus::Manifest::Policy::Matcher.matches?(b.match, key)
 
           slots.each_key { |slot| slots[slot] << b if b.public_send(slot) }
         end
@@ -30,7 +30,7 @@ module Textus
       end
 
       def explain(key)
-        @blocks.select { |b| Textus::Domain::Policy::Matcher.matches?(b.match, key) }
+        @blocks.select { |b| Textus::Manifest::Policy::Matcher.matches?(b.match, key) }
       end
 
       private
@@ -39,7 +39,7 @@ module Textus
         return nil if blocks.empty?
 
         globs = blocks.map(&:match)
-        winning = Textus::Domain::Policy::Matcher.pick_most_specific(globs, key: key)
+        winning = Textus::Manifest::Policy::Matcher.pick_most_specific(globs, key: key)
         blocks.find { |b| b.match == winning }&.public_send(slot)
       end
 
@@ -57,7 +57,7 @@ module Textus
 
         # One dispatch over the registry, replacing the four bespoke parse_*
         # methods. :deferred carries the raw Hash after a shape check (its
-        # contents validate later — guard predicates at GuardFactory build time,
+        # contents validate later — guard predicates at Dispatch::Auth check time,
         # ADR 0031); :immediate instantiates the policy class now. :tagged passes
         # the raw Hash straight to a policy class that is a tagged union and
         # dispatches on its discriminator field (e.g. upkeep's on:). A mapping

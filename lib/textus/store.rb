@@ -54,13 +54,13 @@ module Textus
       Textus::Session.new(
         role: role,
         cursor: audit_log.latest_seq,
-        propose_zone: manifest.policy.propose_zone_for(role),
+        propose_lane: manifest.policy.propose_lane_for(role),
         contract_etag: Textus::Etag.for_contract(root),
       )
     end
 
     def as(role, dry_run: false, correlation_id: nil)
-      RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
+      Textus::Surfaces::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end
 
     Textus::Dispatcher::VERBS.each_key do |verb|
@@ -89,7 +89,6 @@ module Textus
 
     def bootstrap_hooks
       Ports::AuditSubscriber.new(audit_log).attach(steps)
-      Ports::ProduceOnWriteSubscriber.new(container).attach(steps)
       Textus::Step::Builtin.register_all(steps)
       Textus::Step::Loader.new(registry: steps).load_dir(File.join(root, "steps"))
     end

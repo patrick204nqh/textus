@@ -1,12 +1,12 @@
 require "spec_helper"
 
-RSpec.describe Textus::MCP::ToolSchemas do
+RSpec.describe Textus::Surfaces::MCP::ToolSchemas do
   describe ".all" do
     # This assertion is self-updating: it delegates to Catalog.names, so adding
     # a new MCP-surfaced contract automatically expands both sides (ADR 0039).
     it "names exactly match the derived catalog names" do
       expect(described_class.all.map { |t| t[:name] }.sort)
-        .to eq(Textus::MCP::Catalog.names.sort),
+        .to eq(Textus::Surfaces::MCP::Catalog.names.sort),
             "ToolSchemas.all and Catalog.names disagree — check contract surfaces declarations"
     end
 

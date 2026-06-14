@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Domain::Duration do
+RSpec.describe Textus::Core::Duration do
   it "returns nil for nil" do
     expect(described_class.seconds(nil)).to be_nil
   end

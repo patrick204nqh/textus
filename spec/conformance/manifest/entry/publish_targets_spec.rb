@@ -5,8 +5,8 @@ RSpec.describe "publish: list parsing (ADR 0094)" do
   def parse(raw) = Textus::Manifest::Entry::Parser.call(raw)
 
   let(:base) do
-    { "key" => "feeds.cat", "path" => "feeds/cat.json", "zone" => "feeds", "kind" => "produced",
-      "source" => { "from" => "project", "select" => ["k.*"] } }
+    { "key" => "feeds.cat", "path" => "feeds/cat.json", "lane" => "feeds", "kind" => "produced",
+      "source" => { "from" => "derive", "select" => ["k.*"] } }
   end
 
   it "builds PublishTarget objects from a list" do

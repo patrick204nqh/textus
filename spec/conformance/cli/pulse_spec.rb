@@ -9,7 +9,7 @@ RSpec.describe "textus pulse CLI" do
       FileUtils.mkdir_p(File.join(textus, "data", "review"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: canon }
         entries: []
@@ -21,7 +21,7 @@ RSpec.describe "textus pulse CLI" do
   def run_cli(argv, cwd:)
     out = StringIO.new
     err = StringIO.new
-    code = Textus::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
+    code = Textus::Surfaces::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
     [code, out.string, err.string]
   end
 

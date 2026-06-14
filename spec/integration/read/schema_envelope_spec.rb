@@ -6,7 +6,7 @@ RSpec.describe Textus::Read::SchemaEnvelope do
   let(:store) do
     store_from_manifest(
       root,
-      zones: %w[knowledge],
+      lanes: %w[knowledge],
       schemas: {
         "person" => <<~YAML,
           name: person
@@ -19,10 +19,10 @@ RSpec.describe Textus::Read::SchemaEnvelope do
       },
       manifest: <<~YAML,
         version: textus/3
-        zones:
+        lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.person, path: knowledge/person.md, zone: knowledge, schema: person, kind: leaf}
+          - { key: knowledge.person, path: data/knowledge/person.md, lane: knowledge, schema: person, kind: leaf}
 
       YAML
     )
