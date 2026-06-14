@@ -54,7 +54,7 @@ module Textus
             { "op" => "mv", "from" => key, "to" => "#{@to}#{key[@from.length..]}" }
           end
 
-          plan = Textus::Maintenance::Plan.new(steps: steps, warnings: [])
+          plan = Textus::Dispatch::Runtime::Plan.new(steps: steps, warnings: [])
           return plan if @dry_run
 
           rewrite_manifest!(root)

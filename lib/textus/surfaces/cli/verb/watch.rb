@@ -7,7 +7,7 @@ module Textus
 
           def call(store)
             call = Textus::Call.build(role: Textus::Role::AUTOMATION)
-            Textus::Maintenance::Watch.new(container: store.container, call: call).run
+            Textus::Dispatch::Runtime::Watch.new(container: store.container, call: call).run
             0
           end
         end

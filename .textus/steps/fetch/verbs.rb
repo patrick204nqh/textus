@@ -8,12 +8,14 @@ module Textus
       def call(config:, args:, **)
         _ = config
         _ = args
-        projection = Textus::Dispatch::Actions::Capabilities.new.call(container: nil, call: nil)["verbs"]
-        verbs = projection.map do |row|
+        verbs = Textus::Dispatcher::VERBS.filter_map do |name, klass|
+          next unless klass.respond_to?(:contract?) && klass.contract?
+
+          spec = klass.contract
           {
-            "name" => row["verb"],
-            "summary" => row["summary"].to_s,
-            "args" => Array(row["args"]).map { |a| a["name"].to_s }.sort,
+            "name" => name.to_s,
+            "summary" => spec.summary.to_s,
+            "args" => spec.args.map { |a| a.wire.to_s }.sort,
           }
         end
         { "content" => { "verbs" => verbs } }

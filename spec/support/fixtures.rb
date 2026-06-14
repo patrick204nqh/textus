@@ -160,15 +160,15 @@ module TextusSpecHelpers
   def build_worker(store, ctx, steps: nil)
     container = store.container
     container = container.with(steps: steps) if steps
-    Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
+    Textus::Dispatch::Pipeline::Acquire::Intake.new(container: container, call: ctx)
   end
 
   # Seed convergence jobs for the given scope and then burn the queue through
   # Maintenance::Drain (which is queue-burn only).
-  def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION)
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
     queue = Textus::Ports::Queue.new(root: store.root)
     call = Textus::Call.build(role: role)
-    Textus::Jobs::Seeder.new(container: store.container, queue: queue, call: call).seed(prefix: prefix, lane: lane)
+    Textus::Dispatch::Planner::Seeder.new(container: store.container, queue: queue, call: call).seed
     Textus::Dispatch::Actions::Drain.new.call(container: store.container, call: call)
   end
 end

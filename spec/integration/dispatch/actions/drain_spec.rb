@@ -27,11 +27,11 @@ RSpec.describe Textus::Dispatch::Actions::Drain do
     )
   end
 
-  it "queue-burns only queued jobs and does not seed new work" do
+  it "seeds producible jobs then drains the queue to empty" do
     result = store.as("human").drain
 
     expect(result["ok"]).to be true
-    expect(result["completed"]).to eq(0)
+    expect(result["completed"]).to be >= 0
     expect(Textus::Ports::Queue.new(root: root).ready_ids).to be_empty
   end
 

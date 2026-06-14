@@ -28,31 +28,28 @@ module Textus
         end
 
         def call(container:, call:)
-          entry = Textus::Jobs::Handlers.registry.lookup(@type)
-          authorize!(entry, call)
+          action_class = begin
+            Textus::Dispatcher.fetch(@type.to_sym)
+          rescue Textus::UsageError
+            raise Textus::UsageError.new("unregistered job type '#{@type}'")
+          end
+          if action_class.const_defined?(:REQUIRED_ROLE) && call.role != action_class::REQUIRED_ROLE
+            raise Textus::Error.new(
+              "forbidden",
+              "role '#{call.role}' is not authorized to enqueue this job type (requires '#{action_class::REQUIRED_ROLE}')",
+              details: { "role" => call.role, "required_role" => action_class::REQUIRED_ROLE },
+              exit_code: 77,
+            )
+          end
 
           job = Textus::Core::Jobs::Job.new(
             type: @type,
             args: @job_args,
             enqueued_by: call.role,
-            max_attempts: entry.max_attempts,
+            max_attempts: 3,
           )
           Textus::Ports::Queue.new(root: container.root).enqueue(job)
           { "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id }
-        end
-
-        private
-
-        def authorize!(entry, call)
-          required = entry.required_role
-          return if required.nil? || call.role == required
-
-          raise Textus::Error.new(
-            "forbidden",
-            "role '#{call.role}' is not authorized to enqueue this job type (requires '#{required}')",
-            details: { "role" => call.role, "required_role" => required },
-            exit_code: 77,
-          )
         end
       end
     end

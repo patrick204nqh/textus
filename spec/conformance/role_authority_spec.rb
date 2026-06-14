@@ -1,5 +1,14 @@
 require "spec_helper"
 
+def build_validator(store)
+  Textus::Doctor::Validator.new(
+    reader: ->(key, ctnr, c) { Textus::Dispatch::Actions::Get.new(key: key).call(container: ctnr, call: c) },
+    manifest: store.container.manifest,
+    audit_log: store.container.audit_log,
+    schema_for: ->(name) { store.container.schemas.fetch_or_nil(name) },
+  )
+end
+
 RSpec.describe "Role authority via schema.maintained_by" do
   let(:tmp)   { Dir.mktmpdir("textus-role-authority") }
   let(:root)  { File.join(tmp, ".textus") }
@@ -35,7 +44,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       meta: { "name" => "alice", "full_name" => "Alice Wonder", "embedding" => [0.1, 0.2] },
       body: "",
     )
-    res = store.as(Textus::Role::DEFAULT).validate_all
+    res = build_validator(store).call(container: store.container, call: Textus::Call.build(role: Textus::Role::DEFAULT))
     codes = res["violations"].map { |v| v["code"] }
     expect(codes).to include("role_authority")
     bad = res["violations"].find { |v| v["code"] == "role_authority" }
@@ -50,7 +59,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       meta: { "name" => "bob", "full_name" => "Bob Builder", "embedding" => [0.3] },
       body: "",
     )
-    res = store.as(Textus::Role::DEFAULT).validate_all
+    res = build_validator(store).call(container: store.container, call: Textus::Call.build(role: Textus::Role::DEFAULT))
     expect(res["violations"]).to be_empty
   end
 
@@ -90,7 +99,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
         meta: { "name" => "carol", "full_name" => "Carol Override", "embedding" => [0.5] },
         body: "",
       )
-      res = store.as(Textus::Role::DEFAULT).validate_all
+      res = build_validator(store).call(container: store.container, call: Textus::Call.build(role: Textus::Role::DEFAULT))
       authority = res["violations"].select { |v| v["code"] == "role_authority" }
       expect(authority).to be_empty
     end

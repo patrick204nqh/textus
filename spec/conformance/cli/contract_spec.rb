@@ -41,7 +41,6 @@ RSpec.describe "Textus::Surfaces::CLI verb return-value contract" do
       "accept" => Textus::Surfaces::CLI::Verb::GenAccept,
       "audit" => Textus::Surfaces::CLI::Verb::GenAudit,
       "blame" => Textus::Surfaces::CLI::Verb::GenBlame,
-      "capabilities" => Textus::Surfaces::CLI::Verb::GenCapabilities,
       "deps" => Textus::Surfaces::CLI::Verb::GenDeps,
       "doctor" => Textus::Surfaces::CLI::Verb::Doctor,
       "enqueue" => Textus::Surfaces::CLI::Verb::GenEnqueue,

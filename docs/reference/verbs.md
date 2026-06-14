@@ -4,177 +4,6 @@
 # Verb reference
 
 
-## `textus accept`
-
-apply a queued proposal to its target zone; requires the author capability
-
-- `--pending_key`
-
-
-## `textus audit`
-
-Query the audit log with optional filters.
-
-- `--correlation_id`
-- `--key`
-- `--limit`
-- `--role`
-- `--seq_since`
-- `--since`
-- `--verb`
-- `--zone`
-
-
-## `textus blame`
-
-Annotate audit rows for a key with the git commit that introduced each file state.
-
-- `--key`
-- `--limit`
-
-
-## `textus boot`
-
-Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.
-
-- `--lean`
-
-
-## `textus capabilities`
-
-Machine-readable contract surface: every verb, its transports, and arg schema.
-
-- `--verb`
-
-
-## `textus data_mv`
-
-Rename a data lane — manifest + files. Refuses if destination exists.
-
-- `--dry_run`
-- `--from`
-- `--to`
-
-
-## `textus deps`
-
-List the keys a derived entry depends on (its projection/external sources).
-
-- `--key`
-
-
-## `textus doctor`
-
-Run health checks on the textus store and report any issues.
-
-- `--checks`
-
-
-## `textus drain`
-
-Converge everything now: seed produce + retention jobs and drain the queue to empty.
-
-- `--prefix`
-- `--zone`
-
-
-## `textus enqueue`
-
-Push a registered job type onto the convergence queue, to be run by drain/serve.
-
-- `--args`
-- `--type`
-
-
-## `textus freshness`
-
-Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).
-
-- `--prefix`
-- `--zone`
-
-
-## `textus get`
-
-Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
-
-- `--key`
-
-
-## `textus jobs`
-
-List queued jobs by state; retry a dead-lettered job or purge a state.
-
-- `--action`
-- `--job_id`
-- `--state`
-
-
-## `textus key_delete`
-
-Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.
-
-- `--if_etag`
-- `--key`
-
-
-## `textus key_delete_prefix`
-
-Bulk-delete every leaf key under prefix.
-
-- `--dry_run`
-- `--prefix`
-
-
-## `textus key_mv`
-
-Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.
-
-- `--dry_run`
-- `--new_key`
-- `--old_key`
-
-
-## `textus key_mv_prefix`
-
-Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.
-
-- `--dry_run`
-- `--from_prefix`
-- `--to_prefix`
-
-
-## `textus list`
-
-List keys filtered by zone and/or prefix.
-
-- `--prefix`
-- `--zone`
-
-
-## `textus propose`
-
-Write a proposal to the role's propose_zone. Auto-prefixes the key.
-
-- `--_meta`
-- `--body`
-- `--content`
-- `--key`
-
-
-## `textus published`
-
-List all entries that declare a publish_to target.
-
-
-
-## `textus pulse`
-
-Delta since cursor — changed entries, stale, pending proposals, doctor summary.
-
-- `--since`
-
-
 ## `textus put`
 
 Create or update an entry. Schema-validated. Returns {uid, etag}.
@@ -186,11 +15,38 @@ Create or update an entry. Schema-validated. Returns {uid, etag}.
 - `--key`
 
 
-## `textus rdeps`
+## `textus propose`
 
-List the derived entries that depend on a key (reverse deps / impact set).
+Write a proposal to the role's propose_lane. Auto-prefixes the key.
 
+- `--_meta`
+- `--body`
+- `--content`
 - `--key`
+
+
+## `textus key_delete`
+
+Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.
+
+- `--if_etag`
+- `--key`
+
+
+## `textus key_mv`
+
+Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.
+
+- `--dry_run`
+- `--new_key`
+- `--old_key`
+
+
+## `textus accept`
+
+apply a queued proposal to its target zone; requires the author capability
+
+- `--pending_key`
 
 
 ## `textus reject`
@@ -200,30 +56,32 @@ discard a queued proposal without applying it
 - `--pending_key`
 
 
-## `textus rule_explain`
+## `textus enqueue`
 
-Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.
+Push a registered job type onto the convergence queue, to be run by drain/serve.
 
-- `--detail`
+- `--args`
+- `--type`
+
+
+## `textus get`
+
+Read one entry - a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
+
 - `--key`
 
 
-## `textus rule_lint`
+## `textus list`
 
-Diff candidate manifest YAML's rules against the live manifest. No writes.
+List keys filtered by lane and/or prefix.
 
-- `--against`
-
-
-## `textus rule_list`
-
-List every rule block in the manifest.
+- `--lane`
+- `--prefix`
 
 
+## `textus where`
 
-## `textus schema_show`
-
-Return the schema (field shape) for an entry's family, by key.
+Resolve a key to its zone, owner, and path without reading the body.
 
 - `--key`
 
@@ -235,16 +93,159 @@ Return the stable UID of an entry without reading its body.
 - `--key`
 
 
-## `textus validate_all`
+## `textus blame`
 
-Internal store-wide schema + role-authority validation; backs doctor's schema_violations check. No public surface (ADR 0105).
-
-
-
-## `textus where`
-
-Resolve a key to its zone, owner, and path without reading the body.
+Annotate audit rows for a key with the git commit that introduced each file state.
 
 - `--key`
+- `--limit`
+
+
+## `textus audit`
+
+Query the audit log with optional filters.
+
+- `--correlation_id`
+- `--key`
+- `--lane`
+- `--limit`
+- `--role`
+- `--seq_since`
+- `--since`
+- `--verb`
+
+
+## `textus materialize`
+
+Materialize derived entry by converging its pipeline
+
+- `--key`
+
+
+## `textus refresh_data`
+
+Refresh intake data by converging through the pipeline
+
+- `--key`
+
+
+## `textus sweep`
+
+Apply retention policy — drop expired entries from the store
+
+- `--key`
+- `--scope`
+
+
+## `textus deps`
+
+List the keys a derived entry depends on (its projection/external sources).
+
+- `--key`
+
+
+## `textus rdeps`
+
+List the derived entries that depend on a key (reverse deps / impact set).
+
+- `--key`
+
+
+## `textus pulse`
+
+Delta since cursor — changed entries, stale, pending proposals, doctor summary.
+
+- `--since`
+
+
+## `textus rule_explain`
+
+Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.
+
+- `--detail`
+- `--key`
+
+
+## `textus rule_list`
+
+List every rule block in the manifest.
+
+
+
+## `textus published`
+
+List all entries that declare a publish_to target.
+
+
+
+## `textus schema_show`
+
+Return the schema (field shape) for an entry's family, by key.
+
+- `--key`
+
+
+## `textus doctor`
+
+Run health checks on the textus store and report any issues.
+
+- `--checks`
+
+
+## `textus boot`
+
+Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.
+
+- `--lean`
+
+
+## `textus jobs`
+
+List queued jobs by state; retry a dead-lettered job or purge a state.
+
+- `--action`
+- `--job_id`
+- `--state`
+
+
+## `textus data_mv`
+
+Rename a data lane — manifest + files. Refuses if destination exists.
+
+- `--dry_run`
+- `--from`
+- `--to`
+
+
+## `textus key_mv_prefix`
+
+Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.
+
+- `--dry_run`
+- `--from_prefix`
+- `--to_prefix`
+
+
+## `textus key_delete_prefix`
+
+Bulk-delete every leaf key under prefix.
+
+- `--dry_run`
+- `--prefix`
+
+
+## `textus drain`
+
+Converge everything now: seed produce + retention jobs and drain the queue to empty.
+
+- `--lane`
+- `--prefix`
+
+
+## `textus rule_lint`
+
+Diff candidate manifest YAML's rules against the live manifest. No writes.
+
+- `--against`
 
 

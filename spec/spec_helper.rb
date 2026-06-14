@@ -52,4 +52,8 @@ RSpec.configure do |c|
   c.define_derived_metadata(file_path: %r{/spec/unit/produce/events_spec\.rb$}) { |m| m[:volatile] = true }
   c.define_derived_metadata(file_path: %r{/spec/unit/spec_layout_spec\.rb$}) { |m| m[:volatile] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/boot/cli_verbs_spec\.rb$}) { |m| m[:volatile] = true }
+
+  c.define_derived_metadata(file_path: %r{/spec/(unit|integration)/dispatch/}) { |m| m[:volatile] = true }
+
+  c.define_derived_metadata(file_path: %r{/spec/unit/surfaces/}) { |m| m[:volatile] = true }
 end

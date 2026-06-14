@@ -19,7 +19,9 @@ module Textus
       uid: Textus::Dispatch::Actions::Uid,
       blame: Textus::Dispatch::Actions::Blame,
       audit: Textus::Dispatch::Actions::Audit,
-      freshness: Textus::Dispatch::Actions::Freshness,
+      materialize: Textus::Dispatch::Actions::Materialize,
+      refresh_data: Textus::Dispatch::Actions::RefreshData,
+      sweep: Textus::Dispatch::Actions::Sweep,
       deps: Textus::Dispatch::Actions::Deps,
       rdeps: Textus::Dispatch::Actions::Rdeps,
       pulse: Textus::Dispatch::Actions::Pulse,
@@ -27,10 +29,8 @@ module Textus
       rule_list: Textus::Dispatch::Actions::RuleList,
       published: Textus::Dispatch::Actions::Published,
       schema_show: Textus::Dispatch::Actions::SchemaEnvelope,
-      validate_all: Textus::Dispatch::Actions::ValidateAll,
       doctor: Textus::Dispatch::Actions::Doctor,
       boot: Textus::Dispatch::Actions::Boot,
-      capabilities: Textus::Dispatch::Actions::Capabilities,
       jobs: Textus::Dispatch::Actions::Jobs,
 
       # Maintenance

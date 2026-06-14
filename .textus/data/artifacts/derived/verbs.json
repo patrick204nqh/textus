@@ -4,109 +4,24 @@
   },
   "verbs": [
     {
-      "name": "accept",
-      "summary": "apply a queued proposal to its target zone; requires the author capability",
+      "name": "put",
+      "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
       "args": [
-        "pending_key"
-      ]
-    },
-    {
-      "name": "audit",
-      "summary": "Query the audit log with optional filters.",
-      "args": [
-        "correlation_id",
-        "key",
-        "limit",
-        "role",
-        "seq_since",
-        "since",
-        "verb",
-        "zone"
-      ]
-    },
-    {
-      "name": "blame",
-      "summary": "Annotate audit rows for a key with the git commit that introduced each file state.",
-      "args": [
-        "key",
-        "limit"
-      ]
-    },
-    {
-      "name": "boot",
-      "summary": "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.",
-      "args": [
-        "lean"
-      ]
-    },
-    {
-      "name": "capabilities",
-      "summary": "Machine-readable contract surface: every verb, its transports, and arg schema.",
-      "args": [
-        "verb"
-      ]
-    },
-    {
-      "name": "data_mv",
-      "summary": "Rename a data lane — manifest + files. Refuses if destination exists.",
-      "args": [
-        "dry_run",
-        "from",
-        "to"
-      ]
-    },
-    {
-      "name": "deps",
-      "summary": "List the keys a derived entry depends on (its projection/external sources).",
-      "args": [
+        "_meta",
+        "body",
+        "content",
+        "if_etag",
         "key"
       ]
     },
     {
-      "name": "doctor",
-      "summary": "Run health checks on the textus store and report any issues.",
+      "name": "propose",
+      "summary": "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
       "args": [
-        "checks"
-      ]
-    },
-    {
-      "name": "drain",
-      "summary": "Converge everything now: seed produce + retention jobs and drain the queue to empty.",
-      "args": [
-        "prefix",
-        "zone"
-      ]
-    },
-    {
-      "name": "enqueue",
-      "summary": "Push a registered job type onto the convergence queue, to be run by drain/serve.",
-      "args": [
-        "args",
-        "type"
-      ]
-    },
-    {
-      "name": "freshness",
-      "summary": "Internal per-entry lifecycle scan (status, age, ttl, action); backs pulse + hook context. No public surface (ADR 0085).",
-      "args": [
-        "prefix",
-        "zone"
-      ]
-    },
-    {
-      "name": "get",
-      "summary": "Read one entry — a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
-      "args": [
+        "_meta",
+        "body",
+        "content",
         "key"
-      ]
-    },
-    {
-      "name": "jobs",
-      "summary": "List queued jobs by state; retry a dead-lettered job or purge a state.",
-      "args": [
-        "action",
-        "job_id",
-        "state"
       ]
     },
     {
@@ -115,14 +30,6 @@
       "args": [
         "if_etag",
         "key"
-      ]
-    },
-    {
-      "name": "key_delete_prefix",
-      "summary": "Bulk-delete every leaf key under prefix.",
-      "args": [
-        "dry_run",
-        "prefix"
       ]
     },
     {
@@ -135,60 +42,10 @@
       ]
     },
     {
-      "name": "key_mv_prefix",
-      "summary": "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.",
+      "name": "accept",
+      "summary": "apply a queued proposal to its target zone; requires the author capability",
       "args": [
-        "dry_run",
-        "from_prefix",
-        "to_prefix"
-      ]
-    },
-    {
-      "name": "list",
-      "summary": "List keys filtered by zone and/or prefix.",
-      "args": [
-        "prefix",
-        "zone"
-      ]
-    },
-    {
-      "name": "propose",
-      "summary": "Write a proposal to the role's propose_zone. Auto-prefixes the key.",
-      "args": [
-        "_meta",
-        "body",
-        "content",
-        "key"
-      ]
-    },
-    {
-      "name": "published",
-      "summary": "List all entries that declare a publish_to target.",
-      "args": []
-    },
-    {
-      "name": "pulse",
-      "summary": "Delta since cursor — changed entries, stale, pending proposals, doctor summary.",
-      "args": [
-        "since"
-      ]
-    },
-    {
-      "name": "put",
-      "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
-      "args": [
-        "_meta",
-        "body",
-        "content",
-        "if_etag",
-        "key"
-      ]
-    },
-    {
-      "name": "rdeps",
-      "summary": "List the derived entries that depend on a key (reverse deps / impact set).",
-      "args": [
-        "key"
+        "pending_key"
       ]
     },
     {
@@ -199,28 +56,31 @@
       ]
     },
     {
-      "name": "rule_explain",
-      "summary": "Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.",
+      "name": "enqueue",
+      "summary": "Push a registered job type onto the convergence queue, to be run by drain/serve.",
       "args": [
-        "detail",
+        "args",
+        "type"
+      ]
+    },
+    {
+      "name": "get",
+      "summary": "Read one entry - a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).",
+      "args": [
         "key"
       ]
     },
     {
-      "name": "rule_lint",
-      "summary": "Diff candidate manifest YAML's rules against the live manifest. No writes.",
+      "name": "list",
+      "summary": "List keys filtered by lane and/or prefix.",
       "args": [
-        "against"
+        "lane",
+        "prefix"
       ]
     },
     {
-      "name": "rule_list",
-      "summary": "List every rule block in the manifest.",
-      "args": []
-    },
-    {
-      "name": "schema_show",
-      "summary": "Return the schema (field shape) for an entry's family, by key.",
+      "name": "where",
+      "summary": "Resolve a key to its zone, owner, and path without reading the body.",
       "args": [
         "key"
       ]
@@ -233,15 +93,157 @@
       ]
     },
     {
-      "name": "validate_all",
-      "summary": "Internal store-wide schema + role-authority validation; backs doctor's schema_violations check. No public surface (ADR 0105).",
+      "name": "blame",
+      "summary": "Annotate audit rows for a key with the git commit that introduced each file state.",
+      "args": [
+        "key",
+        "limit"
+      ]
+    },
+    {
+      "name": "audit",
+      "summary": "Query the audit log with optional filters.",
+      "args": [
+        "correlation_id",
+        "key",
+        "lane",
+        "limit",
+        "role",
+        "seq_since",
+        "since",
+        "verb"
+      ]
+    },
+    {
+      "name": "materialize",
+      "summary": "Materialize derived entry by converging its pipeline",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "refresh_data",
+      "summary": "Refresh intake data by converging through the pipeline",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "sweep",
+      "summary": "Apply retention policy — drop expired entries from the store",
+      "args": [
+        "key",
+        "scope"
+      ]
+    },
+    {
+      "name": "deps",
+      "summary": "List the keys a derived entry depends on (its projection/external sources).",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "rdeps",
+      "summary": "List the derived entries that depend on a key (reverse deps / impact set).",
+      "args": [
+        "key"
+      ]
+    },
+    {
+      "name": "pulse",
+      "summary": "Delta since cursor — changed entries, stale, pending proposals, doctor summary.",
+      "args": [
+        "since"
+      ]
+    },
+    {
+      "name": "rule_explain",
+      "summary": "Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.",
+      "args": [
+        "detail",
+        "key"
+      ]
+    },
+    {
+      "name": "rule_list",
+      "summary": "List every rule block in the manifest.",
       "args": []
     },
     {
-      "name": "where",
-      "summary": "Resolve a key to its zone, owner, and path without reading the body.",
+      "name": "published",
+      "summary": "List all entries that declare a publish_to target.",
+      "args": []
+    },
+    {
+      "name": "schema_show",
+      "summary": "Return the schema (field shape) for an entry's family, by key.",
       "args": [
         "key"
+      ]
+    },
+    {
+      "name": "doctor",
+      "summary": "Run health checks on the textus store and report any issues.",
+      "args": [
+        "checks"
+      ]
+    },
+    {
+      "name": "boot",
+      "summary": "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.",
+      "args": [
+        "lean"
+      ]
+    },
+    {
+      "name": "jobs",
+      "summary": "List queued jobs by state; retry a dead-lettered job or purge a state.",
+      "args": [
+        "action",
+        "job_id",
+        "state"
+      ]
+    },
+    {
+      "name": "data_mv",
+      "summary": "Rename a data lane — manifest + files. Refuses if destination exists.",
+      "args": [
+        "dry_run",
+        "from",
+        "to"
+      ]
+    },
+    {
+      "name": "key_mv_prefix",
+      "summary": "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.",
+      "args": [
+        "dry_run",
+        "from_prefix",
+        "to_prefix"
+      ]
+    },
+    {
+      "name": "key_delete_prefix",
+      "summary": "Bulk-delete every leaf key under prefix.",
+      "args": [
+        "dry_run",
+        "prefix"
+      ]
+    },
+    {
+      "name": "drain",
+      "summary": "Converge everything now: seed produce + retention jobs and drain the queue to empty.",
+      "args": [
+        "lane",
+        "prefix"
+      ]
+    },
+    {
+      "name": "rule_lint",
+      "summary": "Diff candidate manifest YAML's rules against the live manifest. No writes.",
+      "args": [
+        "against"
       ]
     }
   ]

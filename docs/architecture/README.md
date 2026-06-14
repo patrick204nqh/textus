@@ -1,21 +1,26 @@
 # Textus architecture
 
 > **Explanation** · for contributors · **read this first** for orientation before SPEC
-> **SSoT for** the Ruby implementation layout (layers, container, ports, read/write/produce paths) · **reviewed** 2026-06 (v0.45)
+> **SSoT for** the Ruby implementation layout (layers, container, ports, dispatch/pipeline paths) · **reviewed** 2026-06 (v0.46)
 
 ```mermaid
 flowchart TD
-    interface["Interface — CLI verbs · MCP gate (JSON-RPC)"]
-    application["Application — Call · Container · Dispatcher · RoleScope<br/>read/ · write/ · maintenance/ · produce/ use cases · envelope IO"]
-    domain["Domain — Permission · Freshness<br/>Policy (Guard · GuardFactory · BaseGuards · Evaluation · Fetch · Matcher · Predicates)"]
-    infra["Infrastructure — Store · FileStore · Manifest · Schemas<br/>Ports · Hooks · Entry format strategies"]
-    interface --> application
-    application --> domain
-    application --> infra
-    domain -.->|implemented by| infra
+    surfaces["Surfaces — CLI verbs · MCP gate (JSON-RPC) · RoleScope"]
+    contract["Contract — per-verb DSL (source of truth for public interfaces)"]
+    dispatch["Dispatch — Gate · Auth · Ledger · Executor · Actions<br/>planner/ · pipeline/ · runtime/ · catalog/"]
+    manifest["Manifest — declarative config, no IO (policy/, schema/, entry/)"]
+    core["Core — pure value types (Freshness, Job, Duration, Sentinel)"]
+    ports["Ports — IO adapters (FileStore, AuditLog, Queue, Publisher…)"]
+    step["Step — user-injectable wrappers (Fetch, Transform, Validate, Observe)"]
+    surfaces --> contract
+    contract --> dispatch
+    dispatch --> manifest
+    dispatch --> core
+    dispatch --> ports
+    dispatch --> step
 ```
 
-*Dependency rule: arrows point down.* Domain performs no direct `File`/`Dir`/`Time.now` I/O — all disk and clock access is routed through injected ports; pure path math is allowed. Application imports Domain + Ports. Use cases are plain classes on `(container:, call:)`. Verbs are looked up in the static `Dispatcher::VERBS` table.
+*Dependency rule: inward only.* `dispatch/planner/`, `dispatch/pipeline/`, and `dispatch/runtime/` are private sub-namespaces of `dispatch/` — never referenced directly from `surfaces/` or `contract/`. Use cases are plain classes receiving `(container:, call:)`. Verbs are looked up in the static `Dispatcher::VERBS` table.
 
 ### What lives in each layer
 
@@ -44,35 +49,44 @@ generatable) — stay hand-authored, plus commands with no dispatcher verb (`ini
 `hook`, `mcp serve`, `schema diff/init`). `boot` is auto-generated from its
 contract. Total reconciliation specs make name/dispatch/facet drift unrepresentable.
 
-**Application**
+**Surfaces**
 
 ```
-Call             (slim Data: role, correlation_id, now,
-                  dry_run — request state only)
-Container        (single record — wired ports + manifest)
-Dispatcher       (static VERBS table: verb → use-case)
-RoleScope        (Store#as(role) — forwards verb calls)
+CLI verbs:  store.<verb>(..., role:)
+            store.as(role).<verb>(...)
 
-read/{get,list,where,uid,schema_envelope,
-      deps,rdeps,published,validate_all,boot,doctor,
-      freshness,audit,blame,rule_explain,rule_list,pulse}.rb
-write/{put,key_delete,key_mv,accept,reject,propose}.rb
-maintenance/{drain,serve,worker,key_mv_prefix,key_delete_prefix,
-             zone_mv,rule_lint}.rb
-produce/{engine,events,render,
-         acquire/{intake,handler,projection,serializer}}.rb
-envelope/io/{reader,writer}.rb  (split: parse vs persist)
-projection.rb
+MCP gate:   textus mcp serve — same actions, JSON-RPC.
+RoleScope   (Store#as(role) — builds Call, forwards to Dispatcher)
 ```
 
-**Domain**
+**Dispatch (all runtime)**
 
 ```
-Permission         (write predicate per zone)
+Gate             (thin coordinator: Auth → Ledger → Executor)
+Auth             (authorization engine — FLOOR predicates + rule guards)
+Ledger           (append event to audit before execution)
+Executor         (sync/async routing per action BURN mode)
+Event            (Data.define: name, actor, target, payload, actions)
+
+actions/{get,list,put,key_delete,key_mv,accept,reject,propose,
+         drain,materialize,refresh_data,sweep,observe,
+         enqueue,audit,blame,deps,rdeps,published,boot,doctor,
+         rule_explain,rule_list,rule_lint,pulse,
+         data_mv,key_mv_prefix,key_delete_prefix,
+         schema_envelope,where,uid,jobs}.rb
+
+planner/{planner,scheduler,seeder}.rb  (rules-driven job planning)
+pipeline/{engine,render,acquire/{intake,handler,projection,serializer}}.rb
+runtime/{worker,watch,retention/apply,plan}.rb
+catalog/events.rb                      (dotted event name constants)
+```
+
+**Core (pure value types)**
+
+```
 Freshness::{Verdict,Evaluator}
-Action  Outcome  Sentinel
-Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist,
-         Predicates::{ZoneWritableBy,SchemaValid,AuthorHeld,TargetIsCanon,EtagMatch,FreshWithin}}
+Jobs::Job          (immutable job value object)
+Duration  Sentinel
 ```
 
 **Infrastructure**
@@ -80,50 +94,45 @@ Policy::{Guard,GuardFactory,BaseGuards,Evaluation,Fetch,Matcher,HandlerAllowlist
 ```
 Store              (composition root — wires ports,
                     vends a Container + dispatches verbs)
-Storage::FileStore (bytes-only port: read/write/delete/
-                    exists?/etag)
+Storage::FileStore (bytes-only port: read/write/delete/exists?/etag)
 Manifest           (Data, Resolver, Policy, Rules)
 Schemas            (eager-load cache)
 Ports::{AuditLog,AuditSubscriber,Publisher,Clock,
         BuildLock,Queue,SentinelStore,WatcherLock}
-Hooks::{EventBus,RpcRegistry,Loader,Context,FireReport,
-        Signature,Builtin,ErrorLog}
+Step::{EventBus,RegistryStore,Loader,Context,FireReport,
+       Signature,Builtin,ErrorLog,Fetch,Transform,Validate,Observe}
 Entry::{Markdown,Json,Yaml,Text}  (format strategies)
+Doctor::Validator  (schema + role-authority validation — called by doctor check)
 ```
 
 ## How a verb becomes a method
 
-Each application use case is a plain class under `lib/textus/{read,write,maintenance}/`. The shape is uniform:
+All actions live under `lib/textus/dispatch/actions/`. The shape is uniform:
 
 ```ruby
 module Textus
-  module Read
-    class Get
-      def initialize(container:, call:)
-        @container = container
-        @call      = call
-      end
+  module Dispatch
+    module Actions
+      class Get < Base
+        BURN = :sync
 
-      def call(key)
-        ...
+        def call(container:, call:)
+          ...
+        end
       end
     end
   end
 end
 ```
 
-Verbs are looked up in a static frozen table (`Textus::Dispatcher::VERBS`) that maps `:get → Textus::Read::Get`, `:put → Textus::Write::Put`, etc. `Store#put` / `Store#get` / `Store#as(role).<verb>(...)` instantiate the use case on `(container:, call:)` and invoke `#call`. Adding a new verb is **one entry in `Dispatcher::VERBS`** plus the class — no metaprogramming.
+Verbs are looked up in a static frozen table (`Textus::Dispatcher::VERBS`) that maps `:get → Dispatch::Actions::Get`, `:put → Dispatch::Actions::Put`, etc. Adding a new verb is **one entry in `Dispatcher::VERBS`** plus the class — no metaprogramming.
 
-The instantiate-and-call step itself has one home: `Dispatcher.invoke(verb, container:, call:, args:, kwargs:)` (ADR 0026). `RoleScope` builds the `Call` (request state) and delegates the dispatch to `Dispatcher.invoke`; the convention for invoking a uniform-shape use case lives next to the table that maps the verbs, not re-spelled in the caller. `Store`'s own verb loop is separate — it extracts the `role:` keyword and forwards to `as(role)`, a role-selection job distinct from invocation.
+The instantiate-and-call step lives in `Dispatcher.invoke`. `RoleScope` builds the `Call` (request state) and delegates to `Dispatcher.invoke`. Every system interaction flows through `Dispatch::Gate#fire(event)` — surfaces, internal cascades (rdeps), and async job workers all use the same path. Gate runs Auth → Ledger → Executor in sequence.
 
-`boot` and `doctor` are read verbs like any other: `Read::Boot` / `Read::Doctor`
-are thin `(container:, call:)` use cases that delegate to the `Textus::Boot` /
-`Textus::Doctor` report-building libraries (`build(container:, ...)`). They are
-reached through `Dispatcher::VERBS`, not a special method on `RoleScope`.
+`boot` and `doctor` are actions like any other — reached through `Dispatcher::VERBS`.
 
-Two collaborators live outside the dispatcher because they're composed by other use cases, not invoked as verbs:
+One collaborator lives outside the dispatcher because it's composed by actions, not invoked as a verb:
 
-- `Produce::Engine` — runs the produce pipeline that `drain`/`serve` invoke via the `materialize` job handler; composes `Acquire::Intake` (external pull via handler) with `Produce::Render` (template-driven publish) per entry. Reactive re-produce is emitted by dispatch write actions (`Dispatch::Actions::WriteAction`) as queued `materialize` jobs and run by a worker (no in-process thread runner).
 - `Envelope::IO::{Reader,Writer}` — own the parse and persist halves of the write pipeline; the audit-append-as-final-step invariant lives in `Writer`.
 
 ## Container
@@ -133,11 +142,11 @@ Use cases never see the raw `Store`. `Textus::Container` is a single record hold
 ```ruby
 Container = Data.define(
   :manifest, :file_store, :schemas, :root,
-  :audit_log, :events, :rpc
+  :audit_log, :steps, :gate
 )
 ```
 
-The `Store` builds one `Container` at boot; every use case receives it via `(container:, call:)`. RPC hook callables (`:resolve_handler`, `:transform_rows`, `:validate`) receive `caps: <Container>` — field names match what the prior `WriteCaps` exposed, so handlers reading `caps.manifest`, `caps.events`, etc. continue to work.
+The `Store` builds one `Container` at boot; every action receives it via `(container:, call:)`. Step handlers (Fetch, Transform, Observe) receive `caps: <Container>` — they access `caps.manifest`, `caps.steps`, etc.
 
 ## Ports
 
@@ -152,7 +161,7 @@ Ports are infrastructure adapters with an interface defined by the domain. Each 
 | `Ports::BuildLock` | Process-exclusive `flock` guard over the produce pipeline. Raises `BuildInProgress` if a build is already running. |
 | `Ports::Queue` | Persistent job queue used by `drain`/`watch` workers; tracks ready/leased/done/failed jobs and powers async dispatch actions (`materialize`, `observe`). |
 | `Ports::SentinelStore` | Reads and writes the per-target sentinel file that `Publisher` uses to detect unmanaged overwrites. |
-| `Ports::WatcherLock` | Single-watcher `flock` guard used by `Maintenance::Watch` to ensure only one watcher loop is active per store root. |
+| `Ports::WatcherLock` | Single-watcher `flock` guard used by `Dispatch::Runtime::Watch` to ensure only one watcher loop is active per store root. |
 
 Application use cases access ports only through `Container` fields — never through the raw `Store`.
 
@@ -193,35 +202,36 @@ The four members are wired in `Manifest.build` (`lib/textus/manifest.rb`). `Mani
 2. `Store#get` looks up `Dispatcher::VERBS[:get] → Read::Get`, builds a `Call`, instantiates `Read::Get.new(container:, call:).call(key)`. The verb takes only `key` — there is no `fetch` flag on any surface.
 3. `Read::Get#call(key)` resolves the path through `container.manifest`, reads bytes via `container.file_store`, parses the envelope, and annotates a freshness verdict (`stale`, `reason`, `fetching: false`). When the key has no `upkeep` rule, the envelope is annotated fresh. A stale entry with `upkeep: { ttl:, action: refresh }` is returned **stale** — the read does not refresh it; the next `drain` does.
 
-Because the read is always pure, every caller — interactive reads, dashboards, and the direct in-process callers (accept/reject/publish, materializer, uid, validate_all/validator, schema/tools, hooks/context) — gets the same orchestrator-free, side-effect-free read. The prior read-through path (`get_or_fetch`, then the `fetch:`-flagged `Read::Get`, ADR 0062) and its `Write::FetchOrchestrator` are gone (ADR 0089).
+Because the read is always pure, every caller — interactive reads, dashboards, and the direct in-process callers (accept/reject/publish, materializer, uid, schema/tools, hooks/context) — gets the same orchestrator-free, side-effect-free read. The prior read-through path (`get_or_fetch`, then the `fetch:`-flagged `Read::Get`, ADR 0062) and its `Write::FetchOrchestrator` are gone (ADR 0089).
 
 ## Write path (`store.put(key, ...)`)
 
-1. CLI verb calls `store.put(key, meta:, body:, content:, if_etag:, role:)`.
-2. `Write::Put#call` validates the key, resolves the manifest entry, builds `GuardFactory.for(:put, key)` and calls `Guard#check!(eval)` (topology is predicate #0, `zone_writable_by`) — raises `WriteForbidden` if the topology gate denies, `GuardFailed` if any other predicate fails.
-3. Delegates persistence to `Envelope::IO::Writer#put`, which serializes, schema-validates, etag-checks (raises `EtagMismatch` on conflict), writes via the `FileStore` port, and appends the audit row.
-4. Publishes `:entry_written` via `container.events` with `ctx: <Hooks::Context>`, `key:`, `envelope:`.
+1. CLI/MCP surface calls `store.as(role).put(key, meta:, body:, content:, if_etag:)`.
+2. `Surfaces::RoleScope#dispatch_bound` fires `Gate.fire(Event.new("entry.put", actor: role, ...))`.
+3. `Dispatch::Gate` runs Auth → Ledger → Executor. `Auth#check_event!` evaluates FLOOR predicates (`lane_writable_by`) plus any rule-declared guards — raises `WriteForbidden` / `GuardFailed` on failure.
+4. `Actions::Put#call` validates the key, resolves the manifest entry, delegates persistence to `Envelope::IO::Writer#put` (serialize → schema-validate → etag-check → `FileStore#write` → `AuditLog#append`).
+5. Publishes `:entry_written` via `container.steps` and fires a cascade Gate event for rdep materialization.
 
-`Write::{KeyDelete,KeyMv,Accept,Reject,Propose}` follow the same shape: explicit container, the unified `Guard` for authz (built per transition via `GuardFactory`), `Envelope::IO::Writer` for persistence (where applicable), event published with the `Hooks::Context` handle.
+`Actions::{KeyDelete,KeyMv,Accept,Reject,Propose}` follow the same shape. All write actions inherit `WriteVerb#run_with_cascade`, which enqueues `materialize` jobs for rdeps after the write completes.
 
-`Write::KeyMv` delegates the file-move + audit to `Envelope::IO::Writer#move`, then publishes `:entry_renamed` itself. UID injection (when the source lacks one) goes through `Envelope::IO::Writer#write` directly — no `Put` bypass.
+## Pipeline path (`drain` + reactive `entry.written`)
 
-## Produce path (`drain`/`serve` + reactive `entry_written`)
+The pipeline handles two concerns — **acquire** (pull live data via an intake handler) and **render** (template-driven artifact publish) — unified under `Dispatch::Pipeline::Engine`.
 
-The produce pipeline handles two concerns — **acquire** (pull live data via an intake handler) and **render** (template-driven artifact publish) — unified under `Produce::Engine`.
-
-`Produce::Engine.converge(container:, call:, keys:)` is the entry point the `materialize` job handler calls. Both the batch path (`drain`/`serve` seed jobs) and the reactive path (dispatch write actions enqueue `materialize` jobs on `entry.written`) flow through the queue worker into `converge`.
+`Pipeline::Engine.converge(container:, call:, keys:)` is the entry point `Actions::Materialize` calls. Both the batch path (`drain` seeds jobs via `Planner::Seeder`) and the reactive path (write actions enqueue `materialize` jobs via `WriteVerb#cascade_to_rdeps`) flow through the queue worker into `converge`.
 
 For each key, `Engine#produce_one`:
 
-1. **Acquire phase** — `Produce::Acquire::Intake#run(key)`:
-   - Resolves the manifest entry; looks up the intake handler via `container.rpc.callable(:resolve_handler, mentry.handler)`.
-   - Publishes `:entry_fetch_started` via `Produce::Events`.
-   - Invokes the handler under a timeout deadline.
+1. **Acquire phase** — `Pipeline::Acquire::Intake#run(key)`:
+   - Resolves the manifest entry; looks up the step handler via `container.steps`.
+   - Publishes `:entry_fetch_started` via `container.steps`.
+   - Invokes the `Step::Fetch` handler under a timeout deadline.
    - On error: publishes `:entry_fetch_failed`, re-raises.
-   - On success: normalises the handler result via its own `normalize_action_result` (keyed on the entry's format), checks guard, persists via `Envelope::IO::Writer`, publishes `:entry_fetched` unless the etag is unchanged.
-   - `Acquire::Handler` resolves and invokes the RPC callable under the timeout deadline. (The sibling **projection** sub-path — `from: project` entries — instead runs `Acquire::Projection`, which renders data files through `Acquire::Serializer::{Json,Yaml,Text}` before persisting.)
-2. **Render phase** — `entry.publish_via(context)` calls `Produce::Render#bytes_for(target:, data:, boot:)` to expand the Mustache template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
+   - On success: normalises the handler result, checks auth, persists via `Envelope::IO::Writer`, publishes `:entry_fetched` unless the etag is unchanged.
+   - `Acquire::Handler` resolves and invokes the step under the timeout deadline. (The sibling **projection** sub-path — `from: derive` entries — runs `Acquire::Projection`, which renders data files through `Acquire::Serializer::{Json,Yaml,Text}` before persisting.)
+2. **Render phase** — `entry.publish_via(context)` calls `Pipeline::Render#bytes_for(target:, data:, boot:)` to expand the Mustache template and copy the result to the publish target via `Ports::Publisher`. Returns `nil` if no publish is configured (skipped).
+
+Per-entry failures are published as `:produce_failed` by `Actions::Materialize` after `Engine.converge` returns. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
 
 Reactive produce is enqueued as `materialize` jobs onto `Ports::Queue` when `entry_written`/`entry_deleted`/`entry_renamed` fires; a worker (`drain`/`serve`) runs them through `converge`. A held `BuildLock` is a soft miss — the in-flight build already produces fresh output.
 
@@ -258,4 +268,4 @@ Contract drift surfaces as `ContractDrift` (contract_etag mismatch — a change 
 
 `Hooks::Signature` is the single home of callable keyword-introspection — both `EventBus` (pub-sub dispatch) and `RpcRegistry` (RPC dispatch) delegate to it for `accepts_keyrest?`, `declared_keys`, `missing`, and `filter` rather than each maintaining a hand-rolled copy (ADR 0027). RPC handlers declare `caps:` (single handler); pub-sub handlers declare `ctx:` (0..N handlers).
 
-The event names, payloads, and per-verb firing order are documented once in [`reference/events.md`](../reference/events.md) (the friendly SSoT); the authoritative source is `lib/textus/hooks/catalog.rb` (`Catalog::RPC` and `Catalog::PUBSUB`).
+The event names, payloads, and per-verb firing order are documented once in [`reference/events.md`](../reference/events.md) (the friendly SSoT); the authoritative source is `lib/textus/step/catalog.rb` (`Catalog::RPC` and `Catalog::PUBSUB`) and `lib/textus/dispatch/catalog/events.rb` (dotted Gate event name constants).
