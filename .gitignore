@@ -14,5 +14,6 @@ docs/plans/
 docs/specs/
 docs/handoffs/
 docs/superpowers/
+.superpowers/
 .worktrees/
 **/.textus/.run/
