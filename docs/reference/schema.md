@@ -3,7 +3,6 @@
 
 # Schema reference
 
-
 ## `project`
 
 | Field | Type | Required | Maintained by |
@@ -12,13 +11,9 @@
 | `description` | string | yes | human |
 | `name` | string | yes | human |
 | `repo` | string | no | human |
-
-
 ## `runbook`
 
 | Field | Type | Required | Maintained by |
 |---|---|---|---|
 | `description` | string | yes | human |
 | `name` | string | yes | human |
-
-
