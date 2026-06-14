@@ -38,7 +38,7 @@ module Textus
         merged = inputs.merge(role: @role)
         filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
         cmd = cmd_class.new(**filled)
-        @container.gate.dispatch(cmd, container: @container)
+        @container.gate.dispatch(cmd)
       end
     end
   end

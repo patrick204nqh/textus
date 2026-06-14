@@ -77,7 +77,7 @@ module Textus
             merged = kwargs.merge(role: session.role)
             filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
             cmd = cmd_class.new(**filled)
-            store.gate.dispatch(cmd, container: store.container)
+            store.gate.dispatch(cmd)
           end
 
           result = if spec.around

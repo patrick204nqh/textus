@@ -17,3 +17,6 @@ docs/superpowers/
 .superpowers/
 .worktrees/
 **/.textus/.run/
+
+# Brainstorm visual companion (local-only)
+.superpowers/

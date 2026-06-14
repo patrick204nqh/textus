@@ -68,15 +68,15 @@ module Textus
       @container = container
     end
 
-    def dispatch(cmd, container: @container, correlation_id: nil)
-      cmd = normalize_propose_key(cmd, container) if cmd.is_a?(Command::Propose)
+    def dispatch(cmd, correlation_id: nil)
+      cmd = normalize_propose_key(cmd, @container) if cmd.is_a?(Command::Propose)
       action_classes = ROUTES.fetch(cmd.class) do
         raise Textus::UsageError.new("unknown command: #{cmd.class}")
       end
 
-      Gate::Auth.new(container).check!(cmd)
+      Gate::Auth.new(@container).check!(cmd)
       call_obj = build_call(cmd, correlation_id: correlation_id)
-      results = action_classes.map { |klass| run_action(klass, cmd, container, call_obj) }
+      results = action_classes.map { |klass| run_action(klass, cmd, @container, call_obj) }
       results.length == 1 ? results.first : results
     end
 

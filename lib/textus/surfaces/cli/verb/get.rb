@@ -9,7 +9,7 @@ module Textus
           def invoke(store)
             key = positional.shift or raise UsageError.new("get requires a key")
             cmd = Textus::Command::Get.new(key: key, role: resolved_role(store))
-            result = store.gate.dispatch(cmd, container: store.container)
+            result = store.gate.dispatch(cmd)
             raise Textus::UnknownKey.new(key, suggestions: store.manifest.resolver.suggestions_for(key)) if result.nil?
 
             emit(result.to_h_for_wire)

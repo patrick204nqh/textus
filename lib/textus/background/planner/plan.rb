@@ -3,7 +3,7 @@
 module Textus
   module Background
     module Planner
-      class Planner
+      class Plan
         ACTIONS_BY_TRIGGER = {
           "convergence" => %w[materialize refresh sweep],
           "entry.written" => %w[materialize],

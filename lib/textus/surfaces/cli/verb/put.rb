@@ -20,7 +20,7 @@ module Textus
               if_etag: payload["if_etag"],
               role: resolved_role(store),
             )
-            result = store.gate.dispatch(cmd, container: store.container)
+            result = store.gate.dispatch(cmd)
             emit(result.to_h_for_wire)
           end
         end

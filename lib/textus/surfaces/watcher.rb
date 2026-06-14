@@ -11,7 +11,7 @@ module Textus
       end
 
       def tick
-        Textus::Background::Planner::Planner.seed(
+        Textus::Background::Planner::Plan.seed(
           container: @container,
           queue: @queue,
           role: Textus::Role::AUTOMATION,

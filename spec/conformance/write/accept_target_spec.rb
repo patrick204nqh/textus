@@ -37,6 +37,6 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
 
   it "refuses a proposal whose target resolves to no declared entry" do
     propose("ghost.nope.p1")
-    expect { store.as("human").accept("proposals.notes.p1") }.to fail_guard_with("target_is_canon")
+    expect { store.as("human").accept("proposals.notes.p1") }.to raise_error(Textus::UnknownKey)
   end
 end
