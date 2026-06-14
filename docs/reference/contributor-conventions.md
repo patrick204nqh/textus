@@ -69,9 +69,11 @@ Each step base class declares:
 
 `def self.kind` is not declared - kind is derived from the class hierarchy.
 
-## Test surface
+## Test Surface Rules
 
-Stable surface = `Surfaces::RoleScope#dispatch_bound(verb, inputs)`.
-Specs below this surface test implementation detail and must not exist.
-Unit specs only for pure value objects: `Envelope`, `Role`, `Etag`,
-entry format parsers, `Manifest::Resolver`.
+Unit specs are for stable value objects only: `core/`, `manifest/`, `entry/`,
+`key/`, `role/`, `envelope/`. For anything in `dispatch/`, test through verb
+contract integration specs.
+
+The `volatile` tag marks specs in active flux during a branch only — it is
+not a permanent excuse to keep a spec that should be deleted.
