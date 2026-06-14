@@ -4,10 +4,12 @@ module Textus
       class Verb
         class Watch < Verb
           command_name "watch"
+          option :as_flag, "--as=ROLE"
+          option :poll, "--poll=SECONDS"
 
           def call(store)
-            call = Textus::Call.build(role: Textus::Role::AUTOMATION)
-            Textus::Dispatch::Runtime::Watch.new(container: store.container, call: call).run
+            watcher = Textus::Surfaces::Watcher.new(container: store.container)
+            watcher.run(poll: poll&.to_f)
             0
           end
         end

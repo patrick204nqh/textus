@@ -6,77 +6,33 @@ module Textus
       extend Textus::Contract::DSL
 
       verb :drain
-      summary "Converge everything now: seed produce + retention jobs and drain the queue to empty."
+      summary "Seed refresh + sweep jobs then drain the queue to empty. " \
+              "Identical to one Watcher tick. Use when no watcher is running."
       surfaces :cli, :mcp
-      cli "drain"
-      arg :prefix, String, description: "restrict convergence to keys under this dotted prefix"
-      arg :lane, String, description: "restrict convergence to entries in this lane"
+      arg :prefix, String, description: "restrict to keys under this dotted prefix"
+      arg :lane,   String, description: "restrict to entries in this lane"
 
       BURN = :sync
 
       def initialize(prefix: nil, lane: nil)
         super()
         @prefix = prefix
-        @lane = lane
+        @lane   = lane
       end
 
-      def self.new(*args, **kwargs)
-        return super(**kwargs) unless args.any?
+      def args = { prefix: @prefix, lane: @lane }.compact
 
-        positional = instance_method(:initialize).parameters.slice(:keyreq, :key).map(&:last)
-        mapped = positional.zip(args).to_h
-        super(**mapped.merge(kwargs))
-      end
-
-      def args
-        {
-          prefix: @prefix,
-          lane: @lane,
-        }.compact
-      end
-
-      def call(container:, call:)
+      def call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
         queue = Textus::Ports::Queue.new(root: container.root)
-        Textus::Dispatch::Planner::Seeder.new(
-          container: container, queue: queue, call: call,
-        ).seed
-        completed = 0
-        failed = 0
-
-        while (leased = queue.lease(worker_id: "drain", lease_ttl: 60))
-          begin
-            run_queued_job(leased, container)
-            queue.ack(leased)
-            completed += 1
-          rescue StandardError => e
-            outcome = queue.fail(leased, error: e.message)
-            failed += 1 if outcome == :dead_lettered
-          end
-        end
-
+        Textus::Surfaces::Watcher.seed_scheduled_jobs(container, queue)
+        queue.reclaim(now: Textus::Ports::Clock.new.now)
+        summary = Textus::Dispatch::Runtime::Worker.for(container:, queue:).drain
         {
           "protocol" => Textus::PROTOCOL,
-          "ok" => failed.zero?,
-          "completed" => completed,
-          "failed" => failed,
+          "ok" => summary.failed.zero?,
+          "completed" => summary.completed,
+          "failed" => summary.failed,
         }
-      end
-
-      private
-
-      def run_queued_job(leased, container)
-        job = leased.job
-        klass = Textus::Action.fetch(job.type)
-        action = if klass.instance_method(:initialize).parameters.any?
-                   klass.new(**job.args.transform_keys(&:to_sym))
-                 else
-                   klass.new
-                 end
-        call = Textus::Call.build(
-          role: job.enqueued_by || Textus::Role::AUTOMATION,
-          correlation_id: SecureRandom.uuid,
-        )
-        action.call(container: container, call: call)
       end
     end
   end
