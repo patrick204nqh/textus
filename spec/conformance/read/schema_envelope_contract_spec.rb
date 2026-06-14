@@ -4,7 +4,7 @@ RSpec.describe "Read::SchemaEnvelope MCP contract (ADR 0039)" do
   let(:store) { Textus::Store.new(File.expand_path("../../../.textus", __dir__)) }
 
   it "is exposed on MCP under the name 'schema_show', keyed by entry key" do
-    c = Textus::Read::SchemaEnvelope.contract
+    c = Textus::Dispatch::Actions::SchemaEnvelope.contract
     expect(c.verb).to eq(:schema_show)
     expect(c.mcp?).to be(true)
     expect(c.args.map(&:name)).to eq([:key])

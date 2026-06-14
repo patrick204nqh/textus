@@ -6,8 +6,7 @@ require "spec_helper"
 # Etag helper itself are the sanctioned homes; the envelope persist pipeline
 # (envelope/io/writer.rb) is adjacent to the port and out of this guard's scope.
 ETAG_SPEC_APP_GLOBS = [
-  File.expand_path("../../../lib/textus/read/**/*.rb", __dir__),
-  File.expand_path("../../../lib/textus/write/**/*.rb", __dir__),
+  File.expand_path("../../../lib/textus/dispatch/actions/**/*.rb", __dir__),
 ].freeze
 ETAG_SPEC_DIRECT_CALL = /\bEtag\.for_file\b/
 
@@ -71,7 +70,7 @@ RSpec.describe "Textus::Etag.for_contract" do
     expect(etag).not_to eq(was)
   end
 
-  # Guard spec (ADR 0048 D4): application use cases under read/ and write/ must
+  # Guard spec (ADR 0048 D4): application actions under dispatch/actions/ must
   # compute etags through the FileStore port (container.file_store.etag), never by
   # calling Etag.for_file directly. The port (ports/storage/file_store.rb) and the
   # Etag helper itself are the sanctioned homes; the envelope persist pipeline
@@ -83,7 +82,7 @@ RSpec.describe "Textus::Etag.for_contract" do
       expect(app_files).not_to be_empty
     end
 
-    it "never calls Etag.for_file directly in read/ or write/" do
+    it "never calls Etag.for_file directly in dispatch/actions/" do
       violations = []
       app_files.each do |path|
         File.readlines(path, encoding: "utf-8").each_with_index do |line, idx|

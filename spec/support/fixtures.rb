@@ -169,7 +169,7 @@ module TextusSpecHelpers
     queue = Textus::Ports::Queue.new(root: store.root)
     call = Textus::Call.build(role: role)
     Textus::Jobs::Seeder.new(container: store.container, queue: queue, call: call).seed(prefix: prefix, lane: lane)
-    Textus::Maintenance::Drain.new(container: store.container, call: call).call
+    Textus::Dispatch::Actions::Drain.new.call(container: store.container, call: call)
   end
 end
 

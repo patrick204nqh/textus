@@ -27,7 +27,7 @@ RSpec.describe "verb_registry_handler" do
   end
 
   it "sources verbs from Read::Capabilities (no Dispatcher-internals reach)" do
-    projected = Textus::Read::Capabilities.new.call["verbs"].map { |v| v["verb"] }.sort
+    projected = Textus::Dispatch::Actions::Capabilities.new.call(container: nil, call: nil)["verbs"].map { |v| v["verb"] }.sort
     result = registry.invoke(:fetch, :verbs, caps: caps, config: {}, args: [])
     names = result["content"]["verbs"].map { |v| v["name"] }
     expect(names).to eq(projected)
