@@ -7,8 +7,11 @@ module Textus
         put: %w[lane_writable_by],
         key_delete: %w[lane_writable_by],
         key_mv: %w[lane_writable_by],
-        accept: %w[author_held target_is_canon],
+        accept: %w[author_held],
         reject: %w[author_held],
+        propose: %w[lane_writable_by],
+        key_mv_prefix: %w[lane_writable_by],
+        key_delete_prefix: %w[lane_writable_by],
       }.freeze
 
       AuthContext = Struct.new(
@@ -24,9 +27,7 @@ module Textus
       end
 
       # Command-based check (new Gate path).
-      def check!(cmd) # rubocop:disable Metrics/AbcSize
-        return if cmd.role.to_s == Textus::Role::AUTOMATION
-
+      def check!(cmd)
         key = if cmd.respond_to?(:pending_key)
                 cmd.pending_key
               else
@@ -35,7 +36,6 @@ module Textus
         return unless key
 
         action_sym = command_to_action(cmd)
-        return if %i[propose accept].include?(action_sym)
 
         mentry = @manifest.resolver.resolve(key).entry
         lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)
@@ -91,13 +91,16 @@ module Textus
         raise
       end
 
+      def self.command_to_verb
+        @command_to_verb ||= Textus::Gate::VERB_COMMAND.invert.freeze
+      end
+
       private
 
       def command_to_action(cmd)
-        cmd.class.name.split("::").last
-           .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-           .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-           .downcase.to_sym
+        self.class.command_to_verb.fetch(cmd.class) do
+          raise Textus::UsageError.new("unmapped command: #{cmd.class}")
+        end
       end
 
       def rule_declared_predicates(action, key)

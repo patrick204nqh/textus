@@ -1,4 +1,4 @@
-RSpec.describe Textus::Action::Background::Refresh do
+RSpec.describe Textus::Background::Job::Refresh do
   include_context "textus_store_fixture"
 
   let(:store) { minimal_store(root) }

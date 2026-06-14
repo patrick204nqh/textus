@@ -15,13 +15,13 @@ RSpec.describe Textus::Action::Jobs do
   let(:queue) { Textus::Ports::Queue.new(root: root) }
 
   it "lists ready job ids" do
-    queue.enqueue(Textus::Core::Jobs::Job.new(type: "materialize", args: { "key" => "x" }))
+    queue.enqueue(Textus::Ports::Queue::Job.new(type: "materialize", args: { "key" => "x" }))
     result = store.as("human").jobs(state: "ready")
     expect(result["jobs"]).to include(a_string_starting_with("materialize:"))
   end
 
   it "retries a failed job back to ready" do
-    job = Textus::Core::Jobs::Job.new(type: "materialize", args: { "key" => "x" }, max_attempts: 1)
+    job = Textus::Ports::Queue::Job.new(type: "materialize", args: { "key" => "x" }, max_attempts: 1)
     queue.enqueue(job)
     leased = queue.lease(worker_id: "w", lease_ttl: 60)
     queue.fail(leased, error: "boom") # -> failed/

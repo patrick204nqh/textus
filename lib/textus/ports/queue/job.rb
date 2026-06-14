@@ -2,12 +2,12 @@ require "digest"
 require "json"
 
 module Textus
-  module Core
-    module Jobs
+  module Ports
+    class Queue
       # A unit of deferred work. Pure data. The id is `<type>:<digest>` where the
       # digest is over the args with sorted keys, so logically-identical enqueues
-      # collide on the same id — which is how the Queue dedups (the file already
-      # exists). At-least-once delivery means handlers must be idempotent.
+      # collide on the same id — which is how Queue dedups (file already exists).
+      # At-least-once delivery means handlers must be idempotent.
       class Job
         DIGEST_BYTES = 16
 
@@ -15,10 +15,10 @@ module Textus
         attr_accessor :attempts, :last_error
 
         def initialize(type:, args:, enqueued_by: nil, attempts: 0, max_attempts: 3, last_error: nil)
-          @type = type.to_s
-          @args = stringify(args)
+          @type        = type.to_s
+          @args        = stringify(args)
           @enqueued_by = enqueued_by
-          @attempts = attempts
+          @attempts    = attempts
           @max_attempts = max_attempts
           @last_error = last_error
         end
@@ -29,16 +29,23 @@ module Textus
 
         def to_h
           {
-            "type" => @type, "args" => @args, "enqueued_by" => @enqueued_by,
-            "attempts" => @attempts, "max_attempts" => @max_attempts, "last_error" => @last_error
+            "type" => @type,
+            "args" => @args,
+            "enqueued_by" => @enqueued_by,
+            "attempts" => @attempts,
+            "max_attempts" => @max_attempts,
+            "last_error" => @last_error,
           }
         end
 
         def self.from_h(hash)
           new(
-            type: hash["type"], args: hash["args"] || {}, enqueued_by: hash["enqueued_by"],
-            attempts: hash["attempts"] || 0, max_attempts: hash["max_attempts"] || 3,
-            last_error: hash["last_error"]
+            type: hash["type"],
+            args: hash["args"] || {},
+            enqueued_by: hash["enqueued_by"],
+            attempts: hash["attempts"] || 0,
+            max_attempts: hash["max_attempts"] || 3,
+            last_error: hash["last_error"],
           )
         end
 

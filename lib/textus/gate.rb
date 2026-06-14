@@ -68,18 +68,26 @@ module Textus
       @container = container
     end
 
-    def dispatch(cmd, container: @container)
+    def dispatch(cmd, container: @container, correlation_id: nil)
+      cmd = normalize_propose_key(cmd, container) if cmd.is_a?(Command::Propose)
       action_classes = ROUTES.fetch(cmd.class) do
         raise Textus::UsageError.new("unknown command: #{cmd.class}")
       end
 
       Gate::Auth.new(container).check!(cmd)
-      call_obj = build_call(cmd)
+      call_obj = build_call(cmd, correlation_id: correlation_id)
       results = action_classes.map { |klass| run_action(klass, cmd, container, call_obj) }
-      results.one? ? results.first : results
+      results.length == 1 ? results.first : results
     end
 
     private
+
+    def normalize_propose_key(cmd, container)
+      return cmd if cmd.pending_key
+
+      zone = container.manifest.policy.propose_lane_for(cmd.role.to_s)
+      cmd.with(pending_key: zone ? "#{zone}.#{cmd.key}" : nil)
+    end
 
     def run_action(klass, cmd, container, call_obj)
       action = klass.new(**extract_kwargs(klass, cmd))
@@ -88,18 +96,19 @@ module Textus
 
     def extract_kwargs(klass, cmd)
       params = klass.instance_method(:initialize).parameters
-      accepts_role = params.any? { |t, n| n == :role && %i[keyreq key].include?(t) } || params.any? { |t, _| t == :keyrest }
+      accepts_keyrest = params.any? { |t, _| t == :keyrest }
+      param_set = params.to_set { |_t, n| n }
       cmd.members.each_with_object({}) do |m, h|
-        next if m == :role && !accepts_role
+        next unless accepts_keyrest || param_set.include?(m)
 
         val = cmd.public_send(m)
         h[m] = val unless val.nil?
       end
     end
 
-    def build_call(cmd)
+    def build_call(cmd, correlation_id: nil)
       dry_run = cmd.respond_to?(:dry_run) ? !cmd.dry_run.nil? : false
-      Textus::Call.build(role: cmd.role, dry_run:)
+      Textus::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
     end
   end
 end

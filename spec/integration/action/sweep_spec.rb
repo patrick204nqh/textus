@@ -1,4 +1,4 @@
-RSpec.describe Textus::Action::Background::Sweep do
+RSpec.describe Textus::Background::Job::Sweep do
   include_context "textus_store_fixture"
 
   let(:store) { minimal_store(root) }

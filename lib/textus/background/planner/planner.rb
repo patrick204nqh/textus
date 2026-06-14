@@ -5,12 +5,11 @@ module Textus
     module Planner
       class Planner
         ACTIONS_BY_TRIGGER = {
-          "manual.kick" => %w[materialize refresh sweep],
-          "schedule.tick" => %w[materialize refresh sweep],
-          "entry.written" => %w[materialize decorate],
+          "convergence" => %w[materialize refresh sweep],
+          "entry.written" => %w[materialize],
           "entry.deleted" => %w[materialize],
           "entry.moved" => %w[materialize],
-          "proposal.accepted" => %w[materialize decorate],
+          "proposal.accepted" => %w[materialize],
           "proposal.rejected" => %w[materialize],
         }.freeze
 
@@ -18,8 +17,15 @@ module Textus
           "materialize" => :producible_keys,
           "refresh" => :stale_intake_keys,
           "sweep" => :lane_keys,
-          "decorate" => :producible_keys,
         }.freeze
+
+        def self.seed(container:, queue:, role:)
+          jobs = new(container: container).plan(
+            trigger: { "type" => "convergence" },
+            role: role,
+          )
+          jobs.each { |j| queue.enqueue(j) }
+        end
 
         def initialize(container:)
           @container = container
@@ -49,7 +55,7 @@ module Textus
               do_action = block.react.raw["do"]
               Array(do_action).each do |action|
                 if action == "sweep"
-                  jobs << Textus::Core::Jobs::Job.new(
+                  jobs << Textus::Ports::Queue::Job.new(
                     type: "sweep", args: { "scope" => {} }, enqueued_by: role,
                   )
                 else
@@ -68,7 +74,7 @@ module Textus
           producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
           stale_intake_keys(nil).each { |k| jobs << job("refresh", k, role) } if actions.include?("refresh")
           if actions.include?("sweep")
-            jobs << Textus::Core::Jobs::Job.new(
+            jobs << Textus::Ports::Queue::Job.new(
               type: "sweep", args: { "scope" => {} }, enqueued_by: role,
             )
           end
@@ -81,7 +87,7 @@ module Textus
         end
 
         def job(type, key, enqueued_by)
-          Textus::Core::Jobs::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
+          Textus::Ports::Queue::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
         end
 
         def producible_keys(_target)

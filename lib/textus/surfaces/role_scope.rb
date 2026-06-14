@@ -2,15 +2,17 @@
 
 module Textus
   module Surfaces
-    # Role-scoped facade that dispatches through the Gate.
-    # Replaces the old Event-based RoleScope.
+    # Role-scoped identity carrier. Holds the acting identity (role,
+    # correlation_id, dry_run) bound to a container. All verb methods
+    # (put, get, accept, ...) are injected by textus.rb's define_method
+    # loop, which dispatches directly through Gate.
     class RoleScope
       attr_reader :container, :role, :correlation_id
 
       def initialize(container:, role:, dry_run: false, correlation_id: nil)
-        @container = container
-        @role = role.to_s
-        @dry_run = dry_run
+        @container      = container
+        @role           = role.to_s
+        @dry_run        = dry_run
         @correlation_id = correlation_id || SecureRandom.uuid
       end
 
@@ -30,21 +32,6 @@ module Textus
 
       def hook_context
         @hook_context ||= Textus::Step::Context.new(scope: self)
-      end
-
-      def dispatch_bound(verb, inputs, session: nil)
-        klass = Textus::Action::VERBS[verb]
-        spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
-        if spec
-          pos, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
-          spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
-          action = klass.new(**kwargs)
-        else
-          sym_inputs = inputs.transform_keys(&:to_sym)
-          action = klass.new(**sym_inputs)
-        end
-        call = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
-        [action.call(container: @container, call:)]
       end
     end
   end

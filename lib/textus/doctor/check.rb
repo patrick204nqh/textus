@@ -14,8 +14,9 @@ module Textus
                           .downcase
       end
 
-      def initialize(container)
+      def initialize(container, role: Textus::Role::DEFAULT)
         @container = container
+        @role      = role
       end
 
       def call
@@ -34,7 +35,7 @@ module Textus
         spec = klass.contract if klass.respond_to?(:contract?) && klass.contract?
         inputs = spec ? Textus::Contract::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
         cmd_class = Textus::Gate::VERB_COMMAND.fetch(verb)
-        merged = inputs.merge(role: Textus::Role::DEFAULT)
+        merged = inputs.merge(role: @role)
         filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
         cmd = cmd_class.new(**filled)
         @container.gate.dispatch(cmd, container: @container)

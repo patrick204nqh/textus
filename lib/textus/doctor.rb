@@ -33,7 +33,7 @@ module Textus
 
     module_function
 
-    def build(container:, checks: nil)
+    def build(container:, checks: nil, role: Textus::Role::DEFAULT)
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?
@@ -43,7 +43,7 @@ module Textus
       end
 
       selected = CHECKS.select { |c| selected_keys.include?(c.name_key) }
-      issues = selected.flat_map { |c| c.new(container).call }
+      issues = selected.flat_map { |c| c.new(container, role:).call }
       issues.concat(run_registered_checks(container))
 
       summary = LEVELS.to_h { |l| [l, issues.count { |i| i["level"] == l }] }

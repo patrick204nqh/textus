@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Textus
-  module Action
-    module Background
-      class Refresh < Action::Base
+  module Background
+    module Job
+      class Refresh < Base
         TYPE = "refresh"
 
         def initialize(key:)

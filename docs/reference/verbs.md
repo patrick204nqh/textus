@@ -115,28 +115,6 @@ Query the audit log with optional filters.
 - `--verb`
 
 
-## `textus materialize`
-
-Materialize derived entry by converging its pipeline
-
-- `--key`
-
-
-## `textus refresh_data`
-
-Refresh intake data by converging through the pipeline
-
-- `--key`
-
-
-## `textus sweep`
-
-Apply retention policy — drop expired entries from the store
-
-- `--key`
-- `--scope`
-
-
 ## `textus deps`
 
 List the keys a derived entry depends on (its projection/external sources).
@@ -236,7 +214,7 @@ Bulk-delete every leaf key under prefix.
 
 ## `textus drain`
 
-Converge everything now: seed produce + retention jobs and drain the queue to empty.
+Seed refresh + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.
 
 - `--lane`
 - `--prefix`

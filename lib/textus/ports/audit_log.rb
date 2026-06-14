@@ -78,10 +78,26 @@ module Textus
       def verify_integrity
         return [] unless File.exist?(@path)
 
-        out = []
+        out      = []
+        prev_seq = nil
         File.foreach(@path).with_index(1) do |line, lineno|
           violation = check_line(line.chomp, lineno)
-          out << violation if violation
+          if violation
+            out << violation
+            next
+          end
+
+          parsed = parse_row(line.chomp)
+          next unless parsed && (seq = parsed["seq"]).is_a?(Integer)
+
+          if prev_seq && seq != prev_seq + 1
+            out << {
+              "lineno" => lineno,
+              "reason" => "seq_gap",
+              "detail" => "expected #{prev_seq + 1}, got #{seq}",
+            }
+          end
+          prev_seq = seq
         end
         out
       end

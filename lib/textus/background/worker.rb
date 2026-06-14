@@ -46,7 +46,7 @@ module Textus
 
       def run_one(leased)
         job    = leased.job
-        klass  = Textus::Action.fetch(job.type)
+        klass  = Textus::Background::Job.fetch(job.type)
         action = if klass.instance_method(:initialize).parameters.any?
                    klass.new(**job.args.transform_keys(&:to_sym))
                  else

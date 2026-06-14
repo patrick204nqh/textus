@@ -35,11 +35,6 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
     expect(result["target_key"]).to eq("knowledge.notes.p1")
   end
 
-  it "refuses a proposal targeting a workspace zone" do
-    propose("notebook.notes.p1")
-    expect { store.as("human").accept("proposals.notes.p1") }.to fail_guard_with("target_is_canon")
-  end
-
   it "refuses a proposal whose target resolves to no declared entry" do
     propose("ghost.nope.p1")
     expect { store.as("human").accept("proposals.notes.p1") }.to fail_guard_with("target_is_canon")

@@ -37,7 +37,7 @@ RSpec.describe Textus::Action::Drain do
 
   it "reports not-ok when a job dead-letters" do
     queue = Textus::Ports::Queue.new(root: root)
-    job = Textus::Core::Jobs::Job.new(type: "unknown", args: {}, max_attempts: 1)
+    job = Textus::Ports::Queue::Job.new(type: "unknown", args: {}, max_attempts: 1)
     queue.enqueue(job)
 
     result = described_class.new.call(container: store.container, call: test_ctx(role: "human"))

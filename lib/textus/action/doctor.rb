@@ -22,8 +22,8 @@ module Textus
         { checks: @checks }.compact
       end
 
-      def call(container:, **)
-        Textus::Doctor.build(container: container, checks: @checks)
+      def call(container:, call:, **)
+        Textus::Doctor.build(container: container, checks: @checks, role: call.role)
       end
     end
   end

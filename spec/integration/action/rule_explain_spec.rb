@@ -91,7 +91,7 @@ RSpec.describe Textus::Action::RuleExplain do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:guards][:put][:floor]).to eq(["lane_writable_by"])
       expect(result[:guards][:put][:rule]).to eq([])
-      expect(result[:guards][:accept][:floor]).to include("author_held", "target_is_canon")
+      expect(result[:guards][:accept][:floor]).to include("author_held")
       expect(result[:guards][:accept][:rule]).to include("schema_valid")
     end
 

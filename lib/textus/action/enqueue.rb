@@ -28,7 +28,7 @@ module Textus
 
       def call(container:, call:)
         action_class = begin
-          Textus::Action.fetch(@type.to_s)
+          Textus::Background::Job.fetch(@type.to_s)
         rescue Textus::UsageError
           raise Textus::UsageError.new("unregistered job type '#{@type}'")
         end
@@ -41,7 +41,7 @@ module Textus
           )
         end
 
-        job = Textus::Core::Jobs::Job.new(
+        job = Textus::Ports::Queue::Job.new(
           type: @type,
           args: @job_args,
           enqueued_by: call.role,

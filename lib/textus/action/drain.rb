@@ -22,9 +22,13 @@ module Textus
 
       def args = { prefix: @prefix, lane: @lane }.compact
 
-      def call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
+      def call(container:, call:)
         queue = Textus::Ports::Queue.new(root: container.root)
-        Textus::Surfaces::Watcher.seed_scheduled_jobs(container, queue)
+        Textus::Background::Planner::Planner.seed(
+          container: container,
+          queue: queue,
+          role: call.role,
+        )
         queue.reclaim(now: Textus::Ports::Clock.new.now)
         summary = Textus::Background::Worker.for(container:, queue:).drain
         {
