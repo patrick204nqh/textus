@@ -61,16 +61,20 @@ module Textus
           klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
         end
 
-        def call(name, session:, store:, args:)
+        def call(name, session:, store:, args:) # rubocop:disable Metrics/AbcSize
           klass = Textus::Action::VERBS[name.to_sym]
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
           spec = klass.contract
           inputs = Textus::Contract::Binder.inputs_from_wire(spec, args)
+          pos, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
+          spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
           cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
             raise Textus::MCP::ToolError.new("unknown verb: #{spec.verb}")
           end
-          cmd = cmd_class.new(**inputs.merge(role: session.role).slice(*cmd_class.members))
+          merged = kwargs.merge(role: session.role)
+          filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
+          cmd = cmd_class.new(**filled)
           result = store.gate.dispatch(cmd, container: store.container)
           Textus::Contract::View.render(spec, :default, result, inputs)
         rescue Textus::Contract::MissingArgs => e

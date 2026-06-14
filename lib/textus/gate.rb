@@ -112,7 +112,11 @@ module Textus
       verb = cmd.class.name.split("::").last.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
       return if READ_COMMANDS.include?(verb.to_sym)
 
-      key = cmd.respond_to?(:key) ? cmd.key : nil
+      key = if cmd.respond_to?(:pending_key)
+              cmd.pending_key
+            else
+              (cmd.respond_to?(:key) ? cmd.key : nil)
+            end
       container.audit_log.append(
         role: cmd.role,
         verb:,

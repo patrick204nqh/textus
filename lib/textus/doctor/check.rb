@@ -29,10 +29,14 @@ module Textus
       def steps    = @container.steps
 
       # Dispatch a verb through Gate.
-      def dispatch(verb, *_args, **kwargs)
+      def dispatch(verb, *args, **kwargs)
+        klass = Textus::Action::VERBS[verb]
+        spec = klass.contract if klass.respond_to?(:contract?) && klass.contract?
+        inputs = spec ? Textus::Contract::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
         cmd_class = Textus::Gate::VERB_COMMAND.fetch(verb)
-        merged = kwargs.merge(role: Textus::Role::DEFAULT)
-        cmd = cmd_class.new(**merged.slice(*cmd_class.members))
+        merged = inputs.merge(role: Textus::Role::DEFAULT)
+        filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
+        cmd = cmd_class.new(**filled)
         @container.gate.dispatch(cmd, container: @container)
       end
     end

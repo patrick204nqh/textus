@@ -27,10 +27,16 @@ module Textus
       def check!(cmd) # rubocop:disable Metrics/AbcSize
         return if cmd.role.to_s == Textus::Role::AUTOMATION
 
-        key = cmd.respond_to?(:key) ? cmd.key : nil
+        key = if cmd.respond_to?(:pending_key)
+                cmd.pending_key
+              else
+                cmd.respond_to?(:key) ? cmd.key : nil
+              end
         return unless key
 
         action_sym = command_to_action(cmd)
+        return if %i[propose accept].include?(action_sym)
+
         mentry = @manifest.resolver.resolve(key).entry
         lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)
         actor_caps = Set.new(@manifest.data.role_caps.fetch(cmd.role.to_s, []))
@@ -52,10 +58,6 @@ module Textus
           failures << [pred, result[:reason]]
         end
         raise Textus::GuardFailed.new(failures) unless failures.empty?
-      rescue Textus::UnknownKey
-        raise if cmd.is_a?(Textus::Command::Accept)
-
-        raise
       end
 
       # Backward-compatible check for inline action auth (accept, put, etc.).

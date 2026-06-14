@@ -36,7 +36,8 @@ module Textus
         klass = Textus::Action::VERBS[verb]
         spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
         if spec
-          _, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
+          pos, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
+          spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
           action = klass.new(**kwargs)
         else
           sym_inputs = inputs.transform_keys(&:to_sym)
