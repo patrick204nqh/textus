@@ -9,7 +9,21 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
-## [Unreleased]
+## 0.53.0 — 2026-06-15 — Sandi Metz code quality pass
+
+The codebase was audited against Sandi Metz's four rules (classes ≤ 100 lines, methods ≤ 5 lines, parameters ≤ 4). 40 files touched; ~270 lines removed.
+
+### Changed
+
+- **`Writer#put` decomposed** (38→12 lines): extracted into 8 single-purpose sub-methods (resolve, uid, serialize, schema-validate, etag-check, persist, envelope, audit).
+- **`Gate::Auth#check!` / `check_action!` deduplicated**: shared predicate-evaluation logic extracted into `evaluate_predicates`.
+- **`Init.run` split** (30→10 lines): 8 focused class methods (`check_target!`, `create_directories`, `write_steps_readme`, `write_manifest`, `scaffold_agent`, `setup_state_dirs`, `write_gitignore`, `build_result`).
+- **`auth`/`writer`/`reader` helpers pulled into `WriteVerb`**: removed 4-file duplication from `Put`, `KeyMv`, `KeyDelete`, `Reject`.
+- **`Action::Base#args` auto-generated from `initialize` params**: ~115 lines of boilerplate removed across 25 action classes.
+- **`AuditLog#verify_integrity`**: per-line checking extracted into `check_line_integrity` + `iterate_with_prev_seq`.
+- **`Error#initialize`**: 5-param constructor replaced with `ErrorInfo` parameter object (backward-compatible).
+- **`EventBus#invoke`**: replaced `Thread.new`/`kill` with `Timeout.timeout`.
+- **Hand-rolled Mustache replaced** with `mustache` gem: 117 lines of template engine deleted; 0 regressions.
 
 ### Changed (breaking)
 
