@@ -165,7 +165,7 @@ RSpec.describe Textus::Action::Accept do
         expect(result["accepted"]).to eq("proposals.valid-proposal")
       end
 
-      it "raises guard_failed when schema_valid fails (missing required field)" do
+      it "raises schema_violation when schema_valid fails (missing required field)" do
         store.as("agent").put(
           "proposals.bad-proposal",
           meta: {
@@ -177,7 +177,7 @@ RSpec.describe Textus::Action::Accept do
         )
 
         expect { store.as("human").accept("proposals.bad-proposal") }
-          .to fail_guard_with("schema_valid")
+          .to raise_error(Textus::SchemaViolation)
       end
     end
 
