@@ -125,7 +125,7 @@ module Textus
           end
 
           def auth
-            @auth ||= Textus::Dispatch::Auth.new(manifest: @manifest, schemas: @schemas)
+            @auth ||= Textus::Gate::Auth.new(@container)
           end
         end
       end

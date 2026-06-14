@@ -67,12 +67,6 @@ module Textus
       Textus::Surfaces::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end
 
-    Textus::Dispatcher::VERBS.each_key do |verb|
-      define_method(verb) do |*args, role: Role::DEFAULT, **kwargs|
-        as(role).public_send(verb, *args, **kwargs)
-      end
-    end
-
     private
 
     def build_container(root)

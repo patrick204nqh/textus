@@ -32,7 +32,7 @@ module Textus
           Textus::Manifest::Data.validate_key!(@key)
           mentry = container.manifest.resolver.resolve(@key).entry
 
-          auth(container).check!(action: :key_delete, actor: call.role, key: @key, extra: { if_etag: @if_etag })
+          auth(container).check_action!(action: :key_delete, actor: call.role, key: @key, extra: { if_etag: @if_etag })
 
           writer(container, call).delete(@key, mentry:, if_etag: @if_etag)
 
@@ -49,7 +49,7 @@ module Textus
       private
 
       def auth(container)
-        Textus::Dispatch::Auth.new(manifest: container.manifest, schemas: container.schemas)
+        Textus::Gate::Auth.new(container)
       end
 
       def writer(container, call)

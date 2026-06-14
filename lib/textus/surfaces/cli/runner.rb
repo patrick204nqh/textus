@@ -176,7 +176,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Dispatcher::VERBS.each_value do |klass|
+          Textus::Action::VERBS.each_value do |klass|
             next unless klass.respond_to?(:contract?) && klass.contract?
 
             spec = klass.contract

@@ -99,8 +99,8 @@ module Textus
         raise UnknownKey.new(@old_key) unless reader(container).exists?(@old_key)
 
         validate_zone_and_format!(old_res.entry, new_res.entry)
-        auth(container).check!(action: :key_mv, actor: call.role, key: @old_key)
-        auth(container).check!(action: :key_mv, actor: call.role, key: @new_key)
+        auth(container).check_action!(action: :key_mv, actor: call.role, key: @old_key)
+        auth(container).check_action!(action: :key_mv, actor: call.role, key: @new_key)
         raise UsageError.new("mv: target '#{@new_key}' already exists at #{new_res.path}") if reader(container).exists?(@new_key)
 
         [old_res, new_res]
@@ -148,7 +148,7 @@ module Textus
       end
 
       def auth(container)
-        Textus::Dispatch::Auth.new(manifest: container.manifest, schemas: container.schemas)
+        Textus::Gate::Auth.new(container)
       end
 
       def writer(container, call)

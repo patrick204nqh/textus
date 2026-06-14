@@ -19,9 +19,9 @@ module Textus
 
         # Contracts of every MCP-surfaced verb, in Dispatcher order.
         def specs
-          Textus::Dispatcher::VERBS.values
-                                   .select { |k| mcp_surfaced?(k) }
-                                   .map(&:contract)
+          Textus::Action::VERBS.values
+                               .select { |k| mcp_surfaced?(k) }
+                               .map(&:contract)
         end
 
         def tool_schemas
@@ -40,7 +40,7 @@ module Textus
         # omit one it can (ADR 0056). Excludes write/maintenance verbs by verb
         # identity (routing may be legacy UseCases or Dispatch::Actions).
         def read_verbs
-          Textus::Dispatcher::VERBS
+          Textus::Action::VERBS
             .reject { |verb, _klass| WRITE_VERBS.include?(verb) || MAINTENANCE_VERBS.include?(verb) }
             .select { |_verb, klass| mcp_surfaced?(klass) }
             .keys.map(&:to_s)
@@ -52,7 +52,7 @@ module Textus
         # `--stdin` CLI framing), finishing the de-CLI-ing of the agent surface
         # (ADR 0056, ADR 0057).
         def write_verbs
-          Textus::Dispatcher::VERBS
+          Textus::Action::VERBS
             .select { |verb, klass| WRITE_VERBS.include?(verb) && mcp_surfaced?(klass) }
             .keys.map(&:to_s)
         end
@@ -62,7 +62,7 @@ module Textus
         end
 
         def call(name, session:, store:, args:)
-          klass = Textus::Dispatcher::VERBS[name.to_sym]
+          klass = Textus::Action::VERBS[name.to_sym]
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
           spec = klass.contract

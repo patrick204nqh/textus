@@ -33,7 +33,7 @@ module Textus
       end
 
       def dispatch_bound(verb, inputs, session: nil)
-        klass = Textus::Dispatcher::VERBS[verb]
+        klass = Textus::Action::VERBS[verb]
         spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
         if spec
           _, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
@@ -44,19 +44,6 @@ module Textus
         end
         call = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
         [action.call(container: @container, call:)]
-      end
-
-      Textus::Dispatcher::VERBS.each_key do |verb|
-        define_method(verb) do |*args, **kwargs|
-          klass = Textus::Dispatcher::VERBS[verb]
-          inputs =
-            if klass.respond_to?(:contract?) && klass.contract?
-              Textus::Contract::Binder.inputs_from_ordered(klass.contract, args, kwargs)
-            else
-              kwargs
-            end
-          dispatch_bound(verb, inputs).first
-        end
       end
     end
   end

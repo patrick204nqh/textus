@@ -4,7 +4,7 @@ RSpec.describe "hand-authored CLI verb taxonomy" do
   before { Textus::Surfaces::CLI::Runner.install! }
 
   def cli_class_for(verb)
-    leaf = Textus::Dispatcher::VERBS[verb].contract.cli_leaf
+    leaf = Textus::Action::VERBS[verb].contract.cli_leaf
     Textus::Surfaces::CLI::Verb.descendants.find { |k| k.respond_to?(:command_name) && k.command_name == leaf }
   end
 

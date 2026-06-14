@@ -26,7 +26,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
 ].freeze
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
-  let(:dispatcher) { Textus::Dispatcher::VERBS.keys.map(&:to_s).sort }
+  let(:dispatcher) { Textus::Action::VERBS.keys.map(&:to_s).sort }
   let(:exposed)    { Textus::Surfaces::MCP::Catalog.names.sort }
 
   it "every exposed tool is a dispatcher verb or an explicit composed tool" do
@@ -48,8 +48,8 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   end
 
   it "maps the public `get` verb to the read-through use-case (ADR 0062)" do
-    expect(Textus::Dispatcher::VERBS[:get]).to eq(Textus::Action::Get)
-    expect(Textus::Dispatcher::VERBS).not_to have_key(:get_or_fetch)
+    expect(Textus::Action::VERBS[:get]).to eq(Textus::Action::Get)
+    expect(Textus::Action::VERBS).not_to have_key(:get_or_fetch)
   end
 
   # Floor guard (ADR 0039): the MCP dispatch set and the advertised JSON schemas

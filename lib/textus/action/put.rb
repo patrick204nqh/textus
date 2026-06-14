@@ -45,7 +45,7 @@ module Textus
         run_with_cascade(@key, container:, call:) do
           Textus::Manifest::Data.validate_key!(@key)
           mentry = container.manifest.resolver.resolve(@key).entry
-          auth(container).check!(action: :put, actor: call.role, key: @key, extra: { if_etag: @if_etag })
+          auth(container).check_action!(action: :put, actor: call.role, key: @key, extra: { if_etag: @if_etag })
 
           envelope = writer(container, call).put(
             @key,
@@ -72,7 +72,7 @@ module Textus
       private
 
       def auth(container)
-        Textus::Dispatch::Auth.new(manifest: container.manifest, schemas: container.schemas)
+        Textus::Gate::Auth.new(container)
       end
 
       def writer(container, call)

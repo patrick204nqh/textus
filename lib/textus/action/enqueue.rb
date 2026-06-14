@@ -28,7 +28,7 @@ module Textus
 
       def call(container:, call:)
         action_class = begin
-          Textus::Dispatcher.fetch(@type.to_sym)
+          Textus::Action.fetch(@type.to_s)
         rescue Textus::UsageError
           raise Textus::UsageError.new("unregistered job type '#{@type}'")
         end

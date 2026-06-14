@@ -28,14 +28,12 @@ module Textus
       def manifest = @container.manifest
       def steps    = @container.steps
 
-      # Dispatch a verb through the single use-case invocation seam (ADR 0026).
-      def dispatch(verb, *args, **kwargs)
-        Textus::Dispatcher.invoke(
-          verb,
-          container: @container,
-          call: Textus::Call.build(role: Textus::Role::DEFAULT),
-          args: args, kwargs: kwargs
-        )
+      # Dispatch a verb through Gate.
+      def dispatch(verb, *_args, **kwargs)
+        cmd_class = Textus::Gate::VERB_COMMAND.fetch(verb)
+        merged = kwargs.merge(role: Textus::Role::DEFAULT)
+        cmd = cmd_class.new(**merged.slice(*cmd_class.members))
+        @container.gate.dispatch(cmd, container: @container)
       end
     end
   end
