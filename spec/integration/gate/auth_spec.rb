@@ -25,4 +25,16 @@ RSpec.describe Textus::Gate::Auth do
     auth = Textus::Gate::Auth.new(store.container)
     expect { auth.check!(cmd) }.to raise_error(Textus::UsageError, /unmapped command/)
   end
+
+  describe "AUTOMATION role" do
+    it "is blocked from writing to a canon lane" do
+      expect { store.as("automation").put("knowledge.doc", meta: {}, body: "x") }
+        .to raise_error(Textus::WriteForbidden)
+    end
+
+    it "is permitted to write to a machine lane" do
+      expect { store.as("automation").put("feeds.data", meta: {}, body: "x") }
+        .not_to raise_error
+    end
+  end
 end

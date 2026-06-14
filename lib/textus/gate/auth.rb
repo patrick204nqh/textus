@@ -24,9 +24,7 @@ module Textus
       end
 
       # Command-based check (new Gate path).
-      def check!(cmd) # rubocop:disable Metrics/AbcSize
-        return if cmd.role.to_s == Textus::Role::AUTOMATION
-
+      def check!(cmd)
         key = if cmd.respond_to?(:pending_key)
                 cmd.pending_key
               else
@@ -91,6 +89,10 @@ module Textus
         raise
       end
 
+      def self.command_to_verb
+        @command_to_verb ||= Textus::Gate::VERB_COMMAND.invert.freeze
+      end
+
       private
 
       def command_to_action(cmd)
@@ -98,12 +100,6 @@ module Textus
           raise Textus::UsageError.new("unmapped command: #{cmd.class}")
         end
       end
-
-      def self.command_to_verb
-        @command_to_verb ||= Textus::Gate::VERB_COMMAND.invert.freeze
-      end
-
-      private_class_method :command_to_verb
 
       def rule_declared_predicates(action, key)
         guard_map = @manifest.rules.for(key).guard
