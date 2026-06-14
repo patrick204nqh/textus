@@ -84,7 +84,9 @@ module Textus
         end
         raise Textus::GuardFailed.new(failures) unless failures.empty?
       rescue Textus::UnknownKey
-        raise if action.to_s == "accept"
+        if action.to_s == "accept"
+          raise Textus::GuardFailed.new([["target_is_canon", "proposal target '#{key}' resolves to no declared entry"]])
+        end
 
         raise
       end
@@ -128,7 +130,13 @@ module Textus
       def evaluate_author_held(ctx)
         holders = @manifest.policy.roles_with_capability("author")
         pass = holders.include?(ctx.actor.to_s)
-        reason = pass ? nil : "role '#{ctx.actor}' lacks the 'author' capability (held by: #{holders.join(", ")})"
+        reason = if pass
+                   nil
+                 elsif holders.empty?
+                   "no role holds the 'author' capability; #{ctx.action} is disabled"
+                 else
+                   "role '#{ctx.actor}' lacks the 'author' capability (held by: #{holders.join(", ")})"
+                 end
         { pass:, reason: }
       end
 

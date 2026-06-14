@@ -18,7 +18,7 @@ module Textus
     Pulse           = Data.define(:since, :role)
     RuleExplain     = Data.define(:key, :detail, :role)
     RuleList        = Data.define(:role)
-    RuleLint        = Data.define(:candidate_yaml, :key, :role)
+    RuleLint        = Data.define(:candidate_yaml, :role)
     Published       = Data.define(:role)
     SchemaShow      = Data.define(:key, :role)
     Doctor          = Data.define(:checks, :role)
