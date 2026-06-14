@@ -15,11 +15,10 @@ module Textus
           @manifest = container.manifest
         end
 
-        def seed(prefix:, lane:)
+        def seed
           planner = Textus::Dispatch::Planner::Planner.new(container: @container)
           jobs = planner.plan(
-            triggers: [{ "type" => "manual.kick" }],
-            scope: { "prefix" => prefix, "lane" => lane },
+            trigger: { "type" => "manual.kick" },
             role: @call.role,
           )
           jobs.each { |j| @queue.enqueue(j) }

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Textus
   module Dispatch
     module Planner
@@ -12,81 +14,92 @@ module Textus
           "proposal.rejected" => %w[materialize],
         }.freeze
 
+        SCOPE_RESOLVERS = {
+          "materialize" => :producible_keys,
+          "refresh_data" => :stale_intake_keys,
+          "sweep" => :lane_keys,
+          "decorate" => :producible_keys,
+        }.freeze
+
         def initialize(container:)
           @container = container
-          @manifest = container.manifest
+          @manifest  = container.manifest
         end
 
-        def plan(triggers:, scope:, role:)
-          types = Array(triggers).map { |t| t["type"] || t[:type] }.compact
-          return [] if types.empty?
+        def plan(trigger:, role:)
+          type = trigger["type"] || trigger[:type]
+          trigger["target"] || trigger[:target]
+          return [] if type.nil?
 
-          prefix = scope_prefix(scope)
-          lane = scope_lane(scope)
-          jobs = []
-          actions = coalesced_actions(types)
-
-          if actions.include?("materialize")
-            producible_keys(prefix, lane).each do |key|
-              jobs << job("materialize", { "key" => key }, Textus::Role::AUTOMATION)
-            end
+          blocks_with_react = @manifest.rules.blocks.select(&:react)
+          if blocks_with_react.any?
+            plan_from_rules(blocks_with_react, type, role)
+          else
+            plan_from_defaults(type, role)
           end
-
-          if actions.include?("refresh_data")
-            stale_intake_keys(prefix, lane).each do |key|
-              jobs << job("refresh_data", { "key" => key }, Textus::Role::AUTOMATION)
-            end
-          end
-
-          jobs << job("sweep", { "scope" => { "prefix" => prefix, "lane" => lane } }, role) if actions.include?("sweep")
-
-          if actions.include?("decorate")
-            producible_keys(prefix, lane).each do |key|
-              jobs << job("decorate", { "key" => key }, Textus::Role::AUTOMATION)
-            end
-          end
-
-          jobs
         end
 
         private
 
-        def job(type, args, enqueued_by)
-          Textus::Core::Jobs::Job.new(type: type, args: args, enqueued_by: enqueued_by)
+        def plan_from_rules(blocks, type, role)
+          jobs = []
+          blocks
+            .select { |b| matches_trigger?(b.react, type) }
+            .each do |block|
+              do_action = block.react.raw["do"]
+              Array(do_action).each do |action|
+                if action == "sweep"
+                  jobs << Textus::Core::Jobs::Job.new(
+                    type: "sweep", args: { "scope" => {} }, enqueued_by: role,
+                  )
+                else
+                  resolver = SCOPE_RESOLVERS.fetch(action, :producible_keys)
+                  keys = send(resolver, nil)
+                  keys.each { |key| jobs << job(action, key, role) }
+                end
+              end
+            end
+          jobs
         end
 
-        def producible_keys(prefix, lane)
+        def plan_from_defaults(type, role)
+          actions = ACTIONS_BY_TRIGGER.fetch(type, [])
+          jobs = []
+          producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
+          stale_intake_keys(nil).each { |k| jobs << job("refresh_data", k, role) } if actions.include?("refresh_data")
+          if actions.include?("sweep")
+            jobs << Textus::Core::Jobs::Job.new(
+              type: "sweep", args: { "scope" => {} }, enqueued_by: role,
+            )
+          end
+          jobs
+        end
+
+        def matches_trigger?(react, type)
+          on = react.raw["on"]
+          Array(on).include?(type)
+        end
+
+        def job(type, key, enqueued_by)
+          Textus::Core::Jobs::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
+        end
+
+        def producible_keys(_target)
           @manifest.data.entries
                    .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
-                   .select { |e| in_scope?(e, prefix, lane) }
                    .map(&:key)
         end
 
-        def stale_intake_keys(prefix, lane)
+        def stale_intake_keys(_target)
           Textus::Core::Freshness::Evaluator.new(
             manifest: @manifest,
             file_stat: Textus::Ports::Storage::FileStat.new,
             clock: Textus::Ports::Clock.new,
-          ).stale_intake_keys(prefix: prefix, lane: lane)
+          ).stale_intake_keys(prefix: nil, lane: nil)
         end
 
-        def in_scope?(entry, prefix, lane)
-          return false if lane && entry.lane != lane
-          return false if prefix && !entry.key.start_with?(prefix)
-
-          true
-        end
-
-        def scope_prefix(scope)
-          scope.is_a?(Hash) ? (scope["prefix"] || scope[:prefix]) : nil
-        end
-
-        def scope_lane(scope)
-          scope.is_a?(Hash) ? (scope["lane"] || scope[:lane]) : nil
-        end
-
-        def coalesced_actions(types)
-          types.flat_map { |type| ACTIONS_BY_TRIGGER.fetch(type, []) }.uniq
+        def lane_keys(_target)
+          @manifest.data.entries.map(&:key)
         end
       end
     end
