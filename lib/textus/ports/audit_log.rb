@@ -78,31 +78,41 @@ module Textus
       def verify_integrity
         return [] unless File.exist?(@path)
 
-        out      = []
-        prev_seq = nil
-        File.foreach(@path).with_index(1) do |line, lineno|
-          violation = check_line(line.chomp, lineno)
-          if violation
-            out << violation
-            next
+        [].tap do |out|
+          iterate_with_prev_seq do |line, lineno, prev_seq|
+            check_line_integrity(line, lineno, prev_seq, out)
           end
-
-          parsed = parse_row(line.chomp)
-          next unless parsed && (seq = parsed["seq"]).is_a?(Integer)
-
-          if prev_seq && seq != prev_seq + 1
-            out << {
-              "lineno" => lineno,
-              "reason" => "seq_gap",
-              "detail" => "expected #{prev_seq + 1}, got #{seq}",
-            }
-          end
-          prev_seq = seq
         end
-        out
       end
 
       private
+
+      def iterate_with_prev_seq
+        prev_seq = nil
+        File.foreach(@path).with_index(1) do |line, lineno|
+          yield line.chomp, lineno, prev_seq
+          parsed = parse_row(line.chomp)
+          prev_seq = parsed["seq"] if parsed&.dig("seq").is_a?(Integer)
+        end
+      end
+
+      def check_line_integrity(line, lineno, prev_seq, out)
+        violation = check_line(line, lineno)
+        if violation
+          out << violation
+          return
+        end
+
+        parsed = parse_row(line)
+        return unless parsed && (seq = parsed["seq"]).is_a?(Integer)
+        return unless prev_seq && seq != prev_seq + 1
+
+        out << {
+          "lineno" => lineno,
+          "reason" => "seq_gap",
+          "detail" => "expected #{prev_seq + 1}, got #{seq}",
+        }
+      end
 
       def rotated(n)
         File.join(Textus::Layout.audit_dir(@root), "audit.log.#{n}")

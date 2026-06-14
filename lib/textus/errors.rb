@@ -1,14 +1,22 @@
 module Textus
-  class Error < StandardError
-    attr_reader :code, :details, :exit_code, :hint
+  ErrorInfo = Data.define(:details, :exit_code, :hint) do
+    def self.for(details: {}, exit_code: 1, hint: nil)
+      new(details: details, exit_code: exit_code, hint: hint)
+    end
+  end
 
-    def initialize(code, message, details: {}, exit_code: 1, hint: nil)
+  class Error < StandardError
+    attr_reader :code
+
+    def initialize(code, message, info: nil, details: {}, exit_code: 1, hint: nil)
       super(message)
       @code = code
-      @details = details
-      @exit_code = exit_code
-      @hint = hint
+      @info = info || ErrorInfo.for(details:, exit_code:, hint:)
     end
+
+    def details = @info.details
+    def exit_code = @info.exit_code
+    def hint = @info.hint
 
     def to_envelope
       env = {
@@ -16,9 +24,9 @@ module Textus
         "ok" => false,
         "code" => @code,
         "message" => message,
-        "details" => @details,
+        "details" => details,
       }
-      env["hint"] = @hint if @hint
+      env["hint"] = hint if hint
       env
     end
   end

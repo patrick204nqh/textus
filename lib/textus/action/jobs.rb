@@ -22,14 +22,6 @@ module Textus
         @job_id = job_id
       end
 
-      def args
-        {
-          state: @state,
-          action: @action,
-          job_id: @job_id,
-        }.compact
-      end
-
       def call(container:, **)
         queue = Textus::Ports::Queue.new(root: container.root)
         case @action

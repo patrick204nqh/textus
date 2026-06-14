@@ -18,8 +18,6 @@ module Textus
         @key = key
       end
 
-      def args = { key: @key }
-
       def call(container:, **)
         manifest = container.manifest
         rdeps = manifest.data.entries.each_with_object([]) do |entry, acc|

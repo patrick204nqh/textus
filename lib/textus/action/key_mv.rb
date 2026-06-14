@@ -27,14 +27,6 @@ module Textus
         @dry_run = dry_run
       end
 
-      def args
-        {
-          old_key: @old_key,
-          new_key: @new_key,
-          dry_run: @dry_run,
-        }
-      end
-
       def call(container:, call:)
         run_with_cascade(cascade_target_key, container:, call:) do
           execute_move(container, call)
@@ -145,18 +137,6 @@ module Textus
           "to_path" => new_res.path,
           "uid" => pre_env.uid,
         }
-      end
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
-      end
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
-      end
-
-      def reader(container)
-        Textus::Envelope::IO::Reader.from(container: container)
       end
     end
   end

@@ -24,13 +24,6 @@ module Textus
         @dry_run = dry_run
       end
 
-      def args
-        {
-          prefix: @prefix,
-          dry_run: @dry_run,
-        }
-      end
-
       def call(container:, call:)
         raise UsageError.new("prefix required") if @prefix.nil? || @prefix.empty?
 

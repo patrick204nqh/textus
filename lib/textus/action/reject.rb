@@ -18,10 +18,6 @@ module Textus
         @pending_key = pending_key
       end
 
-      def args
-        { pending_key: @pending_key }
-      end
-
       def call(container:, call:)
         run_with_cascade(@pending_key, container:, call:) do
           auth = Textus::Gate::Auth.new(container)
@@ -47,12 +43,6 @@ module Textus
 
           { "protocol" => PROTOCOL, "rejected" => @pending_key, "target_key" => target_key }
         end
-      end
-
-      private
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
       end
     end
   end

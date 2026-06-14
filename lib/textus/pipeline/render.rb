@@ -1,3 +1,5 @@
+require "mustache"
+
 module Textus
   module Pipeline
     # Renders an entry's stored DATA into the bytes for one publish target

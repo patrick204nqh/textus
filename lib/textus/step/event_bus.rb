@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "timeout"
+
 module Textus
   module Step
     class EventBus
@@ -70,24 +72,19 @@ module Textus
 
       def invoke(event, sub, key, kwargs)
         accepted = Signature.new(sub[:callable]).filter(kwargs)
-        error = nil
-        # Thread#kill is unsafe in general but bounded here: post-commit, isolated, only a runaway user hook is affected.
-        thread = Thread.new do
-          sub[:callable].call(**accepted)
-        rescue StandardError => e
-          error = e
-        end
-        if thread.join(HOOK_TIMEOUT_SECONDS).nil?
-          thread.kill
+        begin
+          Timeout.timeout(HOOK_TIMEOUT_SECONDS) do
+            sub[:callable].call(**accepted)
+          end
+          [:ok, nil]
+        rescue Timeout::Error
           err = HookTimeout.new("hook #{sub[:name]} exceeded #{HOOK_TIMEOUT_SECONDS}s on event #{event}")
           notify_error(event, sub, key, kwargs, err)
-          return [:timed_out, err]
+          [:timed_out, err]
+        rescue StandardError => e
+          notify_error(event, sub, key, kwargs, e)
+          [:errored, e]
         end
-        if error
-          notify_error(event, sub, key, kwargs, error)
-          return [:errored, error]
-        end
-        [:ok, nil]
       end
 
       def notify_error(event, sub, key, kwargs, error)

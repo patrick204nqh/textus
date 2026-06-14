@@ -18,8 +18,6 @@ module Textus
         @key = key
       end
 
-      def args = { key: @key }
-
       def call(container:, **)
         entry = container.manifest.data.entries.find { |e| e.key == @key }
         deps =

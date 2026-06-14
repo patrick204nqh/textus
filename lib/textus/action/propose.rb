@@ -29,15 +29,6 @@ module Textus
         @content = content
       end
 
-      def args
-        {
-          key: @key,
-          meta: @meta,
-          body: @body,
-          content: @content,
-        }.compact
-      end
-
       def call(container:, call:)
         zone = container.manifest.policy.propose_lane_for(call.role)
         unless zone

@@ -1,7 +1,11 @@
 .env
 .envrc
 .claude/settings.local.json
+.claude/skills/
 opencode.local.json
+.agents/skills/
+.opencode/skills/
+.cache/
 
 # Ruby
 /.bundle/

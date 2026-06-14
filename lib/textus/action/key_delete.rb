@@ -23,10 +23,6 @@ module Textus
         @if_etag = if_etag
       end
 
-      def args
-        { key: @key, if_etag: @if_etag }.compact
-      end
-
       def call(container:, call:)
         run_with_cascade(@key, container:, call:) do
           Textus::Manifest::Data.validate_key!(@key)
@@ -44,16 +40,6 @@ module Textus
 
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => @key, "deleted" => true }
         end
-      end
-
-      private
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
-      end
-
-      def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
       end
     end
   end

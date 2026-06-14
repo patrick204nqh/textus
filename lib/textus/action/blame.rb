@@ -23,8 +23,6 @@ module Textus
         @limit = limit
       end
 
-      def args = { key: @key, limit: @limit }.compact
-
       def call(container:, **)
         @container = container
         @manifest = container.manifest

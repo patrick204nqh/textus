@@ -27,14 +27,6 @@ module Textus
         @dry_run = dry_run
       end
 
-      def args
-        {
-          from_prefix: @from_prefix,
-          to_prefix: @to_prefix,
-          dry_run: @dry_run,
-        }
-      end
-
       def call(container:, call:)
         raise UsageError.new("from_prefix and to_prefix required") if @from_prefix.nil? || @to_prefix.nil?
 

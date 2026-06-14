@@ -23,10 +23,6 @@ module Textus
         @detail = detail
       end
 
-      def args
-        { key: @key, detail: @detail }.compact
-      end
-
       def call(container:, **)
         @manifest = container.manifest
         @detail ? explain(@key) : effective(@key)

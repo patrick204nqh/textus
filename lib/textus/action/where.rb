@@ -18,8 +18,6 @@ module Textus
         @key = key
       end
 
-      def args = { key: @key }
-
       def call(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         res = manifest.resolver.resolve(@key)

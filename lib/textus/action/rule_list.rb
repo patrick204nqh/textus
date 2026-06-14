@@ -13,10 +13,6 @@ module Textus
 
       BURN = :sync
 
-      def args
-        {}
-      end
-
       def call(container:, **)
         manifest = container.manifest
         manifest.rules.blocks.map do |block|

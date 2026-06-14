@@ -104,9 +104,23 @@ module Textus
         kind: produced
     YAML
 
-    def self.run(target_root, with_agent: false) # rubocop:disable Metrics/AbcSize
-      raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
+    def self.run(target_root, with_agent: false)
+      check_target!(target_root)
+      scaffold_dir = File.expand_path("init/templates", __dir__)
+      create_directories(target_root)
+      write_steps_readme(target_root, scaffold_dir)
+      write_manifest(target_root, with_agent:)
+      mcp_status = scaffold_agent(target_root, scaffold_dir, with_agent:)
+      setup_state_dirs(target_root)
+      write_gitignore(target_root)
+      build_result(target_root, with_agent:, mcp_status:)
+    end
 
+    def self.check_target!(target_root)
+      raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
+    end
+
+    def self.create_directories(target_root)
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
       FileUtils.mkdir_p(File.join(target_root, "steps/fetch"))
@@ -118,21 +132,38 @@ module Textus
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
-      File.write(File.join(target_root, "steps/README.md"), STEPS_README)
-      scaffold_dir = File.expand_path("init/templates", __dir__)
-      File.write(File.join(target_root, "steps/fetch/machine-intake.rb"),
-                 File.read(File.join(scaffold_dir, "machine_intake.rb")))
+    end
 
+    def self.write_steps_readme(target_root, scaffold_dir)
+      File.write(File.join(target_root, "steps/README.md"), STEPS_README)
+      File.write(
+        File.join(target_root, "steps/fetch/machine-intake.rb"),
+        File.read(File.join(scaffold_dir, "machine_intake.rb")),
+      )
+    end
+
+    def self.write_manifest(target_root, with_agent:)
       File.write(File.join(target_root, "manifest.yaml"), manifest_yaml(with_agent: with_agent))
-      mcp_status = nil
-      if with_agent
-        scaffold_agent_profile(target_root, scaffold_dir)
-        mcp_status = write_mcp_config(target_root, scaffold_dir)
-      end
+    end
+
+    def self.scaffold_agent(target_root, scaffold_dir, with_agent:)
+      return nil unless with_agent
+
+      scaffold_agent_profile(target_root, scaffold_dir)
+      write_mcp_config(target_root, scaffold_dir)
+    end
+
+    def self.setup_state_dirs(target_root)
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
       FileUtils.mkdir_p(Textus::Layout.state(target_root))
       FileUtils.mkdir_p(Textus::Layout.locks(target_root))
+    end
+
+    def self.write_gitignore(target_root)
       File.write(File.join(target_root, ".gitignore"), derived_gitignore(target_root))
+    end
+
+    def self.build_result(target_root, with_agent:, mcp_status:)
       result = { "protocol" => PROTOCOL, "initialized" => target_root, "profile" => with_agent ? "agent" : "default" }
       result["mcp_config"] = mcp_status if with_agent
       result

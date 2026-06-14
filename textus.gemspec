@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.executables = ["textus"]
 
   s.add_dependency "csv", ">= 3.0"
+  s.add_dependency "mustache", "~> 1.1"
   s.add_dependency "psych", ">= 5.0"
   s.add_dependency "rexml", ">= 3.2"
   s.add_dependency "zeitwerk", "~> 2.6"

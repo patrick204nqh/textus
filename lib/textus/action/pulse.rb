@@ -21,10 +21,6 @@ module Textus
         @since = since
       end
 
-      def args
-        { since: @since }.compact
-      end
-
       def call(container:, call:)
         @container = container
         @call = call

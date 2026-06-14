@@ -28,61 +28,27 @@ module Textus
 
       # Command-based check (new Gate path).
       def check!(cmd)
-        key = if cmd.respond_to?(:pending_key)
-                cmd.pending_key
-              else
-                cmd.respond_to?(:key) ? cmd.key : nil
-              end
+        key = extract_key(cmd)
         return unless key
 
-        action_sym = command_to_action(cmd)
-
-        mentry = @manifest.resolver.resolve(key).entry
-        lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)
-        actor_caps = Set.new(@manifest.data.role_caps.fetch(cmd.role.to_s, []))
-
-        ctx = AuthContext.new(
-          actor: cmd.role, actor_caps:, lane_verb:,
-          action: action_sym, target: key, envelope: nil,
-          mentry:, manifest: @manifest
+        evaluate_predicates(
+          action: command_to_action(cmd),
+          actor: cmd.role.to_s,
+          key: key,
+          envelope: nil,
+          extra: {},
         )
-
-        failures = []
-        floor_preds = FLOOR.fetch(action_sym, [])
-        rule_preds = rule_declared_predicates(action_sym, key)
-        (floor_preds + rule_preds).uniq.each do |pred|
-          result = evaluate(pred, ctx, {})
-          next if result[:pass]
-          raise result[:error] if result[:error]
-
-          failures << [pred, result[:reason]]
-        end
-        raise Textus::GuardFailed.new(failures) unless failures.empty?
       end
 
       # Backward-compatible check for inline action auth (accept, put, etc.).
       def check_action!(action:, actor:, key:, envelope: nil, extra: {})
-        mentry = @manifest.resolver.resolve(key).entry
-        lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)
-        actor_caps = Set.new(@manifest.data.role_caps.fetch(actor, []))
-
-        ctx = AuthContext.new(
-          actor:, actor_caps:, lane_verb:,
-          action: action.to_sym, target: key, envelope:,
-          mentry:, manifest: @manifest
+        evaluate_predicates(
+          action: action.to_sym,
+          actor: actor,
+          key: key,
+          envelope: envelope,
+          extra: extra,
         )
-
-        failures = []
-        floor_preds = FLOOR.fetch(action.to_sym, [])
-        rule_preds = rule_declared_predicates(action, key)
-        (floor_preds + rule_preds).uniq.each do |pred|
-          result = evaluate(pred, ctx, extra)
-          next if result[:pass]
-          raise result[:error] if result[:error]
-
-          failures << [pred, result[:reason]]
-        end
-        raise Textus::GuardFailed.new(failures) unless failures.empty?
       end
 
       def self.command_to_verb
@@ -94,6 +60,38 @@ module Textus
       def command_to_action(cmd)
         self.class.command_to_verb.fetch(cmd.class) do
           raise Textus::UsageError.new("unmapped command: #{cmd.class}")
+        end
+      end
+
+      def evaluate_predicates(action:, actor:, key:, envelope:, extra:)
+        mentry = @manifest.resolver.resolve(key).entry
+        lane_verb = @manifest.policy.verb_for_lane(mentry.lane.to_s)
+        actor_caps = Set.new(@manifest.data.role_caps.fetch(actor, []))
+
+        ctx = AuthContext.new(
+          actor:, actor_caps:, lane_verb:,
+          action:, target: key, envelope:,
+          mentry:, manifest: @manifest
+        )
+
+        failures = []
+        floor_preds = FLOOR.fetch(action, [])
+        rule_preds = rule_declared_predicates(action, key)
+        (floor_preds + rule_preds).uniq.each do |pred|
+          result = evaluate(pred, ctx, extra)
+          next if result[:pass]
+          raise result[:error] if result[:error]
+
+          failures << [pred, result[:reason]]
+        end
+        raise Textus::GuardFailed.new(failures) unless failures.empty?
+      end
+
+      def extract_key(cmd)
+        if cmd.respond_to?(:pending_key)
+          cmd.pending_key
+        elsif cmd.respond_to?(:key)
+          cmd.key
         end
       end
 

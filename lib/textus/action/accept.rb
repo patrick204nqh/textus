@@ -18,10 +18,6 @@ module Textus
         @pending_key = pending_key
       end
 
-      def args
-        { pending_key: @pending_key }
-      end
-
       def call(container:, call:)
         env = Textus::Action::Get.new(key: @pending_key).call(container: container, call: call)
         proposal = env.meta["proposal"] or raise Textus::ProposalError.new("entry has no proposal block: #{@pending_key}")

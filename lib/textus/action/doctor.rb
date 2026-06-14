@@ -18,10 +18,6 @@ module Textus
         @checks = checks
       end
 
-      def args
-        { checks: @checks }.compact
-      end
-
       def call(container:, call:, **)
         Textus::Doctor.build(container: container, checks: @checks, role: call.role)
       end
