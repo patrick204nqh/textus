@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Produce::Acquire::Intake do
+RSpec.describe Textus::Dispatch::Pipeline::Acquire::Intake do
   # A simple test events object that records published events, delegating nothing.
   def make_test_events(registry)
     events = []

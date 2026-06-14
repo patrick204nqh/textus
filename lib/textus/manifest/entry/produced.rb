@@ -35,7 +35,7 @@ module Textus
         def publish_via(pctx, prefix: nil)
           built = false
           if projection?
-            Textus::Produce::Acquire::Projection.new(container: pctx.container, call: pctx.call).run(self)
+            Textus::Dispatch::Pipeline::Acquire::Projection.new(container: pctx.container, call: pctx.call).run(self)
             built = true
             pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
           end

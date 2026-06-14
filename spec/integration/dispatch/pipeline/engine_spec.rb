@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Produce::Engine do
+RSpec.describe Textus::Dispatch::Pipeline::Engine do
   subject(:produce) { described_class.new(container: store.container, call: call) }
 
   include_context "textus_store_fixture"

@@ -115,7 +115,7 @@ RSpec.describe "textus/3 conformance — intake source.ttl freshness" do
     # Produce::Acquire::Intake is the internal executor since the `fetch` verb was collapsed
     # (ADR 0079).
     def fetch_machine(key)
-      Textus::Produce::Acquire::Intake.new(
+      Textus::Dispatch::Pipeline::Acquire::Intake.new(
         container: store.container, call: Textus::Call.build(role: "automation"),
       ).run(key)
     end

@@ -17,7 +17,7 @@ module Textus
         def args = { key: @key }
 
         def call(container:, call:)
-          Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
+          Textus::Dispatch::Pipeline::Engine.converge(container: container, call: call, keys: [@key])
         end
       end
     end

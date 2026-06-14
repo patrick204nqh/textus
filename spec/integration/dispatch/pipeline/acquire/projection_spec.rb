@@ -1,9 +1,9 @@
 require "spec_helper"
 
-RSpec.describe Textus::Produce::Acquire::Projection do
+RSpec.describe Textus::Dispatch::Pipeline::Acquire::Projection do
   subject(:data_builder) do
     container = store.container
-    Textus::Produce::Acquire::Projection.new(
+    Textus::Dispatch::Pipeline::Acquire::Projection.new(
       container: container,
       call: ctx,
     )

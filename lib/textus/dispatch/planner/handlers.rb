@@ -28,7 +28,7 @@ module Textus
         # to carry them; the worker drops the return, so re-publish here).
         def produce(job:, container:)
           call = call_for(job)
-          result = Textus::Produce::Engine.converge(container: container, call: call, keys: [job.args["key"]])
+          result = Textus::Dispatch::Pipeline::Engine.converge(container: container, call: call, keys: [job.args["key"]])
           return unless result.is_a?(Hash)
 
           Array(result[:failed]).each do |failure|

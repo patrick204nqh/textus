@@ -26,10 +26,10 @@ RSpec.describe Textus::Dispatch::Planner::Handlers do
   end
 
   it "materialize runs Produce::Engine.converge for the job's key" do
-    allow(Textus::Produce::Engine).to receive(:converge)
+    allow(Textus::Dispatch::Pipeline::Engine).to receive(:converge)
     job = Textus::Core::Jobs::Job.new(type: "materialize", args: { "key" => "k.x" }, enqueued_by: "automation")
     registry.lookup("materialize").handler.call(job: job, container: store.container)
-    expect(Textus::Produce::Engine).to have_received(:converge).with(hash_including(keys: ["k.x"]))
+    expect(Textus::Dispatch::Pipeline::Engine).to have_received(:converge).with(hash_including(keys: ["k.x"]))
   end
 
   it "sweep runs as the job's stamped role, not self-elevated" do
