@@ -48,6 +48,11 @@ RSpec.describe Textus::Gate::Auth do
       expect { store.as("agent").propose("decisions.x", body: "hi") }
         .not_to raise_error
     end
+
+    it "does not pass pending_key through to Action::Propose" do
+      expect { store.as("agent").propose("decisions.x", body: "hi") }
+        .not_to raise_error(ArgumentError)
+    end
   end
 
   describe "accept FLOOR check" do

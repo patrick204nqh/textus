@@ -6,7 +6,14 @@ module Textus
       class Base
         def self.inherited(subclass)
           super
-          Textus::Background::Job.registry << subclass if subclass.name
+          return unless subclass.name
+
+          TracePoint.new(:end) do |tp|
+            if tp.self == subclass
+              Textus::Background::Job.register(subclass)
+              tp.disable
+            end
+          end.enable
         end
 
         def call(**)

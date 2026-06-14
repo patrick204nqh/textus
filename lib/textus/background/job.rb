@@ -3,13 +3,16 @@
 module Textus
   module Background
     module Job
-      @registry = []
+      @registry = {}
 
       def self.registry = @registry
 
+      def self.register(klass)
+        @registry[klass::TYPE] = klass if klass.const_defined?(:TYPE, false)
+      end
+
       def self.fetch(type)
-        @registry.each { |k| return k if k.const_defined?(:TYPE, false) && type == k::TYPE }
-        raise Textus::UsageError.new("unknown job type: #{type}")
+        @registry.fetch(type) { raise Textus::UsageError.new("unknown job type: #{type}") }
       end
     end
   end
