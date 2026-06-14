@@ -1,5 +1,22 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "lsp": {
+    "ruby": {
+      "type": "local",
+      "command": [
+        "bundle",
+        "exec",
+        "ruby-lsp"
+      ],
+      "enabled": true,
+      "extensions": [
+        ".rb",
+        ".rake",
+        ".gemspec",
+        ".ru"
+      ]
+    }
+  },
   "mcp": {
     "textus": {
       "type": "local",
@@ -9,17 +26,11 @@
         "serve"
       ],
       "enabled": true
-    },
-    "codegraph": {
-      "type": "local",
-      "command": [
-        "codegraph",
-        "serve",
-        "--mcp"
-      ],
-      "enabled": true
     }
   },
+  "plugin": [
+    "textus@git+https://github.com/patrick204nqh/textus.git"
+  ],
   "instructions": [
     "AGENTS.md"
   ]

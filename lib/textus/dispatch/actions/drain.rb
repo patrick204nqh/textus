@@ -36,11 +36,11 @@ module Textus
           }.compact
         end
 
-        def call(container:, **)
-          _ = @prefix
-          _ = @lane
-
+        def call(container:, call:)
           queue = Textus::Ports::Queue.new(root: container.root)
+          Textus::Dispatch::Planner::Seeder.new(
+            container: container, queue: queue, call: call,
+          ).seed
           completed = 0
           failed = 0
 

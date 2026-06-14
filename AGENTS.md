@@ -6,7 +6,7 @@ not edit by hand — edit the source under `.textus/zones/...` and run
 
 → Context store: `.textus/` (textus, protocol ).
 → Talk to it over MCP (`.mcp.json` wires the `textus` server; tools are `mcp__textus__*`) or the `textus` CLI.
-→ Run `textus boot` for the catalog + write flows; `textus capabilities` for the full machine-readable verb contract.
+→ Run `textus boot` for the catalog + write flows; `textus get knowledge.docs-index` for the docs map.
 → Write authority by zone:
 
 → Agent protocol (from `textus boot`):

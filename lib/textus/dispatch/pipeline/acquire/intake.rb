@@ -62,20 +62,6 @@ module Textus
 
           private
 
-          def gate
-            @gate ||= Textus::Dispatch::Gate.new(@container)
-          end
-
-          def fire_event(name, target:, payload: {})
-            gate.fire(
-              Textus::Dispatch::Event.new(
-                name: name, actor: Textus::Role::AUTOMATION,
-                target: target, payload: payload,
-                actions: [], correlation_id: @call.correlation_id
-              ),
-            )
-          end
-
           # ADR 0079: a per-rule fetch_timeout_seconds override was an accepted loss
           # in the fetch:/retention: → lifecycle: collapse; the constant ceiling
           # applies to every intake.
@@ -83,8 +69,12 @@ module Textus
             FETCH_TIMEOUT_SECONDS
           end
 
+          def steps_ctx
+            @steps_ctx ||= Textus::Step::Context.for(container: @container, call: @call)
+          end
+
           def fetch_with_events(key, mentry, remaining)
-            fire_event(Textus::Dispatch::Catalog::Events::ENTRY_FETCHED, target: key, payload: { change: :started })
+            @steps.publish(:entry_fetch_started, ctx: steps_ctx, key: key, mode: :sync)
             call_intake(key, mentry, remaining)
           end
 
@@ -96,10 +86,12 @@ module Textus
               label: "intake", timeout: fetch_timeout_for(key)
             )
           rescue Textus::Error => e
-            fire_event(Textus::Dispatch::Catalog::Events::PIPELINE_FAILED, target: key, payload: { error: e.message })
+            @steps.publish(:entry_fetch_failed, ctx: steps_ctx, key: key,
+                                                error_class: e.class.name, error_message: e.message)
             raise
           rescue StandardError => e
-            fire_event(Textus::Dispatch::Catalog::Events::PIPELINE_FAILED, target: key, payload: { error: e.message })
+            @steps.publish(:entry_fetch_failed, ctx: steps_ctx, key: key,
+                                                error_class: e.class.name, error_message: e.message)
             raise UsageError.new("intake '#{mentry.handler}' raised: #{e.class}: #{e.message}")
           end
 
@@ -115,8 +107,8 @@ module Textus
             )
             change = detect_change(before_etag, envelope)
             unless change == :unchanged
-              fire_event(Textus::Dispatch::Catalog::Events::ENTRY_FETCHED, target: key,
-                                                                           payload: { change: change, etag: envelope.etag })
+              @steps.publish(:entry_fetched, ctx: steps_ctx, key: key,
+                                             envelope: envelope, change: change)
             end
             envelope
           end
