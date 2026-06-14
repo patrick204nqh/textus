@@ -27,7 +27,7 @@ RSpec.describe "verb_registry_handler" do
   end
 
   it "sources verbs from the Dispatcher (no Internals reach)" do
-    projected = Textus::Dispatcher::VERBS.keys.map(&:to_s).sort
+    projected = Textus::Action::VERBS.keys.map(&:to_s).sort
     result = registry.invoke(:fetch, :verbs, caps: caps, config: {}, args: [])
     names = result["content"]["verbs"].map { |v| v["name"] }
     expect(projected).to include(*names)

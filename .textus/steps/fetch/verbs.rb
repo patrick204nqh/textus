@@ -8,7 +8,7 @@ module Textus
       def call(config:, args:, **)
         _ = config
         _ = args
-        verbs = Textus::Dispatcher::VERBS.filter_map do |name, klass|
+        verbs = Textus::Action::VERBS.filter_map do |name, klass|
           next unless klass.respond_to?(:contract?) && klass.contract?
 
           spec = klass.contract

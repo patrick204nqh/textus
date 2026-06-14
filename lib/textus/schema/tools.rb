@@ -85,7 +85,7 @@ module Textus
       # while inspecting/migrating entries (ADR 0062).
       def self.pure_get(store, role, key)
         scope = store.as(role)
-        Textus::Dispatch::Actions::Get.new(key: key).call(
+        Textus::Action::Get.new(key: key).call(
           container: scope.container,
           call: Textus::Call.build(role: role),
         )

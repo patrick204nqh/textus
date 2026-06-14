@@ -19,9 +19,9 @@ module Textus
 
         # Contracts of every MCP-surfaced verb, in Dispatcher order.
         def specs
-          Textus::Dispatcher::VERBS.values
-                                   .select { |k| mcp_surfaced?(k) }
-                                   .map(&:contract)
+          Textus::Action::VERBS.values
+                               .select { |k| mcp_surfaced?(k) }
+                               .map(&:contract)
         end
 
         def tool_schemas
@@ -40,7 +40,7 @@ module Textus
         # omit one it can (ADR 0056). Excludes write/maintenance verbs by verb
         # identity (routing may be legacy UseCases or Dispatch::Actions).
         def read_verbs
-          Textus::Dispatcher::VERBS
+          Textus::Action::VERBS
             .reject { |verb, _klass| WRITE_VERBS.include?(verb) || MAINTENANCE_VERBS.include?(verb) }
             .select { |_verb, klass| mcp_surfaced?(klass) }
             .keys.map(&:to_s)
@@ -52,7 +52,7 @@ module Textus
         # `--stdin` CLI framing), finishing the de-CLI-ing of the agent surface
         # (ADR 0056, ADR 0057).
         def write_verbs
-          Textus::Dispatcher::VERBS
+          Textus::Action::VERBS
             .select { |verb, klass| WRITE_VERBS.include?(verb) && mcp_surfaced?(klass) }
             .keys.map(&:to_s)
         end
@@ -61,13 +61,30 @@ module Textus
           klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
         end
 
-        def call(name, session:, store:, args:)
-          klass = Textus::Dispatcher::VERBS[name.to_sym]
+        def call(name, session:, store:, args:) # rubocop:disable Metrics/AbcSize
+          klass = Textus::Action::VERBS[name.to_sym]
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
           spec = klass.contract
           inputs = Textus::Contract::Binder.inputs_from_wire(spec, args)
-          result = store.as(session.role).dispatch_bound(spec.verb, inputs, session: session)
+
+          invoke = lambda do |effective_inputs|
+            pos, kwargs = Textus::Contract::Binder.bind(spec, effective_inputs, session: session)
+            spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
+            cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
+              raise Textus::MCP::ToolError.new("unknown verb: #{spec.verb}")
+            end
+            merged = kwargs.merge(role: session.role)
+            filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
+            cmd = cmd_class.new(**filled)
+            store.gate.dispatch(cmd, container: store.container)
+          end
+
+          result = if spec.around
+                     Textus::Contract::Around.with(spec.around, scope: store.as(session.role), inputs: inputs, session: session, &invoke)
+                   else
+                     invoke.call(inputs)
+                   end
           Textus::Contract::View.render(spec, :default, result, inputs)
         rescue Textus::Contract::MissingArgs => e
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")

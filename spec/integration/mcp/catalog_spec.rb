@@ -102,17 +102,16 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
       end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
     end
 
-    it "re-raises ContractDrift unmodified (not wrapped in ToolError)" do
-      allow(store).to receive(:as).and_raise(Textus::Surfaces::MCP::ContractDrift.new("boom"))
+    it "wraps gateway errors in ToolError" do
       expect do
-        described_class.call("get", session: session, store: store, args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::Surfaces::MCP::ContractDrift, /boom/)
+        described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
+      end.to raise_error(Textus::Surfaces::MCP::ToolError)
     end
   end
 
   describe "literal-default injection" do
     it "injects an arg's literal default when the wire omits it (ADR 0062 amendment)" do
-      spec = Textus::Dispatcher::VERBS[:jobs].contract
+      spec = Textus::Action::VERBS[:jobs].contract
       _pos, kw = Textus::Contract::Binder.bind(spec, {})
       expect(kw[:state]).to eq("ready")
     end

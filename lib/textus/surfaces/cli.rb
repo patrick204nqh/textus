@@ -120,19 +120,27 @@ module Textus
           textus #{VERSION} — reference implementation of #{PROTOCOL}
 
           Usage (json output is the default):
-            textus list [--prefix=KEY] [--zone=Z]
+            textus list [--prefix=KEY] [--lane=LANE]
             textus where KEY
             textus get KEY
             textus put KEY --stdin --as=ROLE
-            textus audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
+            textus propose KEY --stdin --as=ROLE
+            textus accept KEY --as=ROLE
+            textus reject KEY --as=ROLE
+            textus audit [--key=K] [--lane=LANE] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]
             textus blame KEY [--limit=N]
-            textus doctor
+            textus pulse [--since=N]
             textus boot
+            textus doctor
+            textus drain [PREFIX] --as=ROLE
+            textus watch
+            textus jobs
 
-            textus key {delete,mv,uid}
+            textus key {delete,mv,mv-prefix,delete-prefix,uid}
             textus rule {explain,lint,list}
             textus schema {diff,init,migrate,show}
-            textus hook {list,run}
+            textus data {mv}
+            textus mcp {serve}
         HELP
       end
     end

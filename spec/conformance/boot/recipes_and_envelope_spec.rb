@@ -126,7 +126,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
       # `human_steps` are the human/CLI channel (e.g. `accept`, an author-only
       # transition that is deliberately not an MCP tool — ADR 0035/0040), so the
       # guard covers only the steps an agent executes.
-      known = Textus::Dispatcher::VERBS.keys.map(&:to_s)
+      known = Textus::Action::VERBS.keys.map(&:to_s)
       referenced = recipes.values
                           .flat_map { |r| r.values_at("steps", "agent_steps").compact.flatten }
                           .filter_map { |s| s[/\A(\w+)/, 1] }

@@ -82,15 +82,15 @@ RSpec.describe SpecLayout do
     end
 
     it "passes an integration spec mirrored below its category" do
-      expect(described_class.categorized_placement_error("Textus::Dispatch::Actions::Get", %w[integration dispatch actions])).to be_nil
+      expect(described_class.categorized_placement_error("Textus::Action::Get", %w[integration dispatch actions])).to be_nil
     end
 
     it "flags a spec sitting at the spec root (no category)" do
-      expect(described_class.categorized_placement_error("Textus::Dispatch::Actions::Get", [])).not_to be_nil
+      expect(described_class.categorized_placement_error("Textus::Action::Get", [])).not_to be_nil
     end
 
     it "flags an unknown leading segment that is not a category" do
-      err = described_class.categorized_placement_error("Textus::Dispatch::Actions::Get", %w[read])
+      err = described_class.categorized_placement_error("Textus::Action::Get", %w[read])
       expect(err).to match(/not a category/)
     end
 

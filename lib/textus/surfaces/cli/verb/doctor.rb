@@ -4,12 +4,14 @@ module Textus
       class Verb
         class Doctor < Verb
           command_name "doctor"
-
           option :checks, "--check=NAME"
 
           def call(store)
-            check_list = checks&.split(",")&.map(&:strip)
-            res = store.doctor(checks: check_list)
+            cmd = Textus::Command::Doctor.new(
+              checks: checks&.split(",")&.map(&:strip),
+              role: resolved_role(store),
+            )
+            res = store.gate.dispatch(cmd, container: store.container)
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end

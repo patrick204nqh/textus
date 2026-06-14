@@ -53,78 +53,46 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
   describe "command_name derivation (ADR 0064)" do
     it "derives command_name from the contract cli_leaf when not set explicitly" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Get.contract # cli_path "get"
+      klass.spec = Textus::Action::Get.contract # cli_path "get"
       expect(klass.command_name).to eq("get")
     end
 
     it "derives the leaf for a grouped verb" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Uid.contract # cli "key uid"
+      klass.spec = Textus::Action::Uid.contract # cli "key uid"
       expect(klass.command_name).to eq("uid")
     end
 
     it "still honors an explicit command_name" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Get.contract
+      klass.spec = Textus::Action::Get.contract
       klass.command_name "custom"
       expect(klass.command_name).to eq("custom")
     end
   end
 
-  describe "Runner.dispatch shaper selection" do
-    # rubocop:disable RSpec/VerifiedDoubles
+  describe "Runner.shape shaper selection" do
     it "uses the :cli view instead of the default when a :cli view is set" do
       spec = Textus::Contract::Spec.new(
-        verb: :where,
-        summary: nil,
-        args: [],
+        verb: :where, summary: nil, args: [],
         surfaces: %i[cli],
         views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
-        cli: nil,
-        around: nil,
-        cli_stdin: nil,
+        cli: nil, around: nil, cli_stdin: nil
       )
-
-      emitted = nil
-      session_obj = double("session", dispatch_bound: "raw_value")
-      verb_instance = double("verb_instance",
-                             positional: [],
-                             flag_values: {},
-                             session_for: session_obj,
-                             emit: nil)
-      allow(verb_instance).to receive(:flag_values).and_return({})
-      allow(verb_instance).to receive(:emit) { |v| emitted = v }
-
-      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
-      expect(emitted).to eq({ "cli_shaped" => "raw_value" })
+      result = Textus::Surfaces::CLI::Runner.shape(spec, "raw_value", {})
+      expect(result).to eq({ "cli_shaped" => "raw_value" })
     end
 
     it "falls back to the default view when no :cli view is declared" do
       spec = Textus::Contract::Spec.new(
-        verb: :where,
-        summary: nil,
-        args: [],
+        verb: :where, summary: nil, args: [],
         surfaces: %i[cli],
         views: { default: ->(v, _i) { { "from_default" => v } } },
-        cli: nil,
-        around: nil,
-        cli_stdin: nil,
+        cli: nil, around: nil, cli_stdin: nil
       )
-
-      emitted = nil
-      session_obj = double("session", dispatch_bound: "raw_value")
-      verb_instance = double("verb_instance",
-                             positional: [],
-                             flag_values: {},
-                             session_for: session_obj,
-                             emit: nil)
-      allow(verb_instance).to receive(:flag_values).and_return({})
-      allow(verb_instance).to receive(:emit) { |v| emitted = v }
-
-      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
-      expect(emitted).to eq({ "from_default" => "raw_value" })
+      result = Textus::Surfaces::CLI::Runner.shape(spec, "raw_value", {})
+      expect(result).to eq({ "from_default" => "raw_value" })
     end
-    # rubocop:enable RSpec/VerifiedDoubles
   end
 
   describe ".shape (ADR 0067 — the :cli view may see call inputs)" do

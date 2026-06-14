@@ -49,10 +49,7 @@ module Textus
 
         module_function
 
-        # Normalize parsed CLI input into the uniform by-name inputs hash and
-        # dispatch through RoleScope's single bind+invoke site. A missing required
-        # arg becomes a UsageError phrased in the operator's command path (parity
-        # with the hand-written verbs).
+        # Build a Command from the spec + parsed inputs, dispatch through Gate.
         def dispatch(verb_instance, store, spec)
           inputs = Textus::Contract::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
@@ -60,13 +57,41 @@ module Textus
           inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
           inputs = Textus::Contract::Sources.acquire(spec, inputs)
           inputs = apply_cli_defaults(spec, inputs)
-          scope = verb_instance.session_for(store)
-          begin
-            result = scope.dispatch_bound(spec.verb, inputs)
-          rescue Textus::Contract::MissingArgs => e
-            raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
+          role = verb_instance.resolved_role(store)
+
+          invoke = lambda do |effective_inputs|
+            cmd = build_command(spec, effective_inputs, role)
+            store.gate.dispatch(cmd, container: store.container)
           end
+
+          result = if spec.around
+                     scope = store.as(role)
+                     Textus::Contract::Around.with(spec.around, scope: scope, inputs: inputs, session: nil, &invoke)
+                   else
+                     invoke.call(inputs)
+                   end
           verb_instance.emit(shape(spec, result, inputs))
+        rescue Textus::Contract::MissingArgs => e
+          raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
+        end
+
+        def build_command(spec, inputs, role)
+          cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
+            raise Textus::UsageError.new("no Command for verb: #{spec.verb}")
+          end
+          defaults = {}
+          spec.args.each do |a|
+            next if a.default == :__unset || inputs.key?(a.name)
+            next if a.default.nil? && a.required
+
+            defaults[a.name] = a.default
+          end
+          kwargs = defaults.merge(inputs)
+          kwargs[:role] = role if cmd_class.members.include?(:role) && !inputs.key?(:role) && spec.verb != :audit
+          missing = cmd_class.members - kwargs.keys
+          raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) }) unless missing.empty?
+
+          cmd_class.new(**kwargs.slice(*cmd_class.members))
         end
 
         # Fill CLI-specific defaults (cli_default:) for args the operator did not
@@ -156,10 +181,14 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Dispatcher::VERBS.each_value do |klass|
-            next unless klass.respond_to?(:contract?) && klass.contract?
+          Textus::Gate::ROUTES.each_key do |cmd_class|
+            verb = Textus::Gate::VERB_COMMAND.key(cmd_class)
+            next unless verb
 
-            spec = klass.contract
+            action_class = Textus::Gate::ROUTES[cmd_class].first
+            next unless action_class.respond_to?(:contract?) && action_class.contract?
+
+            spec = action_class.contract
             next unless spec.cli?
             next if hand_authored?(spec.verb)
             next if @installed[spec.verb]

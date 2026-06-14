@@ -15,7 +15,7 @@ CONTRACT_SIGNATURE_EXEMPT = %i[key_delete audit].freeze
 
 RSpec.describe "contract reconciliation" do
   def verb_signature_for(klass)
-    if klass <= Textus::Dispatch::Actions::Base
+    if klass <= Textus::Action::Base
       klass.instance_method(:initialize).parameters
     else
       klass.instance_method(:call).parameters
@@ -23,7 +23,7 @@ RSpec.describe "contract reconciliation" do
   end
 
   def positional_param_kind?(klass, kind)
-    if klass <= Textus::Dispatch::Actions::Base
+    if klass <= Textus::Action::Base
       kind == :keyreq
     else
       %i[req opt].include?(kind)
@@ -34,7 +34,7 @@ RSpec.describe "contract reconciliation" do
   # #call parameters exactly. This is the link that makes the derived MCP schema
   # honest — rename a kwarg and forget the contract, and this fails.
   describe "args reconcile with use-case #call (ADR 0039)" do
-    Textus::Dispatcher::VERBS.each do |verb, klass|
+    Textus::Action::VERBS.each do |verb, klass|
       next unless klass.respond_to?(:contract?) && klass.contract?
 
       it "#{verb}: dispatcher key matches the contract's own verb" do
@@ -56,7 +56,7 @@ RSpec.describe "contract reconciliation" do
       it "#{verb}: positional contract args are positional in #call" do
         params = verb_signature_for(klass).to_h { |kind, name| [name, kind] }
         klass.contract.args.each do |a|
-          expected_positional = if klass <= Textus::Dispatch::Actions::Base
+          expected_positional = if klass <= Textus::Action::Base
                                   a.positional ? %i[keyreq key].include?(params[a.name]) : a.positional
                                 else
                                   positional_param_kind?(klass, params[a.name])
@@ -74,9 +74,9 @@ RSpec.describe "contract reconciliation" do
   # (result, inputs) call. Drift becomes a red test, not a runtime surprise.
   describe "facets (ADR 0068)" do
     let(:specs) do
-      Textus::Dispatcher::VERBS.values
-                               .select { |k| k.respond_to?(:contract?) && k.contract? }
-                               .map(&:contract)
+      Textus::Action::VERBS.values
+                           .select { |k| k.respond_to?(:contract?) && k.contract? }
+                           .map(&:contract)
     end
 
     it "every around: names a registered resource" do
@@ -105,9 +105,9 @@ RSpec.describe "contract reconciliation" do
   # command can never silently dispatch a differently-named verb.
   describe "CLI reconciles with the contract (ADR 0063)" do
     let(:cli_specs) do
-      Textus::Dispatcher::VERBS.values
-                               .select { |k| k.respond_to?(:contract?) && k.contract? && k.contract.cli? }
-                               .map(&:contract)
+      Textus::Action::VERBS.values
+                           .select { |k| k.respond_to?(:contract?) && k.contract? && k.contract.cli? }
+                           .map(&:contract)
     end
 
     def path_of(klass)
@@ -135,7 +135,7 @@ RSpec.describe "contract reconciliation" do
       end.reject do |k|
         # The command sits at its own contract's declared cli_path, and its
         # contract verb is a real dispatcher verb.
-        path_of(k) == k.spec.cli_path && Textus::Dispatcher::VERBS.key?(k.spec.verb)
+        path_of(k) == k.spec.cli_path && Textus::Action::VERBS.key?(k.spec.verb)
       end
       expect(offenders.map { |k| [k.name, path_of(k), k.spec.verb] }).to be_empty
     end

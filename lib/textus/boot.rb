@@ -98,9 +98,9 @@ module Textus
     # verb token => contract.summary, for every Dispatcher verb that carries a
     # contract. The single source for a verb's one-line summary (ADR 0039).
     def self.contract_summaries
-      Dispatcher::VERBS.values
-                       .select { |k| k.respond_to?(:contract?) && k.contract? }
-                       .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+      Textus::Action::VERBS.values
+                           .select { |k| k.respond_to?(:contract?) && k.contract? }
+                           .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
     end
 
     # Build the CLI verb catalog: each summary is derived from its contract when

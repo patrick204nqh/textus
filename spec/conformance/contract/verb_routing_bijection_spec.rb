@@ -12,7 +12,7 @@ RSpec.describe "verb routing bijection (ADR 0105)" do
   # the full set. Restricted to real `Textus::` constants to exclude anonymous
   # or test-defined contract classes a sibling spec might have left behind.
   def contract_use_cases
-    routed_actions = Textus::Dispatcher::VERBS.values.select { |klass| klass <= Textus::Dispatch::Actions::Base }
+    routed_actions = Textus::Action::VERBS.values.select { |klass| klass <= Textus::Action::Base }
 
     ObjectSpace.each_object(Class).select do |klass|
       klass.name&.start_with?("Textus::") &&
@@ -23,7 +23,7 @@ RSpec.describe "verb routing bijection (ADR 0105)" do
   end
 
   describe "forward — every route points at the class that claims it" do
-    Textus::Dispatcher::VERBS.each do |verb_sym, klass|
+    Textus::Action::VERBS.each do |verb_sym, klass|
       describe "#{verb_sym} -> #{klass}" do
         it "resolves to a class that declares a contract" do
           expect(klass.respond_to?(:contract?) && klass.contract?)
@@ -42,7 +42,7 @@ RSpec.describe "verb routing bijection (ADR 0105)" do
 
   describe "reverse — every declared verb is routed (no declare-but-unrouted)" do
     it "registers every contract use case in Dispatcher::VERBS" do
-      registered = Textus::Dispatcher::VERBS.values
+      registered = Textus::Action::VERBS.values
       unrouted   = contract_use_cases.reject { |klass| registered.include?(klass) }
 
       expect(unrouted).to be_empty,
@@ -54,15 +54,15 @@ RSpec.describe "verb routing bijection (ADR 0105)" do
 
   describe "totality — the map is a function and an injection" do
     it "routes each verb symbol to exactly one class (no duplicate values)" do
-      classes = Textus::Dispatcher::VERBS.values
+      classes = Textus::Action::VERBS.values
       dupes = classes.tally.select { |_klass, n| n > 1 }.keys
       expect(dupes).to be_empty,
                        "these use-case classes are routed under more than one verb: #{dupes.join(", ")}"
     end
 
     it "keys agree with each class's declared verb set (round-trips)" do
-      from_routes    = Textus::Dispatcher::VERBS.keys.sort
-      from_contracts = Textus::Dispatcher::VERBS.values.map { |k| k.contract.verb }.sort
+      from_routes    = Textus::Action::VERBS.keys.sort
+      from_contracts = Textus::Action::VERBS.values.map { |k| k.contract.verb }.sort
       expect(from_routes).to eq(from_contracts)
     end
   end

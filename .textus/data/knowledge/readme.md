@@ -1,4 +1,4 @@
-<!-- Generated from .textus/zones/knowledge/readme.md — edit there, then run `textus drain`. Do not hand-edit README.md (it is clobbered on drain and flagged by doctor). ADR 0103. -->
+<!-- Generated from .textus/data/knowledge/readme.md — edit there, then run `textus drain`. Do not hand-edit README.md (it is clobbered on drain and flagged by doctor). ADR 0103. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">
@@ -90,7 +90,7 @@ That's the load-bearing claim: **coordination is a protocol invariant, not a lib
 
 ```sh
 gem install textus
-textus init                          # creates .textus/ with zones + schemas
+textus init                          # creates .textus/ with lanes + schemas
 
 # an agent proposes a change — it targets a knowledge entry, but lands in proposals/
 textus propose notes.oncall --as=agent --stdin <<'JSON'
@@ -114,7 +114,7 @@ Try the gate the other way (`textus put knowledge.notes.X --as=agent`) and you g
 
 ## Protocol, not just a gem
 
-This Ruby gem is the reference implementation of **`textus/3`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/zone gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/3`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
+This Ruby gem is the reference implementation of **`textus/3`** — a wire format and storage convention any language can speak. The protocol owns the envelope shape, the role/lane gate, the audit log format, and the key grammar. The gem version (semver, see badge) and the protocol version (`textus/3`) move independently; envelopes carry the `protocol` field so consumers can pin to the contract, not the implementation.
 
 - Specification: [`SPEC.md`](SPEC.md)
 - Architecture: [`docs/architecture/README.md`](docs/architecture/README.md)
@@ -157,7 +157,7 @@ lanes:
   manifest.yaml          # role capabilities + lane kinds + key-to-path mapping
   schemas/               # YAML field shapes per entry family
   templates/             # mustache templates for derived entries
-  steps/                 # step subclasses: fetch/, transform/, observe/
+  steps/                 # step subclasses: fetch/, transform/, validate/, observe/
   .gitignore             # generated — ignores .run/ and any tracked:false entries
   data/                  # one dir per lane; kinds + capabilities are in the manifest above
     knowledge/           # e.g. identity (knowledge.identity.*), voice, decisions, notes
@@ -269,7 +269,7 @@ module Textus
 end
 ```
 
-Observable events include `:entry_written`, `:entry_deleted`, `:entry_fetched`, `:entry_fetch_started`, `:entry_fetch_failed`, `:produce_failed`, `:store_loaded`.
+Observable events: `:entry_written`, `:entry_deleted`, `:entry_fetched`, `:entry_renamed`, `:entry_produced`, `:entry_published`, `:produce_failed`, `:proposal_accepted`, `:proposal_rejected`, `:store_loaded`, `:session_opened`, `:entry_fetch_started`, `:entry_fetch_failed`.
 
 Stale intake entries are re-pulled by `drain`, not by reads — `get` is a pure
 read that annotates the returned envelope with a freshness verdict (ADR 0089).
