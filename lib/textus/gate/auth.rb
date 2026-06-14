@@ -94,11 +94,16 @@ module Textus
       private
 
       def command_to_action(cmd)
-        cmd.class.name.split("::").last
-           .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-           .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-           .downcase.to_sym
+        self.class.command_to_verb.fetch(cmd.class) do
+          raise Textus::UsageError.new("unmapped command: #{cmd.class}")
+        end
       end
+
+      def self.command_to_verb
+        @command_to_verb ||= Textus::Gate::VERB_COMMAND.invert.freeze
+      end
+
+      private_class_method :command_to_verb
 
       def rule_declared_predicates(action, key)
         guard_map = @manifest.rules.for(key).guard
