@@ -172,10 +172,14 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Action::VERBS.each_value do |klass|
-            next unless klass.respond_to?(:contract?) && klass.contract?
+          Textus::Gate::ROUTES.each_key do |cmd_class|
+            verb = Textus::Gate::VERB_COMMAND.key(cmd_class)
+            next unless verb
 
-            spec = klass.contract
+            action_class = Textus::Gate::ROUTES[cmd_class].first
+            next unless action_class.respond_to?(:contract?) && action_class.contract?
+
+            spec = action_class.contract
             next unless spec.cli?
             next if hand_authored?(spec.verb)
             next if @installed[spec.verb]
