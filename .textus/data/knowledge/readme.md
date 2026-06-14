@@ -210,9 +210,9 @@ Every command operates on one store, located in this order: `--root <path>` flag
 
 Produced entries (`kind: produced`) declare how they're acquired in one `source:` block (ADR 0093/0094); `drain` materialises them:
 
-- **`source: { from: project, select: [...], pluck:, sort_by:, limit:, transform: name }`** — a *projection*: textus computes the entry's data from other entries, then renders it through a template under `.textus/templates/` (markdown/text) or a templateless path that lets a transform hook shape the output directly (json/yaml). Projections cap at 1000 rows; the vendored Mustache subset caps at depth 8. No partials, no lambdas, no HTML escaping.
-- **`source: { from: handler, handler: name, ttl: 1h, config: {...} }`** — *intake*: an RPC handler pulls external bytes on a `ttl` cadence; `drain` re-pulls when the entry goes stale.
-- **`source: { from: command, sources: [...] }`** — *externally generated*: an out-of-band command writes the file; textus tracks the declared `sources` for staleness.
+- **`source: { from: derive, select: [...], pluck:, sort_by:, limit:, transform: name }`** — a *derived* entry: textus computes its data from other entries, then renders it through a template under `.textus/templates/` (markdown/text) or a templateless path that lets a transform hook shape the output directly (json/yaml). Projections cap at 1000 rows; the vendored Mustache subset caps at depth 8. No partials, no lambdas, no HTML escaping.
+- **`source: { from: fetch, handler: name, ttl: 1h, config: {...} }`** — *intake*: a Step::Fetch handler pulls external bytes on a `ttl` cadence; `drain` re-pulls when the entry goes stale.
+- **`source: { from: external, sources: [...] }`** — *externally managed*: an out-of-band command writes the file; textus tracks the declared `sources` for staleness.
 
 Publishing is one typed `publish:` block (ADR 0052). `publish: { to: [path, ...] }` byte-copies a single produced file to one or more targets. `publish: { tree: "dir" }` on a nested entry mirrors its whole stored subtree to one target directory, preserving layout (path-driven — no keys or template variables). Sentinels for every published file live under `.textus/.run/sentinels/` (git-ignored runtime state, regenerated on drain — ADR 0070). See SPEC §5.2, §5.3, §5.12.
 
