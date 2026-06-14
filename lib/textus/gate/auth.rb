@@ -83,12 +83,6 @@ module Textus
           failures << [pred, result[:reason]]
         end
         raise Textus::GuardFailed.new(failures) unless failures.empty?
-      rescue Textus::UnknownKey
-        if action.to_s == "accept"
-          raise Textus::GuardFailed.new([["target_is_canon", "proposal target '#{key}' resolves to no declared entry"]])
-        end
-
-        raise
       end
 
       def self.command_to_verb

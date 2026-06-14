@@ -28,8 +28,6 @@ module Textus
         target = proposal["target_key"] or raise Textus::ProposalError.new("proposal missing target_key")
         action = proposal["action"] || "put"
 
-        auth(container).check_action!(action: :accept, actor: call.role, key: target, envelope: env)
-
         case action
         when "put"
           Textus::Action::Put.new(
@@ -53,12 +51,6 @@ module Textus
         )
 
         { "protocol" => Textus::PROTOCOL, "accepted" => @pending_key, "target_key" => target, "action" => action }
-      end
-
-      private
-
-      def auth(container)
-        Textus::Gate::Auth.new(container)
       end
     end
   end
