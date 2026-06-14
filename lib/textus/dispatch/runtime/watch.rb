@@ -37,7 +37,7 @@ module Textus
             target: nil,
             payload: {},
             actions: [
-              Textus::Dispatch::Actions::Enqueue.new(
+              Textus::Action::Enqueue.new(
                 type: "sweep",
                 args: { "scope" => { "prefix" => nil, "lane" => nil } },
               ),

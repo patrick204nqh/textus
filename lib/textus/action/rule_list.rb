@@ -1,0 +1,50 @@
+# frozen_string_literal: true
+
+module Textus
+  module Action
+    class RuleList < Base
+      extend Textus::Contract::DSL
+
+      verb :rule_list
+      summary "List every rule block in the manifest."
+      surfaces :cli
+      cli "rule list"
+      view(:cli) { |policies| { "verb" => "rule_list", "policies" => policies } }
+
+      BURN = :sync
+
+      def args
+        {}
+      end
+
+      def call(container:, **)
+        manifest = container.manifest
+        manifest.rules.blocks.map do |block|
+          row = { "match" => block.match }
+          self.class::LIST_FIELDS.each do |field|
+            value = block.public_send(field)
+            row[field.to_s] = serialize(field, value) unless value.nil?
+          end
+          row
+        end
+      end
+
+      LIST_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_rule_list] }.keys.freeze
+
+      private
+
+      def serialize(field, value)
+        case field
+        when :retention
+          { "ttl_seconds" => value.ttl_seconds, "action" => value.action.to_s }
+        when :react
+          value.to_h
+        when :handler_permit
+          value.handlers
+        else
+          value
+        end
+      end
+    end
+  end
+end

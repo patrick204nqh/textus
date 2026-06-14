@@ -48,7 +48,7 @@ module Textus
           end
 
           def delete(key)
-            Textus::Dispatch::Actions::KeyDelete.new(key: key).call(container: @container, call: @call)
+            Textus::Action::KeyDelete.new(key: key).call(container: @container, call: @call)
           end
         end
       end

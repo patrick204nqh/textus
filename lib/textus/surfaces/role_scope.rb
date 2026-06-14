@@ -83,7 +83,7 @@ module Textus
       end
 
       def action_for(verb, klass, spec, args, kwargs)
-        raise Textus::UsageError.new("verb :#{verb} is not routed to a dispatch action") unless klass <= Textus::Dispatch::Actions::Base
+        raise Textus::UsageError.new("verb :#{verb} is not routed to a dispatch action") unless klass <= Textus::Action::Base
 
         init_kwargs = kwargs.dup
         if spec && !args.empty?

@@ -53,19 +53,19 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
   describe "command_name derivation (ADR 0064)" do
     it "derives command_name from the contract cli_leaf when not set explicitly" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Get.contract # cli_path "get"
+      klass.spec = Textus::Action::Get.contract # cli_path "get"
       expect(klass.command_name).to eq("get")
     end
 
     it "derives the leaf for a grouped verb" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Uid.contract # cli "key uid"
+      klass.spec = Textus::Action::Uid.contract # cli "key uid"
       expect(klass.command_name).to eq("uid")
     end
 
     it "still honors an explicit command_name" do
       klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
-      klass.spec = Textus::Dispatch::Actions::Get.contract
+      klass.spec = Textus::Action::Get.contract
       klass.command_name "custom"
       expect(klass.command_name).to eq("custom")
     end

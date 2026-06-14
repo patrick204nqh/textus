@@ -169,7 +169,7 @@ module TextusSpecHelpers
     queue = Textus::Ports::Queue.new(root: store.root)
     call = Textus::Call.build(role: role)
     Textus::Dispatch::Planner::Seeder.new(container: store.container, queue: queue, call: call).seed
-    Textus::Dispatch::Actions::Drain.new.call(container: store.container, call: call)
+    Textus::Action::Drain.new.call(container: store.container, call: call)
   end
 end
 

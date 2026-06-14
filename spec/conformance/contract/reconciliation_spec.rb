@@ -15,7 +15,7 @@ CONTRACT_SIGNATURE_EXEMPT = %i[key_delete audit].freeze
 
 RSpec.describe "contract reconciliation" do
   def verb_signature_for(klass)
-    if klass <= Textus::Dispatch::Actions::Base
+    if klass <= Textus::Action::Base
       klass.instance_method(:initialize).parameters
     else
       klass.instance_method(:call).parameters
@@ -23,7 +23,7 @@ RSpec.describe "contract reconciliation" do
   end
 
   def positional_param_kind?(klass, kind)
-    if klass <= Textus::Dispatch::Actions::Base
+    if klass <= Textus::Action::Base
       kind == :keyreq
     else
       %i[req opt].include?(kind)
@@ -56,7 +56,7 @@ RSpec.describe "contract reconciliation" do
       it "#{verb}: positional contract args are positional in #call" do
         params = verb_signature_for(klass).to_h { |kind, name| [name, kind] }
         klass.contract.args.each do |a|
-          expected_positional = if klass <= Textus::Dispatch::Actions::Base
+          expected_positional = if klass <= Textus::Action::Base
                                   a.positional ? %i[keyreq key].include?(params[a.name]) : a.positional
                                 else
                                   positional_param_kind?(klass, params[a.name])

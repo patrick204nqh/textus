@@ -59,7 +59,7 @@ module Textus
 
       def pure_reader
         @pure_reader ||= lambda do |key|
-          Textus::Dispatch::Actions::Get.new(key: key).call(
+          Textus::Action::Get.new(key: key).call(
             container: @scope.container,
             call: Textus::Call.build(
               role: @scope.role,

@@ -5,8 +5,8 @@ module Textus
     module Planner
       class Planner
         ACTIONS_BY_TRIGGER = {
-          "manual.kick" => %w[materialize refresh_data sweep],
-          "schedule.tick" => %w[materialize refresh_data sweep],
+          "manual.kick" => %w[materialize refresh sweep],
+          "schedule.tick" => %w[materialize refresh sweep],
           "entry.written" => %w[materialize decorate],
           "entry.deleted" => %w[materialize],
           "entry.moved" => %w[materialize],
@@ -16,7 +16,7 @@ module Textus
 
         SCOPE_RESOLVERS = {
           "materialize" => :producible_keys,
-          "refresh_data" => :stale_intake_keys,
+          "refresh" => :stale_intake_keys,
           "sweep" => :lane_keys,
           "decorate" => :producible_keys,
         }.freeze
@@ -66,7 +66,7 @@ module Textus
           actions = ACTIONS_BY_TRIGGER.fetch(type, [])
           jobs = []
           producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
-          stale_intake_keys(nil).each { |k| jobs << job("refresh_data", k, role) } if actions.include?("refresh_data")
+          stale_intake_keys(nil).each { |k| jobs << job("refresh", k, role) } if actions.include?("refresh")
           if actions.include?("sweep")
             jobs << Textus::Core::Jobs::Job.new(
               type: "sweep", args: { "scope" => {} }, enqueued_by: role,

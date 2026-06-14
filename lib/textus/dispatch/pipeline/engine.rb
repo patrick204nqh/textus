@@ -89,7 +89,7 @@ module Textus
           Textus::Manifest::Entry::Base::PublishContext.new(
             container: @container, call: call,
             reader: lambda { |key|
-              Textus::Dispatch::Actions::Get.new(key: key).call(container: @container, call: call)
+              Textus::Action::Get.new(key: key).call(container: @container, call: call)
             }
           )
         end
