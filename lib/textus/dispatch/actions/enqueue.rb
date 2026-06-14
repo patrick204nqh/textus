@@ -28,7 +28,7 @@ module Textus
         end
 
         def call(container:, call:)
-          entry = Textus::Jobs::Handlers.registry.lookup(@type)
+          entry = Textus::Dispatch::Planner::Handlers.registry.lookup(@type)
           authorize!(entry, call)
 
           job = Textus::Core::Jobs::Job.new(

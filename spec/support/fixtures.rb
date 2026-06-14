@@ -168,7 +168,7 @@ module TextusSpecHelpers
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION)
     queue = Textus::Ports::Queue.new(root: store.root)
     call = Textus::Call.build(role: role)
-    Textus::Jobs::Seeder.new(container: store.container, queue: queue, call: call).seed(prefix: prefix, lane: lane)
+    Textus::Dispatch::Planner::Seeder.new(container: store.container, queue: queue, call: call).seed(prefix: prefix, lane: lane)
     Textus::Dispatch::Actions::Drain.new.call(container: store.container, call: call)
   end
 end

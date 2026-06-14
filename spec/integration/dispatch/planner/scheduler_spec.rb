@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Scheduler do
+RSpec.describe Textus::Dispatch::Planner::Scheduler do
   include_context "textus_store_fixture"
   include_context "intake doc" # provides `store` with a stale-on-boot intake entry (machine.doc)
 

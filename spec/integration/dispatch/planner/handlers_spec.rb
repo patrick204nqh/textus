@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Handlers do
+RSpec.describe Textus::Dispatch::Planner::Handlers do
   include_context "textus_store_fixture"
 
   let(:store) do

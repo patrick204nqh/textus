@@ -67,7 +67,7 @@ module Textus
 
         def run_queued_job(leased, container)
           job = leased.job
-          entry = Textus::Jobs::Handlers.registry.lookup(job.type)
+          entry = Textus::Dispatch::Planner::Handlers.registry.lookup(job.type)
           entry.handler.call(job: job, container: container)
         end
       end

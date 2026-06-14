@@ -11,7 +11,7 @@ module Textus
       # lease TTL from worker_config. Both `drain` and `serve` build it this way.
       def self.for(container:, queue:)
         new(
-          queue: queue, registry: Textus::Jobs::Handlers.registry,
+          queue: queue, registry: Textus::Dispatch::Planner::Handlers.registry,
           container: container, lease_ttl: container.manifest.data.worker_config[:lease_ttl]
         )
       end

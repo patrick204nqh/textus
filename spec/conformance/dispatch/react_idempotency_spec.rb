@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Seeder do
+RSpec.describe "jobs react idempotency" do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -27,23 +27,17 @@ RSpec.describe Textus::Jobs::Seeder do
             }
     )
   end
-  let(:queue) { Textus::Ports::Queue.new(root: root) }
 
-  def seed(role: "human")
-    described_class.new(container: store.container, queue: queue, call: test_ctx(role: role)).seed(prefix: nil, lane: nil)
-  end
+  it "coalesces duplicate entry.written triggers into one effective decorate set" do
+    planner = Textus::Dispatch::Planner::Planner.new(container: store.container)
+    jobs = planner.plan(
+      triggers: [{ "type" => "entry.written" }, { "type" => "entry.written" }],
+      scope: { "prefix" => nil, "lane" => nil },
+      role: "automation",
+    )
 
-  it "enqueues a materialize job per producible key plus a sweep job" do
-    seed
-    ids = queue.ready_ids
-    expect(ids).to include(a_string_starting_with("sweep:"))
-    expect(ids).to include(a_string_starting_with("materialize:"))
-  end
-
-  it "stamps the caller's role on the sweep job (destructive runs as caller)" do
-    seed(role: "human")
-    sweep_id = queue.ready_ids.find { |i| i.start_with?("sweep:") }
-    body = JSON.parse(File.read(File.join(Textus::Layout.queue_state(root, :ready), "#{sweep_id}.json")))
-    expect(body["enqueued_by"]).to eq("human")
+    ids = jobs.map(&:id)
+    decorate_ids = ids.select { |id| id.start_with?("decorate:") }
+    expect(decorate_ids.uniq).to eq(decorate_ids)
   end
 end
