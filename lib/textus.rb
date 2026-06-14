@@ -74,7 +74,14 @@ Textus::Action::VERBS.each_key do |verb|
                   kwargs.transform_keys(&:to_sym)
                 end
 
-    filled = cmd_class.members.to_h { |m| [m, inputs.merge(role: @role)[m]] }
+    role_value = if klass.respond_to?(:contract?) && klass.contract? &&
+                    klass.contract.args.any? { |a| a.name == :role }
+                   inputs[:role]
+                 else
+                   @role
+                 end
+
+    filled = cmd_class.members.to_h { |m| [m, inputs.merge(role: role_value)[m]] }
     @container.gate.dispatch(cmd_class.new(**filled), correlation_id: @correlation_id)
   end
 end
