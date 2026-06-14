@@ -3,7 +3,6 @@
 
 # Verb reference
 
-
 ## `textus put`
 
 Create or update an entry. Schema-validated. Returns {uid, etag}.
@@ -13,26 +12,20 @@ Create or update an entry. Schema-validated. Returns {uid, etag}.
 - `--content`
 - `--if_etag`
 - `--key`
-
-
 ## `textus propose`
 
-Write a proposal to the role's propose_lane. Auto-prefixes the key.
+Write a proposal to the role&#39;s propose_lane. Auto-prefixes the key.
 
 - `--_meta`
 - `--body`
 - `--content`
 - `--key`
-
-
 ## `textus key_delete`
 
 Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.
 
 - `--if_etag`
 - `--key`
-
-
 ## `textus key_mv`
 
 Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.
@@ -40,67 +33,49 @@ Rename one entry (same zone + format). Refuses if the target exists. Single-key,
 - `--dry_run`
 - `--new_key`
 - `--old_key`
-
-
 ## `textus accept`
 
 apply a queued proposal to its target zone; requires the author capability
 
 - `--pending_key`
-
-
 ## `textus reject`
 
 discard a queued proposal without applying it
 
 - `--pending_key`
-
-
 ## `textus enqueue`
 
 Push a registered job type onto the convergence queue, to be run by drain/serve.
 
 - `--args`
 - `--type`
-
-
 ## `textus get`
 
 Read one entry - a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
 
 - `--key`
-
-
 ## `textus list`
 
 List keys filtered by lane and/or prefix.
 
 - `--lane`
 - `--prefix`
-
-
 ## `textus where`
 
 Resolve a key to its zone, owner, and path without reading the body.
 
 - `--key`
-
-
 ## `textus uid`
 
 Return the stable UID of an entry without reading its body.
 
 - `--key`
-
-
 ## `textus blame`
 
 Annotate audit rows for a key with the git commit that introduced each file state.
 
 - `--key`
 - `--limit`
-
-
 ## `textus audit`
 
 Query the audit log with optional filters.
@@ -113,70 +88,50 @@ Query the audit log with optional filters.
 - `--seq_since`
 - `--since`
 - `--verb`
-
-
 ## `textus deps`
 
 List the keys a derived entry depends on (its projection/external sources).
 
 - `--key`
-
-
 ## `textus rdeps`
 
 List the derived entries that depend on a key (reverse deps / impact set).
 
 - `--key`
-
-
 ## `textus pulse`
 
 Delta since cursor — changed entries, stale, pending proposals, doctor summary.
 
 - `--since`
-
-
 ## `textus rule_explain`
 
 Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates.
 
 - `--detail`
 - `--key`
-
-
 ## `textus rule_list`
 
 List every rule block in the manifest.
-
-
 
 ## `textus published`
 
 List all entries that declare a publish_to target.
 
-
-
 ## `textus schema_show`
 
-Return the schema (field shape) for an entry's family, by key.
+Return the schema (field shape) for an entry&#39;s family, by key.
 
 - `--key`
-
-
 ## `textus doctor`
 
 Run health checks on the textus store and report any issues.
 
 - `--checks`
-
-
 ## `textus boot`
 
 Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.
 
 - `--lean`
-
-
 ## `textus jobs`
 
 List queued jobs by state; retry a dead-lettered job or purge a state.
@@ -184,8 +139,6 @@ List queued jobs by state; retry a dead-lettered job or purge a state.
 - `--action`
 - `--job_id`
 - `--state`
-
-
 ## `textus data_mv`
 
 Rename a data lane — manifest + files. Refuses if destination exists.
@@ -193,8 +146,6 @@ Rename a data lane — manifest + files. Refuses if destination exists.
 - `--dry_run`
 - `--from`
 - `--to`
-
-
 ## `textus key_mv_prefix`
 
 Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.
@@ -202,28 +153,20 @@ Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Pla
 - `--dry_run`
 - `--from_prefix`
 - `--to_prefix`
-
-
 ## `textus key_delete_prefix`
 
 Bulk-delete every leaf key under prefix.
 
 - `--dry_run`
 - `--prefix`
-
-
 ## `textus drain`
 
 Seed refresh + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.
 
 - `--lane`
 - `--prefix`
-
-
 ## `textus rule_lint`
 
-Diff candidate manifest YAML's rules against the live manifest. No writes.
+Diff candidate manifest YAML&#39;s rules against the live manifest. No writes.
 
 - `--against`
-
-

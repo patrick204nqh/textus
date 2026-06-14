@@ -18,16 +18,14 @@ Each zone-kind maps 1:1 to exactly one capability (ADR 0091).
 | `workspace` | `keep` |
 | `machine` | `converge` |
 | `queue` | `propose` |
-
 ## Zones (this manifest)
 
 | Zone | `kind` | Required capability | Purpose |
 |------|--------|---------------------|---------|
 | `knowledge` | `canon` | `author` | the maintained source of truth about the repo (project + runbooks) |
-| `notebook` | `workspace` | `keep` | the agent's own durable working notes across sessions |
+| `notebook` | `workspace` | `keep` | the agent&#39;s own durable working notes across sessions |
 | `proposals` | `queue` | `propose` | changes awaiting a human accept |
 | `artifacts` | `machine` | `converge` | machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs |
-
 ## Roles (this manifest)
 
 A role may write a zone iff it holds the capability that zone's kind requires; the last column lists the zone-kinds each role's capabilities authorize.
@@ -37,4 +35,3 @@ A role may write a zone iff it holds the capability that zone's kind requires; t
 | `human` | `author` `propose` | `canon` `queue` |
 | `agent` | `propose` `keep` | `queue` `workspace` |
 | `automation` | `converge` | `machine` |
-
