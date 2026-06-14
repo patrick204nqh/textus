@@ -77,7 +77,7 @@ module Textus
       Gate::Auth.new(container).check!(cmd)
       call_obj = build_call(cmd, correlation_id: correlation_id)
       results = action_classes.map { |klass| run_action(klass, cmd, container, call_obj) }
-      results.one? ? results.first : results
+      results.length == 1 ? results.first : results
     end
 
     private

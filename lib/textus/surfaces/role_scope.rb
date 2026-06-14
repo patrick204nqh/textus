@@ -33,18 +33,46 @@ module Textus
       end
 
       def dispatch_bound(verb, inputs, session: nil)
+        cmd_class = Textus::Gate::VERB_COMMAND[verb]
+
+        if cmd_class
+          cmd = build_command(cmd_class, verb, inputs)
+          [@container.gate.dispatch(cmd, container: @container, correlation_id: @correlation_id)]
+        else
+          action = build_action(verb, inputs, session)
+          call = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
+          [action.call(container: @container, call: call)]
+        end
+      end
+
+      private
+
+      def build_command(cmd_class, verb, inputs)
+        klass  = Textus::Action::VERBS[verb]
+        spec   = klass.contract if klass.respond_to?(:contract?) && klass.contract?
+        role_filter_param = spec&.args&.any? { |a| a.name == :role }
+
+        role_value = if role_filter_param
+                       inputs.key?(:role) ? inputs[:role] : nil
+                     else
+                       @role
+                     end
+        merged = inputs.merge(role: role_value)
+        filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
+        cmd_class.new(**filled)
+      end
+
+      def build_action(verb, inputs, session)
         klass = Textus::Action::VERBS[verb]
-        spec = (klass.contract if klass.respond_to?(:contract?) && klass.contract?)
+        spec  = klass.contract if klass.respond_to?(:contract?) && klass.contract?
+
         if spec
           pos, kwargs = Textus::Contract::Binder.bind(spec, inputs, session: session)
           spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
-          action = klass.new(**kwargs)
+          klass.new(**kwargs)
         else
-          sym_inputs = inputs.transform_keys(&:to_sym)
-          action = klass.new(**sym_inputs)
+          klass.new(**inputs.transform_keys(&:to_sym))
         end
-        call = Textus::Call.build(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)
-        [action.call(container: @container, call:)]
       end
     end
   end
