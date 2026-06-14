@@ -49,10 +49,7 @@ module Textus
 
         module_function
 
-        # Normalize parsed CLI input into the uniform by-name inputs hash and
-        # dispatch through RoleScope's single bind+invoke site. A missing required
-        # arg becomes a UsageError phrased in the operator's command path (parity
-        # with the hand-written verbs).
+        # Build a Command from the spec + parsed inputs, dispatch through Gate.
         def dispatch(verb_instance, store, spec)
           inputs = Textus::Contract::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
@@ -60,13 +57,36 @@ module Textus
           inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
           inputs = Textus::Contract::Sources.acquire(spec, inputs)
           inputs = apply_cli_defaults(spec, inputs)
-          scope = verb_instance.session_for(store)
+          role = verb_instance.resolved_role(store)
           begin
-            result = scope.dispatch_bound(spec.verb, inputs)
+            cmd = build_command(spec, inputs, role)
+            result = store.gate.dispatch(cmd, container: store.container)
           rescue Textus::Contract::MissingArgs => e
             raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
           end
           verb_instance.emit(shape(spec, result, inputs))
+        end
+
+        def build_command(spec, inputs, role)
+          cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
+            raise Textus::UsageError.new("no Command for verb: #{spec.verb}")
+          end
+          defaults = {}
+          spec.args.each do |a|
+            next if a.default == :__unset || inputs.key?(a.name)
+            if a.default.nil? && a.required
+              next
+            elsif a.default.nil? && a.type == :boolean
+              defaults[a.name] = false
+            else
+              defaults[a.name] = a.default
+            end
+          end
+          kwargs = defaults.merge(inputs).merge(role:)
+          missing = cmd_class.members - kwargs.keys
+          raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) }) unless missing.empty?
+
+          cmd_class.new(**kwargs.slice(*cmd_class.members))
         end
 
         # Fill CLI-specific defaults (cli_default:) for args the operator did not

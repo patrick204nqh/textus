@@ -98,16 +98,9 @@ module Textus
           Role.resolve(flag: flag, env: ENV, root: store.root, default: default)
         end
 
-        # Returns a Call value bound to the resolved role. Convenience for
-        # verbs whose only pre-call boilerplate is resolving the role and
-        # wrapping it in a Call.
-        def context_for(store)
-          Textus::Call.build(role: resolved_role(store))
-        end
-
-        # Returns a RoleScope bound to the resolved role.
-        def session_for(store)
-          store.as(resolved_role(store))
+        # Builds a Command from spec + inputs and dispatches through Gate.
+        def gate_dispatch(cmd, store)
+          store.gate.dispatch(cmd, container: store.container)
         end
 
         # The input stream — the source for a `cli_stdin` envelope (ADR 0068).

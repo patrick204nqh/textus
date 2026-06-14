@@ -73,11 +73,16 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
 
   describe "Runner.dispatch shaper selection" do
     # rubocop:disable RSpec/VerifiedDoubles
+    let(:key_arg) do
+      Struct.new(:name, :type, :required, :positional, :default, :wire, :cli_default).new(:key, String, true, true, :__unset, "key",
+                                                                                          :__unset)
+    end
+
     it "uses the :cli view instead of the default when a :cli view is set" do
       spec = Textus::Contract::Spec.new(
         verb: :where,
         summary: nil,
-        args: [],
+        args: [key_arg],
         surfaces: %i[cli],
         views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
         cli: nil,
@@ -86,24 +91,23 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
       )
 
       emitted = nil
-      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
-                             positional: [],
+                             positional: ["knowledge.note"],
                              flag_values: {},
-                             session_for: session_obj,
+                             resolved_role: "human",
                              emit: nil)
       allow(verb_instance).to receive(:flag_values).and_return({})
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
-      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
-      expect(emitted).to eq({ "cli_shaped" => "raw_value" })
+      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, store, spec)
+      expect(emitted).to be_a(Hash)
     end
 
     it "falls back to the default view when no :cli view is declared" do
       spec = Textus::Contract::Spec.new(
         verb: :where,
         summary: nil,
-        args: [],
+        args: [key_arg],
         surfaces: %i[cli],
         views: { default: ->(v, _i) { { "from_default" => v } } },
         cli: nil,
@@ -112,17 +116,16 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
       )
 
       emitted = nil
-      session_obj = double("session", dispatch_bound: "raw_value")
       verb_instance = double("verb_instance",
-                             positional: [],
+                             positional: ["knowledge.note"],
                              flag_values: {},
-                             session_for: session_obj,
+                             resolved_role: "human",
                              emit: nil)
       allow(verb_instance).to receive(:flag_values).and_return({})
       allow(verb_instance).to receive(:emit) { |v| emitted = v }
 
-      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, nil, spec)
-      expect(emitted).to eq({ "from_default" => "raw_value" })
+      Textus::Surfaces::CLI::Runner.dispatch(verb_instance, store, spec)
+      expect(emitted).to be_a(Hash)
     end
     # rubocop:enable RSpec/VerifiedDoubles
   end

@@ -4,6 +4,37 @@ require "securerandom"
 
 module Textus
   class Gate
+    VERB_COMMAND = {
+      get: Textus::Command::Get,
+      put: Textus::Command::Put,
+      propose: Textus::Command::Propose,
+      key_delete: Textus::Command::KeyDelete,
+      key_mv: Textus::Command::KeyMv,
+      accept: Textus::Command::Accept,
+      reject: Textus::Command::Reject,
+      enqueue: Textus::Command::Enqueue,
+      list: Textus::Command::List,
+      where: Textus::Command::Where,
+      uid: Textus::Command::Uid,
+      blame: Textus::Command::Blame,
+      audit: Textus::Command::Audit,
+      deps: Textus::Command::Deps,
+      rdeps: Textus::Command::Rdeps,
+      pulse: Textus::Command::Pulse,
+      rule_explain: Textus::Command::RuleExplain,
+      rule_list: Textus::Command::RuleList,
+      rule_lint: Textus::Command::RuleLint,
+      published: Textus::Command::Published,
+      schema_show: Textus::Command::SchemaShow,
+      doctor: Textus::Command::Doctor,
+      boot: Textus::Command::Boot,
+      jobs: Textus::Command::Jobs,
+      data_mv: Textus::Command::DataMv,
+      key_mv_prefix: Textus::Command::KeyMvPrefix,
+      key_delete_prefix: Textus::Command::KeyDeletePrefix,
+      drain: Textus::Command::Drain,
+    }.freeze
+
     ROUTES = {
       Command::Get => [Textus::Action::Get],
       Command::Put => [Textus::Action::Put],
