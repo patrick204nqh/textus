@@ -8,6 +8,7 @@ module Textus
       class Server
         PROTOCOL_VERSION = "2024-11-05"
         SERVER_INFO = { "name" => "textus", "version" => Textus::VERSION }.freeze
+        MAX_LINE_BYTES = 1_048_576 # 1 MB — protects against OOM from oversized tool calls
 
         def initialize(store:, stdin: $stdin, stdout: $stdout, role: Textus::Role::DEFAULT)
           @store   = store
@@ -29,6 +30,10 @@ module Textus
         private
 
         def handle_line(line)
+          if line.bytesize > MAX_LINE_BYTES
+            emit_error(nil, -32_700, "message too large (#{line.bytesize} bytes, limit #{MAX_LINE_BYTES})")
+            return
+          end
           msg = JSON.parse(line)
         rescue JSON::ParserError => e
           emit_error(nil, -32_700, "parse error: #{e.message}")
