@@ -23,6 +23,7 @@ SOURCES = [
   { name: "skills-best-practices", url: "https://github.com/mgechev/skills-best-practices.git" },
   { name: "stop-slop",             url: "https://github.com/hardikpandya/stop-slop.git" },
   { name: "mattpocock-skills",     url: "https://github.com/mattpocock/skills.git" },
+  { name: "ecc",                   url: "https://github.com/affaan-m/ecc.git" },
 ].freeze
 
 # ── Sync targets (relative to repo root) ─────────────────────────────────────
