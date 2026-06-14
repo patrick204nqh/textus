@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+# bin/dev — local dev setup (tracked; safe to rerun)
+#
+# Usage: bin/dev [--dry-run]
+#
+# Clones or updates skill source repos into .cache/skills/, then symlinks
+# discovered skills into .claude/skills/, .agents/skills/, .opencode/skills/.
+# All three target dirs and the cache are gitignored.
+
+require "fileutils"
+
+REPO_ROOT = File.expand_path("..", __dir__)
+CACHE_DIR = File.join(REPO_ROOT, ".cache/skills")
+DRY_RUN   = ARGV.include?("--dry-run")
+
+# ── Skill sources ─────────────────────────────────────────────────────────────
+# Plugin-style entries (name@git+url) are listed here in plain form.
+SOURCES = [
+  { name: "superpowers",           url: "https://github.com/obra/superpowers.git" },
+  { name: "superpowers-ruby",      url: "https://github.com/lucianghinda/superpowers-ruby.git" },
+  { name: "impeccable",            url: "https://github.com/pbakaus/impeccable.git" },
+  { name: "agent-skills",          url: "https://github.com/addyosmani/agent-skills.git" },
+  { name: "skills-best-practices", url: "https://github.com/mgechev/skills-best-practices.git" },
+  { name: "stop-slop",             url: "https://github.com/hardikpandya/stop-slop.git" },
+  { name: "mattpocock-skills",     url: "https://github.com/mattpocock/skills.git" },
+].freeze
+
+# ── Sync targets (relative to repo root) ─────────────────────────────────────
+TARGETS = %w[.claude/skills .agents/skills .opencode/skills].freeze
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def ok(msg)   = puts("    \e[32m✓\e[0m #{msg}")
+def skip(msg) = puts("    \e[90m·\e[0m #{msg}")
+def warn(msg) = puts("    \e[33m!\e[0m #{msg}")
+def err(msg)  = $stderr.puts("    \e[31m✗\e[0m #{msg}")
+
+def run(*cmd)
+  return if DRY_RUN
+  system(*cmd, exception: true)
+end
+
+def clone_or_update(name:, url:)
+  dest = File.join(CACHE_DIR, name)
+  if DRY_RUN
+    puts "  [dry-run] clone/pull #{url} → #{dest}"
+    return
+  end
+  if Dir.exist?(File.join(dest, ".git"))
+    result = system("git", "-C", dest, "pull", "--quiet", "--ff-only", err: File::NULL)
+    result ? ok("pulled: #{name}") : warn("pull skipped (offline or diverged): #{name}")
+  else
+    FileUtils.mkdir_p(dest)
+    system("git", "clone", "--quiet", "--depth=1", url, dest, exception: true)
+    ok("cloned: #{name}")
+  end
+end
+
+# Returns [{skill_name:, skill_src:}] for every skill found in the repo.
+def detect_skills(repo_dir, name)
+  # 1. SKILL.md at root → whole repo is one skill
+  return [{ skill_name: name, skill_src: repo_dir }] if File.exist?("#{repo_dir}/SKILL.md")
+
+  # 2. skill/ subdir with SKILL.md → single named skill
+  skill_sub = "#{repo_dir}/skill"
+  return [{ skill_name: name, skill_src: skill_sub }] if File.exist?("#{skill_sub}/SKILL.md")
+
+  # 3. Pre-distributed repos (e.g. impeccable): .claude/skills/*/SKILL.md
+  claude_skills = "#{repo_dir}/.claude/skills"
+  if Dir.exist?(claude_skills)
+    found = Dir.glob("#{claude_skills}/*/SKILL.md").map do |f|
+      { skill_name: File.basename(File.dirname(f)), skill_src: File.dirname(f) }
+    end
+    return found unless found.empty?
+  end
+
+  # 4. skills/ subdir → each immediate child with SKILL.md is its own skill
+  skills_sub = "#{repo_dir}/skills"
+  if Dir.exist?(skills_sub)
+    found = Dir.glob("#{skills_sub}/*/SKILL.md").map do |f|
+      { skill_name: File.basename(File.dirname(f)), skill_src: File.dirname(f) }
+    end
+    return found unless found.empty?
+    warn("skills/ exists but no SKILL.md found in children: #{name}")
+    return []
+  end
+
+  warn("no recognisable skill structure in #{name} (skipped)")
+  []
+end
+
+def link_skill(src:, dest:)
+  if DRY_RUN
+    puts "      [dry-run] #{dest} → #{src}"
+    return
+  end
+  unless Dir.exist?(src)
+    err("source not found: #{src}")
+    return
+  end
+  FileUtils.mkdir_p(File.dirname(dest))
+  if File.symlink?(dest)
+    if File.readlink(dest) == src
+      skip(File.basename(dest))
+      return
+    end
+    File.delete(dest)
+  elsif File.exist?(dest)
+    err("exists (not a symlink), skipping: #{dest}")
+    return
+  end
+  File.symlink(src, dest)
+  ok(File.basename(dest))
+end
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+FileUtils.mkdir_p(CACHE_DIR)
+
+puts "Syncing skills → #{REPO_ROOT}"
+puts
+
+SOURCES.each do |source|
+  puts "  [#{source[:name]}]"
+  clone_or_update(**source)
+
+  repo_dir = File.join(CACHE_DIR, source[:name])
+  next unless DRY_RUN || Dir.exist?(repo_dir)
+
+  detect_skills(repo_dir, source[:name]).each do |skill|
+    puts "    [skill: #{skill[:skill_name]}]"
+    TARGETS.each do |target|
+      dest = File.join(REPO_ROOT, target, skill[:skill_name])
+      link_skill(src: skill[:skill_src], dest:)
+    end
+  end
+
+  puts
+end
+
+puts "Done."
