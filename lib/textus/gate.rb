@@ -66,6 +66,13 @@ module Textus
       Command::Drain => [Textus::Action::Drain],
     }.freeze
 
+    READ_COMMANDS = %i[
+      get list where uid blame audit
+      deps rdeps pulse
+      rule_explain rule_list rule_lint
+      published schema_show doctor boot jobs
+    ].freeze
+
     def initialize(container)
       @container = container
     end
@@ -102,8 +109,10 @@ module Textus
     end
 
     def record_audit(cmd, call_obj, container)
-      key = cmd.respond_to?(:key) ? cmd.key : nil
       verb = cmd.class.name.split("::").last.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+      return if READ_COMMANDS.include?(verb.to_sym)
+
+      key = cmd.respond_to?(:key) ? cmd.key : nil
       container.audit_log.append(
         role: cmd.role,
         verb:,
