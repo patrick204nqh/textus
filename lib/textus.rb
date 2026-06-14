@@ -75,7 +75,7 @@ Textus::Action::VERBS.each_key do |verb|
                 end
 
     filled = cmd_class.members.to_h { |m| [m, inputs.merge(role: @role)[m]] }
-    @container.gate.dispatch(cmd_class.new(**filled), container: @container, correlation_id: @correlation_id)
+    @container.gate.dispatch(cmd_class.new(**filled), correlation_id: @correlation_id)
   end
 end
 

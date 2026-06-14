@@ -72,7 +72,7 @@ module Textus
 
     def build_container(root)
       manifest = Manifest.load(root)
-      container_without_gate = Container.new(
+      container = Container.new(
         root: root,
         manifest: manifest,
         schemas: Schemas.new(File.join(root, "schemas")),
@@ -85,8 +85,10 @@ module Textus
         steps: Textus::Step::RegistryStore.new,
         gate: nil,
       )
-      gate = Textus::Gate.new(container_without_gate)
-      container_without_gate.with(gate: gate)
+      gate = Textus::Gate.new(container)
+      container = container.with(gate: gate)
+      gate.instance_variable_set(:@container, container)
+      container
     end
 
     def bootstrap_hooks

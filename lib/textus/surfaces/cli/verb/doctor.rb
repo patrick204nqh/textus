@@ -11,7 +11,7 @@ module Textus
               checks: checks&.split(",")&.map(&:strip),
               role: resolved_role(store),
             )
-            res = store.gate.dispatch(cmd, container: store.container)
+            res = store.gate.dispatch(cmd)
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end

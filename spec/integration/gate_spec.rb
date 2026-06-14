@@ -22,20 +22,20 @@ RSpec.describe Textus::Gate do
 
   it "dispatches Get and returns the envelope" do
     cmd = Textus::Command::Get.new(key: "knowledge.note", role: "human")
-    result = gate.dispatch(cmd, container:)
+    result = gate.dispatch(cmd)
     expect(result).not_to be_nil
     expect(result.to_h_for_wire["key"]).to eq("knowledge.note")
   end
 
   it "dispatches List" do
     cmd = Textus::Command::List.new(prefix: nil, lane: nil, role: "human")
-    result = gate.dispatch(cmd, container:)
+    result = gate.dispatch(cmd)
     expect(result).to be_an(Array)
   end
 
   it "raises UsageError for unknown command class" do
     unknown = Class.new(Data.define(:role))
     cmd = unknown.new(role: "human")
-    expect { gate.dispatch(cmd, container:) }.to raise_error(Textus::UsageError, /unknown command/)
+    expect { gate.dispatch(cmd) }.to raise_error(Textus::UsageError, /unknown command/)
   end
 end

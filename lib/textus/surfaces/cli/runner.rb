@@ -61,7 +61,7 @@ module Textus
 
           invoke = lambda do |effective_inputs|
             cmd = build_command(spec, effective_inputs, role)
-            store.gate.dispatch(cmd, container: store.container)
+            store.gate.dispatch(cmd)
           end
 
           result = if spec.around
