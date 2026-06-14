@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Background::Planner::Planner do
+RSpec.describe Textus::Background::Planner::Plan do
   include_context "textus_store_fixture"
 
   let(:store) do

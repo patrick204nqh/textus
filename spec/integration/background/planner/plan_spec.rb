@@ -1,4 +1,4 @@
-RSpec.describe Textus::Background::Planner::Planner do
+RSpec.describe Textus::Background::Planner::Plan do
   subject(:planner) { described_class.new(container: store.container) }
 
   include_context "textus_store_fixture"
