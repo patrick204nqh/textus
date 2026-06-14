@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Textus
-  module Action
-    module Background
-      class Sweep < Action::Base
+  module Background
+    module Job
+      class Sweep < Base
         REQUIRED_ROLE = Textus::Role::AUTOMATION
         TYPE = "sweep"
 

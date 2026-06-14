@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Textus
-  module Action
-    module Background
-      class Materialize < Action::Base
+  module Background
+    module Job
+      class Materialize < Base
         TYPE = "materialize"
 
         def initialize(key:)
