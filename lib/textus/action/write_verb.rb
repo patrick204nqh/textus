@@ -31,7 +31,7 @@ module Textus
         return if producible.empty?
 
         producible.each do |dep_key|
-          Textus::Background::Job::Materialize.new(key: dep_key).call(container:, call:)
+          Textus::Jobs::Materialize.new(key: dep_key).call(container:, call:)
         end
         container.steps.publish(
           :entry_written,

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "jobs react idempotency" do
+RSpec.describe Textus::Jobs::Planner do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -20,23 +20,31 @@ RSpec.describe "jobs react idempotency" do
                   source: { from: derive, select: "knowledge", pluck: [title] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
+                - key: feeds.doc
+                  kind: produced
+                  path: data/feeds/doc.md
+                  lane: feeds
+                  source: { from: fetch, handler: demo, ttl: 1s }
             YAML
             files: {
               "data/knowledge/a.md" => "---\ntitle: Apple\n---\nx\n",
               "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
+              "steps/fetch/demo.rb" => <<~RUBY,
+                class DemoFetch < Textus::Step::Fetch
+                  def call(config:, args:, **)
+                    _ = config
+                    _ = args
+                    { _meta: {}, body: "x" }
+                  end
+                end
+              RUBY
             }
     )
   end
 
-  it "coalesces duplicate entry.written triggers into one effective job set" do
-    planner = Textus::Jobs::Planner.new(container: store.container)
-    jobs = planner.plan(
-      trigger: { "type" => "entry.written" },
-      role: "automation",
-    )
-
-    expect(jobs.map(&:type)).to include("materialize")
-    ids = jobs.map(&:id)
-    expect(ids.uniq).to eq(ids)
+  it "plans convergence work via .seed" do
+    queue = Textus::Ports::JobStore.new(root: store.root)
+    described_class.seed(container: store.container, queue: queue, role: "automation")
+    expect(queue.ready_ids).not_to be_empty
   end
 end

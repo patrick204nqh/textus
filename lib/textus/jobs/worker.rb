@@ -1,5 +1,5 @@
 module Textus
-  module Background
+  module Jobs
     class Worker
       Summary = Struct.new(:completed, :failed, keyword_init: true)
 
@@ -46,7 +46,7 @@ module Textus
 
       def run_one(leased)
         job    = leased.job
-        klass  = Textus::Background::Job.fetch(job.type)
+        klass  = Textus::Jobs.fetch(job.type)
         action = if klass.instance_method(:initialize).parameters.any?
                    klass.new(**job.args.transform_keys(&:to_sym))
                  else

@@ -1,5 +1,5 @@
 module Textus
-  module Background
+  module Jobs
     Plan = Data.define(:steps, :warnings) do
       def to_h
         { "steps" => steps, "warnings" => warnings }

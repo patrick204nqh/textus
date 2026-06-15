@@ -47,7 +47,7 @@ module Textus
           }
         end
 
-        Textus::Background::Plan.new(steps: steps, warnings: [])
+        Textus::Jobs::Plan.new(steps: steps, warnings: [])
       end
 
       private
