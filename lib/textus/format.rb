@@ -1,13 +1,12 @@
 module Textus
-  # Public entry-format dispatcher.
-  module Entry
+  module Format
     SEP = "---".freeze
 
     STRATEGIES = {
-      "markdown" => Markdown,
-      "json" => Json,
-      "yaml" => Yaml,
-      "text" => Text,
+      "markdown" => -> { Format::Markdown },
+      "json"     => -> { Format::Json },
+      "yaml"     => -> { Format::Yaml },
+      "text"     => -> { Format::Text },
     }.freeze
 
     EXT_TO_FORMAT = {
@@ -18,8 +17,8 @@ module Textus
       ".txt" => "text",
     }.freeze
 
-    def self.for_format(format)
-      STRATEGIES.fetch(format.to_s) { raise UsageError.new("unknown entry format: #{format.inspect}") }
+    def self.for(format)
+      STRATEGIES.fetch(format.to_s) { raise Textus::UsageError.new("unknown entry format: #{format.inspect}") }.call
     end
 
     def self.infer_from_extension(ext)
@@ -31,11 +30,11 @@ module Textus
     end
 
     def self.parse(raw, path: nil, format: "markdown")
-      for_format(format).parse(raw, path: path)
+      Format.for(format).parse(raw, path: path)
     end
 
     def self.serialize(meta: {}, body: "", content: nil, format: "markdown")
-      for_format(format).serialize(meta: meta, body: body, content: content)
+      Format.for(format).serialize(meta: meta, body: body, content: content)
     end
   end
 end

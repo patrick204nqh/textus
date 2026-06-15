@@ -8,7 +8,7 @@ module Textus
           def call(mentry:, data:)
             content = default_shape(mentry, data)
             final   = Textus::Pipeline::Acquire::Projection::InjectMeta.call(content, mentry)
-            Entry.for_format("json").serialize(meta: {}, body: "", content: final)
+            Format.for("json").serialize(meta: {}, body: "", content: final)
           end
 
           private

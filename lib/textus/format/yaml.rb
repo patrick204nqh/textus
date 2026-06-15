@@ -1,8 +1,7 @@
 require "yaml"
 
 module Textus
-  module Entry
-    # YAML entry storage. Top-level must be a mapping so we can carry _meta.
+  module Format
     class Yaml < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
@@ -23,7 +22,6 @@ module Textus
 
       def self.serialize(meta:, body:, content: nil)
         if content.is_a?(Hash)
-          # Re-inject _meta as the first key so on-disk shape is stable.
           on_disk = meta && !meta.empty? ? { "_meta" => meta }.merge(content) : content
           ::YAML.dump(on_disk).sub(/\A---\n/, "")
         elsif body && !body.to_s.empty?
@@ -59,7 +57,6 @@ module Textus
         end
       end
 
-      # Mutating filesystem op; returns true if a write happened.
       def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
         raw = File.binread(path)
         parsed = parse(raw, path: path)

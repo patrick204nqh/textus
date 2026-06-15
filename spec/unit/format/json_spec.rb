@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry::Json do
+RSpec.describe Textus::Format::Json do
   describe ".parse" do
     it "extracts _meta into _meta and exposes data WITHOUT _meta as content" do
       raw = JSON.pretty_generate({ "_meta" => { "title" => "T" }, "name" => "x" })

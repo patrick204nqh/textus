@@ -9,7 +9,7 @@ module Textus
       # callers historically passed the whole Manifest but should now pass
       # `manifest.data`.
       def self.resolve(data, mentry)
-        primary_ext = Entry.for_format(mentry.format).extensions.first
+        primary_ext = Format.for(mentry.format).extensions.first
         rel_path = normalize_relative_path(mentry.path)
         if File.extname(mentry.path) == ""
           File.join(data.root, rel_path + primary_ext)

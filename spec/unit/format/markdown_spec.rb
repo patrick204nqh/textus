@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry::Markdown do
+RSpec.describe Textus::Format::Markdown do
   describe ".parse" do
     it "parses frontmatter and body" do
       raw = "---\ntitle: Hello\ntags:\n  - a\n---\nBody here\n"

@@ -1,8 +1,7 @@
 require "json"
 
 module Textus
-  module Entry
-    # JSON entry storage. Top-level must be an object so we can carry _meta.
+  module Format
     class Json < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
@@ -23,7 +22,6 @@ module Textus
 
       def self.serialize(meta:, body:, content: nil)
         if content.is_a?(Hash)
-          # Re-inject _meta as the first key so on-disk shape is stable.
           on_disk = meta && !meta.empty? ? { "_meta" => meta }.merge(content) : content
           out = ::JSON.pretty_generate(on_disk)
           out += "\n" unless out.end_with?("\n")
@@ -61,7 +59,6 @@ module Textus
         end
       end
 
-      # Mutating filesystem op; returns true if a write happened.
       def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
         raw = File.binread(path)
         parsed = parse(raw, path: path)

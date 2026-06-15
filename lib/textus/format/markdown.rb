@@ -1,8 +1,7 @@
 require "yaml"
 
 module Textus
-  module Entry
-    # Markdown with YAML frontmatter. Original Entry implementation.
+  module Format
     class Markdown < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
@@ -26,7 +25,7 @@ module Textus
       end
 
       def self.serialize(meta:, body:, content: nil)
-        _ = content # markdown ignores content
+        _ = content
         fm_yaml = meta.empty? ? "" : ::YAML.dump(meta).sub(/\A---\n/, "")
         body = body.to_s
         body += "\n" unless body.empty? || body.end_with?("\n")
@@ -44,9 +43,6 @@ module Textus
         [bytes, meta, body.to_s, nil]
       end
 
-      # Mutating filesystem op; returns true if a write happened (boolean is
-      # informational, not a predicate). Rubocop's predicate-name heuristic
-      # disabled here on purpose.
       def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
         raw = File.binread(path)
         parsed = parse(raw, path: path)

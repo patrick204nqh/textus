@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry::Text do
+RSpec.describe Textus::Format::Text do
   describe ".parse" do
     it "returns empty _meta and the raw body" do
       result = described_class.parse("hello world\n", path: "x.txt")

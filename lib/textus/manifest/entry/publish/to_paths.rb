@@ -26,11 +26,11 @@ module Textus
 
             targets.each do |t|
               if t.renders?
-                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
                 publish_bytes(render_bytes(t, content, renderer, pctx), entry.key, t, pctx, data_path, envelope)
               elsif strip_meta?(entry)
-                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
-                bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: content)
+                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                bytes = Textus::Format.for(entry.format).serialize(meta: {}, body: "", content: content)
                 publish_bytes(bytes, entry.key, t, pctx, data_path, envelope)
               else
                 # opaque / command / non-structured — publish the stored file as-is

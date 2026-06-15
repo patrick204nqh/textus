@@ -75,11 +75,11 @@ module Textus
           FileUtils.mv(from_path, to_path)
           prune_empty_parents(from_path)
           basename = to_key.split(".").last
-          Entry.for_format(new_mentry.format).rewrite_name(to_path, basename)
+          Format.for(new_mentry.format).rewrite_name(to_path, basename)
           etag_after = Etag.for_file(to_path)
 
           raw = @file_store.read(to_path)
-          parsed = Entry.for_format(new_mentry.format).parse(raw, path: to_path)
+          parsed = Format.for(new_mentry.format).parse(raw, path: to_path)
           envelope = Textus::Envelope.build(
             key: to_key, mentry: new_mentry, path: to_path,
             meta: parsed["_meta"], body: parsed["body"],
@@ -137,15 +137,15 @@ module Textus
         end
 
         def ensure_uid(format, meta, content, existing_uid)
-          Textus::Entry.for_format(format).inject_uid(meta, content, existing_uid)
+          Textus::Format.for(format).inject_uid(meta, content, existing_uid)
         end
 
         def enforce_name_match!(path, meta, format)
-          Textus::Entry.for_format(format).enforce_name_match!(path, meta)
+          Textus::Format.for(format).enforce_name_match!(path, meta)
         end
 
         def serialize_for_put(mentry:, path:, meta:, body:, content:)
-          Textus::Entry.for_format(mentry.format).serialize_for_put(
+          Textus::Format.for(mentry.format).serialize_for_put(
             meta: meta, body: body, content: content, path: path,
           )
         end
@@ -171,7 +171,7 @@ module Textus
           schema = @schemas.fetch_or_nil(mentry.schema)
           return unless schema
 
-          Entry.for_format(mentry.format).validate_against(
+          Format.for(mentry.format).validate_against(
             schema,
             { "_meta" => eff_meta, "content" => eff_content },
           )

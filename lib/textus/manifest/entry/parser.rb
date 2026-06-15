@@ -58,7 +58,7 @@ module Textus
         def self.resolve_format(raw, path)
           declared = raw["format"]
           ext = File.extname(path)
-          inferred = Textus::Entry.infer_from_extension(ext)
+          inferred = Textus::Format.infer_from_extension(ext)
 
           if declared.nil?
             return inferred if inferred
@@ -66,7 +66,7 @@ module Textus
             return "markdown"
           end
 
-          raise UsageError.new("entry '#{raw["key"]}': unknown format #{declared.inspect}") unless Textus::Entry.formats.include?(declared)
+          raise UsageError.new("entry '#{raw["key"]}': unknown format #{declared.inspect}") unless Textus::Format.formats.include?(declared)
 
           if ext != "" && inferred && inferred != declared
             raise UsageError.new(

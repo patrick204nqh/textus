@@ -1,6 +1,5 @@
 module Textus
-  module Entry
-    # Plain-text entry storage. No frontmatter or structured content.
+  module Format
     class Text < Base
       def self.parse(raw, path: nil)
         raw = raw.dup.force_encoding(Encoding::UTF_8)
@@ -26,7 +25,6 @@ module Textus
       end
 
       def self.enforce_name_match!(_path, _meta)
-        # text has no meta home; no-op
       end
 
       def self.serialize_for_put(meta:, body:, content:, path:)
@@ -36,7 +34,6 @@ module Textus
         [bytes, meta, body.to_s, nil]
       end
 
-      # No-op; text has no meta. Returns false (never writes).
       def self.rewrite_name(_path, _basename) # rubocop:disable Naming/PredicateMethod
         false
       end

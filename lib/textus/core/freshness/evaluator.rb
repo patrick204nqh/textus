@@ -84,7 +84,7 @@ module Textus
         end
 
         def last_fetched_at(mentry, path)
-          meta = Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
+          meta = Format.for(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
           Time.parse(meta["last_fetched_at"].to_s) if meta && meta["last_fetched_at"]
         rescue StandardError
           nil
@@ -108,7 +108,7 @@ module Textus
         end
 
         def generated_at_of(mentry, path)
-          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"].dig("generated", "at")
+          Format.for(mentry.format).parse(@file_stat.read(path), path: path)["_meta"].dig("generated", "at")
         end
 
         def parse_time(str)

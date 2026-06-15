@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry do
+RSpec.describe Textus::Format do
   describe ".infer_from_extension" do
     it "maps .md to markdown" do
       expect(described_class.infer_from_extension(".md")).to eq("markdown")

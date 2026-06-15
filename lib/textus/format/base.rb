@@ -1,8 +1,5 @@
 module Textus
-  module Entry
-    # Abstract base for entry format strategies. Each concrete strategy
-    # owns parsing, serialization, file-extension claims, and schema
-    # validation for entries declared with its format.
+  module Format
     class Base
       def self.parse(_raw, path: nil)
         _ = path
@@ -20,8 +17,6 @@ module Textus
         raise NotImplementedError.new("#{name}.extensions not implemented")
       end
 
-      # Default: validate the meta hash. Overridden by formats that put the
-      # validatable payload elsewhere (json/yaml put it under "content").
       def self.validate_against(schema, parsed)
         schema.validate!(parsed["_meta"] || {})
       end

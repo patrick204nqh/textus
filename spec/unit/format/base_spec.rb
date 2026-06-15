@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry::Base do
+RSpec.describe Textus::Format::Base do
   it "raises NotImplementedError on parse" do
     expect { described_class.parse("x", path: "/tmp/x") }.to raise_error(NotImplementedError)
   end

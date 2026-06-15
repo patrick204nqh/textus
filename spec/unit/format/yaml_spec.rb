@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Entry::Yaml do
+RSpec.describe Textus::Format::Yaml do
   describe ".parse" do
     it "extracts _meta into _meta and exposes data WITHOUT _meta as content" do
       raw = "_meta:\n  title: T\nname: x\n"
