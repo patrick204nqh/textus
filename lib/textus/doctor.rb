@@ -14,7 +14,6 @@ module Textus
       Check::Schemas,
       Check::SchemaParseError,
       Check::Templates,
-      Check::Hooks,
       Check::IntakeRegistration,
       Check::IllegalKeys,
       Check::Sentinels,
