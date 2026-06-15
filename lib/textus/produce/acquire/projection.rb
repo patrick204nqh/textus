@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       # Builds an entry's DATA artifact (ADR 0094) by running the projection
       # pipeline; rendering is a publish concern. External entries are NOT built
@@ -38,9 +38,9 @@ module Textus
 
         def self.renderers
           @renderers ||= {
-            "text" => Textus::Pipeline::Acquire::Serializer::Text,
-            "json" => Textus::Pipeline::Acquire::Serializer::Json,
-            "yaml" => Textus::Pipeline::Acquire::Serializer::Yaml,
+            "text" => Textus::Produce::Acquire::Serializer::Text,
+            "json" => Textus::Produce::Acquire::Serializer::Json,
+            "yaml" => Textus::Produce::Acquire::Serializer::Yaml,
           }
         end
 

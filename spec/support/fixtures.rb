@@ -160,7 +160,7 @@ module TextusSpecHelpers
   def build_worker(store, ctx, steps: nil)
     container = store.container
     container = container.with(steps: steps) if steps
-    Textus::Pipeline::Acquire::Intake.new(container: container, call: ctx)
+    Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
   end
 
   # Seed convergence jobs for the given scope and then burn the queue through

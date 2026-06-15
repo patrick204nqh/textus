@@ -1,14 +1,14 @@
-require "yaml"
+require "json"
 
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       class Serializer
-        class Yaml < Serializer
+        class Json < Serializer
           def call(mentry:, data:)
             content = default_shape(mentry, data)
-            final   = Textus::Pipeline::Acquire::Projection::InjectMeta.call(content, mentry)
-            Format.for("yaml").serialize(meta: {}, body: "", content: final)
+            final   = Textus::Produce::Acquire::Projection::InjectMeta.call(content, mentry)
+            Format.for("json").serialize(meta: {}, body: "", content: final)
           end
 
           private

@@ -1,5 +1,5 @@
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       class Serializer
         class Text < Serializer

@@ -40,7 +40,7 @@ module Textus
         entry = @manifest.resolver.resolve(key).entry
 
         if entry.intake?
-          Textus::Pipeline::Acquire::Intake.new(container: @container, call: build_call).run(key)
+          Textus::Produce::Acquire::Intake.new(container: @container, call: build_call).run(key)
           entry.publish_via(context)
           out[:produced] << key
         else

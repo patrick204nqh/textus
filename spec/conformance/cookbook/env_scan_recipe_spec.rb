@@ -53,7 +53,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
 
   it "fans out per machine: fetching a leaf yields that host's parsed snapshot" do
     # Produce::Acquire::Intake is the internal executor since the `fetch` verb was collapsed (ADR 0079).
-    Textus::Pipeline::Acquire::Intake.new(
+    Textus::Produce::Acquire::Intake.new(
       container: store.container, call: Textus::Call.build(role: "automation"),
     ).run("feeds.machines.prod-web")
     env = store.as("automation").get("feeds.machines.prod-web")

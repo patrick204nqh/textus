@@ -1,7 +1,7 @@
 require "timeout"
 
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       # Invokes a :resolve_handler hook handler by name under a timeout — the single
       # home for "call the intake handler under a deadline" (ADR 0048 D1). Shared by

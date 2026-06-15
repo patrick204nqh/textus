@@ -1,5 +1,5 @@
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       # Abstract base for output serializers. Each concrete serializer owns
       # producing the bytes for one manifest format (json/yaml/text).

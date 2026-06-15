@@ -1,14 +1,14 @@
 require "timeout"
 
 module Textus
-  module Pipeline
+  module Produce
     module Acquire
       # Internal ingest executor for one machine-zone intake entry. No longer a
       # public verb (ADR 0079 collapsed the `fetch` surface): used by the
       # converge sweep (drain/serve) and `textus hook run` only — ingest is system-pushed
       # (ADR 0089 removed the read-through that once also drove it).
       class Intake
-        FETCH_TIMEOUT_SECONDS = Textus::Pipeline::Acquire::Handler::FETCH_TIMEOUT_SECONDS
+        FETCH_TIMEOUT_SECONDS = Textus::Produce::Acquire::Handler::FETCH_TIMEOUT_SECONDS
 
         def initialize(container:, call:)
           @container    = container
@@ -78,7 +78,7 @@ module Textus
         end
 
         def call_intake(key, mentry, remaining)
-          Textus::Pipeline::Acquire::Handler.invoke(
+          Textus::Produce::Acquire::Handler.invoke(
             caps: @container, handler: mentry.handler,
             config: mentry.config,
             args: { trigger_key: key, leaf_segments: remaining || [] },
