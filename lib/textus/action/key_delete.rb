@@ -32,12 +32,6 @@ module Textus
 
           writer(container, call).delete(@key, mentry:, if_etag: @if_etag)
 
-          container.steps.publish(
-            :entry_deleted,
-            ctx: Textus::Step::Context.for(container: container, call: call),
-            key: @key,
-          )
-
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => @key, "deleted" => true }
         end
       end

@@ -34,13 +34,6 @@ module Textus
 
           writer(container, call).delete(@pending_key, mentry: mentry)
 
-          container.steps.publish(
-            :proposal_rejected,
-            ctx: Textus::Step::Context.for(container: container, call: call),
-            key: @pending_key,
-            target_key: target_key,
-          )
-
           { "protocol" => PROTOCOL, "rejected" => @pending_key, "target_key" => target_key }
         end
       end

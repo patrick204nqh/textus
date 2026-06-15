@@ -57,13 +57,11 @@ module Textus
       def built_in_publish(key, data, ctx)
         normalized = normalize(data, ctx.entry.format)
         Gate::Auth.new(@container).check_action!(action: :converge, actor: @call.role, key: key)
-        envelope = Envelope::Writer.from(container: @container, call: @call).put(
+        Envelope::Writer.from(container: @container, call: @call).put(
           key,
           mentry: ctx.entry,
           payload: Envelope::Writer::Payload.new(**normalized),
         )
-        Produce::Render.new(@container).render_if_configured(key, ctx.entry, envelope)
-        envelope
       end
 
       def normalize(data, format)

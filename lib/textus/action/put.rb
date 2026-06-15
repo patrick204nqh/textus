@@ -48,13 +48,6 @@ module Textus
             if_etag: @if_etag,
           )
 
-          container.steps.publish(
-            :entry_written,
-            ctx: Textus::Step::Context.for(container: container, call: call),
-            key: @key,
-            envelope: envelope,
-          )
-
           envelope
         end
       end

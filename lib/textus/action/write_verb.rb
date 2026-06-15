@@ -33,12 +33,6 @@ module Textus
         producible.each do |dep_key|
           Textus::Jobs::Materialize.new(key: dep_key).call(container:, call:)
         end
-        container.steps.publish(
-          :entry_written,
-          ctx: Textus::Step::Context.for(container: container, call: call),
-          key: key,
-          envelope: nil,
-        )
       end
 
       def derived_write?(key, container)

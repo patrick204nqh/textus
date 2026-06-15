@@ -13,16 +13,7 @@ module Textus
       def args = { key: @key }
 
       def call(container:, call:)
-        result = Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
-        return unless result.is_a?(Hash)
-
-        Array(result[:failed]).each do |failure|
-          container.steps.publish(
-            :produce_failed,
-            ctx: Textus::Step::Context.for(container: container, call: call),
-            keys: [failure["key"]], error: failure["error"]
-          )
-        end
+        Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
       end
     end
   end

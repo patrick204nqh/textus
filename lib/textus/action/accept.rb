@@ -39,13 +39,6 @@ module Textus
 
         Textus::Action::KeyDelete.new(key: @pending_key).call(container: container, call: call)
 
-        container.steps.publish(
-          :proposal_accepted,
-          ctx: Textus::Step::Context.for(container: container, call: call),
-          key: @pending_key,
-          target_key: target,
-        )
-
         { "protocol" => Textus::PROTOCOL, "accepted" => @pending_key, "target_key" => target, "action" => action }
       end
     end
