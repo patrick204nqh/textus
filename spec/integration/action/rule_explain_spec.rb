@@ -21,7 +21,6 @@ RSpec.describe Textus::Action::RuleExplain do
             do: materialize
         - match: knowledge.doc
           retention: { ttl: 5m, action: drop }
-          handler_permit: [src_a, src_b]
         - match: "**"
           guard:
             accept: [schema_valid]
@@ -62,7 +61,6 @@ RSpec.describe Textus::Action::RuleExplain do
 
       expect(result[:effective][:retention][:ttl_seconds]).to eq(300)
       expect(result[:effective][:retention][:action]).to eq(:drop)
-      expect(result[:effective][:handler_permit]).to eq(%w[src_a src_b])
       expect(result[:effective][:react]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
@@ -107,7 +105,6 @@ RSpec.describe Textus::Action::RuleExplain do
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:retention]).to be_nil
-      expect(result[:effective][:handler_permit]).to be_nil
       expect(result[:guards][:put][:floor]).to eq(["lane_writable_by"])
       expect(result[:guards][:put][:rule]).to eq([])
     end

@@ -22,7 +22,6 @@ module Textus
       Check::UnownedSchemaFields,
       Check::SchemaViolations,
       Check::RuleAmbiguity,
-      Check::HandlerPermit,
       Check::OrphanedPublishTargets,
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,

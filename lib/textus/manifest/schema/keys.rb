@@ -60,14 +60,7 @@ module Textus
         # Key order here fixes the order of RULE_KEYS (after match), the slots,
         # the RuleSet members, and the doctor SLOTS.
         FIELD_REGISTRY = {
-          handler_permit: {
-            yaml_key: "handler_permit",
-            policy_class: Textus::Manifest::Policy::HandlerPermit,
-            validation: :immediate, sub_keys: nil, arg_key: :handlers,
-            in_pick: true, in_ambiguity: true,
-            in_rule_list: true, in_rule_explain: %i[detail]
-          },
-          guard: {
+                    guard: {
             yaml_key: "guard",
             policy_class: nil,
             validation: :deferred, sub_keys: nil, arg_key: nil,
