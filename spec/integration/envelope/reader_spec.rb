@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Envelope::IO::Reader do
+RSpec.describe Textus::Envelope::Reader do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -15,7 +15,7 @@ RSpec.describe Textus::Envelope::IO::Reader do
   end
 
   def payload(meta: {}, body: nil, content: nil)
-    Textus::Envelope::IO::Writer::Payload.new(
+    Textus::Envelope::Writer::Payload.new(
       meta: meta, body: body, content: content,
     )
   end
