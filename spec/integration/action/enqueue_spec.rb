@@ -12,7 +12,7 @@ RSpec.describe Textus::Action::Enqueue do
         - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
-  let(:queue) { Textus::Ports::Queue.new(root: root) }
+  let(:queue) { Textus::Ports::JobStore.new(root: root) }
 
   it "enqueues a registered type stamped with the caller's role" do
     store.as("automation").enqueue("materialize", { "key" => "knowledge.a" })

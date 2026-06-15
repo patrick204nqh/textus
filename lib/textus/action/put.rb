@@ -40,7 +40,7 @@ module Textus
           envelope = writer(container, call).put(
             @key,
             mentry: mentry,
-            payload: Textus::Envelope::IO::Writer::Payload.new(
+            payload: Textus::Envelope::Writer::Payload.new(
               meta: @meta,
               body: @body,
               content: @content,

@@ -7,7 +7,7 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @queue = Textus::Ports::Queue.new(root: container.root)
+        @queue = Textus::Ports::JobStore.new(root: container.root)
       end
 
       def tick

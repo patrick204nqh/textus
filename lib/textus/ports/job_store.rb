@@ -10,7 +10,7 @@ module Textus
     # worker pool needs no central lock. Dedup falls out of the id-as-filename:
     # enqueueing an id that already exists is a no-op. ADR 0038 (runtime subtree),
     # ADR 0108 (instantiable port).
-    class Queue
+    class JobStore
       STATES = %i[ready leased done failed].freeze
 
       def initialize(root:)
@@ -20,7 +20,7 @@ module Textus
 
       def enqueue(job)
         dest = path(:ready, job.id)
-        return if File.exist?(dest) # dedup: identical work already queued
+        return if File.exist?(dest)
 
         write_atomic(dest, job.to_h)
       end
@@ -29,7 +29,6 @@ module Textus
         Dir.children(Textus::Layout.queue_state(@root, :ready)).map { |f| File.basename(f, ".json") }
       end
 
-      # A claimed job plus the path it lives at, so ack/fail act on this copy.
       Leased = Struct.new(:job, :leased_path, keyword_init: true)
 
       def lease(worker_id:, lease_ttl:)
@@ -38,9 +37,9 @@ module Textus
           src = File.join(ready_dir, name)
           dst = File.join(Textus::Layout.queue_state(@root, :leased), name)
           begin
-            File.rename(src, dst) # atomic claim; loser's rename raises ENOENT
+            File.rename(src, dst)
           rescue Errno::ENOENT
-            next # another worker won this one
+            next
           end
           job = Job.from_h(JSON.parse(File.read(dst)))
           stamp_lease(dst, worker_id: worker_id, expires_at: Time.now.utc + lease_ttl)
@@ -54,9 +53,6 @@ module Textus
         File.rename(leased.leased_path, dest)
       end
 
-      # Increment attempts and either requeue (transient) or dead-letter (attempts
-      # exhausted). Returns :requeued or :dead_lettered so the worker can count
-      # terminal failures distinctly from retries.
       def fail(leased, error:)
         job = leased.job
         job.attempts += 1
@@ -67,9 +63,6 @@ module Textus
         dead ? :dead_lettered : :requeued
       end
 
-      # Return expired leases to ready/ (the holding worker crashed). Returns the
-      # count reclaimed. At-least-once delivery: a job whose handler actually
-      # finished but whose ack was lost will re-run — handlers must be idempotent.
       def reclaim(now:)
         leased_dir = Textus::Layout.queue_state(@root, :leased)
         count = 0
@@ -85,7 +78,7 @@ module Textus
           File.rename(src, dst)
           count += 1
         rescue Errno::ENOENT
-          next # raced with another reclaimer / the worker's ack
+          next
         end
         count
       end
@@ -123,7 +116,7 @@ module Textus
       def write_atomic(dest, hash)
         tmp = "#{dest}.#{Process.pid}.tmp"
         File.write(tmp, JSON.pretty_generate(hash))
-        File.rename(tmp, dest) # atomic on same filesystem
+        File.rename(tmp, dest)
       end
     end
   end

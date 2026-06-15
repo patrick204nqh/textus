@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Ports::Queue::Job do
+RSpec.describe Textus::Ports::JobStore::Job do
   describe "#id" do
     it "is content-addressed — same type + args produce the same id" do
       a = described_class.new(type: "materialize", args: { "key" => "k.x" })

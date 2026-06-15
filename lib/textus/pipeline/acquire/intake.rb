@@ -100,7 +100,7 @@ module Textus
           envelope = writer.put(
             key,
             mentry: mentry,
-            payload: Textus::Envelope::IO::Writer::Payload.new(
+            payload: Textus::Envelope::Writer::Payload.new(
               meta: normalized[:meta], body: normalized[:body], content: normalized[:content],
             ),
           )
@@ -120,7 +120,7 @@ module Textus
         end
 
         def writer
-          @writer ||= Textus::Envelope::IO::Writer.from(container: @container, call: @call)
+          @writer ||= Textus::Envelope::Writer.from(container: @container, call: @call)
         end
 
         def auth

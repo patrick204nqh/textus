@@ -3,7 +3,7 @@ require "json"
 
 module Textus
   module Ports
-    class Queue
+    class JobStore
       # A unit of deferred work. Pure data. The id is `<type>:<digest>` where the
       # digest is over the args with sorted keys, so logically-identical enqueues
       # collide on the same id — which is how Queue dedups (file already exists).

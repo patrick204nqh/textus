@@ -43,7 +43,7 @@ RSpec.describe Textus::Background::Planner::Plan do
   end
 
   it "plans convergence work via .seed" do
-    queue = Textus::Ports::Queue.new(root: store.root)
+    queue = Textus::Ports::JobStore.new(root: store.root)
     described_class.seed(container: store.container, queue: queue, role: "automation")
     expect(queue.ready_ids).not_to be_empty
   end

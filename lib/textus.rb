@@ -9,7 +9,6 @@ loader.inflector.inflect(
   "cli" => "CLI",
   "json" => "Json",
   "yaml" => "Yaml",
-  "io" => "IO",
   "mcp" => "MCP",
   "mcp_serve" => "MCPServe",
 )

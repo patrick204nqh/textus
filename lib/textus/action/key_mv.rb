@@ -117,7 +117,7 @@ module Textus
         writer(container, call).put(
           @old_key,
           mentry: old_mentry,
-          payload: Textus::Envelope::IO::Writer::Payload.new(
+          payload: Textus::Envelope::Writer::Payload.new(
             meta: pre_env.meta,
             body: pre_env.body,
             content: pre_env.content,

@@ -122,14 +122,14 @@ module TextusSpecHelpers
   end
 
   def build_envelope_reader(store)
-    Textus::Envelope::IO::Reader.new(
+    Textus::Envelope::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
-    Textus::Envelope::IO::Writer.new(
+    Textus::Envelope::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
@@ -166,7 +166,7 @@ module TextusSpecHelpers
   # Seed convergence jobs for the given scope and then burn the queue through
   # Maintenance::Drain (which is queue-burn only).
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
-    queue = Textus::Ports::Queue.new(root: store.root)
+    queue = Textus::Ports::JobStore.new(root: store.root)
     Textus::Background::Planner::Plan.seed(container: store.container, queue: queue, role: role)
     Textus::Background::Worker.for(container: store.container, queue: queue).drain
   end

@@ -55,7 +55,7 @@ module Textus
               do_action = block.react.raw["do"]
               Array(do_action).each do |action|
                 if action == "sweep"
-                  jobs << Textus::Ports::Queue::Job.new(
+                  jobs << Textus::Ports::JobStore::Job.new(
                     type: "sweep", args: { "scope" => {} }, enqueued_by: role,
                   )
                 else
@@ -74,7 +74,7 @@ module Textus
           producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
           stale_intake_keys(nil).each { |k| jobs << job("refresh", k, role) } if actions.include?("refresh")
           if actions.include?("sweep")
-            jobs << Textus::Ports::Queue::Job.new(
+            jobs << Textus::Ports::JobStore::Job.new(
               type: "sweep", args: { "scope" => {} }, enqueued_by: role,
             )
           end
@@ -87,7 +87,7 @@ module Textus
         end
 
         def job(type, key, enqueued_by)
-          Textus::Ports::Queue::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
+          Textus::Ports::JobStore::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
         end
 
         def producible_keys(_target)

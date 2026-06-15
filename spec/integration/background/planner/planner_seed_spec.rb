@@ -24,7 +24,7 @@ RSpec.describe Textus::Background::Planner::Plan do
     YAML
   end
 
-  let(:queue) { Textus::Ports::Queue.new(root: store.root) }
+  let(:queue) { Textus::Ports::JobStore.new(root: store.root) }
 
   describe ".seed" do
     it "enqueues convergence jobs for the store" do

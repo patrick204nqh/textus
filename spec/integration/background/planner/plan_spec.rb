@@ -52,7 +52,7 @@ RSpec.describe Textus::Background::Planner::Plan do
         role: Textus::Role::AUTOMATION,
       )
       expect(jobs).not_to be_empty
-      expect(jobs.first).to be_a(Textus::Ports::Queue::Job)
+      expect(jobs.first).to be_a(Textus::Ports::JobStore::Job)
     end
   end
 end

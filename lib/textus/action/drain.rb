@@ -21,7 +21,7 @@ module Textus
       end
 
       def call(container:, call:)
-        queue = Textus::Ports::Queue.new(root: container.root)
+        queue = Textus::Ports::JobStore.new(root: container.root)
         Textus::Background::Planner::Plan.seed(
           container: container,
           queue: queue,
