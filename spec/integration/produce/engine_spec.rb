@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Pipeline::Engine do
+RSpec.describe Textus::Produce::Engine do
   subject(:produce) { described_class.new(container: store.container, call: call) }
 
   include_context "textus_store_fixture"
@@ -98,15 +98,10 @@ RSpec.describe Textus::Pipeline::Engine do
   end
 
   describe ".converge failure isolation" do
-    # A manifest where no role holds the `converge` capability: build_actor_call
-    # raises a Textus::UsageError that escapes Produce#call (it is outside the
-    # per-key rescue). converge must swallow it and publish :produce_failed.
     it "does not raise and publishes :produce_failed" do
       fired = []
       store.container.steps.on(:produce_failed, :probe) { |error:, **| fired << error }
 
-      # Force build_actor_call to fail (no converge actor at call time) so a
-      # Textus::Error escapes Produce#call — the path .converge must isolate.
       allow(store.container.manifest.policy).to receive(:actor_for).with("converge").and_return(nil)
 
       expect do

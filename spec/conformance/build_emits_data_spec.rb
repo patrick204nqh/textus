@@ -22,7 +22,7 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
   end
 
   it "stores the projection data as json (no template consulted)" do
-    Textus::Pipeline::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+    Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
                             .call(keys: ["artifacts.data"])
     raw = File.read(File.join(root, "data/artifacts/data.json"))
     expect(raw).to include("knowledge.a")

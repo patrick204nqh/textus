@@ -29,7 +29,7 @@ RSpec.describe "publish per target (ADR 0094)" do
     end
 
     before do
-      Textus::Pipeline::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+      Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
                               .call(keys: ["artifacts.cat"])
     end
 
@@ -67,7 +67,7 @@ RSpec.describe "publish per target (ADR 0094)" do
 
     it "publishes a json leaf verbatim without crashing (Base#external?)" do
       expect do
-        Textus::Pipeline::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+        Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
                                 .call(keys: ["knowledge.cfg"])
       end.not_to raise_error
 

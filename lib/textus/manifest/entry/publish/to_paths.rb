@@ -21,7 +21,7 @@ module Textus
 
             data_path = pctx.manifest.resolver.resolve(entry.key).path
             envelope  = pctx.reader.call(entry.key)
-            renderer  = Textus::Pipeline::Render.new(template_loader: ->(n) { pctx.read_template(n) })
+            renderer  = Textus::Produce::Render.new(template_loader: ->(n) { pctx.read_template(n) })
             content = nil # parsed lazily; the data's `content` (always _meta-free)
 
             targets.each do |t|

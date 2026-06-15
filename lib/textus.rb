@@ -19,6 +19,7 @@ loader.ignore(File.expand_path("textus/surfaces/mcp/errors.rb", __dir__))
 # templates for user-owned step classes, not gem constants — Zeitwerk must not
 # manage or eager-load them.
 loader.ignore(File.expand_path("textus/init/templates", __dir__))
+loader.ignore(File.expand_path("textus/produce/acquire", __dir__))
 loader.setup
 loader.eager_load
 
