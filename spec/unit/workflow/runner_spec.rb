@@ -60,7 +60,7 @@ RSpec.describe Textus::Workflow::Runner do
 
       runner = described_class.new(defn, container: store.container, call: call)
       expect { runner.run("artifacts.feeds.test") }
-        .to raise_error(Textus::Workflow::Errors::StepFailed) do |e|
+        .to raise_error(Textus::Workflow::StepFailed) do |e|
           expect(e.step_name).to eq(:fetch)
           expect(e.cause.message).to eq("exploded")
         end

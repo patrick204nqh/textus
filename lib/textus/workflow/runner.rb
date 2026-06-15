@@ -40,11 +40,11 @@ module Textus
         timeout = step.timeout || DEFAULT_TIMEOUT
         Timeout.timeout(timeout) { step.callable.call(data, ctx) }
       rescue Timeout::Error => e
-        raise Errors::StepFailed.new(step.name, e)
+        raise StepFailed.new(step.name, e)
       rescue Textus::Error
         raise
       rescue StandardError => e
-        raise Errors::StepFailed.new(step.name, e)
+        raise StepFailed.new(step.name, e)
       end
 
       def publish(key, data, ctx)

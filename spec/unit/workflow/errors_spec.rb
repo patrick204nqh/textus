@@ -1,4 +1,4 @@
-RSpec.describe Textus::Workflow::Errors::StepFailed do
+RSpec.describe Textus::Workflow::StepFailed do
   it "stores step name and wraps the cause message" do
     cause = RuntimeError.new("network timeout")
     err = described_class.new(:fetch, cause)
@@ -9,7 +9,7 @@ RSpec.describe Textus::Workflow::Errors::StepFailed do
   end
 end
 
-RSpec.describe Textus::Workflow::Errors::NotFound do
+RSpec.describe Textus::Workflow::NotFound do
   it "includes the key in the message" do
     err = described_class.new("artifacts.feeds.github.repos")
     expect(err.message).to include("artifacts.feeds.github.repos")
