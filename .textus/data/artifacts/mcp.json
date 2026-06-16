@@ -4,34 +4,19 @@
   },
   "tools": [
     {
-      "name": "put",
-      "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
-      "args": "key: string, _meta?: object, body?: string, content?: object, if_etag?: string"
-    },
-    {
-      "name": "propose",
-      "summary": "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
-      "args": "key: string, _meta?: object, body?: string, content?: object"
-    },
-    {
-      "name": "key_delete",
-      "summary": "Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.",
-      "args": "key: string, if_etag?: string"
-    },
-    {
-      "name": "key_mv",
-      "summary": "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.",
-      "args": "old_key: string, new_key: string, dry_run?: boolean"
-    },
-    {
       "name": "accept",
       "summary": "apply a queued proposal to its target zone; requires the author capability",
       "args": "pending_key: string"
     },
     {
-      "name": "reject",
-      "summary": "discard a queued proposal without applying it",
-      "args": "pending_key: string"
+      "name": "boot",
+      "summary": "Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts.",
+      "args": "none"
+    },
+    {
+      "name": "deps",
+      "summary": "List the keys a derived entry depends on (its projection/external sources).",
+      "args": "key: string"
     },
     {
       "name": "enqueue",
@@ -49,19 +34,39 @@
       "args": "kind: string, slug: string, url?: string, path?: string, zone?: string, label?: string"
     },
     {
+      "name": "jobs",
+      "summary": "List queued jobs by state; retry a dead-lettered job or purge a state.",
+      "args": "state?: string, action?: string, job_id?: string"
+    },
+    {
+      "name": "key_delete",
+      "summary": "Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}.",
+      "args": "key: string, if_etag?: string"
+    },
+    {
+      "name": "key_mv",
+      "summary": "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix.",
+      "args": "old_key: string, new_key: string, dry_run?: boolean"
+    },
+    {
       "name": "list",
       "summary": "List keys filtered by lane and/or prefix.",
       "args": "prefix?: string, lane?: string"
     },
     {
-      "name": "where",
-      "summary": "Resolve a key to its zone, owner, and path without reading the body.",
-      "args": "key: string"
+      "name": "propose",
+      "summary": "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
+      "args": "key: string, _meta?: object, body?: string, content?: object"
     },
     {
-      "name": "deps",
-      "summary": "List the keys a derived entry depends on (its projection/external sources).",
-      "args": "key: string"
+      "name": "pulse",
+      "summary": "Delta since cursor — changed entries, pending proposals, index freshness.",
+      "args": "since?: integer"
+    },
+    {
+      "name": "put",
+      "summary": "Create or update an entry. Schema-validated. Returns {uid, etag}.",
+      "args": "key: string, _meta?: object, body?: string, content?: object, if_etag?: string"
     },
     {
       "name": "rdeps",
@@ -69,9 +74,9 @@
       "args": "key: string"
     },
     {
-      "name": "pulse",
-      "summary": "Delta since cursor — changed entries, pending proposals, index freshness.",
-      "args": "since?: integer"
+      "name": "reject",
+      "summary": "discard a queued proposal without applying it",
+      "args": "pending_key: string"
     },
     {
       "name": "rule_explain",
@@ -84,14 +89,9 @@
       "args": "key: string"
     },
     {
-      "name": "boot",
-      "summary": "Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts.",
-      "args": "none"
-    },
-    {
-      "name": "jobs",
-      "summary": "List queued jobs by state; retry a dead-lettered job or purge a state.",
-      "args": "state?: string, action?: string, job_id?: string"
+      "name": "where",
+      "summary": "Resolve a key to its zone, owner, and path without reading the body.",
+      "args": "key: string"
     }
   ],
   "maintenance": [
@@ -101,9 +101,9 @@
       "args": "from: string, to: string, dry_run?: boolean"
     },
     {
-      "name": "key_mv_prefix",
-      "summary": "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.",
-      "args": "from_prefix: string, to_prefix: string, dry_run?: boolean"
+      "name": "drain",
+      "summary": "Seed materialize + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.",
+      "args": "prefix?: string, lane?: string"
     },
     {
       "name": "key_delete_prefix",
@@ -111,9 +111,9 @@
       "args": "prefix: string, dry_run?: boolean"
     },
     {
-      "name": "drain",
-      "summary": "Seed materialize + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.",
-      "args": "prefix?: string, lane?: string"
+      "name": "key_mv_prefix",
+      "summary": "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false.",
+      "args": "from_prefix: string, to_prefix: string, dry_run?: boolean"
     },
     {
       "name": "rule_lint",

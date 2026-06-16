@@ -50,24 +50,24 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 
 | Tool | Summary | Args |
 |---|---|---|
-| `put` | Create or update an entry. Schema-validated. Returns {uid, etag}. | key: string, _meta?: object, body?: string, content?: object, if_etag?: string |
-| `propose` | Write a proposal to the role's propose_lane. Auto-prefixes the key. | key: string, _meta?: object, body?: string, content?: object |
-| `key_delete` | Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}. | key: string, if_etag?: string |
-| `key_mv` | Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix. | old_key: string, new_key: string, dry_run?: boolean |
 | `accept` | apply a queued proposal to its target zone; requires the author capability | pending_key: string |
-| `reject` | discard a queued proposal without applying it | pending_key: string |
+| `boot` | Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts. | none |
+| `deps` | List the keys a derived entry depends on (its projection/external sources). | key: string |
 | `enqueue` | Push a registered job type onto the convergence queue, to be run by drain/serve. | type: string, args?: object |
 | `get` | Read one entry - a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness). | key: string |
 | `ingest` | Capture external source material into the raw lane. Write-once, agent-owned. | kind: string, slug: string, url?: string, path?: string, zone?: string, label?: string |
+| `jobs` | List queued jobs by state; retry a dead-lettered job or purge a state. | state?: string, action?: string, job_id?: string |
+| `key_delete` | Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; guarded by an optional optimistic-concurrency etag. Returns {ok, key, deleted}. | key: string, if_etag?: string |
+| `key_mv` | Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix. | old_key: string, new_key: string, dry_run?: boolean |
 | `list` | List keys filtered by lane and/or prefix. | prefix?: string, lane?: string |
-| `where` | Resolve a key to its zone, owner, and path without reading the body. | key: string |
-| `deps` | List the keys a derived entry depends on (its projection/external sources). | key: string |
-| `rdeps` | List the derived entries that depend on a key (reverse deps / impact set). | key: string |
+| `propose` | Write a proposal to the role's propose_lane. Auto-prefixes the key. | key: string, _meta?: object, body?: string, content?: object |
 | `pulse` | Delta since cursor — changed entries, pending proposals, index freshness. | since?: integer |
+| `put` | Create or update an entry. Schema-validated. Returns {uid, etag}. | key: string, _meta?: object, body?: string, content?: object, if_etag?: string |
+| `rdeps` | List the derived entries that depend on a key (reverse deps / impact set). | key: string |
+| `reject` | discard a queued proposal without applying it | pending_key: string |
 | `rule_explain` | Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates. | key: string, detail?: boolean |
 | `schema_show` | Return the schema (field shape) for an entry's family, by key. | key: string |
-| `boot` | Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts. | none |
-| `jobs` | List queued jobs by state; retry a dead-lettered job or purge a state. | state?: string, action?: string, job_id?: string |
+| `where` | Resolve a key to its zone, owner, and path without reading the body. | key: string |
 
 Maintenance tools (admin / bulk operations). The four bulk-destructive verbs
 default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
@@ -76,9 +76,9 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 | Tool | Summary | Args |
 |---|---|---|
 | `data_mv` | Rename a data lane — manifest + files. Refuses if destination exists. | from: string, to: string, dry_run?: boolean |
-| `key_mv_prefix` | Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false. | from_prefix: string, to_prefix: string, dry_run?: boolean |
-| `key_delete_prefix` | Bulk-delete every leaf key under prefix. | prefix: string, dry_run?: boolean |
 | `drain` | Seed materialize + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running. | prefix?: string, lane?: string |
+| `key_delete_prefix` | Bulk-delete every leaf key under prefix. | prefix: string, dry_run?: boolean |
+| `key_mv_prefix` | Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false. | from_prefix: string, to_prefix: string, dry_run?: boolean |
 | `rule_lint` | Diff candidate manifest YAML's rules against the live manifest. No writes. | against: string |
 
 ### Errors
