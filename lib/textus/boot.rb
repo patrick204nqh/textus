@@ -32,6 +32,11 @@ module Textus
           "refreshes stale intake #{machine} entries from their declared source; " \
           "derived files are never hand-edited (reactive on canon writes, or a full pass on demand)"
       end,
+      ingest: lambda do |name, _manifest|
+        "'textus ingest --kind=(url|file|asset) --slug=SLUG [--url=URL] [--path=PATH] " \
+          "[--zone=ZONE] [--label=LABEL] --as=#{name}' captures external source material " \
+          "into the raw lane; write-once, delete-and-re-ingest to correct"
+      end,
     }.freeze
 
     def self.write_flows_for(manifest)
