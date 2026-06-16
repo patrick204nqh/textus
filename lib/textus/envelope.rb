@@ -1,10 +1,23 @@
 # frozen_string_literal: true
 
+require "dry-struct"
+
 module Textus
-  Envelope = Data.define(
-    :protocol, :key, :lane, :owner, :path, :format,
-    :uid, :etag, :schema_ref, :meta, :body, :content, :freshness
-  ) do
+  class Envelope < Dry::Struct
+    attribute :protocol,   Types::String
+    attribute :key,        Types::String
+    attribute :lane,       Types::String
+    attribute :owner,      Types::String
+    attribute :path,       Types::String
+    attribute :format,     Types::FormatName
+    attribute :etag,       Types::String
+    attribute :uid,        Types::String.optional
+    attribute :schema_ref, Types::String.optional
+    attribute :meta,       Types::Hash.default({}.freeze)
+    attribute :body,       Types::String.optional
+    attribute :content,    Types::Any.optional
+    attribute :freshness,  Types::Any.optional
+
     # rubocop:disable Metrics/ParameterLists
     def self.build(key:, mentry:, path:, meta:, body:, etag:, content: nil, freshness: nil)
       # rubocop:enable Metrics/ParameterLists
@@ -30,6 +43,8 @@ module Textus
       v.is_a?(String) ? v : nil
     end
 
+    def with(**attrs) = self.class.new(to_h.merge(attrs))
+
     def to_h_for_wire
       h = {
         "protocol" => protocol,
@@ -49,7 +64,7 @@ module Textus
       h
     end
 
-    alias_method :zone, :lane
+    alias zone lane
 
     def stale?
       return false if freshness.nil?
