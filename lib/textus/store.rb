@@ -5,9 +5,9 @@ module Textus
     attr_reader :container
 
     # Readers are derived from the Container's schema, so the field set lives
-    # in exactly one place (Container's Data.define). A new capability added
-    # there is automatically exposed on the Store.
-    Textus::Container.members.each do |field|
+    # in exactly one place (Container). A new capability added there is
+    # automatically exposed on the Store.
+    Textus::Container.attribute_names.each do |field|
       define_method(field) { @container.public_send(field) }
     end
 
