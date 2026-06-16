@@ -18,7 +18,6 @@ module Textus
                                            "to false, so omitting it applies the rename immediately"
       view { |v, _i| v.to_h }
 
-      BURN = :sync
 
       def initialize(from_prefix:, to_prefix:, dry_run: false)
         super()

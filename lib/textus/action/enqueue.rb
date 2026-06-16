@@ -14,7 +14,6 @@ module Textus
       arg :args, Hash, default: {},
                        description: "type-specific arguments (e.g. { key: ... } or { scope: ... })"
 
-      BURN = :sync
 
       def initialize(type:, args: {})
         super()

@@ -16,7 +16,6 @@ module Textus
                                            "defaults to false, so omitting it deletes immediately"
       view { |v, _i| v.to_h }
 
-      BURN = :sync
 
       def initialize(prefix:, dry_run: false)
         super()

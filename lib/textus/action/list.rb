@@ -14,7 +14,6 @@ module Textus
           description: "restrict to one lane by name (see `boot` lanes); combine with prefix to narrow further"
       view(:cli) { |rows| { "entries" => rows } }
 
-      BURN = :sync
 
       def initialize(prefix: nil, lane: nil)
         super()

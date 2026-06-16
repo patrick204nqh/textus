@@ -24,7 +24,6 @@ module Textus
       arg :limit, Integer, required: false, description: "maximum number of rows to return"
       view(:cli) { |rows, _i| { "verb" => "audit", "rows" => rows } }
 
-      BURN = :sync
 
       def initialize(**kwargs)
         super()

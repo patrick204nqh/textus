@@ -12,7 +12,6 @@ module Textus
       arg :prefix, String, description: "restrict to keys under this dotted prefix"
       arg :lane,   String, description: "restrict to entries in this lane"
 
-      BURN = :sync
 
       def initialize(prefix: nil, lane: nil)
         super()

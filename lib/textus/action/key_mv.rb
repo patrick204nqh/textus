@@ -18,7 +18,6 @@ module Textus
                        "defaults to false, so omitting it applies the move immediately " \
                        "(unlike the bulk key_mv_prefix, which defaults to a dry-run plan)"
 
-      BURN = :sync
 
       def initialize(old_key:, new_key:, dry_run: false)
         super()

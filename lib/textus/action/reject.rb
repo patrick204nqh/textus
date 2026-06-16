@@ -11,7 +11,6 @@ module Textus
       cli "reject"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 
-      BURN = :sync
 
       def initialize(pending_key:)
         super()

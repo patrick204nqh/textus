@@ -21,7 +21,6 @@ module Textus
       arg :label, String, description: "human label stored in source.label"
       view { |env| { "key" => env.key, "uid" => env.uid, "etag" => env.etag } }
 
-      BURN = :sync
       SOURCE_KINDS = %w[url file asset].freeze
 
       def initialize(kind:, slug:, url: nil, path: nil, zone: nil, label: nil)

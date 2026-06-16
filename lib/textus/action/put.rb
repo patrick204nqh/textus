@@ -20,7 +20,6 @@ module Textus
           description: "optimistic-concurrency guard: the etag you last read; the write is rejected if the entry changed since"
       view { |env| { "uid" => env.uid, "etag" => env.etag } }
 
-      BURN = :sync
 
       def initialize(key:, meta: nil, body: nil, content: nil, if_etag: nil)
         super()

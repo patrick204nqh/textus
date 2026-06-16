@@ -15,7 +15,6 @@ module Textus
           description: "defaults false: lean {lifecycle, guard}. detail: true adds matched blocks + guard predicates per transition."
       view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
-      BURN = :sync
 
       def initialize(key:, detail: nil)
         super()

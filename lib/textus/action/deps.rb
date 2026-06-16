@@ -11,7 +11,6 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "dotted key of the derived entry whose source keys you want"
 
-      BURN = :sync
 
       def initialize(key:)
         super()
