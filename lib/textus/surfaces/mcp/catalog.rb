@@ -28,11 +28,13 @@ module Textus
           Textus::Action::VERBS
             .select { |_, klass| mcp_surfaced?(klass) }
             .map do |name, action|
+              schema = action.contract.input_schema
+              schema = schema.reject { |k, v| k == :required && Array(v).empty? }
               ::MCP::Tool.define(
                 name: name.to_s,
                 description: action.contract.summary,
-                input_schema: action.contract.input_schema,
-              ) do |args, server_context:|
+                input_schema: schema,
+              ) do |server_context:, **args|
                 mcp_server.dispatch(name, args, server_context)
               end
             end

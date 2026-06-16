@@ -36,7 +36,7 @@ module Textus
             optional(:kind).value(:string)
             optional(:nested).value(:bool)
             optional(:tracked).value(:bool)
-            optional(:ignore).value(:bool)
+            optional(:ignore) # bool or array of glob patterns
             optional(:source).hash do
               optional(:from).value(:string)
               optional(:command).value(:string)

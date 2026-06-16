@@ -7,7 +7,7 @@ module Textus
     attribute :protocol,   Types::String
     attribute :key,        Types::String
     attribute :lane,       Types::String
-    attribute :owner,      Types::String
+    attribute :owner,      Types::String.optional
     attribute :path,       Types::String
     attribute :format,     Types::FormatName
     attribute :etag,       Types::String

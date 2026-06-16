@@ -11,20 +11,27 @@ module Textus
       # execution to Catalog.
       class Server
         def initialize(store:, role: Textus::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
-          @store   = store
-          @role    = role
-          @stdin   = stdin
-          @stdout  = stdout
-          @session = nil
+          @store  = store
+          @role   = role
+          @stdin  = stdin
+          @stdout = stdout
+          # Session built eagerly so the contract_etag is captured at server start.
+          # Changes to manifest/hooks/schemas after this point are detected as drift.
+          @session = Textus::Session.new(
+            role: @role,
+            cursor: @store.audit_log.latest_seq,
+            propose_lane: @store.manifest.policy.propose_lane_for(@role),
+            contract_etag: contract_etag_now,
+          )
 
           @sdk = ::MCP::Server.new(
             name: "textus",
             version: Textus::VERSION,
             tools: Catalog.build_tools(self),
+            resources: build_resources,
             server_context: { mcp_server: self },
           )
-          @sdk.resources_list_handler  { |server_context:| list_resources(server_context) }
-          @sdk.resources_read_handler  { |params, server_context:| handle_resource_read(params[:uri].to_s, server_context) }
+          @sdk.resources_read_handler { |params, server_context:| handle_resource_read(params[:uri].to_s, server_context) }
         end
 
         # Runs the stdio line loop; delegates each JSON line to the SDK.
@@ -42,10 +49,12 @@ module Textus
         end
 
         # Called from every MCP::Tool handler block in Catalog.
+        # The SDK parses JSON with symbolize_names: true — all nested keys are symbols.
+        # Deep-stringify so Catalog.call receives the string-key format it expects.
         def dispatch(verb_name, args, _server_context)
-          ensure_session!
-          @session.check_etag!(contract_etag) unless Catalog.read_verbs.include?(verb_name.to_s)
-          result = Catalog.call(verb_name.to_s, session: @session, store: @store, args: args)
+          str_args = deep_stringify_keys(args)
+          @session.check_etag!(contract_etag_now) unless Catalog.read_verbs.include?(verb_name.to_s)
+          result = Catalog.call(verb_name.to_s, session: @session, store: @store, args: str_args)
           update_session_for(verb_name.to_s)
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::ContractDrift => e
@@ -60,29 +69,18 @@ module Textus
 
         private
 
-        def ensure_session!
-          return if @session
-
-          @session = Textus::Session.new(
-            role: @role,
-            cursor: @store.audit_log.latest_seq,
-            propose_lane: @store.manifest.policy.propose_lane_for(@role),
-            contract_etag: contract_etag,
-          )
-        end
-
         def update_session_for(verb_name)
           @session = @session.advance_cursor(@store.audit_log.latest_seq) if verb_name == "pulse"
-          @session = @session.with(contract_etag: contract_etag)          if verb_name == "boot"
+          @session = @session.with(contract_etag: contract_etag_now)      if verb_name == "boot"
         end
 
-        def list_resources(_server_context)
+        def build_resources
           machine_lane = @store.manifest.policy.machine_lane
           return [] unless machine_lane
 
           @store.manifest.data.entries
                 .select { |e| e.lane == machine_lane && e.is_a?(Textus::Manifest::Entry::Produced) }
-                .map { |e| resource_descriptor(e) }
+                .map { |e| ::MCP::Resource.new(uri: "textus://#{e.key.tr(".", "/")}", name: e.key, mime_type: mime_for_format(e.format)) }
         end
 
         def handle_resource_read(uri, _server_context)
@@ -95,11 +93,17 @@ module Textus
           raise_handler_error("resource read failed: #{e.message}", -32_603)
         end
 
-        def resource_descriptor(entry)
-          { uri: "textus://#{entry.key.tr(".", "/")}", name: entry.key, mimeType: mime_for_format(entry.format) }
-        end
+        def contract_etag_now = Textus::Etag.for_contract(@store.root)
 
-        def contract_etag = Textus::Etag.for_contract(@store.root)
+        # The SDK parses JSON with symbolize_names:true, making all nested hash keys symbols.
+        # Recursively stringify so Catalog.call receives string-keyed hashes throughout.
+        def deep_stringify_keys(obj)
+          case obj
+          when Hash  then obj.transform_keys(&:to_s).transform_values { |v| deep_stringify_keys(v) }
+          when Array then obj.map { |v| deep_stringify_keys(v) }
+          else obj
+          end
+        end
 
         def mime_for_format(format)
           case format.to_s

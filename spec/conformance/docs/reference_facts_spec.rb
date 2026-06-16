@@ -22,7 +22,7 @@ RSpec.describe "reference doc facts cover their projections" do
 
   it "mcp.md documents every MCP tool" do
     doc = read_doc("docs/reference/mcp.md")
-    tools = Textus::Surfaces::MCP::ToolSchemas.all.map { |t| (t[:name] || t["name"]).to_s }
+    tools = Textus::Surfaces::MCP::Catalog.names
     missing = tools.reject { |t| t.empty? || doc.include?(t) }
     expect(missing).to be_empty, "mcp.md missing: #{missing.join(", ")}"
   end
