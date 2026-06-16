@@ -75,10 +75,10 @@ RSpec.describe Textus::Manifest::Schema do
         "lanes" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
           "key" => "x", "lane" => "output", "path" => "x.json", "kind" => "produced",
-          "source" => { "from" => "template", "template" => "t.mustache", "reduce" => "f" }
+          "source" => { "from" => "external", "command" => "make", "bogus" => "x" }
         }],
       )
-    end.to raise_error(Textus::BadManifest, /unknown key 'reduce' at '\$\.entries\[0\]\.source'/)
+    end.to raise_error(Textus::BadManifest, /unknown key 'bogus' at '\$\.entries\[0\]\.source'/)
   end
 
   it "rejects handler_allowlist in a rule via the generic path" do

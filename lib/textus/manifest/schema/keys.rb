@@ -9,23 +9,16 @@ module Textus
         LANE_KEYS  = %w[name kind owner desc].freeze
         ENTRY_KEYS = %w[
           key path lane kind schema owner nested format
-          source publish
-          events ignore tracked
+          source publish tracked ignore
         ].freeze
         # ADR 0052: the typed publish block — `publish: { to: [...] }` (file
         # fan-out) xor `publish: { tree: "dir" }` (subtree mirror).
         PUBLISH_KEYS = %w[to tree].freeze
-        # ADR 0093/0094: entry-level acquisition block. `from: project` sources
-        # expose flat projection fields (select/pluck/sort_by/transform) directly
-        # on the source block (ADR 0094). Render fields (template/inject_boot/
-        # provenance) that were formerly on the source are retired — they live on
-        # publish targets. The legacy `project:` free hash and `template`/
-        # `inject_boot`/`provenance` fields are kept here so the schema walk can
-        # still emit the migration hint rather than a bare "unknown key".
-        SOURCE_KEYS = %w[
-          from handler config template project command sources ttl inject_boot provenance
-          select pluck sort_by transform
-        ].freeze
+        # entry-level external-generator block — only `from: external` is valid.
+        # `from: fetch` and `from: derive` and their specific fields (handler,
+        # config, ttl, select, pluck, sort_by, transform) were removed in the
+        # workflow redesign.
+        SOURCE_KEYS = %w[from command sources].freeze
         # ADR 0093: rule-level GC slot. drop/archive only (refresh gone).
         RETENTION_KEYS = %w[ttl action].freeze
 
@@ -60,7 +53,7 @@ module Textus
         # Key order here fixes the order of RULE_KEYS (after match), the slots,
         # the RuleSet members, and the doctor SLOTS.
         FIELD_REGISTRY = {
-                    guard: {
+          guard: {
             yaml_key: "guard",
             policy_class: nil,
             validation: :deferred, sub_keys: nil, arg_key: nil,
