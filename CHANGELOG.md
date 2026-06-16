@@ -9,6 +9,13 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.54.0 — 2026-06-16 — MCP resources surface and spec hygiene
+
+### Fixed
+
+- **MCP `resources` capability missing from `initialize` handshake** (PR #221). The server only advertised `tools` in its capabilities response, so MCP clients never called `resources/list` — leaving all 9 produced `artifacts` entries unreachable as resources despite the handler and filtering logic being fully implemented. Adding `"resources" => {}` to the handshake makes Claude Code and any other compliant MCP client discover and read the resources automatically.
+- **SpecLayout violations** (PR #221): `workflow_index_spec.rb` and `workflow/errors_spec.rb` used string top-level describes and were placed in `integration/` and `unit/` respectively; moved to `spec/conformance/workflow/` per the SpecLayout guard rule.
+
 ## 0.53.0 — 2026-06-15 — Auth consolidation and code quality
 
 ### Added

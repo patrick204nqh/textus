@@ -4,7 +4,7 @@
   },
   "name": "textus",
   "description": "Durable, multi-writer repo memory. Auto-orients each session with `textus boot`.",
-  "version": "0.53.0",
+  "version": "0.54.0",
   "homepage": "https://github.com/patrick204nqh/textus",
   "repository": "https://github.com/patrick204nqh/textus",
   "license": "MIT",
