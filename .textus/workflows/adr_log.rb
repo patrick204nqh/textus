@@ -1,5 +1,5 @@
 Textus.workflow "adr_log" do
-  match "artifacts.derived.adr-log"
+  match "artifacts.adr-log"
 
   step :build do |_, ctx|
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }

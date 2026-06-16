@@ -1,5 +1,5 @@
 Textus.workflow "mcp_config" do
-  match "artifacts.derived.mcp-config"
+  match "artifacts.mcp-config"
 
   step :derive do |data, ctx|
     {

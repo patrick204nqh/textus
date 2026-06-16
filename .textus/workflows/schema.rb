@@ -1,5 +1,5 @@
 Textus.workflow "schema" do
-  match "artifacts.derived.schema"
+  match "artifacts.schema"
 
   step :fetch do |data, ctx|
     schemas = ctx.container.schemas.by_name.sort_by { |name, _| name }.map do |name, s|

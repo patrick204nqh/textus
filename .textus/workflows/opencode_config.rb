@@ -1,5 +1,5 @@
 Textus.workflow "opencode_config" do
-  match "artifacts.derived.opencode-config"
+  match "artifacts.opencode-config"
 
   step :derive do |data, ctx|
     {

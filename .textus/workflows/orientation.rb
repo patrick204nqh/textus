@@ -1,5 +1,5 @@
 Textus.workflow "orientation" do
-  match "artifacts.derived.orientation"
+  match "artifacts.orientation"
 
   step :build do |_, ctx|
     project_env = Textus::Action::Get.new(key: "knowledge.project")

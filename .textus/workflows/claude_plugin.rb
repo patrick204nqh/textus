@@ -1,5 +1,5 @@
 Textus.workflow "claude_plugin" do
-  match "artifacts.derived.claude-plugin"
+  match "artifacts.claude-plugin"
 
   step :derive do |data, ctx|
     project_env = Textus::Action::Get.new(key: "knowledge.project")
