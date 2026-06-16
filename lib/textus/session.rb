@@ -1,11 +1,22 @@
+# frozen_string_literal: true
+
+require "dry-struct"
+
 module Textus
   # The agent session: per-connection (MCP), per-process (CLI), or per-loop
   # (Ruby) orientation state — the audit cursor plus the contract etag and
-  # propose_lane captured at boot. Immutable Data value; advance_cursor
-  # returns a new instance. ADR 0036; contract_etag widened in ADR 0074.
-  Session = Data.define(:role, :cursor, :propose_lane, :contract_etag) do
+  # propose_lane captured at boot. Immutable Dry::Struct::Value; advance_cursor
+  # and with return new instances. ADR 0036; contract_etag widened in ADR 0074.
+  class Session < Dry::Struct
+    attribute :role,          Types::RoleName
+    attribute :cursor,        Types::Cursor
+    attribute :propose_lane,  Types::String.optional
+    attribute :contract_etag, Types::String
+
     # Back-compat reader while lane terminology migrates.
     def propose_zone = propose_lane
+
+    def with(**attrs) = self.class.new(to_h.merge(attrs))
 
     def advance_cursor(new_cursor) = with(cursor: new_cursor)
 
@@ -21,8 +32,7 @@ module Textus
     private
 
     # First 8 hex chars after the "sha256:" prefix — a stable short id for
-    # the drift diagnostic. Tolerates non-prefixed values (delete_prefix is
-    # a no-op when the prefix is absent).
+    # the drift diagnostic.
     def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
   end
 end

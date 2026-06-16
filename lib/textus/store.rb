@@ -50,7 +50,7 @@ module Textus
     # Ruby equivalent of an MCP `initialize`. ADR 0036.
     def session(role:)
       Textus::Session.new(
-        role: role,
+        role: role.to_s,
         cursor: audit_log.latest_seq,
         propose_lane: manifest.policy.propose_lane_for(role),
         contract_etag: Textus::Etag.for_contract(root),
