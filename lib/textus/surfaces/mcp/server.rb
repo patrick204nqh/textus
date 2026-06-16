@@ -50,6 +50,8 @@ module Textus
           when "ping"                      then emit_result(rid, {})
           when "shutdown"                  then emit_result(rid, nil)
           when "notifications/initialized" then nil
+          when "resources/list"            then handle_resources_list(rid)
+          when "resources/read"            then handle_resources_read(rid, msg["params"] || {})
           else emit_error(rid, -32_601, "method not found: #{msg["method"]}")
           end
         end
@@ -115,6 +117,48 @@ module Textus
 
         def contract_etag
           Textus::Etag.for_contract(@store.root)
+        end
+
+        def handle_resources_list(rid)
+          machine_lane = @store.manifest.policy.machine_lane
+          resources = []
+          if machine_lane
+            @store.manifest.data.entries
+                  .select { |e| e.lane == machine_lane && e.is_a?(Textus::Manifest::Entry::Produced) }
+                  .each do |e|
+                    resources << {
+                      "uri"      => "textus://#{e.key.tr(".", "/")}",
+                      "name"     => e.key,
+                      "mimeType" => mime_for_format(e.format),
+                    }
+                  end
+          end
+          emit_result(rid, { "resources" => resources })
+        end
+
+        def handle_resources_read(rid, params)
+          uri = params["uri"].to_s
+          key = uri.delete_prefix("textus://").tr("/", ".")
+          env = @store.as(@role).get(key)
+          content = env.content || env.body || ""
+          text = content.is_a?(Hash) ? JSON.dump(content) : content.to_s
+          emit_result(rid, {
+            "contents" => [{
+              "uri"      => uri,
+              "mimeType" => mime_for_format(@store.manifest.resolver.resolve(key).entry.format),
+              "text"     => text,
+            }],
+          })
+        rescue Textus::Error => e
+          emit_error(rid, ToolError::JSONRPC_CODE, "resource read failed: #{e.message}")
+        end
+
+        def mime_for_format(format)
+          case format.to_s
+          when "json"  then "application/json"
+          when "yaml"  then "application/yaml"
+          else "text/plain"
+          end
         end
 
         def emit_result(rid, result)
