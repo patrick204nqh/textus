@@ -92,3 +92,8 @@ entries:
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/authority.md, template: authority.mustache }]
+  - key: artifacts.index
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
