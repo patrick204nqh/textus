@@ -77,34 +77,32 @@ module TextusSpecHelpers
     YAML
   end
 
-  # Preset: a machine "feeds" zone with one intake entry (key feeds.doc) wired
-  # to a `test_intake` fetch step. Pass the step method body and the source ttl.
-  # Optionally pass a `retention:` hash (e.g. `{ ttl: "30d", action: "drop" }`)
-  # to add a retention rule; omit for intake-only freshness (ADR 0093).
-  # Writes the step class into the store's steps/fetch dir. Defaults to machine; pass
-  # `kind_zone: "canon"` for owned-intake — the zone name (and key prefix)
-  # follow the kind via LANE_ZONE.
-  def intake_store(root, intake_body:, ttl: "1h", retention: nil, kind_zone: "machine")
-    zone = LANE_ZONE.fetch(kind_zone)
+  # Preset: a machine lane with one produced entry (key artifacts.doc) driven
+  # by a user-registered workflow. Pass the workflow step body as a block.
+  # Optionally pass `retention:` to add a retention rule.
+  def workflow_store(root, workflow_body:, retention: nil, lane_kind: "machine")
+    zone = LANE_ZONE.fetch(lane_kind)
     manifest = <<~YAML
       version: textus/3
       lanes:
-        - { name: #{zone}, kind: #{kind_zone} }
+        - { name: #{zone}, kind: #{lane_kind} }
       entries:
         - key: #{zone}.doc
-          kind: produced
-          path: #{zone}/doc.md
+          path: data/#{zone}/doc.md
           lane: #{zone}
-          source: { from: fetch, handler: test_intake, ttl: #{ttl} }
     YAML
     manifest << "rules:\n  - { match: #{zone}.doc, retention: #{retention} }\n" if retention
     store_from_manifest(
       root,
       lanes: [zone],
       files: {
-        "steps/fetch/test_intake.rb" => <<~RUBY,
-          class TestIntakeFetch < Textus::Step::Fetch
-          #{intake_body}
+        "workflows/test_produce.rb" => <<~RUBY,
+          Textus.workflow "test_produce" do
+            match "#{zone}.doc"
+            step :fetch do |data, ctx|
+              #{workflow_body}
+            end
+            publish
           end
         RUBY
       },
@@ -142,25 +140,6 @@ module TextusSpecHelpers
   # The Store builds its Container once at construction; this returns it.
   def fresh_container(store)
     store.container
-  end
-
-  # ── Use-case invocation idiom ───────────────────────────────────────────
-  # Prefer the public façade for anything reachable through it:
-  #
-  #   store.as(role, correlation_id:, dry_run:).put("working.foo", meta:, body:)
-  #
-  # `store.as` reuses the Store's container, whose observe dispatcher is the
-  # same object as `store.steps` for pub/sub registration, so in-place
-  # `store.steps.register(...)` probes
-  # are visible through it.
-  #
-  # `build_worker` (below) drives an internal use-case class the façade does
-  # not expose (Produce::Acquire::Intake). Pass `events:` to swap the bus wholesale
-  # (e.g. a recording probe) via the immutable Container's #with.
-  def build_worker(store, ctx, steps: nil)
-    container = store.container
-    container = container.with(steps: steps) if steps
-    Textus::Produce::Acquire::Intake.new(container: container, call: ctx)
   end
 
   # Seed convergence jobs for the given scope and then burn the queue through

@@ -35,19 +35,3 @@ RSpec.shared_examples "a guarded action" do |*predicates|
     expect { forbidden_action.call }.to fail_guard_with(*predicates)
   end
 end
-
-# Asserts the action fires `event_name` carrying the key and correlation id.
-# Host defines `store`, `event_key`, and `emit` (a lambda running the action
-# with correlation_id "corr-1"):
-#
-#   it_behaves_like "an event-emitting action", :entry_written
-RSpec.shared_examples "an event-emitting action" do |event_name|
-  it "fires #{event_name} with the key and correlation id" do
-    seen = []
-    store.steps.on(event_name, :spec_probe) do |ctx:, key:, **|
-      seen << [event_name, key, ctx.correlation_id]
-    end
-    emit.call
-    expect(seen).to include([event_name, event_key, "corr-1"])
-  end
-end
