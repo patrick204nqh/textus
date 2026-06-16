@@ -24,7 +24,9 @@
     "textus": {
       "type": "local",
       "command": [
-        "textus",
+        "bundle",
+        "exec",
+        "exe/textus",
         "mcp",
         "serve"
       ],

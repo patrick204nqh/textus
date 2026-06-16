@@ -10,7 +10,7 @@ Textus.workflow "opencode_config" do
             "enabled" => true, "extensions" => [".rb", ".rake", ".gemspec", ".ru"],
           },
         },
-        "mcp"          => { "textus" => { "type" => "local", "command" => %w[textus mcp serve], "enabled" => true } },
+        "mcp"          => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },
         "plugin"       => ["textus@git+https://github.com/patrick204nqh/textus.git"],
         "instructions" => ["AGENTS.md"],
       }
