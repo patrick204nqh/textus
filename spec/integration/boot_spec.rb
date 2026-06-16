@@ -93,37 +93,29 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "lists entries with publish_to and nested flags" do
+  it "includes index_key pointing to artifacts.index" do
     env = described_class.build(container: store.container)
-    by_key = env["entries"].to_h { |e| [e["key"], e] }
-
-    expect(by_key["identity.self"]).not_to have_key("derived")
-    expect(by_key["identity.self"]).not_to have_key("intake")
-
-    expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
-    expect(by_key["artifacts.report"]).not_to have_key("publish_each")
-
-    expect(by_key["knowledge.notes"]["nested"]).to be true
+    expect(env["index_key"]).to eq("artifacts.index")
   end
 
-  it "lists registered workflows as an array" do
+  it "includes agent_protocol with recipes and role_resolution" do
     env = described_class.build(container: store.container)
-    expect(env["workflows"]).to be_an(Array)
-    expect(env["workflows"]).to all(include("name", "match"))
+    expect(env["agent_protocol"]).to include("recipes", "role_resolution")
   end
 
-  it "includes verbatim write_flows and cli_verbs" do
+  it "omits orientation when artifacts.orientation does not exist" do
     env = described_class.build(container: store.container)
-    expect(env["write_flows"]).to include("human", "agent", "automation")
-    expect(env["write_flows"]["agent"]).to include("proposal:")
+    expect(env).not_to have_key("orientation")
+  end
 
-    # human holds [author, propose] → its write_flow joins both guidance
-    # strings (author's 'textus put' + propose's 'proposal:') with ' / '.
-    expect(env["write_flows"]["human"]).to include("textus put").and include(" / ").and include("proposal:")
+  it "omits context when knowledge.boot does not exist" do
+    env = described_class.build(container: store.container)
+    expect(env).not_to have_key("context")
+  end
 
-    names = env["cli_verbs"].map { |v| v["name"] }
-    expect(names).to include("boot", "list", "get", "put", "accept", "drain", "doctor")
-    expect(names).not_to include("build") # build verb removed in ADR 0087
+  it "does not include entries, workflows, cli_verbs, write_flows, or docs" do
+    env = described_class.build(container: store.container)
+    expect(env.keys).not_to include("entries", "workflows", "cli_verbs", "write_flows", "docs")
   end
 
   describe "agent_protocol block" do
@@ -149,34 +141,14 @@ RSpec.describe Textus::Boot do
     end
   end
 
-  describe "backward compatibility" do
-    it "keeps every pre-0.12.3 top-level key with its original shape" do
-      result = Textus::Boot.build(container: store.container)
-      expect(result["protocol"]).to be_a(String).and eq("textus/3")
-      expect(result["store_root"]).to be_a(String)
-      expect(result["lanes"]).to be_a(Array)
-      expect(result["entries"]).to be_a(Array)
-      expect(result["workflows"]).to be_a(Array)
-      expect(result["write_flows"]).to be_a(Hash)
-      expect(result["cli_verbs"]).to be_a(Array)
-      expect(result["docs"]).to be_a(Hash)
-    end
-  end
-
-  describe "lean projection + contract_etag (ADR 0084)" do
+  describe "contract_etag (ADR 0084)" do
     it "the full envelope carries a sha256 contract_etag" do
       out = Textus::Boot.build(container: store.container)
       expect(out["contract_etag"]).to match(/\Asha256:/)
     end
-
-    it "lean keeps orientation essentials and drops the heavy sections" do
-      out = Textus::Boot.build(container: store.container, lean: true)
-      expect(out).to include("protocol", "store_root", "lanes", "agent_quickstart", "contract_etag")
-      expect(out).not_to include("entries", "workflows", "cli_verbs", "agent_protocol", "write_flows")
-    end
   end
 
-  describe "write_flows role resolution" do
+  describe "role_resolution" do
     it "falls back to default role names when roles: block is omitted" do
       yaml = <<~YAML
         version: textus/3
@@ -188,9 +160,6 @@ RSpec.describe Textus::Boot do
       YAML
       s = store_from_manifest(root, manifest: yaml)
       env = described_class.build(container: s.container)
-      flows = env["write_flows"]
-      expect(flows.keys).to contain_exactly("human", "agent", "automation")
-
       roles = env["agent_protocol"]["role_resolution"]["roles"]
       expect(roles).to contain_exactly("human", "agent", "automation")
     end
@@ -205,17 +174,6 @@ RSpec.describe Textus::Boot do
     parsed = JSON.parse(out.string)
     expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["lanes"].length).to eq(4)
-    expect(parsed["cli_verbs"]).to be_an(Array)
-  end
-
-  it "the CLI --lean flag yields the lean envelope" do
-    out = StringIO.new
-    err = StringIO.new
-    code = Textus::Surfaces::CLI.run(["boot", "--lean", "--output=json"],
-                                     stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
-    expect(code).to eq(0)
-    parsed = JSON.parse(out.string)
-    expect(parsed).to include("agent_quickstart", "contract_etag")
-    expect(parsed).not_to have_key("entries")
+    expect(parsed["index_key"]).to eq("artifacts.index")
   end
 end

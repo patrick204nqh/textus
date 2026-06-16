@@ -30,7 +30,7 @@ RSpec.describe "textus pulse CLI" do
       code, stdout = run_cli(%w[pulse --since=0], cwd: root)
       expect(code).to eq(0)
       env = JSON.parse(stdout)
-      expect(env).to include("cursor", "changed", "stale", "pending_review", "doctor")
+      expect(env).to include("cursor", "changed", "pending_review", "contract_etag", "index_etag")
     end
   end
 

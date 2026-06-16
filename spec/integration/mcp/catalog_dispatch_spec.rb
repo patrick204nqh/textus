@@ -44,7 +44,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
   describe ".call('boot', ...)" do
     it "returns the Boot.run envelope" do
       result = described_class.call("boot", session: session, store: store, args: {})
-      expect(result).to include("lanes", "entries", "agent_quickstart")
+      expect(result).to include("lanes", "agent_quickstart", "index_key")
       expect(result["protocol"]).to eq(Textus::PROTOCOL)
     end
   end
@@ -65,9 +65,9 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
   end
 
   describe ".call('pulse', ...)" do
-    it "returns pulse delta with cursor, changed, stale, pending_review, doctor" do
+    it "returns pulse delta with cursor, changed, pending_review, contract_etag, index_etag" do
       result = described_class.call("pulse", session: session, store: store, args: { "since" => 0 })
-      expect(result.keys).to include("cursor", "changed", "stale", "pending_review", "doctor")
+      expect(result.keys).to include("cursor", "changed", "pending_review", "contract_etag", "index_etag")
     end
   end
 

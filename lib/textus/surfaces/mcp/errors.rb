@@ -1,15 +1,6 @@
 module Textus
   module Surfaces
     module MCP
-      # Manifest fingerprint changed mid-session. Client should re-boot.
-      class ContractDrift < Textus::Error
-        JSONRPC_CODE = -32_001
-
-        def initialize(message, details: {})
-          super("contract_drift", message, details: details)
-        end
-      end
-
       # Audit cursor fell off the keep window. Client should re-boot and
       # resume from the new latest_seq.
       class CursorExpired < Textus::Error

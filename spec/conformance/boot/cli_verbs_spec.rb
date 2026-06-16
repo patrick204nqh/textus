@@ -48,7 +48,7 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
     end
 
     let(:verbs) do
-      Textus::Boot.build(container: store.container)["cli_verbs"].to_h { |v| [v["name"], v["summary"]] }
+      Textus::Boot::CLI_VERBS.to_h { |v| [v["name"], v["summary"]] }
     end
 
     it "describes accept as a queued-proposal promotion, not 'review.*'" do

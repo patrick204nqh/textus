@@ -12,7 +12,7 @@ module Textus
     def check_etag!(observed_etag)
       return if observed_etag == contract_etag
 
-      raise Textus::Surfaces::MCP::ContractDrift.new(
+      raise Textus::ContractDrift.new(
         "contract changed (manifest/hooks/schemas were #{short_etag(contract_etag)}, " \
         "now #{short_etag(observed_etag)}); re-run boot",
       )

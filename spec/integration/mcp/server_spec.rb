@@ -93,7 +93,7 @@ RSpec.describe Textus::Surfaces::MCP::Server do
     lines = output.string.lines.map { |l| JSON.parse(l) }
     drift = lines.find { |r| r["id"] == 2 && r["error"] }
     expect(drift).not_to be_nil
-    expect(drift["error"]["code"]).to eq(Textus::Surfaces::MCP::ContractDrift::JSONRPC_CODE)
+    expect(drift["error"]["code"]).to eq(Textus::ContractDrift::JSONRPC_CODE)
   end
 
   # ADR 0083 — contract-drift guard gates write verbs only

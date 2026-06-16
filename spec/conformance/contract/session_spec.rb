@@ -30,7 +30,7 @@ RSpec.describe "session contract" do
       File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| } # edited\n")
 
       expect { session.check_etag!(observed(store)) }
-        .to raise_error(Textus::Surfaces::MCP::ContractDrift, %r{manifest/hooks/schemas})
+        .to raise_error(Textus::ContractDrift, %r{manifest/hooks/schemas})
     end
 
     it "does not raise when nothing changed" do

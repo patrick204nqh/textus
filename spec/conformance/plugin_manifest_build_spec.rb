@@ -15,15 +15,14 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
           _ = config
           project = rows.find { |r| r["_key"] == "knowledge.project" } || {}
           repo = project["repo"]
-          command = { "type" => "command", "command" => "textus boot --lean" }
+          command = { "type" => "command", "command" => "textus boot" }
           session_start = %w[startup clear compact].map do |m|
             { "matcher" => m, "hooks" => [command] }
           end
           {
             "name" => project["name"] || "textus",
             "description" => "Durable, multi-writer repo memory for humans, agents, and automation. " \
-                             "Auto-orients each session with a lean `textus boot` so the agent starts " \
-                             "knowing the store's zones, write authority, and contract etag.",
+                             "Auto-orients each session with `textus boot`.",
             "version" => Textus::VERSION,
             "homepage" => repo,
             "repository" => repo,

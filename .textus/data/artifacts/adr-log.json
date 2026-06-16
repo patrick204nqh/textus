@@ -1,9 +1,6 @@
 {
   "_meta": {
-    "from": [
-      "knowledge.decisions"
-    ],
-    "reduce": "adr_index"
+    "uid": "5fae90fbb8a76eb3"
   },
   "adrs": [
     {
