@@ -87,7 +87,7 @@ RSpec.describe Textus::Action::RuleExplain do
 
     it "reports the effective guard predicate names per transition" do
       result = store.as("human").rule_explain("knowledge.doc", detail: true)
-      expect(result[:guards][:put][:floor]).to eq(["lane_writable_by", "raw_lane_ingest_only"])
+      expect(result[:guards][:put][:floor]).to eq(%w[lane_writable_by raw_lane_ingest_only])
       expect(result[:guards][:put][:rule]).to eq([])
       expect(result[:guards][:accept][:floor]).to include("author_held")
       expect(result[:guards][:accept][:rule]).to include("schema_valid")
@@ -105,7 +105,7 @@ RSpec.describe Textus::Action::RuleExplain do
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:retention]).to be_nil
-      expect(result[:guards][:put][:floor]).to eq(["lane_writable_by", "raw_lane_ingest_only"])
+      expect(result[:guards][:put][:floor]).to eq(%w[lane_writable_by raw_lane_ingest_only])
       expect(result[:guards][:put][:rule]).to eq([])
     end
   end

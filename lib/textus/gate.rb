@@ -63,6 +63,7 @@ module Textus
       Command::KeyMvPrefix => [Textus::Action::KeyMvPrefix],
       Command::KeyDeletePrefix => [Textus::Action::KeyDeletePrefix],
       Command::Drain => [Textus::Action::Drain],
+      Command::Ingest => [Textus::Action::Ingest],
     }.freeze
 
     def initialize(container)

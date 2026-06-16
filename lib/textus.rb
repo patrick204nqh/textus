@@ -35,6 +35,7 @@ Textus::Action::VERBS = {
   reject: Textus::Action::Reject,
   enqueue: Textus::Action::Enqueue,
   get: Textus::Action::Get,
+  ingest: Textus::Action::Ingest,
   list: Textus::Action::List,
   where: Textus::Action::Where,
   uid: Textus::Action::Uid,

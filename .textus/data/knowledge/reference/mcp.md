@@ -51,6 +51,7 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 | `pulse` | `{cursor, changed, stale, pending_review, doctor}` | `since?: int` |
 | `list` | `[{key, ...}]` | `zone?: string, prefix?: string` |
 | `get` | Envelope (uid, etag, _meta, body, freshness) | `key: string` |
+| `ingest` | `{uid}` | `kind: string, slug: string, url?: string, path?: string, zone?: string, label?: string` |
 | `put` | `{uid, etag}` | `key, _meta, body?, content?, if_etag?` |
 | `propose` | Full wire envelope (`uid, etag, key, zone, owner, path, ...`; `key` prefixed with propose_zone) | `key, _meta, body?, content?` |
 | `schema_show` | Field shape (schema for an entry's family) | `key: string` |

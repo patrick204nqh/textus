@@ -1,0 +1,14 @@
+fields:
+  ingested_at: { type: string, required: true, maintained_by: machine }
+  source:
+    type: map
+    required: true
+    maintained_by: machine
+    schema:
+      fields:
+        kind:   { type: string, required: true, maintained_by: machine }
+        url:    { type: string, maintained_by: machine }
+        path:   { type: string, maintained_by: machine }
+        label:  { type: string, maintained_by: machine }
+  body:  { type: string, maintained_by: machine }
+  asset: { type: string, maintained_by: machine }

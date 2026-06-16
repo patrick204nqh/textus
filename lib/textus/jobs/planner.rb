@@ -4,17 +4,17 @@ module Textus
   module Jobs
     class Planner
       ACTIONS_BY_TRIGGER = {
-        "convergence"       => %w[materialize sweep],
-        "entry.written"     => %w[materialize],
-        "entry.deleted"     => %w[materialize],
-        "entry.moved"       => %w[materialize],
+        "convergence" => %w[materialize sweep],
+        "entry.written" => %w[materialize],
+        "entry.deleted" => %w[materialize],
+        "entry.moved" => %w[materialize],
         "proposal.accepted" => %w[materialize],
         "proposal.rejected" => %w[materialize],
       }.freeze
 
       SCOPE_RESOLVERS = {
         "materialize" => :producible_keys,
-        "sweep"       => :lane_keys,
+        "sweep" => :lane_keys,
       }.freeze
 
       def self.seed(container:, queue:, role:)

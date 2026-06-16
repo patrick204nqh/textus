@@ -84,6 +84,7 @@ module Textus
       { "name" => "boot" },
       { "name" => "list" },
       { "name" => "get" },
+      { "name" => "ingest" },
       { "name" => "where" },
       { "name" => "schema", "summary" => "schema operations: 'schema show KEY', 'schema diff', 'schema init', 'schema migrate'" },
       { "name" => "put" },

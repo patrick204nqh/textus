@@ -18,6 +18,10 @@
     {
       "kind": "queue",
       "capability": "propose"
+    },
+    {
+      "kind": "raw",
+      "capability": "ingest"
     }
   ],
   "zones": [
@@ -44,6 +48,12 @@
       "kind": "machine",
       "capability": "converge",
       "desc": "machine-maintained computed outputs"
+    },
+    {
+      "name": "raw",
+      "kind": "raw",
+      "capability": "ingest",
+      "desc": "ingested external source material (write-once)"
     }
   ],
   "roles": [
@@ -51,31 +61,37 @@
       "name": "human",
       "can": [
         "author",
-        "propose"
+        "propose",
+        "ingest"
       ],
       "writes_kinds": [
         "canon",
-        "queue"
+        "queue",
+        "raw"
       ]
     },
     {
       "name": "agent",
       "can": [
         "propose",
-        "keep"
+        "keep",
+        "ingest"
       ],
       "writes_kinds": [
         "queue",
+        "raw",
         "workspace"
       ]
     },
     {
       "name": "automation",
       "can": [
-        "converge"
+        "converge",
+        "ingest"
       ],
       "writes_kinds": [
-        "machine"
+        "machine",
+        "raw"
       ]
     }
   ]

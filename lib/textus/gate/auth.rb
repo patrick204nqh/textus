@@ -4,15 +4,15 @@ module Textus
   class Gate
     class Auth
       FLOOR = {
-        put:               %w[lane_writable_by raw_lane_ingest_only],
-        key_delete:        %w[lane_deletable_by],
-        key_mv:            %w[lane_writable_by raw_lane_ingest_only],
-        accept:            %w[author_held],
-        reject:            %w[author_held],
-        propose:           %w[lane_writable_by raw_lane_ingest_only],
-        key_mv_prefix:     %w[lane_writable_by raw_lane_ingest_only],
+        put: %w[lane_writable_by raw_lane_ingest_only],
+        key_delete: %w[lane_deletable_by],
+        key_mv: %w[lane_writable_by raw_lane_ingest_only],
+        accept: %w[author_held],
+        reject: %w[author_held],
+        propose: %w[lane_writable_by raw_lane_ingest_only],
+        key_mv_prefix: %w[lane_writable_by raw_lane_ingest_only],
         key_delete_prefix: %w[lane_writable_by raw_lane_ingest_only],
-        ingest:            %w[lane_writable_by raw_write_once],
+        ingest: %w[lane_writable_by raw_write_once],
       }.freeze
 
       AuthContext = Struct.new(
@@ -179,7 +179,7 @@ module Textus
         { pass: false, error: Textus::Error.new(
           :raw_lane_ingest_only,
           "raw lane '#{ctx.mentry.lane}' only accepts `textus ingest` — " \
-          "use that verb instead of '#{ctx.action}'"
+          "use that verb instead of '#{ctx.action}'",
         ) }
       end
 
@@ -190,7 +190,7 @@ module Textus
         { pass: false, error: Textus::Error.new(
           :raw_write_once,
           "raw entry '#{ctx.target}' already exists; " \
-          "delete it first (`textus key-delete #{ctx.target}`), then re-ingest"
+          "delete it first (`textus key-delete #{ctx.target}`), then re-ingest",
         ) }
       end
 
@@ -211,7 +211,7 @@ module Textus
         extra_holders = is_raw ? ["author"] : [ctx.lane_verb.to_s, "author"]
         holders = extra_holders.flat_map { |v| @manifest.policy.roles_with_capability(v) }.uniq
         { pass: false, error: Textus::WriteForbidden.new(ctx.mentry.key, ctx.mentry.lane,
-                                                          verb: ctx.lane_verb, holders:) }
+                                                         verb: ctx.lane_verb, holders:) }
       end
 
       def schema_reason(err)

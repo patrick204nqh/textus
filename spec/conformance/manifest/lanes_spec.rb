@@ -5,11 +5,11 @@ RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
 
   it "is the kind => required-capability function (ADR 0091: quarantine + derived folded into machine; ADR 0114: raw→ingest)" do
     expect(s::LANES).to eq(
-      "canon"     => "author",
+      "canon" => "author",
       "workspace" => "keep",
-      "machine"   => "converge",
-      "queue"     => "propose",
-      "raw"       => "ingest",
+      "machine" => "converge",
+      "queue" => "propose",
+      "raw" => "ingest",
     )
   end
 
