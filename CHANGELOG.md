@@ -9,6 +9,40 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.54.0 — 2026-06-16 — Workflow system, raw ingest pipeline, MCP resources
+
+### Added
+
+- **Workflow system** (PR #218): Ruby DSL files in `.textus/workflows/` replace the `step/` extension model. `Workflow::Registry` (loaded from `.textus/workflows/**/*.rb`) is resolved by `Produce::Engine` at produce time; `Workflow::Runner` threads data through each named step and persists. Core components: `Workflow::Context`, `Workflow::Pattern` (glob matching), `Workflow::DSL`, `Workflow::Collector`, `Workflow::Registry`, `Workflow::Loader`, `Workflow::Runner`.
+- **`artifacts.index` produced workflow**: pre-computed full-store catalog (`artifacts.index`) served as a produced artifact — enumerates every manifest entry with its key, lane, format, etag, and `generated_at` timestamp.
+- **MCP `resources/list` and `resources/read`** (PR #221): machine-lane `produced` entries are now exposed as MCP resources at `textus://<key>` URIs with correct MIME types. Clients discover them via the `resources` capability advertised in the `initialize` handshake.
+- **Raw ingest pipeline** (PR #219, [ADR 0114](docs/architecture/decisions/0114-foundation-refactor.md), [ADR 0116](docs/architecture/decisions/0116-raw-lane-and-ingest-verb.md)): new `raw` zone-kind with a `write-once` gate and an `ingest` capability/verb (`Action::Ingest`). Doctor checks and an asset sentinel guard the lane. The `raw` bijection entry maps `raw → ingest`.
+
+### Changed
+
+- **`artifacts.derived.*` → `artifacts.*`**: the `derived` key segment is dropped — all machine-lane entries flatten to `artifacts.<name>` in both the manifest and the on-disk store. Workflows, boot, and all other callers updated.
+- **`boot` reads from `artifacts.index`**: inline computation removed from the boot action; the pre-computed catalog drives the response. `--lean` flag removed (PR #220).
+- **`pulse` slimmed**: `stale`, `doctor`, and `next_due_at` removed from the pulse envelope; `index_etag` added so clients can cheaply detect catalog drift without a full list.
+- **`ContractDrift` moved to core** (PR #220): `Textus::ContractDrift` extracted from the MCP surface into the core library so it is reusable across surfaces.
+- **MCP `Server` refactored per Sandi Metz rules** (PR #220): routing extracted to `Routing` module; methods decomposed to ≤ 5 lines each.
+- **Plugin manifest wiring** (PR #220): `claude_plugin` uses the installed `textus` binary (external use); `mcp_config` keeps `bundle exec` (dev environment). `--lean` references removed from the plugin manifest spec.
+- **Namespace renames** (PR #218, internal): `entry/` → `format/`, `envelope/io/` → `envelope/`, `Ports::Queue` → `Ports::JobStore`, `background/` → `jobs/`, `pipeline/` → `produce/`.
+- **Workflows reorganised**: workflow files split into `artifacts/` and `config/` subdirectories under `.textus/workflows/`.
+
+### Removed
+
+- **Step system** (PR #218): entire `lib/textus/step/` directory deleted along with all step-related specs, `container.steps`, dead `hooks.rb` doctor check, and `ports/audit_subscriber.rb`. **Migration:** rewrite step files as `.textus/workflows/*.rb` using the Workflow DSL.
+- **`Jobs::Refresh`** ([ADR 0115](docs/architecture/decisions/0115-role-trust-model.md)): workflow-based periodic re-derivation replaces the background refresh job.
+- **`handler_permit` manifest field** (PR #218): doctor-only field with no runtime enforcement deleted along with its policy class and schema key.
+- **Dead guards and constants**: `derived_write?` no-op guard from `WriteVerb#cascade_to_rdeps`; `publish_each` runtime guard from `Entry::Publish`; duplicate inline `check_action!` from `put`/`key_delete`/`reject`; `BURN = :sync` constant; cross-lane notebook side-effect from `Action::Ingest`.
+- **`source.from: fetch` and `source.from: derive`** narrowed to `external` only — fetch/derive methods removed from `Produced`; freshness/pulse use retention rules; boot drops intake/derived keys.
+
+### Fixed
+
+- **MCP `resources` capability missing from `initialize` handshake** (PR #221): the server only advertised `tools`, so MCP clients never called `resources/list`. Adding `"resources" => {}` makes all 9 produced artifacts discoverable as resources.
+- **`adr_log` workflow**: `include_keyless: true` added for tree-publish of `knowledge.decisions`.
+- **SpecLayout violations** (PR #221): `workflow_index_spec` and `workflow/errors_spec` (string-described) moved to `spec/conformance/workflow/`.
+
 ## 0.53.0 — 2026-06-15 — Auth consolidation and code quality
 
 ### Added

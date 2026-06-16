@@ -53,7 +53,7 @@ module Textus
           emit_result(rid, {
                         "protocolVersion" => PROTOCOL_VERSION,
                         "serverInfo" => SERVER_INFO,
-                        "capabilities" => { "tools" => {} },
+                        "capabilities" => { "tools" => {}, "resources" => {} },
                       })
         end
 
