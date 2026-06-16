@@ -93,8 +93,32 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "includes index_key pointing to artifacts.index" do
+  it "omits index_key when artifacts.index does not exist" do
     env = described_class.build(container: store.container)
+    expect(env).not_to have_key("index_key")
+  end
+
+  it "includes index_key when artifacts.index file exists" do
+    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
+    File.write(File.join(root, "manifest.yaml"), <<~YAML)
+      version: textus/3
+      roles:
+        - { name: human,      can: [author, propose] }
+        - { name: automation, can: [converge] }
+      lanes:
+        - { name: artifacts, kind: machine }
+        - { name: proposals, kind: queue }
+      entries:
+        - key: artifacts.index
+          kind: produced
+          path: artifacts/index.json
+          lane: artifacts
+          owner: automation:auto
+          source: { from: external, command: "true", sources: [] }
+    YAML
+    File.write(File.join(root, "data/artifacts/index.json"), "{}")
+    s = Textus::Store.new(root)
+    env = described_class.build(container: s.container)
     expect(env["index_key"]).to eq("artifacts.index")
   end
 
@@ -174,6 +198,6 @@ RSpec.describe Textus::Boot do
     parsed = JSON.parse(out.string)
     expect(parsed["protocol"]).to eq("textus/3")
     expect(parsed["lanes"].length).to eq(4)
-    expect(parsed["index_key"]).to eq("artifacts.index")
+    expect(parsed).not_to have_key("index_key")
   end
 end
