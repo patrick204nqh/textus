@@ -27,7 +27,6 @@ module Textus
         @manifest = container.manifest
         @audit_log = container.audit_log
         @root = container.root
-        @steps = container.steps
 
         freshness_rows = Pulse::Scanner.new.call(container: container, call: call)
         {
@@ -38,7 +37,6 @@ module Textus
           "doctor" => doctor_summary,
           "contract_etag" => Textus::Etag.for_contract(@root),
           "next_due_at" => soonest_due(freshness_rows),
-          "hook_errors" => hook_errors_since(@since || 0),
         }
       end
 
@@ -67,20 +65,6 @@ module Textus
           "warn" => issues.count { |i| i["level"] == "warning" },
           "fail" => issues.count { |i| i["level"] == "error" },
         }
-      end
-
-      def hook_errors_since(seq)
-        @steps.error_log.since(seq).map do |row|
-          {
-            "seq" => row[:seq],
-            "event" => row[:event].to_s,
-            "hook" => row[:hook].to_s,
-            "key" => row[:key],
-            "error_class" => row[:error_class],
-            "error_message" => row[:error_message],
-            "at" => row[:at],
-          }
-        end
       end
     end
   end
