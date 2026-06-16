@@ -8,7 +8,7 @@ module Textus
 
         collector = Collector.new(registry)
         Collector.with(collector) do
-          Dir.glob(File.join(workflows_dir, "**", "*.rb")).sort.each { |path| load path }
+          Dir.glob(File.join(workflows_dir, "**", "*.rb")).each { |path| load path }
         end
         registry
       end

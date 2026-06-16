@@ -24,8 +24,7 @@ module Textus
         [meta, content]
       end
 
-      def self.enforce_name_match!(_path, _meta)
-      end
+      def self.enforce_name_match!(_path, _meta); end
 
       def self.serialize_for_put(meta:, body:, content:, path:)
         _ = path

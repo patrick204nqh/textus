@@ -23,7 +23,7 @@ module Textus
                      elsif block
                        block
                      else
-                       raise ArgumentError, "step :#{name} requires a block or a callable (got neither)"
+                       raise ArgumentError.new("step :#{name} requires a block or a callable (got neither)")
                      end
           t = callable_or_opt.is_a?(Hash) ? callable_or_opt[:timeout] : timeout
           @steps << Step.new(name: name, callable: callable, timeout: t)

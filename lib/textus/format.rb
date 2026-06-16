@@ -4,9 +4,9 @@ module Textus
 
     STRATEGIES = {
       "markdown" => -> { Format::Markdown },
-      "json"     => -> { Format::Json },
-      "yaml"     => -> { Format::Yaml },
-      "text"     => -> { Format::Text },
+      "json" => -> { Format::Json },
+      "yaml" => -> { Format::Yaml },
+      "text" => -> { Format::Text },
     }.freeze
 
     EXT_TO_FORMAT = {

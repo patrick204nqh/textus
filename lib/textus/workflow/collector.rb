@@ -3,7 +3,9 @@ module Textus
     class Collector
       @current = nil
 
-      def self.current = @current
+      class << self
+        attr_reader :current
+      end
 
       def self.with(collector)
         prev      = @current
