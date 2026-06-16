@@ -217,7 +217,7 @@ module Textus
         "store_root" => container.root,
         "lanes" => lanes_for(manifest),
         "entries" => entries_for(manifest),
-        "hooks" => hooks_for_container(container),
+        "workflows" => workflows_for(container),
         "write_flows" => write_flows_for(manifest),
         "cli_verbs" => CLI_VERBS.map(&:dup),
         "agent_protocol" => agent_protocol(manifest),
@@ -256,24 +256,11 @@ module Textus
       end
     end
 
-    def self.hooks_for_container(container)
-      hooks_for_container_internal(steps: container.steps)
-    end
-
-    def self.hooks_for_container_internal(steps:)
-      sections = {}
-      rpc_kind_map = {
-        resolve_handler: :fetch,
-        transform_rows: :transform,
-        validate: :validate,
-      }
-      Step::Catalog::RPC.each_key do |event|
-        sections[event.to_s] = steps.names(rpc_kind_map.fetch(event)).map(&:to_s).sort
+    def self.workflows_for(container)
+      container.workflows.all.map do |d|
+        { "name" => d.name, "match" => d.match_pattern.to_s }
       end
-      Step::Catalog::PUBSUB.each_key do |event|
-        sections[event.to_s] = steps.pubsub_handlers(event).map { |h| h[:name].to_s }.sort
-      end
-      sections
     end
+    private_class_method :workflows_for
   end
 end
