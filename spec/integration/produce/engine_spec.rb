@@ -22,20 +22,24 @@ RSpec.describe Textus::Produce::Engine do
     YAML
   end
 
-  it "raises Workflow::NotFound when no workflow matches the key" do
+  it "completes as a no-op when no workflow matches and entry has no publish targets" do
     result = described_class.converge(
       container: store.container,
       call: Textus::Call.build(role: "automation"),
       keys: ["artifacts.feeds.github.repos"],
     )
-    expect(result[:failed].first[:error]).to include("no workflow matches")
+    expect(result[:completed]).to include("artifacts.feeds.github.repos")
+    expect(result[:failed]).to be_empty
   end
 
   it "converges a key when a workflow is registered" do
     fetched = []
     defn = Textus::Workflow::DSL::Definition.new("test")
     defn.match("artifacts.feeds.github.*")
-    defn.step(:fetch) { |data, ctx| fetched << ctx.key; { content: ["item"] } }
+    defn.step(:fetch) do |_data, ctx|
+      fetched << ctx.key
+      { content: ["item"] }
+    end
     store.container.workflows.register(defn)
 
     result = described_class.converge(

@@ -6,19 +6,19 @@ RSpec.describe Textus::Workflow::DSL::Definition do
   end
 
   it "records a step block" do
-    defn.step(:fetch) { |data, ctx| data }
+    defn.step(:fetch) { |data, _ctx| data }
     expect(defn.steps.length).to eq(1)
     expect(defn.steps.first.name).to eq(:fetch)
   end
 
   it "records a step callable class" do
-    klass = Class.new { def self.call(data, ctx) = data }
+    klass = Class.new { def self.call(data, _ctx) = data }
     defn.step(:fetch, klass)
     expect(defn.steps.first.callable).to eq(klass)
   end
 
   it "records step timeout" do
-    defn.step(:fetch, timeout: 15) { |d, c| d }
+    defn.step(:fetch, timeout: 15) { |d, _c| d }
     expect(defn.steps.first.timeout).to eq(15)
   end
 

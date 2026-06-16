@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Manifest::Rules do
   let(:raw) do
     [
-      { "match" => "intake.news.*",   "retention" => { "ttl" => "6h", "action" => "drop" } },
+      { "match" => "intake.news.*", "retention" => { "ttl" => "6h", "action" => "drop" } },
       { "match" => "review.**", "guard" => { "accept" => ["schema_valid"] } },
     ]
   end

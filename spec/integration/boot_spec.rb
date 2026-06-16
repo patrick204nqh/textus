@@ -181,15 +181,10 @@ RSpec.describe Textus::Boot do
     expect(by_key["knowledge.notes"]["nested"]).to be true
   end
 
-  it "lists hooks grouped by event, sorted alphabetically" do
+  it "lists registered workflows as an array" do
     env = described_class.build(container: store.container)
-    ext = env["hooks"]
-    expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
-    # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["resolve_handler"]).to include("apple", "demo-action", "zebra")
-    expect(ext["resolve_handler"]).to eq(ext["resolve_handler"].sort)
-    expect(ext["entry_produced"]).to eq(["stamp_log"])
-    expect(ext["validate"]).to include("smoke")
+    expect(env["workflows"]).to be_an(Array)
+    expect(env["workflows"]).to all(include("name", "match"))
   end
 
   it "includes verbatim write_flows and cli_verbs" do
@@ -236,7 +231,7 @@ RSpec.describe Textus::Boot do
       expect(result["store_root"]).to be_a(String)
       expect(result["lanes"]).to be_a(Array)
       expect(result["entries"]).to be_a(Array)
-      expect(result["hooks"]).to be_a(Hash)
+      expect(result["workflows"]).to be_a(Array)
       expect(result["write_flows"]).to be_a(Hash)
       expect(result["cli_verbs"]).to be_a(Array)
       expect(result["docs"]).to be_a(Hash)
@@ -252,7 +247,7 @@ RSpec.describe Textus::Boot do
     it "lean keeps orientation essentials and drops the heavy sections" do
       out = Textus::Boot.build(container: store.container, lean: true)
       expect(out).to include("protocol", "store_root", "lanes", "agent_quickstart", "contract_etag")
-      expect(out).not_to include("entries", "hooks", "cli_verbs", "agent_protocol", "write_flows")
+      expect(out).not_to include("entries", "workflows", "cli_verbs", "agent_protocol", "write_flows")
     end
   end
 

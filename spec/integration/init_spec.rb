@@ -31,24 +31,13 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "creates .textus/steps/ with a README stub" do
+  it "creates .textus/workflows/ directory" do
     tmp = Dir.mktmpdir
     target = File.join(tmp, ".textus")
     Textus::Init.run(target)
-    expect(File.directory?(File.join(target, "steps"))).to be true
-    expect(File.read(File.join(target, "steps", "README.md"))).to include("discovered by convention")
+    expect(File.directory?(File.join(target, "workflows"))).to be true
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
-  end
-
-  it "scaffolds steps/README.md without dangling 'extension' terminology" do
-    Dir.mktmpdir do |dir|
-      target = File.join(dir, ".textus")
-      Textus::Init.run(target)
-      readme = File.read(File.join(target, "steps/README.md"))
-      expect(readme).to include("Steps are discovered by convention")
-      expect(readme).not_to match(/extensions register/i)
-    end
   end
 
   it "declares all four zones and pre-creates their directories" do

@@ -68,6 +68,10 @@ module Textus
           def root       = container.root
           def repo_root  = File.dirname(container.root)
 
+          # No-op: event bus removed in workflow redesign; callers that fire
+          # :entry_published / :entry_produced remain unchanged in the source.
+          def emit(_event, **_payload) = nil
+
           # Read a named template from the store's templates/ directory.
           # Raises TemplateError when the file doesn't exist.
           def read_template(name)

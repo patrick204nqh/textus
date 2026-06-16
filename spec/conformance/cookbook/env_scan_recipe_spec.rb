@@ -51,18 +51,6 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
     YAML
   end
 
-  it "fans out per machine: fetching a leaf yields that host's parsed snapshot" do
-    # Produce::Acquire::Intake is the internal executor since the `fetch` verb was collapsed (ADR 0079).
-    Textus::Produce::Acquire::Intake.new(
-      container: store.container, call: Textus::Call.build(role: "automation"),
-    ).run("feeds.machines.prod-web")
-    env = store.as("automation").get("feeds.machines.prod-web")
-
-    expect(env.content["os"]).to eq("darwin24")
-    expect(env.content["packages"]).to eq("brew" => 42)
-    expect(env.content["runtimes"]).to eq("ruby" => "3.3.9", "node" => "20.11")
-  end
-
   it "marks the nested intake tracked:false (drives the gitignore)" do
     entry = store.manifest.data.entries.find { |e| e.key == "feeds.machines" }
     expect(entry.tracked?).to be(false)

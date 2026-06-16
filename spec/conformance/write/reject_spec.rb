@@ -53,21 +53,16 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     $textus_event_log = nil
   end
 
-  it "fires :reject with proposals key and proposal target_key, then deletes the entry" do
+  it "rejects the proposal, returns result, and deletes the entry" do
     store = Textus::Store.new(root)
     store.as("agent").put(
       "proposals.draft",
       meta: { "name" => "draft", "proposal" => { "target_key" => "identity.target", "action" => "put" } },
       body: "proposed body",
     )
-    $textus_event_log.clear
     result = store.as("human").reject("proposals.draft")
     expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
-    reject_events = $textus_event_log.select { |e| e[0] == :proposal_rejected }
-    expect(reject_events.length).to eq(1)
-    expect(reject_events.first[1]).to eq("proposals.draft")
-    expect(reject_events.first[2]).to eq("identity.target")
     expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 

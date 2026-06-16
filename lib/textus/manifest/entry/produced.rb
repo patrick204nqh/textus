@@ -25,25 +25,11 @@ module Textus
 
         KIND = :produced
 
-        # ADR 0094/0095: projection (from: project) sources build their DATA
-        # artifact here, then publish via the ONE shared mode (Publish::ToPaths).
-        # Intake bytes come from Produce::Acquire::Intake and command (external) bytes from the
-        # out-of-band runner — neither builds, but both still publish their
-        # existing store bytes through the same mode. A projection entry with no
-        # targets is a terminal data node: it produced data, so report :built
-        # even though nothing was emitted.
+        # Publish existing store bytes via the shared publish mode (Publish::ToPaths
+        # or Publish::None). Workflow runners handle the produce step; this method
+        # only publishes whatever bytes are already on disk.
         def publish_via(pctx, prefix: nil)
-          built = false
-          if projection?
-            Textus::Produce::Acquire::Projection.new(container: pctx.container, call: pctx.call).run(self)
-            built = true
-            pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
-          end
-          emitted = publish_mode.publish(pctx, prefix: prefix)
-          return emitted if emitted
-          return nil unless built
-
-          { kind: :built, value: { "key" => @key, "path" => Key::Path.resolve(pctx.manifest.data, self), "published_to" => [] } }
+          publish_mode.publish(pctx, prefix: prefix)
         end
 
         def self.from_raw(common, raw)

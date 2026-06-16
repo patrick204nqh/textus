@@ -16,6 +16,7 @@ RSpec.describe Textus::Workflow::Runner do
           source: { from: external, command: "true", sources: [] }
     YAML
   end
+  let(:call) { Textus::Call.build(role: "automation") }
 
   def build_definition(pattern: "artifacts.**", &block)
     Textus::Workflow::DSL::Definition.new("test").tap do |d|
@@ -24,26 +25,27 @@ RSpec.describe Textus::Workflow::Runner do
     end
   end
 
-  let(:call) { Textus::Call.build(role: "automation") }
-
   describe "#run" do
     it "threads data through steps in order" do
       defn = build_definition do
-        step(:fetch)     { |data, ctx| ["a", "b"] }
-        step(:transform) { |data, ctx| data.map(&:upcase) }
+        step(:fetch)     { |_data, _ctx| %w[a b] }
+        step(:transform) { |data, _ctx| data.map(&:upcase) }
       end
 
       runner = described_class.new(defn, container: store.container, call: call)
       allow(runner).to receive(:built_in_publish).and_return(nil)
 
       result = runner.run("artifacts.feeds.test")
-      expect(result).to eq(["A", "B"])
+      expect(result).to eq(%w[A B])
     end
 
     it "passes nil as data to the first step" do
       received = []
       defn = build_definition do
-        step(:fetch) { |data, ctx| received << data; { content: "x" } }
+        step(:fetch) do |data, _ctx|
+          received << data
+          { content: "x" }
+        end
       end
 
       runner = described_class.new(defn, container: store.container, call: call)
@@ -55,7 +57,7 @@ RSpec.describe Textus::Workflow::Runner do
 
     it "wraps step errors in Workflow::StepFailed" do
       defn = build_definition do
-        step(:fetch) { |data, ctx| raise "exploded" }
+        step(:fetch) { |_data, _ctx| raise "exploded" }
       end
 
       runner = described_class.new(defn, container: store.container, call: call)
@@ -69,8 +71,8 @@ RSpec.describe Textus::Workflow::Runner do
     it "calls publish block when one is declared" do
       published = []
       defn = build_definition do
-        step(:fetch) { |data, ctx| { content: "result" } }
-        publish { |data, ctx| published << data }
+        step(:fetch) { |_data, _ctx| { content: "result" } }
+        publish { |data, _ctx| published << data }
       end
 
       runner = described_class.new(defn, container: store.container, call: call)

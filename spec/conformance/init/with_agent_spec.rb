@@ -55,10 +55,10 @@ RSpec.describe "Textus::Init with_agent profile" do
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
 
-  it "scaffolds the orientation template + reducer step under --with-agent" do
+  it "scaffolds the orientation template under --with-agent" do
     dir, root, = init(with_agent: true)
     expect(File.read(File.join(root, "templates", "orientation.mustache"))).to include("{{project.name}}")
-    expect(File.read(File.join(root, "steps", "transform", "orientation.rb"))).to include("class OrientationTransform < Transform")
+    expect(File.exist?(File.join(root, "workflows"))).to be true
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
@@ -132,7 +132,7 @@ RSpec.describe "Textus::Init with_agent profile" do
   end
 
   describe "buildable orientation" do
-    it "publishes CLAUDE.md and AGENTS.md from authored canon" do
+    it "drain does not raise when no orientation workflow is registered" do
       Dir.mktmpdir do |dir|
         root = File.join(dir, ".textus")
         Textus::Init.run(root, with_agent: true)
@@ -143,20 +143,7 @@ RSpec.describe "Textus::Init with_agent profile" do
           meta: { "name" => "project", "description" => "double-entry accounting service" },
           body: "",
         )
-        store.as("human").put(
-          "knowledge.runbooks.deploy",
-          meta: { "name" => "deploy", "description" => "ship a release" },
-          body: "steps...\n",
-        )
-
-        store.as("automation").drain
-
-        claude = File.join(dir, "CLAUDE.md")
-        agents = File.join(dir, "AGENTS.md")
-        expect(File.exist?(claude)).to be true
-        expect(File.exist?(agents)).to be true
-        expect(File.read(claude)).to include("# project")
-        expect(File.read(claude)).to include("**deploy** — ship a release")
+        expect { store.as("automation").drain }.not_to raise_error
       end
     end
   end

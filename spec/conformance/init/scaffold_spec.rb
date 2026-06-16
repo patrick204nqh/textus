@@ -6,8 +6,8 @@ RSpec.describe "init scaffolds machine surfaces" do
 
     before { Textus::Init.run(File.join(Dir.pwd, ".textus")) }
 
-    it "drops the intake step" do
-      expect(File).to exist(".textus/steps/fetch/machine-intake.rb")
+    it "does not scaffold steps/ directories" do
+      expect(File).not_to exist(".textus/steps")
     end
 
     it "declares a nested artifacts.feeds.machines intake entry, tracked:false, in the artifacts zone" do

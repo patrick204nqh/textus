@@ -16,16 +16,34 @@ module Textus
         results
       end
 
+      alias call run
+
       private
 
       def produce_one(key, results)
         workflow = @container.workflows.for(key)
-        raise Textus::Workflow::NotFound.new(key) unless workflow
-
-        Workflow::Runner.new(workflow, container: @container, call: @call).run(key)
+        if workflow
+          Workflow::Runner.new(workflow, container: @container, call: @call).run(key)
+        else
+          publish_only(key)
+        end
         results[:completed] << key
       rescue StandardError => e
         results[:failed] << { key: key, error: e.message }
+      end
+
+      def publish_only(key)
+        entry = @container.manifest.resolver.resolve(key).entry
+        return unless entry.publish_tree || !Array(entry.publish_to).empty?
+
+        reader     = Textus::Envelope::Reader.from(container: @container)
+        entry_path = @container.manifest.resolver.resolve(key).path
+        return unless entry.publish_tree || File.exist?(entry_path)
+
+        pctx = Textus::Manifest::Entry::Base::PublishContext.new(
+          container: @container, call: @call, reader: reader.method(:read),
+        )
+        entry.publish_via(pctx)
       end
     end
   end

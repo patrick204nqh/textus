@@ -29,18 +29,15 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
   let(:produce) { Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation")) }
 
   it "publishes a command entry's existing store bytes without running the command" do
-    out = produce.call(keys: ["artifacts.bundle"])
-    expect(out[:produced]).to include("artifacts.bundle")
-    # Published artifacts land at repo_root (parent of .textus), which is `tmp` in the fixture.
-    # The plan's test used `root` (.textus dir) — corrected to `tmp` here.
-    # verbatim_source re-serializes JSON to strip _meta; no _meta present means
-    # pretty-printed output. Check structural equality rather than exact bytes.
+    out = produce.run(["artifacts.bundle"])
+    expect(out[:completed]).to include("artifacts.bundle")
     published = JSON.parse(File.read(File.join(tmp, "dist/bundle.json")))
     expect(published).to eq("ok" => true)
   end
 
-  it "skips a command entry with no publish targets (Publish::None)" do
-    out = produce.call(keys: ["artifacts.signal"])
-    expect(out[:skipped]).to include("artifacts.signal")
+  it "completes as a no-op for a command entry with no publish targets (Publish::None)" do
+    out = produce.run(["artifacts.signal"])
+    expect(out[:completed]).to include("artifacts.signal")
+    expect(out[:failed]).to be_empty
   end
 end
