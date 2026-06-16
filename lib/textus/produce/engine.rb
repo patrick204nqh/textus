@@ -2,10 +2,10 @@ module Textus
   module Produce
     class Engine
       def self.converge(container:, call:, keys:)
-        new(container, call).run(keys)
+        new(container:, call:).run(keys)
       end
 
-      def initialize(container, call)
+      def initialize(container:, call:)
         @container = container
         @call      = call
       end
