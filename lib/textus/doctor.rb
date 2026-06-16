@@ -23,6 +23,7 @@ module Textus
       Check::GeneratorDrift,
       Check::RawAssetPaths,
       Check::NotebookSources,
+      Check::StaleReviewedStamp,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze
