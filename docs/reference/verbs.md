@@ -54,6 +54,16 @@ Push a registered job type onto the convergence queue, to be run by drain/serve.
 Read one entry - a pure on-disk read annotated with a freshness verdict; never ingests (quarantine freshness is drain + hook only, ADR 0089). Returns the envelope (uid, etag, _meta, body, freshness).
 
 - `--key`
+## `textus ingest`
+
+Capture external source material into the raw lane. Write-once, agent-owned.
+
+- `--kind`
+- `--label`
+- `--path`
+- `--slug`
+- `--url`
+- `--zone`
 ## `textus list`
 
 List keys filtered by lane and/or prefix.
@@ -100,7 +110,7 @@ List the derived entries that depend on a key (reverse deps / impact set).
 - `--key`
 ## `textus pulse`
 
-Delta since cursor — changed entries, stale, pending proposals, doctor summary.
+Delta since cursor — changed entries, pending proposals, index freshness.
 
 - `--since`
 ## `textus rule_explain`
@@ -129,9 +139,8 @@ Run health checks on the textus store and report any issues.
 - `--checks`
 ## `textus boot`
 
-Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.
+Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts.
 
-- `--lean`
 ## `textus jobs`
 
 List queued jobs by state; retry a dead-lettered job or purge a state.
@@ -161,7 +170,7 @@ Bulk-delete every leaf key under prefix.
 - `--prefix`
 ## `textus drain`
 
-Seed refresh + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.
+Seed materialize + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.
 
 - `--lane`
 - `--prefix`

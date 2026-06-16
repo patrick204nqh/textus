@@ -44,7 +44,8 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
   describe ".call('boot', ...)" do
     it "returns the Boot.run envelope" do
       result = described_class.call("boot", session: session, store: store, args: {})
-      expect(result).to include("lanes", "agent_quickstart", "index_key")
+      expect(result).to include("lanes", "agent_quickstart")
+      expect(result).not_to have_key("index_key")
       expect(result["protocol"]).to eq(Textus::PROTOCOL)
     end
   end

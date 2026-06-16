@@ -17,7 +17,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -55,6 +55,7 @@ entries:
   - { key: knowledge.readme,       lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
   - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
   - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
+  - { key: knowledge.spec,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SPEC.md }] }
   - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
@@ -63,8 +64,8 @@ entries:
     kind: produced
     source: { from: external, command: "true", sources: [] }
     publish:
-      - { to: CLAUDE.md,  template: orientation.mustache, inject_boot: true }
-      - { to: AGENTS.md,  template: orientation.mustache }
+      - { to: CLAUDE.md,  template: artifacts/orientation.mustache, inject_boot: true }
+      - { to: AGENTS.md,  template: artifacts/orientation.mustache }
   - { key: artifacts.mcp-config,      path: artifacts/mcp.json,      lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .mcp.json }] }
   - { key: artifacts.claude-plugin,   path: artifacts/plugin.json,   lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .claude-plugin/plugin.json }] }
   - { key: artifacts.opencode-config, path: artifacts/opencode.json, lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: opencode.json }] }
@@ -73,25 +74,38 @@ entries:
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/verbs.md, template: verbs.mustache }]
+    publish: [{ to: docs/reference/verbs.md, template: artifacts/verbs.mustache }]
   - key: artifacts.schema
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/schema.md, template: schema.mustache }]
+    publish: [{ to: docs/reference/schema.md, template: artifacts/schema.mustache }]
   - key: artifacts.adr-log
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/adr-log.md, template: adr-log.mustache }]
+    publish: [{ to: docs/reference/adr-log.md, template: artifacts/adr-log.mustache }]
   - key: artifacts.authority
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/authority.md, template: authority.mustache }]
+    publish: [{ to: docs/reference/authority.md, template: artifacts/authority.mustache }]
+  - key: artifacts.events
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: docs/reference/events.md, template: artifacts/events.mustache }]
+  - key: artifacts.mcp
+    path: artifacts/mcp-catalog.json
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: docs/reference/mcp.md, template: artifacts/mcp.mustache }]
   - key: artifacts.index
     lane: artifacts
     kind: produced

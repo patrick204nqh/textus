@@ -28,7 +28,7 @@ RSpec.describe Textus::Action::Ingest do
         kind: "url", slug: "github-pr-218",
         url: "https://github.com/org/repo/pull/218", label: "PR #218"
       )
-      env = store.as("agent").get("raw.#{Date.today.strftime("%Y.%m.%d")}.url-github-pr-218")
+      env = store.as("agent").get("raw.#{Time.now.utc.strftime("%Y.%m.%d")}.url-github-pr-218")
       expect(env).not_to be_nil
       expect(env.content["source"]["kind"]).to eq("url")
       expect(env.content["source"]["url"]).to eq("https://github.com/org/repo/pull/218")
@@ -52,7 +52,7 @@ RSpec.describe Textus::Action::Ingest do
 
     it "writes a markdown raw entry with file body" do
       store.as("agent").ingest(kind: "file", slug: "sprint-plan", path: tmp_file)
-      date = Date.today.strftime("%Y.%m.%d")
+      date = Time.now.utc.strftime("%Y.%m.%d")
       env = store.as("agent").get("raw.#{date}.file-sprint-plan")
       expect(env).not_to be_nil
       expect(env.content["body"]).to include("Sprint plan")
@@ -72,7 +72,7 @@ RSpec.describe Textus::Action::Ingest do
         kind: "asset", slug: "login-screenshot",
         path: tmp_asset, zone: "playwright"
       )
-      date = Date.today.strftime("%Y.%m.%d")
+      date = Time.now.utc.strftime("%Y.%m.%d")
       env = store.as("agent").get("raw.#{date}.asset-login-screenshot")
       expect(env).not_to be_nil
       expect(env.content["asset"]).to match(%r{raw/\d{4}/\d{2}/\d{2}/playwright/screenshot\.png})
