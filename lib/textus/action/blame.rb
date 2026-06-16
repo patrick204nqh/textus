@@ -15,7 +15,6 @@ module Textus
       arg :limit, Integer, required: false, description: "maximum number of audit rows to return"
       view(:cli) { |rows, inputs| { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }
 
-
       def initialize(key:, limit: nil)
         super()
         @key = key

@@ -11,7 +11,6 @@ module Textus
       cli "doctor"
       arg :checks, Array, required: false, description: "subset of check names to run (default: all)"
 
-
       def initialize(checks: nil)
         super()
         @checks = checks

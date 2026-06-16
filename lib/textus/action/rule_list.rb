@@ -11,7 +11,6 @@ module Textus
       cli "rule list"
       view(:cli) { |policies| { "verb" => "rule_list", "policies" => policies } }
 
-
       def call(container:, **)
         manifest = container.manifest
         manifest.rules.blocks.map do |block|

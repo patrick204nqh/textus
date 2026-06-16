@@ -11,7 +11,6 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "dotted key to locate (returns zone, owner, path; does not read content)"
 
-
       def initialize(key:)
         super()
         @key = key

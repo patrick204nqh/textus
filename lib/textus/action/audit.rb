@@ -24,7 +24,6 @@ module Textus
       arg :limit, Integer, required: false, description: "maximum number of rows to return"
       view(:cli) { |rows, _i| { "verb" => "audit", "rows" => rows } }
 
-
       def initialize(**kwargs)
         super()
         @query = Query.build(**kwargs.slice(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit))

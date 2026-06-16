@@ -19,7 +19,6 @@ module Textus
                                            "defaults to false, so omitting it applies the move immediately"
       view { |v, _i| v.to_h }
 
-
       def initialize(from:, to:, dry_run: false)
         super()
         @from = from

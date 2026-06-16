@@ -19,7 +19,6 @@ module Textus
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
       view { |env, _i| env.to_h_for_wire }
 
-
       def initialize(key:, meta: nil, body: nil, content: nil)
         super()
         @key = key

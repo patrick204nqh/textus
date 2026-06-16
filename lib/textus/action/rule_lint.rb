@@ -15,7 +15,6 @@ module Textus
                                    description: "path to candidate manifest YAML; its `rules:` block is diffed against the live manifest"
       view { |v, _i| v.to_h }
 
-
       def initialize(candidate_yaml:)
         super()
         @candidate_yaml = candidate_yaml

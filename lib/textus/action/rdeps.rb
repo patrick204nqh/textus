@@ -11,7 +11,6 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "dotted key whose dependents (what would be stranded if it moved) you want"
 
-
       def initialize(key:)
         super()
         @key = key

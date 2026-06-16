@@ -11,7 +11,6 @@ module Textus
       cli "reject"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 
-
       def initialize(pending_key:)
         super()
         @pending_key = pending_key

@@ -15,7 +15,6 @@ module Textus
       arg :if_etag, String,
           description: "optimistic-concurrency guard: the etag you last read; the delete is rejected if the entry changed since"
 
-
       def initialize(key:, if_etag: nil)
         super()
         @key = key

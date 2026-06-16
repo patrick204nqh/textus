@@ -14,7 +14,6 @@ module Textus
       arg :since, Integer, session_default: :cursor,
                            description: "audit seq to diff from; defaults to the session cursor"
 
-
       def initialize(since: nil)
         super()
         @since = since

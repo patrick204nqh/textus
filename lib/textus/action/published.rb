@@ -10,7 +10,6 @@ module Textus
       surfaces :cli
       cli "published"
 
-
       def args
         {}
       end

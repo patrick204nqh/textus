@@ -13,7 +13,6 @@ module Textus
       arg :action, String, default: nil, description: "retry|purge (optional)"
       arg :job_id, String, default: nil, description: "job id (required for action=retry)"
 
-
       def initialize(state: "ready", action: nil, job_id: nil)
         super()
         @state = state
