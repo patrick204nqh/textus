@@ -11,6 +11,14 @@
 | `description` | string | yes | human |
 | `name` | string | yes | human |
 | `repo` | string | no | human |
+## `raw`
+
+| Field | Type | Required | Maintained by |
+|---|---|---|---|
+| `asset` | string | no | machine |
+| `body` | string | no | machine |
+| `ingested_at` | string | yes | machine |
+| `source` | map | yes | machine |
 ## `runbook`
 
 | Field | Type | Required | Maintained by |

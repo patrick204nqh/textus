@@ -17,7 +17,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
@@ -93,6 +93,18 @@ entries:
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/authority.md, template: authority.mustache }]
+  - key: artifacts.events
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: docs/reference/events.md, template: events.mustache }]
+  - key: artifacts.mcp
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: docs/reference/mcp.md, template: mcp.mustache }]
   - key: artifacts.index
     lane: artifacts
     kind: produced

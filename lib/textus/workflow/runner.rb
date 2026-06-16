@@ -64,6 +64,21 @@ module Textus
           mentry: ctx.entry,
           payload: Envelope::Writer::Payload.new(**normalized),
         )
+        publish_external(key, ctx)
+      end
+
+      def publish_external(key, ctx)
+        entry = ctx.entry
+        return unless entry.publish_tree || !Array(entry.publish_to).empty?
+
+        entry_path = @container.manifest.resolver.resolve(key).path
+        return unless entry.publish_tree || File.exist?(entry_path)
+
+        reader = Textus::Envelope::Reader.from(container: @container)
+        pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
+          container: @container, call: @call, reader: reader.method(:read),
+        )
+        entry.publish_via(pctx)
       end
 
       def normalize(data, format)

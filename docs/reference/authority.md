@@ -18,20 +18,22 @@ Each zone-kind maps 1:1 to exactly one capability (ADR 0091).
 | `workspace` | `keep` |
 | `machine` | `converge` |
 | `queue` | `propose` |
+| `raw` | `ingest` |
 ## Zones (this manifest)
 
 | Zone | `kind` | Required capability | Purpose |
 |------|--------|---------------------|---------|
-| `knowledge` | `canon` | `author` | the maintained source of truth about the repo (project + runbooks) |
-| `notebook` | `workspace` | `keep` | the agent&#39;s own durable working notes across sessions |
+| `knowledge` | `canon` | `author` | the maintained source of truth about the repo |
+| `notebook` | `workspace` | `keep` | the agent&#39;s own durable working notes |
 | `proposals` | `queue` | `propose` | changes awaiting a human accept |
-| `artifacts` | `machine` | `converge` | machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs |
+| `artifacts` | `machine` | `converge` | machine-maintained computed outputs |
+| `raw` | `raw` | `ingest` | ingested external source material (write-once) |
 ## Roles (this manifest)
 
 A role may write a zone iff it holds the capability that zone's kind requires; the last column lists the zone-kinds each role's capabilities authorize.
 
 | Role | Capabilities (`can`) | Writes zone-kinds |
 |------|----------------------|-------------------|
-| `human` | `author` `propose` | `canon` `queue` |
-| `agent` | `propose` `keep` | `queue` `workspace` |
-| `automation` | `converge` | `machine` |
+| `human` | `author` `propose` `ingest` | `canon` `queue` `raw` |
+| `agent` | `propose` `keep` `ingest` | `queue` `raw` `workspace` |
+| `automation` | `converge` `ingest` | `machine` `raw` |
