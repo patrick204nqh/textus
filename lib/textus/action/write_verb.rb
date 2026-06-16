@@ -24,8 +24,6 @@ module Textus
       end
 
       def cascade_to_rdeps(key, container, call)
-        return if derived_write?(key, container)
-
         rdeps = Textus::Action::Rdeps.new(key: key).call(container: container, call: call).fetch("rdeps", [])
         producible = rdeps.select { |dep_key| producible?(dep_key, container) }
         return if producible.empty?
@@ -33,12 +31,6 @@ module Textus
         producible.each do |dep_key|
           Textus::Jobs::Materialize.new(key: dep_key).call(container:, call:)
         end
-      end
-
-      def derived_write?(_key, _container)
-        false
-      rescue Textus::Error
-        false
       end
 
       def producible?(key, container)
