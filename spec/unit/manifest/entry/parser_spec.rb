@@ -18,9 +18,30 @@ RSpec.describe Textus::Manifest::Entry::Parser do
         .to raise_error(Textus::UsageError, /manifest entry missing key/)
     end
 
-    it "raises when path is missing" do
-      expect { described_class.call({ "key" => "working.foo", "lane" => "working" }) }
-        .to raise_error(Textus::UsageError, /missing path/)
+    it "derives path for a leaf entry without explicit path:" do
+      entry = described_class.call({ "key" => "knowledge.notes", "lane" => "knowledge", "kind" => "leaf" })
+      expect(entry.path).to eq("knowledge/notes.md")
+    end
+
+    it "derives path for a nested entry without explicit path:" do
+      entry = described_class.call({ "key" => "knowledge.how-to", "lane" => "knowledge", "kind" => "nested", "nested" => true })
+      expect(entry.path).to eq("knowledge/how-to")
+    end
+
+    it "derives path for a produced json entry without explicit path:" do
+      entry = described_class.call({ "key" => "artifacts.derived.verbs", "lane" => "artifacts", "kind" => "produced", "format" => "json" })
+      expect(entry.path).to eq("artifacts/derived/verbs.json")
+    end
+
+    it "explicit path: overrides derivation" do
+      entry = described_class.call({ "key" => "knowledge.notes", "path" => "knowledge/custom-name.md", "lane" => "knowledge",
+                                     "kind" => "leaf" })
+      expect(entry.path).to eq("knowledge/custom-name.md")
+    end
+
+    it "defaults format to markdown when neither path nor format declared" do
+      entry = described_class.call({ "key" => "knowledge.notes", "lane" => "knowledge", "kind" => "leaf" })
+      expect(entry.format).to eq("markdown")
     end
 
     it "raises when lane is missing" do
