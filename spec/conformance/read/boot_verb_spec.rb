@@ -22,7 +22,7 @@ RSpec.describe "boot verb dispatch" do
   it "dispatches store.boot to Read::Boot and returns the contract envelope" do
     res = store.boot
     expect(res["protocol"]).to eq(Textus::PROTOCOL)
-    expect(res).to include("lanes", "entries", "agent_quickstart", "cli_verbs")
+    expect(res).to include("lanes", "agent_quickstart", "index_key")
   end
 
   it "is reachable via the role-scoped facade" do

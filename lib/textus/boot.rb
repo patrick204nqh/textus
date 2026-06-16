@@ -1,53 +1,9 @@
 module Textus
   # Read-only "what's in this store and how do I use it" envelope.
-  # A single call gives an agent the working model of a textus-managed
-  # project: lanes and their write authority, entries and their flags,
-  # registered hooks, write flows, and the CLI verb catalog.
-  #
-  # Boot is side-effect-free.
+  # Boot is side-effect-free. Reads from pre-computed artifacts and
+  # the store catalog rather than computing inline.
   module Boot
     PROTOCOL_ID = PROTOCOL
-
-    # Per-capability write-flow templates. Each lambda receives the user-facing
-    # role name and the manifest, and returns guidance for that verb with the
-    # live lane named by kind (ADR 0034). A role holding multiple verbs gets one
-    # joined string; roles whose verbs have no template are omitted.
-    WRITE_FLOW_TEMPLATES = {
-      author: lambda do |name, manifest|
-        "edit files in #{lane_label(manifest, :canon, "your canon lane")}, " \
-          "then 'textus put KEY --as=#{name}'"
-      end,
-      keep: lambda do |name, manifest|
-        "keep durable notes in #{lane_label(manifest, :workspace, "your workspace")}: " \
-          "'textus put KEY --as=#{name}' (no accept needed)"
-      end,
-      propose: lambda do |name, manifest|
-        authority = manifest.policy.roles_with_capability("author").first || "the author-holder"
-        "propose changes by writing #{manifest.policy.queue_lane}.* entries with --as=#{name} " \
-          "and a 'proposal:' frontmatter block; the #{authority} role runs 'textus accept' to apply"
-      end,
-      converge: lambda do |_name, manifest|
-        machine = lane_label(manifest, :machine, "machine")
-        "'textus drain' materializes derived #{machine} entries from their sources and " \
-          "refreshes stale intake #{machine} entries from their declared source; " \
-          "derived files are never hand-edited (reactive on canon writes, or a full pass on demand)"
-      end,
-      ingest: lambda do |name, _manifest|
-        "'textus ingest --kind=(url|file|asset) --slug=SLUG [--url=URL] [--path=PATH] " \
-          "[--zone=ZONE] [--label=LABEL] --as=#{name}' captures external source material " \
-          "into the raw lane; write-once, delete-and-re-ingest to correct"
-      end,
-    }.freeze
-
-    def self.write_flows_for(manifest)
-      manifest.data.role_caps.each_with_object({}) do |(name, caps), acc|
-        flows = caps.filter_map do |verb|
-          tmpl = WRITE_FLOW_TEMPLATES[verb.to_sym]
-          tmpl&.call(name, manifest)
-        end
-        acc[name] = flows.join(" / ") unless flows.empty?
-      end
-    end
 
     # Human-readable name(s) for the live lane(s) of a given kind, or `fallback`
     # when the manifest declares none. Lets write-flow guidance name the live
@@ -134,14 +90,6 @@ module Textus
       propose_lane = manifest.policy.propose_lane_for(agent_role)
 
       {
-        # Both verb lists derive from the MCP catalog (ADR 0056, ADR 0057): the
-        # agent's real read and write surface, named as verbs the agent calls —
-        # not CLI strings. read_verbs can neither advertise a verb the agent
-        # cannot call (audit/doctor are CLI-only; freshness is a Ruby-only
-        # internal scan, ADR 0085) nor omit one it can
-        # (schema_show/rules); write_verbs drops the old `put KEY --as=… --stdin` CLI
-        # framing (role is connection-resolved over MCP; there is no stdin).
-        # writable_lanes / propose_lane below carry the agent's write authority.
         "read_verbs" => Textus::Surfaces::MCP::Catalog.read_verbs,
         "write_verbs" => agent_role ? Textus::Surfaces::MCP::Catalog.write_verbs : [],
         "writable_lanes" => writable_lanes,
@@ -150,10 +98,6 @@ module Textus
       }
     end
 
-    # Recipes reference verbs, not a transport's CLI strings (ADR 0056): every
-    # step names a verb the agent can call (each transport frames it — CLI as
-    # `textus get KEY`, MCP as the `get` tool) or is a plain materialize step. This
-    # keeps shell lines out of the surface an MCP agent reads.
     def self.recipes(manifest)
       queue = manifest.policy.queue_lane
       feeds = lane_label(manifest, :machine, "the machine lane")
@@ -204,33 +148,44 @@ module Textus
       )
     end
 
-    def self.build(container:, lean: false)
+    def self.build(container:)
       manifest = container.manifest
       etag = Textus::Etag.for_contract(container.root)
 
-      if lean
-        return {
-          "protocol" => PROTOCOL_ID,
-          "store_root" => container.root,
-          "lanes" => lanes_for(manifest),
-          "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-          "contract_etag" => etag,
-        }
-      end
-
       {
-        "protocol" => PROTOCOL_ID,
-        "store_root" => container.root,
-        "lanes" => lanes_for(manifest),
-        "entries" => entries_for(manifest),
-        "workflows" => workflows_for(container),
-        "write_flows" => write_flows_for(manifest),
-        "cli_verbs" => CLI_VERBS.map(&:dup),
-        "agent_protocol" => agent_protocol(manifest),
+        "protocol"        => PROTOCOL_ID,
+        "store_root"      => container.root,
+        "contract_etag"   => etag,
+        "lanes"           => lanes_for(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-        "contract_etag" => etag,
-        "docs" => { "spec" => "SPEC.md", "example" => ".textus/" },
-      }
+        "orientation"     => read_artifact_content(container, "artifacts.orientation"),
+        "context"         => read_boot_context(container),
+        "index_key"       => "artifacts.index",
+        "agent_protocol"  => agent_protocol(manifest),
+      }.compact
+    end
+
+    def self.read_artifact_content(container, key)
+      res = container.manifest.resolver.resolve(key)
+      return nil unless res.path && File.exist?(res.path)
+
+      call = Textus::Call.build(role: Textus::Role::DEFAULT)
+      env  = Textus::Action::Get.new(key: key).call(container: container, call: call)
+      env&.content
+    rescue Textus::Error
+      nil
+    end
+
+    def self.read_boot_context(container)
+      res = container.manifest.resolver.resolve("knowledge.boot")
+      return nil unless res.path && File.exist?(res.path)
+
+      call = Textus::Call.build(role: Textus::Role::DEFAULT)
+      env  = Textus::Action::Get.new(key: "knowledge.boot").call(container: container, call: call)
+      body = env&.body&.strip
+      body.nil? || body.empty? ? nil : body
+    rescue Textus::Error
+      nil
     end
 
     def self.lanes_for(manifest)
@@ -244,26 +199,5 @@ module Textus
         row
       end
     end
-
-    def self.entries_for(manifest)
-      manifest.data.entries.map do |e|
-        {
-          "key" => e.key,
-          "lane" => e.lane,
-          "schema" => e.schema,
-          "nested" => e.is_a?(Textus::Manifest::Entry::Nested),
-          "owner" => e.owner,
-          "format" => e.format,
-          "publish_to" => Array(e.publish_to),
-        }
-      end
-    end
-
-    def self.workflows_for(container)
-      container.workflows.all.map do |d|
-        { "name" => d.name, "match" => d.match_pattern.to_s }
-      end
-    end
-    private_class_method :workflows_for
   end
 end

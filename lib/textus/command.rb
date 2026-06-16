@@ -31,7 +31,7 @@ module Textus
     Published       = Data.define(:role)
     SchemaShow      = Data.define(:key, :role)
     Doctor          = Data.define(:checks, :role)
-    Boot            = Data.define(:lean, :role)
+    Boot            = Data.define(:role)
     Jobs            = Data.define(:state, :action, :job_id, :role)
     DataMv          = Data.define(:from, :to, :dry_run, :role)
     KeyMvPrefix     = Data.define(:from_prefix, :to_prefix, :dry_run, :role)

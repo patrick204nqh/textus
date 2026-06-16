@@ -44,9 +44,8 @@ RSpec.describe Textus::Boot do
       expect(qs["latest_seq"]).to be_a(Integer)
     end
 
-    it "includes pulse in the cli_verbs list" do
-      out = described_class.build(container: Textus::Store.new(root).container)
-      names = out["cli_verbs"].map { |v| v["name"] }
+    it "pulse is in the CLI_VERBS constant" do
+      names = Textus::Boot::CLI_VERBS.map { |v| v["name"] }
       expect(names).to include("pulse")
     end
 

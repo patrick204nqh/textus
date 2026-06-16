@@ -3,14 +3,13 @@ Textus.workflow "mcp_config" do
 
   step :build do |_, ctx|
     { "content" => {
-        "mcpServers" => {
-          "textus" => {
-            "command" => "textus",
-            "args"    => %w[--root .textus mcp serve],
-          },
+      "mcpServers" => {
+        "textus" => {
+          "command" => "bundle",
+          "args" => %w[exec exe/textus --root .textus mcp serve],
         },
-      }
-    }
+      },
+    } }
   end
 
   publish
