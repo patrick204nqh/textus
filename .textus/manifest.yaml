@@ -100,6 +100,7 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/events.md, template: artifacts/events.mustache }]
   - key: artifacts.mcp
+    path: artifacts/mcp-catalog.json
     lane: artifacts
     kind: produced
     format: json
