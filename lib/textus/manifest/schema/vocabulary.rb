@@ -9,10 +9,11 @@ module Textus
       # collapses them, so kind ↔ capability is 1:1).
       module Vocabulary
         LANES = {
-          "canon" => "author",
+          "canon"     => "author",
           "workspace" => "keep",
-          "machine" => "converge",
-          "queue" => "propose",
+          "machine"   => "converge",
+          "queue"     => "propose",
+          "raw"       => "ingest",
         }.freeze
 
         LANE_KINDS         = LANES.keys.freeze
