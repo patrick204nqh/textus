@@ -4,8 +4,10 @@
   },
   "mcpServers": {
     "textus": {
-      "command": "textus",
+      "command": "bundle",
       "args": [
+        "exec",
+        "exe/textus",
         "--root",
         ".textus",
         "mcp",

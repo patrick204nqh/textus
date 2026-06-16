@@ -142,7 +142,7 @@
     },
     {
       "name": "pulse",
-      "summary": "Delta since cursor — changed entries, stale, pending proposals, doctor summary.",
+      "summary": "Delta since cursor — changed entries, pending proposals, index freshness.",
       "args": [
         "since"
       ]
@@ -181,10 +181,8 @@
     },
     {
       "name": "boot",
-      "summary": "Return the orientation contract: zones, entries, schemas, write_flows, agent_quickstart.",
-      "args": [
-        "lean"
-      ]
+      "summary": "Return the orientation contract: lanes, agent_quickstart, agent_protocol, and pre-computed artifacts.",
+      "args": []
     },
     {
       "name": "jobs",
