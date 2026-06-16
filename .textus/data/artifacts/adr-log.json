@@ -2,5 +2,790 @@
   "_meta": {
     "uid": "5fae90fbb8a76eb3"
   },
-  "adrs": []
+  "adrs": [
+    {
+      "number": "0113",
+      "title": "the proposal block speaks `_meta`, not `frontmatter`",
+      "date": "2026-06-09",
+      "status": "Accepted",
+      "slug": "0113-proposal-block-meta-key"
+    },
+    {
+      "number": "0112",
+      "title": "the authority model is a produced reference doc",
+      "date": "2026-06-09",
+      "status": "Accepted",
+      "slug": "0112-produced-authority-reference"
+    },
+    {
+      "number": "0111",
+      "title": "rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0111-rename-reconcile-capability-to-converge"
+    },
+    {
+      "number": "0110",
+      "title": "job queue execution model; `reconcile` → `drain`/`serve`; async-only materialize",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0110-job-queue-and-drain-serve"
+    },
+    {
+      "number": "0109",
+      "title": "board-exact schema split + single port shape",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0109-board-exact-schema-ports"
+    },
+    {
+      "number": "0108",
+      "title": "two port shapes, named and documented (not converted)",
+      "date": "2026-06-08",
+      "status": "Superseded by ADR 0109 — every port is now a single shape (an instantiable class); `Clock`/`Publisher` were converted.",
+      "slug": "0108-port-shape-convention"
+    },
+    {
+      "number": "0107",
+      "title": "split `manifest/schema.rb`: data vs validation walk",
+      "date": "2026-06-08",
+      "status": "Partially superseded by ADR 0109 (the constants it kept on `Schema` now live in `Schema::Vocabulary`/`Schema::Keys`, re-exported on `Schema`).",
+      "slug": "0107-split-manifest-schema"
+    },
+    {
+      "number": "0106",
+      "title": "the layering is executable, not just intended",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0106-executable-layering-invariant"
+    },
+    {
+      "number": "0105",
+      "title": "the verb token has one home: route ⟺ contract",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0105-verb-routing-contract-bijection"
+    },
+    {
+      "number": "0104",
+      "title": "finish the root-doc canon move (CONTRIBUTING + SECURITY), clean up the drift",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0104-root-docs-canon-and-cleanup"
+    },
+    {
+      "number": "0103",
+      "title": "the root README is canon, published out",
+      "date": "2026-06-08",
+      "status": "Accepted",
+      "slug": "0103-root-readme-is-canon"
+    },
+    {
+      "number": "0102",
+      "title": "produce the event catalog from the registry",
+      "date": "2026-06-08",
+      "status": "Proposed",
+      "slug": "0102-produced-event-catalog"
+    },
+    {
+      "number": "0101",
+      "title": "interface-layer fossils",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0101-interface-fossils"
+    },
+    {
+      "number": "0100",
+      "title": "`produce/` topology + de-fossilized names",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0100-produce-topology"
+    },
+    {
+      "number": "0099",
+      "title": "one `Freshness` evaluator",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0099-one-freshness-evaluator"
+    },
+    {
+      "number": "0098",
+      "title": "Docs SSoT/DRY/SOLID cleanup: produce vs guard, single-sourced status",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0098-docs-ssot-cleanup"
+    },
+    {
+      "number": "0097",
+      "title": "Reference docs become produced (projected/introspected, published out)",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0097-produced-reference-docs"
+    },
+    {
+      "number": "0096",
+      "title": "Does the conformance tier earn a distinct category?",
+      "date": "2026-06-07",
+      "status": "Proposed",
+      "slug": "0096-conformance-tier-boundary"
+    },
+    {
+      "number": "0095",
+      "title": "collapse `derived`/`intake` into one `produced` kind",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0095-collapse-produced-kind"
+    },
+    {
+      "number": "0094",
+      "title": "`source` produces data; one publish path renders",
+      "date": "2026-06-07",
+      "status": "Accepted",
+      "slug": "0094-source-data-publish-render"
+    },
+    {
+      "number": "0093",
+      "title": "`source` + `retention` over one reconcile engine",
+      "date": "2026-06-06",
+      "status": "Accepted",
+      "slug": "0093-source-retention-over-one-reconcile-engine"
+    },
+    {
+      "number": "0092",
+      "title": "Finish ADR 0080's cleanup: couple conformance to contract, not fixture spelling",
+      "date": "2026-06-06",
+      "status": "Accepted",
+      "slug": "0092-spec-suite-churn-resistance"
+    },
+    {
+      "number": "0091",
+      "title": "One `machine` zone-kind; entry-kind is the single discriminator",
+      "date": "2026-06-06",
+      "status": "Accepted",
+      "slug": "0091-fold-machine-zone"
+    },
+    {
+      "number": "0090",
+      "title": "Automation is one capability + one `upkeep` policy",
+      "date": "2026-06-05",
+      "status": "Accepted",
+      "slug": "0090-fold-automation-capability-and-upkeep"
+    },
+    {
+      "number": "0089",
+      "title": "Ingest is system-pushed: remove `get`'s read-through and `put --fetch`",
+      "date": "2026-06-05",
+      "status": "Accepted",
+      "slug": "0089-ingest-is-system-pushed"
+    },
+    {
+      "number": "0088",
+      "title": "Rename the quarantine capability `fetch` → `ingest`; name the verb/capability split",
+      "date": "2026-06-05",
+      "status": "Accepted",
+      "slug": "0088-rename-quarantine-capability-fetch-to-ingest"
+    },
+    {
+      "number": "0087",
+      "title": "Fold `build` into a single `reconcile` pass; materialization becomes system-pushed",
+      "date": "2026-06-05",
+      "status": "Accepted",
+      "slug": "0087-fold-build-into-reconcile"
+    },
+    {
+      "number": "0086",
+      "title": "textus owns agent-integration config: consolidate the plugin manifest, fold MCP + hook into it, keep `init` as the no-plugin fallback",
+      "date": "2026-06-04",
+      "status": "Accepted (ships 0.50.0)",
+      "slug": "0086-textus-owns-agent-integration-config"
+    },
+    {
+      "number": "0085",
+      "title": "Two observability verbs on orthogonal axes; remove the public `freshness` verb",
+      "date": "2026-06-04",
+      "status": "Accepted",
+      "slug": "0085-two-observability-verbs-remove-freshness"
+    },
+    {
+      "number": "0084",
+      "title": "`boot` is delivered at session start via a SessionStart hook; textus ships the hook as a plugin",
+      "date": "2026-06-04",
+      "status": "Accepted (ships 0.50.0)",
+      "slug": "0084-boot-injected-at-session-start"
+    },
+    {
+      "number": "0083",
+      "title": "The contract-drift guard applies to writes only; `boot` and reads bypass it",
+      "date": "2026-06-04",
+      "status": "Accepted (ships 0.50.0)",
+      "slug": "0083-contract-guard-writes-only-boot-self-heals"
+    },
+    {
+      "number": "0082",
+      "title": "Normalize the key-verb family stem (`key_mv`/`key_delete`) and remove the `migrate` orchestrator",
+      "date": "2026-06-04",
+      "status": "Accepted",
+      "slug": "0082-normalize-key-verb-names"
+    },
+    {
+      "number": "0081",
+      "title": "Docs become canon, published out to `docs/`",
+      "date": "2026-06-04",
+      "status": "Accepted",
+      "slug": "0081-docs-become-canon-published-out"
+    },
+    {
+      "number": "0080",
+      "title": "Spec suite: a three-category physical split (unit / integration / conformance) over the lib mirror",
+      "date": "2026-06-04",
+      "status": "Accepted · Phase 4 (evidence-gated retirement) executed by ADR 0092",
+      "slug": "0080-spec-suite-three-category-split"
+    },
+    {
+      "number": "0079",
+      "title": "Unify staleness + retention into one `lifecycle` policy; collapse the upkeep verbs; lazy by default",
+      "date": "2026-06-04",
+      "status": "Accepted · §4 `freshness`-verb surface partially superseded by ADR 0085 (the unified lifecycle *policy* stands; the public `freshness` *verb* §4 kept is removed — its scan folds into `pulse` and goes Ruby-only) · the `tend` verb name + its destructive-only body are superseded by ADR 0087 (renamed `reconcile`, gains a materialize Phase 1; the \"destructiveness decides execution site\" thesis stands and is extended to source-change-decides-materialize-site)",
+      "slug": "0079-unify-lifecycle-policy"
+    },
+    {
+      "number": "0078",
+      "title": "`tend`: a composite upkeep pass so the cleanup lifecycle can run unattended",
+      "date": "2026-06-04",
+      "status": "Partially superseded by 0079 — held before shipping. The `tend` verb and its authority stance (runs as the caller, never self-elevates) and the \"scheduled, not a daemon\" principle all stand; 0079 reshapes `tend`'s *body* from a composite of `fetch_all`+`retain`+`doctor` into the destructive-only sweep of the unified `lifecycle` model. This decision was reconsidered while still in review (never reached `main` as a composite verb); the reasoning is retained as the exploration that led to 0079. The verb *name* `tend` is retired by ADR 0087, which renames it `reconcile` and folds a materialize phase back in.",
+      "slug": "0078-tend-composite-upkeep-pass"
+    },
+    {
+      "number": "0077",
+      "title": "`init --with-agent`: an opt-in profile that wires a fresh store to an agent",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0077-init-with-agent-profile"
+    },
+    {
+      "number": "0076",
+      "title": "`build` runs as the build actor, not the caller — surface it to MCP",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0076-build-gates-by-capability-actor-surface-to-mcp"
+    },
+    {
+      "number": "0075",
+      "title": "`session_opened`: a connect-time hook event carrying the resolved role",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0075-session-opened-connect-event"
+    },
+    {
+      "number": "0074",
+      "title": "The drift guard fingerprints the whole contract, not just the manifest",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0074-contract-etag-drift-guard"
+    },
+    {
+      "number": "0073",
+      "title": "`surfaces` declares external projections; Ruby is the implicit base",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0073-surfaces-declare-external-projections"
+    },
+    {
+      "number": "0072",
+      "title": "`accept`/`reject` gate by capability, not by transport — surface them to MCP",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0072-accept-reject-gate-by-capability"
+    },
+    {
+      "number": "0071",
+      "title": "`dry_run` is an opt-in preview, not a default — verbs apply by default on every surface",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0071-dry-run-is-opt-in"
+    },
+    {
+      "number": "0070",
+      "title": "Built artifacts are content-addressed: no `generated_at` in the tracked output",
+      "date": "2026-06-03",
+      "status": "Accepted",
+      "slug": "0070-content-addressed-build-artifacts"
+    },
+    {
+      "number": "0069",
+      "title": "Single-path lifecycle: views self-shape, one normalizer home, validation is unconditional",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.45.1)",
+      "slug": "0069-single-path-lifecycle"
+    },
+    {
+      "number": "0068",
+      "title": "Declarative `source:`/`coerce:`/`cli_stdin`/`around:`/`cli_default:` dissolve the acquisition & wrapper escape hatches",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.45.0)",
+      "slug": "0068-declarative-facets-dissolve-escape-hatches"
+    },
+    {
+      "number": "0067",
+      "title": "Per-surface `view`s replace `response`/`cli_response` and the arity hack",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.45.0)",
+      "slug": "0067-per-surface-views"
+    },
+    {
+      "number": "0066",
+      "title": "One argument binder; `required:` is a surface policy, not a contract invariant",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.45.0)",
+      "slug": "0066-one-binder-required-is-a-surface-policy"
+    },
+    {
+      "number": "0065",
+      "title": "Finish the `cli_response` projection: shrink the output-only escape hatches",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.44.1)",
+      "slug": "0065-finish-cli-response-shrink-escape-hatches"
+    },
+    {
+      "number": "0064",
+      "title": "Derive the CLI command name; guard the dispatcher key against the contract verb",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0064-derive-command-name-and-guard-dispatcher-key"
+    },
+    {
+      "number": "0063",
+      "title": "The CLI is a projection of the contract: close the last derive-or-guard gap",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0063-cli-is-a-projection-of-the-contract"
+    },
+    {
+      "number": "0062",
+      "title": "One `get`: unify the public read verb on read-through; keep `Read::GetEntry` as the internal pure primitive",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0062-one-get-read-through"
+    },
+    {
+      "number": "0061",
+      "title": "Reconcile the `build`/`publish` vocabulary: the verb is `build`, `publish` is the output-destination noun",
+      "date": "2026-06-03",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0061-build-publish-vocabulary"
+    },
+    {
+      "number": "0060",
+      "title": "Close the agent safety asymmetry: graph-reads on MCP + default-dry-run on bulk-destructive verbs",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.44.0) · the default-dry-run half (decision §2) is **reversed by ADR 0071** — verbs apply by default again; the graph-reads-on-MCP half stands",
+      "slug": "0060-agent-safety-graph-reads-and-default-dry-run"
+    },
+    {
+      "number": "0059",
+      "title": "One rule verb, two depths: merge `rules` + `policy_explain` into `rule_explain`",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0059-one-rule-verb-two-depths"
+    },
+    {
+      "number": "0058",
+      "title": "One verb name across surfaces: align the MCP tool, the CLI command, and the use-case method",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.44.0)",
+      "slug": "0058-one-verb-name-across-surfaces"
+    },
+    {
+      "number": "0057",
+      "title": "Agent-legible MCP contracts: arg descriptions, `_meta` wire parity, derived `write_verbs`",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.43.2)",
+      "slug": "0057-agent-legible-mcp-contracts"
+    },
+    {
+      "number": "0056",
+      "title": "`boot`'s agent surface speaks the MCP catalog, not a CLI dialect",
+      "date": "2026-06-02",
+      "status": "Proposed",
+      "slug": "0056-boot-quickstart-speaks-the-mcp-catalog"
+    },
+    {
+      "number": "0054",
+      "title": "Entry-level `desc`: the manifest as a navigable index",
+      "date": "2026-06-02",
+      "status": "Proposed",
+      "slug": "0054-entry-level-desc"
+    },
+    {
+      "number": "0053",
+      "title": "Remove `index_filename`: nested entries enumerate files",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.43.0)",
+      "slug": "0053-remove-index-filename"
+    },
+    {
+      "number": "0052",
+      "title": "Fold `publish_to`/`publish_tree` into one typed `publish:` block",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.43.0)",
+      "slug": "0052-typed-publish-block"
+    },
+    {
+      "number": "0051",
+      "title": "Remove `publish_each`: collapse publish to two modes",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.42.0)",
+      "slug": "0051-remove-publish-each"
+    },
+    {
+      "number": "0050",
+      "title": "Own multi-file artifacts by native in-store authoring; migrate by content-identical adoption",
+      "date": "2026-06-02",
+      "status": "Accepted · native authoring now rides **`publish_tree`** alone — `publish_each` was removed by ADR 0051 (the index-present `publish_each` references below are historical)",
+      "slug": "0050-native-authoring-and-content-identical-adoption"
+    },
+    {
+      "number": "0049",
+      "title": "Publish modes as a resolved sum type + one shared subtree mirror",
+      "date": "2026-06-02",
+      "status": "Accepted",
+      "slug": "0049-publish-modes-as-sum-type"
+    },
+    {
+      "number": "0048",
+      "title": "Fetch subsystem: separate intake invocation, deadline/async policy, and lifecycle events",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.41.0)",
+      "slug": "0048-fetch-subsystem-three-concerns"
+    },
+    {
+      "number": "0047",
+      "title": "`publish_tree`: a key-less subtree mirror for a derived-index leaf",
+      "date": "2026-06-02",
+      "status": "Accepted (ships 0.41.0)",
+      "slug": "0047-publish-tree-keyless-subtree-mirror"
+    },
+    {
+      "number": "0046",
+      "title": "`publish_each` publishes a leaf's whole subtree; siblings are opaque attachments, never keys",
+      "date": "2026-06-01",
+      "status": "Accepted · the \"no third key\" ruling is scoped to the index-*present* case by ADR 0047",
+      "slug": "0046-publish-leaf-subtrees"
+    },
+    {
+      "number": "0045",
+      "title": "Close the role-name set to {human, agent, automation}; keep capabilities open",
+      "date": "2026-06-01",
+      "status": "Accepted",
+      "slug": "0045-close-role-name-set"
+    },
+    {
+      "number": "0044",
+      "title": "System-initiated actors are resolved by capability, never by a hardcoded role name",
+      "date": "2026-06-01",
+      "status": "Proposed",
+      "slug": "0044-system-actors-resolved-by-capability"
+    },
+    {
+      "number": "0043",
+      "title": "Feed ergonomics without breaking core purity: an intake cookbook, and environment as a `feeds.machine` snapshot",
+      "date": "2026-06-01",
+      "status": "Proposed",
+      "slug": "0043-feed-ergonomics-without-breaking-core-purity"
+    },
+    {
+      "number": "0042",
+      "title": "Native ignore patterns for entry enumeration (one shared filter seam, evaluated above legality)",
+      "date": "2026-06-01",
+      "status": "Accepted (ships 0.39.0)",
+      "slug": "0042-native-ignore-patterns-for-entry-enumeration"
+    },
+    {
+      "number": "0041",
+      "title": "Dogfood textus in its own repo: a self-development store + MCP wiring",
+      "date": "2026-05-31",
+      "status": "Accepted",
+      "slug": "0041-dogfood-textus-in-its-own-repo"
+    },
+    {
+      "number": "0040",
+      "title": "The MCP connection acts as `agent`; human authority is a separate channel",
+      "date": "2026-05-31",
+      "status": "Accepted — §1/§2/§4 ship 0.38.0; §3 (role-aware `surfaces`) tracked separately",
+      "slug": "0040-mcp-connection-role-and-two-channels"
+    },
+    {
+      "number": "0039",
+      "title": "The MCP catalog derives from one declared verb contract; no unguarded hand-maintained mirror",
+      "date": "2026-05-31",
+      "status": "Accepted — ships 0.37.0 (**breaking**: MCP tool surface and core verb set change)",
+      "slug": "0039-mcp-catalog-derive-or-guard"
+    },
+    {
+      "number": "0038",
+      "title": "Runtime artifacts live under `.run/`; one `Layout` owns the map",
+      "date": "2026-05-31",
+      "status": "Accepted · the `sentinels/` → `:config` classification (Decision §1) is **superseded by ADR 0070** — sentinels are machine-generated runtime state and move under `.run/sentinels/`; the `.run/` layout and `Layout`-as-map decisions stand",
+      "slug": "0038-runtime-artifacts-under-run-and-layout"
+    },
+    {
+      "number": "0037",
+      "title": "Boot/pulse: derive-or-guard, no unguarded hand-maintained mirror",
+      "date": "2026-05-31",
+      "status": "Accepted",
+      "slug": "0037-boot-pulse-derive-or-guard"
+    },
+    {
+      "number": "0036",
+      "title": "Transports are pure framings: one verb vocabulary, one session, lifted to core",
+      "date": "2026-05-31",
+      "status": "Accepted — ships 0.36.0 (**breaking**: MCP tool names change)",
+      "slug": "0036-transports-as-pure-framings"
+    },
+    {
+      "number": "0035",
+      "title": "Constrain a proposal's target zone; keep the accept/reject anchor-gate explicit",
+      "date": "2026-05-31",
+      "status": "Accepted — ships 0.35.0",
+      "slug": "0035-proposal-target-zone-constraint"
+    },
+    {
+      "number": "0034",
+      "title": "Unify the zone-kind/capability bijection into a single Lane table",
+      "date": "2026-05-30",
+      "status": "Accepted — ships 0.34.0",
+      "slug": "0034-unify-lane-vocabulary"
+    },
+    {
+      "number": "0033",
+      "title": "Complete the primitive set (`workspace` + `keep`) and clarify the vocabulary",
+      "date": "2026-05-30",
+      "status": "Accepted — ships 0.33.0",
+      "slug": "0033-complete-primitives-and-vocabulary"
+    },
+    {
+      "number": "0032",
+      "title": "Drop `read_policy`: textus gates writes, not reads",
+      "date": "2026-05-30",
+      "status": "Accepted — shipped in 0.32.0, folded into the unified-guard work (ADR 0031)",
+      "slug": "0032-drop-read-policy"
+    },
+    {
+      "number": "0031",
+      "title": "The unified Guard: one explainable authorization path for every transition",
+      "date": "2026-05-30",
+      "status": "Accepted — shipped in 0.32.0 (ADR 0028 moves 2 & 3); **sequenced after ADR 0030** (capability roles, 0.31.0).",
+      "slug": "0031-unified-guard"
+    },
+    {
+      "number": "0030",
+      "title": "Capability-based roles: role = name + composable verbs",
+      "date": "2026-05-30",
+      "status": "Accepted",
+      "slug": "0030-capability-based-roles"
+    },
+    {
+      "number": "0029",
+      "title": "Concept vocabulary: coordination space → lanes → zones",
+      "date": "2026-05-30",
+      "status": "Accepted",
+      "slug": "0029-concept-vocabulary"
+    },
+    {
+      "number": "0028",
+      "title": "Coordination space: closed topology, closed transitions, open policy",
+      "date": "2026-05-29",
+      "status": "Accepted — moves 1 & 4 shipped in 0.30.0 (zone kind + retention); moves 2 & 3 shipped in 0.32.0 (ADR 0031)",
+      "slug": "0028-coordination-planes"
+    },
+    {
+      "number": "0027",
+      "title": "Hook-registry convergence and MCP transport de-leak",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0027-hook-signature-and-mcp-policy"
+    },
+    {
+      "number": "0026",
+      "title": "Use-case construction seams (named constructors, one dispatch path, transport-side fetch helper)",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0026-use-case-construction-seams"
+    },
+    {
+      "number": "0025",
+      "title": "Boot/Doctor as dispatched verbs + manifest etag via FileStore port",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0025-boot-doctor-as-verbs-and-etag-via-port"
+    },
+    {
+      "number": "0024",
+      "title": "Domain purity via FileStat/Clock ports",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0024-domain-purity-ports"
+    },
+    {
+      "number": "0023",
+      "title": "Uniform use-case shape",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0023-uniform-use-case-shape"
+    },
+    {
+      "number": "0022",
+      "title": "Container + Call + Dispatcher",
+      "date": "2026-05-29",
+      "status": "Accepted",
+      "slug": "0022-container-call-dispatcher"
+    },
+    {
+      "number": "0021",
+      "title": "Session + module-function use-cases",
+      "date": "2026-05-28",
+      "status": "Partially superseded by ADR 0022 — the per-call `Session` is replaced by `RoleScope` under the 0.27.0 architecture; the use-case shape was refined by ADR 0023.",
+      "slug": "0021-session-and-module-use-cases"
+    },
+    {
+      "number": "0020",
+      "title": "Replace Ports with ReadCaps, WriteCaps, HookCaps",
+      "date": "2026-05-28",
+      "status": "Accepted",
+      "slug": "0020-capability-records"
+    },
+    {
+      "number": "0019",
+      "title": "Split Hooks::Bus into EventBus and RpcRegistry",
+      "date": "2026-05-28",
+      "status": "Accepted",
+      "slug": "0019-hooks-bus-split"
+    },
+    {
+      "number": "0018",
+      "title": "Carve Manifest into Data, Resolver, Policy, Rules",
+      "date": "2026-05-28",
+      "status": "Accepted — shipped; `Manifest::Data` / `Resolver` / `Policy` / `Rules` are the live decomposition.",
+      "slug": "0018-manifest-carving"
+    },
+    {
+      "number": "0017",
+      "title": "Split EnvelopeIO into Reader and Writer",
+      "date": "2026-05-28",
+      "status": "Partially superseded by ADR 0022 — the Reader/Writer split shipped, but lives at `Envelope::IO::Reader` / `Envelope::IO::Writer` rather than the `Application::Writes::Envelope*` names proposed here.",
+      "slug": "0017-envelope-io-split"
+    },
+    {
+      "number": "0016",
+      "title": "Application Ports value object",
+      "date": "2026-05-28",
+      "status": "Superseded by ADR 0020 — the single `Application::Ports` value object proposed here is replaced by the `ReadCaps` / `WriteCaps` / `HookCaps` capability records.",
+      "slug": "0016-application-ports-value"
+    },
+    {
+      "number": "0015",
+      "title": "Agent gate (MCP-shaped surface)",
+      "date": "2026-05-28",
+      "status": "Accepted (Phase 0 + Phase 1 shipped in 0.23.0)",
+      "slug": "0015-agent-gate-mcp"
+    },
+    {
+      "number": "0014",
+      "title": "Explicit Dependencies",
+      "date": "2026-05-27",
+      "status": "Partially superseded by ADR 0022 (`Application::Context` renamed to `Call`; `Application::*` namespace flattened; `Infra::*` renamed to `Ports::*`). The explicit-dependencies principle stands.",
+      "slug": "0014-explicit-dependencies"
+    },
+    {
+      "number": "0013",
+      "title": "Port extraction: Store as composition root",
+      "date": "2026-05-27",
+      "status": "Partially superseded by ADR 0022 (`Infra::*` renamed to `Ports::*`; `Application::Writes::EnvelopeIO` flattened to `Envelope::IO`). The composition-root role of `Store` is unchanged.",
+      "slug": "0013-port-extraction-store-as-root"
+    },
+    {
+      "number": "0012",
+      "title": "Explicit hook registration",
+      "date": "2026-05-27",
+      "status": "Accepted",
+      "slug": "0012-explicit-hook-registration"
+    },
+    {
+      "number": "0011",
+      "title": "Authorize-bang in Context",
+      "date": "2026-05-27",
+      "status": "Superseded by ADR 0031 — write authorization moves from `Context#authorize_write!` to the unified `Guard`, and the read side (`authorize_read!`) is dropped by ADR 0032. Ships 0.32.0.",
+      "slug": "0011-authorize-bang-in-context"
+    },
+    {
+      "number": "0010",
+      "title": "Flat Operations API",
+      "date": "2026-05-27",
+      "status": "Partially superseded by ADR 0022 — the flat one-method-per-use-case ergonomics stand, but the `Operations` class described here is replaced by `Container` + `RoleScope` under the 0.27.0 architecture.",
+      "slug": "0010-flat-operations-api"
+    },
+    {
+      "number": "0009",
+      "title": "AuditSubscriber split from Hooks::Dispatcher",
+      "date": "2026-05-26",
+      "status": "Partially superseded by ADR 0022 (`Infra::AuditSubscriber` is now `Ports::AuditSubscriber`; `Application::Writes::Mv` is now `Write::Mv`). The subscriber-split decision stands.",
+      "slug": "0009-audit-subscriber-split"
+    },
+    {
+      "number": "0008",
+      "title": "Freshness and Resolution value objects",
+      "date": "2026-05-26",
+      "status": "Accepted",
+      "slug": "0008-freshness-and-resolution-types"
+    },
+    {
+      "number": "0007",
+      "title": "Envelope as Data.define + Build/Publish split",
+      "date": "2026-05-26",
+      "status": "Accepted",
+      "slug": "0007-envelope-data-class"
+    },
+    {
+      "number": "0006",
+      "title": "Format-strategy extraction (Phase 2 of facade cleanup)",
+      "date": "2026-05-26",
+      "status": "Accepted",
+      "slug": "0006-format-strategy-extraction"
+    },
+    {
+      "number": "0005",
+      "title": "Store facade final removal (Phase 1 completion)",
+      "date": "2026-05-26",
+      "status": "Accepted",
+      "slug": "0005-store-facade-final-removal"
+    },
+    {
+      "number": "0004",
+      "title": "Operations rename + Store facade removal (v0.12.2)",
+      "date": "2026-05-26",
+      "status": "Partially superseded by ADR 0010 — the Store-facade removal shipped (v0.12.2); the `Operations` surface this ADR renamed was later flattened to one method per use case by 0010.",
+      "slug": "0004-operations-rename-and-store-facade-removal"
+    },
+    {
+      "number": "0003",
+      "title": "Legacy Sweep (v0.12.0)",
+      "date": "2026-05-25",
+      "status": "Accepted",
+      "slug": "0003-legacy-sweep"
+    },
+    {
+      "number": "0002",
+      "title": "textus/3 Vocabulary Redesign",
+      "date": null,
+      "status": "Accepted (2026-05-25)",
+      "slug": "0002-textus-3-vocabulary-redesign"
+    },
+    {
+      "number": "0001",
+      "title": "Defer first-class skill-bundle support",
+      "date": null,
+      "status": "Accepted (2026-05-24). Ships alongside the recipe at `docs/recipe-github-skill-bundle.md`.",
+      "slug": "0001-skill-bundle-deferral"
+    }
+  ]
 }

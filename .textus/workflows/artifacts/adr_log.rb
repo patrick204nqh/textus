@@ -5,7 +5,7 @@ Textus.workflow "adr_log" do
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }
 
     keys = ctx.container.manifest.resolver
-               .enumerate(prefix: "knowledge.decisions")
+               .enumerate(prefix: "knowledge.decisions", include_keyless: true)
                .map { |row| row[:key] }
 
     adrs = keys.filter_map do |k|
