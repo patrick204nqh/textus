@@ -158,10 +158,6 @@ module Textus
     end
   end
 
-  class InvalidProjection < Error
-    def initialize(m) = super("invalid_projection", m)
-  end
-
   class TemplateError < Error
     def initialize(m, template_name: nil)
       hint =
