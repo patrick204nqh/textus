@@ -15,14 +15,14 @@ RSpec.describe "textus drain concurrency (build lock)" do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf}
 
         - key: artifacts.note
           kind: produced
-          path: data/artifacts/note.json
+          path: artifacts/note.json
           lane: artifacts
           owner: automation:auto
-          source: { from: derive, select: knowledge.note }
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: NOTE.md, template: echo.mustache }
     YAML

@@ -21,16 +21,16 @@ module Textus
 
             data_path = pctx.manifest.resolver.resolve(entry.key).path
             envelope  = pctx.reader.call(entry.key)
-            renderer  = Textus::Pipeline::Render.new(template_loader: ->(n) { pctx.read_template(n) })
+            renderer  = Textus::Produce::Render.new(template_loader: ->(n) { pctx.read_template(n) })
             content = nil # parsed lazily; the data's `content` (always _meta-free)
 
             targets.each do |t|
               if t.renders?
-                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
                 publish_bytes(render_bytes(t, content, renderer, pctx), entry.key, t, pctx, data_path, envelope)
               elsif strip_meta?(entry)
-                content ||= Textus::Entry.for_format(entry.format).parse(File.read(data_path), path: data_path)["content"]
-                bytes = Textus::Entry.for_format(entry.format).serialize(meta: {}, body: "", content: content)
+                content ||= Textus::Format.for(entry.format).parse(File.read(data_path), path: data_path)["content"]
+                bytes = Textus::Format.for(entry.format).serialize(meta: {}, body: "", content: content)
                 publish_bytes(bytes, entry.key, t, pctx, data_path, envelope)
               else
                 # opaque / command / non-structured — publish the stored file as-is

@@ -1,4 +1,3 @@
-# rubocop:disable Style/GlobalVars
 require "spec_helper"
 
 RSpec.describe Textus::Store do
@@ -7,14 +6,13 @@ RSpec.describe Textus::Store do
 
   before do
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    FileUtils.mkdir_p(File.join(root, "steps"))
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.demo, path: data/knowledge/demo, lane: knowledge, owner: human:patrick, kind: leaf}
+        - { key: knowledge.demo, path: knowledge/demo, lane: knowledge, owner: human:patrick, kind: leaf}
 
     YAML
   end
@@ -29,7 +27,7 @@ RSpec.describe Textus::Store do
       expect(store.schemas).to be_a(Textus::Schemas)
       expect(store.file_store).to be_a(Textus::Ports::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Ports::AuditLog)
-      expect(store.steps).to be_a(Textus::Step::RegistryStore)
+      expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
     end
 
     it "no longer responds to reader/writer/schema_for" do
@@ -73,28 +71,7 @@ RSpec.describe Textus::Store do
     end
   end
 
-  describe "step bootstrapping" do
-    it "loads step files from <root>/steps at construction time" do
-      FileUtils.mkdir_p(File.join(root, "steps/observe"))
-      File.write(File.join(root, "steps/observe/marker.rb"), <<~RUBY)
-        module Textus
-          module Step
-            class MarkerObserve < Observe
-              def self.event = :store_loaded
-              def self.match = nil
-              def call(ctx:, **)
-                $textus_store_spec_seen = [$textus_store_spec_seen, :loaded].compact
-              end
-            end
-          end
-        end
-      RUBY
-      $textus_store_spec_seen = nil
-      described_class.new(root)
-      expect($textus_store_spec_seen).to eq([:loaded])
-    ensure
-      $textus_store_spec_seen = nil
-    end
+  it "exposes container.workflows as a Workflow::Registry" do
+    expect(described_class.new(root).container.workflows).to be_a(Textus::Workflow::Registry)
   end
 end
-# rubocop:enable Style/GlobalVars

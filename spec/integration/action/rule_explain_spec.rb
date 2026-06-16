@@ -11,7 +11,7 @@ RSpec.describe Textus::Action::RuleExplain do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: "knowledge.*"
@@ -21,7 +21,6 @@ RSpec.describe Textus::Action::RuleExplain do
             do: materialize
         - match: knowledge.doc
           retention: { ttl: 5m, action: drop }
-          handler_permit: [src_a, src_b]
         - match: "**"
           guard:
             accept: [schema_valid]
@@ -62,7 +61,6 @@ RSpec.describe Textus::Action::RuleExplain do
 
       expect(result[:effective][:retention][:ttl_seconds]).to eq(300)
       expect(result[:effective][:retention][:action]).to eq(:drop)
-      expect(result[:effective][:handler_permit]).to eq(%w[src_a src_b])
       expect(result[:effective][:react]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
@@ -75,9 +73,9 @@ RSpec.describe Textus::Action::RuleExplain do
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
         entries:
-          - { key: knowledge.src, path: data/knowledge/src.md, lane: knowledge, kind: leaf }
-          - { key: artifacts.feed, path: data/artifacts/feed.md, lane: artifacts,
-              kind: produced, source: { from: fetch, handler: noop } }
+          - { key: knowledge.src, path: knowledge/src.md, lane: knowledge, kind: leaf }
+          - { key: artifacts.feed, path: artifacts/feed.md, lane: artifacts,
+              kind: produced, source: { from: external, command: "make", sources: [] } }
         rules:
           - match: artifacts.feed
             retention: { ttl: 30d, action: archive }
@@ -101,13 +99,12 @@ RSpec.describe Textus::Action::RuleExplain do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       YAML
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)
       expect(result[:matched_blocks]).to eq([])
       expect(result[:effective][:retention]).to be_nil
-      expect(result[:effective][:handler_permit]).to be_nil
       expect(result[:guards][:put][:floor]).to eq(["lane_writable_by"])
       expect(result[:guards][:put][:rule]).to eq([])
     end

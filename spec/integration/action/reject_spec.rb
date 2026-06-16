@@ -22,14 +22,10 @@ RSpec.describe Textus::Action::Reject do
     )
   end
 
-  it "deletes the proposal and fires :proposal_rejected" do
-    events = []
-    store.steps.on(:proposal_rejected, :capture_reject) { |key:, target_key:, **| events << [key, target_key] }
-
+  it "deletes the proposal and returns the rejection result" do
     res = store.as("human").reject("proposals.draft")
 
     expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "proposals.draft", "target_key" => "identity.target")
-    expect(events).to eq([["proposals.draft", "identity.target"]])
     expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 

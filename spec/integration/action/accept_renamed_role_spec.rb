@@ -13,7 +13,7 @@ RSpec.describe Textus::Action::Accept do
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries:
-        - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested}
+        - { key: knowledge.network.org, path: knowledge/network/org, lane: knowledge, owner: human:self, kind: nested}
 
         - { key: proposals,             path: proposals,             lane: proposals, owner: human:self, kind: nested}
 

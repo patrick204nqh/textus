@@ -1,7 +1,7 @@
 require "spec_helper"
 
 RSpec.describe Textus::Action::KeyMv do
-  it "moves an entry and publishes :entry_renamed via the bus" do
+  it "moves an entry and returns the renamed keys" do
     Dir.mktmpdir do |tmp|
       Textus::Surfaces::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
                                                                    cwd: tmp)
@@ -9,17 +9,12 @@ RSpec.describe Textus::Action::KeyMv do
       ops = store.as("human")
       ops.put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hello")
 
-      events = []
-      store.steps.on(:entry_renamed, :mv_spec_capture) { |**kw| events << kw }
-
       result = store.as("human").key_mv("knowledge.notes.alpha",
                                         "knowledge.notes.beta")
 
       expect(result["ok"]).to be(true)
       expect(result["from_key"]).to eq("knowledge.notes.alpha")
       expect(result["to_key"]).to eq("knowledge.notes.beta")
-      expect(events.size).to eq(1)
-      expect(events.first[:from_key]).to eq("knowledge.notes.alpha")
     end
   end
 

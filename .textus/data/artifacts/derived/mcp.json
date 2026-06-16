@@ -1,9 +1,6 @@
 {
   "_meta": {
-    "from": [
-      "knowledge.project"
-    ],
-    "reduce": "mcp_config"
+    "uid": "2fb66a9307fbbc10"
   },
   "mcpServers": {
     "textus": {

@@ -49,7 +49,7 @@ RSpec.describe Textus::Manifest::Schema do
     end
 
     it "keeps retention as the only cadence/GC field while allowing reaction policy" do
-      expect(registry.keys).to eq(%i[handler_permit guard retention react])
+      expect(registry.keys).to eq(%i[guard retention react])
     end
   end
 end

@@ -12,7 +12,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, owner: human:self, kind: nested }
+        - { key: knowledge.notes, path: knowledge/notes, lane: knowledge, owner: human:self, kind: nested }
         - { key: proposals, path: proposals, lane: proposals, owner: agent, kind: nested }
     YAML
   end

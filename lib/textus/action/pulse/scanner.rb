@@ -46,10 +46,6 @@ module Textus
         end
 
         def policy_for(mentry)
-          if mentry.intake?
-            ttl = mentry.source.ttl_seconds
-            return [ttl, :refresh] unless ttl.nil?
-          end
           ret = @manifest.rules.for(mentry.key).retention
           return [ret.ttl_seconds, ret.action] unless ret.nil?
 
@@ -57,25 +53,11 @@ module Textus
         end
 
         def basis_for(mentry)
-          return evaluator.intake_basis(mentry) if mentry.intake? && mentry.source.ttl_seconds
-
           mtime_for(mentry.key)
         end
 
-        def expired?(mentry, basis, ttl)
-          if mentry.intake? && mentry.source.ttl_seconds
-            evaluator.verdict(mentry).stale
-          else
-            basis.nil? || Textus::Core::Retention::Sweep.expired?(ttl_seconds: ttl, mtime: basis, now: @call.now)
-          end
-        end
-
-        def evaluator
-          @evaluator ||= Textus::Core::Freshness::Evaluator.new(
-            manifest: @manifest,
-            file_stat: Textus::Ports::Storage::FileStat.new,
-            clock: @call,
-          )
+        def expired?(_mentry, basis, ttl)
+          basis.nil? || Textus::Core::Retention::Sweep.expired?(ttl_seconds: ttl, mtime: basis, now: @call.now)
         end
 
         def mtime_for(key)
@@ -99,7 +81,7 @@ module Textus
           return nil unless @file_store.exists?(res.path)
 
           raw = @file_store.read(res.path)
-          parsed = Textus::Entry.for_format(res.entry.format).parse(raw, path: res.path)
+          parsed = Textus::Format.for(res.entry.format).parse(raw, path: res.path)
           Textus::Envelope.build(
             key: key,
             mentry: res.entry,

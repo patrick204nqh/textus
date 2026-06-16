@@ -11,7 +11,7 @@ RSpec.describe "textus rule group" do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       rules:
         # ADR 0093: age-GC is the `retention:` rule ({ ttl, action: drop|archive }).
@@ -20,7 +20,6 @@ RSpec.describe "textus rule group" do
           react: { on: [entry.written], do: materialize }
         - match: knowledge.doc
           retention: { ttl: 5m, action: drop }
-          handler_permit: [src_a]
     YAML
   end
 
@@ -44,7 +43,7 @@ RSpec.describe "textus rule group" do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
         rules:
           - match: knowledge.doc
@@ -81,7 +80,6 @@ RSpec.describe "textus rule group" do
       expect(payload["matched_blocks"].length).to eq(2)
       expect(payload["effective"]["retention"]["ttl_seconds"]).to eq(300)
       expect(payload["effective"]["retention"]["action"]).to eq("drop")
-      expect(payload["effective"]["handler_permit"]).to eq(["src_a"])
       expect(payload["effective"]["react"]).to eq({ "on" => ["entry.written"], "do" => "materialize" })
     end
 
@@ -100,7 +98,6 @@ RSpec.describe "textus rule group" do
         rules:
           - match: knowledge.doc
             retention: { ttl: 5m, action: drop }
-            handler_permit: [src_a]
           - match: knowledge.new
             retention: { ttl: 2h, action: archive }
       YAML

@@ -25,13 +25,13 @@
       "name": "knowledge",
       "kind": "canon",
       "capability": "author",
-      "desc": "the maintained source of truth about the repo (project + runbooks)"
+      "desc": "the maintained source of truth about the repo"
     },
     {
       "name": "notebook",
       "kind": "workspace",
       "capability": "keep",
-      "desc": "the agent's own durable working notes across sessions"
+      "desc": "the agent's own durable working notes"
     },
     {
       "name": "proposals",
@@ -43,7 +43,7 @@
       "name": "artifacts",
       "kind": "machine",
       "capability": "converge",
-      "desc": "machine-maintained: computed outputs (artifacts.derived.*) — CLAUDE.md, AGENTS.md, configs"
+      "desc": "machine-maintained computed outputs"
     }
   ],
   "roles": [

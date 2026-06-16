@@ -29,10 +29,6 @@ module Textus
       def with_dry_run
         self.class.new(container: @container, role: @role, dry_run: true, correlation_id: @correlation_id)
       end
-
-      def hook_context
-        @hook_context ||= Textus::Step::Context.new(scope: self)
-      end
     end
   end
 end

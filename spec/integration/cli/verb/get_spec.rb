@@ -35,9 +35,9 @@ RSpec.describe Textus::Surfaces::CLI::Verb::Get do
         entries:
           - key: feeds.doc
             kind: produced
-            path: data/feeds/doc.md
+            path: feeds/doc.md
             lane: feeds
-            source: { from: fetch, handler: test_intake, ttl: 1s }
+            source: { from: external, command: "make", sources: [] }
       YAML
     )
     File.write(File.join(root, "data", "feeds", "doc.md"), <<~MD)
@@ -49,12 +49,12 @@ RSpec.describe Textus::Surfaces::CLI::Verb::Get do
     MD
   end
 
-  it "is a pure read: a stale key returns the on-disk stale envelope, never ingesting" do
+  it "is a pure read: returns the on-disk envelope without running the command" do
     Thread.current[:cli_get_fetch_count] = 0
     rc = run(["get", "feeds.doc", "--as=automation"])
     expect(rc).to eq(0), "stderr: #{stderr.string}"
     payload = JSON.parse(stdout.string)
-    expect(payload["stale"]).to be(true)
+    expect(payload["body"]).to include("old body")
     expect(Thread.current[:cli_get_fetch_count]).to eq(0)
   end
 end

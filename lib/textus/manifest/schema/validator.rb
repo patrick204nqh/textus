@@ -289,17 +289,9 @@ module Textus
         # out). Per ADR 0095 the produce-method is read from source.from on the one
         # Produced kind, so there is no longer a kind to agree against the source.
         # (Replaces validate_upkeep_kinds!.)
-        def validate_source_and_retention!(manifest)
-          manifest.data.entries.each do |entry|
-            retention = manifest.rules.for(entry.key).retention
-            next if retention.nil?
-            next unless entry.derived?
-
-            raise BadManifest.new(
-              "entry '#{entry.key}': a derived entry regenerates from its source; " \
-              "retention (drop/archive) is invalid",
-            )
-          end
+        def validate_source_and_retention!(_manifest)
+          # No-op: from: derive is removed; retention + produced entries are
+          # always valid (retention drives age-GC on workflow-produced entries).
         end
 
         # Write authority is derived from capabilities (ADR 0030): a lane of a

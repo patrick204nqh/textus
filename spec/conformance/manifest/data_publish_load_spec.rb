@@ -15,10 +15,10 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
           template: c.mustache
-          source: { from: derive, select: [knowledge.a] }
+          source: { from: external, command: "make", sources: [] }
     YAML
     expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094/i)
   end
@@ -30,10 +30,10 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
           inject_boot: true
-          source: { from: derive, select: [knowledge.a] }
+          source: { from: external, command: "make", sources: [] }
     YAML
     expect { load(yaml) }.to raise_error(Textus::BadManifest, /inject_boot/i)
   end
@@ -45,9 +45,9 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
-          source: { from: derive, select: [knowledge.a], transform: r }
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: OUT.md, template: c.mustache, inject_boot: true }
             - { to: out.json }

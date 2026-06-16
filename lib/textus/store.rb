@@ -44,9 +44,6 @@ module Textus
 
     def initialize(root)
       @container = build_container(File.expand_path(root))
-      bootstrap_hooks
-      steps.publish(:store_loaded, ctx: Step::Context.for(container: @container,
-                                                          call: Textus::Call.build(role: Role::DEFAULT)))
     end
 
     # Build an agent Session oriented at the current cursor/manifest — the
@@ -82,19 +79,13 @@ module Textus
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         ),
-        steps: Textus::Step::RegistryStore.new,
+        workflows: Workflow::Loader.load_all(root),
         gate: nil,
       )
       gate = Textus::Gate.new(container)
       container = container.with(gate: gate)
       gate.instance_variable_set(:@container, container)
       container
-    end
-
-    def bootstrap_hooks
-      Ports::AuditSubscriber.new(audit_log).attach(steps)
-      Textus::Step::Builtin.register_all(steps)
-      Textus::Step::Loader.new(registry: steps).load_dir(File.join(root, "steps"))
     end
   end
 end

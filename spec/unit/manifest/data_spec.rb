@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Data do
         - { name: knowledge, kind: canon }
         - { name: review,  kind: machine }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.notes, path: knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
   end
   let(:raw) { YAML.safe_load(yaml, aliases: false) }

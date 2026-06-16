@@ -7,17 +7,17 @@ module Textus
     class Watcher
       def initialize(container:)
         @container = container
-        @queue = Textus::Ports::Queue.new(root: container.root)
+        @queue = Textus::Ports::JobStore.new(root: container.root)
       end
 
       def tick
-        Textus::Background::Planner::Plan.seed(
+        Textus::Jobs::Planner.seed(
           container: @container,
           queue: @queue,
           role: Textus::Role::AUTOMATION,
         )
         @queue.reclaim(now: Textus::Ports::Clock.new.now)
-        Textus::Background::Worker.for(container: @container, queue: @queue).drain
+        Textus::Jobs::Worker.for(container: @container, queue: @queue).drain
       end
 
       def run(poll: nil)

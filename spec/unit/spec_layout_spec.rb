@@ -144,7 +144,7 @@ RSpec.describe SpecLayout do
     end
 
     it "finds the whole moved suite (guard against a silent empty glob)" do
-      expect(spec_files.size).to be > 250
+      expect(spec_files.size).to be > 190 # updated after source/intake removal
     end
 
     it "has no textus/ duplicate-prefix directory under any category" do

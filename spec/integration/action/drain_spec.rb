@@ -13,12 +13,12 @@ RSpec.describe Textus::Action::Drain do
           - { name: knowledge, kind: canon }
           - { name: feeds, kind: machine }
         entries:
-          - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+          - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
           - key: feeds.catalog
             kind: produced
-            path: data/feeds/catalog.json
+            path: feeds/catalog.json
             lane: feeds
-            source: { from: derive, select: "knowledge", pluck: [title] }
+            source: { from: external, command: "make", sources: [] }
       YAML
       files: {
         "data/knowledge/a.md" => "---\ntitle: Apple\n---\nhello\n",
@@ -32,12 +32,12 @@ RSpec.describe Textus::Action::Drain do
 
     expect(result["ok"]).to be true
     expect(result["completed"]).to be >= 0
-    expect(Textus::Ports::Queue.new(root: root).ready_ids).to be_empty
+    expect(Textus::Ports::JobStore.new(root: root).ready_ids).to be_empty
   end
 
   it "reports not-ok when a job dead-letters" do
-    queue = Textus::Ports::Queue.new(root: root)
-    job = Textus::Ports::Queue::Job.new(type: "unknown", args: {}, max_attempts: 1)
+    queue = Textus::Ports::JobStore.new(root: root)
+    job = Textus::Ports::JobStore::Job.new(type: "unknown", args: {}, max_attempts: 1)
     queue.enqueue(job)
 
     result = described_class.new.call(container: store.container, call: test_ctx(role: "human"))

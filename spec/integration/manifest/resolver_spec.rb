@@ -13,7 +13,7 @@ RSpec.describe Textus::Manifest::Resolver do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf}
+        - { key: knowledge.notes, path: knowledge/notes.md, lane: knowledge, owner: human:self, kind: leaf}
 
     YAML
   end
@@ -44,7 +44,7 @@ RSpec.describe Textus::Manifest::Resolver do
             - { name: knowledge, kind: canon }
           entries:
             - key: skills
-              path: data/knowledge/skills
+              path: knowledge/skills
               lane: knowledge
               owner: human:self
               kind: nested
@@ -83,7 +83,7 @@ RSpec.describe Textus::Manifest::Resolver do
             - { name: knowledge, kind: canon }
           entries:
             - key: decisions
-              path: data/knowledge/decisions
+              path: knowledge/decisions
               lane: knowledge
               owner: human:self
               kind: nested

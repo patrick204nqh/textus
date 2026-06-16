@@ -44,7 +44,6 @@ module Textus
         return dry_run_result(container, old_res, new_res) if @dry_run
 
         envelope = apply_move(container, call, old_res, new_res)
-        publish_rename(container, call, envelope)
         success_result(old_res, new_res, envelope)
       end
 
@@ -54,17 +53,6 @@ module Textus
           from_key: @old_key,
           to_key: @new_key,
           new_mentry: new_res.entry,
-        )
-      end
-
-      def publish_rename(container, call, envelope)
-        container.steps.publish(
-          :entry_renamed,
-          ctx: Textus::Step::Context.for(container: container, call: call),
-          key: @new_key,
-          from_key: @old_key,
-          to_key: @new_key,
-          envelope: envelope,
         )
       end
 
@@ -117,7 +105,7 @@ module Textus
         writer(container, call).put(
           @old_key,
           mentry: old_mentry,
-          payload: Textus::Envelope::IO::Writer::Payload.new(
+          payload: Textus::Envelope::Writer::Payload.new(
             meta: pre_env.meta,
             body: pre_env.body,
             content: pre_env.content,

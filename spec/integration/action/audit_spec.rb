@@ -13,7 +13,7 @@ RSpec.describe Textus::Action::Audit do
                             - { name: knowledge, kind: canon }
                             - { name: identity,   kind: canon }
                           entries:
-                            - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+                            - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
                             - { key: identity.note,  path: identity/note.md,  lane: identity, kind: leaf}
 

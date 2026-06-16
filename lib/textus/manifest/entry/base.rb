@@ -62,22 +62,15 @@ module Textus
         def ignored?(_rel_path) = false
 
         # Minimal context object passed into entry `publish_via` hooks.
-        # Everything beyond the three primitives is derived. Data.define
-        # instances are frozen, so we recompute per-call rather than
-        # memoizing — RoleScope/Step::Context construction is cheap.
+        # Everything beyond the three primitives is derived.
         PublishContext = ::Data.define(:container, :call, :reader) do
           def manifest   = container.manifest
           def root       = container.root
           def repo_root  = File.dirname(container.root)
-          def steps      = container.steps
 
-          def hook_context
-            Textus::Step::Context.new(scope: scope_for_hooks)
-          end
-
-          def emit(event, **payload)
-            steps.publish(event, ctx: hook_context, **payload)
-          end
+          # No-op: event bus removed in workflow redesign; callers that fire
+          # :entry_published / :entry_produced remain unchanged in the source.
+          def emit(_event, **_payload) = nil
 
           # Read a named template from the store's templates/ directory.
           # Raises TemplateError when the file doesn't exist.
@@ -90,14 +83,6 @@ module Textus
               )
             end
             File.read(path)
-          end
-
-          private
-
-          def scope_for_hooks
-            Textus::Surfaces::RoleScope.new(
-              container: container, role: call.role, dry_run: call.dry_run,
-            )
           end
         end
 

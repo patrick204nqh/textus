@@ -4,14 +4,14 @@ RSpec.describe Textus::Container do
   it "is a Data class bundling collaborators" do
     container = described_class.new(
       manifest: :m, file_store: :fs, schemas: :s, root: "/r",
-      audit_log: :a, steps: :steps, gate: :gate
+      audit_log: :a, workflows: :workflows, gate: :gate
     )
     expect(container.manifest).to eq(:m)
     expect(container.file_store).to eq(:fs)
     expect(container.schemas).to eq(:s)
     expect(container.root).to eq("/r")
     expect(container.audit_log).to eq(:a)
-    expect(container.steps).to eq(:steps)
+    expect(container.workflows).to eq(:workflows)
     expect(container.gate).to eq(:gate)
     expect(container).to be_frozen
   end
@@ -32,7 +32,7 @@ RSpec.describe Textus::Container do
       expect(store.schemas).to be(container.schemas)
       expect(store.root).to eq(container.root)
       expect(store.audit_log).to be(container.audit_log)
-      expect(store.steps).to be(container.steps)
+      expect(store.workflows).to be(container.workflows)
     end
   end
 end

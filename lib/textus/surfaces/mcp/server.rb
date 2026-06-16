@@ -68,16 +68,6 @@ module Textus
             contract_etag: contract_etag,
           )
 
-          # ADR 0075: announce the connection to connect-time hooks with the
-          # resolved role. Distinct from :store_loaded (fired at Store.new under
-          # the default role, before any connection's role is known).
-          @store.steps.publish(
-            :session_opened,
-            ctx: Step::Context.new(scope: @store.as(@role)),
-            role: @role,
-            cursor: @session.cursor,
-          )
-
           emit_result(rid, {
                         "protocolVersion" => PROTOCOL_VERSION,
                         "serverInfo" => SERVER_INFO,

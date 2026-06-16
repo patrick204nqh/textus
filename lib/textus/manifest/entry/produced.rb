@@ -1,53 +1,32 @@
 module Textus
   class Manifest
     class Entry
-      # A produced entry (ADR 0095) — anything with a `source:`. The produce
-      # method (intake/derived/external) is read from source.from; there is no
-      # separate kind for it. Merges the former Derived + Intake classes.
+      # A produced entry — `kind: produced` with an optional `source:` block.
+      # When `source:` is present it must be `from: external` (out-of-band
+      # generator; textus detects drift but never runs it). When absent the
+      # entry is produced by a workflow file in .textus/workflows/.
       class Produced < Base
-        attr_reader :source, :events
+        attr_reader :source
 
-        def initialize(source:, events: {}, **rest)
+        def initialize(source:, **rest)
           super(**rest)
           @source = source
-          @events = events || {}
         end
 
-        def intake?     = @source.kind == :intake
-        def derived?    = @source.kind == :derived
-        def external?   = @source.external?
-        def projection? = @source.projection?
-        def fetch?      = @source.fetch?
-        def derive?     = @source.derive?
-        def nested?     = !!@raw["nested"]
-        def handler     = @source.handler
-        def config      = @source.config
+        def external? = @source&.external? || false
+        def nested?   = !!@raw["nested"]
 
         KIND = :produced
 
-        # ADR 0094/0095: projection (from: project) sources build their DATA
-        # artifact here, then publish via the ONE shared mode (Publish::ToPaths).
-        # Intake bytes come from Produce::Acquire::Intake and command (external) bytes from the
-        # out-of-band runner — neither builds, but both still publish their
-        # existing store bytes through the same mode. A projection entry with no
-        # targets is a terminal data node: it produced data, so report :built
-        # even though nothing was emitted.
+        # Publish existing store bytes via the shared publish mode (Publish::ToPaths
+        # or Publish::None). Workflow runners handle the produce step; this method
+        # only publishes whatever bytes are already on disk.
         def publish_via(pctx, prefix: nil)
-          built = false
-          if projection?
-            Textus::Pipeline::Acquire::Projection.new(container: pctx.container, call: pctx.call).run(self)
-            built = true
-            pctx.emit(:entry_produced, key: @key, envelope: pctx.reader.call(@key), sources: Array(@source.select).compact)
-          end
-          emitted = publish_mode.publish(pctx, prefix: prefix)
-          return emitted if emitted
-          return nil unless built
-
-          { kind: :built, value: { "key" => @key, "path" => Key::Path.resolve(pctx.manifest.data, self), "published_to" => [] } }
+          publish_mode.publish(pctx, prefix: prefix)
         end
 
         def self.from_raw(common, raw)
-          new(source: Parser.parse_source(raw, common[:key]), events: raw["events"] || {}, **common)
+          new(source: Parser.parse_source(raw, common[:key]), **common)
         end
 
         Entry::REGISTRY[KIND] = self

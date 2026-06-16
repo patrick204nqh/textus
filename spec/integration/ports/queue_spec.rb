@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Ports::Queue do
+RSpec.describe Textus::Ports::JobStore do
   subject(:queue) { described_class.new(root: root) }
 
   include_context "textus_store_fixture"
@@ -8,7 +8,7 @@ RSpec.describe Textus::Ports::Queue do
   before { FileUtils.mkdir_p(root) }
 
   def job(type: "materialize", args: { "key" => "x" }, **rest)
-    Textus::Ports::Queue::Job.new(type: type, args: args, **rest)
+    Textus::Ports::JobStore::Job.new(type: type, args: args, **rest)
   end
 
   describe "#enqueue" do

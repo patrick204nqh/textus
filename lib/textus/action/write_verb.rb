@@ -10,11 +10,11 @@ module Textus
       end
 
       def writer(container, call)
-        Textus::Envelope::IO::Writer.from(container: container, call: call)
+        Textus::Envelope::Writer.from(container: container, call: call)
       end
 
       def reader(container)
-        Textus::Envelope::IO::Reader.from(container: container)
+        Textus::Envelope::Reader.from(container: container)
       end
 
       def run_with_cascade(target_key, container:, call:)
@@ -31,25 +31,19 @@ module Textus
         return if producible.empty?
 
         producible.each do |dep_key|
-          Textus::Background::Job::Materialize.new(key: dep_key).call(container:, call:)
+          Textus::Jobs::Materialize.new(key: dep_key).call(container:, call:)
         end
-        container.steps.publish(
-          :entry_written,
-          ctx: Textus::Step::Context.for(container: container, call: call),
-          key: key,
-          envelope: nil,
-        )
       end
 
-      def derived_write?(key, container)
-        container.manifest.resolver.resolve(key).entry.derived?
+      def derived_write?(_key, _container)
+        false
       rescue Textus::Error
         false
       end
 
       def producible?(key, container)
         entry = container.manifest.resolver.resolve(key).entry
-        entry.derived? || !entry.publish_tree.nil?
+        !entry.publish_tree.nil?
       rescue Textus::Error
         false
       end

@@ -53,7 +53,7 @@ module Textus
         else
           raise UnknownKey.new(key, suggestions: suggestions_for(key)) unless nested_entry?(entry)
 
-          primary_ext = Textus::Entry.for_format(entry.format).extensions.first
+          primary_ext = Textus::Format.for(entry.format).extensions.first
           base = Textus::Key::Path.normalize_relative_path(entry.path)
           path = File.join(@data.root, base, *remaining) + primary_ext
           Resolution.new(entry: entry, path: path, remaining: remaining)
@@ -111,7 +111,7 @@ module Textus
       end
 
       def nested_glob(format)
-        Textus::Entry.for_format(format).nested_glob
+        Textus::Format.for(format).nested_glob
       end
     end
   end

@@ -21,9 +21,8 @@ module Textus
         - { key: knowledge.notes,    path: data/knowledge/notes,       lane: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: data/notebook/notes,        lane: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: data/proposals/notes,       lane: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A per-host snapshot, refreshed from its declared intake by `textus drain` (scheduled, or on demand).
-        # Nested so it grows to a fleet — add artifacts.feeds.machines.<host> leaves over SSH
-        # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
+        # A per-host snapshot, populated by a registered workflow. Nested so it
+        # grows to a fleet — add leaves over SSH without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable
         # via `textus get artifacts.feeds.machines.local`. Delete to opt out. (ADR 0043)
         - key: artifacts.feeds.machines
@@ -32,59 +31,9 @@ module Textus
           format: yaml
           nested: true
           tracked: false
-          kind: produced
-          source:
-            from: fetch
-            handler: machine-intake
-            ttl: 1h # cadence on a long-running server
-            config:
-              machines:
-                local: { via: local }
+          kind: nested
       rules: []
     YAML
-
-    STEPS_README = <<~MD
-      # Steps
-
-      Drop one Ruby file per step. Steps are discovered by convention.
-      Files under `.textus/steps/<kind>/<name>.rb` are loaded at
-      startup and registered.
-
-      ## Conventions
-
-      The directory name (`<kind>`) must be one of:
-      - `fetch`: Acquires data from outside the store.
-      - `transform`: Reshapes projection rows.
-      - `validate`: Validates data before writing.
-      - `observe`: Listens to store events.
-
-      The filename (`<name>.rb`) defines the step name. The class defined
-      in the file must be a subclass of `Textus::Step::<Kind>` (e.g.
-      `Textus::Step::Fetch`) and be wrapped in the `Textus::Step` module.
-
-      ## Example
-
-      ```ruby
-      module Textus
-        module Step
-          class MyFetch < Fetch
-            def call(config:, args:, caps:, **)
-              { content: { "foo" => "bar" } }
-            end
-          end
-        end
-      end
-      ```
-
-      Events: :fetch, :transform, :validate (rpc — return value used)
-              :entry_written, :entry_deleted, :entry_fetched, :entry_renamed,
-              :entry_produced, :produce_failed,
-              :proposal_accepted, :proposal_rejected,
-              :entry_published, :store_loaded, :session_opened,
-              :entry_fetch_started, :entry_fetch_failed (pub-sub — return discarded)
-
-      See SPEC.md §5.10 for the full table.
-    MD
 
     AGENT_ENTRIES = <<~YAML.gsub(/^/, "  ")
       - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, owner: human:self, kind: leaf }
@@ -95,12 +44,6 @@ module Textus
         publish:
         - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
         - { to: AGENTS.md, template: orientation.mustache, inject_boot: true }
-        source:
-          from: derive
-          select:
-          - knowledge.project
-          - knowledge.runbooks
-          transform: orientation
         kind: produced
     YAML
 
@@ -108,7 +51,6 @@ module Textus
       check_target!(target_root)
       scaffold_dir = File.expand_path("init/templates", __dir__)
       create_directories(target_root)
-      write_steps_readme(target_root, scaffold_dir)
       write_manifest(target_root, with_agent:)
       mcp_status = scaffold_agent(target_root, scaffold_dir, with_agent:)
       setup_state_dirs(target_root)
@@ -123,23 +65,12 @@ module Textus
     def self.create_directories(target_root)
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
-      FileUtils.mkdir_p(File.join(target_root, "steps/fetch"))
-      FileUtils.mkdir_p(File.join(target_root, "steps/transform"))
-      FileUtils.mkdir_p(File.join(target_root, "steps/validate"))
-      FileUtils.mkdir_p(File.join(target_root, "steps/observe"))
+      FileUtils.mkdir_p(File.join(target_root, "workflows"))
       ZONES.each do |z|
         dir = File.join(target_root, "data", z)
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end
-    end
-
-    def self.write_steps_readme(target_root, scaffold_dir)
-      File.write(File.join(target_root, "steps/README.md"), STEPS_README)
-      File.write(
-        File.join(target_root, "steps/fetch/machine-intake.rb"),
-        File.read(File.join(scaffold_dir, "machine_intake.rb")),
-      )
     end
 
     def self.write_manifest(target_root, with_agent:)
@@ -184,7 +115,6 @@ module Textus
         "project.schema.yaml" => File.join("schemas", "project.yaml"),
         "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
         "orientation.mustache" => File.join("templates", "orientation.mustache"),
-        "orientation_reducer.rb" => File.join("steps/transform", "orientation.rb"),
       }.each do |src, dest|
         File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
       end

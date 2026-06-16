@@ -6,7 +6,7 @@ RSpec.describe "publish: list parsing (ADR 0094)" do
 
   let(:base) do
     { "key" => "feeds.cat", "path" => "feeds/cat.json", "lane" => "feeds", "kind" => "produced",
-      "source" => { "from" => "derive", "select" => ["k.*"] } }
+      "source" => { "from" => "external", "command" => "make", "sources" => [] } }
   end
 
   it "builds PublishTarget objects from a list" do

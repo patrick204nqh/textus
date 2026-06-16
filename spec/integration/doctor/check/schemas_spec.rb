@@ -11,7 +11,7 @@ RSpec.describe Textus::Doctor::Check::Schemas do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, schema: note, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, schema: note, kind: leaf}
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)

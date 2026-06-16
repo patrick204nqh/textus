@@ -14,11 +14,11 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
       entries:
         - key: knowledge.src
           kind: leaf
-          path: data/knowledge/src.md
+          path: knowledge/src.md
           lane: knowledge
         - key: artifacts.catalog
           kind: produced
-          path: data/artifacts/catalog.md
+          path: artifacts/catalog.md
           lane: artifacts
           source:
             from: external

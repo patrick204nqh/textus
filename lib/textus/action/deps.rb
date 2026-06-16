@@ -20,19 +20,7 @@ module Textus
 
       def call(container:, **)
         entry = container.manifest.data.entries.find { |e| e.key == @key }
-        deps =
-          if entry&.derived?
-            src = entry.source
-            if src.projection?
-              Array(src.select).compact
-            elsif src.external?
-              Array(src.sources).compact
-            else
-              []
-            end
-          else
-            []
-          end
+        deps = entry&.external? ? Array(entry.source&.sources).compact : []
         { "key" => @key, "deps" => deps.uniq }
       end
 

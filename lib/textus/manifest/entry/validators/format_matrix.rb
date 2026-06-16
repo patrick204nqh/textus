@@ -5,7 +5,7 @@ module Textus
         module FormatMatrix
           def self.call(entry, policy:) # rubocop:disable Lint/UnusedMethodArgument
             begin
-              Textus::Entry.for_format(entry.format).validate_path_extension(entry.path, entry.nested?)
+              Textus::Format.for(entry.format).validate_path_extension(entry.path, entry.nested?)
             rescue UsageError => e
               raise UsageError.new("entry '#{entry.key}': #{e.message}")
             end

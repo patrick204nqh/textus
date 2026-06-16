@@ -40,19 +40,12 @@ module Textus
           envelope = writer(container, call).put(
             @key,
             mentry: mentry,
-            payload: Textus::Envelope::IO::Writer::Payload.new(
+            payload: Textus::Envelope::Writer::Payload.new(
               meta: @meta,
               body: @body,
               content: @content,
             ),
             if_etag: @if_etag,
-          )
-
-          container.steps.publish(
-            :entry_written,
-            ctx: Textus::Step::Context.for(container: container, call: call),
-            key: @key,
-            envelope: envelope,
           )
 
           envelope

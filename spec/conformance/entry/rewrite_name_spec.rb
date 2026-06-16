@@ -6,8 +6,8 @@ RSpec.describe "Entry strategy: rewrite_name" do
       Dir.mktmpdir do |dir|
         path = File.join(dir, "newname.md")
         File.write(path, "---\nname: oldname\n---\nbody\n")
-        Textus::Entry::Markdown.rewrite_name(path, "newname")
-        parsed = Textus::Entry::Markdown.parse(File.read(path), path: path)
+        Textus::Format::Markdown.rewrite_name(path, "newname")
+        parsed = Textus::Format::Markdown.parse(File.read(path), path: path)
         expect(parsed["_meta"]["name"]).to eq("newname")
         expect(parsed["body"]).to eq("body\n")
       end
@@ -18,7 +18,7 @@ RSpec.describe "Entry strategy: rewrite_name" do
         path = File.join(dir, "newname.md")
         File.write(path, "---\nname: newname\n---\nbody\n")
         before = File.read(path)
-        Textus::Entry::Markdown.rewrite_name(path, "newname")
+        Textus::Format::Markdown.rewrite_name(path, "newname")
         expect(File.read(path)).to eq(before)
       end
     end
@@ -28,7 +28,7 @@ RSpec.describe "Entry strategy: rewrite_name" do
         path = File.join(dir, "newname.md")
         File.write(path, "---\nother: 1\n---\nbody\n")
         before = File.read(path)
-        Textus::Entry::Markdown.rewrite_name(path, "newname")
+        Textus::Format::Markdown.rewrite_name(path, "newname")
         expect(File.read(path)).to eq(before)
       end
     end
@@ -39,7 +39,7 @@ RSpec.describe "Entry strategy: rewrite_name" do
       Dir.mktmpdir do |dir|
         path = File.join(dir, "foo.txt")
         File.write(path, "plain text")
-        Textus::Entry::Text.rewrite_name(path, "bar")
+        Textus::Format::Text.rewrite_name(path, "bar")
         expect(File.read(path)).to eq("plain text")
       end
     end

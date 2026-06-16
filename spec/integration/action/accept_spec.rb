@@ -10,7 +10,7 @@ RSpec.describe Textus::Action::Accept do
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
       entries:
-        - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
+        - { key: knowledge.network.org, path: knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
         - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
     YAML
   end
@@ -50,30 +50,6 @@ RSpec.describe Textus::Action::Accept do
       .to fail_guard_with("author_held")
   end
 
-  it "fires :accepted event with correlation_id" do
-    store.as("agent").put(
-      "proposals.p1",
-      meta: {
-        "name" => "p1",
-        "proposal" => { "target_key" => "knowledge.network.org.alice", "action" => "put" },
-        "_meta" => { "name" => "alice" },
-      },
-      body: "Alice content",
-    )
-
-    events = []
-    store.steps.on(:proposal_accepted, :capture_accept) do |ctx:, key:, target_key:, **|
-      events << { key: key, target_key: target_key, correlation_id: ctx.correlation_id }
-    end
-
-    store.as("human", correlation_id: "corr-accept-1").accept("proposals.p1")
-
-    expect(events.length).to eq(1)
-    expect(events.first[:key]).to eq("proposals.p1")
-    expect(events.first[:target_key]).to eq("knowledge.network.org.alice")
-    expect(events.first[:correlation_id]).to eq("corr-accept-1")
-  end
-
   it "raises ProposalError when entry has no proposal block" do
     store.as("agent").put("proposals.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
 
@@ -95,7 +71,7 @@ RSpec.describe Textus::Action::Accept do
           - { name: feeds, kind: machine }
           - { name: proposals, kind: queue }
         entries:
-          - { key: feeds.n, path: data/feeds/n.md, lane: feeds, owner: human:self, kind: leaf }
+          - { key: feeds.n, path: feeds/n.md, lane: feeds, owner: human:self, kind: leaf }
           - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
         rules: []
       YAML
@@ -140,7 +116,7 @@ RSpec.describe Textus::Action::Accept do
               - { name: knowledge, kind: canon }
               - { name: proposals,  kind: queue }
             entries:
-              - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, schema: org-member, owner: human:self, kind: nested }
+              - { key: knowledge.network.org, path: knowledge/network/org, lane: knowledge, schema: org-member, owner: human:self, kind: nested }
               - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
             rules:
               - match: "knowledge.network.org.**"
@@ -189,7 +165,7 @@ RSpec.describe Textus::Action::Accept do
             - { name: knowledge, kind: canon }
             - { name: proposals,  kind: queue }
           entries:
-            - { key: knowledge.network.org, path: data/knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
+            - { key: knowledge.network.org, path: knowledge/network/org, lane: knowledge, owner: human:self, kind: nested }
             - { key: proposals, path: proposals, lane: proposals, owner: human:self, kind: nested }
           rules:
             - match: "knowledge.network.org.**"

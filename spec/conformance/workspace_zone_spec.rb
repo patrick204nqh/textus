@@ -14,7 +14,7 @@ RSpec.describe "workspace lane-kind + keep capability (ADR 0033)" do
         - { name: notebook,  kind: workspace, owner: agent }
         - { name: proposals, kind: queue }
       entries:
-        - { key: notebook.notes, path: data/notebook/notes, lane: notebook, owner: agent:self, kind: nested }
+        - { key: notebook.notes, path: notebook/notes, lane: notebook, owner: agent:self, kind: nested }
     YAML
   end
 

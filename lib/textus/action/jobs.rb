@@ -23,7 +23,7 @@ module Textus
       end
 
       def call(container:, **)
-        queue = Textus::Ports::Queue.new(root: container.root)
+        queue = Textus::Ports::JobStore.new(root: container.root)
         case @action
         when "retry"
           queue.retry_failed(@job_id)

@@ -3,7 +3,6 @@ module Textus
     class Entry
       module Validators
         REGISTERED = [
-          Events,
           Publish,
           Ignore,
           FormatMatrix,

@@ -18,8 +18,8 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
         - { name: proposals,   kind: queue }
       entries:
         - { key: identity.self,   path: identity/self.md, lane: identity, owner: human:self, kind: leaf }
-        - { key: knowledge.note,    path: data/knowledge/note.md,  lane: knowledge,  owner: human:self, kind: leaf }
-        - { key: proposals.proposal, path: data/proposals/proposal,  lane: proposals,   owner: agent, kind: nested }
+        - { key: knowledge.note,    path: knowledge/note.md,  lane: knowledge,  owner: human:self, kind: leaf }
+        - { key: proposals.proposal, path: proposals/proposal,  lane: proposals,   owner: agent, kind: nested }
     YAML
   end
   let(:store) { Textus::Store.new(root) }

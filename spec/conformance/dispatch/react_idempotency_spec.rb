@@ -12,12 +12,12 @@ RSpec.describe "jobs react idempotency" do
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }
               entries:
-                - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+                - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
                 - key: feeds.catalog
                   kind: produced
-                  path: data/feeds/catalog.json
+                  path: feeds/catalog.json
                   lane: feeds
-                  source: { from: derive, select: "knowledge", pluck: [title] }
+                  source: { from: external, command: "make", sources: [] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
             YAML
@@ -29,7 +29,7 @@ RSpec.describe "jobs react idempotency" do
   end
 
   it "coalesces duplicate entry.written triggers into one effective job set" do
-    planner = Textus::Background::Planner::Plan.new(container: store.container)
+    planner = Textus::Jobs::Planner.new(container: store.container)
     jobs = planner.plan(
       trigger: { "type" => "entry.written" },
       role: "automation",

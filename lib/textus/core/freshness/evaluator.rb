@@ -4,15 +4,11 @@ module Textus
   module Core
     module Freshness
       # The single currency evaluator (ADR 0099). Answers "is the stored data
-      # stale relative to its source?" for every produce-method:
-      #   - intake (source.from: fetch) -> AGE signal: now - basis > source.ttl,
-      #     basis = _meta.last_fetched_at (else file mtime). No ttl -> :no_policy
-      #     (skipped — a cadence-less handler is not auto-re-pulled).
+      # stale relative to its retention rule?" and detects generator drift for
+      # external entries.
+      #   - retention rule TTL -> AGE signal: now - file_basis > ttl_seconds
       #   - external -> DRIFT signal: a source changed since generated.at
-      #     (surfaced by the doctor generator_drift check; derived entries annotate
-      #     fresh at read time because converge runs them reactively).
-      # Replaces Core::IntakeStaleness and Core::Staleness::GeneratorCheck and
-      # the inline copies in Read::Get / Read::Freshness.
+      #     (surfaced by the doctor generator_drift check).
       class Evaluator
         def initialize(manifest:, file_stat:, clock:)
           @manifest  = manifest
@@ -20,32 +16,28 @@ module Textus
           @clock     = clock
         end
 
-        # Per-entry currency Verdict (drives Read::Get's annotation). Non-intake
-        # entries are always fresh (retention is GC, not content currency).
+        # Per-entry currency Verdict driven by the retention rule TTL (if any).
         def verdict(mentry)
-          return fresh unless mentry.intake?
-
-          ttl = mentry.source.ttl_seconds
+          ttl = @manifest.rules.for(mentry.key).retention&.ttl_seconds
           return fresh if ttl.nil?
 
-          stale = age_stale?(intake_basis(mentry), ttl)
+          stale = age_stale?(file_basis(mentry), ttl)
           Verdict.build(stale: stale, reason: stale ? "ttl exceeded" : nil, fetching: false)
         end
 
-        # Keys of intake entries past their source.ttl — the converge produce
-        # scope (replaces Core::IntakeStaleness#call). A ttl-less intake entry
-        # is :no_policy and skipped; a never-recorded one (with a ttl) is stale.
-        def stale_intake_keys(prefix: nil, lane: nil)
+        # Keys of entries past their retention rule TTL — the refresh produce scope.
+        def stale_keys(prefix: nil, lane: nil)
           @manifest.data.entries.select { |m| due?(m, prefix: prefix, lane: lane) }.map(&:key)
         end
 
-        # Age basis as a Time (or nil): _meta.last_fetched_at when present, else
-        # file mtime. The single definition the three call sites used to repeat.
-        def intake_basis(mentry)
+        alias stale_intake_keys stale_keys
+
+        # File basis as a Time (or nil): file mtime when present, else nil.
+        def file_basis(mentry)
           path = @manifest.resolver.resolve(mentry.key).path
           return nil unless @file_stat.exists?(path)
 
-          last_fetched_at(mentry, path) || @file_stat.mtime(path)
+          @file_stat.mtime(path)
         end
 
         # Generator-drift rows for one entry (replaces Staleness::GeneratorCheck#
@@ -63,17 +55,16 @@ module Textus
         def fresh = Verdict.build(stale: false, reason: nil, fetching: false)
 
         def due?(mentry, prefix:, lane:)
-          return false unless mentry.intake?
           return false if lane && mentry.lane != lane
           return false if prefix && !mentry.key.start_with?(prefix)
 
-          ttl = mentry.source.ttl_seconds
-          return false if ttl.nil? # no declared cadence -> :no_policy, skip (ADR 0099)
+          ttl = @manifest.rules.for(mentry.key).retention&.ttl_seconds
+          return false if ttl.nil?
 
           path = @manifest.resolver.resolve(mentry.key).path
           return true unless @file_stat.exists?(path)
 
-          age_stale?(intake_basis(mentry), ttl)
+          age_stale?(file_basis(mentry), ttl)
         end
 
         # The one age comparison. A never-recorded entry (nil basis) is stale.
@@ -81,13 +72,6 @@ module Textus
           return true if basis.nil?
 
           (@clock.now - basis).to_i > ttl
-        end
-
-        def last_fetched_at(mentry, path)
-          meta = Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"]
-          Time.parse(meta["last_fetched_at"].to_s) if meta && meta["last_fetched_at"]
-        rescue StandardError
-          nil
         end
 
         # --- generator drift (lifted from Staleness::GeneratorCheck) ---
@@ -108,7 +92,7 @@ module Textus
         end
 
         def generated_at_of(mentry, path)
-          Entry.for_format(mentry.format).parse(@file_stat.read(path), path: path)["_meta"].dig("generated", "at")
+          Format.for(mentry.format).parse(@file_stat.read(path), path: path)["_meta"].dig("generated", "at")
         end
 
         def parse_time(str)

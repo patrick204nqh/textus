@@ -12,7 +12,7 @@ RSpec.describe "session contract" do
         version: textus/3
         lanes: [{ name: knowledge, kind: canon }]
         entries:
-          - { key: knowledge.x, path: data/knowledge/x.md, lane: knowledge, kind: leaf }
+          - { key: knowledge.x, path: knowledge/x.md, lane: knowledge, kind: leaf }
       YAML
       File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| }\n")
     end

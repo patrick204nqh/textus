@@ -7,15 +7,12 @@ RSpec.describe Textus::Action::KeyDelete do
   # Contract for the cross-cutting write behaviours (spec/support/examples).
   let(:perform) { -> { store.as("automation").key_delete("feeds.foo") } }
   let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").key_delete("feeds.foo") } }
-  let(:emit)      { perform_with_correlation }
-  let(:event_key) { "feeds.foo" }
 
   # The entry must exist on disk before it can be deleted.
   before { File.write(File.join(root, "data", "feeds", "foo.md"), "---\nkey: feeds.foo\n---\nbody\n") }
 
   it_behaves_like "an audited write", "key_delete"
   it_behaves_like "a correlated write", "key_delete"
-  it_behaves_like "an event-emitting action", :entry_deleted
 
   it "removes the entry file from disk" do
     expect { perform.call }.to change { File.exist?(File.join(root, "data", "feeds", "foo.md")) }.from(true).to(false)

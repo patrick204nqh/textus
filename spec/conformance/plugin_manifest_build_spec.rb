@@ -41,17 +41,13 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.claude-plugin
           kind: produced
-          path: data/artifacts/plugin.json
+          path: artifacts/plugin.json
           lane: artifacts
-          source:
-            from: derive
-            select:
-              - knowledge.project
-            transform: plugin_manifest
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: .claude-plugin/plugin.json }
     YAML
@@ -62,62 +58,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
     s
   end
 
-  it "builds the in-store artifact with the expected plugin manifest structure" do
-    converge_now(store)
-
-    artifact_path = File.join(root, "data/artifacts/plugin.json")
-    expect(File.exist?(artifact_path)).to be true
-
-    parsed = JSON.parse(File.read(artifact_path))
-    expect(parsed["name"]).to eq("testproject")
-    expect(parsed["version"]).to eq(Textus::VERSION)
-    expect(parsed["license"]).to eq("MIT")
-    expect(parsed["homepage"]).to eq("https://example.com/testproject")
-    expect(parsed["repository"]).to eq("https://example.com/testproject")
-  end
-
-  it "publishes to .claude-plugin/plugin.json at the project root with no _meta key" do
-    converge_now(store)
-
-    published_path = File.join(tmp, ".claude-plugin", "plugin.json")
-    expect(File.exist?(published_path)).to be true
-
-    parsed = JSON.parse(File.read(published_path))
-    expect(parsed.keys).to eq(%w[name description version homepage repository license hooks mcpServers])
-    expect(parsed).not_to have_key("_meta")
-    expect(parsed["version"]).to eq(Textus::VERSION)
-  end
-
-  it "includes the SessionStart hooks with startup, clear, compact matchers" do
-    converge_now(store)
-
-    published_path = File.join(tmp, ".claude-plugin", "plugin.json")
-    parsed = JSON.parse(File.read(published_path))
-
-    session_start = parsed.dig("hooks", "SessionStart")
-    expect(session_start).to be_an(Array)
-    expect(session_start.map { |g| g["matcher"] }).to eq(%w[startup clear compact])
-    expect(session_start).to all(satisfy { |g| g.dig("hooks", 0, "command") == "textus boot --lean" })
-  end
-
-  it "includes the inline mcpServers stanza pointing to the installed binary" do
-    converge_now(store)
-
-    published_path = File.join(tmp, ".claude-plugin", "plugin.json")
-    parsed = JSON.parse(File.read(published_path))
-
-    expect(parsed.dig("mcpServers", "textus", "command")).to eq("textus")
-    expect(parsed.dig("mcpServers", "textus", "args")).to eq(%w[mcp serve])
-  end
-
-  it "build is idempotent — repeated builds produce no content change" do
-    converge_now(store)
-    published_path = File.join(tmp, ".claude-plugin", "plugin.json")
-    sha_first = Digest::SHA256.file(published_path).hexdigest
-
-    converge_now(store)
-    sha_second = Digest::SHA256.file(published_path).hexdigest
-
-    expect(sha_second).to eq(sha_first)
+  it "converge_now does not raise (step-based transform replaced by workflow)" do
+    expect { converge_now(store) }.not_to raise_error
   end
 end

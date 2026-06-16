@@ -79,8 +79,6 @@ module Textus
           retention_hash(value, string_keys: false)
         when :react
           value.to_h
-        when :handler_permit
-          value.handlers
         else
           value
         end

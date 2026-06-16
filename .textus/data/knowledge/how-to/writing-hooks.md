@@ -227,4 +227,4 @@ A non-empty return array surfaces as a doctor failure with each issue listed.
 - [`./configuring-zones.md`](configuring-zones.md) — the manifest side: declaring which entries trigger which hooks
 - [`../../SPEC.md` §5.4, §5.10](../../SPEC.md#510-hooks) — the normative `:resolve_handler` and event contracts
 - [`../architecture/README.md`](../architecture/README.md) — how `Hooks::EventBus` and `Hooks::RpcRegistry` are implemented
-- [`../../.textus/steps/`](../../.textus/steps/) — a worked `:transform_rows` hook that reshapes projection rows for a template
+- [`../../.textus/workflows/`](../../.textus/workflows/) — workflow files registered with `Textus.workflow`

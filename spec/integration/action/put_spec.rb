@@ -11,8 +11,6 @@ RSpec.describe Textus::Action::Put do
   let(:perform_with_correlation) do
     -> { store.as("automation", correlation_id: "corr-1").put("feeds.foo", meta: {}, body: "x") }
   end
-  let(:emit)      { perform_with_correlation }
-  let(:event_key) { "feeds.foo" }
 
   it "writes the envelope when role has permission" do
     envelope = store.as("automation").put(
@@ -39,5 +37,4 @@ RSpec.describe Textus::Action::Put do
 
   it_behaves_like "an audited write", "put"
   it_behaves_like "a correlated write", "put"
-  it_behaves_like "an event-emitting action", :entry_written
 end

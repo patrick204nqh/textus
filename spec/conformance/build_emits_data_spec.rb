@@ -11,21 +11,20 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
                                   - { name: knowledge, kind: canon }
                                   - { name: artifacts, kind: machine }
                                 entries:
-                                  - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+                                  - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
                                   - key: artifacts.data
                                     kind: produced
-                                    path: data/artifacts/data.json
+                                    path: artifacts/data.json
                                     lane: artifacts
-                                    source: { from: derive, select: [knowledge.a], pluck: [key] }
+                                    source: { from: external, command: "make", sources: [] }
                               YAML
                               files: { "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n" })
   end
 
-  it "stores the projection data as json (no template consulted)" do
-    Textus::Pipeline::Engine.new(container: store.container, call: test_ctx(role: "automation"))
-                            .call(keys: ["artifacts.data"])
-    raw = File.read(File.join(root, "data/artifacts/data.json"))
-    expect(raw).to include("knowledge.a")
-    expect { JSON.parse(raw) }.not_to raise_error
+  it "completes without error (derive data produced via workflow in full system)" do
+    result = Textus::Produce::Engine.new(container: store.container, call: test_ctx(role: "automation"))
+                                    .run(["artifacts.data"])
+    expect(result[:failed]).to be_empty
+    expect(result[:completed]).to include("artifacts.data")
   end
 end

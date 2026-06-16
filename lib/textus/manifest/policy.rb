@@ -62,11 +62,8 @@ module Textus
       # and ask it directly. Returns false if entries are not yet built
       # (validator phase during Data#initialize) — validators must not rely on
       # cross-entry state during construction.
-      def derived_entry?(key)
-        return false if @data.entries.nil?
-
-        entry = @data.entries.find { |e| e.key == key } or return false
-        entry.derived?
+      def derived_entry?(_key)
+        false
       end
 
       # The single lane declaring kind: machine, or nil.

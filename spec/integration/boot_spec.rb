@@ -11,10 +11,6 @@ RSpec.describe Textus::Boot do
     FileUtils.mkdir_p(File.join(root, "data/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
-    FileUtils.mkdir_p(File.join(root, "steps/fetch"))
-    FileUtils.mkdir_p(File.join(root, "steps/transform"))
-    FileUtils.mkdir_p(File.join(root, "steps/observe"))
-    FileUtils.mkdir_p(File.join(root, "steps/validate"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -32,93 +28,26 @@ RSpec.describe Textus::Boot do
 
         - key: knowledge.notes
           kind: nested
-          path: data/knowledge/notes
+          path: knowledge/notes
           lane: knowledge
           nested: true
         - key: artifacts.feed
           kind: produced
-          path: data/artifacts/feed.md
+          path: artifacts/feed.md
           lane: artifacts
           owner: automation:local
-          source:
-            from: fetch
-            handler: demo-action
-            config: { foo: 1 }
+          source: { from: external, command: "make", sources: [] }
         - key: artifacts.report
           kind: produced
-          path: data/artifacts/report.json
+          path: artifacts/report.json
           lane: artifacts
           owner: automation:auto
-          source:
-            from: derive
-            select: [knowledge.notes]
-            pluck: "*"
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: REPORT.md, template: report.mustache }
     YAML
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
-
-    File.write(File.join(root, "steps/fetch/demo-action.rb"), <<~RUBY)
-      class DemoActionFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/fetch/zebra.rb"), <<~RUBY)
-      class ZebraFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/fetch/apple.rb"), <<~RUBY)
-      class AppleFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/transform/rank_by_recency.rb"), <<~RUBY)
-      class RankByRecencyTransform < Textus::Step::Transform
-        def call(rows:, config:, **)
-          _ = config
-          rows
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/transform/alpha.rb"), <<~RUBY)
-      class AlphaTransform < Textus::Step::Transform
-        def call(rows:, config:, **)
-          _ = config
-          rows
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/observe/stamp_log.rb"), <<~RUBY)
-      class StampLogObserve < Textus::Step::Observe
-        on :entry_produced
-
-        def call(**)
-          nil
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/validate/smoke.rb"), <<~RUBY)
-      class SmokeValidate < Textus::Step::Validate
-        def call(caps:)
-          _ = caps
-          []
-        end
-      end
-    RUBY
   end
 
   let(:store) { Textus::Store.new(root) }
@@ -164,32 +93,23 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "lists entries with derived, intake, publish_to flags" do
+  it "lists entries with publish_to and nested flags" do
     env = described_class.build(container: store.container)
     by_key = env["entries"].to_h { |e| [e["key"], e] }
 
-    expect(by_key["identity.self"]["derived"]).to be false
-    expect(by_key["identity.self"]["intake"]).to be false
+    expect(by_key["identity.self"]).not_to have_key("derived")
+    expect(by_key["identity.self"]).not_to have_key("intake")
 
-    expect(by_key["artifacts.feed"]["intake"]).to be true
-    expect(by_key["artifacts.feed"]["derived"]).to be false
-
-    expect(by_key["artifacts.report"]["derived"]).to be true
     expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
     expect(by_key["artifacts.report"]).not_to have_key("publish_each")
 
     expect(by_key["knowledge.notes"]["nested"]).to be true
   end
 
-  it "lists hooks grouped by event, sorted alphabetically" do
+  it "lists registered workflows as an array" do
     env = described_class.build(container: store.container)
-    ext = env["hooks"]
-    expect(ext["transform_rows"]).to eq(%w[alpha rank_by_recency])
-    # demo-action, apple, zebra + builtins (json, csv, markdown-links, ical-events, rss)
-    expect(ext["resolve_handler"]).to include("apple", "demo-action", "zebra")
-    expect(ext["resolve_handler"]).to eq(ext["resolve_handler"].sort)
-    expect(ext["entry_produced"]).to eq(["stamp_log"])
-    expect(ext["validate"]).to include("smoke")
+    expect(env["workflows"]).to be_an(Array)
+    expect(env["workflows"]).to all(include("name", "match"))
   end
 
   it "includes verbatim write_flows and cli_verbs" do
@@ -236,7 +156,7 @@ RSpec.describe Textus::Boot do
       expect(result["store_root"]).to be_a(String)
       expect(result["lanes"]).to be_a(Array)
       expect(result["entries"]).to be_a(Array)
-      expect(result["hooks"]).to be_a(Hash)
+      expect(result["workflows"]).to be_a(Array)
       expect(result["write_flows"]).to be_a(Hash)
       expect(result["cli_verbs"]).to be_a(Array)
       expect(result["docs"]).to be_a(Hash)
@@ -252,7 +172,7 @@ RSpec.describe Textus::Boot do
     it "lean keeps orientation essentials and drops the heavy sections" do
       out = Textus::Boot.build(container: store.container, lean: true)
       expect(out).to include("protocol", "store_root", "lanes", "agent_quickstart", "contract_etag")
-      expect(out).not_to include("entries", "hooks", "cli_verbs", "agent_protocol", "write_flows")
+      expect(out).not_to include("entries", "workflows", "cli_verbs", "agent_protocol", "write_flows")
     end
   end
 

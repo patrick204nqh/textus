@@ -64,7 +64,7 @@ module Textus
         return nil unless @file_store.exists?(path)
 
         raw = @file_store.read(path)
-        parsed = Textus::Entry.for_format(mentry.format).parse(raw, path: path)
+        parsed = Textus::Format.for(mentry.format).parse(raw, path: path)
         Textus::Envelope.build(
           key: key,
           mentry: mentry,

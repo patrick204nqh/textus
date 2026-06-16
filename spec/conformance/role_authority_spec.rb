@@ -23,7 +23,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       lanes:
         - { name: proposals, kind: queue }
       entries:
-        - { key: proposals.people, path: data/proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
+        - { key: proposals.people, path: proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
 
     YAML
 
@@ -80,7 +80,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, schema: person, owner: human:patrick, kind: nested}
+          - { key: knowledge.people, path: knowledge/people, lane: knowledge, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

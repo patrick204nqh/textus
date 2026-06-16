@@ -18,9 +18,9 @@ RSpec.describe Textus::Action::List do
           - { name: knowledge, kind: canon }
           - { name: notes,   kind: canon }
         entries:
-          - { key: knowledge.alpha, path: data/knowledge/alpha.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.alpha, path: knowledge/alpha.md, lane: knowledge, kind: leaf}
 
-          - { key: knowledge.beta,  path: data/knowledge/beta.md,  lane: knowledge, kind: leaf}
+          - { key: knowledge.beta,  path: knowledge/beta.md,  lane: knowledge, kind: leaf}
 
           - { key: notes.report,  path: notes/report.md,  lane: notes, kind: leaf}
 

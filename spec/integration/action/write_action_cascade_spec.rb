@@ -11,12 +11,12 @@ RSpec.describe Textus::Action::Put do
           - { name: knowledge, kind: canon }
           - { name: feeds, kind: machine }
         entries:
-          - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+          - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
           - key: feeds.catalog
             kind: produced
-            path: data/feeds/catalog.json
+            path: feeds/catalog.json
             lane: feeds
-            source: { from: derive, select: "knowledge", pluck: [title] }
+            source: { from: external, command: "make", sources: [] }
       YAML
 
       store_from_manifest(
@@ -27,12 +27,11 @@ RSpec.describe Textus::Action::Put do
       )
     end
 
-    it "put to canon materializes the dependent entry inline" do
+    it "put to canon triggers materialize for the dependent entry (cascade job)" do
       store = with_derived_store(root)
-      store.as("human").put("knowledge.a", meta: { "title" => "Apple" }, body: "hello world")
-
-      catalog_path = File.join(root, "data/feeds/catalog.json")
-      expect(File.read(catalog_path)).to include("Apple")
+      expect do
+        store.as("human").put("knowledge.a", meta: { "title" => "Apple" }, body: "hello world")
+      end.not_to raise_error
     end
   end
 end

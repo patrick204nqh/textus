@@ -9,17 +9,19 @@ loader.inflector.inflect(
   "cli" => "CLI",
   "json" => "Json",
   "yaml" => "Yaml",
-  "io" => "IO",
   "mcp" => "MCP",
   "mcp_serve" => "MCPServe",
+  "dsl" => "DSL",
 )
 loader.ignore(File.expand_path("textus/errors.rb", __dir__))
 loader.ignore(File.expand_path("textus/surfaces/mcp.rb", __dir__))
 loader.ignore(File.expand_path("textus/surfaces/mcp/errors.rb", __dir__))
+loader.ignore(File.expand_path("textus/workflow/errors.rb", __dir__))
 # Scaffold sources copied verbatim into user stores by `textus init`. They are
 # templates for user-owned step classes, not gem constants — Zeitwerk must not
 # manage or eager-load them.
 loader.ignore(File.expand_path("textus/init/templates", __dir__))
+loader.ignore(File.expand_path("textus/produce/acquire", __dir__))
 loader.setup
 loader.eager_load
 
@@ -87,4 +89,12 @@ Textus::Action::VERBS.each_key do |verb|
 end
 
 module Textus
+  def self.workflow(name, &)
+    collector = Workflow::Collector.current
+    raise "Textus.workflow called outside Workflow::Loader.load_all context" unless collector
+
+    defn = Workflow::DSL::Definition.new(name)
+    defn.instance_eval(&)
+    collector.register(defn)
+  end
 end

@@ -27,7 +27,6 @@ module Textus
 
       def root     = @container.root
       def manifest = @container.manifest
-      def steps    = @container.steps
 
       # Dispatch a verb through Gate.
       def dispatch(verb, *args, **kwargs)

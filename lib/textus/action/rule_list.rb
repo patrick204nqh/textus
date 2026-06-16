@@ -35,8 +35,6 @@ module Textus
           { "ttl_seconds" => value.ttl_seconds, "action" => value.action.to_s }
         when :react
           value.to_h
-        when :handler_permit
-          value.handlers
         else
           value
         end
