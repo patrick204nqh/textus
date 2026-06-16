@@ -1,14 +1,15 @@
 Textus.workflow "mcp_config" do
   match "artifacts.mcp-config"
 
-  step :derive do |data, ctx|
-    {
-      "mcpServers" => {
-        "textus" => {
-          "command" => "bundle",
-          "args"    => ["exec", "exe/textus", "--root", ".textus", "mcp", "serve"],
+  step :build do |_, ctx|
+    { "content" => {
+        "mcpServers" => {
+          "textus" => {
+            "command" => "textus",
+            "args"    => %w[--root .textus mcp serve],
+          },
         },
-      },
+      }
     }
   end
 
