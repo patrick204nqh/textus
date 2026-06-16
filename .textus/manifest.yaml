@@ -49,8 +49,8 @@ entries:
     nested: true
     kind: nested
     publish: [{ tree: docs/architecture/decisions }]
-  - { key: knowledge.docs-index,         path: knowledge/docs-readme.md,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
-  - { key: knowledge.architecture-index, path: knowledge/architecture-readme.md, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
+  - { key: knowledge.docs-index,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
+  - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
   - { key: knowledge.readme,       lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
   - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
   - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
