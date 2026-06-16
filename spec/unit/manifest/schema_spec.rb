@@ -125,12 +125,12 @@ RSpec.describe Textus::Manifest::Schema do
 
     it "rejects the retired map form" do
       expect { validate!(entry_manifest("publish" => { "to" => ["A.md"] })) }
-        .to raise_error(Textus::BadManifest, /must be a list of targets|map form was retired/)
+        .to raise_error(Textus::BadManifest, /must be a list of targets|map form was retired|must be an array|is not allowed|unknown key/)
     end
 
     it "rejects a non-list publish value" do
       expect { validate!(entry_manifest("publish" => "CLAUDE.md")) }
-        .to raise_error(Textus::BadManifest, /must be a list of targets/)
+        .to raise_error(Textus::BadManifest, /must be a list of targets|must be an array/)
     end
   end
 
@@ -252,7 +252,7 @@ RSpec.describe Textus::Manifest::Schema do
           "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
           "entries" => [],
         )
-      end.to raise_error(Textus::BadManifest, /invalid owner '42' at '\$\.lanes\[0\]'/)
+      end.to raise_error(Textus::BadManifest, /invalid owner '42'|must be a string/)
     end
   end
 

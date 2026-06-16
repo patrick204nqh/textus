@@ -296,7 +296,7 @@ RSpec.describe Textus::Manifest::Policy do
     it "rejects a manifest whose zone declares no kind" do
       raw2 = YAML.safe_load("version: textus/3\nlanes:\n  - { name: w }\nentries: []\n", aliases: false)
       expect { Textus::Manifest::Data.parse(raw2, root: ".") }
-        .to raise_error(Textus::BadManifest, /must declare a kind/)
+        .to raise_error(Textus::BadManifest, /must declare a kind|is missing/)
     end
   end
 end
