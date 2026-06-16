@@ -88,7 +88,7 @@ module Textus
           Textus::Contract::View.render(spec, :default, result, inputs)
         rescue Textus::Contract::MissingArgs => e
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
-        rescue ContractDrift, CursorExpired
+        rescue Textus::ContractDrift, CursorExpired
           raise
         rescue Textus::Error => e
           raise ToolError.new("#{name}: #{e.message}")

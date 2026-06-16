@@ -2,10 +2,10 @@ require "spec_helper"
 
 RSpec.describe Textus::Surfaces::MCP do
   it "defines ContractDrift as a Textus::Error" do
-    err = Textus::Surfaces::MCP::ContractDrift.new("manifest changed")
+    err = Textus::ContractDrift.new("manifest changed")
     expect(err).to be_a(Textus::Error)
     expect(err.message).to eq("manifest changed")
-    expect(Textus::Surfaces::MCP::ContractDrift::JSONRPC_CODE).to eq(-32_001)
+    expect(Textus::ContractDrift::JSONRPC_CODE).to eq(-32_001)
   end
 
   it "defines CursorExpired with JSON-RPC code -32002" do

@@ -205,6 +205,14 @@ module Textus
     end
   end
 
+  class ContractDrift < Error
+    JSONRPC_CODE = -32_001
+
+    def initialize(message, details: {})
+      super("contract_drift", message, details: details)
+    end
+  end
+
   class FlagRenamed < Error
     def initialize(old_flag, new_flag)
       super(

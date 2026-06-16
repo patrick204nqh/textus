@@ -78,7 +78,7 @@ module Textus
           return unless session_ready?(rid)
 
           invoke_tool(rid, params["name"], params["arguments"] || {})
-        rescue ContractDrift, CursorExpired, ToolError => e
+        rescue Textus::ContractDrift, CursorExpired, ToolError => e
           emit_error(rid, e.class::JSONRPC_CODE, e.message)
         rescue StandardError => e
           emit_error(rid, -32_603, "internal: #{e.class}: #{e.message}")

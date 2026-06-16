@@ -23,7 +23,7 @@ RSpec.describe Textus::Surfaces::MCP::Session do
 
   it "raises ContractDrift if checked etag differs" do
     s = described_class.new(role: "agent", cursor: 0, propose_lane: nil, contract_etag: "abc")
-    expect { s.check_etag!("def") }.to raise_error(Textus::Surfaces::MCP::ContractDrift)
+    expect { s.check_etag!("def") }.to raise_error(Textus::ContractDrift)
   end
 
   it "no-ops when checked etag matches" do
