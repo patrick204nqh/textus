@@ -17,7 +17,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
         - { name: feeds, kind: machine }
       entries:
         - key: feeds.machines
-          path: data/feeds/machines
+          path: feeds/machines
           lane: feeds
           format: yaml
           nested: true

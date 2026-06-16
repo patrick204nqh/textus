@@ -17,7 +17,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.foo
@@ -36,7 +36,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.*
@@ -64,8 +64,8 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.src, path: data/knowledge/src.md, lane: knowledge, kind: leaf }
-        - { key: artifacts.foo, path: data/artifacts/foo.json, lane: artifacts,
+        - { key: knowledge.src, path: knowledge/src.md, lane: knowledge, kind: leaf }
+        - { key: artifacts.foo, path: artifacts/foo.json, lane: artifacts,
             kind: produced, source: { from: external, command: "make", sources: [] } }
       rules:
         - match: artifacts.*
@@ -88,7 +88,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: knowledge.*

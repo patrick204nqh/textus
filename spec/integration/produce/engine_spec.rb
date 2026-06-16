@@ -13,10 +13,10 @@ RSpec.describe Textus::Produce::Engine do
         - { name: knowledge, kind: canon }
         - { name: feeds, kind: machine }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
         - key: artifacts.feeds.github.repos
           kind: produced
-          path: data/feeds/repos.md
+          path: feeds/repos.md
           lane: feeds
           source: { from: external, command: "true", sources: [] }
     YAML

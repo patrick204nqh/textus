@@ -35,7 +35,7 @@ RSpec.describe Textus::Surfaces::CLI::Verb::Get do
         entries:
           - key: feeds.doc
             kind: produced
-            path: data/feeds/doc.md
+            path: feeds/doc.md
             lane: feeds
             source: { from: external, command: "make", sources: [] }
       YAML

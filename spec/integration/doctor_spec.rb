@@ -14,10 +14,10 @@ RSpec.describe Textus::Doctor do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, schema: note, kind: nested}
+        - { key: knowledge.notes, path: knowledge/notes, lane: knowledge, schema: note, kind: nested}
 
         - key: artifacts.summary
-          path: data/artifacts/summary.json
+          path: artifacts/summary.json
           lane: artifacts
           kind: produced
           source: { from: external, command: "make", sources: [] }
@@ -152,7 +152,7 @@ RSpec.describe Textus::Doctor do
         lanes:
           - { name: proposals, kind: queue }
         entries:
-          - { key: proposals.people, path: data/proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
+          - { key: proposals.people, path: proposals/people, lane: proposals, schema: person, owner: human:patrick, kind: nested}
 
       YAML
 

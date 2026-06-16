@@ -28,18 +28,18 @@ RSpec.describe Textus::Boot do
 
         - key: knowledge.notes
           kind: nested
-          path: data/knowledge/notes
+          path: knowledge/notes
           lane: knowledge
           nested: true
         - key: artifacts.feed
           kind: produced
-          path: data/artifacts/feed.md
+          path: artifacts/feed.md
           lane: artifacts
           owner: automation:local
           source: { from: external, command: "make", sources: [] }
         - key: artifacts.report
           kind: produced
-          path: data/artifacts/report.json
+          path: artifacts/report.json
           lane: artifacts
           owner: automation:auto
           source: { from: external, command: "make", sources: [] }

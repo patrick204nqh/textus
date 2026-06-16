@@ -14,7 +14,7 @@ RSpec.describe "textus mv" do
         - { name: knowledge, kind: canon }
         - { name: identity,   kind: canon }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, kind: nested}
+        - { key: knowledge.notes, path: knowledge/notes, lane: knowledge, kind: nested}
 
         - { key: identity.notes,   path: identity/notes,   lane: identity,   kind: nested}
 

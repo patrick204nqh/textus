@@ -1,12 +1,9 @@
 {
   "_meta": {
-    "from": [
-      "knowledge.project"
-    ],
-    "reduce": "plugin_manifest"
+    "uid": "2f1c7aaa1c0ec1e7"
   },
   "name": "textus",
-  "description": "Durable, multi-writer repo memory for humans, agents, and automation. Auto-orients each session with a lean `textus boot` so the agent starts knowing the store's zones, write authority, and contract etag.",
+  "description": "Durable, multi-writer repo memory for humans, agents, and automation. Auto-orients each session with a lean `textus boot` so the agent starts knowing the store's lanes, write authority, and contract etag.",
   "version": "0.53.0",
   "homepage": "https://github.com/patrick204nqh/textus",
   "repository": "https://github.com/patrick204nqh/textus",

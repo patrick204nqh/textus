@@ -12,7 +12,7 @@ RSpec.describe Textus::Store do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.demo, path: data/knowledge/demo, lane: knowledge, owner: human:patrick, kind: leaf}
+        - { key: knowledge.demo, path: knowledge/demo, lane: knowledge, owner: human:patrick, kind: leaf}
 
     YAML
   end

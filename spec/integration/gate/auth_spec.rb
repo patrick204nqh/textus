@@ -13,9 +13,9 @@ RSpec.describe Textus::Gate::Auth do
         - { name: proposals, kind: queue }
         - { name: feeds,     kind: machine }
       entries:
-        - { key: knowledge.doc,   path: data/knowledge/doc.md,   lane: knowledge, kind: leaf }
+        - { key: knowledge.doc,   path: knowledge/doc.md,   lane: knowledge, kind: leaf }
         - { key: proposals,       path: proposals,                lane: proposals, owner: human:self, kind: nested }
-        - { key: feeds.data,      path: data/feeds/data.md,      lane: feeds,     kind: leaf }
+        - { key: feeds.data,      path: feeds/data.md,      lane: feeds,     kind: leaf }
     YAML
   end
 

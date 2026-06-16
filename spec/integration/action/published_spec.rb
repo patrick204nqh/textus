@@ -17,11 +17,11 @@ RSpec.describe Textus::Action::Published do
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
         entries:
-          - { key: knowledge.people, path: data/knowledge/people, lane: knowledge, owner: human:self, kind: nested}
+          - { key: knowledge.people, path: knowledge/people, lane: knowledge, owner: human:self, kind: nested}
 
           - key: artifacts.catalogs.people
             kind: produced
-            path: data/artifacts/catalogs/people.json
+            path: artifacts/catalogs/people.json
             lane: artifacts
             owner: automation:auto
             source: { from: external, command: "make", sources: [] }

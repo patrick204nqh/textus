@@ -11,7 +11,7 @@ RSpec.describe "rules.react manifest load" do
     manifest = load(<<~YAML)
       version: textus/3
       lanes: [{ name: knowledge, kind: canon }]
-      entries: [{ key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }]
+      entries: [{ key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:
         - match: "knowledge.*"
           react:
@@ -33,7 +33,7 @@ RSpec.describe "rules.react manifest load" do
     expect { load(<<~YAML) }.to raise_error(Textus::BadManifest, /react\.ttl.*invalid/i)
       version: textus/3
       lanes: [{ name: knowledge, kind: canon }]
-      entries: [{ key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }]
+      entries: [{ key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:
         - match: "knowledge.*"
           react: { on: [schedule.tick], do: refresh_data, ttl: 5m }

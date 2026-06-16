@@ -30,11 +30,11 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.mcp-config
           kind: produced
-          path: data/artifacts/mcp.json
+          path: artifacts/mcp.json
           lane: artifacts
           source: { from: external, command: "make", sources: [] }
           publish:

@@ -9,7 +9,7 @@ RSpec.describe Textus::Manifest::Data do # worker config
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
 

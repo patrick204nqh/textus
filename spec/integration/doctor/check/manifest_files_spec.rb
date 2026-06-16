@@ -10,7 +10,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf}
 
     YAML
   end
@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.notes, path: data/knowledge/notes, lane: knowledge, kind: nested}
+        - { key: knowledge.notes, path: knowledge/notes, lane: knowledge, kind: nested}
 
     YAML
     store = Textus::Store.new(root)

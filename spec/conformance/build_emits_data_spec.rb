@@ -11,10 +11,10 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
                                   - { name: knowledge, kind: canon }
                                   - { name: artifacts, kind: machine }
                                 entries:
-                                  - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+                                  - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
                                   - key: artifacts.data
                                     kind: produced
-                                    path: data/artifacts/data.json
+                                    path: artifacts/data.json
                                     lane: artifacts
                                     source: { from: external, command: "make", sources: [] }
                               YAML

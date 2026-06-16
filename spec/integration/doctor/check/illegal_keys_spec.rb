@@ -17,7 +17,7 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
           - { name: knowledge, kind: canon }
         entries:
           - key: notes
-            path: data/knowledge/notes
+            path: knowledge/notes
             lane: knowledge
             owner: human:self
             kind: nested

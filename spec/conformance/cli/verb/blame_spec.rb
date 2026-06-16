@@ -14,7 +14,7 @@ RSpec.describe "blame CLI (generated, ADR 0065)" do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "data/knowledge/doc.md"), "---\nname: doc\n---\nbody\n")

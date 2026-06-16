@@ -11,7 +11,7 @@ RSpec.describe Textus::Gate do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf }
     YAML
     File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abc\n---\nhello\n")
   end

@@ -15,7 +15,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
           template: c.mustache
           source: { from: external, command: "make", sources: [] }
@@ -30,7 +30,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
           inject_boot: true
           source: { from: external, command: "make", sources: [] }
@@ -45,7 +45,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
       entries:
         - key: artifacts.x
           kind: produced
-          path: data/artifacts/x.json
+          path: artifacts/x.json
           lane: artifacts
           source: { from: external, command: "make", sources: [] }
           publish:

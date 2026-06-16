@@ -12,10 +12,10 @@ RSpec.describe "jobs react idempotency" do
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }
               entries:
-                - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+                - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
                 - key: feeds.catalog
                   kind: produced
-                  path: data/feeds/catalog.json
+                  path: feeds/catalog.json
                   lane: feeds
                   source: { from: external, command: "make", sources: [] }
                   publish:

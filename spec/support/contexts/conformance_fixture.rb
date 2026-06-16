@@ -20,14 +20,14 @@ RSpec.shared_context "textus/3 conformance fixture" do
       entries:
         - { key: identity.self,         path: identity/self,         lane: identity,   owner: human:patrick, kind: leaf}
 
-        - { key: knowledge.network.org,   path: data/knowledge/network/org,   lane: knowledge,  schema: person, owner: human:patrick, kind: nested}
+        - { key: knowledge.network.org,   path: knowledge/network/org,   lane: knowledge,  schema: person, owner: human:patrick, kind: nested}
 
-        - { key: knowledge.projects,      path: data/knowledge/projects,      lane: knowledge,    owner: human:patrick, kind: nested}
+        - { key: knowledge.projects,      path: knowledge/projects,      lane: knowledge,    owner: human:patrick, kind: nested}
 
-        - { key: artifacts.catalogs.skills, path: data/artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
+        - { key: artifacts.catalogs.skills, path: artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: artifacts.feeds.calendar.events
           kind: nested
-          path: data/artifacts/feeds/calendar/events
+          path: artifacts/feeds/calendar/events
           lane: artifacts
           owner: automation:cron
           nested: true

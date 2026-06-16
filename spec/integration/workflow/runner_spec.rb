@@ -8,10 +8,10 @@ RSpec.describe Textus::Workflow::Runner do
         - { name: knowledge, kind: canon }
         - { name: feeds, kind: machine }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
         - key: artifacts.feeds.test
           kind: produced
-          path: data/feeds/test.json
+          path: feeds/test.json
           lane: feeds
           source: { from: external, command: "true", sources: [] }
     YAML

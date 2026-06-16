@@ -21,7 +21,7 @@ RSpec.describe Textus::Action::Uid do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       YAML
     )

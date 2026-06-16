@@ -11,7 +11,7 @@ RSpec.describe Textus::Action::RuleExplain do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       rules:
         - match: "knowledge.*"
@@ -73,8 +73,8 @@ RSpec.describe Textus::Action::RuleExplain do
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
         entries:
-          - { key: knowledge.src, path: data/knowledge/src.md, lane: knowledge, kind: leaf }
-          - { key: artifacts.feed, path: data/artifacts/feed.md, lane: artifacts,
+          - { key: knowledge.src, path: knowledge/src.md, lane: knowledge, kind: leaf }
+          - { key: artifacts.feed, path: artifacts/feed.md, lane: artifacts,
               kind: produced, source: { from: external, command: "make", sources: [] } }
         rules:
           - match: artifacts.feed
@@ -99,7 +99,7 @@ RSpec.describe Textus::Action::RuleExplain do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       YAML
       result = no_policy_store.as("human").rule_explain("knowledge.doc", detail: true)

@@ -13,7 +13,7 @@ RSpec.describe Textus::Action::Where do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, owner: human:alice, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, owner: human:alice, kind: leaf}
 
       YAML
     )

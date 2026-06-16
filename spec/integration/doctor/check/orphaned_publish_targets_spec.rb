@@ -12,7 +12,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
       entries:
         - key: knowledge.skills
           kind: nested
-          path: data/knowledge/skills
+          path: knowledge/skills
           lane: knowledge
           schema: null
           nested: true

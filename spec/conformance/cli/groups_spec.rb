@@ -13,7 +13,7 @@ RSpec.describe "CLI subcommand groups" do
         - { name: knowledge, kind: canon }
         - { name: archive, kind: canon }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf}
 
     YAML
     File.write(File.join(root, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
@@ -37,9 +37,9 @@ RSpec.describe "CLI subcommand groups" do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf}
 
-          - { key: knowledge.memo, path: data/knowledge/memo.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.memo, path: knowledge/memo.md, lane: knowledge, kind: leaf}
 
       YAML
       rc = run(["key", "mv", "knowledge.note", "knowledge.memo", "--as=human"])

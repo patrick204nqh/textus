@@ -11,7 +11,7 @@ RSpec.describe "textus rule group" do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
       rules:
         # ADR 0093: age-GC is the `retention:` rule ({ ttl, action: drop|archive }).
@@ -43,7 +43,7 @@ RSpec.describe "textus rule group" do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf}
+          - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf}
 
         rules:
           - match: knowledge.doc

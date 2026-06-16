@@ -9,8 +9,8 @@ RSpec.describe Textus::Envelope::Reader do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.foo, path: data/knowledge/foo.md, lane: knowledge, kind: leaf}
-        - { key: knowledge.missing, path: data/knowledge/missing.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.foo, path: knowledge/foo.md, lane: knowledge, kind: leaf}
+        - { key: knowledge.missing, path: knowledge/missing.md, lane: knowledge, kind: leaf}
     YAML
   end
 

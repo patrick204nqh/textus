@@ -9,7 +9,7 @@ RSpec.describe Textus::Action::Jobs do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
   let(:queue) { Textus::Ports::JobStore.new(root: root) }

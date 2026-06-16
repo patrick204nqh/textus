@@ -72,8 +72,8 @@ module TextusSpecHelpers
         - { name: feeds, kind: machine }
         - { name: knowledge, kind: canon }
       entries:
-        - { key: feeds.foo, path: data/feeds/foo.md, lane: feeds, kind: leaf }
-        - { key: knowledge.bar, path: data/knowledge/bar.md, lane: knowledge, kind: leaf }
+        - { key: feeds.foo, path: feeds/foo.md, lane: feeds, kind: leaf }
+        - { key: knowledge.bar, path: knowledge/bar.md, lane: knowledge, kind: leaf }
     YAML
   end
 
@@ -88,7 +88,7 @@ module TextusSpecHelpers
         - { name: #{zone}, kind: #{lane_kind} }
       entries:
         - key: #{zone}.doc
-          path: data/#{zone}/doc.md
+          path: #{zone}/doc.md
           lane: #{zone}
     YAML
     manifest << "rules:\n  - { match: #{zone}.doc, retention: #{retention} }\n" if retention

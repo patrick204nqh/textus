@@ -18,9 +18,9 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
                             - { name: proposals, kind: queue }
                             - { name: artifacts, kind: machine }
                           entries:
-                            - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, schema: project, kind: leaf }
-                            - { key: notebook.notes, path: data/notebook/notes, lane: notebook, kind: nested, nested: true }
-                            - { key: proposals.notes, path: data/proposals/notes, lane: proposals, kind: nested, nested: true }
+                            - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, schema: project, kind: leaf }
+                            - { key: notebook.notes, path: notebook/notes, lane: notebook, kind: nested, nested: true }
+                            - { key: proposals.notes, path: proposals/notes, lane: proposals, kind: nested, nested: true }
                         YAML
   end
   let(:session) { store.session(role: "human") }

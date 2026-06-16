@@ -22,7 +22,7 @@ RSpec.describe Textus::Action::SchemaEnvelope do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.person, path: data/knowledge/person.md, lane: knowledge, schema: person, kind: leaf}
+          - { key: knowledge.person, path: knowledge/person.md, lane: knowledge, schema: person, kind: leaf}
 
       YAML
     )

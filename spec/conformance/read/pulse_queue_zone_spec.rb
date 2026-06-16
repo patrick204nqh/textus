@@ -13,7 +13,7 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
       entries:
-        - { key: proposals.p1, path: data/proposals/p1.md, lane: proposals, owner: agent:self, kind: leaf }
+        - { key: proposals.p1, path: proposals/p1.md, lane: proposals, owner: agent:self, kind: leaf }
     YAML
   end
 

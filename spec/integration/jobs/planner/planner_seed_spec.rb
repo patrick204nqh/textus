@@ -12,9 +12,9 @@ RSpec.describe Textus::Jobs::Planner do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.doc, path: data/knowledge/doc.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.doc, path: knowledge/doc.md, lane: knowledge, kind: leaf }
         - key: artifacts.derived.summary
-          path: data/artifacts/derived/summary.json
+          path: artifacts/derived/summary.json
           lane: artifacts
           kind: produced
           source: { from: external, command: "make", sources: [] }

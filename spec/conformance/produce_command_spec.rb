@@ -13,13 +13,13 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
                                 entries:
                                   - key: artifacts.bundle
                                     kind: produced
-                                    path: data/artifacts/bundle.json
+                                    path: artifacts/bundle.json
                                     lane: artifacts
                                     source: { from: external, command: "true", sources: ["src/*"] }
                                     publish: [{ to: dist/bundle.json }]
                                   - key: artifacts.signal
                                     kind: produced
-                                    path: data/artifacts/signal.json
+                                    path: artifacts/signal.json
                                     lane: artifacts
                                     source: { from: external, command: "true", sources: ["src/*"] }
                               YAML

@@ -41,11 +41,11 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
       entries:
-        - { key: knowledge.project, path: data/knowledge/project.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
 
         - key: artifacts.claude-plugin
           kind: produced
-          path: data/artifacts/plugin.json
+          path: artifacts/plugin.json
           lane: artifacts
           source: { from: external, command: "make", sources: [] }
           publish:

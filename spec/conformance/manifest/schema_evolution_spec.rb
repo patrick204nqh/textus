@@ -55,7 +55,7 @@ RSpec.describe "Schema evolution" do
         lanes:
           - { name: knowledge, kind: canon }
         entries:
-          - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, schema: note, kind: leaf }
+          - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, schema: note, kind: leaf }
       YAML
     end
 
@@ -88,7 +88,7 @@ RSpec.describe "Schema evolution" do
         lanes:
           - { name: proposals, kind: queue }
         entries:
-          - { key: proposals.note, path: data/proposals/note.md, lane: proposals, schema: note, kind: leaf }
+          - { key: proposals.note, path: proposals/note.md, lane: proposals, schema: note, kind: leaf }
       YAML
 
       expect do

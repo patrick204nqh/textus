@@ -27,7 +27,7 @@ RSpec.describe Textus::Manifest::Schema do
       "version" => "textus/3",
       "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
       "entries" => [{ "key" => "knowledge.foo", "lane" => "knowledge",
-                      "path" => "data/knowledge/foo.md", "kind" => "leaf" }],
+                      "path" => "knowledge/foo.md", "kind" => "leaf" }],
     }
     expect { Textus::Manifest::Schema.validate!(raw) }.not_to raise_error
   end

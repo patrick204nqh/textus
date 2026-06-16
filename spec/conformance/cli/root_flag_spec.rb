@@ -53,7 +53,7 @@ RSpec.describe "textus --root" do
       lanes:
         - { name: knowledge, kind: canon }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, kind: leaf }
     YAML
     File.write(File.join(custom, "data/knowledge/note.md"), "---\nuid: abc123\n---\nhello\n")
     stdout, _stderr, status = run_cli("key", "uid", "knowledge.note", "--root=#{custom}", "--output=json")

@@ -19,7 +19,7 @@ RSpec.describe "MCP end-to-end" do
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: knowledge.note, path: data/knowledge/note.md, lane: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note, path: knowledge/note.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
     FileUtils.mkdir_p(audit_dir_path(root))
     File.write(audit_log_path(root), "")
@@ -128,8 +128,8 @@ RSpec.describe "MCP end-to-end" do
         - { name: knowledge,  kind: canon }
         - { name: proposals,   kind: queue }
       entries:
-        - { key: knowledge.note,    path: data/knowledge/note.md,    lane: knowledge, owner: human:self, kind: leaf }
-        - { key: knowledge.renamed, path: data/knowledge/renamed.md, lane: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.note,    path: knowledge/note.md,    lane: knowledge, owner: human:self, kind: leaf }
+        - { key: knowledge.renamed, path: knowledge/renamed.md, lane: knowledge, owner: human:self, kind: leaf }
     YAML
 
     responses = run_session([

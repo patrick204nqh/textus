@@ -12,10 +12,10 @@ RSpec.describe "publish per target (ADR 0094)" do
                                     - { name: knowledge, kind: canon }
                                     - { name: artifacts, kind: machine }
                                   entries:
-                                    - { key: knowledge.a, path: data/knowledge/a.md, lane: knowledge, kind: leaf }
+                                    - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
                                     - key: artifacts.cat
                                       kind: produced
-                                      path: data/artifacts/cat.json
+                                      path: artifacts/cat.json
                                       lane: artifacts
                                       source: { from: external, command: "make", sources: [] }
                                       publish:
@@ -56,7 +56,7 @@ RSpec.describe "publish per target (ADR 0094)" do
                                   entries:
                                     - key: knowledge.cfg
                                       kind: leaf
-                                      path: data/knowledge/cfg.json
+                                      path: knowledge/cfg.json
                                       lane: knowledge
                                       publish:
                                         - { to: out.json }

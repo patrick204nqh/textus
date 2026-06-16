@@ -42,7 +42,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         entries:
           - { key: identity.target, path: identity/target.md, lane: identity, kind: leaf}
 
-          - { key: proposals.draft,    path: data/proposals/draft.md,    lane: proposals, kind: leaf}
+          - { key: proposals.draft,    path: proposals/draft.md,    lane: proposals, kind: leaf}
 
       YAML
     )
@@ -98,7 +98,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
           entries:
             - { key: identity.t, path: identity/t.md, lane: identity, kind: leaf}
 
-            - { key: proposals.d,   path: data/proposals/d.md,   lane: proposals, kind: leaf}
+            - { key: proposals.d,   path: proposals/d.md,   lane: proposals, kind: leaf}
 
         YAML
       )
@@ -141,7 +141,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         entries:
           - { key: identity.target, path: identity/target.md, lane: identity, kind: leaf}
 
-          - { key: proposals.draft,    path: data/proposals/draft.md,    lane: proposals, kind: leaf}
+          - { key: proposals.draft,    path: proposals/draft.md,    lane: proposals, kind: leaf}
 
       YAML
 

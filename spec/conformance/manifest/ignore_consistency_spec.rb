@@ -14,7 +14,7 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
           - { name: knowledge, kind: canon }
         entries:
           - key: skills
-            path: data/knowledge/skills
+            path: knowledge/skills
             lane: knowledge
             owner: human:self
             kind: nested
