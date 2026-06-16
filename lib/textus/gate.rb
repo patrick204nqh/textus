@@ -31,6 +31,7 @@ module Textus
       key_mv_prefix: Textus::Command::KeyMvPrefix,
       key_delete_prefix: Textus::Command::KeyDeletePrefix,
       drain: Textus::Command::Drain,
+      ingest: Textus::Command::Ingest,
     }.freeze
 
     ROUTES = {
