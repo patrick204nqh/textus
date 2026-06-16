@@ -91,8 +91,8 @@ module Textus
 
       def producible_keys(_target)
         @manifest.data.entries
-               .select { |e| e.derived? || !e.publish_tree.nil? || !e.publish_to.empty? }
-               .map(&:key)
+                 .select { |e| !e.publish_tree.nil? || !e.publish_to.empty? }
+                 .map(&:key)
       end
 
       def stale_intake_keys(_target)
@@ -100,7 +100,7 @@ module Textus
           manifest: @manifest,
           file_stat: Textus::Ports::Storage::FileStat.new,
           clock: Textus::Ports::Clock.new,
-        ).stale_intake_keys(prefix: nil, lane: nil)
+        ).stale_keys(prefix: nil, lane: nil)
       end
 
       def lane_keys(_target)

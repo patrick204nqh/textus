@@ -241,7 +241,6 @@ module Textus
 
     def self.entries_for(manifest)
       manifest.data.entries.map do |e|
-        derived = e.derived?
         {
           "key" => e.key,
           "lane" => e.lane,
@@ -249,8 +248,6 @@ module Textus
           "nested" => e.is_a?(Textus::Manifest::Entry::Nested),
           "owner" => e.owner,
           "format" => e.format,
-          "derived" => derived,
-          "intake" => e.intake?,
           "publish_to" => Array(e.publish_to),
         }
       end

@@ -35,15 +35,15 @@ module Textus
         end
       end
 
-      def derived_write?(key, container)
-        container.manifest.resolver.resolve(key).entry.derived?
+      def derived_write?(_key, _container)
+        false
       rescue Textus::Error
         false
       end
 
       def producible?(key, container)
         entry = container.manifest.resolver.resolve(key).entry
-        entry.derived? || !entry.publish_tree.nil?
+        !entry.publish_tree.nil?
       rescue Textus::Error
         false
       end

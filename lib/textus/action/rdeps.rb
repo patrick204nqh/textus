@@ -21,17 +21,9 @@ module Textus
       def call(container:, **)
         manifest = container.manifest
         rdeps = manifest.data.entries.each_with_object([]) do |entry, acc|
-          next unless entry.derived?
+          next unless entry.external?
 
-          src = entry.source
-          sources =
-            if src.projection?
-              Array(src.select).compact
-            elsif src.external?
-              Array(src.sources).compact
-            else
-              []
-            end
+          sources = Array(entry.source&.sources).compact
           acc << entry.key if sources.any? { |source| source == @key || @key.start_with?("#{source}.") }
         end
         { "key" => @key, "rdeps" => rdeps }

@@ -23,12 +23,12 @@ module Textus
       def build_context(key)
         res = @container.manifest.resolver.resolve(key)
         Context.new(
-          key:       key,
-          entry:     res.entry,
-          config:    (res.entry.config || {}).freeze,
-          lane:      res.entry.lane.to_s,
+          key: key,
+          entry: res.entry,
+          config: {}.freeze,
+          lane: res.entry.lane.to_s,
           container: @container,
-          call:      @call,
+          call: @call,
         )
       end
 

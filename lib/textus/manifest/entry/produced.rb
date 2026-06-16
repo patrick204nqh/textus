@@ -1,27 +1,20 @@
 module Textus
   class Manifest
     class Entry
-      # A produced entry (ADR 0095) — anything with a `source:`. The produce
-      # method (intake/derived/external) is read from source.from; there is no
-      # separate kind for it. Merges the former Derived + Intake classes.
+      # A produced entry — `kind: produced` with an optional `source:` block.
+      # When `source:` is present it must be `from: external` (out-of-band
+      # generator; textus detects drift but never runs it). When absent the
+      # entry is produced by a workflow file in .textus/workflows/.
       class Produced < Base
-        attr_reader :source, :events
+        attr_reader :source
 
-        def initialize(source:, events: {}, **rest)
+        def initialize(source:, **rest)
           super(**rest)
           @source = source
-          @events = events || {}
         end
 
-        def intake?     = false
-        def derived?    = false
-        def external?   = @source&.external? || false
-        def projection? = false
-        def fetch?      = false
-        def derive?     = false
-        def nested?     = !!@raw["nested"]
-        def handler     = nil
-        def config      = @source.respond_to?(:config) ? @source.config : nil
+        def external? = @source&.external? || false
+        def nested?   = !!@raw["nested"]
 
         KIND = :produced
 
@@ -33,7 +26,7 @@ module Textus
         end
 
         def self.from_raw(common, raw)
-          new(source: Parser.parse_source(raw, common[:key]), events: raw["events"] || {}, **common)
+          new(source: Parser.parse_source(raw, common[:key]), **common)
         end
 
         Entry::REGISTRY[KIND] = self

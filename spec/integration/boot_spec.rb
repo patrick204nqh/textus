@@ -93,17 +93,13 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "lists entries with derived, intake, publish_to flags" do
+  it "lists entries with publish_to and nested flags" do
     env = described_class.build(container: store.container)
     by_key = env["entries"].to_h { |e| [e["key"], e] }
 
-    expect(by_key["identity.self"]["derived"]).to be false
-    expect(by_key["identity.self"]["intake"]).to be false
+    expect(by_key["identity.self"]).not_to have_key("derived")
+    expect(by_key["identity.self"]).not_to have_key("intake")
 
-    expect(by_key["artifacts.feed"]["intake"]).to be false
-    expect(by_key["artifacts.feed"]["derived"]).to be false
-
-    expect(by_key["artifacts.report"]["derived"]).to be false
     expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
     expect(by_key["artifacts.report"]).not_to have_key("publish_each")
 
