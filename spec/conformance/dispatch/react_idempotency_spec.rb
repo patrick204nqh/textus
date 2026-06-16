@@ -17,7 +17,7 @@ RSpec.describe "jobs react idempotency" do
                   kind: produced
                   path: data/feeds/catalog.json
                   lane: feeds
-                  source: { from: derive, select: "knowledge", pluck: [title] }
+                  source: { from: external, command: "make", sources: [] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
             YAML

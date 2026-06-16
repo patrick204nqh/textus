@@ -271,20 +271,6 @@ RSpec.describe Textus::Manifest::Policy do
     end
   end
 
-  it "Entry::Produced#derived? returns true (ADR 0091/0095: derived-ness is an entry property)" do
-    raw2 = YAML.safe_load(<<~YAML, aliases: false)
-      version: textus/3
-      roles: [{ name: automation, can: [converge] }]
-      lanes: [{ name: artifacts, kind: machine }]
-      entries:
-        - { key: artifacts.x, path: data/artifacts/x.json, lane: artifacts, owner: automation:auto, kind: produced,
-            source: { from: derive, select: [knowledge.notes], pluck: "*" } }
-    YAML
-    d2 = Textus::Manifest::Data.parse(raw2, root: ".")
-    entry = d2.entries.first
-    expect(entry.derived?).to be(true)
-  end
-
   describe "declared zone kinds on Data" do
     let(:yaml) do
       <<~YAML
@@ -312,21 +298,5 @@ RSpec.describe Textus::Manifest::Policy do
       expect { Textus::Manifest::Data.parse(raw2, root: ".") }
         .to raise_error(Textus::BadManifest, /must declare a kind/)
     end
-  end
-
-  it "resolves derived per-entry inside a mixed machine zone (ADR 0091)" do
-    raw2 = YAML.safe_load(<<~YAML, aliases: false)
-      version: textus/3
-      roles: [{ name: automation, can: [converge] }]
-      lanes: [{ name: artifacts, kind: machine }]
-      entries:
-        - { key: artifacts.feeds.cal, path: data/feeds/cal.json, lane: artifacts, kind: produced, source: { from: fetch, handler: noop } }
-        - { key: artifacts.derived.idx, path: idx.json, lane: artifacts, owner: automation:auto, kind: produced,
-            format: json, source: { from: derive, select: ["x.*"] } }
-    YAML
-    d2 = Textus::Manifest::Data.parse(raw2, root: ".")
-    policy2 = d2.policy
-    expect(policy2.derived_entry?("artifacts.derived.idx")).to be(true)
-    expect(policy2.derived_entry?("artifacts.feeds.cal")).to be(false)
   end
 end

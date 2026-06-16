@@ -57,7 +57,7 @@ RSpec.describe "Manifest format: field validation" do
         kind: produced
         path: data/artifacts/x.json
         lane: artifacts
-        source: { from: derive, select: [knowledge] }
+        source: { from: external, command: "make", sources: [] }
     YAML
     expect { Textus::Manifest.load(root) }.not_to raise_error
   end

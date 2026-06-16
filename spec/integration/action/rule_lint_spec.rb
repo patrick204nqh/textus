@@ -10,7 +10,7 @@ RSpec.describe Textus::Action::RuleLint do
       lanes:
         - { name: intake, kind: machine }
       entries:
-        - { key: intake.feed, path: intake/feed.md, lane: intake, owner: automation:self, kind: produced, source: { from: fetch, handler: noop } }
+        - { key: intake.feed, path: intake/feed.md, lane: intake, owner: automation:self, kind: produced, source: { from: external, command: "make", sources: [] } }
       rules:
         - { match: "intake.*", retention: { ttl: 600, action: drop } }
     YAML

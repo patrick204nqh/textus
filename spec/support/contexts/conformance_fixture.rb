@@ -26,15 +26,11 @@ RSpec.shared_context "textus/3 conformance fixture" do
 
         - { key: artifacts.catalogs.skills, path: data/artifacts/catalogs/skills, lane: artifacts, owner: automation:catalog, kind: produced, source: { from: external, command: "rake catalog:skills", sources: [knowledge.projects] } }
         - key: artifacts.feeds.calendar.events
-          kind: produced
+          kind: nested
           path: data/artifacts/feeds/calendar/events
           lane: artifacts
           owner: automation:cron
-          source:
-            from: fetch
-            handler: http_json
-            config: { url: "https://example.com/calendar.ics" }
-            ttl: 300s
+          nested: true
     YAML
 
     File.write(File.join(root, "schemas/person.yaml"), <<~YAML)

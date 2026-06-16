@@ -17,7 +17,7 @@ RSpec.describe "publish per target (ADR 0094)" do
                                       kind: produced
                                       path: data/artifacts/cat.json
                                       lane: artifacts
-                                      source: { from: derive, select: [knowledge.a] }
+                                      source: { from: external, command: "make", sources: [] }
                                       publish:
                                         - { to: OUT.md, template: rows.mustache }
                                         - { to: out.json }

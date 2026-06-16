@@ -17,10 +17,7 @@ RSpec.describe Textus::Jobs::Planner do
           path: data/artifacts/derived/summary.json
           lane: artifacts
           kind: produced
-          source:
-            from: derive
-            select: [knowledge.doc]
-            transform: identity
+          source: { from: external, command: "make", sources: [] }
     YAML
   end
 

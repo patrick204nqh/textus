@@ -16,7 +16,7 @@ RSpec.describe "build emits data, not a render (ADR 0094)" do
                                     kind: produced
                                     path: data/artifacts/data.json
                                     lane: artifacts
-                                    source: { from: derive, select: [knowledge.a], pluck: [key] }
+                                    source: { from: external, command: "make", sources: [] }
                               YAML
                               files: { "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n" })
   end

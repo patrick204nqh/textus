@@ -21,9 +21,8 @@ module Textus
         - { key: knowledge.notes,    path: data/knowledge/notes,       lane: knowledge, schema: null, owner: human:self, nested: true, kind: nested }
         - { key: notebook.notes,     path: data/notebook/notes,        lane: notebook,  schema: null, owner: agent:self, nested: true, kind: nested }
         - { key: proposals.notes,    path: data/proposals/notes,       lane: proposals, schema: null, owner: agent:self, nested: true, kind: nested }
-        # A per-host snapshot, refreshed from its declared intake by `textus drain` (scheduled, or on demand).
-        # Nested so it grows to a fleet — add artifacts.feeds.machines.<host> leaves over SSH
-        # (see docs/cookbook/environment-scan.md) without renaming. tracked:false →
+        # A per-host snapshot, populated by a registered workflow. Nested so it
+        # grows to a fleet — add leaves over SSH without renaming. tracked:false →
         # gitignored (machine info can be sensitive/noisy) but still protocol-readable
         # via `textus get artifacts.feeds.machines.local`. Delete to opt out. (ADR 0043)
         - key: artifacts.feeds.machines
@@ -32,14 +31,7 @@ module Textus
           format: yaml
           nested: true
           tracked: false
-          kind: produced
-          source:
-            from: fetch
-            handler: machine-intake
-            ttl: 1h # cadence on a long-running server
-            config:
-              machines:
-                local: { via: local }
+          kind: nested
       rules: []
     YAML
 
@@ -52,12 +44,6 @@ module Textus
         publish:
         - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
         - { to: AGENTS.md, template: orientation.mustache, inject_boot: true }
-        source:
-          from: derive
-          select:
-          - knowledge.project
-          - knowledge.runbooks
-          transform: orientation
         kind: produced
     YAML
 

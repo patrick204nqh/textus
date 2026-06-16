@@ -17,14 +17,14 @@ RSpec.describe Textus::Jobs::Planner do
                   kind: produced
                   path: data/feeds/catalog.json
                   lane: feeds
-                  source: { from: derive, select: "knowledge", pluck: [title] }
+                  source: { from: external, command: "make", sources: [] }
                   publish:
                     - { to: CATALOG.md, template: catalog.mustache }
                 - key: feeds.doc
                   kind: produced
                   path: data/feeds/doc.md
                   lane: feeds
-                  source: { from: fetch, handler: demo, ttl: 1s }
+                  source: { from: external, command: "make", sources: [] }
             YAML
             files: {
               "data/knowledge/a.md" => "---\ntitle: Apple\n---\nx\n",

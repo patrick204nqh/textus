@@ -47,11 +47,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
           kind: produced
           path: data/artifacts/plugin.json
           lane: artifacts
-          source:
-            from: derive
-            select:
-              - knowledge.project
-            transform: plugin_manifest
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: .claude-plugin/plugin.json }
     YAML

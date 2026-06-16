@@ -37,7 +37,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         publish:
           - { to: "skills/my-skill/SKILL.md" }
-        source: { from: derive, select: ["working.skilldefs"] }
+        source: { from: external, command: "make", sources: [] }
     Y
 
     found = issues
@@ -63,7 +63,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         publish:
           - { to: "skills/my-skill/SKILL.md" }
-        source: { from: derive, select: ["working.skilldefs"] }
+        source: { from: external, command: "make", sources: [] }
     Y
 
     expect(issues).to be_empty
@@ -87,7 +87,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         publish:
           - { to: "skills/my-skill/SKILL.md" }
-        source: { from: derive, select: ["working.skilldefs"] }
+        source: { from: external, command: "make", sources: [] }
     Y
 
     expect(issues.map { |i| i["code"] }).to include("publish.tree_index_overlap")
@@ -110,7 +110,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
         schema: null
         publish:
           - { to: "docs/other.md" }
-        source: { from: derive, select: ["working.skilldefs"] }
+        source: { from: external, command: "make", sources: [] }
     Y
 
     expect(issues).to be_empty

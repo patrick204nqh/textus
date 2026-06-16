@@ -18,7 +18,7 @@ RSpec.describe Textus::Action::Drain do
             kind: produced
             path: data/feeds/catalog.json
             lane: feeds
-            source: { from: derive, select: "knowledge", pluck: [title] }
+            source: { from: external, command: "make", sources: [] }
       YAML
       files: {
         "data/knowledge/a.md" => "---\ntitle: Apple\n---\nhello\n",

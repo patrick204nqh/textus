@@ -11,10 +11,6 @@ RSpec.describe Textus::Boot do
     FileUtils.mkdir_p(File.join(root, "data/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
-    FileUtils.mkdir_p(File.join(root, "steps/fetch"))
-    FileUtils.mkdir_p(File.join(root, "steps/transform"))
-    FileUtils.mkdir_p(File.join(root, "steps/observe"))
-    FileUtils.mkdir_p(File.join(root, "steps/validate"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/3
@@ -40,85 +36,18 @@ RSpec.describe Textus::Boot do
           path: data/artifacts/feed.md
           lane: artifacts
           owner: automation:local
-          source:
-            from: fetch
-            handler: demo-action
-            config: { foo: 1 }
+          source: { from: external, command: "make", sources: [] }
         - key: artifacts.report
           kind: produced
           path: data/artifacts/report.json
           lane: artifacts
           owner: automation:auto
-          source:
-            from: derive
-            select: [knowledge.notes]
-            pluck: "*"
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: REPORT.md, template: report.mustache }
     YAML
 
     File.write(File.join(root, "templates/report.mustache"), "ok\n")
-
-    File.write(File.join(root, "steps/fetch/demo-action.rb"), <<~RUBY)
-      class DemoActionFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/fetch/zebra.rb"), <<~RUBY)
-      class ZebraFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/fetch/apple.rb"), <<~RUBY)
-      class AppleFetch < Textus::Step::Fetch
-        def call(config:, args:, **)
-          _ = config
-          _ = args
-          { _meta: {}, body: "" }
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/transform/rank_by_recency.rb"), <<~RUBY)
-      class RankByRecencyTransform < Textus::Step::Transform
-        def call(rows:, config:, **)
-          _ = config
-          rows
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/transform/alpha.rb"), <<~RUBY)
-      class AlphaTransform < Textus::Step::Transform
-        def call(rows:, config:, **)
-          _ = config
-          rows
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/observe/stamp_log.rb"), <<~RUBY)
-      class StampLogObserve < Textus::Step::Observe
-        on :entry_produced
-
-        def call(**)
-          nil
-        end
-      end
-    RUBY
-    File.write(File.join(root, "steps/validate/smoke.rb"), <<~RUBY)
-      class SmokeValidate < Textus::Step::Validate
-        def call(caps:)
-          _ = caps
-          []
-        end
-      end
-    RUBY
   end
 
   let(:store) { Textus::Store.new(root) }
@@ -171,10 +100,10 @@ RSpec.describe Textus::Boot do
     expect(by_key["identity.self"]["derived"]).to be false
     expect(by_key["identity.self"]["intake"]).to be false
 
-    expect(by_key["artifacts.feed"]["intake"]).to be true
+    expect(by_key["artifacts.feed"]["intake"]).to be false
     expect(by_key["artifacts.feed"]["derived"]).to be false
 
-    expect(by_key["artifacts.report"]["derived"]).to be true
+    expect(by_key["artifacts.report"]["derived"]).to be false
     expect(by_key["artifacts.report"]["publish_to"]).to eq(["REPORT.md"])
     expect(by_key["artifacts.report"]).not_to have_key("publish_each")
 

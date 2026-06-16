@@ -16,11 +16,10 @@ RSpec.describe "Textus::Init with_agent profile" do
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
   end
 
-  it "appends the orientation projection entries under --with-agent" do
+  it "appends the orientation entries under --with-agent" do
     dir, root, = init(with_agent: true)
     manifest = File.read(File.join(root, "manifest.yaml"))
     expect(manifest).to include("key: artifacts.derived.orientation")
-    expect(manifest).to include("transform: orientation")
     expect(manifest).to include("to: CLAUDE.md").and include("to: AGENTS.md")
     # base entries still present (additive superset)
     expect(manifest).to include("key: knowledge.identity")

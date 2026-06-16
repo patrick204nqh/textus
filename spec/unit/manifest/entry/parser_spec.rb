@@ -34,19 +34,6 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       end.to raise_error(Textus::BadManifest, /missing required `kind:`/)
     end
 
-    it "extracts source: from project (projection)" do
-      entry = described_class.call(
-        {
-          "key" => "output.foo", "path" => "foo.md", "lane" => "output",
-          "kind" => "produced",
-          "source" => { "from" => "derive", "select" => ["working.bar"] }
-        },
-      )
-      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
-      expect(entry).to be_projection
-      expect(entry.source.select).to eq(["working.bar"])
-    end
-
     it "extracts source: from command (external)" do
       entry = described_class.call(
         {
@@ -59,7 +46,17 @@ RSpec.describe Textus::Manifest::Entry::Parser do
       expect(entry).to be_external
     end
 
-    it "rejects unknown source.from" do
+    it "rejects removed source.from values (fetch/derive)" do
+      expect do
+        described_class.call(
+          {
+            "key" => "output.foo", "path" => "foo.md", "lane" => "output",
+            "kind" => "produced",
+            "source" => { "from" => "fetch", "handler" => "h" }
+          },
+        )
+      end.to raise_error(Textus::BadManifest, /is removed/)
+
       expect do
         described_class.call(
           {
@@ -68,20 +65,7 @@ RSpec.describe Textus::Manifest::Entry::Parser do
             "source" => { "from" => "weird" }
           },
         )
-      end.to raise_error(Textus::BadManifest, /source.from must be one of/)
-    end
-
-    it "extracts source: from handler config" do
-      entry = described_class.call(
-        {
-          "key" => "intake.foo", "path" => "foo.md", "lane" => "intake",
-          "kind" => "produced",
-          "source" => { "from" => "fetch", "handler" => "pull_foo", "config" => { "url" => "x" } }
-        },
-      )
-      expect(entry).to be_a(Textus::Manifest::Entry::Produced)
-      expect(entry.handler).to eq("pull_foo")
-      expect(entry.config).to eq({ "url" => "x" })
+      end.to raise_error(Textus::BadManifest, /is removed/)
     end
 
     it "parses an explicit leaf row" do
@@ -92,20 +76,6 @@ RSpec.describe Textus::Manifest::Entry::Parser do
     it "parses an explicit nested row" do
       e = described_class.call({ "key" => "z.n", "path" => "z/n", "lane" => "z", "kind" => "nested" })
       expect(e).to be_a(Textus::Manifest::Entry::Nested)
-    end
-
-    it "parses an explicit derived/projection row" do
-      e = described_class.call({ "key" => "o.x", "path" => "o/x.md", "lane" => "o", "kind" => "produced",
-                                 "source" => { "from" => "derive", "select" => "z.n" } })
-      expect(e).to be_a(Textus::Manifest::Entry::Produced)
-      expect(e).to be_projection
-    end
-
-    it "parses an explicit intake row" do
-      e = described_class.call({ "key" => "i.x", "path" => "i/x.md", "lane" => "i", "kind" => "produced",
-                                 "source" => { "from" => "fetch", "handler" => "h" } })
-      expect(e).to be_a(Textus::Manifest::Entry::Produced)
-      expect(e.handler).to eq("h")
     end
 
     it "raises on unknown kind" do

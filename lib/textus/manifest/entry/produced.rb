@@ -13,15 +13,15 @@ module Textus
           @events = events || {}
         end
 
-        def intake?     = @source.kind == :intake
-        def derived?    = @source.kind == :derived
-        def external?   = @source.external?
-        def projection? = @source.projection?
-        def fetch?      = @source.fetch?
-        def derive?     = @source.derive?
+        def intake?     = false
+        def derived?    = false
+        def external?   = @source&.external? || false
+        def projection? = false
+        def fetch?      = false
+        def derive?     = false
         def nested?     = !!@raw["nested"]
-        def handler     = @source.handler
-        def config      = @source.config
+        def handler     = nil
+        def config      = @source.respond_to?(:config) ? @source.config : nil
 
         KIND = :produced
 

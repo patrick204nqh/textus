@@ -24,7 +24,7 @@ RSpec.describe Textus::Action::Published do
             path: data/artifacts/catalogs/people.json
             lane: artifacts
             owner: automation:auto
-            source: { from: derive, select: knowledge.people }
+            source: { from: external, command: "make", sources: [] }
             publish:
               - { to: PEOPLE.md, template: people.mustache }
       YAML

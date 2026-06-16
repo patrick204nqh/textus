@@ -22,7 +22,7 @@ RSpec.describe "textus drain concurrency (build lock)" do
           path: data/artifacts/note.json
           lane: artifacts
           owner: automation:auto
-          source: { from: derive, select: knowledge.note }
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: NOTE.md, template: echo.mustache }
     YAML

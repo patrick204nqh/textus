@@ -20,7 +20,7 @@ RSpec.describe Textus::Doctor do
           path: data/artifacts/summary.json
           lane: artifacts
           kind: produced
-          source: { from: derive, select: [knowledge.notes] }
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: summary.md, template: summary.mustache }
 

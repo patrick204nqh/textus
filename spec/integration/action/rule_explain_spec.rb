@@ -75,7 +75,7 @@ RSpec.describe Textus::Action::RuleExplain do
         entries:
           - { key: knowledge.src, path: data/knowledge/src.md, lane: knowledge, kind: leaf }
           - { key: artifacts.feed, path: data/artifacts/feed.md, lane: artifacts,
-              kind: produced, source: { from: fetch, handler: noop } }
+              kind: produced, source: { from: external, command: "make", sources: [] } }
         rules:
           - match: artifacts.feed
             retention: { ttl: 30d, action: archive }

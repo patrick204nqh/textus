@@ -30,11 +30,11 @@ module Textus
           klass.from_raw(common, raw)
         end
 
-        # ADR 0093: an entry's production block is the unified `source:`. Returns a
-        # Manifest::Policy::Source; kind (intake/derived) is read from source.from.
-        def self.parse_source(raw, key)
-          block = raw["source"] or
-            raise BadManifest.new("entry '#{key}' requires a source: { from: derive|fetch|external, ... }")
+        # Parse the optional `source:` block. Returns nil when absent (workflow
+        # produced entries register their produce logic in .textus/workflows/).
+        def self.parse_source(raw, _key)
+          block = raw["source"]
+          return nil if block.nil?
 
           Textus::Manifest::Policy::Source.new(block)
         end

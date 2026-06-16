@@ -16,7 +16,7 @@ RSpec.describe Textus::Action::Put do
             kind: produced
             path: data/feeds/catalog.json
             lane: feeds
-            source: { from: derive, select: "knowledge", pluck: [title] }
+            source: { from: external, command: "make", sources: [] }
       YAML
 
       store_from_manifest(

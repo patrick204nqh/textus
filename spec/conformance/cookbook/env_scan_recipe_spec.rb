@@ -8,24 +8,8 @@ require "spec_helper"
 RSpec.describe "cookbook: environment-scan (nested machines intake)" do
   include_context "textus_store_fixture"
 
-  # Canned probe output stands in for `ssh host '<probe script>'`. A mapping
-  # (object), so a format:yaml entry stores queryable content.
-  let(:probe_json) { %({"os":"darwin24","packages":{"brew":42},"runtimes":{"ruby":"3.3.9","node":"20.11"}}) }
-
-  let(:machines_step) { <<~RUBY }
-    class MachinesFetch < Textus::Step::Fetch
-      def call(caps:, config:, args:, **)
-        machine = args[:leaf_segments].first
-        raise "unknown machine: \#{machine}" unless config.fetch("machines").key?(machine)
-        raw = #{probe_json.inspect}                      # stands in for the SSH probe
-        caps.steps.invoke(:fetch, :json,
-                          caps: caps, config: { "bytes" => raw }, args: args)
-      end
-    end
-  RUBY
-
   let(:store) do
-    store_from_manifest(root, lanes: %w[feeds], files: { "steps/fetch/machines.rb" => machines_step }, manifest: <<~YAML)
+    store_from_manifest(root, lanes: %w[feeds], manifest: <<~YAML)
       version: textus/3
       roles:
         - { name: automation, can: [converge] }
@@ -38,15 +22,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
           format: yaml
           nested: true
           tracked: false
-          kind: produced
-          source:
-            from: fetch
-            handler: machines
-            ttl: 1h
-            config:
-              machines:
-                laptop:   { via: local }
-                prod-web: { via: ssh, host: "user@10.0.0.5" }
+          kind: nested
       rules: []
     YAML
   end

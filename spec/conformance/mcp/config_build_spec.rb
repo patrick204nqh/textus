@@ -36,13 +36,9 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
           kind: produced
           path: data/artifacts/mcp.json
           lane: artifacts
+          source: { from: external, command: "make", sources: [] }
           publish:
             - { to: .mcp.json }
-          source:
-            from: derive
-            select:
-              - knowledge.project
-            transform: mcp_config_reducer
     YAML
 
     File.write(File.join(root, "data/knowledge/project.md"),
