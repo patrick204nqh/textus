@@ -8,7 +8,7 @@ module Textus
       extend Textus::Contract::DSL
 
       verb :pulse
-      summary "Delta since cursor — changed entries, stale, pending proposals, doctor summary."
+      summary "Delta since cursor — changed entries, pending proposals, index freshness."
       surfaces :cli, :mcp
       around :cursor
       arg :since, Integer, session_default: :cursor,
@@ -26,26 +26,16 @@ module Textus
         @audit_log = container.audit_log
         @root = container.root
 
-        freshness_rows = Pulse::Scanner.new.call(container: container, call: call)
         {
-          "cursor" => @audit_log.latest_seq,
-          "changed" => Textus::Action::Audit.new(seq_since: @since).call(container: container),
-          "stale" => freshness_rows.select { |row| row[:status] == :expired }.map { |row| row[:key] },
+          "cursor"         => @audit_log.latest_seq,
+          "changed"        => Textus::Action::Audit.new(seq_since: @since).call(container: container),
           "pending_review" => review_keys,
-          "doctor" => doctor_summary,
-          "contract_etag" => Textus::Etag.for_contract(@root),
-          "next_due_at" => soonest_due(freshness_rows),
+          "contract_etag"  => Textus::Etag.for_contract(@root),
+          "index_etag"     => index_etag(container),
         }
       end
 
       private
-
-      def soonest_due(rows)
-        times = rows.map { |row| row[:next_due_at] }.compact.map { |t| Time.parse(t) }
-        return nil if times.empty?
-
-        times.min.utc.iso8601
-      end
 
       def review_keys
         queue = @manifest.policy.queue_lane
@@ -55,14 +45,11 @@ module Textus
         rows.map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
       end
 
-      def doctor_summary
-        result = Textus::Doctor.build(container: @container)
-        issues = result["issues"] || []
-        {
-          "ok" => result["ok"],
-          "warn" => issues.count { |i| i["level"] == "warning" },
-          "fail" => issues.count { |i| i["level"] == "error" },
-        }
+      def index_etag(container)
+        path = container.manifest.resolver.resolve("artifacts.index").path
+        File.exist?(path) ? container.file_store.etag(path) : nil
+      rescue Textus::Error
+        nil
       end
     end
   end

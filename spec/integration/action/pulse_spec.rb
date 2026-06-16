@@ -22,10 +22,17 @@ RSpec.describe Textus::Action::Pulse do
   let(:store) { Textus::Store.new(root) }
   let(:ops)   { store.as("human") }
 
-  it "returns an envelope with cursor, changed, stale, pending_review, doctor" do
+  it "returns cursor, changed, pending_review, contract_etag, index_etag" do
     result = ops.pulse(since: 0)
-    expect(result).to include("cursor", "changed", "stale", "pending_review", "doctor")
-    expect(result["doctor"]).to include("ok", "warn", "fail")
+    expect(result).to include("cursor", "changed", "pending_review", "contract_etag", "index_etag")
+    expect(result).not_to have_key("stale")
+    expect(result).not_to have_key("doctor")
+    expect(result).not_to have_key("next_due_at")
+  end
+
+  it "index_etag is nil when artifacts.index does not exist" do
+    result = ops.pulse(since: 0)
+    expect(result["index_etag"]).to be_nil
   end
 
   it "advances cursor monotonically across calls" do
