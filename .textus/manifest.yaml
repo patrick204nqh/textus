@@ -9,10 +9,9 @@ lanes:
   - { name: proposals, kind: queue,     desc: "changes awaiting a human accept" }
   - { name: artifacts, kind: machine,   desc: "machine-maintained computed outputs" }
 entries:
-  - { key: knowledge.project,  path: data/knowledge/project.md,      lane: knowledge, schema: project, owner: human:self, kind: leaf }
-  - { key: knowledge.runbooks, path: data/knowledge/runbooks,         lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
+  - { key: knowledge.project,  lane: knowledge, schema: project, owner: human:self, kind: leaf }
+  - { key: knowledge.runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
   - key: knowledge.reference
-    path: data/knowledge/reference
     lane: knowledge
     owner: human:self
     nested: true
@@ -21,81 +20,71 @@ entries:
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
-    path: data/knowledge/how-to
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/how-to }]
   - key: knowledge.explanation
-    path: data/knowledge/explanation
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/explanation }]
   - key: knowledge.cookbook
-    path: data/knowledge/cookbook
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/cookbook }]
   - key: knowledge.tutorials
-    path: data/knowledge/tutorials
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/tutorials }]
   - key: knowledge.decisions
-    path: data/knowledge/decisions
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/architecture/decisions }]
-  - { key: knowledge.docs-index,        path: data/knowledge/docs-readme.md,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
-  - { key: knowledge.architecture-index, path: data/knowledge/architecture-readme.md, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
-  - { key: knowledge.readme,            path: data/knowledge/readme.md,              lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
-  - { key: knowledge.contributing,      path: data/knowledge/contributing.md,        lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
-  - { key: knowledge.security,          path: data/knowledge/security.md,            lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
-  - { key: notebook.notes,   path: data/notebook/notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
-  - { key: proposals.notes,  path: data/proposals/notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
+  - { key: knowledge.docs-index,         path: knowledge/docs-readme.md,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
+  - { key: knowledge.architecture-index, path: knowledge/architecture-readme.md, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
+  - { key: knowledge.readme,       lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
+  - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
+  - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
+  - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
+  - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - key: artifacts.derived.orientation
-    path: data/artifacts/derived/orientation.json
     lane: artifacts
     kind: produced
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: CLAUDE.md,  template: orientation.mustache, inject_boot: true }
       - { to: AGENTS.md,  template: orientation.mustache }
-  - { key: artifacts.derived.mcp-config,    path: data/artifacts/derived/mcp.json,    lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .mcp.json }] }
-  - { key: artifacts.derived.claude-plugin, path: data/artifacts/derived/plugin.json, lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .claude-plugin/plugin.json }] }
-  - { key: artifacts.derived.opencode-config, path: data/artifacts/derived/opencode.json, lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: opencode.json }] }
+  - { key: artifacts.derived.mcp-config,      path: artifacts/derived/mcp.json,      lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .mcp.json }] }
+  - { key: artifacts.derived.claude-plugin,   path: artifacts/derived/plugin.json,   lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .claude-plugin/plugin.json }] }
+  - { key: artifacts.derived.opencode-config, path: artifacts/derived/opencode.json, lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: opencode.json }] }
   - key: artifacts.derived.verbs
-    path: data/artifacts/derived/verbs.json
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/verbs.md, template: verbs.mustache }]
   - key: artifacts.derived.schema
-    path: data/artifacts/derived/schema.json
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/schema.md, template: schema.mustache }]
   - key: artifacts.derived.adr-log
-    path: data/artifacts/derived/adr-log.json
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/adr-log.md, template: adr-log.mustache }]
   - key: artifacts.derived.authority
-    path: data/artifacts/derived/authority.json
     lane: artifacts
     kind: produced
     format: json
