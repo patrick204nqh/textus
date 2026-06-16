@@ -16,7 +16,7 @@ tracks both additive improvements and breaking protocol bumps independently.
 - **Workflow system** (PR #218): Ruby DSL files in `.textus/workflows/` replace the `step/` extension model. `Workflow::Registry` (loaded from `.textus/workflows/**/*.rb`) is resolved by `Produce::Engine` at produce time; `Workflow::Runner` threads data through each named step and persists. Core components: `Workflow::Context`, `Workflow::Pattern` (glob matching), `Workflow::DSL`, `Workflow::Collector`, `Workflow::Registry`, `Workflow::Loader`, `Workflow::Runner`.
 - **`artifacts.index` produced workflow**: pre-computed full-store catalog (`artifacts.index`) served as a produced artifact — enumerates every manifest entry with its key, lane, format, etag, and `generated_at` timestamp.
 - **MCP `resources/list` and `resources/read`** (PR #221): machine-lane `produced` entries are now exposed as MCP resources at `textus://<key>` URIs with correct MIME types. Clients discover them via the `resources` capability advertised in the `initialize` handshake.
-- **Raw ingest pipeline** (PR #219, [ADR 0114](docs/architecture/decisions/0114-raw-zone-kind.md), [ADR 0116](docs/architecture/decisions/0116-raw-ingest-pipeline.md)): new `raw` zone-kind with a `write-once` gate and an `ingest` capability/verb (`Action::Ingest`). Doctor checks and an asset sentinel guard the lane. The `raw` bijection entry maps `raw → ingest`.
+- **Raw ingest pipeline** (PR #219, [ADR 0114](docs/architecture/decisions/0114-foundation-refactor.md), [ADR 0116](docs/architecture/decisions/0116-raw-lane-and-ingest-verb.md)): new `raw` zone-kind with a `write-once` gate and an `ingest` capability/verb (`Action::Ingest`). Doctor checks and an asset sentinel guard the lane. The `raw` bijection entry maps `raw → ingest`.
 
 ### Changed
 
@@ -32,7 +32,7 @@ tracks both additive improvements and breaking protocol bumps independently.
 ### Removed
 
 - **Step system** (PR #218): entire `lib/textus/step/` directory deleted along with all step-related specs, `container.steps`, dead `hooks.rb` doctor check, and `ports/audit_subscriber.rb`. **Migration:** rewrite step files as `.textus/workflows/*.rb` using the Workflow DSL.
-- **`Jobs::Refresh`** ([ADR 0115](docs/architecture/decisions/0115-remove-jobs-refresh.md)): workflow-based periodic re-derivation replaces the background refresh job.
+- **`Jobs::Refresh`** ([ADR 0115](docs/architecture/decisions/0115-role-trust-model.md)): workflow-based periodic re-derivation replaces the background refresh job.
 - **`handler_permit` manifest field** (PR #218): doctor-only field with no runtime enforcement deleted along with its policy class and schema key.
 - **Dead guards and constants**: `derived_write?` no-op guard from `WriteVerb#cascade_to_rdeps`; `publish_each` runtime guard from `Entry::Publish`; duplicate inline `check_action!` from `put`/`key_delete`/`reject`; `BURN = :sync` constant; cross-lane notebook side-effect from `Action::Ingest`.
 - **`source.from: fetch` and `source.from: derive`** narrowed to `external` only — fetch/derive methods removed from `Produced`; freshness/pulse use retention rules; boot drops intake/derived keys.
