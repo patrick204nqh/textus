@@ -43,9 +43,7 @@ module Textus
           action: :ingest, actor: call.role, key: key,
         )
 
-        envelope = write_raw_entry(key, now, container, call)
-        ensure_notebook_entry(key, now, container, call)
-        envelope
+        write_raw_entry(key, now, container, call)
       end
 
       private
@@ -131,32 +129,6 @@ module Textus
         FileUtils.mkdir_p(assets_root)
         sentinel = File.join(assets_root, ".gitignore")
         File.write(sentinel, "*\n") unless File.exist?(sentinel)
-      end
-
-      def ensure_notebook_entry(raw_key, now, container, call)
-        nb_key = "notebook.notes.#{@slug}"
-        path   = container.manifest.resolver.resolve(nb_key).path
-        return if container.file_store.exists?(path)
-
-        ts          = now.iso8601
-        frontmatter = <<~MARKDOWN
-          ---
-          created_at: "#{ts}"
-          updated_at: "#{ts}"
-          sources:
-            - #{raw_key}
-          ---
-
-        MARKDOWN
-
-        mentry = container.manifest.resolver.resolve(nb_key).entry
-        Textus::Envelope::Writer.from(container: container, call: call).put(
-          nb_key,
-          mentry: mentry,
-          payload: Textus::Envelope::Writer::Payload.new(
-            meta: nil, body: frontmatter, content: nil,
-          ),
-        )
       end
     end
   end

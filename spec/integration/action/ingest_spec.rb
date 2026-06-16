@@ -35,17 +35,6 @@ RSpec.describe Textus::Action::Ingest do
       expect(env.body).to be_a(String)
     end
 
-    it "creates a notebook.notes stub wired to the raw key" do
-      store.as("agent").ingest(
-        kind: "url", slug: "github-pr-218",
-        url: "https://github.com/org/repo/pull/218"
-      )
-      date = Date.today.strftime("%Y.%m.%d")
-      nb = store.as("agent").get("notebook.notes.github-pr-218")
-      expect(nb).not_to be_nil
-      expect(nb.body).to include("raw.#{date}.url-github-pr-218")
-    end
-
     it "raises on second ingest of the same slug on the same day (write-once)" do
       store.as("agent").ingest(kind: "url", slug: "pr-dupe", url: "https://example.com")
       expect do
