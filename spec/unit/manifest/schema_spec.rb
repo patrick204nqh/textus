@@ -261,10 +261,10 @@ RSpec.describe Textus::Manifest::Schema do
       .to raise_error(Textus::BadManifest, /`upkeep:` was removed.*retention/m)
   end
 
-  describe "ADR 0091 machine kind" do
+  describe "ADR 0091 machine kind / ADR 0114 raw kind" do
     it "accepts kind: machine and maps it to converge" do
       expect(Textus::Manifest::Schema::LANES["machine"]).to eq("converge")
-      expect(Textus::Manifest::Schema::LANE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue")
+      expect(Textus::Manifest::Schema::LANE_KINDS).to contain_exactly("canon", "workspace", "machine", "queue", "raw")
     end
 
     it "rejects the retired quarantine/derived kinds with a 0091 hint" do

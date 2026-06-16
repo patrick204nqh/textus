@@ -1,13 +1,14 @@
 version: textus/3
 roles:
-  - { name: human,      can: [author, propose] }
-  - { name: agent,      can: [propose, keep] }
-  - { name: automation, can: [converge] }
+  - { name: human,      can: [author, propose, ingest] }
+  - { name: agent,      can: [propose, keep, ingest] }
+  - { name: automation, can: [converge, ingest] }
 lanes:
   - { name: knowledge, kind: canon,     desc: "the maintained source of truth about the repo" }
   - { name: notebook,  kind: workspace, owner: agent, desc: "the agent's own durable working notes" }
   - { name: proposals, kind: queue,     desc: "changes awaiting a human accept" }
   - { name: artifacts, kind: machine,   desc: "machine-maintained computed outputs" }
+  - { name: raw,       kind: raw,       desc: "ingested external source material (write-once)" }
 entries:
   - { key: knowledge.project,  lane: knowledge, schema: project, owner: human:self, kind: leaf }
   - { key: knowledge.runbooks, lane: knowledge, schema: runbook, owner: human:self, nested: true, kind: nested }
@@ -56,6 +57,7 @@ entries:
   - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
   - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
+  - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
   - key: artifacts.derived.orientation
     lane: artifacts
     kind: produced

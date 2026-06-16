@@ -4,14 +4,15 @@ module Textus
   class Gate
     class Auth
       FLOOR = {
-        put: %w[lane_writable_by],
-        key_delete: %w[lane_writable_by],
-        key_mv: %w[lane_writable_by],
+        put: %w[lane_writable_by raw_lane_ingest_only],
+        key_delete: %w[lane_deletable_by],
+        key_mv: %w[lane_writable_by raw_lane_ingest_only],
         accept: %w[author_held],
         reject: %w[author_held],
-        propose: %w[lane_writable_by],
-        key_mv_prefix: %w[lane_writable_by],
-        key_delete_prefix: %w[lane_writable_by],
+        propose: %w[lane_writable_by raw_lane_ingest_only],
+        key_mv_prefix: %w[lane_writable_by raw_lane_ingest_only],
+        key_delete_prefix: %w[lane_writable_by raw_lane_ingest_only],
+        ingest: %w[lane_writable_by raw_write_once],
       }.freeze
 
       AuthContext = Struct.new(
@@ -104,12 +105,15 @@ module Textus
 
       def evaluate(pred_name, ctx, extra)
         case pred_name
-        when "lane_writable_by"  then evaluate_lane_writable_by(ctx)
-        when "author_held"       then evaluate_author_held(ctx)
-        when "target_is_canon"   then evaluate_target_is_canon(ctx)
-        when "etag_match"        then evaluate_etag_match(ctx, extra)
-        when "schema_valid"      then evaluate_schema_valid(ctx)
-        when "fresh_within"      then { pass: true }
+        when "lane_writable_by"      then evaluate_lane_writable_by(ctx)
+        when "author_held"           then evaluate_author_held(ctx)
+        when "target_is_canon"       then evaluate_target_is_canon(ctx)
+        when "etag_match"            then evaluate_etag_match(ctx, extra)
+        when "schema_valid"          then evaluate_schema_valid(ctx)
+        when "fresh_within"          then { pass: true }
+        when "raw_lane_ingest_only"  then evaluate_raw_lane_ingest_only(ctx)
+        when "raw_write_once"        then evaluate_raw_write_once(ctx)
+        when "lane_deletable_by"     then evaluate_lane_deletable_by(ctx)
         else raise Textus::UsageError.new("unknown predicate '#{pred_name}'")
         end
       end
@@ -166,6 +170,48 @@ module Textus
         rescue Textus::SchemaViolation => e
           { pass: false, reason: schema_reason(e) }
         end
+      end
+
+      def evaluate_raw_lane_ingest_only(ctx)
+        return { pass: true } unless @manifest.policy.declared_kind(ctx.mentry.lane.to_s) == :raw
+        return { pass: true } if ctx.action == :ingest
+
+        { pass: false, error: Textus::Error.new(
+          :raw_lane_ingest_only,
+          "raw lane '#{ctx.mentry.lane}' only accepts `textus ingest` — " \
+          "use that verb instead of '#{ctx.action}'",
+        ) }
+      end
+
+      def evaluate_raw_write_once(ctx)
+        path = @manifest.resolver.resolve(ctx.target).path
+        return { pass: true } unless File.exist?(path)
+
+        { pass: false, error: Textus::Error.new(
+          :raw_write_once,
+          "raw entry '#{ctx.target}' already exists; " \
+          "delete it first (`textus key-delete #{ctx.target}`), then re-ingest",
+        ) }
+      end
+
+      # Deletion authority: the lane's write capability OR the author capability.
+      # On raw-kind lanes only the author capability grants deletion (correction
+      # escape hatch); the lane's own verb (ingest) is write-only. On all other
+      # lane kinds the behaviour matches lane_writable_by — the lane's writer
+      # can delete as before.
+      def evaluate_lane_deletable_by(ctx)
+        is_raw = @manifest.policy.declared_kind(ctx.mentry.lane.to_s) == :raw
+        pass = if is_raw
+                 ctx.actor_caps.include?("author")
+               else
+                 ctx.actor_caps.include?(ctx.lane_verb.to_s) || ctx.actor_caps.include?("author")
+               end
+        return { pass: true } if pass
+
+        extra_holders = is_raw ? ["author"] : [ctx.lane_verb.to_s, "author"]
+        holders = extra_holders.flat_map { |v| @manifest.policy.roles_with_capability(v) }.uniq
+        { pass: false, error: Textus::WriteForbidden.new(ctx.mentry.key, ctx.mentry.lane,
+                                                         verb: ctx.lane_verb, holders:) }
       end
 
       def schema_reason(err)

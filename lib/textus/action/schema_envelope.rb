@@ -12,8 +12,6 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "any key in the family whose schema you want; returns required/optional fields and their types"
 
-      BURN = :sync
-
       def initialize(key:)
         super()
         @key = key

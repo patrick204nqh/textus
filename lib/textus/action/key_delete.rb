@@ -15,8 +15,6 @@ module Textus
       arg :if_etag, String,
           description: "optimistic-concurrency guard: the etag you last read; the delete is rejected if the entry changed since"
 
-      BURN = :sync
-
       def initialize(key:, if_etag: nil)
         super()
         @key = key
@@ -27,8 +25,6 @@ module Textus
         run_with_cascade(@key, container:, call:) do
           Textus::Manifest::Data.validate_key!(@key)
           mentry = container.manifest.resolver.resolve(@key).entry
-
-          auth(container).check_action!(action: :key_delete, actor: call.role, key: @key, extra: { if_etag: @if_etag })
 
           writer(container, call).delete(@key, mentry:, if_etag: @if_etag)
 

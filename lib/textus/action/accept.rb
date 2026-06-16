@@ -11,8 +11,6 @@ module Textus
       cli "accept"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 
-      BURN = :sync
-
       def initialize(pending_key:)
         super()
         @pending_key = pending_key

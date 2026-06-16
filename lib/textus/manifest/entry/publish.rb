@@ -18,8 +18,6 @@ module Textus
         # the block groups the two but does not make exclusivity structural, so
         # this stays the one enforcement point (ADR 0052 D2).
         def self.resolve(entry)
-          reject_removed_publish_each(entry)
-
           set = []
           set << "publish.to"   unless Array(entry.publish_to).empty?
           set << "publish.tree" unless entry.publish_tree.nil?
@@ -32,16 +30,6 @@ module Textus
 
           mode_for(entry, set.first)
         end
-
-        def self.reject_removed_publish_each(entry)
-          return unless entry.raw["publish_each"]
-
-          raise Textus::UsageError.new(
-            "entry '#{entry.key}': publish_each was removed in 0.42.0 (ADR 0051) — " \
-            "mirror the subtree with `publish: { tree: \"...\" }`.",
-          )
-        end
-        private_class_method :reject_removed_publish_each
 
         def self.mode_for(entry, key)
           case key

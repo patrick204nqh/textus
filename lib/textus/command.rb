@@ -12,6 +12,11 @@ module Textus
     Accept          = Data.define(:pending_key, :role)
     Reject          = Data.define(:pending_key, :role)
     Enqueue         = Data.define(:type, :args, :role)
+    Ingest          = Data.define(:kind, :slug, :url, :path, :zone, :label, :role) do
+      def initialize(kind:, slug:, role:, url: nil, path: nil, zone: nil, label: nil)
+        super
+      end
+    end
     List            = Data.define(:prefix, :lane, :role)
     Where           = Data.define(:key, :role)
     Uid             = Data.define(:key, :role)

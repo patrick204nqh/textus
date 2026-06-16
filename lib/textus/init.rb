@@ -3,7 +3,7 @@ require "pathname"
 
 module Textus
   module Init
-    ZONES = %w[knowledge notebook proposals artifacts].freeze
+    ZONES = %w[knowledge notebook proposals artifacts raw].freeze
 
     DEFAULT_MANIFEST = <<~YAML
       version: textus/3
@@ -62,12 +62,19 @@ module Textus
       raise UsageError.new(".textus/ already exists at #{target_root}") if File.directory?(target_root)
     end
 
+    ASSET_ZONES = %w[raw].freeze
+
     def self.create_directories(target_root)
       FileUtils.mkdir_p(File.join(target_root, "schemas"))
       FileUtils.mkdir_p(File.join(target_root, "templates"))
       FileUtils.mkdir_p(File.join(target_root, "workflows"))
       ZONES.each do |z|
         dir = File.join(target_root, "data", z)
+        FileUtils.mkdir_p(dir)
+        File.write(File.join(dir, ".gitkeep"), "")
+      end
+      ASSET_ZONES.each do |z|
+        dir = File.join(target_root, "assets", z)
         FileUtils.mkdir_p(dir)
         File.write(File.join(dir, ".gitkeep"), "")
       end

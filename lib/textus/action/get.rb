@@ -15,8 +15,6 @@ module Textus
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       view { |v, _i| v.to_h_for_wire }
 
-      BURN = :sync
-
       def initialize(key:)
         super()
         @key = key

@@ -71,6 +71,18 @@
       ]
     },
     {
+      "name": "ingest",
+      "summary": "Capture external source material into the raw lane. Write-once, agent-owned.",
+      "args": [
+        "kind",
+        "label",
+        "path",
+        "slug",
+        "url",
+        "zone"
+      ]
+    },
+    {
       "name": "list",
       "summary": "List keys filtered by lane and/or prefix.",
       "args": [
@@ -211,7 +223,7 @@
     },
     {
       "name": "drain",
-      "summary": "Seed refresh + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.",
+      "summary": "Seed materialize + sweep jobs then drain the queue to empty. Identical to one Watcher tick. Use when no watcher is running.",
       "args": [
         "lane",
         "prefix"

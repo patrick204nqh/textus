@@ -11,8 +11,6 @@ module Textus
       arg :lean, :boolean,
           description: "return only orientation essentials (zones, agent_quickstart, contract_etag) for cheap session-start injection"
 
-      BURN = :sync
-
       def initialize(lean: nil)
         super()
         @lean = lean

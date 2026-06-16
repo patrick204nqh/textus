@@ -10,8 +10,6 @@ module Textus
       surfaces :cli
       cli "published"
 
-      BURN = :sync
-
       def args
         {}
       end

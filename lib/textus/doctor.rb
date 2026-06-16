@@ -21,6 +21,8 @@ module Textus
       Check::PublishTreeIndexOverlap,
       Check::ProposalTargets,
       Check::GeneratorDrift,
+      Check::RawAssetPaths,
+      Check::NotebookSources,
     ].freeze
 
     ALL_CHECKS = CHECKS.map(&:name_key).freeze

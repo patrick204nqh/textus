@@ -13,6 +13,7 @@ module Textus
           "workspace" => "keep",
           "machine" => "converge",
           "queue" => "propose",
+          "raw" => "ingest",
         }.freeze
 
         LANE_KINDS         = LANES.keys.freeze

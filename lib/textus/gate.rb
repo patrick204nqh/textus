@@ -31,6 +31,7 @@ module Textus
       key_mv_prefix: Textus::Command::KeyMvPrefix,
       key_delete_prefix: Textus::Command::KeyDeletePrefix,
       drain: Textus::Command::Drain,
+      ingest: Textus::Command::Ingest,
     }.freeze
 
     ROUTES = {
@@ -62,6 +63,7 @@ module Textus
       Command::KeyMvPrefix => [Textus::Action::KeyMvPrefix],
       Command::KeyDeletePrefix => [Textus::Action::KeyDeletePrefix],
       Command::Drain => [Textus::Action::Drain],
+      Command::Ingest => [Textus::Action::Ingest],
     }.freeze
 
     def initialize(container)

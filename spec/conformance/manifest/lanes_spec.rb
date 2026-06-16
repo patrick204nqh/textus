@@ -3,19 +3,22 @@ require "spec_helper"
 RSpec.describe "Schema::LANES single source of truth (ADR 0034)" do
   let(:s) { Textus::Manifest::Schema }
 
-  it "is the kind => required-capability function (ADR 0091: quarantine + derived folded into machine)" do
+  it "is the kind => required-capability function (ADR 0091: quarantine + derived folded into machine; ADR 0114: raw→ingest)" do
     expect(s::LANES).to eq(
-      "canon" => "author", "workspace" => "keep", "machine" => "converge",
-      "queue" => "propose"
+      "canon" => "author",
+      "workspace" => "keep",
+      "machine" => "converge",
+      "queue" => "propose",
+      "raw" => "ingest",
     )
   end
 
   it "derives LANE_KINDS from the lane keys (order preserved for the error message)" do
-    expect(s::LANE_KINDS).to eq(%w[canon workspace machine queue])
+    expect(s::LANE_KINDS).to eq(%w[canon workspace machine queue raw])
   end
 
-  it "derives CAPABILITIES from the lane values, de-duplicated (three: machine requires converge)" do
-    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "converge")
+  it "derives CAPABILITIES from the lane values, de-duplicated (five: machine requires converge, raw→ingest)" do
+    expect(s::CAPABILITIES).to contain_exactly("author", "keep", "propose", "converge", "ingest")
   end
 
   it "derives KIND_REQUIRES_VERB as the lane table itself" do

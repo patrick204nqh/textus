@@ -6,13 +6,11 @@ module Textus
       extend Textus::Contract::DSL
 
       verb :drain
-      summary "Seed refresh + sweep jobs then drain the queue to empty. " \
+      summary "Seed materialize + sweep jobs then drain the queue to empty. " \
               "Identical to one Watcher tick. Use when no watcher is running."
       surfaces :cli, :mcp
       arg :prefix, String, description: "restrict to keys under this dotted prefix"
       arg :lane,   String, description: "restrict to entries in this lane"
-
-      BURN = :sync
 
       def initialize(prefix: nil, lane: nil)
         super()

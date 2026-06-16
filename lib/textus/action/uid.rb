@@ -12,8 +12,6 @@ module Textus
       arg :key, String, required: true, positional: true, description: "entry key"
       view(:cli) { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }
 
-      BURN = :sync
-
       def initialize(key:)
         super()
         @key = key

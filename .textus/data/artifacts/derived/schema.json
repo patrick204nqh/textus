@@ -33,6 +33,35 @@
       ]
     },
     {
+      "name": "raw",
+      "fields": [
+        {
+          "name": "asset",
+          "type": "string",
+          "required": false,
+          "maintained_by": "machine"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "required": false,
+          "maintained_by": "machine"
+        },
+        {
+          "name": "ingested_at",
+          "type": "string",
+          "required": true,
+          "maintained_by": "machine"
+        },
+        {
+          "name": "source",
+          "type": "map",
+          "required": true,
+          "maintained_by": "machine"
+        }
+      ]
+    },
+    {
       "name": "runbook",
       "fields": [
         {

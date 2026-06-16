@@ -4,7 +4,7 @@ module Textus
   module Jobs
     class Planner
       ACTIONS_BY_TRIGGER = {
-        "convergence" => %w[materialize refresh sweep],
+        "convergence" => %w[materialize sweep],
         "entry.written" => %w[materialize],
         "entry.deleted" => %w[materialize],
         "entry.moved" => %w[materialize],
@@ -14,7 +14,6 @@ module Textus
 
       SCOPE_RESOLVERS = {
         "materialize" => :producible_keys,
-        "refresh" => :stale_intake_keys,
         "sweep" => :lane_keys,
       }.freeze
 
@@ -71,7 +70,6 @@ module Textus
         actions = ACTIONS_BY_TRIGGER.fetch(type, [])
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
-        stale_intake_keys(nil).each { |k| jobs << job("refresh", k, role) } if actions.include?("refresh")
         if actions.include?("sweep")
           jobs << Textus::Ports::JobStore::Job.new(
             type: "sweep", args: { "scope" => {} }, enqueued_by: role,
@@ -93,14 +91,6 @@ module Textus
         @manifest.data.entries
                  .select { |e| !e.publish_tree.nil? || !e.publish_to.empty? }
                  .map(&:key)
-      end
-
-      def stale_intake_keys(_target)
-        Textus::Core::Freshness::Evaluator.new(
-          manifest: @manifest,
-          file_stat: Textus::Ports::Storage::FileStat.new,
-          clock: Textus::Ports::Clock.new,
-        ).stale_keys(prefix: nil, lane: nil)
       end
 
       def lane_keys(_target)

@@ -20,8 +20,6 @@ module Textus
           description: "optimistic-concurrency guard: the etag you last read; the write is rejected if the entry changed since"
       view { |env| { "uid" => env.uid, "etag" => env.etag } }
 
-      BURN = :sync
-
       def initialize(key:, meta: nil, body: nil, content: nil, if_etag: nil)
         super()
         @key = key
@@ -35,8 +33,6 @@ module Textus
         run_with_cascade(@key, container:, call:) do
           Textus::Manifest::Data.validate_key!(@key)
           mentry = container.manifest.resolver.resolve(@key).entry
-          auth(container).check_action!(action: :put, actor: call.role, key: @key, extra: { if_etag: @if_etag })
-
           envelope = writer(container, call).put(
             @key,
             mentry: mentry,

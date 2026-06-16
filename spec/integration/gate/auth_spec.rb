@@ -109,4 +109,77 @@ RSpec.describe Textus::Gate::Auth do
       expect(recorded).to eq(["agent"])
     end
   end
+
+  describe "raw lane enforcement" do
+    let(:raw_store) do
+      store_from_manifest(root, lanes: %w[raw notebook], manifest: <<~YAML)
+        version: textus/3
+        roles:
+          - { name: human,      can: [author, propose] }
+          - { name: agent,      can: [propose, keep, ingest] }
+          - { name: automation, can: [converge] }
+        lanes:
+          - { name: raw,      kind: raw,       desc: "ingest log" }
+          - { name: notebook, kind: workspace, desc: "agent notes" }
+        entries:
+          - { key: raw,            lane: raw,      owner: agent:self, nested: true, kind: nested, format: yaml }
+          - { key: notebook.notes, lane: notebook, owner: agent:self, nested: true, kind: nested }
+      YAML
+    end
+
+    it "blocks put to a raw-kind lane (ingest-only)" do
+      expect { raw_store.as("agent").put("raw.2026.06.16.github-pr-1", body: "x") }
+        .to raise_error(Textus::Error, /raw lane.*ingest/i)
+    end
+
+    it "blocks propose to a raw-kind lane" do
+      expect { raw_store.as("agent").propose("raw.2026.06.16.github-pr-1", body: "x") }
+        .to raise_error(Textus::Error)
+    end
+
+    it "rejects ingest if the raw key already exists" do
+      path = File.join(root, "data/raw/2026/06/16/github-pr-1.yaml")
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "ingested_at: '2026-06-16T10:00:00Z'\n")
+
+      auth = Textus::Gate::Auth.new(raw_store.container)
+      expect do
+        auth.check_action!(action: :ingest, actor: "agent", key: "raw.2026.06.16.github-pr-1")
+      end.to raise_error(Textus::Error, /already exists/)
+    end
+
+    it "allows ingest for a fresh raw key by an agent with ingest capability" do
+      auth = Textus::Gate::Auth.new(raw_store.container)
+      expect do
+        auth.check_action!(action: :ingest, actor: "agent", key: "raw.2026.06.16.github-pr-new")
+      end.not_to raise_error
+    end
+
+    it "blocks ingest for a role without ingest capability" do
+      auth = Textus::Gate::Auth.new(raw_store.container)
+      expect do
+        auth.check_action!(action: :ingest, actor: "human", key: "raw.2026.06.16.github-pr-new")
+      end.to raise_error(Textus::Error)
+    end
+
+    it "allows human to key_delete a raw entry (correction escape hatch)" do
+      path = File.join(root, "data/raw/2026/06/16/url-to-delete.yaml")
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "ingested_at: '2026-06-16T10:00:00Z'\nsource:\n  kind: url\n  url: https://example.com\n")
+
+      expect do
+        raw_store.as("human").key_delete("raw.2026.06.16.url-to-delete")
+      end.not_to raise_error
+    end
+
+    it "blocks agent from key_delete on raw lane (agent lacks author, only ingest)" do
+      path = File.join(root, "data/raw/2026/06/16/url-agent-del.yaml")
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "ingested_at: '2026-06-16T10:00:00Z'\nsource:\n  kind: url\n  url: https://example.com\n")
+
+      expect do
+        raw_store.as("agent").key_delete("raw.2026.06.16.url-agent-del")
+      end.to raise_error(Textus::WriteForbidden)
+    end
+  end
 end
