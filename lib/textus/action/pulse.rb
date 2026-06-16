@@ -27,11 +27,11 @@ module Textus
         @root = container.root
 
         {
-          "cursor"         => @audit_log.latest_seq,
-          "changed"        => Textus::Action::Audit.new(seq_since: @since).call(container: container),
+          "cursor" => @audit_log.latest_seq,
+          "changed" => Textus::Action::Audit.new(seq_since: @since).call(container: container),
           "pending_review" => review_keys,
-          "contract_etag"  => Textus::Etag.for_contract(@root),
-          "index_etag"     => index_etag(container),
+          "contract_etag" => Textus::Etag.for_contract(@root),
+          "index_etag" => index_etag(container),
         }
       end
 

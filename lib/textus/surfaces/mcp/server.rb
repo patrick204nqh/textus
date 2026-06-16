@@ -127,8 +127,8 @@ module Textus
                   .select { |e| e.lane == machine_lane && e.is_a?(Textus::Manifest::Entry::Produced) }
                   .each do |e|
                     resources << {
-                      "uri"      => "textus://#{e.key.tr(".", "/")}",
-                      "name"     => e.key,
+                      "uri" => "textus://#{e.key.tr(".", "/")}",
+                      "name" => e.key,
                       "mimeType" => mime_for_format(e.format),
                     }
                   end
@@ -143,12 +143,12 @@ module Textus
           content = env.content || env.body || ""
           text = content.is_a?(Hash) ? JSON.dump(content) : content.to_s
           emit_result(rid, {
-            "contents" => [{
-              "uri"      => uri,
-              "mimeType" => mime_for_format(@store.manifest.resolver.resolve(key).entry.format),
-              "text"     => text,
-            }],
-          })
+                        "contents" => [{
+                          "uri" => uri,
+                          "mimeType" => mime_for_format(@store.manifest.resolver.resolve(key).entry.format),
+                          "text" => text,
+                        }],
+                      })
         rescue Textus::Error => e
           emit_error(rid, ToolError::JSONRPC_CODE, "resource read failed: #{e.message}")
         end

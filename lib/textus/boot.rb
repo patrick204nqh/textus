@@ -153,15 +153,15 @@ module Textus
       etag = Textus::Etag.for_contract(container.root)
 
       {
-        "protocol"        => PROTOCOL_ID,
-        "store_root"      => container.root,
-        "contract_etag"   => etag,
-        "lanes"           => lanes_for(manifest),
+        "protocol" => PROTOCOL_ID,
+        "store_root" => container.root,
+        "contract_etag" => etag,
+        "lanes" => lanes_for(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-        "orientation"     => read_artifact_content(container, "artifacts.orientation"),
-        "context"         => read_boot_context(container),
-        "index_key"       => "artifacts.index",
-        "agent_protocol"  => agent_protocol(manifest),
+        "orientation" => read_artifact_content(container, "artifacts.orientation"),
+        "context" => read_boot_context(container),
+        "index_key" => "artifacts.index",
+        "agent_protocol" => agent_protocol(manifest),
       }.compact
     end
 
