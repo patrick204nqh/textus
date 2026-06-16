@@ -27,8 +27,6 @@ module Textus
           Textus::Manifest::Data.validate_key!(@key)
           mentry = container.manifest.resolver.resolve(@key).entry
 
-          auth(container).check_action!(action: :key_delete, actor: call.role, key: @key, extra: { if_etag: @if_etag })
-
           writer(container, call).delete(@key, mentry:, if_etag: @if_etag)
 
           { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => @key, "deleted" => true }

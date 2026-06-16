@@ -19,9 +19,6 @@ module Textus
 
       def call(container:, call:)
         run_with_cascade(@pending_key, container:, call:) do
-          auth = Textus::Gate::Auth.new(container)
-          auth.check_action!(action: :reject, actor: call.role, key: @pending_key)
-
           mentry = container.manifest.resolver.resolve(@pending_key).entry
           unless mentry.in_proposal_lane?(container.manifest.policy)
             raise ProposalError.new("reject: '#{@pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
