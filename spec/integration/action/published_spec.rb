@@ -8,7 +8,7 @@ RSpec.describe Textus::Action::Published do
       root,
       lanes: %w[knowledge artifacts],
       files: {
-        "templates/people.mustache" => "{{#entries}}- {{name}}\n{{/entries}}",
+        "templates/people.erb" => "<% entries.each do |e| %>- <%= e[\"name\"] %>\n<% end -%>",
         "data/knowledge/people/alice.md" => "---\nname: alice\n---\n",
       },
       manifest: <<~YAML,
@@ -26,7 +26,7 @@ RSpec.describe Textus::Action::Published do
             owner: automation:auto
             source: { from: external, command: "make", sources: [] }
             publish:
-              - { to: PEOPLE.md, template: people.mustache }
+              - { to: PEOPLE.md, template: people.erb }
       YAML
     )
   end

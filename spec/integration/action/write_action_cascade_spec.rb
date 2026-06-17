@@ -23,7 +23,7 @@ RSpec.describe Textus::Action::Put do
         root,
         lanes: %w[knowledge feeds],
         manifest: manifest,
-        files: { "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}" },
+        files: { "templates/catalog.erb" => "<% Array(entries).each do |e| %><%= e[\"title\"] %>\n<% end -%>" },
       )
     end
 

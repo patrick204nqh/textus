@@ -14,19 +14,19 @@ Each zone-kind maps 1:1 to exactly one capability (ADR 0091).
 
 | Zone `kind` | Required capability |
 |-------------|---------------------|
-{{#lanes}}| `{{kind}}` | `{{capability}}` |
-{{/lanes}}
+<% lanes.each do |lane| -%>| `<%= lane["kind"] %>` | `<%= lane["capability"] %>` |
+<% end -%>
 ## Zones (this manifest)
 
 | Zone | `kind` | Required capability | Purpose |
 |------|--------|---------------------|---------|
-{{#zones}}| `{{name}}` | `{{kind}}` | `{{capability}}` | {{desc}} |
-{{/zones}}
+<% zones.each do |zone| -%>| `<%= zone["name"] %>` | `<%= zone["kind"] %>` | `<%= zone["capability"] %>` | <%= zone["desc"] %> |
+<% end -%>
 ## Roles (this manifest)
 
 A role may write a zone iff it holds the capability that zone's kind requires; the last column lists the zone-kinds each role's capabilities authorize.
 
 | Role | Capabilities (`can`) | Writes zone-kinds |
 |------|----------------------|-------------------|
-{{#roles}}| `{{name}}` | {{#can}}`{{.}}` {{/can}}| {{#writes_kinds}}`{{.}}` {{/writes_kinds}}|
-{{/roles}}
+<% roles.each do |role| -%>| `<%= role["name"] %>` | <%= Array(role["can"]).map { |c| "`#{c}`" }.join(" ") %> | <%= Array(role["writes_kinds"]).map { |k| "`#{k}`" }.join(" ") %> |
+<% end -%>

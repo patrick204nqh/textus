@@ -32,7 +32,7 @@ module Textus
             optional(:path).value(:string)
             optional(:owner).value(:string)
             optional(:format).value(:string)
-            optional(:schema).value(:string)
+            optional(:schema).maybe(:string)
             optional(:kind).value(:string)
             optional(:nested).value(:bool)
             optional(:tracked).value(:bool)

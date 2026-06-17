@@ -24,10 +24,10 @@ RSpec.describe "textus drain concurrency (build lock)" do
           owner: automation:auto
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: NOTE.md, template: echo.mustache }
+            - { to: NOTE.md, template: echo.erb }
     YAML
 
-    File.write(File.join(root, "templates/echo.mustache"), "hello {{key}}\n")
+    File.write(File.join(root, "templates/echo.erb"), "hello <%= key %>\n")
     File.write(File.join(root, "data/knowledge/note.md"),
                "---\nkey: knowledge.note\n---\nbody\n")
   end

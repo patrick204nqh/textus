@@ -50,8 +50,8 @@ The `put` and `propose` tools take their frontmatter under the **`_meta`** prope
 
 | Tool | Summary | Args |
 |---|---|---|
-{{#tools}}| `{{name}}` | {{{summary}}} | {{args}} |
-{{/tools}}
+<% tools.each do |tool| -%>| `<%= tool["name"] %>` | <%= tool["summary"] %> | <%= tool["args"] %> |
+<% end -%>
 
 Maintenance tools (admin / bulk operations). The four bulk-destructive verbs
 default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
@@ -59,8 +59,8 @@ default to **dry-run** (ADR 0060): omitting `dry_run` returns a Plan; pass
 
 | Tool | Summary | Args |
 |---|---|---|
-{{#maintenance}}| `{{name}}` | {{{summary}}} | {{args}} |
-{{/maintenance}}
+<% maintenance.each do |tool| -%>| `<%= tool["name"] %>` | <%= tool["summary"] %> | <%= tool["args"] %> |
+<% end -%>
 
 ### Errors
 

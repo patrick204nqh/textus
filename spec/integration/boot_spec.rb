@@ -44,10 +44,10 @@ RSpec.describe Textus::Boot do
           owner: automation:auto
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: REPORT.md, template: report.mustache }
+            - { to: REPORT.md, template: report.erb }
     YAML
 
-    File.write(File.join(root, "templates/report.mustache"), "ok\n")
+    File.write(File.join(root, "templates/report.erb"), "ok\n")
   end
 
   let(:store) { Textus::Store.new(root) }

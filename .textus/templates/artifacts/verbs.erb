@@ -3,11 +3,11 @@
 
 # Verb reference
 
-{{#verbs}}
-## `textus {{name}}`
+<% verbs.each do |verb| -%>
+## `textus <%= verb["name"] %>`
 
-{{summary}}
+<%= verb["summary"] %>
 
-{{#args}}- `--{{.}}`
-{{/args}}
-{{/verbs}}
+<% Array(verb["args"]).each do |arg| -%>- `--<%= arg %>`
+<% end -%>
+<% end -%>

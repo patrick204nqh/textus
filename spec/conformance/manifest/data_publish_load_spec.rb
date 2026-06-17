@@ -17,7 +17,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
           kind: produced
           path: artifacts/x.json
           lane: artifacts
-          template: c.mustache
+          template: c.erb
           source: { from: external, command: "make", sources: [] }
     YAML
     expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094/i)
@@ -49,7 +49,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
           lane: artifacts
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: OUT.md, template: c.mustache, inject_boot: true }
+            - { to: OUT.md, template: c.erb, inject_boot: true }
             - { to: out.json }
     YAML
     e = load(yaml).data.entries.find { |x| x.key == "artifacts.x" }

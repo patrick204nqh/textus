@@ -25,12 +25,12 @@ This is the catalog and timeline reference. The *normative* event table lives in
 
 ## The events in plain English
 
-textus has {{total_count}} events: {{rpc_count}} RPC and {{pubsub_count}} pub-sub. The 2 `:entry_fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events). Event names follow one convention (ADR 0094): pub-sub reads `<subject>_<past-tense>` (single-key events take the `entry_` prefix; batch failures are `<process>_failed`); RPC reads `<verb>_<object>`.
+textus has <%= total_count %> events: <%= rpc_count %> RPC and <%= pubsub_count %> pub-sub. The 2 `:entry_fetch_*` lifecycle events are listed separately in [Fetch lifecycle events](#fetch-lifecycle-events). Event names follow one convention (ADR 0094): pub-sub reads `<subject>_<past-tense>` (single-key events take the `entry_` prefix; batch failures are `<process>_failed`); RPC reads `<verb>_<object>`.
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-{{#events}}| `:{{name}}` | {{mode}} | {{{desc}}} |
-{{/events}}
+<% events.each do |event| -%>| `:<%= event["name"] %>` | <%= event["mode"] %> | <%= event["desc"] %> |
+<% end -%>
 
 ### Fetch lifecycle events
 
@@ -38,8 +38,8 @@ Two additional pub-sub events observe the progress of intake fetches during `dra
 
 | Event | Mode | What it's for |
 |-------|------|---------------|
-{{#fetch_events}}| `:{{name}}` | {{mode}} | {{{desc}}} |
-{{/fetch_events}}
+<% fetch_events.each do |event| -%>| `:<%= event["name"] %>` | <%= event["mode"] %> | <%= event["desc"] %> |
+<% end -%>
 
 ---
 

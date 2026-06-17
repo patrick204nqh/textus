@@ -22,7 +22,7 @@ RSpec.describe Textus::Doctor do
           kind: produced
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: summary.md, template: summary.mustache }
+            - { to: summary.md, template: summary.erb }
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
@@ -33,7 +33,7 @@ RSpec.describe Textus::Doctor do
         name: { type: string, maintained_by: human }
         tag:  { type: string }
     YAML
-    File.write(File.join(root, "templates/summary.mustache"), "summary\n")
+    File.write(File.join(root, "templates/summary.erb"), "summary\n")
   end
 
   def doctor
@@ -59,7 +59,7 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports template.missing when a template file is missing" do
-    File.delete(File.join(root, "templates/summary.mustache"))
+    File.delete(File.join(root, "templates/summary.erb"))
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "template.missing" }
     expect(issue).not_to be_nil

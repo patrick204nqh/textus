@@ -42,8 +42,8 @@ module Textus
         path: data/artifacts/derived/orientation.json
         lane: artifacts
         publish:
-        - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
-        - { to: AGENTS.md, template: orientation.mustache, inject_boot: true }
+        - { to: CLAUDE.md, template: orientation.erb, inject_boot: true }
+        - { to: AGENTS.md, template: orientation.erb, inject_boot: true }
         kind: produced
     YAML
 
@@ -121,7 +121,7 @@ module Textus
       {
         "project.schema.yaml" => File.join("schemas", "project.yaml"),
         "runbook.schema.yaml" => File.join("schemas", "runbook.yaml"),
-        "orientation.mustache" => File.join("templates", "orientation.mustache"),
+        "orientation.erb" => File.join("templates", "orientation.erb"),
       }.each do |src, dest|
         File.write(File.join(target_root, dest), File.read(File.join(scaffold_dir, src)))
       end

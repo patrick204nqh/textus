@@ -19,12 +19,12 @@ RSpec.describe "publish per target (ADR 0094)" do
                                       lane: artifacts
                                       source: { from: external, command: "make", sources: [] }
                                       publish:
-                                        - { to: OUT.md, template: rows.mustache }
+                                        - { to: OUT.md, template: rows.erb }
                                         - { to: out.json }
                                 YAML
                                 files: {
                                   "data/knowledge/a.md" => "---\ntitle: A\n---\nbody\n",
-                                  "templates/rows.mustache" => "{{#entries}}{{_key}}\n{{/entries}}",
+                                  "templates/rows.erb" => "<% Array(entries).each do |e| %><%= e[\"_key\"] %>\n<% end -%>",
                                 })
     end
 
