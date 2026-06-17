@@ -8,6 +8,17 @@ RSpec.describe Textus::Envelope do
     )
   end
 
+  it "raises a type error for an unknown format" do
+    expect do
+      described_class.build(
+        key: "k.v", mentry: instance_double(
+          Textus::Manifest::Entry::Base,
+          lane: "l", owner: "human", format: "pdf", schema: nil,
+        ), path: "/tmp/f", meta: {}, body: "", etag: "abc"
+      )
+    end.to raise_error(Dry::Struct::Error)
+  end
+
   describe ".build" do
     it "constructs an Envelope with all required fields" do
       env = described_class.build(

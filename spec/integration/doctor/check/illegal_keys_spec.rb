@@ -12,7 +12,7 @@ RSpec.describe Textus::Doctor::Check::IllegalKeys do
   context "with a nested entry and an ignore pattern" do
     let(:manifest) do
       <<~YAML
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

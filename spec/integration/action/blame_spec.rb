@@ -10,7 +10,7 @@ RSpec.describe Textus::Action::Blame do
   def make_store_at(textus_dir)
     FileUtils.mkdir_p(File.join(textus_dir, "data", "knowledge"))
     File.write(File.join(textus_dir, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:

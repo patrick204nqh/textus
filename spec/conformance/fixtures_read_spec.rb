@@ -1,16 +1,16 @@
 require "spec_helper"
 require "digest"
 
-# Conformance fixture A from textus/3 §12: resolve and read.
-RSpec.describe "textus/3 conformance — Fixture A: resolve and read" do
-  include_context "textus/3 conformance fixture"
+# Conformance fixture A from textus/4 §12: resolve and read.
+RSpec.describe "textus/4 conformance — Fixture A: resolve and read" do
+  include_context "textus/4 conformance fixture"
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
       env = store.as(Textus::Role::DEFAULT).get("knowledge.network.org.jane")
 
       aggregate_failures do
-        expect(env.protocol).to eq("textus/3")
+        expect(env.protocol).to eq("textus/4")
         expect(env.key).to eq("knowledge.network.org.jane")
         expect(env.lane).to eq("knowledge")
         expect(env.owner).to eq("human:patrick")

@@ -9,7 +9,7 @@ RSpec.describe Textus::Doctor::Check::Sentinels do
   before do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries: []

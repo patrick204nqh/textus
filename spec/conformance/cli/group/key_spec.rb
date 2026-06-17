@@ -11,7 +11,7 @@ RSpec.describe "textus key group (delete / delete-prefix split, ADR 0068)" do
     FileUtils.mkdir_p(File.join(root, "data/working/notes"))
     FileUtils.mkdir_p(File.join(root, "data/working/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: working, kind: canon }
       entries:

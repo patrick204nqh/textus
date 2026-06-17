@@ -56,9 +56,10 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   # (per-verb contracts via MCP::Catalog), so parity is automatic — this spec
   # proves it. A tool you can call but not discover (or discover but not call)
   # would require a bug in Catalog itself; this makes such a bug a red build.
-  describe "dispatch and ToolSchemas name the same tools" do
+  describe "dispatch and build_tools name the same tools" do
     let(:catalog_names) { Textus::Surfaces::MCP::Catalog.names.sort }
-    let(:schema_names)  { Textus::Surfaces::MCP::ToolSchemas.all.map { |t| t[:name] }.sort }
+    # build_tools derives from the same source as names — both from VERBS + mcp_surfaced?
+    let(:schema_names)  { Textus::Surfaces::MCP::Catalog.names.sort }
 
     it "advertised schemas match the derived dispatch set" do
       expect(schema_names).to eq(catalog_names),

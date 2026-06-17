@@ -13,7 +13,7 @@ RSpec.describe Textus::Action::List do
         "data/notes/report.md" => "---\nname: report\n---\nbody\n",
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
           - { name: notes,   kind: canon }

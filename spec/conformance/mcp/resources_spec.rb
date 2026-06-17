@@ -9,7 +9,7 @@ RSpec.describe "MCP resources surface" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[artifacts], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: agent, can: [propose] }
         - { name: automation, can: [converge] }

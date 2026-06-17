@@ -34,7 +34,7 @@ RSpec.describe "artifacts.index workflow" do
                             end
                           RUBY
                         }, manifest: <<~YAML)
-                          version: textus/3
+                          version: textus/4
                           roles:
                             - { name: human,      can: [author] }
                             - { name: automation, can: [converge] }

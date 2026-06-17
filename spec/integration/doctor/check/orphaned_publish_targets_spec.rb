@@ -6,7 +6,7 @@ RSpec.describe Textus::Doctor::Check::OrphanedPublishTargets do
   def write_manifest
     FileUtils.mkdir_p(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:

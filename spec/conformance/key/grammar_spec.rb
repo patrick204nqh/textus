@@ -9,7 +9,7 @@ RSpec.describe "Key grammar enforcement" do
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: working, kind: canon }
       entries:

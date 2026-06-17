@@ -128,7 +128,7 @@ RSpec.describe Textus::Ports::AuditLog do
     end
   end
 
-  describe "textus/3 role canonicalization" do
+  describe "textus/4 role canonicalization" do
     it "writes canonical role names verbatim for new rows" do
       log.append(role: "agent", verb: "put", key: "working.x",
                  etag_before: nil, etag_after: "sha256:0")
@@ -137,7 +137,7 @@ RSpec.describe Textus::Ports::AuditLog do
     end
 
     it "tolerates pre-0.11.0 legacy role values (ai/script/build) verbatim" do
-      # Audit history can contain legacy role values from before the textus/3
+      # Audit history can contain legacy role values from before the textus/4
       # vocabulary rename. The reader returns them verbatim — anyone reading
       # historical rows is responsible for normalization. New writes always use
       # canonical roles.

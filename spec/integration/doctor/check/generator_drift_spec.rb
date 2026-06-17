@@ -7,7 +7,7 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts,  kind: machine }

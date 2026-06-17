@@ -6,7 +6,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
   before do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:
@@ -33,7 +33,7 @@ RSpec.describe Textus::Doctor::Check::ManifestFiles do
 
   it "skips nested entries" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:

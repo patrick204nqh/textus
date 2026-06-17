@@ -48,7 +48,7 @@ RSpec.describe "Schema evolution" do
 
     let(:store_with_roles) do
       store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,  can: [author, propose] }
           - { name: agent,  can: [propose] }
@@ -82,7 +82,7 @@ RSpec.describe "Schema evolution" do
 
     it "migrate raises UsageError when roles: is declared but no author kind exists" do
       store = store_from_manifest(root, lanes: %w[knowledge], schemas: { note: NOTE_SCHEMA_BODY }, manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: agent, can: [propose] }
         lanes:
@@ -97,9 +97,9 @@ RSpec.describe "Schema evolution" do
     end
   end
 
-  # Conformance fixture C from textus/3 §12: schema validation.
+  # Conformance fixture C from textus/4 §12: schema validation.
   describe "Fixture C — schema validation" do
-    include_context "textus/3 conformance fixture"
+    include_context "textus/4 conformance fixture"
 
     it "raises SchemaViolation listing the missing required field" do
       expect do

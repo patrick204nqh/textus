@@ -19,7 +19,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
     FileUtils.mkdir_p(File.join(root, "data/proposals/people"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: proposals, kind: queue }
       entries:
@@ -73,7 +73,7 @@ RSpec.describe "Role authority via schema.maintained_by" do
       FileUtils.mkdir_p(File.join(root, "data/proposals/people"))
 
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }

@@ -7,7 +7,7 @@ RSpec.describe Textus::Manifest, "#audit_config" do
 
   it "defaults to max_size 10485760 (10MB) and keep 5 when audit: is absent" do
     m = manifest_from(<<~YAML)
-      version: textus/3
+      version: textus/4
       lanes: [{ name: knowledge, kind: canon }]
       entries: []
     YAML
@@ -16,7 +16,7 @@ RSpec.describe Textus::Manifest, "#audit_config" do
 
   it "reads max_size and keep from manifest" do
     m = manifest_from(<<~YAML)
-      version: textus/3
+      version: textus/4
       audit:
         max_size: 1048576
         keep: 3
@@ -29,7 +29,7 @@ RSpec.describe Textus::Manifest, "#audit_config" do
   it "rejects unknown audit: keys" do
     expect do
       manifest_from(<<~YAML)
-        version: textus/3
+        version: textus/4
         audit: { bogus: 1 }
         lanes: [{ name: knowledge, kind: canon }]
         entries: []

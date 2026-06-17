@@ -56,7 +56,7 @@ RSpec.describe "Textus::Init with_agent profile" do
 
   it "scaffolds the orientation template under --with-agent" do
     dir, root, = init(with_agent: true)
-    expect(File.read(File.join(root, "templates", "orientation.mustache"))).to include("{{project.name}}")
+    expect(File.read(File.join(root, "templates", "orientation.erb"))).to include('project["name"]')
     expect(File.exist?(File.join(root, "workflows"))).to be true
   ensure
     FileUtils.remove_entry(dir) if dir && File.directory?(dir)
@@ -100,7 +100,7 @@ RSpec.describe "Textus::Init with_agent profile" do
       verb.parse(["--with-agent"])
       exit_code = verb.call(nil)
       expect(exit_code).to eq(0)
-      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.mustache"))).to be true
+      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.erb"))).to be true
       expect(File.exist?(File.join(dir, ".mcp.json"))).to be true
       payload = JSON.parse(out.string)
       expect(payload["profile"]).to eq("agent")
@@ -113,7 +113,7 @@ RSpec.describe "Textus::Init with_agent profile" do
       verb = Textus::Surfaces::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
       verb.parse([])
       verb.call(nil)
-      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.mustache"))).to be false
+      expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.erb"))).to be false
       expect(JSON.parse(out.string)["profile"]).to eq("default")
     end
   end

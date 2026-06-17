@@ -8,7 +8,7 @@ RSpec.describe Textus::Action::Pulse do
     FileUtils.mkdir_p(File.join(root, "data/proposals"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }

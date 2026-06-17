@@ -5,7 +5,7 @@ RSpec.describe "Manifest::Data drops the vestigial #zones map (ADR 0034 / D2)" d
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles: [{ name: human, can: [author, propose] }]
       lanes:
         - { name: knowledge, kind: canon }

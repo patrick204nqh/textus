@@ -7,7 +7,7 @@ RSpec.describe Textus::Doctor::Check::RawAssetPaths do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[raw], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: agent, can: [propose, keep, ingest] }
       lanes:

@@ -4,7 +4,7 @@ RSpec.describe Textus::Jobs::Planner do
   include_context "textus_store_fixture"
 
   let(:react_manifest) { <<~YAML }
-    version: textus/3
+    version: textus/4
     lanes:
       - { name: knowledge, kind: canon }
       - { name: feeds, kind: machine }
@@ -16,7 +16,7 @@ RSpec.describe Textus::Jobs::Planner do
         lane: feeds
         source: { from: external, command: "make", sources: [] }
         publish:
-          - { to: CATALOG.md, template: catalog.mustache }
+          - { to: CATALOG.md, template: catalog.erb }
     rules:
       - match: feeds.*
         react:
@@ -26,7 +26,7 @@ RSpec.describe Textus::Jobs::Planner do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge feeds], manifest: react_manifest,
-                              files: { "templates/catalog.mustache" => "{{title}}" })
+                              files: { "templates/catalog.erb" => "<%= title %>" })
   end
 
   context "when manifest has react rules" do

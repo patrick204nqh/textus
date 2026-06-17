@@ -1,4 +1,6 @@
-require "mustache"
+# frozen_string_literal: true
+
+require "erb"
 
 module Textus
   module Produce
@@ -11,7 +13,7 @@ module Textus
         raise ArgumentError.new("Produce::Render called for a verbatim target #{target.to.inspect}") unless target.renders?
 
         ctx = target.inject_boot ? data.merge("boot" => boot) : data
-        Mustache.render(@template_loader.call(target.template), ctx)
+        ERB.new(@template_loader.call(target.template), trim_mode: "-").result_with_hash(ctx)
       end
     end
   end

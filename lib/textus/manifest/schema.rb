@@ -23,11 +23,8 @@ module Textus
       RULE_KEYS             = Keys::RULE_KEYS
       OWNER_SUBJECT_PATTERN = Keys::OWNER_SUBJECT_PATTERN
 
-      # Public entry points — the validation walk lives in Schema::Validator
-      # (ADR 0107). Kept here so callers keep speaking to `Schema`.
+      # Public entry point — the validation walk lives in Schema::Validator (ADR 0107).
       def self.validate!(raw) = Validator.validate!(raw)
-
-      def self.validate_source_and_retention!(manifest) = Validator.validate_source_and_retention!(manifest)
     end
   end
 end

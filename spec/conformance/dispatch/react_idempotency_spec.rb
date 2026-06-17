@@ -7,7 +7,7 @@ RSpec.describe "jobs react idempotency" do
     store_from_manifest(
       root, lanes: %w[knowledge feeds],
             manifest: <<~YAML,
-              version: textus/3
+              version: textus/4
               lanes:
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }
@@ -19,11 +19,11 @@ RSpec.describe "jobs react idempotency" do
                   lane: feeds
                   source: { from: external, command: "make", sources: [] }
                   publish:
-                    - { to: CATALOG.md, template: catalog.mustache }
+                    - { to: CATALOG.md, template: catalog.erb }
             YAML
             files: {
               "data/knowledge/a.md" => "---\ntitle: Apple\n---\nx\n",
-              "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
+              "templates/catalog.erb" => "<% Array(entries).each do |e| %><%= e[\"title\"] %>\n<% end -%>",
             }
     )
   end

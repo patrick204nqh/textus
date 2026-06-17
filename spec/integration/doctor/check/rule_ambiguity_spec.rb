@@ -13,7 +13,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
   it "returns no issues when each slot has a single winner" do
     manifest = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:
@@ -32,7 +32,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   it "warns when two rules of equal specificity carry the same slot" do
     # Both globs (`knowledge.*` and `*.foo`) have specificity 11 (10 literal + 1 wildcard).
     manifest = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:
@@ -58,7 +58,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
   it "warns on a retention tie across equally-specific rules (ADR 0093)" do
     # Two equally-specific rules both assign retention to the same intake entry.
     manifest = <<~YAML
-      version: textus/3
+      version: textus/4
       roles: [{ name: automation, can: [converge] }, { name: human, can: [author] }]
       lanes:
         - { name: knowledge, kind: canon }
@@ -84,7 +84,7 @@ RSpec.describe Textus::Doctor::Check::RuleAmbiguity do
 
   it "does not warn when one block dominates by specificity" do
     manifest = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:

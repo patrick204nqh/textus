@@ -5,7 +5,7 @@ RSpec.describe Textus::Produce::Engine do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge feeds], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: automation, can: [converge] }
         - { name: human, can: [author] }

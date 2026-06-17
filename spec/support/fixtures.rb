@@ -16,7 +16,7 @@ module TextusSpecHelpers
   #
   #   include_context "textus_store_fixture"
   #   let(:store) { store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML) }
-  #     version: textus/3
+  #     version: textus/4
   #     ...
   #   YAML
   #
@@ -54,7 +54,7 @@ module TextusSpecHelpers
   #                                     path: "knowledge/doc.md") }
   def minimal_store(root, kind_zone: "canon", lane: LANE_ZONE.fetch(kind_zone), key: "#{lane}.foo", path: "#{lane}/foo.md")
     store_from_manifest(root, lanes: [lane], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: #{lane}, kind: #{kind_zone} }
       entries:
@@ -67,7 +67,7 @@ module TextusSpecHelpers
   # content in canon). Used by put/delete/mv/accept/reject specs.
   def machine_store(root)
     store_from_manifest(root, lanes: %w[feeds knowledge], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: feeds, kind: machine }
         - { name: knowledge, kind: canon }
@@ -83,7 +83,7 @@ module TextusSpecHelpers
   def workflow_store(root, workflow_body:, retention: nil, lane_kind: "machine")
     zone = LANE_ZONE.fetch(lane_kind)
     manifest = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: #{zone}, kind: #{lane_kind} }
       entries:

@@ -10,22 +10,22 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
 
   it "rejects entry-level template: (rendering is a publish concern)" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
           kind: produced
           path: artifacts/x.json
           lane: artifacts
-          template: c.mustache
+          template: c.erb
           source: { from: external, command: "make", sources: [] }
     YAML
-    expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094/i)
+    expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094|unknown key 'template'/i)
   end
 
   it "rejects entry-level inject_boot:" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
@@ -40,7 +40,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
 
   it "accepts a flat project source with a publish list" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
@@ -49,7 +49,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
           lane: artifacts
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: OUT.md, template: c.mustache, inject_boot: true }
+            - { to: OUT.md, template: c.erb, inject_boot: true }
             - { to: out.json }
     YAML
     e = load(yaml).data.entries.find { |x| x.key == "artifacts.x" }

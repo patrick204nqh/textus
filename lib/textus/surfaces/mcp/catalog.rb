@@ -1,11 +1,10 @@
 module Textus
   module Surfaces
     module MCP
-      # Derives the entire MCP tool surface from the per-verb contracts
-      # (ADR 0039). `tool_schemas` feeds tools/list; `call` is the generic
-      # tools/call dispatch: map JSON args -> (positional, keyword) per the
-      # contract, invoke the verb through the role scope, then shape the
-      # return value with the contract's default view. No per-tool code.
+      # Derives the entire MCP tool surface from the per-verb contracts (ADR 0039).
+      # `build_tools` builds MCP::Tool instances for the SDK; `call` is the generic
+      # dispatch: map JSON args -> (positional, keyword) per the contract, invoke
+      # the verb through the role scope, then shape the return value. No per-tool code.
       module Catalog
         module_function
 
@@ -24,14 +23,27 @@ module Textus
                                .map(&:contract)
         end
 
-        def tool_schemas
-          specs.map do |s|
-            { name: s.verb.to_s, description: s.summary, inputSchema: s.input_schema }
-          end.freeze
+        # Builds MCP::Tool instances for the SDK, bound to mcp_server.dispatch.
+        def build_tools(mcp_server)
+          Textus::Action::VERBS
+            .select { |_, klass| mcp_surfaced?(klass) }
+            .map do |name, action|
+              schema = action.contract.input_schema
+              schema = schema.reject { |k, v| k == :required && Array(v).empty? }
+              ::MCP::Tool.define(
+                name: name.to_s,
+                description: action.contract.summary,
+                input_schema: schema,
+              ) do |server_context:, **args|
+                mcp_server.dispatch(name, args, server_context)
+              end
+            end
         end
 
         def names
-          specs.map { |s| s.verb.to_s }
+          Textus::Action::VERBS
+            .select { |_, klass| mcp_surfaced?(klass) }
+            .keys.map(&:to_s)
         end
 
         # MCP-surfaced read verbs, by Dispatcher class namespace — the agent's

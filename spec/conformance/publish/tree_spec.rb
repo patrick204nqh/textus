@@ -6,7 +6,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
   def write_manifest(entries_yaml)
     FileUtils.mkdir_p(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: working, kind: canon }
       entries:
@@ -229,7 +229,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
   describe "opacity (ADR 0047)" do
     let(:opacity_manifest) do
       <<~YAML
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: working, kind: canon }
         entries:
@@ -277,7 +277,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
 
     it "still flags illegal segments on a non-publish nested entry (guard not over-broad)" do
       plain = <<~YAML
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: working, kind: canon }
         entries:

@@ -7,7 +7,7 @@ RSpec.describe "textus rule group" do
   before do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:
@@ -39,7 +39,7 @@ RSpec.describe "textus rule group" do
     it "serializes a retention rule as a plain hash with integer seconds" do
       FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

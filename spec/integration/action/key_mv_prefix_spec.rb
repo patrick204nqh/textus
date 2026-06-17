@@ -6,7 +6,7 @@ RSpec.describe Textus::Action::KeyMvPrefix do
   before do
     %w[data/working/old data/working/new schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: working, kind: canon }
       entries:

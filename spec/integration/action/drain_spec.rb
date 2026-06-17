@@ -8,7 +8,7 @@ RSpec.describe Textus::Action::Drain do
       root,
       lanes: %w[knowledge feeds],
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
           - { name: feeds, kind: machine }
@@ -22,7 +22,7 @@ RSpec.describe Textus::Action::Drain do
       YAML
       files: {
         "data/knowledge/a.md" => "---\ntitle: Apple\n---\nhello\n",
-        "templates/catalog.mustache" => "{{#entries}}{{title}}\n{{/entries}}",
+        "templates/catalog.erb" => "<% Array(entries).each do |e| %><%= e[\"title\"] %>\n<% end -%>",
       },
     )
   end

@@ -9,7 +9,7 @@ RSpec.describe "ignore-pattern consistency across list and doctor (issue #119)" 
       root,
       lanes: %w[knowledge],
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

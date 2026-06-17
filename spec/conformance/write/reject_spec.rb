@@ -35,7 +35,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         RUBY
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
@@ -91,7 +91,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         cli_root,
         lanes: %w[identity proposals],
         manifest: <<~YAML,
-          version: textus/3
+          version: textus/4
           lanes:
             - { name: identity, kind: canon }
             - { name: proposals,   kind: queue }
@@ -134,7 +134,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "data/identity"))
       FileUtils.mkdir_p(File.join(root, "data/proposals"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
@@ -164,7 +164,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       FileUtils.mkdir_p(File.join(root, "data/identity"))
       FileUtils.mkdir_p(File.join(root, "data/pending"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: pending,  kind: canon }

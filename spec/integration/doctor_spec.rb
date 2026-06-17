@@ -9,7 +9,7 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
@@ -22,7 +22,7 @@ RSpec.describe Textus::Doctor do
           kind: produced
           source: { from: external, command: "make", sources: [] }
           publish:
-            - { to: summary.md, template: summary.mustache }
+            - { to: summary.md, template: summary.erb }
 
     YAML
     File.write(File.join(root, "schemas/note.yaml"), <<~YAML)
@@ -33,7 +33,7 @@ RSpec.describe Textus::Doctor do
         name: { type: string, maintained_by: human }
         tag:  { type: string }
     YAML
-    File.write(File.join(root, "templates/summary.mustache"), "summary\n")
+    File.write(File.join(root, "templates/summary.erb"), "summary\n")
   end
 
   def doctor
@@ -43,7 +43,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports a clean store as ok: true with no error-level issues" do
     res = doctor
-    expect(res["protocol"]).to eq("textus/3")
+    expect(res["protocol"]).to eq("textus/4")
     expect(res["ok"]).to be true
     expect(res["issues"].any? { |i| i["level"] == "error" }).to be false
   end
@@ -59,7 +59,7 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports template.missing when a template file is missing" do
-    File.delete(File.join(root, "templates/summary.mustache"))
+    File.delete(File.join(root, "templates/summary.erb"))
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "template.missing" }
     expect(issue).not_to be_nil
@@ -148,7 +148,7 @@ RSpec.describe Textus::Doctor do
       FileUtils.mkdir_p(File.join(ra_root, "data/knowledge/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: proposals, kind: queue }
         entries:

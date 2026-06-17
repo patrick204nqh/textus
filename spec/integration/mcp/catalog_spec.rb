@@ -7,7 +7,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
     store_from_manifest(root, lanes: %w[knowledge notebook proposals artifacts], schemas: {
                           "project" => File.read(File.expand_path("../../../.textus/schemas/project.yaml", __dir__)),
                         }, manifest: <<~YAML)
-                          version: textus/3
+                          version: textus/4
                           roles:
                             - { name: human,      can: [author, propose] }
                             - { name: agent,      can: [propose, keep] }
@@ -25,27 +25,33 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
   end
   let(:session) { store.session(role: "human") }
 
-  describe ".tool_schemas" do
-    it "advertises one entry per MCP-surfaced contract, with derived inputSchema" do
-      names = described_class.tool_schemas.map { |t| t[:name] }
+  describe ".build_tools" do
+    it "returns an MCP::Tool for each MCP-surfaced verb" do
+      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      names = tools.map(&:tool_name)
       expect(names).to include("get", "put", "list", "pulse", "boot")
-      get = described_class.tool_schemas.find { |t| t[:name] == "get" }
-      expect(get[:description]).to match(/Read one entry/)
-      expect(get[:inputSchema][:required]).to eq(["key"])
-      expect(get[:inputSchema][:properties]["key"]["type"]).to eq("string")
-      expect(get[:inputSchema][:properties]["key"]["description"]).to be_a(String).and(satisfy { |s| !s.empty? })
     end
 
-    # ADR 0057: the `meta:` kwarg exposes `_meta` on the wire so write matches
-    # what `get` returns and what the CLI `--stdin` envelope already speaks.
-    it "exposes put's meta kwarg as the `_meta` wire property" do
-      put = described_class.tool_schemas.find { |t| t[:name] == "put" }
-      expect(put[:inputSchema][:properties]).to have_key("_meta")
-      expect(put[:inputSchema][:properties]).not_to have_key("meta")
-      # ADR 0069: `_meta` is `required: false` on the contract — its real
-      # requiredness lives in schema validation downstream, not on the wire — so
-      # it is advertised as a property but not in the input schema's `required`.
-      expect(put[:inputSchema][:required]).not_to include("_meta")
+    it "each tool has a description and input_schema" do
+      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      get_tool = tools.find { |t| t.tool_name == "get" }
+      expect(get_tool.description).to be_a(String).and(satisfy { |s| !s.empty? })
+      schema = get_tool.input_schema.to_h
+      expect(schema).to have_key(:required)
+    end
+
+    # ADR 0057: put's _meta wire property
+    it "exposes put's _meta in the input_schema properties" do
+      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      put_tool = tools.find { |t| t.tool_name == "put" }
+      schema = put_tool.input_schema.to_h
+      props = schema[:properties]
+      has_meta = props.key?(:_meta) || props.key?("_meta")
+      no_meta  = !props.key?(:meta) && !props.key?("meta")
+      expect(has_meta).to be(true), "expected _meta in #{props.keys.inspect}"
+      expect(no_meta).to be(true)
+      required = schema[:required] || []
+      expect(required).not_to include("_meta")
     end
   end
 

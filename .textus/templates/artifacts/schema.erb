@@ -3,11 +3,11 @@
 
 # Schema reference
 
-{{#schemas}}
-## `{{name}}`
+<% schemas.each do |schema| -%>
+## `<%= schema["name"] %>`
 
 | Field | Type | Required | Maintained by |
 |---|---|---|---|
-{{#fields}}| `{{name}}` | {{type}} | {{#required}}yes{{/required}}{{^required}}no{{/required}} | {{maintained_by}} |
-{{/fields}}
-{{/schemas}}
+<% schema["fields"].each do |field| -%>| `<%= field["name"] %>` | <%= field["type"] %> | <%= field["required"] ? "yes" : "no" %> | <%= field["maintained_by"] %> |
+<% end -%>
+<% end -%>

@@ -18,5 +18,5 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
-{{#adrs}}| [{{number}}](../architecture/decisions/{{slug}}.md) | {{title}} | {{date}} | {{status}} |
-{{/adrs}}
+<% adrs.each do |adr| -%>| [<%= adr["number"] %>](../architecture/decisions/<%= adr["slug"] %>.md) | <%= adr["title"] %> | <%= adr["date"] %> | <%= adr["status"] %> |
+<% end -%>

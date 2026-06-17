@@ -11,7 +11,7 @@ RSpec.describe "publish: list parsing (ADR 0094)" do
 
   it "builds PublishTarget objects from a list" do
     e = parse(base.merge("publish" => [
-                           { "to" => "CLAUDE.md", "template" => "c.mustache", "inject_boot" => true },
+                           { "to" => "CLAUDE.md", "template" => "c.erb", "inject_boot" => true },
                            { "to" => ".mcp.json" },
                          ]))
     expect(e.publish_targets.map(&:to)).to eq(["CLAUDE.md", ".mcp.json"])

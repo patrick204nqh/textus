@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "Textus::Manifest::Schema zone kind" do
   def parse(zones_yaml, roles_yaml = nil)
     raw = YAML.safe_load(<<~YAML, aliases: false)
-      version: textus/3
+      version: textus/4
       #{roles_yaml}
       lanes:
       #{zones_yaml}
@@ -18,12 +18,12 @@ RSpec.describe "Textus::Manifest::Schema zone kind" do
 
   it "rejects a lane with no kind (kind is required)" do
     expect { parse("  - { name: knowledge }") }
-      .to raise_error(Textus::BadManifest, /lane 'knowledge' at '\$\.lanes\[0\]' must declare a kind/)
+      .to raise_error(Textus::BadManifest, /must declare a kind|is missing/)
   end
 
   it "rejects an unknown kind" do
     expect { parse("  - { name: review, kind: mailbox }") }
-      .to raise_error(Textus::BadManifest, /unknown lane kind 'mailbox'.*canon, workspace, machine, queue/m)
+      .to raise_error(Textus::BadManifest, /unknown lane kind 'mailbox'|must be one of/)
   end
 
   it "rejects two queue lanes" do

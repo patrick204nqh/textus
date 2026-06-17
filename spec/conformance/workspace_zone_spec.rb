@@ -5,7 +5,7 @@ RSpec.describe "workspace lane-kind + keep capability (ADR 0033)" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge notebook proposals], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose, keep] }
@@ -30,7 +30,7 @@ RSpec.describe "workspace lane-kind + keep capability (ADR 0033)" do
   end
 
   it "requires some role to hold keep when a workspace lane is declared" do
-    bad = { "version" => "textus/3",
+    bad = { "version" => "textus/4",
             "roles" => [{ "name" => "human", "can" => ["author"] }],
             "lanes" => [{ "name" => "notebook", "kind" => "workspace" }],
             "entries" => [] }

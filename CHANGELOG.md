@@ -9,6 +9,24 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.54.1 — 2026-06-17 — MCP SDK, dry ecosystem, ERB templates
+
+### Added
+
+- **`Textus::Types` module**: shared `dry-types` constrained types (`RoleName`, `Cursor`, `FormatName`) used across all dry-struct structs.
+
+### Changed
+
+- **MCP surface → official `mcp` SDK** (PR #223): the hand-rolled JSON-RPC 2.0 stdio loop is replaced by the official `mcp` gem (`~> 0.20`). Protocol version auto-negotiates up to `2025-11-25` (was hardcoded `2024-11-05`). `Catalog.build_tools` generates `MCP::Tool` instances from verb contracts; `Server` manages session lifecycle and delegates dispatch. `routing.rb`, the `MCP::Session` alias, and `ToolSchemas` are deleted.
+- **`Session`, `Envelope`, `Container` → `Dry::Struct`** (PR #223): `Data.define` replaced with `Dry::Struct` for typed, loudly-failing construction at object creation time. `Session` enforces `RoleName` and non-negative `Cursor`; `Envelope` enforces known `FormatName`; `Container` has typed port references.
+- **Manifest validator → dry-schema + Semantics** (PR #223): the 318-line programmatic validator is split into `contract.rb` (dry-schema structural contract) and `semantics.rb` (cross-field rules, `walk`-based unknown-key detection, ADR migration hints). Public interface `Validator.validate!` unchanged.
+- **Mustache → ERB** (PR #223): `mustache` gem removed; all 8 `.mustache` templates converted to `.erb` using `ERB#result_with_hash`. `Produce::Render` now uses `ERB.new(template, trim_mode: "-").result_with_hash(ctx)`.
+
+### Removed
+
+- `mustache` runtime dependency (replaced by Ruby stdlib ERB).
+- `MCP::Routing` module, `MCP::Session` alias, `MCP::ToolSchemas` module — superseded by the SDK.
+
 ## 0.54.0 — 2026-06-16 — Workflow system, raw ingest pipeline, MCP resources
 
 ### Added

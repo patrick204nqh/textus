@@ -14,7 +14,7 @@ Create or update an entry. Schema-validated. Returns {uid, etag}.
 - `--key`
 ## `textus propose`
 
-Write a proposal to the role&#39;s propose_lane. Auto-prefixes the key.
+Write a proposal to the role's propose_lane. Auto-prefixes the key.
 
 - `--_meta`
 - `--body`
@@ -129,7 +129,7 @@ List all entries that declare a publish_to target.
 
 ## `textus schema_show`
 
-Return the schema (field shape) for an entry&#39;s family, by key.
+Return the schema (field shape) for an entry's family, by key.
 
 - `--key`
 ## `textus doctor`
@@ -176,6 +176,6 @@ Seed materialize + sweep jobs then drain the queue to empty. Identical to one Wa
 - `--prefix`
 ## `textus rule_lint`
 
-Diff candidate manifest YAML&#39;s rules against the live manifest. No writes.
+Diff candidate manifest YAML's rules against the live manifest. No writes.
 
 - `--against`

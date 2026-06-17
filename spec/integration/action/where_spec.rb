@@ -9,7 +9,7 @@ RSpec.describe Textus::Action::Where do
       lanes: %w[knowledge],
       files: { "data/knowledge/doc.md" => "---\nname: doc\n---\nbody\n" },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

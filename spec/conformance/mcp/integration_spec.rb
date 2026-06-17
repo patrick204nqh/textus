@@ -13,7 +13,7 @@ RSpec.describe "MCP end-to-end" do
       FileUtils.mkdir_p(File.join(root, d))
     end
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
@@ -122,7 +122,7 @@ RSpec.describe "MCP end-to-end" do
   it "renames one key through the MCP catalog (single-key mv, ADR 0060 amendment)" do
     # Extend the manifest with a second entry so mv has a valid manifest target
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }

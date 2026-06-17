@@ -6,7 +6,7 @@ RSpec.describe Textus::Doctor::Check::PublishTreeIndexOverlap do
   def write_manifest(entries_yaml)
     FileUtils.mkdir_p(root)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: working, kind: canon }
         - { name: gen, kind: machine }

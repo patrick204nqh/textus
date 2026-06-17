@@ -11,7 +11,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
   let(:manifest_yaml) do
     <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }
@@ -25,7 +25,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
   let(:store) { Textus::Store.new(root) }
   let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
   let(:session) do
-    Textus::Surfaces::MCP::Session.new(role: "agent", cursor: 0, propose_lane: "proposals", contract_etag: etag)
+    Textus::Session.new(role: "agent", cursor: 0, propose_lane: "proposals", contract_etag: etag)
   end
 
   before do
@@ -74,7 +74,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
-      human_session = Textus::Surfaces::MCP::Session.new(
+      human_session = Textus::Session.new(
         role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag,
       )
       result = described_class.call(
@@ -106,7 +106,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
   describe ".call('accept' / 'reject', ...) — capability-gated on MCP (ADR 0072 F7)" do
     let(:human_session) do
-      Textus::Surfaces::MCP::Session.new(role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag)
+      Textus::Session.new(role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag)
     end
 
     # Queue a proposal as the agent, returning its full key (proposals.proposal.<leaf>).

@@ -2,8 +2,20 @@ require "spec_helper"
 
 RSpec.describe Textus::Session do
   subject(:session) do
-    described_class.new(role: :agent, cursor: 10, propose_lane: "proposals",
+    described_class.new(role: "agent", cursor: 10, propose_lane: "proposals",
                         contract_etag: "sha256:aaaa")
+  end
+
+  it "raises a type error for an invalid role" do
+    expect do
+      described_class.new(role: "nope", cursor: 0, propose_lane: nil, contract_etag: "abc")
+    end.to raise_error(Dry::Struct::Error)
+  end
+
+  it "raises a type error for a negative cursor" do
+    expect do
+      described_class.new(role: "human", cursor: -1, propose_lane: nil, contract_etag: "abc")
+    end.to raise_error(Dry::Struct::Error)
   end
 
   it "advances the cursor immutably" do

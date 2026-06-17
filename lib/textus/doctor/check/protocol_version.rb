@@ -13,13 +13,13 @@ module Textus
 
           doc = YAML.safe_load_file(path, aliases: false) || {}
           version = doc["version"]
-          return [] if version == "textus/3"
+          return [] if version == "textus/4"
 
           [{
             "code" => "protocol_mismatch",
             "severity" => "error",
-            "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
-            "hint" => "Upgrade the store's manifest version to textus/3 (see CHANGELOG for breaking changes).",
+            "message" => "Store reports version=#{version.inspect}; this gem expects textus/4.",
+            "hint" => "Upgrade the store's manifest version to textus/4 (see CHANGELOG for breaking changes).",
           }]
         end
 
@@ -31,14 +31,14 @@ module Textus
 
           doc = YAML.safe_load_file(path, aliases: false) || {}
           version = doc["version"]
-          return [] if version == "textus/3"
+          return [] if version == "textus/4"
 
           [{
             "code" => "protocol_mismatch",
             "level" => "error",
             "subject" => path,
-            "message" => "Store reports version=#{version.inspect}; this gem expects textus/3.",
-            "fix" => "Upgrade the store's manifest version to textus/3 (see CHANGELOG for breaking changes).",
+            "message" => "Store reports version=#{version.inspect}; this gem expects textus/4.",
+            "fix" => "Upgrade the store's manifest version to textus/4 (see CHANGELOG for breaking changes).",
           }]
         end
       end
