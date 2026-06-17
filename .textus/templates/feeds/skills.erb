@@ -1,0 +1,13 @@
+# Skills Reference
+
+> **Generated** from [agentskills.io](https://agentskills.io) · <%= count %> skills
+
+<% skills.each do |skill| %>
+## <%= skill["name"] %>
+
+<%= skill["description"] %>
+
+**Source:** [<%= skill["url"] %>](<%= skill["url"] %>)
+
+---
+<% end %>

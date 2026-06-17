@@ -17,7 +17,7 @@ entries:
     owner: human:self
     nested: true
     kind: nested
-    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md"]
+    ignore: ["**/verbs.md", "**/schema.md", "**/adr-log.md", "**/authority.md", "**/events.md", "**/mcp.md", "**/skills.md"]
     publish:
       - { tree: docs/reference }
   - key: knowledge.how-to
