@@ -2,7 +2,7 @@
 
 > **Cookbook** · for integrators · **read when** you want a fleet's environments (laptop, cloud servers, …) as protocol-readable, gitignored feed data
 
-The built-in `artifacts.feeds.machines` snapshot ([machine snapshot](../how-to/configuring-zones.md#machine-snapshot-scaffolded))
+The built-in `artifacts.feeds.machines` snapshot ([machine snapshot](../how-to/configuring-lanes.md))
 captures *this* host. This recipe scales it to **many machines**: one nested
 intake `artifacts.feeds.machines.*`, **one leaf per machine**, each holding that host's
 OS / package / runtime snapshot. The control store (your laptop) pulls each
