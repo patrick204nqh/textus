@@ -24,7 +24,7 @@ Each zone-kind maps 1:1 to exactly one capability (ADR 0091).
 | Zone | `kind` | Required capability | Purpose |
 |------|--------|---------------------|---------|
 | `knowledge` | `canon` | `author` | the maintained source of truth about the repo |
-| `notebook` | `workspace` | `keep` | the agent&#39;s own durable working notes |
+| `notebook` | `workspace` | `keep` | the agent's own durable working notes |
 | `proposals` | `queue` | `propose` | changes awaiting a human accept |
 | `artifacts` | `machine` | `converge` | machine-maintained computed outputs |
 | `raw` | `raw` | `ingest` | ingested external source material (write-once) |
