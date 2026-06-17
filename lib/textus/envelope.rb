@@ -64,8 +64,6 @@ module Textus
       h
     end
 
-    alias zone lane
-
     def stale?
       return false if freshness.nil?
 

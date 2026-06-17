@@ -22,16 +22,6 @@ module Textus
           Semantics.check!(raw)
         end
 
-        # Delegates preserved for callers that reference Validator directly (schema_spec).
-        def valid_owner?(token) = Semantics.valid_owner?(token)
-        def validate_rules!(rules) = Semantics.check_rules!(rules)
-        def validate_lanes!(lanes) = Semantics.check_lanes!(lanes)
-        def validate_single_machine!(raw) = Semantics.check_single_machine!(raw)
-        def validate_single_queue!(raw) = Semantics.check_single_queue!(raw)
-
-        # No-op — source/retention validation was removed in ADR 0093.
-        def validate_source_and_retention!(_manifest) = nil
-
         # Format the first dry-schema error to match the legacy path-prefixed style:
         # "unknown key 'x' at '$.lanes[0]'" for extra-key errors;
         # "manifest structure error at <path>: <msg>" for type/value errors.
@@ -52,8 +42,6 @@ module Textus
         def format_path(parts)
           "$" + Array(parts).map { |p| p.is_a?(Integer) ? "[#{p}]" : ".#{p}" }.join
         end
-
-        module_function :format_first_error, :format_path
       end
     end
   end

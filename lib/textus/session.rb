@@ -13,9 +13,6 @@ module Textus
     attribute :propose_lane,  Types::String.optional
     attribute :contract_etag, Types::String
 
-    # Back-compat reader while lane terminology migrates.
-    def propose_zone = propose_lane
-
     def with(**attrs) = self.class.new(to_h.merge(attrs))
 
     def advance_cursor(new_cursor) = with(cursor: new_cursor)
