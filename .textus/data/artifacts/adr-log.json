@@ -4,6 +4,34 @@
   },
   "adrs": [
     {
+      "number": "0117",
+      "title": "textus 4 protocol version bump",
+      "date": "2026-06-17",
+      "status": "Accepted",
+      "slug": "0117-textus-4-protocol-version-bump"
+    },
+    {
+      "number": "0116",
+      "title": "raw lane and ingest verb",
+      "date": "2026-06-16",
+      "status": "Accepted",
+      "slug": "0116-raw-lane-and-ingest-verb"
+    },
+    {
+      "number": "0115",
+      "title": "role trust model",
+      "date": "2026-06-14",
+      "status": "Accepted",
+      "slug": "0115-role-trust-model"
+    },
+    {
+      "number": "0114",
+      "title": "Foundation refactor: lanes, dispatch, core, surfaces",
+      "date": "2026-06-13",
+      "status": "Accepted",
+      "slug": "0114-foundation-refactor"
+    },
+    {
       "number": "0113",
       "title": "the proposal block speaks `_meta`, not `frontmatter`",
       "date": "2026-06-09",
