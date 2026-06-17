@@ -11,7 +11,7 @@ RSpec.describe Textus::Surfaces::MCP::Server do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "hooks"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }

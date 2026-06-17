@@ -13,7 +13,7 @@ RSpec.describe Textus::Boot do
     FileUtils.mkdir_p(File.join(root, "templates"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose] }
@@ -54,7 +54,7 @@ RSpec.describe Textus::Boot do
 
   it "returns an envelope with protocol + store_root" do
     env = described_class.build(container: store.container)
-    expect(env["protocol"]).to eq("textus/3")
+    expect(env["protocol"]).to eq("textus/4")
     expect(env["store_root"]).to eq(root)
   end
 
@@ -79,7 +79,7 @@ RSpec.describe Textus::Boot do
 
   it "omits purpose for unknown lane names" do
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: weird,    kind: canon }
@@ -101,7 +101,7 @@ RSpec.describe Textus::Boot do
   it "includes index_key when artifacts.index file exists" do
     FileUtils.mkdir_p(File.join(root, "data/artifacts"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author, propose] }
         - { name: automation, can: [converge] }
@@ -154,7 +154,7 @@ RSpec.describe Textus::Boot do
 
     it "does not change the wire protocol field" do
       result = Textus::Boot.build(container: store.container)
-      expect(result["protocol"]).to eq("textus/3")
+      expect(result["protocol"]).to eq("textus/4")
     end
 
     it "is omitted from per-recipe output by default (no example field)" do
@@ -175,7 +175,7 @@ RSpec.describe Textus::Boot do
   describe "role_resolution" do
     it "falls back to default role names when roles: block is omitted" do
       yaml = <<~YAML
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: proposals,   kind: queue }
@@ -196,7 +196,7 @@ RSpec.describe Textus::Boot do
                                      stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
-    expect(parsed["protocol"]).to eq("textus/3")
+    expect(parsed["protocol"]).to eq("textus/4")
     expect(parsed["lanes"].length).to eq(4)
     expect(parsed).not_to have_key("index_key")
   end

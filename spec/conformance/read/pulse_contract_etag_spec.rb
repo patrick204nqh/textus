@@ -6,7 +6,7 @@ RSpec.describe "Pulse contract_etag" do
   before do
     %w[data/knowledge schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:

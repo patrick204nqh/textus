@@ -5,7 +5,7 @@ RSpec.describe "accept refuses a non-canon proposal target (ADR 0035)" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge notebook proposals], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose, keep] }

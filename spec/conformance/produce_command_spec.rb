@@ -8,7 +8,7 @@ RSpec.describe "Produce: command publish-or-staleness via mode resolution (ADR 0
   let(:store) do
     store_from_manifest(root, lanes: %w[artifacts],
                               manifest: <<~YAML,
-                                version: textus/3
+                                version: textus/4
                                 lanes: [{ name: artifacts, kind: machine }]
                                 entries:
                                   - key: artifacts.bundle

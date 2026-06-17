@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe "Textus::Manifest::Schema zone kind" do
   def parse(zones_yaml, roles_yaml = nil)
     raw = YAML.safe_load(<<~YAML, aliases: false)
-      version: textus/3
+      version: textus/4
       #{roles_yaml}
       lanes:
       #{zones_yaml}

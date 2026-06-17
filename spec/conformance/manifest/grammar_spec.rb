@@ -3,9 +3,9 @@ require "spec_helper"
 RSpec.describe "Textus::Manifest grammar" do
   describe "version mismatch hints" do
     it "raises BadFrontmatter with the generic hint for any unsupported version" do
-      yaml = "version: textus/4\nlanes: []\nentries: []\n"
+      yaml = "version: textus/2\nlanes: []\nentries: []\n"
       expect { Textus::Manifest.parse(yaml) }.to raise_error(Textus::BadFrontmatter) { |err|
-        expect(err.message).to match(%r{unsupported manifest version "textus/4"})
+        expect(err.message).to match(%r{unsupported manifest version "textus/2"})
         expect(err.hint).to match(/syntax errors/)
         expect(err.hint).not_to match(/0\.11\.x/)
       }
@@ -13,11 +13,11 @@ RSpec.describe "Textus::Manifest grammar" do
   end
 
   describe "zones block" do
-    include_context "textus/3 conformance fixture"
+    include_context "textus/4 conformance fixture"
 
     it "derives zone writers from capability × zone-kind" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: proposals,  kind: queue }
@@ -36,7 +36,7 @@ RSpec.describe "Textus::Manifest grammar" do
 
     it "raises BadFrontmatter if zones block is absent" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         entries:
           - { key: state.x, path: state/x.md, lane: state, owner: human:self, kind: leaf}
 
@@ -51,7 +51,7 @@ RSpec.describe "Textus::Manifest grammar" do
 
     let(:store) do
       store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles: [{ name: human, can: [author] }]
         lanes:
           - { name: knowledge, kind: canon, desc: "the maintained source of truth" }
@@ -66,7 +66,7 @@ RSpec.describe "Textus::Manifest grammar" do
     it "omits purpose when no desc is declared" do
       dir2 = File.join(tmp, ".textus2")
       s = store_from_manifest(dir2, lanes: %w[knowledge], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles: [{ name: human, can: [author] }]
         lanes:
           - { name: knowledge, kind: canon }

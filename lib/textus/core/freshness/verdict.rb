@@ -9,7 +9,7 @@ module Textus
       # Note on wire format: `#to_h_for_wire` is intentionally narrower than the
       # full field set. It emits the legacy keys ("stale", "stale_reason",
       # "fetching", and "fetch_error" when present) so the CLI JSON wire stays
-      # byte-identical with textus/3. The gem-side fields `checked_at` and
+      # byte-identical with textus/4. The gem-side fields `checked_at` and
       # `ttl_remaining_ms` are NOT emitted on the wire.
       Verdict = Data.define(
         :stale, :fetching, :reason, :fetch_error, :checked_at, :ttl_remaining_ms

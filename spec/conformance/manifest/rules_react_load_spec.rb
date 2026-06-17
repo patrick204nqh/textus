@@ -9,7 +9,7 @@ RSpec.describe "rules.react manifest load" do
 
   it "loads react with allowed keys" do
     manifest = load(<<~YAML)
-      version: textus/3
+      version: textus/4
       lanes: [{ name: knowledge, kind: canon }]
       entries: [{ key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:
@@ -31,7 +31,7 @@ RSpec.describe "rules.react manifest load" do
 
   it "rejects react.ttl to avoid ttl conflicts" do
     expect { load(<<~YAML) }.to raise_error(Textus::BadManifest, /react\.ttl.*invalid/i)
-      version: textus/3
+      version: textus/4
       lanes: [{ name: knowledge, kind: canon }]
       entries: [{ key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }]
       rules:

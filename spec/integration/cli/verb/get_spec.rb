@@ -29,7 +29,7 @@ RSpec.describe Textus::Surfaces::CLI::Verb::Get do
       lanes: %w[feeds],
       files: { "hooks/test_intake.rb" => hook_body },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: feeds, kind: machine }
         entries:

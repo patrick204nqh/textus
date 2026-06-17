@@ -9,7 +9,7 @@ RSpec.describe "session contract" do
       FileUtils.mkdir_p(File.join(root, "data/knowledge"))
       FileUtils.mkdir_p(File.join(root, "hooks"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes: [{ name: knowledge, kind: canon }]
         entries:
           - { key: knowledge.x, path: knowledge/x.md, lane: knowledge, kind: leaf }
@@ -46,7 +46,7 @@ RSpec.describe "session contract" do
     before do
       %w[data/working schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: working, kind: canon }
         entries:

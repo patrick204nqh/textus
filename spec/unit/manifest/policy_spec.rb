@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Policy do
 
   let(:yaml) do
     <<~YAML
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author, propose] }
         - { name: automation, can: [converge] }
@@ -38,7 +38,7 @@ RSpec.describe Textus::Manifest::Policy do
     it "prefers a non-author proposer over an author+propose role" do
       # default-style: human=[author,propose], agent=[propose] → agent wins
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
@@ -53,7 +53,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "falls back to the first proposer when the only proposer also holds author" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
         lanes:
@@ -67,7 +67,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "returns nil when no role holds propose" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: automation, can: [converge] }
         lanes:
@@ -87,7 +87,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "returns the first declared holder when several roles hold the verb" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
@@ -102,7 +102,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "resolves by capability, not by a conventional name (agent may hold converge)" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: agent, can: [propose, converge] }
         lanes:
@@ -116,7 +116,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "returns nil when no role holds the verb" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
         lanes:
@@ -132,7 +132,7 @@ RSpec.describe Textus::Manifest::Policy do
     context "when the role writes the declared kind: queue zone" do
       let(:yaml) do
         <<~YAML
-          version: textus/3
+          version: textus/4
           roles:
             - { name: human,      can: [author, propose] }
             - { name: automation, can: [converge] }
@@ -152,7 +152,7 @@ RSpec.describe Textus::Manifest::Policy do
     context "when no zone declares kind: queue" do
       it "returns nil (no substring fallback)" do
         raw2 = YAML.safe_load(<<~YAML, aliases: false)
-          version: textus/3
+          version: textus/4
           roles: [{ name: human, can: [author, propose] }]
           lanes: [{ name: review, kind: canon }]
           entries: []
@@ -183,7 +183,7 @@ RSpec.describe Textus::Manifest::Policy do
     context "when the role writes multiple zones — a non-queue zone declared first, then the queue zone" do
       let(:yaml) do
         <<~YAML
-          version: textus/3
+          version: textus/4
           roles:
             - { name: human, can: [author, propose] }
           lanes:
@@ -204,7 +204,7 @@ RSpec.describe Textus::Manifest::Policy do
   describe "zone-kind lookups" do
     let(:yaml) do
       <<~YAML
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
@@ -233,7 +233,7 @@ RSpec.describe Textus::Manifest::Policy do
 
     it "does NOT treat a non-machine zone as the machine zone" do
       raw2 = YAML.safe_load(<<~YAML, aliases: false)
-        version: textus/3
+        version: textus/4
         roles: [{ name: human, can: [author, propose] }]
         lanes: [{ name: out, kind: canon }]
         entries: []
@@ -250,7 +250,7 @@ RSpec.describe Textus::Manifest::Policy do
   describe "#propose_lane_for with declared queue" do
     let(:yaml) do
       <<~YAML
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }
@@ -274,7 +274,7 @@ RSpec.describe Textus::Manifest::Policy do
   describe "declared zone kinds on Data" do
     let(:yaml) do
       <<~YAML
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
@@ -294,7 +294,7 @@ RSpec.describe Textus::Manifest::Policy do
     end
 
     it "rejects a manifest whose zone declares no kind" do
-      raw2 = YAML.safe_load("version: textus/3\nlanes:\n  - { name: w }\nentries: []\n", aliases: false)
+      raw2 = YAML.safe_load("version: textus/4\nlanes:\n  - { name: w }\nentries: []\n", aliases: false)
       expect { Textus::Manifest::Data.parse(raw2, root: ".") }
         .to raise_error(Textus::BadManifest, /must declare a kind|is missing/)
     end

@@ -1,8 +1,8 @@
 require "spec_helper"
 
-# Conformance fixture B from textus/3 §12: role gate on write.
-RSpec.describe "textus/3 conformance — Fixture B: role gate on write" do
-  include_context "textus/3 conformance fixture"
+# Conformance fixture B from textus/4 §12: role gate on write.
+RSpec.describe "textus/4 conformance — Fixture B: role gate on write" do
+  include_context "textus/4 conformance fixture"
 
   describe "Fixture B — role gate on write" do
     it "raises WriteForbidden when an agent tries to write identity" do

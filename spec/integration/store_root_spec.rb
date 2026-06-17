@@ -5,7 +5,7 @@ RSpec.describe Textus::Store, ".discover" do
 
   def make_store_at(dir)
     store_from_manifest(dir, lanes: %w[knowledge], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries: []

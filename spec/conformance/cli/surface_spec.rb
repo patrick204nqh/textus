@@ -1,12 +1,12 @@
 require "spec_helper"
 require "stringio"
 
-# Conformance CLI smoke tests over the textus/3 §12 fixture.
-RSpec.describe "textus/3 conformance — CLI surface" do
-  include_context "textus/3 conformance fixture"
+# Conformance CLI smoke tests over the textus/4 §12 fixture.
+RSpec.describe "textus/4 conformance — CLI surface" do
+  include_context "textus/4 conformance fixture"
 
   describe "CLI" do
-    it "emits a textus/3 envelope for `get`" do
+    it "emits a textus/4 envelope for `get`" do
       out = StringIO.new
       rc = Textus::Surfaces::CLI.run(
         ["get", "knowledge.network.org.jane", "--output=json"],
@@ -14,7 +14,7 @@ RSpec.describe "textus/3 conformance — CLI surface" do
       )
       expect(rc).to eq(0)
       env = JSON.parse(out.string.lines.last)
-      expect(env["protocol"]).to eq("textus/3")
+      expect(env["protocol"]).to eq("textus/4")
       expect(env["key"]).to eq("knowledge.network.org.jane")
     end
 

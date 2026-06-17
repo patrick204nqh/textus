@@ -4,7 +4,7 @@ RSpec.describe Textus::Jobs::Planner do
   include_context "textus_store_fixture"
 
   let(:react_manifest) { <<~YAML }
-    version: textus/3
+    version: textus/4
     lanes:
       - { name: knowledge, kind: canon }
       - { name: feeds, kind: machine }

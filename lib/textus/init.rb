@@ -6,7 +6,7 @@ module Textus
     ZONES = %w[knowledge notebook proposals artifacts raw].freeze
 
     DEFAULT_MANIFEST = <<~YAML
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep] }

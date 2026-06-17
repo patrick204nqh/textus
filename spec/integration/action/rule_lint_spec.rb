@@ -6,7 +6,7 @@ RSpec.describe Textus::Action::RuleLint do
   before do
     %w[data/intake schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: intake, kind: machine }
       entries:

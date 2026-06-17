@@ -17,7 +17,7 @@ RSpec.describe Textus::Action::Uid do
         MD
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

@@ -5,7 +5,7 @@ RSpec.describe Textus::Action::Accept do
 
   let(:store) do
     store_from_manifest(root, lanes: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals,  kind: queue }
@@ -63,7 +63,7 @@ RSpec.describe Textus::Action::Accept do
     # manifest still validates — yet accept/reject have no authority to gate.
     let(:store) do
       s = store_from_manifest(root, lanes: %w[feeds proposals], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: agent, can: [propose] }
           - { name: automation, can: [converge] }
@@ -111,7 +111,7 @@ RSpec.describe Textus::Action::Accept do
           lanes: ["knowledge/network/org", "proposals"],
           schemas: { "org-member" => org_member_schema },
           manifest: <<~YAML,
-            version: textus/3
+            version: textus/4
             lanes:
               - { name: knowledge, kind: canon }
               - { name: proposals,  kind: queue }
@@ -160,7 +160,7 @@ RSpec.describe Textus::Action::Accept do
     context "with an author_held guard" do
       let(:store) do
         store_from_manifest(root, lanes: ["knowledge/network/org", "proposals"], manifest: <<~YAML)
-          version: textus/3
+          version: textus/4
           lanes:
             - { name: knowledge, kind: canon }
             - { name: proposals,  kind: queue }

@@ -7,7 +7,7 @@ RSpec.describe Textus::Init do
     Textus::Init.run(root)
     expect(File.exist?(File.join(root, "manifest.yaml"))).to be true
     expect(File.directory?(File.join(root, "schemas"))).to be true
-    expect(File.read(File.join(root, "manifest.yaml"))).to include("version: textus/3")
+    expect(File.read(File.join(root, "manifest.yaml"))).to include("version: textus/4")
   ensure
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end

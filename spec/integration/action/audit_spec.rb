@@ -8,7 +8,7 @@ RSpec.describe Textus::Action::Audit do
     store_from_manifest(root,
                         lanes: %w[knowledge identity],
                         manifest: <<~YAML)
-                          version: textus/3
+                          version: textus/4
                           lanes:
                             - { name: knowledge, kind: canon }
                             - { name: identity,   kind: canon }

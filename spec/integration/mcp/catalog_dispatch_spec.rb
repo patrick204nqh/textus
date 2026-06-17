@@ -11,7 +11,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
   let(:manifest_yaml) do
     <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity, kind: canon }
         - { name: knowledge,  kind: canon }

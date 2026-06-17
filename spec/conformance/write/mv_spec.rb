@@ -9,7 +9,7 @@ RSpec.describe "textus mv" do
     FileUtils.mkdir_p(File.join(root, "data/knowledge/notes"))
     FileUtils.mkdir_p(File.join(root, "data/identity/notes"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: identity,   kind: canon }

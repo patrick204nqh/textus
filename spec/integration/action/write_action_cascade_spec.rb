@@ -6,7 +6,7 @@ RSpec.describe Textus::Action::Put do
 
     def with_derived_store(root)
       manifest = <<~YAML
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
           - { name: feeds, kind: machine }

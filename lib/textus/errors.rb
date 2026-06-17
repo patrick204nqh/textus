@@ -217,7 +217,7 @@ module Textus
     def initialize(old_flag, new_flag)
       super(
         "flag_renamed",
-        "#{old_flag} was renamed in textus/3 — use #{new_flag}",
+        "#{old_flag} was renamed in textus/4 — use #{new_flag}",
         details: { "old" => old_flag, "new" => new_flag },
         hint: "Use #{new_flag} instead.",
         exit_code: 2,

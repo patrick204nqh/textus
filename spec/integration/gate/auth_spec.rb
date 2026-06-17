@@ -7,7 +7,7 @@ RSpec.describe Textus::Gate::Auth do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge proposals feeds], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }
@@ -113,7 +113,7 @@ RSpec.describe Textus::Gate::Auth do
   describe "raw lane enforcement" do
     let(:raw_store) do
       store_from_manifest(root, lanes: %w[raw notebook], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose, keep, ingest] }

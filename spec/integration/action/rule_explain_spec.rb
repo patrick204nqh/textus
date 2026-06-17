@@ -7,7 +7,7 @@ RSpec.describe Textus::Action::RuleExplain do
   # stored (non-derived) entry, so a leaf can carry a retention rule (ADR 0093).
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
       entries:
@@ -67,7 +67,7 @@ RSpec.describe Textus::Action::RuleExplain do
     it "surfaces a retention rule in matched_blocks and effective (ADR 0093)" do
       # An intake entry in a machine zone can carry a retention (age-GC) rule.
       ret_store = store_from_manifest(root, lanes: %w[artifacts knowledge], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles: [{ name: automation, can: [converge] }, { name: human, can: [author] }]
         lanes:
           - { name: knowledge, kind: canon }
@@ -95,7 +95,7 @@ RSpec.describe Textus::Action::RuleExplain do
 
     it "returns nil-valued effective slots when no policy matches" do
       no_policy_store = store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

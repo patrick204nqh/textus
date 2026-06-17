@@ -40,7 +40,7 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
 
     let(:store) do
       store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles: [{ name: human, can: [author] }]
         lanes: [{ name: knowledge, kind: canon }]
         entries: []

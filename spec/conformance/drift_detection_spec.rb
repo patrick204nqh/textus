@@ -1,8 +1,8 @@
 require "spec_helper"
 
-# Conformance fixture D from textus/3 §12: generator drift detection (via doctor).
-RSpec.describe "textus/3 conformance — Fixture D: generator drift detection" do
-  include_context "textus/3 conformance fixture"
+# Conformance fixture D from textus/4 §12: generator drift detection (via doctor).
+RSpec.describe "textus/4 conformance — Fixture D: generator drift detection" do
+  include_context "textus/4 conformance fixture"
 
   describe "Fixture D — generator drift detection (via doctor)" do
     it "flags artifacts entries with sources newer than generated.at without executing" do

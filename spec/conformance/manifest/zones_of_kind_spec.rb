@@ -5,7 +5,7 @@ RSpec.describe "Manifest::Policy#lanes_of_kind (ADR 0034)" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge notebook feeds], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author] }
         - { name: agent,      can: [keep] }

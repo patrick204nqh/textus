@@ -7,7 +7,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   let(:stdin) { StringIO.new }
   let(:manifest_yaml) do
     <<~YAML
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: proposals, kind: queue }

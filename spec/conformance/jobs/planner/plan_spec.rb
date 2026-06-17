@@ -7,7 +7,7 @@ RSpec.describe Textus::Jobs::Planner do
     store_from_manifest(
       root, lanes: %w[knowledge feeds],
             manifest: <<~YAML,
-              version: textus/3
+              version: textus/4
               lanes:
                 - { name: knowledge, kind: canon }
                 - { name: feeds, kind: machine }

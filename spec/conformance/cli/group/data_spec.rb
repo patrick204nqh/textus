@@ -11,7 +11,7 @@ RSpec.describe "textus data mv (generated, ADR 0068)" do
   before do
     FileUtils.mkdir_p(File.join(root, "data/scratch"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: scratch, kind: canon }
       entries:

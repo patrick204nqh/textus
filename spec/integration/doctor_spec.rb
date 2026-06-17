@@ -9,7 +9,7 @@ RSpec.describe Textus::Doctor do
     FileUtils.mkdir_p(File.join(root, "schemas"))
     FileUtils.mkdir_p(File.join(root, "templates"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }
@@ -43,7 +43,7 @@ RSpec.describe Textus::Doctor do
 
   it "reports a clean store as ok: true with no error-level issues" do
     res = doctor
-    expect(res["protocol"]).to eq("textus/3")
+    expect(res["protocol"]).to eq("textus/4")
     expect(res["ok"]).to be true
     expect(res["issues"].any? { |i| i["level"] == "error" }).to be false
   end
@@ -148,7 +148,7 @@ RSpec.describe Textus::Doctor do
       FileUtils.mkdir_p(File.join(ra_root, "data/knowledge/people"))
 
       File.write(File.join(ra_root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: proposals, kind: queue }
         entries:

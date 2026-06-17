@@ -1,4 +1,4 @@
-version: textus/3
+version: textus/4
 roles:
   - { name: human,      can: [author, propose, ingest] }
   - { name: agent,      can: [propose, keep, ingest] }

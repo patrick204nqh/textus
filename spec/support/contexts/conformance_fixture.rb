@@ -1,4 +1,4 @@
-RSpec.shared_context "textus/3 conformance fixture" do
+RSpec.shared_context "textus/4 conformance fixture" do
   let(:tmp)  { Dir.mktmpdir("textus-spec") }
   let(:root) { File.join(tmp, ".textus") }
   let(:store) { Textus::Store.new(root) }
@@ -12,7 +12,7 @@ RSpec.shared_context "textus/3 conformance fixture" do
     FileUtils.mkdir_p(File.join(root, "data/identity"))
 
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: identity,  kind: canon }
         - { name: knowledge,   kind: canon }

@@ -10,7 +10,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
 
   it "rejects entry-level template: (rendering is a publish concern)" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
@@ -25,7 +25,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
 
   it "rejects entry-level inject_boot:" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x
@@ -40,7 +40,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
 
   it "accepts a flat project source with a publish list" do
     yaml = <<~YAML
-      version: textus/3
+      version: textus/4
       lanes: [{ name: artifacts, kind: machine }, { name: knowledge, kind: canon }]
       entries:
         - key: artifacts.x

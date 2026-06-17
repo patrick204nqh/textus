@@ -8,7 +8,7 @@ RSpec.describe "CLI subcommand groups" do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))
     FileUtils.mkdir_p(File.join(root, "data/archive"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: archive, kind: canon }
@@ -33,7 +33,7 @@ RSpec.describe "CLI subcommand groups" do
   describe "textus key mv OLD NEW" do
     it "works and prints no deprecation warning" do
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

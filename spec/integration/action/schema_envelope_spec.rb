@@ -18,7 +18,7 @@ RSpec.describe Textus::Action::SchemaEnvelope do
         "data/knowledge/person.md" => "---\nfull_name: Alice\n---\nbody\n",
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries:

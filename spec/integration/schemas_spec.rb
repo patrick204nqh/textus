@@ -103,7 +103,7 @@ RSpec.describe Textus::Schemas do
 
   describe "canon zone-kind (ADR 0033)" do
     it "accepts kind: canon and rejects the retired kind: origin" do
-      canon = { "version" => "textus/3",
+      canon = { "version" => "textus/4",
                 "roles" => [{ "name" => "human", "can" => ["author"] }],
                 "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
                 "entries" => [] }

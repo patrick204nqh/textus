@@ -5,7 +5,7 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author] }
         - { name: agent, can: [propose] }
@@ -27,7 +27,7 @@ RSpec.describe "pulse pending_review derives the queue zone, not 'review' (ADR 0
 
   it "returns [] cleanly when no queue zone is declared" do
     s = store_from_manifest(File.join(tmp, "no-queue", ".textus"), lanes: %w[knowledge], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles: [{ name: human, can: [author] }]
       lanes: [{ name: knowledge, kind: canon }]
       entries: []

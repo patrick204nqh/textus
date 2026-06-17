@@ -8,7 +8,7 @@ RSpec.describe "textus pulse CLI" do
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       FileUtils.mkdir_p(File.join(textus, "data", "review"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
           - { name: review,  kind: canon }

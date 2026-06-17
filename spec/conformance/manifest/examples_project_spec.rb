@@ -6,8 +6,8 @@ RSpec.describe "project .textus manifest -- live fixture contract" do
     expect { store.manifest }.not_to raise_error
   end
 
-  it "declares the textus/3 protocol version" do
-    expect(store.manifest.data.raw["version"]).to eq("textus/3")
+  it "declares the textus/4 protocol version" do
+    expect(store.manifest.data.raw["version"]).to eq("textus/4")
   end
 
   it "has at least one entry" do

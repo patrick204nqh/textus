@@ -25,7 +25,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
     RUBY
 
     s = store_from_manifest(root, lanes: %w[knowledge artifacts], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }

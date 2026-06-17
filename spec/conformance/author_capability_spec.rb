@@ -5,7 +5,7 @@ RSpec.describe "author capability (ADR 0033)" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge proposals], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author, propose] }
         - { name: agent, can: [propose] }
@@ -24,7 +24,7 @@ RSpec.describe "author capability (ADR 0033)" do
   end
 
   it "rejects the retired `accept` capability at load" do
-    bad = { "version" => "textus/3",
+    bad = { "version" => "textus/4",
             "roles" => [{ "name" => "human", "can" => ["accept"] }],
             "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
             "entries" => [] }

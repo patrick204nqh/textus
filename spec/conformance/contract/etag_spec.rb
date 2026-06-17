@@ -32,7 +32,7 @@ RSpec.describe "Textus::Etag.for_contract" do
   before do
     FileUtils.mkdir_p(File.join(root, "hooks"))
     FileUtils.mkdir_p(File.join(root, "schemas"))
-    File.write(File.join(root, "manifest.yaml"), "version: textus/3\n")
+    File.write(File.join(root, "manifest.yaml"), "version: textus/4\n")
     File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| }\n")
     File.write(File.join(root, "schemas/x.yaml"), "type: object\n")
   end
@@ -48,7 +48,7 @@ RSpec.describe "Textus::Etag.for_contract" do
 
   it "changes when the manifest changes" do
     was = etag
-    File.write(File.join(root, "manifest.yaml"), "version: textus/3\n# edit\n")
+    File.write(File.join(root, "manifest.yaml"), "version: textus/4\n# edit\n")
     expect(etag).not_to eq(was)
   end
 

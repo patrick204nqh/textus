@@ -8,7 +8,7 @@ RSpec.describe Textus::Manifest::Schema do
   it "accepts a minimal canonical manifest" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [],
@@ -17,14 +17,14 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   it "rejects a manifest with no lanes:" do
-    raw = { "version" => "textus/3" }
+    raw = { "version" => "textus/4" }
     expect { Textus::Manifest::Schema.validate!(raw) }
       .to raise_error(Textus::BadManifest, /lanes/)
   end
 
   it "accepts lanes: with valid entries" do
     raw = {
-      "version" => "textus/3",
+      "version" => "textus/4",
       "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
       "entries" => [{ "key" => "knowledge.foo", "lane" => "knowledge",
                       "path" => "knowledge/foo.md", "kind" => "leaf" }],
@@ -34,14 +34,14 @@ RSpec.describe Textus::Manifest::Schema do
 
   it "rejects an unknown key at the root with path-prefixed message" do
     expect do
-      validate!("version" => "textus/3", "lanes" => [], "entries" => [], "garbage" => 1)
+      validate!("version" => "textus/4", "lanes" => [], "entries" => [], "garbage" => 1)
     end.to raise_error(Textus::BadManifest, /unknown key 'garbage' at '\$'/)
   end
 
   it "rejects an unknown key inside a zone (path includes index)" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "intake", "kind" => "machine", "ohno" => 1 }],
         "entries" => [],
       )
@@ -51,7 +51,7 @@ RSpec.describe Textus::Manifest::Schema do
   it "rejects writable_by (legacy alias) via the generic path" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "intake", "kind" => "machine", "writable_by" => ["automation"] }],
         "entries" => [],
       )
@@ -61,7 +61,7 @@ RSpec.describe Textus::Manifest::Schema do
   it "rejects bare projection: at entry level via the generic path" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{ "key" => "x", "lane" => "output", "path" => "x.json", "projection" => {} }],
       )
@@ -71,7 +71,7 @@ RSpec.describe Textus::Manifest::Schema do
   it "rejects an unknown source sub-key via the generic path" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "output", "kind" => "machine" }],
         "entries" => [{
           "key" => "x", "lane" => "output", "path" => "x.json", "kind" => "produced",
@@ -84,7 +84,7 @@ RSpec.describe Textus::Manifest::Schema do
   it "rejects handler_allowlist in a rule via the generic path" do
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "intake", "kind" => "machine" }],
         "entries" => [],
         "rules" => [{ "match" => "intake.x.*", "handler_allowlist" => ["h"] }],
@@ -94,13 +94,13 @@ RSpec.describe Textus::Manifest::Schema do
 
   it "rejects policies: at root via the generic path" do
     expect do
-      validate!("version" => "textus/3", "lanes" => [], "entries" => [], "policies" => [])
+      validate!("version" => "textus/4", "lanes" => [], "entries" => [], "policies" => [])
     end.to raise_error(Textus::BadManifest, /unknown key 'policies' at '\$'/)
   end
 
   def entry_manifest(extra)
     {
-      "version" => "textus/3",
+      "version" => "textus/4",
       "lanes" => [{ "name" => "knowledge", "kind" => "canon" }],
       "entries" => [
         { "key" => "knowledge.skills", "path" => "knowledge/skills", "lane" => "knowledge",
@@ -140,7 +140,7 @@ RSpec.describe Textus::Manifest::Schema do
     # This is intentional — one error format per concern.
     expect do
       validate!(
-        "version" => "textus/3",
+        "version" => "textus/4",
         "lanes" => [{ "name" => "inbox", "kind" => "machine" }],
         "entries" => [],
       )
@@ -184,7 +184,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "accepts a bare archetype owner on a lane (shipped `owner: agent`)" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           # roles: present only so the workspace lane clears validate_lane_kind_consistency! (needs `keep`); unrelated to owner validation
           "roles" => [{ "name" => "agent", "can" => ["keep"] }],
           "lanes" => [{ "name" => "notebook", "kind" => "workspace", "owner" => "agent" }],
@@ -196,7 +196,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "accepts <archetype>:<subject> on a lane and an entry" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "knowledge", "kind" => "canon", "owner" => "human:self" }],
           "entries" => [{ "key" => "knowledge.identity", "path" => "knowledge/identity.md",
                           "lane" => "knowledge", "kind" => "leaf", "owner" => "human:self" }],
@@ -207,7 +207,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "accepts a lane with no owner declared" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "intake", "kind" => "machine" }],
           "entries" => [],
         )
@@ -217,7 +217,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "rejects an archetype outside the closed set, with a path-prefixed message" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => "compiler:whoever" }],
           "entries" => [],
         )
@@ -227,7 +227,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "rejects a garbage bare token" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => "garbage" }],
           "entries" => [],
         )
@@ -237,7 +237,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "rejects an empty subject on an entry, with the entry path" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "z", "kind" => "canon" }],
           "entries" => [{ "key" => "z.x", "path" => "z/x.md", "lane" => "z",
                           "kind" => "leaf", "owner" => "human:" }],
@@ -248,7 +248,7 @@ RSpec.describe Textus::Manifest::Schema do
     it "rejects a non-string owner value" do
       expect do
         validate!(
-          "version" => "textus/3",
+          "version" => "textus/4",
           "lanes" => [{ "name" => "z", "kind" => "canon", "owner" => 42 }],
           "entries" => [],
         )

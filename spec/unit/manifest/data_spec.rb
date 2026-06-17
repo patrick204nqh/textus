@@ -5,7 +5,7 @@ RSpec.describe Textus::Manifest::Data do
 
   let(:yaml) do
     <<~YAML
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human, can: [author, propose] }
         - { name: automation, can: [converge] }

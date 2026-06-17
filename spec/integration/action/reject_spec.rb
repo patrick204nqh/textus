@@ -11,7 +11,7 @@ RSpec.describe Textus::Action::Reject do
         "data/draft.md" => "---\nname: draft\nproposal:\n  target_key: identity.target\n---\nbody\n",
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: identity, kind: canon }
           - { name: proposals, kind: queue }

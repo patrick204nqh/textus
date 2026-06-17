@@ -8,7 +8,7 @@ RSpec.describe Textus::Action::Ingest do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[raw notebook], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: human,      can: [author, propose] }
         - { name: agent,      can: [propose, keep, ingest] }

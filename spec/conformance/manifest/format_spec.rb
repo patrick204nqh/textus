@@ -10,7 +10,7 @@ RSpec.describe "Manifest format: field validation" do
 
   def write_manifest(entries_yaml)
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
         - { name: artifacts, kind: machine }

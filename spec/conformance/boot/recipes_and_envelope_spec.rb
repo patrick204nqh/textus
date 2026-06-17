@@ -11,7 +11,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
     before do
       FileUtils.mkdir_p(File.join(root, "data/intake"))
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: automation, can: [converge] }
@@ -40,7 +40,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
 
     let(:store) do
       store_from_manifest(root, lanes: %w[knowledge feeds proposals], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
@@ -83,7 +83,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
 
     let(:store) do
       store_from_manifest(root, lanes: %w[knowledge feeds proposals], manifest: <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human,      can: [author, propose] }
           - { name: agent,      can: [propose] }
@@ -145,7 +145,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
     before do
       FileUtils.mkdir_p(root)
       File.write(File.join(root, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         roles:
           - { name: human, can: [author, propose] }
           - { name: agent, can: [propose] }

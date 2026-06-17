@@ -6,7 +6,7 @@ RSpec.describe Textus::Action::DataMv do
   before do
     %w[data/scratch schemas hooks].each { |d| FileUtils.mkdir_p(File.join(root, d)) }
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/3
+      version: textus/4
       lanes:
         - { name: scratch, kind: canon }
       entries:

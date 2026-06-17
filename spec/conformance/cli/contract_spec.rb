@@ -7,7 +7,7 @@ RSpec.describe "Textus::Surfaces::CLI verb return-value contract" do
       textus = File.join(root, ".textus")
       FileUtils.mkdir_p(File.join(textus, "data", "knowledge"))
       File.write(File.join(textus, "manifest.yaml"), <<~YAML)
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
         entries: []

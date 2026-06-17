@@ -10,7 +10,7 @@ RSpec.describe "cookbook: environment-scan (nested machines intake)" do
 
   let(:store) do
     store_from_manifest(root, lanes: %w[feeds], manifest: <<~YAML)
-      version: textus/3
+      version: textus/4
       roles:
         - { name: automation, can: [converge] }
       lanes:

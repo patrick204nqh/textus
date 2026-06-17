@@ -12,7 +12,7 @@ RSpec.describe Textus::Action::Published do
         "data/knowledge/people/alice.md" => "---\nname: alice\n---\n",
       },
       manifest: <<~YAML,
-        version: textus/3
+        version: textus/4
         lanes:
           - { name: knowledge, kind: canon }
           - { name: artifacts, kind: machine }
