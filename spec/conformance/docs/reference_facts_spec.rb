@@ -13,11 +13,11 @@ RSpec.describe "reference doc facts cover their projections" do
     (repo + rel).read
   end
 
-  it "zones.md documents every manifest zone" do
-    doc = read_doc("docs/reference/zones.md")
-    zones = Textus::Manifest.load((repo + ".textus").to_s).data.declared_lane_kinds.keys
-    missing = zones.map(&:to_s).reject { |z| doc.include?(z) }
-    expect(missing).to be_empty, "zones.md missing: #{missing.join(", ")}"
+  it "lanes.md documents every manifest lane" do
+    doc = read_doc("docs/reference/lanes.md")
+    lanes = Textus::Manifest.load((repo + ".textus").to_s).data.declared_lane_kinds.keys
+    missing = lanes.map(&:to_s).reject { |z| doc.include?(z) }
+    expect(missing).to be_empty, "lanes.md missing: #{missing.join(", ")}"
   end
 
   it "mcp.md documents every MCP tool" do

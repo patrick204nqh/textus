@@ -406,7 +406,7 @@ No `textus/3` wire-format change. Manifest schema gains one optional, backward-c
   segment-wise globstar — `**` spans zero or more path segments; within a
   segment `*` is anchored and `{a,b}` alternates (stdlib `File.fnmatch`,
   no new dependency). Documented in
-  [`docs/reference/zones.md`](docs/reference/zones.md#nested-entries).
+  [`docs/reference/zones.md`](docs/reference/lanes.md#nested-entries).
 
 ### Internal
 
