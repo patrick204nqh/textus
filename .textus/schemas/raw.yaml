@@ -10,5 +10,6 @@ fields:
         url:    { type: string, maintained_by: machine }
         path:   { type: string, maintained_by: machine }
         label:  { type: string, maintained_by: machine }
+        access: { type: string, maintained_by: human }
   body:  { type: string, maintained_by: machine }
   asset: { type: string, maintained_by: machine }
