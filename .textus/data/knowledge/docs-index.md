@@ -21,17 +21,17 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 | Doc | What it does |
 |---|---|
 | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | Wire an agent: quickstart, context store, boot → pulse loop |
-| [`how-to/writing-hooks.md`](how-to/writing-hooks.md) | Define, wire, and test Ruby hooks |
-| [`how-to/configuring-zones.md`](how-to/configuring-zones.md) | Define zones, wire intake, set up derived entries |
+| [`how-to/configuring-lanes.md`](how-to/configuring-lanes.md) | Declare lanes, wire workflows, set up produced entries |
+| [`how-to/drain-scheduling.md`](how-to/drain-scheduling.md) | Schedule `drain` for unattended upkeep |
 | [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely |
 
 ## Reference
 
 | Doc | What it documents |
 |---|---|
-| [`../SPEC.md`](../SPEC.md) | The `textus/3` wire protocol — normative |
-| [`reference/zones.md`](reference/zones.md) | Zone, role/capability, and entry semantics |
-| [`reference/authority.md`](reference/authority.md) | **Generated.** Who may write what — the projected lane/role/zone tables |
+| [`../SPEC.md`](../SPEC.md) | The `textus/4` wire protocol — normative |
+| [`reference/lanes.md`](reference/lanes.md) | Lane, role/capability, and entry semantics |
+| [`reference/authority.md`](reference/authority.md) | **Generated.** Who may write what — the projected lane/role tables |
 | [`reference/events.md`](reference/events.md) | Event catalog + per-verb lifecycle timelines |
 | [`reference/mcp.md`](reference/mcp.md) | MCP tool catalog, errors, transports, plugin wiring |
 | [`reference/conventions.md`](reference/conventions.md) | Idiomatic `.textus/` tree shaping (integrator-facing) |

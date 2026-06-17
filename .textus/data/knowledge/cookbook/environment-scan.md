@@ -175,6 +175,5 @@ zones/artifacts/feeds/machines/
 
 > **Scaling past a handful of hosts?** Flip to a *push* model: each machine runs
 > the probe on a cron and drops its JSON to a shared sink (object store, a git
-> branch, a shared FS); the control store ingests each leaf with the
-> [HTTP JSON](./intake-recipes.md#http-json-api) or local-file recipe instead of
-> SSHing out. No central credentials, each host self-reports.
+> branch, a shared FS); the control store ingests each leaf via `textus ingest file`
+> or a workflow step instead of SSHing out. No central credentials, each host self-reports.

@@ -115,7 +115,7 @@ expired feed:
 textus drain --as=automation   # in cron / CI — re-pulls all stale feeds
 ```
 
-See [`./zones.md` §6](zones.md) for the full intake contract and [`../how-to/writing-hooks.md`](../how-to/writing-hooks.md) for writing custom handlers.
+See [`./lanes.md`](lanes.md) for lane semantics and [`../how-to/configuring-lanes.md`](../how-to/configuring-lanes.md) for setting up produced entries and workflows.
 
 ### Read vs. refresh
 
