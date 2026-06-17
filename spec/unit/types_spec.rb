@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Textus::Types" do
+RSpec.describe Textus::Types do
   it "rejects an invalid role name" do
     expect { Textus::Types::RoleName["nope"] }.to raise_error(Dry::Types::ConstraintError)
   end

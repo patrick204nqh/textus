@@ -7,8 +7,6 @@ module Textus
     module Schema
       # rubocop:disable Metrics/BlockLength
       Contract = Dry::Schema.JSON do
-        config.validate_keys = true
-
         required(:lanes).value(:array).each do
           hash do
             required(:name).value(:string)
@@ -25,7 +23,7 @@ module Textus
           end
         end
 
-        required(:entries).value(:array).each do
+        optional(:entries).value(:array).each do
           hash do
             required(:key).value(:string)
             required(:lane).value(:string)
@@ -36,20 +34,9 @@ module Textus
             optional(:kind).value(:string)
             optional(:nested).value(:bool)
             optional(:tracked).value(:bool)
-            optional(:ignore) # bool or array of glob patterns
-            optional(:source).hash do
-              optional(:from).value(:string)
-              optional(:command).value(:string)
-              optional(:sources).value(:array)
-            end
-            optional(:publish).value(:array).each do
-              hash do
-                optional(:to).value(:string)
-                optional(:tree).value(:string)
-                optional(:template).value(:string)
-                optional(:inject_boot).value(:bool)
-              end
-            end
+            optional(:ignore)
+            optional(:source)
+            optional(:publish).value(:array)
           end
         end
 
@@ -57,10 +44,7 @@ module Textus
           hash do
             optional(:match).value(:string)
             optional(:guard)
-            optional(:retention).hash do
-              optional(:ttl).value(:string)
-              optional(:action).value(:string)
-            end
+            optional(:retention)
             optional(:react)
           end
         end

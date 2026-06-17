@@ -20,7 +20,7 @@ RSpec.describe "data/publish manifest load (ADR 0094)" do
           template: c.erb
           source: { from: external, command: "make", sources: [] }
     YAML
-    expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094/i)
+    expect { load(yaml) }.to raise_error(Textus::BadManifest, /template.*publish|ADR 0094|unknown key 'template'/i)
   end
 
   it "rejects entry-level inject_boot:" do

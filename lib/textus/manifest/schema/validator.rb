@@ -11,6 +11,9 @@ module Textus
         def validate!(raw)
           raise BadManifest.new("manifest must be a hash") unless raw.is_a?(Hash)
 
+          # Root unknown-key check before Contract so it fires even when lanes: is empty.
+          Semantics.walk(raw, ROOT_KEYS, "$")
+
           result = Contract.call(raw)
           raise BadManifest.new(format_first_error(result.errors.messages)) unless result.success?
 

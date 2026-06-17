@@ -111,7 +111,7 @@ RSpec.describe Textus::Schemas do
 
       origin = canon.merge("lanes" => [{ "name" => "knowledge", "kind" => "origin" }])
       expect { Textus::Manifest::Schema.validate!(origin) }
-        .to raise_error(Textus::BadManifest, /unknown lane kind 'origin'/)
+        .to raise_error(Textus::BadManifest, /unknown lane kind 'origin'|must be one of/)
     end
   end
 end

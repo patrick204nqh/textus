@@ -17,6 +17,7 @@ module Textus
           check_single_queue!(raw)
           check_single_machine!(raw)
           check_lane_kind_consistency!(raw)
+          walk(raw["audit"], AUDIT_KEYS, "$.audit") if raw["audit"].is_a?(Hash)
         end
 
         def check_roles!(roles)
@@ -51,6 +52,7 @@ module Textus
 
         def check_lanes!(lanes)
           Array(lanes).each_with_index do |z, i|
+            walk(z, LANE_KEYS, "$.lanes[#{i}]")
             next unless %w[quarantine derived].include?(z["kind"])
 
             raise BadManifest.new(
@@ -65,7 +67,9 @@ module Textus
             path = "$.entries[#{i}]"
             check_retired_publish_keys!(e, path)
             check_retired_render_keys!(e, path)
+            walk(e, ENTRY_KEYS, path)
             check_publish_block!(e, path)
+            walk(e["source"], SOURCE_KEYS, "#{path}.source") if e.is_a?(Hash) && e["source"].is_a?(Hash)
           end
         end
 
@@ -129,6 +133,8 @@ module Textus
 
           block.each_with_index do |t, i|
             raise BadManifest.new("publish target ##{i} must be a mapping at '#{path}.publish'") unless t.is_a?(Hash)
+
+            walk(t, %w[to tree template inject_boot], "#{path}.publish[#{i}]")
           end
         end
 
@@ -160,18 +166,26 @@ module Textus
         def check_rules!(rules)
           Array(rules).each_with_index do |r, i|
             path = "$.rules[#{i}]"
+            # Check retired keys BEFORE the generic walk so specific hints fire first.
             { "lifecycle" => "age GC moved to `retention:` rule", "materialize" => "removed (ADR 0093)" }
               .each do |old, hint|
                 next unless r.is_a?(Hash) && r.key?(old)
 
                 raise BadManifest.new("`#{old}:` was removed at '#{path}' (ADR 0093) — #{hint}.")
               end
-            next unless r.is_a?(Hash) && r.key?("upkeep")
+            if r.is_a?(Hash) && r.key?("upkeep")
+              raise BadManifest.new(
+                "rule key `upkeep:` was removed (ADR 0093): move age-GC to `retention:` " \
+                "and production to the entry's `source:`",
+              )
+            end
+            walk(r, RULE_KEYS, path)
+            FIELD_REGISTRY.each_value do |meta|
+              next unless meta[:sub_keys]
 
-            raise BadManifest.new(
-              "rule key `upkeep:` was removed (ADR 0093): move age-GC to `retention:` " \
-              "and production to the entry's `source:`",
-            )
+              value = r.is_a?(Hash) ? r[meta[:yaml_key]] : nil
+              walk(value, meta[:sub_keys], "#{path}.#{meta[:yaml_key]}") if value.is_a?(Hash)
+            end
           end
         end
 
@@ -200,6 +214,16 @@ module Textus
               "lane '#{z["name"]}' (#{z["kind"]}) at '$.lanes[#{i}]' " \
               "needs a role with capability '#{verb}'; none declared",
             )
+          end
+        end
+
+        def walk(hash, allowed, path)
+          return unless hash.is_a?(Hash)
+
+          hash.each_key do |k|
+            next if allowed.include?(k)
+
+            raise BadManifest.new("unknown key '#{k}' at '#{path}'")
           end
         end
       end
