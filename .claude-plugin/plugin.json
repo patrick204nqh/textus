@@ -1,7 +1,4 @@
 {
-  "_meta": {
-    "uid": "2f1c7aaa1c0ec1e7"
-  },
   "name": "textus",
   "description": "Durable, multi-writer repo memory. Auto-orients each session with `textus boot`.",
   "version": "0.54.1",

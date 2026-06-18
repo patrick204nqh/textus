@@ -1,7 +1,7 @@
 require "spec_helper"
 require "json"
 
-RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
+RSpec.describe "artifacts.config.plugin build (ADR 0086)" do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -42,7 +42,7 @@ RSpec.describe "artifacts.claude-plugin build (ADR 0086)" do
       entries:
         - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
 
-        - key: artifacts.claude-plugin
+        - key: artifacts.config.plugin
           kind: produced
           path: artifacts/plugin.json
           lane: artifacts

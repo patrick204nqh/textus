@@ -16,7 +16,7 @@ RSpec.describe "MCP resources surface" do
       lanes:
         - { name: artifacts, kind: machine }
       entries:
-        - key: artifacts.index
+        - key: artifacts.system.index
           lane: artifacts
           kind: produced
           format: json

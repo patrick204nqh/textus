@@ -1,7 +1,7 @@
 require "spec_helper"
 require "json"
 
-RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
+RSpec.describe "artifacts.config.mcp build (ADR 0086)" do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -32,7 +32,7 @@ RSpec.describe "artifacts.mcp-config build (ADR 0086)" do
       entries:
         - { key: knowledge.project, path: knowledge/project.md, lane: knowledge, kind: leaf }
 
-        - key: artifacts.mcp-config
+        - key: artifacts.config.mcp
           kind: produced
           path: artifacts/mcp.json
           lane: artifacts

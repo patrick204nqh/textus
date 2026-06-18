@@ -1,5 +1,5 @@
 Textus.workflow "mcp" do
-  match "artifacts.mcp"
+  match "artifacts.docs.mcp"
 
   step :build do |_, _ctx|
     maintenance_names = Textus::Surfaces::MCP::Catalog::MAINTENANCE_VERBS.to_set(&:to_s)

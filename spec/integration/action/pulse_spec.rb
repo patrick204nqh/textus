@@ -30,7 +30,7 @@ RSpec.describe Textus::Action::Pulse do
     expect(result).not_to have_key("next_due_at")
   end
 
-  it "index_etag is nil when artifacts.index does not exist" do
+  it "index_etag is nil when artifacts.system.index does not exist" do
     result = ops.pulse(since: 0)
     expect(result["index_etag"]).to be_nil
   end

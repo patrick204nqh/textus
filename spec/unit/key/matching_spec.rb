@@ -7,7 +7,7 @@ RSpec.describe Textus::Key::Matching do
     end
 
     it "matches a dotted descendant" do
-      expect(described_class.matches_prefix?("artifacts.orientation", "artifacts")).to be(true)
+      expect(described_class.matches_prefix?("artifacts.config.orientation", "artifacts")).to be(true)
     end
 
     it "does NOT match a partial-segment prefix (dotted boundary)" do

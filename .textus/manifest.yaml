@@ -59,54 +59,72 @@ entries:
   - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
-  - key: artifacts.orientation
+  # Config — tool configuration files
+  - key: artifacts.config.orientation
     lane: artifacts
     kind: produced
+    format: json
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: CLAUDE.md,  template: docs/orientation.erb, inject_boot: true }
       - { to: AGENTS.md,  template: docs/orientation.erb }
-  - { key: artifacts.mcp-config,      path: artifacts/mcp.json,      lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .mcp.json }] }
-  - { key: artifacts.claude-plugin,   path: artifacts/plugin.json,   lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: .claude-plugin/plugin.json }] }
-  - { key: artifacts.opencode-config, path: artifacts/opencode.json, lane: artifacts, kind: produced, source: { from: external, command: "true", sources: [] }, publish: [{ to: opencode.json }] }
-  - key: artifacts.verbs
+  - key: artifacts.config.opencode
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: opencode.json }]
+  - key: artifacts.config.mcp
+    path: artifacts/config/claude-mcp.json
+    lane: artifacts
+    kind: produced
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: .mcp.json }]
+  - key: artifacts.config.plugin
+    path: artifacts/config/claude-plugin.json
+    lane: artifacts
+    kind: produced
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: .claude-plugin/plugin.json }]
+  # Docs — generated reference documentation
+  - key: artifacts.docs.verbs
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/verbs.md, template: docs/verbs.erb }]
-  - key: artifacts.schema
+  - key: artifacts.docs.schema
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/schema.md, template: docs/schema.erb }]
-  - key: artifacts.adr-log
+  - key: artifacts.docs.adr-log
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/adr-log.md, template: docs/adr-log.erb }]
-  - key: artifacts.authority
+  - key: artifacts.docs.authority
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/authority.md, template: docs/authority.erb }]
-  - key: artifacts.events
+  - key: artifacts.docs.events
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/events.md, template: docs/events.erb }]
-  - key: artifacts.mcp
-    path: artifacts/mcp-catalog.json
+  - key: artifacts.docs.mcp
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/mcp.md, template: docs/mcp.erb }]
-  - key: artifacts.index
+  # System — internal machinery
+  - key: artifacts.system.index
     lane: artifacts
     kind: produced
     format: json

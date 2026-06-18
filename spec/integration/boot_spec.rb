@@ -98,8 +98,8 @@ RSpec.describe Textus::Boot do
     expect(env).not_to have_key("index_key")
   end
 
-  it "includes index_key when artifacts.index file exists" do
-    FileUtils.mkdir_p(File.join(root, "data/artifacts"))
+  it "includes index_key when artifacts.system.index file exists" do
+    FileUtils.mkdir_p(File.join(root, "data/artifacts/system"))
     File.write(File.join(root, "manifest.yaml"), <<~YAML)
       version: textus/4
       roles:
@@ -109,17 +109,17 @@ RSpec.describe Textus::Boot do
         - { name: artifacts, kind: machine }
         - { name: proposals, kind: queue }
       entries:
-        - key: artifacts.index
+        - key: artifacts.system.index
           kind: produced
-          path: artifacts/index.json
+          path: artifacts/system/index.json
           lane: artifacts
           owner: automation:auto
           source: { from: external, command: "true", sources: [] }
     YAML
-    File.write(File.join(root, "data/artifacts/index.json"), "{}")
+    File.write(File.join(root, "data/artifacts/system/index.json"), "{}")
     s = Textus::Store.new(root)
     env = described_class.build(container: s.container)
-    expect(env["index_key"]).to eq("artifacts.index")
+    expect(env["index_key"]).to eq("artifacts.system.index")
   end
 
   it "includes agent_protocol with recipes and role_resolution" do

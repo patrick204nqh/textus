@@ -2,14 +2,14 @@
 
 require "spec_helper"
 
-RSpec.describe "artifacts.index workflow" do
+RSpec.describe "artifacts.system.index workflow" do
   include_context "textus_store_fixture"
 
   let(:store) do
     store_from_manifest(root, lanes: %w[knowledge artifacts], files: {
                           "workflows/test_index.rb" => <<~RUBY,
                             Textus.workflow "store_index" do
-                              match "artifacts.index"
+                              match "artifacts.system.index"
 
                               step :build do |_, ctx|
                                 container = ctx.container
@@ -43,7 +43,7 @@ RSpec.describe "artifacts.index workflow" do
                             - { name: artifacts, kind: machine }
                           entries:
                             - { key: knowledge.project, lane: knowledge, owner: human:self, kind: leaf }
-                            - key: artifacts.index
+                            - key: artifacts.system.index
                               lane: artifacts
                               kind: produced
                               format: json
@@ -56,13 +56,13 @@ RSpec.describe "artifacts.index workflow" do
                           meta: { "description" => "test" }, body: "")
   end
 
-  it "drain produces artifacts.index with an entries array" do
+  it "drain produces artifacts.system.index with an entries array" do
     Textus::Produce::Engine.converge(
       container: store.container,
       call: Textus::Call.build(role: "automation"),
-      keys: ["artifacts.index"],
+      keys: ["artifacts.system.index"],
     )
-    env = store.as("human").get("artifacts.index")
+    env = store.as("human").get("artifacts.system.index")
     expect(env).not_to be_nil
     expect(env.content).to include("entries", "generated_at")
     expect(env.content["entries"]).to be_an(Array)
@@ -72,9 +72,9 @@ RSpec.describe "artifacts.index workflow" do
     Textus::Produce::Engine.converge(
       container: store.container,
       call: Textus::Call.build(role: "automation"),
-      keys: ["artifacts.index"],
+      keys: ["artifacts.system.index"],
     )
-    env = store.as("human").get("artifacts.index")
+    env = store.as("human").get("artifacts.system.index")
     project_row = env.content["entries"].find { |r| r["key"] == "knowledge.project" }
     expect(project_row).to include("key", "lane", "format", "etag")
     expect(project_row["lane"]).to eq("knowledge")

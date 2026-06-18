@@ -45,11 +45,8 @@ module Textus
 
           private
 
-          # A structured-data entry that textus owns: its `_meta` stays in the
-          # store, so the published file is the re-serialized meta-free content.
-          # An external (command) entry is opaque — never parse/re-serialize it.
           def strip_meta?(entry)
-            !entry.external? && %w[json yaml].include?(entry.format.to_s)
+            %w[json yaml].include?(entry.format.to_s)
           end
 
           def render_bytes(target, content, renderer, pctx)

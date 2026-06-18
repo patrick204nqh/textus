@@ -46,7 +46,7 @@ module Textus
       end
 
       def index_etag(container)
-        path = container.manifest.resolver.resolve("artifacts.index").path
+        path = container.manifest.resolver.resolve("artifacts.system.index").path
         File.exist?(path) ? container.file_store.etag(path) : nil
       rescue Textus::Error
         nil

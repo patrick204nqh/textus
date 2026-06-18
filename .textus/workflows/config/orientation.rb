@@ -1,9 +1,9 @@
 Textus.workflow "orientation" do
-  match "artifacts.orientation"
+  match "artifacts.config.orientation"
 
   step :build do |_, ctx|
     project_env = Textus::Action::Get.new(key: "knowledge.project")
-                                     .call(container: ctx.container, call: ctx.call)
+                    .call(container: ctx.container, call: ctx.call)
     project = project_env&.meta || {}
 
     runbook_keys = ctx.container.manifest.resolver
@@ -17,14 +17,14 @@ Textus.workflow "orientation" do
 
     {
       "content" => {
-        "project" => {
-          "name" => project["name"],
-          "description" => project["description"],
-          "commands" => (project["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
+        "project"  => {
+          "name"         => project["name"],
+          "description"  => project["description"],
+          "commands"     => (project["commands"] || {}).map { |k, v| "- **#{k}**: `#{v}`" }.join("\n"),
           "has_commands" => !(project["commands"] || {}).empty?,
         },
         "runbooks" => runbooks.map { |r| { "name" => r["name"], "description" => r["description"] } },
-      },
+      }
     }
   end
 

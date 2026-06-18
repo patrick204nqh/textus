@@ -1,5 +1,5 @@
 Textus.workflow "opencode_config" do
-  match "artifacts.opencode-config"
+  match "artifacts.config.opencode"
 
   step :build do |_, ctx|
     { "content" => {

@@ -1,10 +1,6 @@
 {
   "_meta": {
-    "from": [
-      "knowledge.project",
-      "knowledge.runbooks"
-    ],
-    "reduce": "orientation"
+    "uid": "52439f76fb5814bb"
   },
   "project": {
     "name": "textus",
