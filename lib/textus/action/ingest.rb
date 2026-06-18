@@ -58,8 +58,9 @@ module Textus
         if duplicate_key && duplicate_key != key
           supersede_entry(duplicate_key, key, structured, container, call, index)
         else
-          write_raw_entry(key, structured, mentry, writer)
+          env = write_raw_entry(key, structured, mentry, writer)
           index.upsert(content_hash: content_hash, url: @url, key: key)
+          env
         end
       end
 
@@ -155,11 +156,12 @@ module Textus
                             ))
 
         structured["supersedes"] = old_key
-        write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
+        env = write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
 
         move_asset_file(container, old_content["asset"]) if @kind == "asset" && old_content["asset"]
 
         index.upsert(content_hash: structured["content_hash"], url: @url, key: new_key)
+        env
       end
 
       def move_asset_file(container, old_asset_rel)
