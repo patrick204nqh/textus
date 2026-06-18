@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "date"
+require "digest"
 
 module Textus
   module Action
@@ -22,6 +23,8 @@ module Textus
       view { |env| { "key" => env.key, "uid" => env.uid, "etag" => env.etag } }
 
       SOURCE_KINDS = %w[url file asset].freeze
+      CONTENT_HASH_ALGO = "sha256"
+      TOMBSTONE_RETAIN = %w[ingested_at].freeze
 
       def initialize(kind:, slug:, url: nil, path: nil, zone: nil, label: nil)
         super()
@@ -43,7 +46,21 @@ module Textus
           action: :ingest, actor: call.role, key: key,
         )
 
-        write_raw_entry(key, now, container, call)
+        content_hash = compute_content_hash
+        writer = Textus::Envelope::Writer.from(container: container, call: call)
+        mentry = container.manifest.resolver.resolve(key).entry
+        ts = now.iso8601
+        structured = build_structured(ts, container, now, content_hash)
+
+        index = Textus::Ports::RawIndex.new(root: container.root)
+        duplicate_key = find_duplicate(index, content_hash)
+
+        if duplicate_key && duplicate_key != key
+          supersede_entry(duplicate_key, key, structured, container, call, content_hash, index)
+        else
+          write_raw_entry(key, structured, mentry, writer)
+          index.upsert(content_hash: content_hash, url: @url, key: key)
+        end
       end
 
       private
@@ -70,48 +87,97 @@ module Textus
         "raw.#{date}.#{@kind}-#{@slug}"
       end
 
-      def write_raw_entry(key, now, container, call)
-        ts     = now.iso8601
-        mentry = container.manifest.resolver.resolve(key).entry
-        writer = Textus::Envelope::Writer.from(container: container, call: call)
-
+      def compute_content_hash
+        digest = Digest::SHA256.new
         case @kind
         when "url"
-          structured = {
-            "ingested_at" => ts,
-            "source" => { "kind" => "url", "url" => @url, "label" => @label || @url },
-            "body" => nil,
-          }
-          writer.put(key, mentry: mentry,
-                          payload: Textus::Envelope::Writer::Payload.new(
-                            meta: nil, body: nil, content: structured,
-                          ))
+          digest.update(@url)
+        when "file", "asset"
+          digest.file(@path)
+        end
+        "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
+      end
+
+      def build_structured(ts, container, now, content_hash)
+        base = { "ingested_at" => ts, "content_hash" => content_hash }
+        case @kind
+        when "url"
+          base.merge("source" => { "kind" => "url", "url" => @url, "label" => @label || @url },
+                     "body" => nil)
         when "file"
           body_content = File.read(@path)
-          structured = {
-            "ingested_at" => ts,
-            "source" => { "kind" => "file", "path" => @path,
-                          "label" => @label || File.basename(@path) },
-            "body" => body_content,
-          }
-          writer.put(key, mentry: mentry,
-                          payload: Textus::Envelope::Writer::Payload.new(
-                            meta: nil, body: nil, content: structured,
-                          ))
+          base.merge("source" => { "kind" => "file", "path" => @path,
+                                   "label" => @label || File.basename(@path) },
+                     "body" => body_content)
         when "asset"
           asset_rel = copy_asset_file(container, now)
-          structured = {
-            "ingested_at" => ts,
-            "source" => { "kind" => "asset",
-                          "label" => @label || File.basename(@path) },
-            "asset" => asset_rel,
-            "body" => nil,
-          }
-          writer.put(key, mentry: mentry,
-                          payload: Textus::Envelope::Writer::Payload.new(
-                            meta: nil, body: nil, content: structured,
-                          ))
+          base.merge("source" => { "kind" => "asset",
+                                   "label" => @label || File.basename(@path) },
+                     "asset" => asset_rel,
+                     "body" => nil)
         end
+      end
+
+      def write_raw_entry(key, structured, mentry, writer)
+        writer.put(key, mentry: mentry,
+                        payload: Textus::Envelope::Writer::Payload.new(
+                          meta: nil, body: nil, content: structured,
+                        ))
+      end
+
+      def find_duplicate(index, content_hash)
+        dup = index.find_by_hash(content_hash)
+        return dup if dup
+
+        if @kind == "url"
+          index.find_by_url(@url)
+        end
+      end
+
+      def supersede_entry(old_key, new_key, structured, container, call, content_hash, index)
+        old_mentry = container.manifest.resolver.resolve(old_key).entry
+        writer = Textus::Envelope::Writer.from(container: container, call: call)
+
+        reader = Textus::Envelope::Reader.from(container: container)
+        old_env = reader.read(old_key)
+        old_content = old_env&.content || {}
+        tombstone = {}
+        TOMBSTONE_RETAIN.each do |k|
+          tombstone[k] = old_content[k] if old_content.key?(k)
+        end
+        source_kind = old_content.dig("source", "kind")
+        tombstone["source"] = { "kind" => source_kind } if source_kind
+        tombstone["superseded_by"] = new_key
+
+        writer.put(old_key, mentry: old_mentry,
+                            payload: Textus::Envelope::Writer::Payload.new(
+                              meta: nil, body: nil, content: tombstone,
+                            ))
+
+        structured["supersedes"] = old_key
+        write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
+
+        if @kind == "asset" && old_content["asset"]
+          move_asset_file(container, old_content["asset"])
+        end
+
+        index.upsert(content_hash: content_hash, url: @url, key: new_key)
+      end
+
+      def move_asset_file(container, old_asset_rel)
+        old_path = File.join(container.root, "assets", old_asset_rel)
+        return unless File.exist?(old_path)
+
+        now = Time.now.utc
+        date_path = now.strftime("%Y/%m/%d")
+        filename = File.basename(old_path)
+        new_dir = File.join(container.root, "assets", "raw", date_path, @zone)
+        new_path = File.join(new_dir, filename)
+
+        FileUtils.mkdir_p(new_dir)
+        FileUtils.mv(old_path, new_path)
+      rescue Errno::ENOENT, Errno::EACCES => e
+        warn "[textus ingest] could not move asset #{old_asset_rel}: #{e.message}"
       end
 
       def copy_asset_file(container, now)
