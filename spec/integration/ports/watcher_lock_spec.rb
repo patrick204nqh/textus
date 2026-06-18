@@ -15,8 +15,8 @@ RSpec.describe Textus::Ports::WatcherLock do
     expect(described_class.running?(root)).to be(false)
   end
 
-  it "lock path is under .run/" do
-    expect(Textus::Layout.watcher_lock(root)).to include(".run")
+  it "lock path is under .state/" do
+    expect(Textus::Layout.watcher_lock(root)).to include(".state")
     expect(Textus::Layout.watcher_lock(root)).to end_with("watcher.lock")
   end
 end

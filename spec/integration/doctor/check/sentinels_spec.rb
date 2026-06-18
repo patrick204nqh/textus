@@ -4,7 +4,7 @@ require "digest"
 RSpec.describe Textus::Doctor::Check::Sentinels do
   include_context "textus_store_fixture"
 
-  let(:sentinels_dir) { File.join(root, ".run", "sentinels") }
+  let(:sentinels_dir) { File.join(root, ".state", "sentinels") }
 
   before do
     FileUtils.mkdir_p(File.join(root, "data/knowledge"))

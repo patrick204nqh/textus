@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  # Per-role cursor cache under <root>/.run/state/cursor.<role>. A convenience so
+  # Per-role cursor cache under <root>/.state/cursors/<role>. A convenience so
   # `textus pulse` (no --since) means "since I last looked". Gitignored;
   # losing it just re-emits recent deltas, never corrupts the store. ADR 0036/0038.
   class CursorStore

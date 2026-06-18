@@ -42,7 +42,7 @@ textus drain artifacts.feeds.skills --as=automation
 **cron** (hourly, log to the store's run dir):
 
 ```cron
-0 * * * * cd /path/to/repo && textus drain --as=automation >> .textus/.run/drain.log 2>&1
+0 * * * * cd /path/to/repo && textus drain --as=automation >> .textus/.state/drain.log 2>&1
 ```
 
 **Claude Code routine** (`/schedule`): a daily agent run that calls the `drain` MCP tool over the same connection it uses for the edit→accept loop, then reads back the `health` block.
