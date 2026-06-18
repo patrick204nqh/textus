@@ -111,29 +111,34 @@ RSpec.describe Textus::Action::Ingest do
       expect(env.content["content_hash"]).to match(/\Asha256:[a-f0-9]{64}\z/)
     end
 
-    it "creates alias chain when re-ingesting same url under different slug" do
+    it "strips old entry to tombstone with superseded_by on alias" do
       unique_url = "https://unique.example.com/alias-#{SecureRandom.hex(4)}"
       date = Time.now.utc.strftime("%Y.%m.%d")
 
       store.as("agent").ingest(kind: "url", slug: "alias-a", url: unique_url)
-      env_a = store.as("agent").get("raw.#{date}.url-alias-a")
-      hash_a = env_a.content["content_hash"]
-      expect(env_a.content["supersedes"]).to be_nil
-      expect(env_a.content["superseded_by"]).to be_nil
-
       store.as("agent").ingest(kind: "url", slug: "alias-b", url: unique_url)
 
-      env_a_stale = store.as("agent").get("raw.#{date}.url-alias-a")
-      expect(env_a_stale.content["superseded_by"]).to eq("raw.#{date}.url-alias-b")
-      expect(env_a_stale.content["url"]).to be_nil
-      expect(env_a_stale.content["body"]).to be_nil
-      expect(env_a_stale.content["ingested_at"]).not_to be_nil
-      expect(env_a_stale.content.dig("source", "kind")).to eq("url")
+      env_a = store.as("agent").get("raw.#{date}.url-alias-a")
+      expect(env_a.content["superseded_by"]).to eq("raw.#{date}.url-alias-b")
+      expect(env_a.content["url"]).to be_nil
+      expect(env_a.content["body"]).to be_nil
+      expect(env_a.content["ingested_at"]).not_to be_nil
+      expect(env_a.content.dig("source", "kind")).to eq("url")
+    end
 
-      env_b = store.as("agent").get("raw.#{date}.url-alias-b")
-      expect(env_b.content["supersedes"]).to eq("raw.#{date}.url-alias-a")
-      expect(env_b.content["source"]["url"]).to eq(unique_url)
-      expect(env_b.content["content_hash"]).to eq(hash_a)
+    it "new entry has supersedes and full content on alias" do
+      unique_url = "https://unique.example.com/alias2-#{SecureRandom.hex(4)}"
+      date = Time.now.utc.strftime("%Y.%m.%d")
+
+      store.as("agent").ingest(kind: "url", slug: "alias-c", url: unique_url)
+      env_c = store.as("agent").get("raw.#{date}.url-alias-c")
+      hash_c = env_c.content["content_hash"]
+
+      store.as("agent").ingest(kind: "url", slug: "alias-d", url: unique_url)
+      env_d = store.as("agent").get("raw.#{date}.url-alias-d")
+      expect(env_d.content["supersedes"]).to eq("raw.#{date}.url-alias-c")
+      expect(env_d.content["source"]["url"]).to eq(unique_url)
+      expect(env_d.content["content_hash"]).to eq(hash_c)
     end
 
     it "deduplicates by content hash for file kind with different slugs" do

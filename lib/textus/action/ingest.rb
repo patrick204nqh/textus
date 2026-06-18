@@ -56,7 +56,7 @@ module Textus
         duplicate_key = find_duplicate(index, content_hash)
 
         if duplicate_key && duplicate_key != key
-          supersede_entry(duplicate_key, key, structured, container, call, content_hash, index)
+          supersede_entry(duplicate_key, key, structured, container, call, index)
         else
           write_raw_entry(key, structured, mentry, writer)
           index.upsert(content_hash: content_hash, url: @url, key: key)
@@ -98,8 +98,8 @@ module Textus
         "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
       end
 
-      def build_structured(ts, container, now, content_hash)
-        base = { "ingested_at" => ts, "content_hash" => content_hash }
+      def build_structured(timestamp, container, now, content_hash)
+        base = { "ingested_at" => timestamp, "content_hash" => content_hash }
         case @kind
         when "url"
           base.merge("source" => { "kind" => "url", "url" => @url, "label" => @label || @url },
@@ -129,12 +129,12 @@ module Textus
         dup = index.find_by_hash(content_hash)
         return dup if dup
 
-        if @kind == "url"
-          index.find_by_url(@url)
-        end
+        return unless @kind == "url"
+
+        index.find_by_url(@url)
       end
 
-      def supersede_entry(old_key, new_key, structured, container, call, content_hash, index)
+      def supersede_entry(old_key, new_key, structured, container, call, index)
         old_mentry = container.manifest.resolver.resolve(old_key).entry
         writer = Textus::Envelope::Writer.from(container: container, call: call)
 
@@ -157,11 +157,9 @@ module Textus
         structured["supersedes"] = old_key
         write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
 
-        if @kind == "asset" && old_content["asset"]
-          move_asset_file(container, old_content["asset"])
-        end
+        move_asset_file(container, old_content["asset"]) if @kind == "asset" && old_content["asset"]
 
-        index.upsert(content_hash: content_hash, url: @url, key: new_key)
+        index.upsert(content_hash: structured["content_hash"], url: @url, key: new_key)
       end
 
       def move_asset_file(container, old_asset_rel)

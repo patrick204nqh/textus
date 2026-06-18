@@ -9,8 +9,13 @@ RSpec.describe Textus::Layout do
     expect(described_class.cursor(root, "agent")).to eq("/tmp/store/.textus/.state/cursors/agent")
     expect(described_class.locks(root)).to eq("/tmp/store/.textus/.state/locks")
     expect(described_class.build_lock(root)).to eq("/tmp/store/.textus/.state/build.lock")
+    expect(described_class.watcher_lock(root)).to eq("/tmp/store/.textus/.state/watcher.lock")
     expect(described_class.audit_dir(root)).to eq("/tmp/store/.textus/.state/audit")
     expect(described_class.audit_log(root)).to eq("/tmp/store/.textus/.state/audit/audit.log")
+  end
+
+  it "exposes sentinel and index paths under .state/" do
+    expect(described_class.sentinels(root)).to eq("/tmp/store/.textus/.state/sentinels")
     expect(described_class.indexes(root)).to eq("/tmp/store/.textus/.state/indexes")
     expect(described_class.raw_index(root)).to eq("/tmp/store/.textus/.state/indexes/raw.yaml")
   end
