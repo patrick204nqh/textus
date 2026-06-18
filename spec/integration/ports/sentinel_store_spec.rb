@@ -76,7 +76,7 @@ RSpec.describe Textus::Ports::SentinelStore do
   end
 
   describe "#sentinel_path" do
-    it "places sentinel under <store_root>/.run/sentinels/ mirroring repo-relative target" do
+    it "places sentinel under <store_root>/.state/sentinels/ mirroring repo-relative target" do
       expect(store.sentinel_path(dst_abs, store_root))
         .to eq(File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json"))
     end
