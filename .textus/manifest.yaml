@@ -129,7 +129,7 @@ entries:
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
-  - key: artifacts.skills
+  - key: artifacts.feeds.skills
     lane: artifacts
     kind: produced
     format: json

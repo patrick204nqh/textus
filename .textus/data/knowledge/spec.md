@@ -366,7 +366,7 @@ Produced entries live in a `machine` lane (writable by a role holding `converge`
 A produced entry that acquires its data via the `Textus.workflow` DSL declares `source: { from: external, command: "true", sources: [] }`. textus does **not** execute the command field; the workflow DSL block (in `.textus/workflows/**/*.rb`) runs on `drain` and returns the data to be stored.
 
 ```yaml
-- key: artifacts.skills
+- key: artifacts.feeds.skills
   lane: artifacts
   kind: produced
   format: json
@@ -378,7 +378,7 @@ A matching `Textus.workflow` block in `.textus/workflows/`:
 
 ```ruby
 Textus.workflow "agentskills" do
-  match "artifacts.skills"
+  match "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     # acquire data — return { "content" => { ... } }
@@ -865,7 +865,7 @@ Given the `person` schema and a `put` whose frontmatter omits `relationship`, th
 Given a manifest entry `artifacts.feeds` with `kind: produced` and a `retention: { ttl: 1h }` rule, and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `artifacts.feeds` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-materialise.
 
 **Fixture E — Workflow produce:**
-Given a manifest entry `artifacts.skills` with `kind: produced` and `source: { from: external, command: "true", sources: [] }` and a matching `Textus.workflow` block, `textus drain --prefix=artifacts.skills` produces the entry's **data** on disk (serialized per `format:`) matching the workflow's returned content. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
+Given a manifest entry `artifacts.feeds.skills` with `kind: produced` and `source: { from: external, command: "true", sources: [] }` and a matching `Textus.workflow` block, `textus drain --prefix=artifacts.feeds.skills` produces the entry's **data** on disk (serialized per `format:`) matching the workflow's returned content. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
 
 **Fixture F — ERB render at publish:**
 Given a produced entry with a to-target `{ to:, template: <name> }`, `textus drain` renders the entry's stored data through the named ERB template (under `.textus/templates/`) and emits a file whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization). Two to-targets with different templates produce different bytes from the one entry.

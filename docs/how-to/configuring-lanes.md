@@ -95,7 +95,7 @@ Produced entries acquire their data via `Textus.workflow` blocks in `.textus/wor
 
 ```yaml
 entries:
-  - key: artifacts.skills
+  - key: artifacts.feeds.skills
     lane: artifacts
     kind: produced
     format: json
@@ -108,7 +108,7 @@ entries:
 ```ruby
 # .textus/workflows/feeds/agentskills.rb
 Textus.workflow "agentskills" do
-  match "artifacts.skills"
+  match "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     # acquire data from any source — HTTP, store reads, file reads, etc.

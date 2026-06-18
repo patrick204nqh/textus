@@ -54,7 +54,7 @@ Tooling around `git blame` or audit logs may filter on owner; the gem itself onl
 A produced entry declares `source: { from: external, command: "true", sources: [] }` and a matching `Textus.workflow` block in `.textus/workflows/**/*.rb`. The `source:` acquires **data** — it never renders; rendering is a publish concern (below).
 
 ```yaml
-- key: artifacts.skills
+- key: artifacts.feeds.skills
   lane: artifacts
   kind: produced
   format: json
@@ -68,7 +68,7 @@ The matching workflow block:
 ```ruby
 # .textus/workflows/feeds/agentskills.rb
 Textus.workflow "agentskills" do
-  match "artifacts.skills"
+  match "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     { "content" => { "skills" => [...], "count" => 1 } }

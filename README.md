@@ -283,8 +283,8 @@ Stale produced entries are re-materialised by `drain`, not by reads — `get` is
 
 ```sh
 textus drain --as=automation                  # re-materialise every stale produced entry
-textus drain artifacts.skills --as=automation # scope to one prefix
-textus get artifacts.skills                   # a pure read; carries a freshness verdict
+textus drain artifacts.feeds.skills --as=automation # scope to one prefix
+textus get artifacts.feeds.skills                  # a pure read; carries a freshness verdict
 ```
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
