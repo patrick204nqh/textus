@@ -1,5 +1,5 @@
 Textus.workflow "claude_plugin" do
-  match "artifacts.claude-plugin"
+  match "artifacts.config.plugin"
 
   step :build do |_, ctx|
     project_env = Textus::Action::Get.new(key: "knowledge.project")

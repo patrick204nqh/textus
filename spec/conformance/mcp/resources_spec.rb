@@ -16,7 +16,7 @@ RSpec.describe "MCP resources surface" do
       lanes:
         - { name: artifacts, kind: machine }
       entries:
-        - key: artifacts.index
+        - key: artifacts.system.index
           lane: artifacts
           kind: produced
           format: json
@@ -43,7 +43,7 @@ RSpec.describe "MCP resources surface" do
     resources = result.dig("result", "resources")
     expect(resources).to be_an(Array)
     uris = resources.map { |r| r["uri"] }
-    expect(uris).to include("textus://artifacts/index")
+    expect(uris).to include("textus://artifacts/system/index")
   end
 
   it "each resource has uri, name, and mimeType" do
@@ -56,14 +56,14 @@ RSpec.describe "MCP resources surface" do
   end
 
   it "resources/read returns content of an existing artifact" do
-    path = File.join(root, "data/artifacts/index.json")
+    path = File.join(root, "data/artifacts/system/index.json")
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, JSON.dump({ "entries" => [], "generated_at" => "2026-06-16T00:00:00Z" }))
 
-    result = mcp_exchange(store, "resources/read", { "uri" => "textus://artifacts/index" })
+    result = mcp_exchange(store, "resources/read", { "uri" => "textus://artifacts/system/index" })
     contents = result.dig("result", "contents")
     expect(contents).to be_an(Array)
-    expect(contents.first["uri"]).to eq("textus://artifacts/index")
+    expect(contents.first["uri"]).to eq("textus://artifacts/system/index")
     expect(contents.first["text"]).to be_a(String)
   end
 end

@@ -98,7 +98,7 @@ FETCH_EVENTS_CATALOG = [
 ].freeze
 
 Textus.workflow "events" do
-  match "artifacts.events"
+  match "artifacts.docs.events"
 
   step :build do |_, _ctx|
     all = EVENTS_CATALOG + FETCH_EVENTS_CATALOG

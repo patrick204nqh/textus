@@ -158,7 +158,7 @@ module Textus
         "contract_etag" => etag,
         "lanes" => lanes_for(manifest),
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-        "orientation" => read_artifact_content(container, "artifacts.orientation"),
+        "orientation" => read_artifact_content(container, "artifacts.config.orientation"),
         "context" => read_boot_context(container),
         "index_key" => index_key_if_present(container),
         "agent_protocol" => agent_protocol(manifest),
@@ -189,8 +189,8 @@ module Textus
     end
 
     def self.index_key_if_present(container)
-      res = container.manifest.resolver.resolve("artifacts.index")
-      res.path && File.exist?(res.path) ? "artifacts.index" : nil
+      res = container.manifest.resolver.resolve("artifacts.system.index")
+      res.path && File.exist?(res.path) ? "artifacts.system.index" : nil
     rescue Textus::Error
       nil
     end

@@ -1,5 +1,5 @@
 Textus.workflow "schema" do
-  match "artifacts.schema"
+  match "artifacts.docs.schema"
 
   step :build do |_, ctx|
     schemas = ctx.container.schemas.by_name.sort_by { |name, _| name }.map do |name, s|

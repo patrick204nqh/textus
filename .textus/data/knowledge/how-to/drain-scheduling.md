@@ -30,7 +30,7 @@ Scope a single lane or prefix on its own cadence with `--lane` or `--prefix`:
 
 ```bash
 textus drain --lane=artifacts --as=automation
-textus drain artifacts.skills --as=automation
+textus drain artifacts.feeds.skills --as=automation
 ```
 
 ## Authority

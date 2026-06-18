@@ -1,5 +1,5 @@
 Textus.workflow "verbs" do
-  match "artifacts.verbs"
+  match "artifacts.docs.verbs"
 
   step :build do |_, _ctx|
     verbs = Textus::Action::VERBS.filter_map do |name, klass|

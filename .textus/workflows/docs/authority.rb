@@ -1,5 +1,5 @@
 Textus.workflow "authority" do
-  match "artifacts.authority"
+  match "artifacts.docs.authority"
 
   step :build do |_, ctx|
     lanes_map = Textus::Manifest::Schema::Vocabulary::LANES

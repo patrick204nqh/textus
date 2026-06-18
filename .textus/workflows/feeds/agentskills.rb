@@ -5,7 +5,7 @@ require "json"
 require "uri"
 
 Textus.workflow "agentskills" do
-  match "artifacts.skills"
+  match "artifacts.feeds.skills"
 
   step :fetch do |_, _ctx|
     base = "https://agentskills.io"

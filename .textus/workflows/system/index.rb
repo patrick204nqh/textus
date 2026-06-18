@@ -1,5 +1,5 @@
 Textus.workflow "store_index" do
-  match "artifacts.index"
+  match "artifacts.system.index"
 
   step :build do |_, ctx|
     container = ctx.container
@@ -10,12 +10,12 @@ Textus.workflow "store_index" do
       mentry = row[:manifest_entry]
       etag   = Textus::Etag.for_file(path)
       {
-        "key" => row[:key],
-        "lane" => mentry.lane,
+        "key"    => row[:key],
+        "lane"   => mentry.lane,
         "schema" => mentry.schema,
-        "owner" => mentry.owner,
+        "owner"  => mentry.owner,
         "format" => mentry.format,
-        "etag" => etag,
+        "etag"   => etag,
       }
     end
     { "content" => { "entries" => rows, "generated_at" => Time.now.utc.iso8601 } }
