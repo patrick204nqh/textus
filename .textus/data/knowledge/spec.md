@@ -1,7 +1,7 @@
-# textus/3 — Specification
+# textus/4 — Specification
 
-**Status:** Draft v3.0
-**Protocol identifier:** `textus/3`
+**Status:** Accepted v4.0
+**Protocol identifier:** `textus/4`
 **Reference implementation:** Ruby gem `textus`
 
 > *textus* — Latin for "the fabric a text is woven from," same root as *context* (from *con-texere*, "to weave together"). This spec defines a storage shape and wire protocol for that fabric.
@@ -18,21 +18,19 @@
 - [3. Storage layout](#3-storage-layout)
   - [3.1 Store location precedence](#31-store-location-precedence)
 - [4. Manifest](#4-manifest)
-- [5. Zones and capability-based write gates](#5-zones-and-capability-based-write-gates)
+- [5. Lanes and capability-based write gates](#5-lanes-and-capability-based-write-gates)
   - [5.1 Role resolution](#51-role-resolution)
     - [5.1.1 Capabilities](#511-capabilities)
   - [5.2 Source layer (produced entries)](#52-source-layer-produced-entries)
-    - [5.2.1 Derived source (`from: derive`)](#521-derived-source-from-derive)
-    - [5.2.2 External source (`from: external`)](#522-external-source-from-external)
+    - [5.2.1 External source (`from: external`)](#521-external-source-from-external)
   - [5.3 Publish layer](#53-publish-layer-publish)
-  - [5.4 Intake source (`from: fetch`)](#54-intake-source-from-fetch)
+  - [5.4 Raw lane and ingest verb](#54-raw-lane-and-ingest-verb)
   - [5.5 Pending / accept workflow](#55-pending--accept-workflow)
   - [5.6 Audit log](#56-audit-log)
   - [5.7 Security bounds](#57-security-bounds)
   - [5.8 Schema evolution](#58-schema-evolution)
-  - [5.9 Hooks](#59-hooks)
-  - [5.10 Rules](#510-rules)
-  - [5.11 Storage formats](#511-storage-formats)
+  - [5.9 Rules](#59-rules)
+  - [5.10 Storage formats](#510-storage-formats)
 - [6. Schemas](#6-schemas)
 - [7. Entry file format](#7-entry-file-format)
 - [8. Envelope (the wire format)](#8-envelope-the-wire-format)
@@ -45,8 +43,6 @@
 - [12. Conformance fixtures](#12-conformance-fixtures)
 - [13. Why not X?](#13-why-not-x)
   - [13.1 Layered architecture (internal)](#131-layered-architecture-internal)
-- [14. Open questions (v3.x scope)](#14-open-questions-v3x-scope)
-- [15. Implementation checklist](#15-implementation-checklist)
 
 ---
 
@@ -60,7 +56,7 @@ meaning **only** when they appear in uppercase. The same words in lowercase
 carry their ordinary English sense and impose no requirement.
 
 Requirements are stated against any **conforming implementation** of the
-`textus/3` protocol. The Ruby gem `textus` is the reference implementation, but
+`textus/4` protocol. The Ruby gem `textus` is the reference implementation, but
 the contract is the protocol defined here — not the gem. Where this document and
 the implementation disagree, this document is the source of truth and the
 implementation is the bug.
@@ -71,19 +67,19 @@ implementation is the bug.
 
 A storage convention and JSON wire protocol for humans, agents, and automation to read and write structured project memory **deterministically**. It provides addressable dotted keys, schema validation, capability-based write gates, declarative data sources, and a list of publish targets that copy or render that data.
 
-The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees, declares the capabilities each role holds, and declares each zone's kind — write authority for a zone is derived from the role's capabilities and the zone's kind. Schemas (also YAML) define what frontmatter shape each entry must have. Produced entries acquire their data via a declared `source:` (a pure projection over other entries, an external fetch, or an out-of-band command); that data is then optionally published to repo-relative paths — copied verbatim, or rendered through a per-target Mustache template. The CLI surface (`textus get/put/list/where/schema/drain/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
+The storage lives in a `.textus/` directory at the project root. Each entry is a Markdown file with YAML frontmatter. A manifest binds dotted keys to subtrees, declares the capabilities each role holds, and declares each lane's kind — write authority for a lane is derived from the role's capabilities and the lane's kind. Schemas (also YAML) define what frontmatter shape each entry must have. Produced entries acquire their data via a declared `source:` (a pure projection over other entries, an external fetch, or an out-of-band workflow); that data is then optionally published to repo-relative paths — copied verbatim, or rendered through a per-target ERB template. The CLI surface (`textus get/put/list/where/schema/drain/...` `--output=json`) returns a versioned envelope any caller can parse without knowing Markdown.
 
 You **shape your own memory structure** inside `.textus/`. The protocol manages how it's read, written, addressed, validated, gated, computed, and published. The contents are entirely yours.
 
 ### 1.1 Vocabulary axes
 
-textus/3 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
+textus/4 names its concepts along six axes. Reviewers who internalize these can map any part of the spec to the right category:
 
 - **Actor** — who is interacting: roles such as `human`, `agent`, `automation`, each holding a set of capabilities (`propose`, `author`, `keep`, `converge`).
-- **Place** — where data lives: zones such as `knowledge`, `notebook`, `feeds`, `proposals`, `artifacts`.
+- **Place** — where data lives: lanes such as `knowledge`, `notebook`, `raw`, `proposals`, `artifacts`.
 - **Thing** — what is stored: entries, fields, keys.
-- **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `drain`, `serve`, …).
-- **Event** — what gets fired after an operation: hook event names, split into RPC events (`:resolve_handler`, `:transform_rows`, `:validate`) and pub-sub events (`:entry_written`, `:entry_produced`, …).
+- **Operation** — how you act on things: RPC and CLI verbs (`get`, `put`, `drain`, `serve`, `ingest`, …).
+- **Event** — what gets fired after an operation: pub-sub events (`:entry_written`, `:entry_produced`, `:entry_published`, …).
 - **Rule** — constraints declared in the top-level `rules:` array of the manifest.
 
 ### 1.2 The five layers
@@ -93,7 +89,7 @@ textus is organized as five composable layers. Each layer has a single responsib
 | Layer | Name | Responsibility |
 |---|---|---|
 | L1 | **Store** | Plain-file backend: `.textus/data/<lane>/...` with YAML frontmatter + Markdown body, addressed by dotted keys, schema-validated, etag-versioned. |
-| L2 | **Sources** | Declared external inputs (the `artifacts` machine zone in the default scaffold, under the `artifacts.feeds.*` keys; any `machine` zone, writable by a role with `converge`): URLs, files, feeds with declared parsers and TTLs. textus *describes* sources; external automation fetches and pipes results through `textus put`. |
+| L2 | **Sources** | Produced entries in the `artifacts` machine lane declare a `source:` block (`from: external` + a `Textus.workflow` block) that acquires their data on `drain`. textus *describes* sources; the workflow DSL acquires data and returns it to the store. |
 | L3 | **Source** | An entry's `source:` *acquires* **data** — a pure in-process projection from store entries (select/pluck/sort/transform), an external fetch via a handler, or an out-of-band command. Acquire-only: rendering is not a source concern. No shell execution. |
 | L4 | **Publish** | Emits a produced entry's data to repo-relative paths, declared via a **list** of `publish:` targets. A target with no `template:` copies the data verbatim (json/yaml re-serialized without `_meta`; other formats byte-copied); a target with a `template:` renders the data through it. A `{ tree: }` target mirrors a subtree (ADR 0047). Published artifacts are clean content — textus's `_meta` provenance stays in the store. A sentinel under `.textus/.run/sentinels/<target-rel-path>.textus-managed.json` (git-ignored runtime state) records the source, sha256, and `mode: "copy"`. |
 | L5 | **Consumers** | Anything that reads the published files or calls the CLI — editors, LLM tools, MCP servers, CI jobs, dashboards. textus is agnostic about who consumes; the envelope is the contract. |
@@ -101,12 +97,12 @@ textus is organized as five composable layers. Each layer has a single responsib
 ## 2. Goals and non-goals
 
 **Goals**
-- Stable wire format (`textus/3`) any language can speak.
+- Stable wire format (`textus/4`) any language can speak.
 - Deterministic read/write of structured Markdown via a CLI returning JSON.
 - Schema-validated frontmatter using YAML schemas as data.
-- Capability-based write gates (roles hold capabilities; write authority per zone is derived from the role's capabilities and the zone's kind).
+- Capability-based write gates (roles hold capabilities; write authority per lane is derived from the role's capabilities and the lane's kind).
 - Optimistic concurrency via ETags.
-- Pure declarative data sources: derived entries acquire their data from projections over store keys, no shell-out; presentation (Mustache) is a separate publish concern.
+- Pure declarative data sources: produced entries acquire their data via workflow DSL steps; rendering (ERB) is a separate publish concern.
 - Publish derived entries to well-known paths as body-only plain files.
 - Plain-file backend — consumers can also read raw if they prefer.
 
@@ -127,8 +123,8 @@ The root is `.textus/` at the project working directory. A typical tree:
 .textus/
   manifest.yaml          # internal: key → subtree mapping + role/lane declarations
   schemas/               # internal: YAML schema files
-  templates/             # internal: Mustache templates referenced by derived entries
-  steps/                 # internal: user-injectable step handlers (fetch, derive, external)
+  templates/             # internal: ERB templates referenced by produced entries
+  workflows/             # user: Textus.workflow DSL files for produced entry acquisition
   .run/                  # runtime (git-ignored): audit log, sentinels, locks, queue, pulse cursors
     audit.log            # append-only NDJSON log of every successful write
     sentinels/           # byte-copied publish bookkeeping (see §5.3)
@@ -137,9 +133,10 @@ The root is `.textus/` at the project working directory. A typical tree:
     notebook/            # lane: notebook (kind: workspace — keep-holders write; agent's own durable lane)
     proposals/           # lane: proposals (kind: queue — propose-holders write)
     artifacts/           # lane: artifacts (kind: machine — converge-holders write)
+    raw/                 # lane: raw (kind: raw — ingest-holders write; write-once)
 ```
 
-Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `steps/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.run/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/foo.md`).
+Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `workflows/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.run/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/foo.md`).
 
 Lane directories under `data/` are conventional; their write semantics are derived from the lane's declared `kind:` (and the capabilities roles hold), not the directory name.
 
@@ -157,11 +154,11 @@ When (1) or (2) names a path that has no `manifest.yaml`, the CLI exits with `io
 
 ## 4. Manifest
 
-The manifest declares: (a) which roles exist and the capabilities each holds, (b) which zones exist and each zone's `kind:`, (c) the key-to-subtree mapping, (d) the schema applied to entries in each subtree, and (e) the owner string recorded in writes. Write authority is **derived** — a role may write a zone iff it holds the capability the zone's kind requires (§5).
+The manifest declares: (a) which roles exist and the capabilities each holds, (b) which lanes exist and each lane's `kind:`, (c) the key-to-subtree mapping, (d) the schema applied to entries in each subtree, and (e) the owner string recorded in writes. Write authority is **derived** — a role may write a lane iff it holds the capability the lane's kind requires (§5).
 
 ```yaml
 # .textus/manifest.yaml
-version: textus/3
+version: textus/4
 
 roles:
   - { name: human,      can: [author, propose] }
@@ -208,7 +205,7 @@ audit:
   keep: 5              # rotated files to retain (default: 5)
 ```
 
-Zone names are conventional — write authority comes from each zone's declared `kind:` crossed with the capabilities roles hold (§5); rename zones freely.
+Zone names are conventional — write authority comes from each lane's declared `kind:` crossed with the capabilities roles hold (§5); rename lanes freely.
 
 **Key grammar:** dotted segments matching `/^[a-z0-9][a-z0-9-]*$/`. Segments are joined by `.`. A key has at most 8 segments; each segment is at most 64 characters. Segments MUST NOT contain dots, slashes, uppercase letters, or underscores. Example: `working.projects.acme.dashboard`. Enforcement points: manifest load (rejects illegal `key:` declarations and illegal nested file/directory names), `put` (rejects illegal keys before any write), `enumerate` (filters and warns on illegal filenames).
 
@@ -225,7 +222,7 @@ For `nested: true`, the recursive glob matches the format's extension (markdown�
 
 **The `publish:` list (ADR 0052, ADR 0094).** Publishing is configured by a `publish:` **list** of targets; each element is exactly one of a to-target `{ to:, template?:, inject_boot?: }` (file emit, §5.3) or a tree-target `{ tree: }` (subtree mirror, below). The legacy *map* forms (`publish: { to: [...] }`, `publish: { tree: ... }`) and the older top-level `publish_to:` / `publish_tree:` keys are rejected at load with a migration message — `publish:` is a list, and a mirror is a `{ tree: }` element of it.
 
-**Subtree mirror (a `{ tree: }` target).** A nested manifest entry MAY include a `{ tree: "dir" }` target to mirror its entire stored subtree (`zones/<path>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every drain the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). When a `{ tree: }` target directory overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
+**Subtree mirror (a `{ tree: }` target).** A nested manifest entry MAY include a `{ tree: "dir" }` target to mirror its entire stored subtree (`data/<lane>/**`) to a single target directory, preserving relative layout (case and extension preserved). It is **path-driven, not key-driven**: no keys are enumerated, no template variables are interpreted, and the mirrored files are opaque payload (never addressable). The entry's `ignore:` globs (§4, ADR 0042) filter the walk; each mirrored file gets its own sentinel; and on every drain the whole target directory is pruned of textus-managed files the current source no longer produces (unmanaged files are never touched). When a `{ tree: }` target directory overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry **must** `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap`. See ADR 0047.
 
 ```yaml
 - key: knowledge.skills
@@ -242,44 +239,46 @@ For `nested: true`, the recursive glob matches the format's extension (markdown�
 
 ## 5. Lanes and capability-based write gates
 
-Write authority is **derived**, never declared per-zone. Each zone declares a `kind:`; each zone-kind requires one capability to write to it. A role may write a zone iff its capability set (`role.can`) contains the verb that zone-kind requires. textus gates **writes, not reads**: reads are unrestricted at the protocol layer (the `.textus/` files are on disk). Per-role read-scoping, if needed, is an agent-surface projection, not a manifest field.
+Write authority is **derived**, never declared per-lane. Each lane declares a `kind:`; each lane-kind requires one capability to write to it. A role may write a lane iff its capability set (`role.can`) contains the verb that lane-kind requires. textus gates **writes, not reads**: reads are unrestricted at the protocol layer (the `.textus/` files are on disk). Per-role read-scoping, if needed, is an agent-surface projection, not a manifest field.
 
 The kind→verb mapping is closed:
 
-| Zone `kind` | Required capability | Meaning |
+| Lane `kind` | Required capability | Meaning |
 |---|---|---|
 | `canon` | `author` | Authored truth — only the trust anchor writes directly. |
 | `workspace` | `keep` | Agent's own durable lane — bytes never auto-promote; climb to `canon` only via propose→accept. |
-| `machine` | `converge` | Machine-maintained: external bytes pending validation + outputs computed from other zones. |
+| `machine` | `converge` | Machine-maintained: computed outputs produced by `drain`. |
 | `queue` | `propose` | Proposals awaiting promotion. |
+| `raw` | `ingest` | Write-once external source material (URL bookmarks, files, assets). |
 
-This is a **bijection** (zone-kind ⟺ capability) again (ADR 0091, which folded the former `quarantine` + `derived` kinds — split apart in ADR 0090 — back into one `machine` kind): the single `machine` lane requires `converge`, because machine-maintained bytes (external inputs and computed outputs alike) are kept current by the same convergence sweep (`drain`/`serve`).
+This is a **bijection** (lane-kind ⟺ capability) (ADR 0091, extended by ADR 0116 with the `raw → ingest` pair): each lane-kind maps to exactly one capability.
 
-`owner:` on a zone is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a zone is optional; the value surfaces as the `purpose` field in `textus boot` zone rows.
+`owner:` on a lane is OPTIONAL, INFORMATIONAL metadata (not enforced in 0.33.0 — owner-scoped enforcement is deferred). `desc:` on a lane is optional; the value surfaces as the `purpose` field in `textus boot` lane rows.
 
-Default scaffold — Setup-1 (roles `human=[author, propose]`, `agent=[propose, keep]`, `automation=[converge]`):
+Default scaffold — Setup-1 (roles `human=[author, propose, ingest]`, `agent=[propose, keep, ingest]`, `automation=[converge, ingest]`):
 
-| Zone | `kind` | Required capability | Writable by (default) | Use case |
+| Lane | `kind` | Required capability | Writable by (default) | Use case |
 |---|---|---|---|---|
-| `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. `knowledge.identity.*` is the identity key convention. |
+| `knowledge` | `canon` | `author` | `human` | Authored truth: identity, voice, decisions, network. |
 | `notebook` | `workspace` | `keep` | `agent` | Agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept. |
-| `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. Lets agents stage changes without touching `knowledge`. |
-| `artifacts` | `machine` | `converge` | `automation` | Machine-maintained, never by humans or agents directly: declared external inputs (calendar, feeds, scraped pages) under `artifacts.feeds.*` pulled in by the convergence sweep, and computed outputs (catalogs, indexes, published context) under `artifacts.derived.*` materialized via `textus drain`. |
+| `proposals` | `queue` | `propose` | `agent`, `human` | Proposals awaiting human review via `textus accept`. |
+| `artifacts` | `machine` | `converge` | `automation` | Computed outputs produced by `drain` via the workflow DSL. |
+| `raw` | `raw` | `ingest` | `human`, `agent`, `automation` | Write-once external source material: URL bookmarks, files, binary assets. |
 
-A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role does not hold the capability the target zone-kind requires, the write returns `write_forbidden` with the message `writing '<key>' (zone '<zone>') needs capability '<verb>'` and a hint naming the roles that hold it (`held by: <roles>`, or `held by: no declared role` when none do).
+A write is gated by the caller's **role**, supplied via `--as=<role>`. If the role does not hold the capability the target lane-kind requires, the write returns `write_forbidden` with the message `writing '<key>' (lane '<lane>') needs capability '<verb>'` and a hint naming the roles that hold it (`held by: <roles>`, or `held by: no declared role` when none do).
 
-Every zone MUST declare a `kind:` describing its role in the data-flow graph.
+Every lane MUST declare a `kind:` describing its role in the data-flow graph.
 The vocabulary is closed: `canon` (authored truth), `workspace` (agent's own
-durable lane), `machine` (machine-maintained: external bytes pending validation
-+ outputs computed from other zones), `queue` (proposals awaiting promotion). A
-manifest MUST declare at most one `queue` zone and at most one `machine` zone.
+durable lane), `machine` (machine-maintained computed outputs), `queue`
+(proposals awaiting promotion), `raw` (write-once external source material). A
+manifest MUST declare at most one `queue` lane and at most one `machine` lane.
 Because authority is derived, a manifest is rejected at load if it declares a
-zone whose required verb is held by **no** declared role (`machine` ⇒ a role with
-`converge`, `queue` ⇒ `propose`, `workspace` ⇒ `keep`, `canon` ⇒ `author`).
-Coordination is keyed off the declared kind: a zone is machine-maintained only if
-it declares `kind: machine`, and proposals route to the declared `queue` zone —
-there is no name-based fallback. A manifest with a kind-less zone is rejected at
-load.
+lane whose required verb is held by **no** declared role (`machine` ⇒ a role with
+`converge`, `queue` ⇒ `propose`, `workspace` ⇒ `keep`, `canon` ⇒ `author`,
+`raw` ⇒ `ingest`). Coordination is keyed off the declared kind: a lane is
+machine-maintained only if it declares `kind: machine`, and proposals route to
+the declared `queue` lane — there is no name-based fallback. A manifest with a
+kind-less lane is rejected at load.
 
 ### 5.1 Role resolution
 
@@ -317,12 +316,12 @@ roles:
 ```
 
 Capability allow-list: `propose`, `author`, `keep`, `converge`. The mapping from
-zone-kind to its required capability is a **bijection** (ADR 0091, which folded
+lane-kind to its required capability is a **bijection** (ADR 0091, which folded
 the former `quarantine` + `derived` kinds back into one `machine` kind — undoing
 the two-kind split of ADR 0090): each capability authorizes exactly one
-zone-kind:
+lane-kind:
 
-| Capability | Authorizes writes to zone-kind |
+| Capability | Authorizes writes to lane-kind |
 |---|---|
 | `author` | `canon` |
 | `keep` | `workspace` |
@@ -337,7 +336,7 @@ spelling `fetch` — in a `can:` list is rejected at load with a hint pointing t
 (a manifest declaring two or more is rejected at load). The `accept` and
 `reject` transitions also require the `author` capability — `accept` is a
 transition verb, not a capability. Because write authority is derived, there is
-no `write_policy:` — instead, every declared zone-kind's required verb MUST be
+no `write_policy:` — instead, every declared lane-kind's required verb MUST be
 held by at least one role, or the manifest is rejected at load.
 
 When the `roles:` block is omitted, the default mapping applies:
@@ -348,7 +347,7 @@ When the `roles:` block is omitted, the default mapping applies:
 | `agent`      | `[propose, keep]` |
 | `automation` | `[converge]` |
 
-Wire protocol `textus/3` is unchanged — capabilities are a manifest/semantics
+Wire protocol `textus/4` is unchanged — capabilities are a manifest/semantics
 concept and never appear on the wire.
 
 Every write transition is authorized by **one Guard** (ADR 0031): an ordered
@@ -360,74 +359,39 @@ when the acting role holds `author`). See §5.11 for composing extra predicates 
 
 ### 5.2 Source layer (produced entries)
 
-Produced entries live in a `machine` lane (writable by a role holding `converge`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their **data** is acquired from a declared `source:` block with a `from:` discriminator (`derive | fetch | external`). A `source:` is **acquire-only**: it produces the data the store holds; it does **not** render. Rendering is a publish concern (§5.3). Every produced entry is `kind: produced` (ADR 0095); the **produce-method** is read from `source.from` — `from: derive | external` is *derived* (internal projection / out-of-band command), `from: fetch` is *intake* (external fetch, §5.4). `kind:` no longer restates the produce-method (the former `kind: derived` / `kind: intake` are rejected at load with a fold hint).
+Produced entries live in a `machine` lane (writable by a role holding `converge`; `automation` by default) — `artifacts` in the default scaffold. They are not authored by hand; their **data** is acquired from a declared `source:` block with `from: external`. A `source:` is **acquire-only**: it produces the data the store holds; it does **not** render. Rendering is a publish concern (§5.3). Every produced entry is `kind: produced` (ADR 0095).
 
-#### 5.2.1 Derived source (`from: derive`)
+#### 5.2.1 External source (`from: external`)
 
-A derived entry produced by a pure in-process projection declares `source: { from: derive, ... }`. The projection fields are **flat** under `source:` (there is no nested `derive:` block). The stored form is **data** — serialized via the `format:` strategy (e.g. `json`, `yaml`, `markdown-table`); no template is consulted at acquire time.
+A produced entry that acquires its data via the `Textus.workflow` DSL declares `source: { from: external, command: "true", sources: [] }`. textus does **not** execute the command field; the workflow DSL block (in `.textus/workflows/**/*.rb`) runs on `drain` and returns the data to be stored.
 
 ```yaml
-- key: artifacts.derived.people
-  kind: produced                   # produce-method (derived) read from source.from: derive
+- key: artifacts.skills
   lane: artifacts
-  path: data/artifacts/derived/people.json
-  source:
-    from: derive
-    select: knowledge.network.org  # prefix OR [list of prefixes]
-    pluck:  [name, relationship, org]
-    sort_by: name                  # optional
-    limit: 1000                    # default 1000, max 1000
-    format: json                   # one of: list, hash, yaml-list-in-md, json, markdown-table
-    on_write: async                # sync | async (default async)
+  kind: produced
+  format: json
+  source: { from: external, command: "true", sources: [] }
+  publish: [{ to: docs/reference/skills.md, template: feeds/skills.erb }]
 ```
 
-`select` is either a single dotted-key prefix or a list of prefixes. Every entry whose key starts with one of those prefixes is included. `pluck` names the frontmatter fields to retain. `sort_by` is optional; when absent, entries are sorted by key. `limit` is bounded at 1000 entries (hard cap); requests above 1000 are rejected.
+A matching `Textus.workflow` block in `.textus/workflows/`:
 
-`format` controls how the acquired data is serialized for storage. Permitted values: `list`, `hash`, `yaml-list-in-md`, `json`, `markdown-table`.
+```ruby
+Textus.workflow "agentskills" do
+  match "artifacts.skills"
 
-`on_write:` (`sync` | `async`, default `async`) controls the write-trigger strategy: `sync` rebuilds the entry's data inline before the triggering write returns; `async` defers it to a background pass that completes before process exit.
+  step :fetch do |_, _ctx|
+    # acquire data — return { "content" => { ... } }
+    { "content" => { "skills" => [...], "count" => 1 } }
+  end
 
-> **No source-level `template:` / `provenance:`.** Those are retired from `source:` (and from the entry top level). Rendering moves to a publish target (§5.3); provenance is carried in the data's `_meta` (§5.11). A manifest carrying `source: { from: template }` or an entry-level `template:`/`provenance:` is **rejected at load** with a fold hint (ADR 0094).
-
-#### 5.2.2 External source (`from: external`)
-
-A derived entry that is produced by a build tool *outside* textus — `rake`, `just`, a shell script, anything — declares `source: { from: external, ... }`. textus does **not** execute the command (consistent with §2); the external automation is responsible for writing the file. textus records `sources:` so `doctor`'s `generator_drift` check can compare source mtimes against the derived file's `_meta.generated.at` and report staleness. (Generator/build drift is dependency-based, not age-based; ADR 0085 keeps it out of the internal `freshness` scan — it is a `doctor` health check.)
-
-```yaml
-- key: artifacts.derived.skills
-  path: data/artifacts/derived/skills.md
-  kind: produced                   # produce-method (derived) read from source.from: external
-  lane: artifacts
-  owner: automation:catalog-skills
-  source:
-    from: external
-    command: "rake catalog:skills"   # informational; external automation invokes it
-    sources:                          # dotted keys OR repo-relative paths
-      - knowledge.projects
-      - knowledge.network
+  publish
+end
 ```
 
-**`sources:`** is a list. Each element is either a dotted key prefix (matched against manifest entries) or a filesystem path (relative to the repo root, or absolute). For each key prefix, every matching entry's file mtime is checked. For each path, file or directory mtime is checked.
+`drain` discovers all workflow files, matches each to the produced entries via `match`, runs the steps, and writes the result back to the entry's data path. `publish:` then copies or renders it to consumer paths.
 
-**`command:`** is recorded in the staleness row's `generator` field but never executed. It exists so `doctor`'s `generator_drift` output can carry a hint about how to regenerate.
-
-**Generator-drift contract.** An entry with `source: { from: external }` is reported by `doctor`'s `generator_drift` check as drifted when:
-- The derived file does not exist, OR
-- `_meta.generated.at` is missing or unparseable, OR
-- Any `sources:` element has been modified after `_meta.generated.at`.
-
-**Frontmatter contract.** The external automation is responsible for writing the `generated:` frontmatter block when it produces the file:
-
-```yaml
-generated:
-  by: "rake catalog:skills"
-  at: "2026-05-25T12:00:00Z"
-  from: [knowledge.projects, knowledge.network]
-```
-
-`generated.from` SHOULD match `source.sources` — they're the same list, recorded twice so a diff proves what was actually consumed.
-
-`from: external` and `from: derive` are alternatives — exactly one per derived entry. The external automation produces the bytes directly for `from: external`; the in-process projection produces them for `from: derive`. Either way the stored form is data; rendering is deferred to publish (§5.3).
+**`sources:`** lists dotted-key prefixes or repo-relative paths whose mtimes `doctor`'s `generator_drift` check compares against `_meta.generated.at`. An empty list (`sources: []`) disables drift detection for that entry.
 
 ### 5.3 Publish layer (`publish:`)
 
@@ -440,8 +404,8 @@ The legacy *map* forms — `publish: { to: [...] }` and `publish: { tree: ... }`
 
 ```yaml
 publish:
-  - { to: CLAUDE.md, template: orientation.mustache, inject_boot: true }
-  - { to: AGENTS.md, template: orientation.mustache }   # same data, its own render
+  - { to: CLAUDE.md, template: orientation.erb, inject_boot: true }
+  - { to: AGENTS.md, template: orientation.erb }   # same data, its own render
   - { to: .mcp.json }                                    # no template → copy data verbatim
   - { tree: skills/ }                                    # subtree mirror (ADR 0047)
 ```
@@ -449,59 +413,53 @@ publish:
 A **to-target** carries `to:` (required) and optionally `template:` / `inject_boot:`:
 
 - **No `template:`** → publish the entry's **content**. For a structured data format (`json`/`yaml`) the content is re-serialized *without* textus's `_meta` block, so a config like `.mcp.json` stays a clean consumer file; for any other / opaque format, a literal byte-copy. (This is "publish the content," not "copy the stored envelope.")
-- **`template:` present** → render the entry's data through the named Mustache template under `.textus/templates/` and publish the rendered bytes. One dataset can feed differently-formatted outputs by giving each to-target its own template.
+- **`template:` present** → render the entry's data through the named ERB template under `.textus/templates/` and publish the rendered bytes. One dataset can feed differently-formatted outputs by giving each to-target its own template.
 - **`inject_boot:`** (default `false`) → merge the `textus boot` payload into the render data for *this target*. It is per-target and only meaningful alongside a `template:`.
 
 **Published artifacts are clean content.** textus's `_meta` provenance (`from`/`reduce`, §5.12) stays in the **stored** entry and is never emitted — a verbatim copy strips it on re-serialize, a rendered template surfaces provenance only if it explicitly references `_meta`. There is no entry-level / publish `provenance:` flag (rejected at load); provenance is carried in one place, the stored data's `_meta`.
 
-The vendored Mustache subset for `template:`: `{{var}}` (interpolation), `{{#section}}...{{/section}}` (iteration / truthy block), `{{^inverted}}...{{/inverted}}` (inverted section), `{{!comment}}`. No partials, no lambdas, no HTML escaping (output is raw text). Template recursion depth is bounded at 8; exceeding the limit is an error.
+The ERB template receives the entry's `content` hash as local variables via `ERB#result_with_hash`. Templates live under `.textus/templates/` as `.erb` files. If `inject_boot: true` is set on the publish target, a `boot` variable is also available with the live orientation context.
 
 A sentinel is written for each published file at `<store_root>/.run/sentinels/<target-relative-to-repo>.textus-managed.json` (git-ignored runtime state — ADR 0070), recording `source`, `target`, the target's sha256, and `mode: "copy"`. Sentinels live under the store's runtime tree rather than beside the consumer file so target directories stay clean, and are regenerated by the next drain (via content-identical adoption) rather than committed. The sentinel exists so out-of-band edits can be detected on the next publish — textus refuses to clobber a destination that is not either missing, marked as managed, or **byte-identical to the source being published**. An identical destination is *adopted*: its sentinel is written and management proceeds (the copy is a content no-op), so an artifact tree already on disk onboards without a manual delete. An unmanaged destination whose content **differs**, or any unmanaged symlink, is still refused (ADR 0050). Legacy sibling sentinels (`<target>.textus-managed.json`) are still recognised as managed and are migrated to the new location on the next publish.
 
-**Subtree mirror.** A nested entry MAY include a `{ tree: "dir" }` target (see §4). On every drain/serve pass, textus walks the entry's full stored subtree (`zones/<path>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/.run/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The convergence envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `produced` array, plus a `pruned` array listing any orphaned managed files removed on this pass. Targets that would resolve outside the repo root are refused. When a `{ tree: }` target overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
+**Subtree mirror.** A nested entry MAY include a `{ tree: "dir" }` target (see §4). On every drain/serve pass, textus walks the entry's full stored subtree (`data/<lane>/**`), applies the entry's `ignore:` filter, and byte-copies each file to the target directory, preserving relative layout — one sentinel per file under `<store_root>/.run/sentinels/`. The mirror is path-driven: no keys are enumerated, no template variables are interpreted, and mirrored files are opaque payload (never addressable). On rebuild, the entire target directory is pruned of textus-managed files the current source no longer produces; unmanaged files are never touched. The convergence envelope grows a `published_leaves` array — one row per mirrored file, with `key`, `source`, and `target` — alongside the existing `produced` array, plus a `pruned` array listing any orphaned managed files removed on this pass. Targets that would resolve outside the repo root are refused. When a `{ tree: }` target overlaps another entry's `{ to: }` target (e.g. a derived `SKILL.md` written into the mirrored dir), the mirroring entry must `ignore:` that filename or prune will delete it — `doctor` flags this as `publish.tree_index_overlap` (ADR 0047).
 
 **Publish presence is a uniform rule across all kinds.** Absent → the entry is terminal data (consumed internally via another entry's `select`, or read via `get`). Present → emit to the listed targets, every kind through one publish path. A `from: command` entry with publish targets emits the bytes the command already wrote into the store; without targets it is a staleness-only signal.
 
-### 5.4 Intake source (`from: fetch`)
+### 5.4 Raw lane and ingest verb
 
-Intake entries acquire their data via `source: { from: handler, ... }` — an external fetch through a registered handler. The `source:` block fully replaces the former `intake:` block; the entry's `kind:` is `produced` and the *intake* produce-method is read from `source.from: handler` (ADR 0095). Like every `source:`, it is acquire-only — a fetched feed is **data**, and if it needs rendering for a consumer that is a publish target's `template:` (§5.3), never the handler's job. textus itself makes no implicit network calls: the handler runs only when `textus drain`/`serve` or a `hook run` event re-pulls a stale entry past its `source.ttl` — a `get` never runs it (ADR 0089).
+The `raw` lane (`kind: raw`) is a write-once intake lane for external source material that has not been reviewed. All three default roles (`human`, `agent`, `automation`) hold the `ingest` capability. (ADR 0116)
 
-```yaml
-- key: feeds.calendar.events
-  kind: produced                 # produce-method (intake) read from source.from: handler
-  zone: feeds
-  source:
-    from: handler
-    handler: ical-events
-    config:
-      url: "https://calendar.google.com/.../basic.ics"
-    ttl: 6h                    # re-pull cadence; drain/serve re-pulls when past ttl
+**Write-once contract** — the same key MAY NOT be written twice on the same day. A collision returns `write_forbidden`. To replace an entry, delete it and re-ingest.
+
+**Key derivation** — the `ingest` verb derives a daily key: `raw.YYYY.MM.DD.<kind>-<slug>` where `YYYY.MM.DD` is the UTC date at ingest time.
+
+**Three source kinds:**
+
+| Kind | Required fields | Stored content |
+|------|----------------|----------------|
+| `url` | `--url` | URL reference only (`body: null`) — a bookmark, never a content fetch |
+| `file` | `--path` | File body text — use only for genuinely valuable content |
+| `asset` | `--path`, `--zone` | Binary copied to `assets/raw/YYYY/MM/DD/<zone>/`; inline body is null |
+
+**`access` field** — entries MAY carry `source.access: public | private` (field is `maintained_by: human`). Set `private` for sources not safe to reproduce publicly.
+
+**Notebook stub** — every ingest creates a `notebook.notes` stub with a backlink (`Ingested from raw.<key>`) so the agent or human can annotate the ingested material without touching the write-once record.
+
+**Example — URL bookmark:**
+
+```sh
+textus ingest url agentskills-io-brainstorming \
+  --url=https://agentskills.io/skills/brainstorming \
+  --label="brainstorming skill" \
+  --as=agent
 ```
 
-`handler` names a registered `:resolve_handler` hook (see §5.10); `config` is an opaque hash handed to the handler. `ttl` is the re-pull cadence: the `drain`/`serve` sweep (and `hook run`) re-pulls the entry when `now - last_fetched_at > ttl`. A `get` annotates the entry with `stale: true` when past ttl but **never** re-pulls (ADR 0089). Age-based garbage collection of intake entries is separate and orthogonal — declare a `retention:` rule block (§5.11).
-
-> **Note:** `list`/`where` paths do **not** annotate freshness — only `get` does. None of them ever re-pull.
-
-In intake mode the handler MUST return one of three shapes, all normalized by the store into its internal `{_meta, body, content}` representation (§5.12):
-
-- `{ _meta:, body: }` — markdown-friendly; `_meta` becomes the entry's parsed metadata hash.
-- `{ content: }` — for `format: json|yaml` entries; the parsed object becomes the entry's content.
-- `{ body: }` — raw bytes for `text` or for any format that prefers verbatim writes; the store re-parses and validates per `format:`.
-
-**Built-in intake handlers.** `json`, `csv`, `markdown-links`, `ical-events`, `rss` are always available. They expect raw bytes in `config["bytes"]` and produce structured `_meta`/body. Built-ins do not perform I/O themselves — the caller (or an outer hook) is responsible for supplying bytes.
-
-**Re-pull paths.** Ingest is system-pushed (ADR 0089) — never triggered by a read:
-
-1. **Scheduled sweep** — the convergence worker re-pulls every intake entry past its `source.ttl`: it resolves the entry's `source.handler`, invokes the registered `:resolve_handler` hook with `(caps:, config:, args: {})`, and writes the result under a role holding `converge` (`automation` by default). Run `textus serve` as a long-lived daemon (its scheduler seeds re-pull jobs each tick) or `textus drain --as=automation` on a cron/timer (seed-and-exit).
-2. **Event push** — `textus hook run` invokes a handler for a specific key on an external event (the same `:resolve_handler` path), for sources that announce changes rather than waiting for the sweep.
-
-(A third, manual path remains for out-of-band sources: read the `stale` list from `textus pulse` — soonest deadline `next_due_at` — fetch bytes yourself, and store them with `textus put KEY --as=automation --stdin`. `put` only stores bytes; it runs no handler. For per-entry detail read `textus get KEY` and `textus rule_explain KEY`.)
-
-All paths share the same write gate, audit-log entry, and `:entry_fetched` event. User-supplied hooks live in `.textus/hooks/**/*.rb` and auto-load at `Store#initialize` — see §5.10 for the full hook contract.
+A `get` on a raw entry is a pure read — it returns the entry as stored and never re-fetches (ADR 0089).
 
 ### 5.5 Pending / accept workflow
 
-Proposal entries are full patches authored into the `proposals` queue zone (writable by `propose`-holders: `agent` and `human` by default) — `proposals` in the default scaffold (Setup-1) — typically by agents. The entry's frontmatter describes the patch it proposes against another zone:
+Proposal entries are full patches authored into the `proposals` queue lane (writable by `propose`-holders: `agent` and `human` by default) — `proposals` in the default scaffold (Setup-1) — typically by agents. The entry's frontmatter describes the patch it proposes against another lane:
 
 ```yaml
 ---
@@ -516,9 +474,9 @@ _meta:
 Proposed body content.
 ```
 
-`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The sibling `_meta` block and the body are the proposed new content — a proposal carries the same `{ _meta, body }` envelope shape it intends `accept` to write (ADR 0113). A proposal's `target_key` MUST resolve to a `canon` zone; `accept` refuses any other target (`target_is_canon`, ADR 0035).
+`proposal.target_key` names the entry the patch would create or modify, and `proposal.action` is `put` or `delete`. The sibling `_meta` block and the body are the proposed new content — a proposal carries the same `{ _meta, body }` envelope shape it intends `accept` to write (ADR 0113). A proposal's `target_key` MUST resolve to a `canon` lane; `accept` refuses any other target (`target_is_canon`, ADR 0035).
 
-`textus accept <proposal-key>` is a **transition** (not a capability) that requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target zone, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. The `reject` transition likewise requires `author`. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept or reject.
+`textus accept <proposal-key>` is a **transition** (not a capability) that requires the **`author` capability**: the resolved role must hold `author` (the single trust anchor — `human` by default). It copies the patch into the target lane, records provenance (originating proposal key, original role, original timestamp) in the audit log, and removes the proposal entry. The `reject` transition likewise requires `author`. Roles holding only `propose` (e.g. `agent`) can propose but cannot accept or reject.
 
 ### 5.6 Audit log
 
@@ -606,71 +564,7 @@ evolution:
 
 **Override rule:** a role holding the `author` capability (the trust anchor — `human` by default) is permitted to write any `maintained_by` field, regardless of declared owner. The trust anchor overrides agent-maintained fields by design: schema field ownership (`maintained_by:`) makes the boundary explicit, not implicit. All other role mismatches are reported by `doctor --check=schema_violations` with code `role_authority`, including fields `key`, `field`, `expected`, and `last_writer`.
 
-### 5.9 Hooks
-
-This section is the normative event table. For the hook-author's guide (how to define and test hooks), see [`docs/how-to/writing-hooks.md`](docs/how-to/writing-hooks.md).
-
-textus has a single hook registration verb: `Textus.hook { |reg| reg.on(event, name, **opts) { ... } }`. The EVENTS table below defines every extension point. Files in `.textus/hooks/**/*.rb` are `load`ed at `Store#initialize` in alphabetical order by full path; the store-scoped loader drains the queued blocks and invokes each with its own registry.
-
-The subdirectory layout under `hooks/` is organizational only; the registered event and name come from the DSL call, not the file path.
-
-#### Registration DSL
-
-```ruby
-# Canonical form — works for every event:
-Textus.hook do |reg|
-  reg.on(:resolve_handler,  :my_source)              { |caps:, config:, args:, **|  … }
-  reg.on(:transform_rows,   :rank_by_recency)         { |caps:, rows:, **|            … }
-  reg.on(:validate,         :storage_writable)        { |caps:|                        … }
-  reg.on(:entry_written,    :audit, keys: ["working.*"]) { |ctx:, key:, envelope:, **| … }
-  reg.on(:entry_published,  :git_add, keys: ["derived.*"]) { |ctx:, target:, **| `git add #{target.shellescape}` }
-end
-```
-
-`Textus.hook` is the sole entry point. The block receives the store's `Hooks::Registry`; `reg.on` is the only registration primitive.
-
-#### Event table
-
-| Event                   | Mode    | Args                                                      | Return                | Failure       |
-|-------------------------|---------|-----------------------------------------------------------|-----------------------|---------------|
-| `:resolve_handler`      | rpc     | caps:, config:, args:                                     | {_meta:, body:}       | aborts op     |
-| `:transform_rows`       | rpc     | caps:, rows:, config:                                     | rows array            | aborts op     |
-| `:validate`             | rpc     | caps:                                                     | issues array          | aborts doctor |
-| `:entry_written`        | pubsub  | ctx:, key:, envelope:                                     | (discarded)           | logged        |
-| `:entry_deleted`        | pubsub  | ctx:, key:                                                | (discarded)           | logged        |
-| `:entry_fetched`        | pubsub  | ctx:, key:, envelope:, change:                            | (discarded)           | logged        |
-| `:entry_produced`       | pubsub  | ctx:, key:, envelope:, sources:                           | (discarded)           | logged        |
-| `:proposal_accepted`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
-| `:entry_published`      | pubsub  | ctx:, key:, envelope:, source:, target:                   | (discarded)           | logged        |
-| `:entry_renamed`        | pubsub  | ctx:, key:, from_key:, to_key:, envelope:                 | (discarded)           | logged        |
-| `:proposal_rejected`    | pubsub  | ctx:, key:, target_key:                                   | (discarded)           | logged        |
-| `:store_loaded`         | pubsub  | ctx:                                                      | (discarded)           | logged        |
-| `:session_opened`       | pubsub  | ctx:, role:, cursor:                                     | (discarded)           | logged        |
-| `:entry_fetch_started`  | pubsub  | ctx:, key:, mode:                                         | (discarded)           | logged        |
-| `:entry_fetch_failed`   | pubsub  | ctx:, key:, error_class:, error_message:                  | (discarded)           | logged        |
-
-The two `:entry_fetch_*` lifecycle events report the progress and failures of intake fetches during `drain`/`serve` / `hook run`.
-
-**`:entry_fetch_started`** fires immediately before an intake handler is invoked. `mode:` is `"refresh"`.
-
-**`:entry_fetch_failed`** fires when an intake handler raises. `error_class:` is the exception class name string; `error_message:` is `e.message`.
-
-**Signature invariant** — hooks receive a capability handle as their first keyword argument; the name depends on the mode:
-
-- **RPC hooks** (`rpc` mode) receive `caps:` — a `Textus::Container`. Event-specific kwargs (`config:`, `args:`, `rows:`) follow in the stable order shown in the table above.
-- **Pub-sub hooks** (`pubsub` mode) receive `ctx:` — a `Textus::Hooks::Context` that exposes a narrow surface: `get`, `list`, `deps`, `freshness` (reads — `freshness` is the Ruby-only internal lifecycle scan, ADR 0085, not a public verb), `put`, `delete`, `audit` (authorized writes), `publish_followup`, plus `role` and `correlation_id`. The raw `Store` is not handed out.
-
-Declaring `store:` instead of `caps:` in an RPC callable will pass registration but raise `UsageError` at call time (`Hooks::RpcRegistry#invoke` rejects `store:` — there is no shim).
-
-The primary entity is always `key:` (for `:proposal_accepted`, `key:` is the pending key being accepted and `target_key:` is the destination). For `:entry_renamed`, `key:` is present and equals `to_key:` — it is the entry's post-move home, present so `keys:` glob filters route correctly; `from_key:` is the prior key. For `:proposal_rejected`, `key:` is the pending key being rejected. For `:store_loaded`, no key — the event observes store readiness, not an entry. For `:session_opened`, no key — it fires once per MCP connection at `initialize` with the connection's resolved `role:` and boot `cursor:` (ADR 0075); distinct from `:store_loaded`, which fires once per process at `Store#initialize` under the default role.
-
-**RPC mode** — exactly one handler per (event, name). The manifest references the handler by name (`source.handler: NAME` for `:resolve_handler`, `source.transform: NAME` for `:transform_rows`). Failure or timeout aborts the calling operation.
-
-**Pub-sub mode** — zero or more handlers per event. All matching handlers fire. The `keys:` option restricts a handler to keys matching one of the given globs (`File.fnmatch?` rules). Absence of `keys:` fires on every event of that type. Handler failures and 2s timeouts are logged to `audit.log` as `event_error` rows; they NEVER abort the triggering operation.
-
-Each handler runs under `Timeout.timeout(2)`.
-
-### 5.10 Rules
+### 5.9 Rules
 
 A manifest MAY declare a top-level `rules:` block — a list of rule blocks matched against entry keys by glob. Each block carries one or more slots:
 
@@ -703,7 +597,7 @@ The `retention:` slot handles age-based GC only. Write-trigger strategy for deri
 
 **Read surface.** `textus rule list` dumps every block. `textus rule explain KEY` shows the resolved `RuleSet` for one key — lean effective `{retention, guard}` by default; `--detail` adds every matched block and the effective guard predicate names for every write transition (ADR 0059).
 
-### 5.11 Storage formats
+### 5.10 Storage formats
 
 An entry's `format:` selects a storage strategy. All strategies expose the same `parse(bytes) → {_meta, body, content}` and `serialize(meta:, body:, content:) → bytes` contract. The store, audit, etag, and projection layers operate on the parsed shape; only (de)serialization differs.
 
@@ -771,7 +665,7 @@ The frontmatter `name:` field, when present, must match the file's basename (wit
 - Existing files without a uid continue to work. The envelope shows `"uid": null` until a put mints one.
 - `text` entries have no metadata channel and therefore no uid; their envelope always shows `"uid": null`.
 
-Entries in a `derived` zone SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build tooling can extend the metadata without breaking conformance.
+Entries in a `produced` lane SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build tooling can extend the metadata without breaking conformance.
 
 ## 8. Envelope (the wire format)
 
@@ -779,11 +673,11 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 
 ```json
 {
-  "protocol": "textus/3",
+  "protocol": "textus/4",
   "key": "knowledge.network.org.jane",
-  "zone": "knowledge",
+  "lane": "knowledge",
   "owner": "human:network",
-  "path": "/absolute/path/to/.textus/zones/knowledge/network/org/jane.md",
+  "path": "/absolute/path/to/.textus/data/knowledge/network/org/jane.md",
   "format": "markdown",
   "_meta": { "name": "jane", "relationship": "peer", "org": "acme" },
   "body": "Short body in Markdown.\n",
@@ -797,9 +691,9 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 ```
 
 **Field rules:**
-- `protocol` MUST be the exact string `textus/3`.
+- `protocol` MUST be the exact string `textus/4`.
 - `key` MUST be the canonical resolved key.
-- `zone` MUST be one of the lanes declared in the manifest (`knowledge`, `notebook`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
+- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `notebook`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
@@ -807,7 +701,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-pulled; `false` otherwise. Only populated for `intake` entries (those with `source: { from: handler, ttl: ... }`); always `false` for non-intake entries.
+- `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-materialised; `false` otherwise. Only populated for produced entries with a declared `ttl`; always `false` for other entries.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a background re-pull is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
 
@@ -817,12 +711,12 @@ Errors use a distinct envelope:
 
 ```json
 {
-  "protocol": "textus/3",
+  "protocol": "textus/4",
   "ok": false,
   "code": "write_forbidden",
-  "message": "writing 'knowledge.identity.self' (zone 'knowledge') needs capability 'author'",
+  "message": "writing 'knowledge.identity.self' (lane 'knowledge') needs capability 'author'",
   "hint": "held by: human; pass --as=<role>",
-  "details": { "key": "knowledge.identity.self", "zone": "knowledge", "verb": "author", "holders": ["human"] }
+  "details": { "key": "knowledge.identity.self", "lane": "knowledge", "verb": "author", "holders": ["human"] }
 }
 ```
 
@@ -833,7 +727,7 @@ Errors use a distinct envelope:
 | `unknown_key` | Key does not resolve | 1 |
 | `bad_frontmatter` | YAML parse failed or `name:` mismatch | 1 |
 | `schema_violation` | Required field missing or wrong type | 1 |
-| `write_forbidden` | Resolved role lacks the capability the zone-kind requires | 1 |
+| `write_forbidden` | Resolved role lacks the capability the lane-kind requires | 1 |
 | `etag_mismatch` | Concurrent write detected | 1 |
 | `io_error` | Filesystem failure | 64 |
 | `usage` | CLI argument error | 2 |
@@ -842,15 +736,15 @@ Errors use a distinct envelope:
 
 The reference binary is `textus`. Conforming implementations MAY use any binary name; the protocol is in the JSON.
 
-All verbs accept `--output=json` and emit a canonical envelope (success or error). Write verbs require `--as=<role>`; the role must satisfy the target zone's write gate (§5). The per-entry `format:` field in the manifest is unchanged — `--output` controls only the CLI envelope rendering.
+All verbs accept `--output=json` and emit a canonical envelope (success or error). Write verbs require `--as=<role>`; the role must satisfy the target lane's write gate (§5). The per-entry `format:` field in the manifest is unchanged — `--output` controls only the CLI envelope rendering.
 
 | Verb | Reads / writes | Role required |
 |---|---|---|
-| `list [--prefix=K] [--zone=Z]` | read | any |
+| `list [--prefix=K] [--lane=Z]` | read | any |
 | `where K` | read | any |
 | `get K` | read (a pure on-disk read annotated with a freshness verdict; never refreshes — ADR 0089) | any |
 | `schema show K` | read | any |
-| `audit [--key=K] [--zone=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
+| `audit [--key=K] [--lane=Z] [--role=R] [--verb=V] [--since=X] [--correlation-id=ID] [--limit=N]` | read | any |
 | `blame KEY` | read | any |
 | `rule list` / `rule explain KEY` | read | any |
 | `deps K` / `rdeps K` | read | any |
@@ -860,17 +754,17 @@ All verbs accept `--output=json` and emit a canonical envelope (success or error
 | `doctor [--check=NAME[,NAME]] [--output=json]` | read | any |
 | `boot [--output=json]` | read | any |
 | `pulse [--since=N]` | read | any |
-| `put K --stdin --as=R` | write (stores the stdin JSON; runs no handler — ADR 0089) | per zone |
+| `put K --stdin --as=R` | write (stores the stdin JSON; runs no handler — ADR 0089) | per lane |
 | `propose K --stdin --as=R` | write | `propose`-holder (auto-prefixes propose_zone) |
-| `key delete K --if-etag=E --as=R` | write | per zone |
-| `drain [--prefix=K] [--zone=Z]` | write | `converge`-holder (typically `automation`) |
+| `key delete K --if-etag=E --as=R` | write | per lane |
+| `drain [--prefix=K] [--lane=Z]` | write | `converge`-holder (typically `automation`) |
 | `serve [--poll=SECS]` | write (long-lived daemon) | `converge`-holder (typically `automation`) |
 | `jobs [--state=ready\|leased\|done\|failed] [--action=retry\|purge] [--job-id=ID]` | read | any |
 | `accept K --as=human` | write | `author`-holder (typically `human`) |
 | `reject K --as=human` | write | `author`-holder (typically `human`) |
 | `init` | write | `human` |
 | `schema {show,init,diff,migrate}` | read/write | `human` for writes |
-| `key mv OLD NEW [--as=R] [--dry-run]` | write | per zone (same-zone only) |
+| `key mv OLD NEW [--as=R] [--dry-run]` | write | per lane (same-lane only) |
 | `key uid K` | read | any |
 
 **`textus boot` envelope extras.** In addition to lanes, entries, hooks, write flows, and the `cli_verbs` catalog, the boot envelope includes an `agent_quickstart` block synthesized from the manifest's role capabilities:
@@ -905,7 +799,7 @@ The agent's MCP write surface includes the single-key `key_delete` and `key_mv` 
 }
 ```
 
-`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `pending_review` lists all keys in the queue zone. `contract_etag` is the `sha256:`-prefixed composite content hash of the contract — the manifest plus hooks and schemas (ADR 0074, via ADR 0025) — for cheap change-detection. `index_etag` is the etag of the `artifacts.index` catalog file, or `null` when it does not exist — agents use this to detect when the catalog has been rebuilt. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
+`cursor` is the new high-water mark; pass it as `--since` on the next call. `changed` is sourced from `audit --seq-since`. `pending_review` lists all keys in the `proposals` queue lane. `contract_etag` is the `sha256:`-prefixed composite content hash of the contract — the manifest plus hooks and schemas (ADR 0074, via ADR 0025) — for cheap change-detection. `index_etag` is the etag of the `artifacts.index` catalog file, or `null` when it does not exist — agents use this to detect when the catalog has been rebuilt. When `--since` is below the oldest available seq (due to audit log rotation), pulse returns `CursorExpired`.
 
 **`put` input** (read from stdin when `--stdin` is given):
 
@@ -919,11 +813,11 @@ The agent's MCP write surface includes the single-key `key_delete` and `key_mv` 
 
 The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, one verdict (`fresh`, `expired`, or `no_policy`) against each intake entry's `source.ttl`. ADR 0085 removed the standalone `freshness` verb that used to render these rows; the scan is now Ruby-only (consumed by `pulse` and the hook context), and human drill-down into a single entry's verdict is `textus get KEY` (carries `stale`/`stale_reason`) plus `textus rule_explain KEY` (the `source.ttl` and retention policy). `textus drain` enqueues the convergence jobs — produce every in-scope derived entry, re-pull every stale intake entry, and a retention sweep — then drains the queue to empty (§5.11). Convergence is async-only (ADR 0110): there is no `--dry-run`.
 
-`textus accept K --as=human` promotes a pending entry into its target zone: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
+`textus accept K --as=human` promotes a pending entry into its target lane: it copies the patch body into the target key, deletes the pending entry, and writes one audit line per side (§audit). Only a role holding the `author` capability (the trust anchor — `human` by default) may invoke `accept`.
 
-`textus drain [--prefix=K] [--zone=Z]` is the manual converge-and-exit pass (ADR 0093, ADR 0110). It seeds a closed allow-list of jobs into the durable file-backed queue (`Ports::Queue` under `.textus/.run/queue/`) and runs a worker until the queue is empty: a **`materialize`** job per in-scope derived / publish entry (always rebuild — pure/idempotent, unchanged sources write nothing; nested `{ tree: }` targets included), a **`re-pull`** job per intake entry past its `source.ttl`, and a single **`sweep`** job for the destructive `retention:` GC (§5.11). Authority is frozen at enqueue: `materialize`/`re-pull` self-elevate inside `Produce::Engine` to the manifest's `converge`-capable actor (`automation` by default) — materialization is a pure function of already-accepted canon and grants no authority over content — while `sweep` runs as the **caller** (gated as the caller's own `key_delete` authority), never self-elevating. Drain is single-pass and **serial**: each produce job self-acquires the non-reentrant build lock, so a held lock is a graceful soft-miss. `drain` returns `{ ok, completed, failed, health }` and exits non-zero if any job dead-lettered; per-key produce failures surface as `:produce_failed` events. There is no `--dry-run` (materialization is async-only). `textus serve` is the same worker as a long-lived daemon, whose `Scheduler` seeds TTL re-pull + sweep each tick; `textus jobs` inspects/retries/purges the queue. In day-to-day use derived entries stay fresh **reactively** — a canon write enqueues a `materialize` job for each dependent derived entry (the reactive scope is "converge narrowed to rdeps ∩ derived"), processed by a running `serve` or the next `drain` — so `drain` is the on-demand / CI catch-all, not a step in the normal write loop.
+`textus drain [--prefix=K] [--lane=Z]` is the manual converge-and-exit pass (ADR 0093, ADR 0110). It seeds a closed allow-list of jobs into the durable file-backed queue (`Ports::Queue` under `.textus/.run/queue/`) and runs a worker until the queue is empty: a **`materialize`** job per in-scope derived / publish entry (always rebuild — pure/idempotent, unchanged sources write nothing; nested `{ tree: }` targets included), a **`re-pull`** job per intake entry past its `source.ttl`, and a single **`sweep`** job for the destructive `retention:` GC (§5.11). Authority is frozen at enqueue: `materialize`/`re-pull` self-elevate inside `Produce::Engine` to the manifest's `converge`-capable actor (`automation` by default) — materialization is a pure function of already-accepted canon and grants no authority over content — while `sweep` runs as the **caller** (gated as the caller's own `key_delete` authority), never self-elevating. Drain is single-pass and **serial**: each produce job self-acquires the non-reentrant build lock, so a held lock is a graceful soft-miss. `drain` returns `{ ok, completed, failed, health }` and exits non-zero if any job dead-lettered; per-key produce failures surface as `:produce_failed` events. There is no `--dry-run` (materialization is async-only). `textus serve` is the same worker as a long-lived daemon, whose `Scheduler` seeds TTL re-pull + sweep each tick; `textus jobs` inspects/retries/purges the queue. In day-to-day use derived entries stay fresh **reactively** — a canon write enqueues a `materialize` job for each dependent derived entry (the reactive scope is "converge narrowed to rdeps ∩ derived"), processed by a running `serve` or the next `drain` — so `drain` is the on-demand / CI catch-all, not a step in the normal write loop.
 
-`textus init` scaffolds a fresh `.textus/` tree (manifest, zones, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
+`textus init` scaffolds a fresh `.textus/` tree (manifest, lanes, schemas, audit log) under the current directory with a default manifest. Customize by editing `.textus/manifest.yaml` after init.
 
 `textus schema show K` prints the schema for entry `K`. `textus schema init NAME` writes a stub schema. `textus schema diff NAME` compares the on-disk schema against entries that claim it and prints the deltas. `textus schema migrate NAME --rename=OLD:NEW` rewrites the `_meta` key `OLD` to `NEW` across every entry that uses the named schema, in a single transactional sweep that logs each touched file.
 
@@ -937,20 +831,20 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 
 ## 10.2 `textus doctor`
 
-`textus doctor` returns a health-check envelope: `{ "protocol": "textus/3", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_permit`, `fetch_locks`, `proposal_targets`, `publish.tree_index_overlap`, `generator_drift`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
+`textus doctor` returns a health-check envelope: `{ "protocol": "textus/4", "ok": bool, "issues": [...], "summary": {error, warning, info} }`. Each issue carries `code`, `level` (`error|warning|info`), `subject`, `message`, and optionally `fix`. `ok` is true iff no error-level issues are present; warnings and info do not flip the bit. Builtin checks: `protocol_version`, `manifest_files`, `schemas`, `schema_parse_error`, `templates`, `intake_registration`, `illegal_keys`, `sentinels`, `audit_log`, `unowned_schema_fields`, `schema_violations`, `rule_ambiguity`, `handler_permit`, `fetch_locks`, `proposal_targets`, `publish.tree_index_overlap`, `generator_drift`. Additional registered `:validate` hooks (§5.10) run after the builtin set. Exit code is 0 on `ok`, 1 otherwise.
 
 ## 11. Versioning
 
-- The current wire string is `textus/3`.
-- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/3`.
-- Breaking changes (renamed/removed envelope fields, zone semantics, key grammar) require a new wire string `textus/4`.
+- The current wire string is `textus/4`.
+- Backward-compatible additions (new fields, new error codes, new schema types) MAY be made under `textus/4`.
+- Breaking changes (renamed/removed envelope fields, lane semantics, key grammar) require a new wire string `textus/4`.
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
-The reference Ruby gem follows semver independently and speaks `textus/3`.
+The reference Ruby gem follows semver independently and speaks `textus/4`.
 
 ## 11.1 Agent integration
 
-Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable zones, and its propose zone. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
+Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable lanes, and its propose lane. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
 
 For the full boot → pulse loop with pseudocode and cursor-expiry handling, see [`docs/how-to/agents-mcp.md`](docs/how-to/agents-mcp.md).
 
@@ -959,22 +853,22 @@ For the full boot → pulse loop with pseudocode and cursor-expiry handling, see
 A conformant implementation MUST pass these fixtures (the reference test suite ships a YAML file listing inputs and expected envelopes):
 
 **Fixture A — Resolve and read:**
-Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/zones/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --output=json` returns the canonical envelope with `etag` matching the file's sha256.
+Given a manifest with `working.network.org` → `working/network/org` (nested), schema `person`, and a file `.textus/data/working/network/org/jane.md` with valid frontmatter, `textus get working.network.org.jane --output=json` returns the canonical envelope with `etag` matching the file's sha256.
 
 **Fixture B — Role gate on write:**
-Given a manifest entry where `key: identity.self` lives in the `identity` zone (`kind: canon`, requiring the `author` capability), `textus put identity.self --stdin --as=agent` (where `agent` holds only `propose`) returns the error envelope with `code: "write_forbidden"` and exit code 1.
+Given a manifest entry where `key: identity.self` lives in the `identity` lane (`kind: canon`, requiring the `author` capability), `textus put identity.self --stdin --as=agent` (where `agent` holds only `propose`) returns the error envelope with `code: "write_forbidden"` and exit code 1.
 
 **Fixture C — Schema violation:**
 Given the `person` schema and a `put` whose frontmatter omits `relationship`, the result is the error envelope with `code: "schema_violation"`, `details.missing: ["relationship"]`, and exit code 1.
 
 **Fixture D — Staleness detection:**
-Given a manifest entry `intake.notes` with `kind: produced` and `source: { from: handler, handler: h, ttl: 1h }` (the intake produce-method read from `source.from`), and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `intake.notes` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-pull.
+Given a manifest entry `artifacts.feeds` with `kind: produced` and a `retention: { ttl: 1h }` rule, and an envelope on disk whose `_meta.last_fetched_at` is older than `now - ttl`, `textus pulse --output=json` lists `artifacts.feeds` in its `stale` array (the lifecycle scan classifies it `expired`). The scan is pure: producing this verdict does NOT trigger a re-materialise.
 
-**Fixture E — Projection produce:**
-Given a manifest entry `artifacts.derived.skills` with `kind: produced` and `source: { from: project, select: knowledge.projects, ... }` (the derived produce-method read from `source.from`), `textus drain --prefix=artifacts.derived.skills` produces the derived entry's **data** on disk (serialized per `format:`) matching the projected shape. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
+**Fixture E — Workflow produce:**
+Given a manifest entry `artifacts.skills` with `kind: produced` and `source: { from: external, command: "true", sources: [] }` and a matching `Textus.workflow` block, `textus drain --prefix=artifacts.skills` produces the entry's **data** on disk (serialized per `format:`) matching the workflow's returned content. The output is content-addressed (no `generated_at` timestamp, ADR 0070), so re-running with unchanged sources reproduces it byte-for-byte and writes nothing.
 
-**Fixture F — Mustache render at publish:**
-Given a produced entry with a to-target `{ to:, template: <name> }`, `textus drain` renders the entry's stored data through the template and emits a file whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization). Two to-targets with different templates produce different bytes from the one entry.
+**Fixture F — ERB render at publish:**
+Given a produced entry with a to-target `{ to:, template: <name> }`, `textus drain` renders the entry's stored data through the named ERB template (under `.textus/templates/`) and emits a file whose contents match the expected rendered output byte-for-byte (after trailing-newline normalization). Two to-targets with different templates produce different bytes from the one entry.
 
 **Fixture G — Copy publish:**
 Given a manifest entry with a templateless to-target `publish: [{ to: <path> }]`, a successful `textus drain` for that entry leaves a plain file at `<path>` whose contents are the entry's content re-serialized without `_meta` (byte-identical to a clean consumer config), accompanied by a sentinel at `.textus/.run/sentinels/<path>.textus-managed.json` recording `source`, `target`, `sha256`, and `mode: "copy"`. Re-running `drain` is idempotent.
@@ -989,13 +883,13 @@ Given a proposal entry `proposals.knowledge.self.patch` proposing a change to `k
 
 - **Why not MCP?** MCP is a transport; textus is a data model. The two compose: a 50-line MCP server can wrap `textus get/put` as tools. textus exists because the *shape* of agent-readable project memory deserves a standalone spec, separate from how it's served.
 
-- **Why doesn't textus execute external build commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/3` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. External build systems stay the executor; textus stays a data tool.
+- **Why doesn't textus execute external build commands itself?** textus is a dataflow oracle, not a build runner. The moment a spec includes process execution, it inherits shell-injection surface, OS-portability concerns, and signal-handling semantics — and ends up duplicating whatever build system the consumer already runs (make, rake, just, lefthook, CI). Keeping execution external means a Python or TypeScript port of `textus/4` only has to parse YAML and emit JSON; it doesn't have to spawn processes safely. External build systems stay the executor; textus stays a data tool.
 
 - **Why not plain Markdown vaults (Obsidian / Foam)?** No schema enforcement, no write-gating, no addressable wire format. Fine for human notes; underspecified for agents that must act on the contents deterministically.
 
 - **Why not Notion / Coda?** Closed, hosted, lossy export. textus is local-first, plain-files, diffable in git.
 
-- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/3`.
+- **Why not JSON Schema for the schemas?** Considered. Bespoke YAML chosen for v1: simpler implementation, lighter dependency footprint, matches the reference impl's house language. JSON Schema MAY be added as an alternate schema-language adapter in a future minor revision without breaking `textus/4`.
 
 - **Why not a database (SQLite, kv store)?** textus's whole point is that the storage is plain files agents and humans both read. A binary store loses git-diff, grep, and editor support.
 
@@ -1007,31 +901,4 @@ Textus internals are organized as one-way layers — **Surfaces** (`surfaces/cli
 
 See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
 
-## 14. Open questions (v3.x scope)
-
-- **Locking on `put`:** the reference impl uses sha256 etags. Should the spec also define a file-lock fallback for systems where read-before-write is racy?
-- **Schema imports:** can one schema reference another (`type: $ref: person`)?
-- **Internationalization:** non-ASCII in keys? Spec currently restricts segments to `[a-z0-9][a-z0-9-]*`. Revisit if community wants Unicode.
-- **Generated content in `derived/`:** the spec says `schema: null` is allowed, but should there be a separate marker (`generated: true`) for clarity?
-
-## 15. Implementation checklist
-
-A `textus/3` implementation MUST:
-
-- [ ] Parse `.textus/manifest.yaml` and accept `version: textus/3`.
-- [ ] Resolve keys via longest-prefix match against manifest entries.
-- [ ] Read `_meta` + body from `.md` files; validate against the named schema.
-- [ ] Read `_meta` from the top-level `_meta` hash in `.json` / `.yaml` files; validate against the named schema.
-- [ ] Compute `sha256:<hex>` etags over raw file bytes.
-- [ ] Refuse writes whose resolved role lacks the capability the target zone-kind requires with `write_forbidden`.
-- [ ] Return envelopes matching the shape in §8 exactly (with `_meta`, not `frontmatter`).
-- [ ] Use the error codes in §8 and the exit-code table.
-- [ ] Implement the lifecycle scan behind `pulse` (`stale`/`next_due_at`) and the hook context per §5.4, §5.11, and §9, walking each intake entry, comparing `now - last_fetched_at` against `source.ttl`, and reporting `fresh|expired|no_policy` without invoking any re-pull. (ADR 0085: a Ruby-only internal scan — there is no public `freshness` verb.)
-- [ ] Pass the conformance fixtures A–I in §12.
-
-A `textus/3` implementation MAY:
-
-- Add additional CLI verbs (e.g. `move`, vendor-specific reporters) beyond the current set in §9.
-- Provide alternate output formats (`--output=yaml`, `--output=table`) for human use.
-- Support additional schema field types beyond §6, marked as `vendor:<name>` extensions.
 

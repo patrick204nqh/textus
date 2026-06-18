@@ -2,7 +2,7 @@
 
 > **Cookbook** · for integrators · **read when** you want a fleet's environments (laptop, cloud servers, …) as protocol-readable, gitignored feed data
 
-The built-in `artifacts.feeds.machines` snapshot ([machine snapshot](../how-to/configuring-zones.md#machine-snapshot-scaffolded))
+The built-in `artifacts.feeds.machines` snapshot ([machine snapshot](../how-to/configuring-lanes.md))
 captures *this* host. This recipe scales it to **many machines**: one nested
 intake `artifacts.feeds.machines.*`, **one leaf per machine**, each holding that host's
 OS / package / runtime snapshot. The control store (your laptop) pulls each
@@ -175,6 +175,5 @@ zones/artifacts/feeds/machines/
 
 > **Scaling past a handful of hosts?** Flip to a *push* model: each machine runs
 > the probe on a cron and drops its JSON to a shared sink (object store, a git
-> branch, a shared FS); the control store ingests each leaf with the
-> [HTTP JSON](./intake-recipes.md#http-json-api) or local-file recipe instead of
-> SSHing out. No central credentials, each host self-reports.
+> branch, a shared FS); the control store ingests each leaf via `textus ingest file`
+> or a workflow step instead of SSHing out. No central credentials, each host self-reports.

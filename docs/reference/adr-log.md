@@ -18,6 +18,10 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0117](../architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump | 2026-06-17 | Accepted |
+| [0116](../architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb | 2026-06-16 | Accepted |
+| [0115](../architecture/decisions/0115-role-trust-model.md) | role trust model | 2026-06-14 | Accepted |
+| [0114](../architecture/decisions/0114-foundation-refactor.md) | Foundation refactor: lanes, dispatch, core, surfaces | 2026-06-13 | Accepted |
 | [0113](../architecture/decisions/0113-proposal-block-meta-key.md) | the proposal block speaks `_meta`, not `frontmatter` | 2026-06-09 | Accepted |
 | [0112](../architecture/decisions/0112-produced-authority-reference.md) | the authority model is a produced reference doc | 2026-06-09 | Accepted |
 | [0111](../architecture/decisions/0111-rename-reconcile-capability-to-converge.md) | rename the `reconcile` capability/lane token to `converge`; drop the dead `:reconcile_failed` event | 2026-06-08 | Accepted |

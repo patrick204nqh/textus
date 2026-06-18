@@ -5,8 +5,8 @@ Textus.workflow "adr_log" do
     normalize = ->(s) { s.to_s.gsub(/\[([^\]]+)\]\([^)]+\)/, '\1').gsub(/\s+/, " ").strip }
 
     keys = ctx.container.manifest.resolver
-               .enumerate(prefix: "knowledge.decisions", include_keyless: true)
-               .map { |row| row[:key] }
+              .enumerate(prefix: "knowledge.decisions", include_keyless: true)
+              .map { |row| row[:key] }
 
     adrs = keys.filter_map do |k|
       env = Textus::Action::Get.new(key: k).call(container: ctx.container, call: ctx.call)
@@ -21,10 +21,10 @@ Textus.workflow "adr_log" do
 
       {
         "number" => m[1],
-        "title"  => normalize.call(title),
-        "date"   => text[/^\*\*Date:\*\*\s*(.+)$/, 1]&.strip,
+        "title" => normalize.call(title),
+        "date" => text[/^\*\*Date:\*\*\s*(.+)$/, 1]&.strip,
         "status" => normalize.call(text[/^\*\*Status:\*\*\s*(.+)$/, 1]),
-        "slug"   => slug,
+        "slug" => slug,
       }
     end.sort_by { |a| a["number"].to_i }.reverse
 

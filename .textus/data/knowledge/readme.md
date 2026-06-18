@@ -39,6 +39,9 @@ flowchart LR
     agent -->|keep| notebook["notebook<br/>(workspace)"]
     agent -->|propose| proposals["proposals<br/>(queue)"]
     automation -->|drain| artifacts["artifacts<br/>(machine)"]
+    human -->|ingest| raw["raw<br/>(intake)"]
+    agent -->|ingest| raw
+    automation -->|ingest| raw
 
     proposals ==>|human accept| knowledge
     knowledge -.->|projection source| artifacts
@@ -46,13 +49,15 @@ flowchart LR
     classDef actor fill:#238636,stroke:#2ea043,color:#fff;
     classDef gate fill:#9e6a03,stroke:#bb8009,color:#fff;
     classDef anchor fill:#1f6feb,stroke:#388bfd,color:#fff;
+    classDef intake fill:#6e40c9,stroke:#8b5cf6,color:#fff;
     class human,agent,automation actor;
     class proposals gate;
     class knowledge anchor;
+    class raw intake;
 ```
 
 *Each actor writes only into its own lane; low-trust input climbs to authoritative lanes only by passing a guarded transition (an agent's proposal needs a human `accept`).*
-*Colour legend: **green** = writers · **amber** = the review gate (`proposals`) · **blue** = the trust anchor (`knowledge`).*
+*Colour legend: **green** = writers · **amber** = the review gate (`proposals`) · **blue** = the trust anchor (`knowledge`) · **purple** = write-once intake (`raw`).*
 
 The point of those lanes is to **build context you can trust**. Place each lane on two axes — how durable it is, and how much you can rely on it without review — and the value shows up as a climb: the high-trust corner (durable *and* authoritative = `knowledge`) is the one place nothing is *written* directly. It's *earned* by crossing the `accept` gate.
 
@@ -64,9 +69,10 @@ DURABLE       │  notebook                │  knowledge  ★ the goal        �
 (kept)        │  agent's working truth   │  canon — a human authors      │
               │  durable, but low-trust  │  here · the context you ship  │
               ├──────────────────────────┼───────────────────────────────┤
-TRANSIENT     │  artifacts.*             │  proposals  (queue)           │
-(staging)     │  computed outputs and    │  a candidate, in review       │
-              │  external inputs         │  ▲ climbs via human accept    │
+TRANSIENT     │  artifacts  (outputs)    │  proposals  (queue)           │
+(staging)     │  computed, machine-made  │  a candidate, in review       │
+              │  raw        (inputs)     │  ▲ climbs via human accept    │
+              │  ingested, write-once    │                               │
               └──────────────────────────┴───────────────────────────────┘
                 raw material ──── propose ────► a human accept lifts it to canon
 ```
@@ -195,14 +201,14 @@ For a worked store — knowledge entries, a staged proposal, schemas, ERB templa
 - **Agent loop.** `textus boot` orients a fresh session; `textus pulse --since=N` is the per-turn heartbeat (changed entries, pending proposals, index etag for catalog drift detection). ([docs/how-to/agents-mcp.md](docs/how-to/agents-mcp.md))
 - **MCP surface.** The official `mcp` Ruby SDK drives the stdio JSON-RPC server; protocol version auto-negotiated up to `2025-11-25`. Wire textus into Claude Code, Cursor, or any MCP host in one config block.
 - **`textus doctor`.** Health checks across schemas, workflow registrations, keys, sentinels, and the audit log.
-- **`raw` lane kind.** A write-once intake lane for external data that hasn't been reviewed yet; carries the `ingest` capability.
+- **`raw` lane and `ingest` verb.** Write-once intake lane for external URL bookmarks, files, and binary assets. Three source kinds (`url`/`file`/`asset`); daily key derivation; notebook stub per ingest. See "Intake and ingest" section below.
 
 ## CLI and lanes
 
 Every command operates on one store, located in this order: `--root <path>` flag → **`TEXTUS_ROOT`** env → walk up from the working directory for a `.textus/` ([SPEC §3.1](SPEC.md)). Write verbs require `--as=<role>`, resolved as: `--as` flag → **`TEXTUS_ROLE`** env → `.textus/role` file → default `human` ([SPEC §5.1](SPEC.md)). Default roles: `human`, `agent`, `automation` (rename or add your own in the manifest's `roles:` block). All verbs accept `--output=json` and return the envelope defined in [SPEC §8](SPEC.md).
 
 - Full verb table — read, write, health, scaffolding — is in [SPEC §9](SPEC.md).
-- Lane semantics and the capability × lane-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/zones.md`](docs/reference/zones.md).
+- Lane semantics and the capability × lane-kind mapping live in [SPEC §5](SPEC.md), with the reference in [`docs/reference/lanes.md`](docs/reference/lanes.md).
 
 `textus boot` prints the same information for the current store: lanes, entry families with schemas, registered workflows, write flows, and the verb catalog. Run it inside a store and you get the live picture; reach for the SPEC when you want the contract.
 
@@ -222,7 +228,7 @@ Templates live in `.textus/templates/` as ERB files (`.erb`). The template recei
 textus extends through **workflows** — a `Textus.workflow` block placed in `.textus/workflows/**/*.rb`. Each workflow matches a produced entry by key glob, then runs one or more named steps to acquire its data:
 
 ```ruby
-# .textus/workflows/artifacts/my_report.rb
+# .textus/workflows/docs/my_report.rb
 Textus.workflow "my_report" do
   match "artifacts.my-report"
 
@@ -238,27 +244,47 @@ end
 
 `drain` discovers all workflow files, matches them against produced entries, and runs the steps. The result is written back to the entry's data path; `publish:` then copies it to its consumer paths.
 
-## Hooks
+## Intake and ingest
 
-Out-of-band event reactions use the hook DSL. Drop a file anywhere in `.textus/workflows/` and use `Textus.hook`:
+The `raw` lane is the inbound counterpart to `artifacts`: where `drain` materialises
+**outbound** computed outputs, `ingest` receives **inbound** external source material.
 
-```ruby
-Textus.hook do |reg|
-  reg.on(:entry_written) do |key:, envelope:, **|
-    # fire-and-forget — runs after every successful write
-    $stderr.puts "wrote #{key} (etag #{envelope.etag[0, 8]})"
-  end
-end
+**The ingest principle:** prefer a reference over a copy. Store body or asset only when the
+content itself is the value — human-authored notes, brainstorm outputs, context you want to
+annotate. For everything else, the URL is enough. If the source is private or
+access-restricted, set `access: private` in `source:` so downstream workflows can handle it
+appropriately.
+
+**Three source kinds:**
+
+| Kind | Stores | Use when |
+|------|--------|----------|
+| `url` | URL reference only (`body: null`) | Bookmarking a page, skill, or doc for later annotation |
+| `file` | File body text | Valuable human-authored content (brainstorm notes, meeting summaries) |
+| `asset` | Binary at `assets/raw/` | Screenshots, PDFs — only when the asset itself is the artefact |
+
+**Write-once** — the same slug on the same day cannot be overwritten. Delete and re-ingest to replace.
+
+```sh
+# bookmark a skill reference — URL only, body stays null
+textus ingest url agentskills-io-brainstorming \
+  --url=https://agentskills.io/skills/brainstorming \
+  --label="brainstorming skill" \
+  --as=agent
+
+# see what landed in the raw lane
+textus list --lane=raw
+
+# a notebook stub was created alongside — annotate it
+textus get notebook.notes.raw
 ```
 
-Observable events: `:entry_written`, `:entry_deleted`, `:entry_fetched`, `:entry_renamed`, `:entry_produced`, `:entry_published`, `:produce_failed`, `:proposal_accepted`, `:proposal_rejected`, `:store_loaded`, `:session_opened`, `:entry_fetch_started`, `:entry_fetch_failed`.
-
-Stale produced entries are re-materialised by `drain`, not by reads — `get` is a pure read that annotates the returned envelope with a freshness verdict (ADR 0089).
+Stale produced entries are re-materialised by `drain`, not by reads — `get` is a pure read (ADR 0089).
 
 ```sh
 textus drain --as=automation                  # re-materialise every stale produced entry
-textus drain artifacts.feeds --as=automation  # scope to one prefix
-textus get artifacts.feeds.calendar.events    # a pure read; carries a freshness verdict
+textus drain artifacts.skills --as=automation # scope to one prefix
+textus get artifacts.skills                   # a pure read; carries a freshness verdict
 ```
 
 Schemas (`.textus/schemas/<name>.yaml`) declare field shapes, per-field `maintained_by:` ownership, and an `evolution:` block (`added_in`, `deprecated_at`, `migrate_from`). Full contract in SPEC §5.8.
