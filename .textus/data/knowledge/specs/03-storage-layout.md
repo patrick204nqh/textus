@@ -8,7 +8,7 @@ The root is `.textus/` at the project working directory. A typical tree:
   schemas/               # internal: YAML schema files
   templates/             # internal: ERB templates referenced by produced entries
   workflows/             # user: Textus.workflow DSL files for produced entry acquisition
-  .run/                  # runtime (git-ignored): audit log, sentinels, locks, queue, pulse cursors
+  .state/                  # runtime (git-ignored): audit log, sentinels, locks, queue, pulse cursors
     audit.log            # append-only NDJSON log of every successful write
     sentinels/           # byte-copied publish bookkeeping (see §5.3)
   data/                  # ALL user content lives here
@@ -19,7 +19,7 @@ The root is `.textus/` at the project working directory. A typical tree:
     raw/                 # lane: raw (kind: raw — ingest-holders write; write-once)
 ```
 
-Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `workflows/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.run/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/foo.md`).
+Textus internals (`manifest.yaml`, `schemas/`, `templates/`, `workflows/`) live directly under `.textus/`; disposable runtime state (audit log, publish `sentinels/`, fetch/build locks, pulse cursors, job queue) lives under `.textus/.state/` (git-ignored, ADR 0038/0070). **All user content lives under `.textus/data/`.** Manifest `path:` fields are relative to `.textus/` — they include the `data/` prefix explicitly (e.g. `path: data/knowledge/foo.md`).
 
 Lane directories under `data/` are conventional; their write semantics are derived from the lane's declared `kind:` (and the capabilities roles hold), not the directory name.
 

@@ -141,7 +141,7 @@ bundle exec exe/textus --help
 
 ## What `textus init` gives you
 
-You get `.textus/` with all four lane directories under `data/`, baseline schemas, a starter manifest, and a gitignored `.run/` for disposable runtime state (the audit log, per-role cursors, produce locks). Roles declare capabilities; each lane declares a `kind:`, and write authority is derived from the role's capabilities crossed with the lane's kind:
+You get `.textus/` with all five lane directories under `data/`, baseline schemas, a starter manifest, and a gitignored `.state/` for disposable runtime state (the audit log, per-role cursors, produce locks). Roles declare capabilities; each lane declares a `kind:`, and write authority is derived from the role's capabilities crossed with the lane's kind:
 
 ```yaml
 roles:
@@ -162,17 +162,18 @@ lanes:
   schemas/               # YAML field shapes per entry family
   templates/             # ERB templates for produced entries
   workflows/             # Ruby workflow files (Textus.workflow DSL) for data acquisition
-  .gitignore             # generated — ignores .run/ and any tracked:false entries
+  .gitignore             # generated — ignores .state/ and any tracked:false entries
   data/                  # one dir per lane; kinds + capabilities are in the manifest above
     knowledge/           # e.g. identity (knowledge.identity.*), voice, decisions, notes
     notebook/
     proposals/
     artifacts/           # machine lane: computed outputs + external inputs
-  .run/                  # disposable runtime state — gitignored, safe to delete (ADR 0038)
+  .state/                  # disposable runtime state — gitignored, safe to delete (ADR 0038)
     audit/audit.log      # append-only NDJSON event ledger, every write (rotates at ~10 MB)
-    state/cursor.<role>  # per-role pulse cursor — where `pulse --since` resumes
+    cursors/<role>       # per-role pulse cursor — where `pulse --since` resumes
     locks/               # per-key produce locks + the produce mutex
     sentinels/           # publish bookkeeping (target sha) — regenerated on drain (ADR 0070)
+    indexes/raw.yaml     # raw lane content-hash/URL index — regenerable cache
 ```
 
 Manifest `path:` fields are relative to `.textus/data/`. So `knowledge.notes.org.jane` lives at `.textus/data/knowledge/notes/org/jane.md`.
@@ -219,7 +220,7 @@ Produced entries (`kind: produced`) declare how they're acquired in one `source:
 - **`source: { from: external, command: "...", sources: [...] }`** — *externally managed*: an out-of-band command or workflow writes the file; textus tracks staleness via declared `sources`.
 - **`source: { from: external, command: "true", sources: [] }` + a workflow** — *workflow-driven*: a `Textus.workflow` block (in `.textus/workflows/`) acquires and shapes the data on `drain`.
 
-Publishing is one typed `publish:` block (ADR 0052/0094). Each target is either `{ to: path, template?: name }` for a single file (optionally rendered through an ERB template) or `{ tree: "dir" }` to mirror a whole stored subtree. Sentinels for every published file live under `.textus/.run/sentinels/` (git-ignored, regenerated on drain). See SPEC §5.2, §5.3, §5.12.
+Publishing is one typed `publish:` block (ADR 0052/0094). Each target is either `{ to: path, template?: name }` for a single file (optionally rendered through an ERB template) or `{ tree: "dir" }` to mirror a whole stored subtree. Sentinels for every published file live under `.textus/.state/sentinels/` (git-ignored, regenerated on drain). See SPEC §5.2, §5.3, §5.12.
 
 Templates live in `.textus/templates/` as ERB files (`.erb`). The template receives the entry's `content` hash as local variables via `ERB#result_with_hash`. If `inject_boot: true`, a `boot` variable is also available with the live orientation context.
 
