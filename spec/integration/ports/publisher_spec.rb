@@ -7,7 +7,7 @@ RSpec.describe Textus::Ports::Publisher do
   let(:store_root) { File.join(tmp, ".textus") }
   let(:src) { File.join(store_root, "data", "output", "out.md") }
   let(:dst) { File.join(tmp, "dst.md") }
-  let(:sentinel) { File.join(store_root, ".run", "sentinels", "dst.md.textus-managed.json") }
+  let(:sentinel) { File.join(store_root, ".state", "sentinels", "dst.md.textus-managed.json") }
 
   before do
     FileUtils.mkdir_p(File.dirname(src))
@@ -36,7 +36,7 @@ RSpec.describe Textus::Ports::Publisher do
   it "mirrors nested target paths in the sentinel tree" do
     nested = File.join(tmp, ".claude-plugin", "marketplace.json")
     publisher.publish(source: src, target: nested, store_root: store_root)
-    expected_sentinel = File.join(store_root, ".run", "sentinels", ".claude-plugin", "marketplace.json.textus-managed.json")
+    expected_sentinel = File.join(store_root, ".state", "sentinels", ".claude-plugin", "marketplace.json.textus-managed.json")
     expect(File.exist?(expected_sentinel)).to be true
   end
 

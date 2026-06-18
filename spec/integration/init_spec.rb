@@ -54,15 +54,15 @@ RSpec.describe Textus::Init do
     FileUtils.remove_entry(tmp) if tmp && File.directory?(tmp)
   end
 
-  it "emits a .gitignore that ignores the .run runtime subtree" do
+  it "emits a .gitignore that ignores the .state runtime subtree" do
     Dir.mktmpdir do |dir|
       target = File.join(dir, ".textus")
       Textus::Init.run(target)
 
       gitignore = File.join(target, ".gitignore")
       expect(File.exist?(gitignore)).to be(true)
-      expect(File.read(gitignore)).to include(".run/")
-      expect(File.directory?(File.join(target, ".run"))).to be(true)
+      expect(File.read(gitignore)).to include(".state/")
+      expect(File.directory?(File.join(target, ".state"))).to be(true)
     end
   end
 

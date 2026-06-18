@@ -77,8 +77,8 @@ RSpec.describe Textus::Doctor do
   end
 
   it "reports sentinel.orphan when a sentinel's target is missing" do
-    FileUtils.mkdir_p(File.join(root, ".run", "sentinels"))
-    File.write(File.join(root, ".run/sentinels/missing.md.textus-managed.json"), JSON.generate(
+    FileUtils.mkdir_p(File.join(root, ".state", "sentinels"))
+    File.write(File.join(root, ".state/sentinels/missing.md.textus-managed.json"), JSON.generate(
                                                                                    "source" => "x",
                                                                                    "target" => File.join(tmp, "missing.md"),
                                                                                    "sha256" => "deadbeef",
@@ -95,8 +95,8 @@ RSpec.describe Textus::Doctor do
     target = File.join(tmp, "CLAUDE.md")
     File.write(target, "original\n")
     sha = Digest::SHA256.hexdigest("original\n")
-    FileUtils.mkdir_p(File.join(root, ".run", "sentinels"))
-    File.write(File.join(root, ".run/sentinels/CLAUDE.md.textus-managed.json"), JSON.generate(
+    FileUtils.mkdir_p(File.join(root, ".state", "sentinels"))
+    File.write(File.join(root, ".state/sentinels/CLAUDE.md.textus-managed.json"), JSON.generate(
                                                                                   "source" => "x",
                                                                                   "target" => target,
                                                                                   "sha256" => sha,

@@ -174,6 +174,8 @@ module Textus
         new_dir = File.join(container.root, "assets", "raw", date_path, @zone)
         new_path = File.join(new_dir, filename)
 
+        return if old_path == new_path
+
         FileUtils.mkdir_p(new_dir)
         FileUtils.mv(old_path, new_path)
       rescue Errno::ENOENT, Errno::EACCES => e

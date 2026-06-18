@@ -5,6 +5,9 @@ require "fileutils"
 
 module Textus
   module Ports
+    # Content-addressable index for the raw lane. Maps content hashes and URLs
+    # to their current canonical key. Lives under <root>/.state/indexes/raw.yaml
+    # (gitignored, regenerable — truth is in the on-disk raw entries).
     class RawIndex
       def initialize(root:)
         @root = root
