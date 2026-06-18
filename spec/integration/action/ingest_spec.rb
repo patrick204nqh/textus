@@ -102,4 +102,122 @@ RSpec.describe Textus::Action::Ingest do
       store.as("agent").ingest(kind: "url", slug: "no-url")
     end.to raise_error(Textus::UsageError, /requires.*url/)
   end
+
+  describe "dedup" do
+    it "stores content_hash on first ingest" do
+      store.as("agent").ingest(kind: "url", slug: "dedup-test", url: "https://example.com/dedup")
+      date = Time.now.utc.strftime("%Y.%m.%d")
+      env = store.as("agent").get("raw.#{date}.url-dedup-test")
+      expect(env.content["content_hash"]).to match(/\Asha256:[a-f0-9]{64}\z/)
+    end
+
+    it "creates alias chain when re-ingesting same url under different slug" do
+      unique_url = "https://unique.example.com/alias-#{SecureRandom.hex(4)}"
+      date = Time.now.utc.strftime("%Y.%m.%d")
+
+      store.as("agent").ingest(kind: "url", slug: "alias-a", url: unique_url)
+      env_a = store.as("agent").get("raw.#{date}.url-alias-a")
+      hash_a = env_a.content["content_hash"]
+      expect(env_a.content["supersedes"]).to be_nil
+      expect(env_a.content["superseded_by"]).to be_nil
+
+      store.as("agent").ingest(kind: "url", slug: "alias-b", url: unique_url)
+
+      env_a_stale = store.as("agent").get("raw.#{date}.url-alias-a")
+      expect(env_a_stale.content["superseded_by"]).to eq("raw.#{date}.url-alias-b")
+      expect(env_a_stale.content["url"]).to be_nil
+      expect(env_a_stale.content["body"]).to be_nil
+      expect(env_a_stale.content["ingested_at"]).not_to be_nil
+      expect(env_a_stale.content.dig("source", "kind")).to eq("url")
+
+      env_b = store.as("agent").get("raw.#{date}.url-alias-b")
+      expect(env_b.content["supersedes"]).to eq("raw.#{date}.url-alias-a")
+      expect(env_b.content["source"]["url"]).to eq(unique_url)
+      expect(env_b.content["content_hash"]).to eq(hash_a)
+    end
+
+    it "deduplicates by content hash for file kind with different slugs" do
+      tmp_file_path = File.join(tmp, "same_content.txt")
+      File.write(tmp_file_path, "identical body content for hash dedup")
+
+      date = Time.now.utc.strftime("%Y.%m.%d")
+
+      store.as("agent").ingest(kind: "file", slug: "first-name", path: tmp_file_path)
+      store.as("agent").ingest(kind: "file", slug: "second-name", path: tmp_file_path)
+
+      env1 = store.as("agent").get("raw.#{date}.file-first-name")
+      expect(env1.content["superseded_by"]).to eq("raw.#{date}.file-second-name")
+      expect(env1.content["body"]).to be_nil
+
+      env2 = store.as("agent").get("raw.#{date}.file-second-name")
+      expect(env2.content["supersedes"]).to eq("raw.#{date}.file-first-name")
+      expect(env2.content["body"]).to eq("identical body content for hash dedup")
+    end
+
+    it "still rejects same-day same-slug collision" do
+      store.as("agent").ingest(kind: "url", slug: "day-collision", url: "https://example.com/day1")
+      expect do
+        store.as("agent").ingest(kind: "url", slug: "day-collision", url: "https://example.com/day1")
+      end.to raise_error(Textus::Error, /already exists/)
+    end
+
+    it "updates the raw index after supersede" do
+      unique_url = "https://example.com/index-#{SecureRandom.hex(4)}"
+      date = Time.now.utc.strftime("%Y.%m.%d")
+      store.as("agent").ingest(kind: "url", slug: "index-a", url: unique_url)
+      first_env = store.as("agent").get("raw.#{date}.url-index-a")
+      hash = first_env.content["content_hash"]
+
+      index = Textus::Ports::RawIndex.new(root: root)
+      expect(index.find_by_hash(hash)).to eq("raw.#{date}.url-index-a")
+      expect(index.find_by_url(unique_url)).to eq("raw.#{date}.url-index-a")
+
+      store.as("agent").ingest(kind: "url", slug: "index-b", url: unique_url)
+
+      index2 = Textus::Ports::RawIndex.new(root: root)
+      expect(index2.find_by_hash(hash)).to eq("raw.#{date}.url-index-b")
+      expect(index2.find_by_url(unique_url)).to eq("raw.#{date}.url-index-b")
+    end
+
+    it "moves asset file on supersede" do
+      asset_path = File.join(tmp, "dedup_asset.png")
+      File.write(asset_path, "ASSET_BYTES_DEDUP")
+
+      date = Time.now.utc.strftime("%Y.%m.%d")
+      store.as("agent").ingest(kind: "asset", slug: "dedup-a", path: asset_path, zone: "tests")
+      env_a = store.as("agent").get("raw.#{date}.asset-dedup-a")
+
+      old_asset_path = File.join(root, "assets", env_a.content["asset"])
+      expect(File.exist?(old_asset_path)).to be(true)
+
+      store.as("agent").ingest(kind: "asset", slug: "dedup-b", path: asset_path, zone: "tests")
+
+      env_b = store.as("agent").get("raw.#{date}.asset-dedup-b")
+      new_asset_path = File.join(root, "assets", env_b.content["asset"])
+      expect(File.exist?(new_asset_path)).to be(true)
+
+      env_a_stale = store.as("agent").get("raw.#{date}.asset-dedup-a")
+      expect(env_a_stale.content["asset"]).to be_nil
+      expect(env_a_stale.content["superseded_by"]).to eq("raw.#{date}.asset-dedup-b")
+      expect(env_b.content["asset"]).to match(%r{raw/#{date.gsub(".", "/")}/tests/dedup_asset\.png})
+    end
+
+    it "does not create alias when content differs" do
+      file_a = File.join(tmp, "content_a.txt")
+      File.write(file_a, "content A")
+      file_b = File.join(tmp, "content_b.txt")
+      File.write(file_b, "content B")
+
+      date = Time.now.utc.strftime("%Y.%m.%d")
+      store.as("agent").ingest(kind: "file", slug: "different-a", path: file_a)
+      store.as("agent").ingest(kind: "file", slug: "different-b", path: file_b)
+
+      env_a = store.as("agent").get("raw.#{date}.file-different-a")
+      env_b = store.as("agent").get("raw.#{date}.file-different-b")
+      expect(env_a.content["superseded_by"]).to be_nil
+      expect(env_b.content["supersedes"]).to be_nil
+      expect(env_a.content["body"]).to eq("content A")
+      expect(env_b.content["body"]).to eq("content B")
+    end
+  end
 end
