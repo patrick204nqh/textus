@@ -12,37 +12,18 @@
 
 - [Conventions](#conventions)
 - [1. What textus is](#1-what-textus-is)
-  - [1.1 Vocabulary axes](#11-vocabulary-axes)
-  - [1.2 The five layers](#12-the-five-layers)
 - [2. Goals and non-goals](#2-goals-and-non-goals)
 - [3. Storage layout](#3-storage-layout)
-  - [3.1 Store location precedence](#31-store-location-precedence)
 - [4. Manifest](#4-manifest)
 - [5. Lanes and capability-based write gates](#5-lanes-and-capability-based-write-gates)
-  - [5.1 Role resolution](#51-role-resolution)
-    - [5.1.1 Capabilities](#511-capabilities)
-  - [5.2 Source layer (produced entries)](#52-source-layer-produced-entries)
-    - [5.2.1 External source (`from: external`)](#521-external-source-from-external)
-  - [5.3 Publish layer](#53-publish-layer-publish)
-  - [5.4 Raw lane and ingest verb](#54-raw-lane-and-ingest-verb)
-  - [5.5 Pending / accept workflow](#55-pending--accept-workflow)
-  - [5.6 Audit log](#56-audit-log)
-  - [5.7 Security bounds](#57-security-bounds)
-  - [5.8 Schema evolution](#58-schema-evolution)
-  - [5.9 Rules](#59-rules)
-  - [5.10 Storage formats](#510-storage-formats)
 - [6. Schemas](#6-schemas)
 - [7. Entry file format](#7-entry-file-format)
 - [8. Envelope (the wire format)](#8-envelope-the-wire-format)
 - [9. CLI surface](#9-cli-surface)
 - [10. ETag semantics](#10-etag-semantics)
-  - [10.1 Errors carry hints](#101-errors-carry-hints)
-  - [10.2 `textus doctor`](#102-textus-doctor)
 - [11. Versioning](#11-versioning)
-  - [11.1 Agent integration](#111-agent-integration)
 - [12. Conformance fixtures](#12-conformance-fixtures)
 - [13. Why not X?](#13-why-not-x)
-  - [13.1 Layered architecture (internal)](#131-layered-architecture-internal)
 
 ---
 
@@ -824,7 +805,6 @@ The lifecycle scan behind `pulse.stale`/`pulse.next_due_at` reports, per entry, 
 ## 10. ETag semantics
 
 The etag is `sha256:<lowercase-hex-digest-of-raw-file-bytes>`. Computed after any normalization (trailing newline on write, UTF-8 encoding). Both reads and successful writes return the current etag; passing it back in `if_etag` enforces optimistic concurrency.
-
 ## 10.1 Errors carry hints
 
 Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hint is a single short string suggesting the next action — the file to edit, the role to pass, the command to run. Errors in the wire envelope include the hint as a top-level `hint:` field when present. The CLI prints failures to stderr as `code: message` followed by `  → hint` (when a hint exists), in addition to the JSON envelope on stdout. Hints are advisory: implementations MAY omit or rephrase them without breaking conformance.
@@ -841,7 +821,6 @@ Every `Textus::Error` exposes `code`, `message`, and an optional `hint:`. The hi
 - Implementations MUST reject envelopes whose `protocol` they do not recognize.
 
 The reference Ruby gem follows semver independently and speaks `textus/4`.
-
 ## 11.1 Agent integration
 
 Agents interact with a textus store through two verbs: `boot` (once per session, for orientation) and `pulse` (per turn, for deltas). The `boot` envelope's `agent_quickstart` block gives the agent its starting cursor (`latest_seq`), its writable lanes, and its propose lane. The `pulse` verb returns a delta envelope keyed on that cursor. When audit log rotation expires a cursor, `CursorExpired` signals the agent to call `boot` again.
@@ -894,11 +873,9 @@ Given a proposal entry `proposals.knowledge.self.patch` proposing a change to `k
 - **Why not a database (SQLite, kv store)?** textus's whole point is that the storage is plain files agents and humans both read. A binary store loses git-diff, grep, and editor support.
 
 - **Why not vector embeddings?** Different problem. textus is for facts agents act on deterministically; embeddings are for fuzzy retrieval. They compose — index a textus tree into a vector store if you need both.
-
 ## 13.1 Layered architecture (internal)
 
 Textus internals are organized as one-way layers — **Surfaces** (`surfaces/cli/`, `surfaces/mcp/`) → **Contract** (`contract/`) → **Dispatch** (`dispatch/`) → **Manifest + Core + Ports + Step** (domain and adapters). Each layer imports only from layers to its right. Plugin authors touch only the Step DSL and the manifest YAML; the layering is internal and may evolve.
 
 See [`docs/architecture/README.md`](docs/architecture/README.md) for an ASCII diagram and the full read-path walkthrough.
-
 

@@ -55,7 +55,21 @@ entries:
   - { key: knowledge.readme,       lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
   - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
   - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
-  - { key: knowledge.spec,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SPEC.md }] }
+  - key: knowledge.specs
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
+    publish:
+      - { tree: docs/reference/specs }
+  - key: knowledge.spec
+    lane: knowledge
+    owner: human:self
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: SPEC.md, template: docs/spec.erb }
   - { key: notebook.notes,  lane: notebook,  owner: agent:self, nested: true, kind: nested }
   - { key: proposals.notes, lane: proposals, owner: agent:self, nested: true, kind: nested }
   - { key: raw, lane: raw, owner: agent:self, nested: true, kind: nested, format: yaml }
