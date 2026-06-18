@@ -9,6 +9,19 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.54.2 — 2026-06-18 — ingest dedup, .run → .state rename
+
+### Added
+
+- **Content-hash dedup in `Action::Ingest`**: re-ingesting the same URL or file bytes silently creates a supersede chain — new entry with full content, old stripped to tombstone with a `superseded_by` pointer.
+- **`Ports::RawIndex`**: lightweight YAML-based O(1) index for raw lane content-hash/URL lookups, stored at `.textus/.state/indexes/raw.yaml`.
+- **`content_hash` field**: every new raw entry stores a `sha256:` content hash for fast dedup lookups.
+- **Asset file move on re-ingest**: asset files are moved (not copied) to the new date path on supersede.
+
+### Changed
+
+- **`.run` → `.state` rename**: the runtime artifact directory is renamed from `.textus/.run/` to `.textus/.state/`. The `state/` subdirectory becomes `cursors/`. Layout path methods follow automatically. Manual migration step: `mv .textus/.run .textus/.state`.
+
 ## 0.54.1 — 2026-06-17 — MCP SDK, dry ecosystem, ERB templates
 
 ### Added
