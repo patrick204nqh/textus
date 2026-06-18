@@ -14,9 +14,7 @@ module Textus
         @path = Layout.raw_index(root)
       end
 
-      def path
-        @path
-      end
+      attr_reader :path
 
       def load
         return empty_index unless File.exist?(@path)

@@ -4,9 +4,10 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Textus::Ports::RawIndex do
+  subject(:raw_index) { described_class.new(root: root) }
+
   let(:tmp) { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
-  subject(:raw_index) { described_class.new(root: root) }
 
   before { FileUtils.mkdir_p(File.dirname(Textus::Layout.raw_index(root))) }
   after { FileUtils.remove_entry(tmp) }
