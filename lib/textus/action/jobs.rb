@@ -21,7 +21,8 @@ module Textus
       end
 
       def call(container:, **)
-        queue = Textus::Ports::JobStore.new(root: container.root)
+        store = Textus::Ports::Store.new(root: container.root).setup!
+        queue = Textus::Jobs::Queue.new(store: store)
         case @action
         when "retry"
           queue.retry_failed(@job_id)
@@ -30,6 +31,8 @@ module Textus
         end
 
         { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => @state, "jobs" => queue.list(@state) }
+      ensure
+        store&.close
       end
     end
   end

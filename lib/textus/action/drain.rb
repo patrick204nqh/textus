@@ -19,7 +19,8 @@ module Textus
       end
 
       def call(container:, call:)
-        queue = Textus::Ports::JobStore.new(root: container.root)
+        store = Textus::Ports::Store.new(root: container.root).setup!
+        queue = Textus::Jobs::Queue.new(store: store)
         Textus::Jobs::Planner.seed(
           container: container,
           queue: queue,
@@ -33,6 +34,8 @@ module Textus
           "completed" => summary.completed,
           "failed" => summary.failed,
         }
+      ensure
+        store&.close
       end
     end
   end
