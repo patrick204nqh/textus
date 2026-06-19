@@ -14,15 +14,17 @@ RSpec.describe Textus::Layout do
     expect(described_class.audit_log(root)).to eq("/tmp/store/.textus/.state/audit/audit.log")
   end
 
-  it "exposes sentinel and index paths under .state/" do
+  it "exposes sentinel paths under .state/" do
     expect(described_class.sentinels(root)).to eq("/tmp/store/.textus/.state/sentinels")
-    expect(described_class.indexes(root)).to eq("/tmp/store/.textus/.state/indexes")
-    expect(described_class.raw_index(root)).to eq("/tmp/store/.textus/.state/indexes/raw.yaml")
   end
 
   it "exposes data paths under .textus/data" do
     expect(described_class.data(root)).to eq("/tmp/store/.textus/data")
     expect(described_class.data_lane(root, "knowledge")).to eq("/tmp/store/.textus/data/knowledge")
+  end
+
+  it "stores the SQLite database under the runtime subtree" do
+    expect(described_class.store_db("/tmp/store/.textus")).to eq("/tmp/store/.textus/.state/store.db")
   end
 
   it "exposes a .gitignore body that ignores the state subtree" do
