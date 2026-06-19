@@ -83,7 +83,7 @@ Textus::Action::VERBS.each_key do |verb|
                    @role
                  end
 
-    Textus::Dispatch::Dispatcher.dispatch(klass.contract, inputs, store: @container, role: role_value)
+    Textus::Dispatch::Dispatcher.dispatch(klass.contract, inputs, store: @container, role: role_value, correlation_id: @correlation_id)
   end
 end
 

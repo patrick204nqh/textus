@@ -14,11 +14,11 @@ module Textus
     module Dispatcher
       module_function
 
-      def dispatch(spec, inputs, store:, role:, session: nil, scope: nil)
+      def dispatch(spec, inputs, store:, role:, session: nil, scope: nil, correlation_id: nil)
         invoke = lambda do |effective_inputs|
           resolved = Binder.bind(spec, effective_inputs, session: session)
           cmd = CommandBuilder.build(spec, resolved, role: role)
-          store.gate.dispatch(cmd)
+          store.gate.dispatch(cmd, correlation_id: correlation_id)
         end
 
         if spec.around && scope
