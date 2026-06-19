@@ -38,14 +38,6 @@ module Textus
       File.join(run(root), "watcher.lock")
     end
 
-    def self.queue(root)
-      File.join(run(root), "queue")
-    end
-
-    def self.queue_state(root, state)
-      File.join(queue(root), state.to_s)
-    end
-
     def self.audit_dir(root)
       File.join(run(root), "audit")
     end
@@ -58,16 +50,12 @@ module Textus
       File.join(run(root), "sentinels")
     end
 
-    def self.indexes(root)
-      File.join(run(root), "indexes")
-    end
-
-    def self.raw_index(root)
-      File.join(indexes(root), "raw.yaml")
-    end
-
     def self.audit_log(root)
       File.join(audit_dir(root), "audit.log")
+    end
+
+    def self.store_db(root)
+      File.join(run(root), "store.db")
     end
 
     # The store's `.gitignore` body. Always ignores the runtime subtree

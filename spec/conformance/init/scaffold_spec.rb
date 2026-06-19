@@ -10,6 +10,13 @@ RSpec.describe "init scaffolds machine surfaces" do
       expect(File).not_to exist(".textus/steps")
     end
 
+    it "no longer creates cursors, locks, or queue runtime dirs" do
+      expect(File.directory?(File.join(Dir.pwd, ".textus/.state/cursors"))).to be(false)
+      expect(File.directory?(File.join(Dir.pwd, ".textus/.state/locks"))).to be(false)
+      expect(File.directory?(File.join(Dir.pwd, ".textus/.state/queue"))).to be(false)
+      expect(File.exist?(File.join(Dir.pwd, ".textus/.state/store.db"))).to be(false)
+    end
+
     it "declares a nested artifacts.feeds.machines entry, tracked:false, in the artifacts zone" do
       manifest = Textus::Manifest.load(File.join(Dir.pwd, ".textus"))
       entry = manifest.data.entries.find { |e| e.key == "artifacts.feeds.machines" }

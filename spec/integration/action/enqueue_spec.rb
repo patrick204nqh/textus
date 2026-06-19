@@ -12,13 +12,17 @@ RSpec.describe Textus::Action::Enqueue do
         - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
-  let(:queue) { Textus::Ports::JobStore.new(root: root) }
+  let(:store_port) { Textus::Ports::Store.new(root: root).setup! }
+  let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+
+  after { store_port.close }
 
   it "enqueues a registered type stamped with the caller's role" do
     store.as("automation").enqueue("materialize", { "key" => "knowledge.a" })
     id = queue.ready_ids.find { |i| i.start_with?("materialize:") }
-    body = JSON.parse(File.read(File.join(Textus::Layout.queue_state(root, :ready), "#{id}.json")))
-    expect(body["enqueued_by"]).to eq("automation")
+    expect(id).not_to be_nil
+    leased = queue.lease(worker_id: "test", lease_ttl: 60)
+    expect(leased.job.role).to eq("automation")
   end
 
   it "rejects an unregistered type (closed allow-list)" do

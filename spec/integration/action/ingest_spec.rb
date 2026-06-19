@@ -166,22 +166,26 @@ RSpec.describe Textus::Action::Ingest do
       end.to raise_error(Textus::Error, /already exists/)
     end
 
-    it "updates the raw index after supersede" do
+    it "updates the SQLite index after supersede" do
       unique_url = "https://example.com/index-#{SecureRandom.hex(4)}"
       date = Time.now.utc.strftime("%Y.%m.%d")
       store.as("agent").ingest(kind: "url", slug: "index-a", url: unique_url)
       first_env = store.as("agent").get("raw.#{date}.url-index-a")
       hash = first_env.content["content_hash"]
 
-      index = Textus::Ports::RawIndex.new(root: root)
-      expect(index.find_by_hash(hash)).to eq("raw.#{date}.url-index-a")
-      expect(index.find_by_url(unique_url)).to eq("raw.#{date}.url-index-a")
+      store_port = Textus::Ports::Store.new(root: root).setup!
+      lookup = Textus::Index::Lookup.new(store: store_port)
+      expect(lookup.find_by_hash(hash)).to eq("raw.#{date}.url-index-a")
+      expect(lookup.find_by_url(unique_url)).to eq("raw.#{date}.url-index-a")
+      store_port.close
 
       store.as("agent").ingest(kind: "url", slug: "index-b", url: unique_url)
 
-      index2 = Textus::Ports::RawIndex.new(root: root)
-      expect(index2.find_by_hash(hash)).to eq("raw.#{date}.url-index-b")
-      expect(index2.find_by_url(unique_url)).to eq("raw.#{date}.url-index-b")
+      store_port = Textus::Ports::Store.new(root: root).setup!
+      lookup = Textus::Index::Lookup.new(store: store_port)
+      expect(lookup.find_by_hash(hash)).to eq("raw.#{date}.url-index-b")
+      expect(lookup.find_by_url(unique_url)).to eq("raw.#{date}.url-index-b")
+      store_port.close
     end
 
     it "moves asset file on supersede" do

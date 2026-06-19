@@ -52,7 +52,8 @@ RSpec.describe Textus::Jobs::Planner do
         role: Textus::Role::AUTOMATION,
       )
       expect(jobs).not_to be_empty
-      expect(jobs.first).to be_a(Textus::Ports::JobStore::Job)
+      expect(jobs.first).to be_a(Textus::Jobs::Queue::Job)
+      expect(jobs.map(&:role)).to all(eq("automation").or(eq("human")).or(eq("agent")))
     end
   end
 end

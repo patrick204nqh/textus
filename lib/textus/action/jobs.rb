@@ -21,15 +21,17 @@ module Textus
       end
 
       def call(container:, **)
-        queue = Textus::Ports::JobStore.new(root: container.root)
-        case @action
-        when "retry"
-          queue.retry_failed(@job_id)
-        when "purge"
-          queue.purge(@state)
-        end
+        Textus::Ports::Store.open(container.root) do |store|
+          queue = Textus::Jobs::Queue.new(store: store)
+          case @action
+          when "retry"
+            queue.retry_failed(@job_id)
+          when "purge"
+            queue.purge(@state)
+          end
 
-        { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => @state, "jobs" => queue.list(@state) }
+          { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => @state, "jobs" => queue.list(@state) }
+        end
       end
     end
   end

@@ -4,7 +4,7 @@ module Textus
   module Jobs
     class Planner
       ACTIONS_BY_TRIGGER = {
-        "convergence" => %w[materialize sweep],
+        "convergence" => %w[materialize sweep index],
         "entry.written" => %w[materialize],
         "entry.deleted" => %w[materialize],
         "entry.moved" => %w[materialize],
@@ -15,6 +15,11 @@ module Textus
       SCOPE_RESOLVERS = {
         "materialize" => :producible_keys,
         "sweep" => :lane_keys,
+      }.freeze
+
+      GLOBAL_ACTIONS = {
+        "index" => {},
+        "sweep" => { "scope" => {} },
       }.freeze
 
       def self.seed(container:, queue:, role:)
@@ -52,10 +57,8 @@ module Textus
           .each do |block|
             do_action = block.react.raw["do"]
             Array(do_action).each do |action|
-              if action == "sweep"
-                jobs << Textus::Ports::JobStore::Job.new(
-                  type: "sweep", args: { "scope" => {} }, enqueued_by: role,
-                )
+              if (global_args = GLOBAL_ACTIONS[action])
+                jobs << Textus::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
               else
                 resolver = SCOPE_RESOLVERS.fetch(action, :producible_keys)
                 keys = send(resolver, nil)
@@ -70,10 +73,8 @@ module Textus
         actions = ACTIONS_BY_TRIGGER.fetch(type, [])
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
-        if actions.include?("sweep")
-          jobs << Textus::Ports::JobStore::Job.new(
-            type: "sweep", args: { "scope" => {} }, enqueued_by: role,
-          )
+        GLOBAL_ACTIONS.each do |action, args|
+          jobs << Textus::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
         end
         jobs
       end
@@ -83,8 +84,8 @@ module Textus
         Array(on).include?(type)
       end
 
-      def job(type, key, enqueued_by)
-        Textus::Ports::JobStore::Job.new(type: type, args: { "key" => key }, enqueued_by: enqueued_by)
+      def job(type, key, role)
+        Textus::Jobs::Queue::Job.new(type: type, args: { "key" => key }, role: role)
       end
 
       def producible_keys(_target)

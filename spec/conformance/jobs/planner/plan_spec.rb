@@ -43,8 +43,13 @@ RSpec.describe Textus::Jobs::Planner do
   end
 
   it "plans convergence work via .seed" do
-    queue = Textus::Ports::JobStore.new(root: store.root)
+    store_port = Textus::Ports::Store.new(root: store.root).setup!
+    queue = Textus::Jobs::Queue.new(store: store_port)
     described_class.seed(container: store.container, queue: queue, role: "automation")
     expect(queue.ready_ids).not_to be_empty
+    ids = queue.ready_ids
+    expect(ids).to include(a_string_starting_with("index:"))
+    expect(ids.count { |id| id.start_with?("index:") }).to eq(1)
+    store_port.close
   end
 end

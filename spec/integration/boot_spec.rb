@@ -93,33 +93,9 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "omits index_key when artifacts.index does not exist" do
+  it "never includes index_key (system index removed)" do
     env = described_class.build(container: store.container)
     expect(env).not_to have_key("index_key")
-  end
-
-  it "includes index_key when artifacts.system.index file exists" do
-    FileUtils.mkdir_p(File.join(root, "data/artifacts/system"))
-    File.write(File.join(root, "manifest.yaml"), <<~YAML)
-      version: textus/4
-      roles:
-        - { name: human,      can: [author, propose] }
-        - { name: automation, can: [converge] }
-      lanes:
-        - { name: artifacts, kind: machine }
-        - { name: proposals, kind: queue }
-      entries:
-        - key: artifacts.system.index
-          kind: produced
-          path: artifacts/system/index.json
-          lane: artifacts
-          owner: automation:auto
-          source: { from: external, command: "true", sources: [] }
-    YAML
-    File.write(File.join(root, "data/artifacts/system/index.json"), "{}")
-    s = Textus::Store.new(root)
-    env = described_class.build(container: s.container)
-    expect(env["index_key"]).to eq("artifacts.system.index")
   end
 
   it "includes agent_protocol with recipes and role_resolution" do

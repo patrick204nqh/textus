@@ -53,7 +53,7 @@ module Textus
                    klass.new
                  end
         call   = Textus::Call.build(
-          role: job.enqueued_by || Textus::Role::AUTOMATION,
+          role: job.role || Textus::Role::AUTOMATION,
           correlation_id: SecureRandom.uuid,
         )
         action.call(container: @container, call: call)
