@@ -6,7 +6,8 @@
 ```mermaid
 flowchart TD
     surfaces["Surfaces — CLI · MCP · RoleScope"]
-    contract["Contract — per-verb DSL (source of truth for public interfaces)"]
+    contract["Contract — per-verb DSL (Arg, Spec, DSL)"]
+    dispatch["Dispatch — Binder · Around · CommandBuilder · Dispatcher"]
     gate["Gate — routing (VERB_COMMAND) · Auth"]
     action["Actions — per-verb use cases (action/)"]
     jobs["Jobs — Worker · Planner · Materialize · Retention · Sweep"]
@@ -15,8 +16,10 @@ flowchart TD
     manifest["Manifest — declarative config, no IO (policy/, schema/, entry/)"]
     core["Core — pure value types (Freshness, Retention, Duration, Sentinel)"]
     ports["Ports — IO adapters (FileStore, AuditLog, JobStore, Publisher…)"]
-    surfaces --> contract
-    contract --> gate
+    surfaces --> dispatch
+    surfaces -.->|declare| contract
+    contract --> dispatch
+    dispatch --> gate
     gate --> action
     action --> jobs
     action --> produce
@@ -27,7 +30,7 @@ flowchart TD
     jobs --> produce
 ```
 
-*Dependency rule: inward only.* Surfaces → Contract → Gate → Actions → inner layers. Actions never reference surfaces.
+*Dependency rule: inward only.* Surfaces → Dispatch → Gate → Actions → inner layers. Actions never reference surfaces.
 
 ### What lives in each layer
 
@@ -35,18 +38,27 @@ flowchart TD
 
 ```
 surfaces/cli/     CLI command generation from contracts
+  sources.rb      CLI-only input acquisition (stdin parsing, file sourcing, coercion)
 surfaces/mcp/     MCP server — stdio JSON-RPC 2.0, tools derived from contracts
 surfaces/role_scope.rb
                   (Store#as(role)) — holds (container, role, dry_run, correlation_id);
                   all verb methods injected via define_method in textus.rb
 ```
 
-**Contract**
+**Contract + Dispatch**
 
 ```
-contract/         Per-verb DSL — verb, summary, surfaces, arg, view.
-                  Contract::Binder.inputs_from_ordered splits the uniform inputs hash
-                  into positional/keyword args for every surface.
+contract/         Per-verb DSL — verb, summary, surfaces, arg, view, around.
+                  Pure declaration: Spec and DSL only.
+
+dispatch/         Runtime machinery consumed by every surface.
+  binder.rb       Binder — validates required args, resolves session/literal defaults.
+  around.rb       Around — registry of stateful wrappers (cursor, build_lock).
+  view.rb         View.render(spec, surface, result, inputs) — output shaping.
+  command_builder.rb
+                  CommandBuilder — command construction + role injection.
+  dispatcher.rb   Dispatcher — unified pipeline: Around → Binder → Command → Gate.
+  resources/      Around resource implementations (Cursor, BuildLock).
 ```
 
 **Gate + Auth**

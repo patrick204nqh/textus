@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "textus audit (generated via coerce:since + cli view, ADR 0068)" do
+RSpec.describe "textus audit (generated via coerce:since + cli view, ADR 0068)", :volatile do
   include_context "textus_store_fixture"
   include_context "cli invocation"
 
