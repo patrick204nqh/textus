@@ -160,7 +160,6 @@ module Textus
         "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
         "orientation" => read_artifact_content(container, "artifacts.config.orientation"),
         "context" => read_boot_context(container),
-        "index_key" => index_key_if_present(container),
         "agent_protocol" => agent_protocol(manifest),
       }.compact
     end
@@ -184,13 +183,6 @@ module Textus
       env  = Textus::Action::Get.new(key: "knowledge.boot").call(container: container, call: call)
       body = env&.body&.strip
       body.nil? || body.empty? ? nil : body
-    rescue Textus::Error
-      nil
-    end
-
-    def self.index_key_if_present(container)
-      res = container.manifest.resolver.resolve("artifacts.system.index")
-      res.path && File.exist?(res.path) ? "artifacts.system.index" : nil
     rescue Textus::Error
       nil
     end

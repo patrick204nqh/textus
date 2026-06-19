@@ -56,6 +56,10 @@ RSpec.describe "artifacts.system.index workflow" do
                           meta: { "description" => "test" }, body: "")
   end
 
+  it "no longer generates the old system index workflow" do
+    expect(File.exist?(File.join(root, "workflows", "system", "index.rb"))).to be(false)
+  end
+
   it "drain produces artifacts.system.index with an entries array" do
     Textus::Produce::Engine.converge(
       container: store.container,

@@ -93,8 +93,6 @@ module Textus
 
     def self.setup_state_dirs(target_root)
       FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
-      FileUtils.mkdir_p(Textus::Layout.cursors(target_root))
-      FileUtils.mkdir_p(Textus::Layout.locks(target_root))
     end
 
     def self.write_gitignore(target_root)
