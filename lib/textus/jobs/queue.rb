@@ -58,7 +58,6 @@ module Textus
       def lease(worker_id:, lease_ttl:)
         now = Time.now.utc
         expires_at = now + lease_ttl
-        JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601 })
         token = SecureRandom.hex(8)
         marked_lease = JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601, "token" => token })
 

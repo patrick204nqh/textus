@@ -8,10 +8,9 @@ module Textus
       def args = {}
 
       def call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
-        store = Textus::Ports::Store.new(root: container.root).setup!
-        Textus::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
-      ensure
-        store&.close
+        Textus::Ports::Store.open(container.root) do |store|
+          Textus::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+        end
       end
     end
   end

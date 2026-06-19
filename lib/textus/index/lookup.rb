@@ -13,23 +13,20 @@ module Textus
       def search(query, lane: nil)
         return [] if query.to_s.strip.empty?
 
+        clauses = ["entries_fts MATCH ?"]
+        params = [query]
         if lane
-          @db.execute(
-            "SELECT entries.key, entries.lane, entries.format, entries.etag, bm25(entries_fts) AS rank
-               FROM entries_fts JOIN entries ON entries_fts.rowid = entries.rowid
-              WHERE entries_fts MATCH ? AND entries.lane = ?
-              ORDER BY rank",
-            [query, lane],
-          )
-        else
-          @db.execute(
-            "SELECT entries.key, entries.lane, entries.format, entries.etag, bm25(entries_fts) AS rank
-               FROM entries_fts JOIN entries ON entries_fts.rowid = entries.rowid
-              WHERE entries_fts MATCH ?
-              ORDER BY rank",
-            [query],
-          )
+          clauses << "entries.lane = ?"
+          params << lane
         end
+        conditions = "WHERE #{clauses.join(" AND ")}"
+        @db.execute(
+          "SELECT entries.key, entries.lane, entries.format, entries.etag, bm25(entries_fts) AS rank
+             FROM entries_fts JOIN entries ON entries_fts.rowid = entries.rowid
+           #{conditions}
+           ORDER BY rank",
+          params,
+        )
       rescue SQLite3::SQLException
         []
       end

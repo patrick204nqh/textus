@@ -17,6 +17,11 @@ module Textus
         "sweep" => :lane_keys,
       }.freeze
 
+      GLOBAL_ACTIONS = {
+        "index" => {},
+        "sweep" => { "scope" => {} },
+      }.freeze
+
       def self.seed(container:, queue:, role:)
         jobs = new(container: container).plan(
           trigger: { "type" => "convergence" },
@@ -52,12 +57,8 @@ module Textus
           .each do |block|
             do_action = block.react.raw["do"]
             Array(do_action).each do |action|
-              if action == "index"
-                jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role)
-              elsif action == "sweep"
-                jobs << Textus::Jobs::Queue::Job.new(
-                  type: "sweep", args: { "scope" => {} }, role: role,
-                )
+              if (global_args = GLOBAL_ACTIONS[action])
+                jobs << Textus::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
               else
                 resolver = SCOPE_RESOLVERS.fetch(action, :producible_keys)
                 keys = send(resolver, nil)
@@ -72,11 +73,8 @@ module Textus
         actions = ACTIONS_BY_TRIGGER.fetch(type, [])
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
-        jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role) if actions.include?("index")
-        if actions.include?("sweep")
-          jobs << Textus::Jobs::Queue::Job.new(
-            type: "sweep", args: { "scope" => {} }, role: role,
-          )
+        GLOBAL_ACTIONS.each do |action, args|
+          jobs << Textus::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
         end
         jobs
       end

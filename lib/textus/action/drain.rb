@@ -19,23 +19,22 @@ module Textus
       end
 
       def call(container:, call:)
-        store = Textus::Ports::Store.new(root: container.root).setup!
-        queue = Textus::Jobs::Queue.new(store: store)
-        Textus::Jobs::Planner.seed(
-          container: container,
-          queue: queue,
-          role: call.role,
-        )
-        queue.reclaim(now: Textus::Ports::Clock.new.now)
-        summary = Textus::Jobs::Worker.for(container:, queue:).drain
-        {
-          "protocol" => Textus::PROTOCOL,
-          "ok" => summary.failed.zero?,
-          "completed" => summary.completed,
-          "failed" => summary.failed,
-        }
-      ensure
-        store&.close
+        Textus::Ports::Store.open(container.root) do |store|
+          queue = Textus::Jobs::Queue.new(store: store)
+          Textus::Jobs::Planner.seed(
+            container: container,
+            queue: queue,
+            role: call.role,
+          )
+          queue.reclaim(now: Textus::Ports::Clock.new.now)
+          summary = Textus::Jobs::Worker.for(container:, queue:).drain
+          {
+            "protocol" => Textus::PROTOCOL,
+            "ok" => summary.failed.zero?,
+            "completed" => summary.completed,
+            "failed" => summary.failed,
+          }
+        end
       end
     end
   end

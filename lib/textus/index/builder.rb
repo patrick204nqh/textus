@@ -12,35 +12,41 @@ module Textus
       end
 
       def rebuild!(resolver:)
-        indexed = 0
+        rows = resolver.enumerate.filter_map { |row| build_row(row) }
+        now_iso = Time.now.utc.iso8601
+
         @store.transaction do
           @db.execute("DELETE FROM entries")
-          resolver.enumerate.each do |row|
-            indexed += index_row(row)
+          rows.each do |data|
+            @db.execute(
+              "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)",
+              [data[:key], data[:lane], data[:format], data[:etag], data[:content], data[:extra], now_iso],
+            )
           end
           @db.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
         end
-        { indexed: indexed }
+        { indexed: rows.size }
       end
 
       private
 
-      def index_row(row)
+      def build_row(row)
         key = row.fetch(:key)
         path = row.fetch(:path)
         entry = row.fetch(:manifest_entry)
-        return 0 unless path && File.file?(path)
+        return nil unless path && File.file?(path)
 
         raw = File.read(path)
         parsed = Textus::Format.for(entry.format).parse(raw, path: path)
-        content = content_text(parsed)
-        extra = extra_json(parsed)
-        @db.execute(
-          "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [key, entry.lane, entry.format.to_s, Textus::Etag.for_bytes(raw), content, extra, Time.now.utc.iso8601],
-        )
-        1
+        {
+          key: key,
+          lane: entry.lane,
+          format: entry.format.to_s,
+          etag: Textus::Etag.for_bytes(raw),
+          content: content_text(parsed),
+          extra: extra_json(parsed),
+        }
       end
 
       def content_text(parsed)
@@ -49,7 +55,7 @@ module Textus
         parts = []
         parts << body if body
         parts << JSON.dump(content) if content
-        parts.compact.join("\n")
+        parts.join("\n")
       end
 
       def extra_json(parsed)

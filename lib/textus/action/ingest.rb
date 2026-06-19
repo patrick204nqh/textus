@@ -52,19 +52,18 @@ module Textus
         ts = now.iso8601
         structured = build_structured(ts, container, now, content_hash)
 
-        store = Textus::Ports::Store.new(root: container.root).setup!
-        index = Textus::Index::Lookup.new(store: store)
-        duplicate_key = find_duplicate(index, content_hash)
+        Textus::Ports::Store.open(container.root) do |store|
+          index = Textus::Index::Lookup.new(store: store)
+          duplicate_key = find_duplicate(index, content_hash)
 
-        if duplicate_key && duplicate_key != key
-          supersede_entry(duplicate_key, key, structured, container, call, store: store)
-        else
-          env = write_raw_entry(key, structured, mentry, writer)
-          rebuild_index(container, store)
-          env
+          if duplicate_key && duplicate_key != key
+            supersede_entry(duplicate_key, key, structured, container, call, store: store)
+          else
+            env = write_raw_entry(key, structured, mentry, writer)
+            rebuild_index(container, store)
+            env
+          end
         end
-      ensure
-        store&.close
       end
 
       private

@@ -69,6 +69,16 @@ module Textus
       def close
         connection.close unless connection.closed?
       end
+
+      def self.open(root)
+        store = new(root: root)
+        store.setup!
+        return store unless block_given?
+
+        yield store
+      ensure
+        store&.close
+      end
     end
   end
 end
