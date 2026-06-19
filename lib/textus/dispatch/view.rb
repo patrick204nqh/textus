@@ -1,5 +1,5 @@
 module Textus
-  module Contract
+  module Dispatch
     # Renders a use-case result for a surface, using the verb's declared view
     # (falling back to the default). The single replacement for the old
     # response/cli_response split and the Proc#arity sniff: views are always

@@ -3,7 +3,7 @@ require "tempfile"
 require "stringio"
 require "json"
 
-RSpec.describe Textus::Contract::Sources do
+RSpec.describe Textus::Surfaces::CLI::Sources do
   let(:spec) do
     Class.new do
       extend Textus::Contract::DSL
