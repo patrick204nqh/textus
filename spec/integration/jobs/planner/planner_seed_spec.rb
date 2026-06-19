@@ -21,7 +21,9 @@ RSpec.describe Textus::Jobs::Planner do
     YAML
   end
 
-  let(:queue) { Textus::Ports::JobStore.new(root: store.root) }
+  let(:store_port) { Textus::Ports::Store.new(root: store.root).setup! }
+  let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+  after { store_port.close }
 
   describe ".seed" do
     it "enqueues convergence jobs for the store" do
@@ -29,10 +31,10 @@ RSpec.describe Textus::Jobs::Planner do
       expect(queue.ready_ids).not_to be_empty
     end
 
-    it "accepts the caller role as the enqueued_by value" do
+    it "accepts the caller role as the role value" do
       described_class.seed(container: store.container, queue: queue, role: "human")
       leased = queue.lease(worker_id: "test", lease_ttl: 60)
-      expect(leased.job.enqueued_by).to eq("human")
+      expect(leased.job.role).to eq("human")
     end
   end
 end

@@ -39,14 +39,17 @@ module Textus
           )
         end
 
-        job = Textus::Ports::JobStore::Job.new(
+        job = Textus::Jobs::Queue::Job.new(
           type: @type,
           args: @job_args,
-          enqueued_by: call.role,
+          role: call.role,
           max_attempts: 3,
         )
-        Textus::Ports::JobStore.new(root: container.root).enqueue(job)
+        store = Textus::Ports::Store.new(root: container.root).setup!
+        Textus::Jobs::Queue.new(store: store).enqueue(job)
         { "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id }
+      ensure
+        store&.close
       end
     end
   end
