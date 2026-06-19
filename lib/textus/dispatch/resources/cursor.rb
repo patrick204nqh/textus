@@ -1,5 +1,5 @@
 module Textus
-  module Contract
+  module Dispatch
     module Resources
       # Reads the persisted file cursor as the `since` default when the caller
       # did not supply one, runs pulse, then persists the returned cursor.
@@ -23,4 +23,4 @@ module Textus
   end
 end
 
-Textus::Contract::Around.register(:cursor, Textus::Contract::Resources::Cursor.new)
+Textus::Dispatch::Around.register(:cursor, Textus::Dispatch::Resources::Cursor.new)

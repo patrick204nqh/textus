@@ -70,9 +70,8 @@ Textus::Action::VERBS.each_key do |verb|
 
   Textus::Surfaces::RoleScope.define_method(verb) do |*args, **kwargs|
     klass     = Textus::Action::VERBS[verb]
-    cmd_class = Textus::Gate::VERB_COMMAND[verb]
     inputs    = if klass.respond_to?(:contract?) && klass.contract?
-                  Textus::Contract::Binder.inputs_from_ordered(klass.contract, args, kwargs)
+                  Textus::Dispatch::Binder.inputs_from_ordered(klass.contract, args, kwargs)
                 else
                   kwargs.transform_keys(&:to_sym)
                 end
@@ -84,8 +83,7 @@ Textus::Action::VERBS.each_key do |verb|
                    @role
                  end
 
-    filled = cmd_class.members.to_h { |m| [m, inputs.merge(role: role_value)[m]] }
-    @container.gate.dispatch(cmd_class.new(**filled), correlation_id: @correlation_id)
+    Textus::Dispatch::Dispatcher.dispatch(klass.contract, inputs, store: @container, role: role_value)
   end
 end
 

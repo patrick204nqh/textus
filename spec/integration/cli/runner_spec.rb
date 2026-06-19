@@ -71,31 +71,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
     end
   end
 
-  describe "Runner.shape shaper selection" do
-    it "uses the :cli view instead of the default when a :cli view is set" do
-      spec = Textus::Contract::Spec.new(
-        verb: :where, summary: nil, args: [],
-        surfaces: %i[cli],
-        views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
-        cli: nil, around: nil, cli_stdin: nil
-      )
-      result = Textus::Surfaces::CLI::Runner.shape(spec, "raw_value", {})
-      expect(result).to eq({ "cli_shaped" => "raw_value" })
-    end
-
-    it "falls back to the default view when no :cli view is declared" do
-      spec = Textus::Contract::Spec.new(
-        verb: :where, summary: nil, args: [],
-        surfaces: %i[cli],
-        views: { default: ->(v, _i) { { "from_default" => v } } },
-        cli: nil, around: nil, cli_stdin: nil
-      )
-      result = Textus::Surfaces::CLI::Runner.shape(spec, "raw_value", {})
-      expect(result).to eq({ "from_default" => "raw_value" })
-    end
-  end
-
-  describe ".shape (ADR 0067 — the :cli view may see call inputs)" do
+  describe "cli view rendering" do
     def spec_with(cli:, args: [])
       views = { default: ->(v, _i) { v } }
       views[:cli] = cli if cli
@@ -113,19 +89,41 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
       )
     end
 
+    it "uses the :cli view instead of the default when a :cli view is set" do
+      spec = Textus::Contract::Spec.new(
+        verb: :where, summary: nil, args: [],
+        surfaces: %i[cli],
+        views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
+        cli: nil, around: nil, cli_stdin: nil
+      )
+      result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
+      expect(result).to eq({ "cli_shaped" => "raw_value" })
+    end
+
+    it "falls back to the default view when no :cli view is declared" do
+      spec = Textus::Contract::Spec.new(
+        verb: :where, summary: nil, args: [],
+        surfaces: %i[cli],
+        views: { default: ->(v, _i) { { "from_default" => v } } },
+        cli: nil, around: nil, cli_stdin: nil
+      )
+      result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
+      expect(result).to eq({ "from_default" => "raw_value" })
+    end
+
     it "passes the result to a one-parameter :cli view (inputs ignored)" do
       spec = spec_with(cli: ->(r, _i) { { "wrapped" => r } })
-      expect(Textus::Surfaces::CLI::Runner.shape(spec, "X", {})).to eq("wrapped" => "X")
+      expect(Textus::Dispatch::View.render(spec, :cli, "X", {})).to eq("wrapped" => "X")
     end
 
     it "passes (result, inputs) to a two-parameter :cli view, keyed by arg name" do
       spec = spec_with(cli: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
-      expect(Textus::Surfaces::CLI::Runner.shape(spec, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
+      expect(Textus::Dispatch::View.render(spec, :cli, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
     end
 
     it "falls back to the default view when there is no :cli view" do
       spec = spec_with(cli: nil)
-      expect(Textus::Surfaces::CLI::Runner.shape(spec, "X", {})).to eq("X")
+      expect(Textus::Dispatch::View.render(spec, :cli, "X", {})).to eq("X")
     end
   end
 

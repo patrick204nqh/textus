@@ -3,6 +3,10 @@ module Textus
   # for the agent-facing summary, the argument schema, which transports expose
   # the verb, and how the return value is shaped for the wire. CLI/Ruby/MCP and
   # boot project from this; the MCP catalog is fully derived from it (ADR 0039).
+  #
+  # This module is pure declaration — Arg, Spec, and the DSL. Runtime dispatch
+  # machinery (Binder, Around, View, Dispatcher) lives under Textus::Dispatch.
+  # CLI-specific input acquisition lives under Surfaces::CLI::Sources.
   module Contract
     # One argument of a verb. `positional: true` means it is passed to the
     # use-case as a positional (e.g. `get(key)`); otherwise as a keyword.
@@ -107,7 +111,7 @@ module Textus
         end
       end
 
-      # Declare a stateful wrapper resource (Contract::Around) to run around
+      # Declare a stateful wrapper resource (Dispatch::Around) to run around
       # dispatch — e.g. `around :cursor` (pulse) or `around :build_lock` (build).
       def around(name = nil)
         return @__around unless name

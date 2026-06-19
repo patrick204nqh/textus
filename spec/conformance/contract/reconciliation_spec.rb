@@ -81,7 +81,7 @@ RSpec.describe "contract reconciliation" do
 
     it "every around: names a registered resource" do
       specs.select(&:around).each do |s|
-        expect { Textus::Contract::Around.fetch(s.around) }
+        expect { Textus::Dispatch::Around.fetch(s.around) }
           .not_to(raise_error, "verb #{s.verb} around #{s.around.inspect}")
       end
     end

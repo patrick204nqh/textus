@@ -1,5 +1,5 @@
 module Textus
-  module Contract
+  module Dispatch
     # Registry of named, stateful wrappers a verb may declare via `around :name`.
     # A resource implements
     #   `wrap(scope:, inputs:, session:) { |effective_inputs| ... }`:

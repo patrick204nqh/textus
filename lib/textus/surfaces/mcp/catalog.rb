@@ -73,32 +73,16 @@ module Textus
           klass.respond_to?(:contract?) && klass.contract? && klass.contract.mcp?
         end
 
-        def call(name, session:, store:, args:) # rubocop:disable Metrics/AbcSize
+        def call(name, session:, store:, args:)
           klass = Textus::Action::VERBS[name.to_sym]
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
           spec = klass.contract
-          inputs = Textus::Contract::Binder.inputs_from_wire(spec, args)
+          inputs = Textus::Dispatch::Binder.inputs_from_wire(spec, args)
 
-          invoke = lambda do |effective_inputs|
-            pos, kwargs = Textus::Contract::Binder.bind(spec, effective_inputs, session: session)
-            spec.args.select(&:positional).zip(pos).each { |a, v| kwargs[a.name] = v unless kwargs.key?(a.name) }
-            cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
-              raise Textus::MCP::ToolError.new("unknown verb: #{spec.verb}")
-            end
-            merged = kwargs.merge(role: session.role)
-            filled = cmd_class.members.to_h { |m| [m, merged.key?(m) ? merged[m] : nil] }
-            cmd = cmd_class.new(**filled)
-            store.gate.dispatch(cmd)
-          end
-
-          result = if spec.around
-                     Textus::Contract::Around.with(spec.around, scope: store.as(session.role), inputs: inputs, session: session, &invoke)
-                   else
-                     invoke.call(inputs)
-                   end
-          Textus::Contract::View.render(spec, :default, result, inputs)
-        rescue Textus::Contract::MissingArgs => e
+          result = Textus::Dispatch::Dispatcher.dispatch(spec, inputs, store:, role: session.role, session:, scope: store.as(session.role))
+          Textus::Dispatch::View.render(spec, :default, result, inputs)
+        rescue Textus::Dispatch::MissingArgs => e
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, CursorExpired
           raise

@@ -1,5 +1,5 @@
 module Textus
-  module Contract
+  module Dispatch
     module Resources
       # Serializes builds across every surface (CLI, MCP, Ruby). Previously the
       # CLI verb wrapped each build in a BuildLock by hand; lifting it into the
@@ -14,4 +14,4 @@ module Textus
   end
 end
 
-Textus::Contract::Around.register(:build_lock, Textus::Contract::Resources::BuildLock.new)
+Textus::Dispatch::Around.register(:build_lock, Textus::Dispatch::Resources::BuildLock.new)

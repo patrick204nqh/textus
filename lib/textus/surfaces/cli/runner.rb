@@ -49,61 +49,19 @@ module Textus
 
         module_function
 
-        # Build a Command from the spec + parsed inputs, dispatch through Gate.
         def dispatch(verb_instance, store, spec)
-          inputs = Textus::Contract::Binder.inputs_from_ordered(
+          inputs = Textus::Dispatch::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
           )
-          inputs = inputs.merge(Textus::Contract::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
-          inputs = Textus::Contract::Sources.acquire(spec, inputs)
+          inputs = inputs.merge(Surfaces::CLI::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
+          inputs = Surfaces::CLI::Sources.acquire(spec, inputs)
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
 
-          invoke = lambda do |effective_inputs|
-            cmd = build_command(spec, effective_inputs, role)
-            store.gate.dispatch(cmd)
-          end
-
-          result = if spec.around
-                     scope = store.as(role)
-                     Textus::Contract::Around.with(spec.around, scope: scope, inputs: inputs, session: nil, &invoke)
-                   else
-                     invoke.call(inputs)
-                   end
-          verb_instance.emit(shape(spec, result, inputs))
-        rescue Textus::Contract::MissingArgs => e
+          result = Textus::Dispatch::Dispatcher.dispatch(spec, inputs, store:, role:, scope: store.as(role))
+          verb_instance.emit(Textus::Dispatch::View.render(spec, :cli, result, inputs))
+        rescue Textus::Dispatch::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
-        end
-
-        def build_command(spec, inputs, role)
-          cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
-            raise Textus::UsageError.new("no Command for verb: #{spec.verb}")
-          end
-          defaults = {}
-          spec.args.each do |a|
-            next if a.default == :__unset || inputs.key?(a.name)
-            next if a.default.nil? && a.required
-
-            defaults[a.name] = a.default
-          end
-          kwargs = defaults.merge(inputs)
-          kwargs[:role] = role if cmd_class.members.include?(:role) && !inputs.key?(:role) && spec.verb != :audit
-          check_missing_args!(spec, cmd_class, kwargs)
-
-          cmd_class.new(**kwargs.slice(*cmd_class.members))
-        end
-
-        def check_missing_args!(spec, cmd_class, kwargs)
-          params = cmd_class.instance_method(:initialize).parameters
-          required = if params == [[:rest]]
-                       cmd_class.members
-                     else
-                       params.select { |t,| t == :keyreq }.map(&:last)
-                     end
-          missing = required - kwargs.keys
-          return if missing.empty?
-
-          raise Textus::Contract::MissingArgs.new(spec, missing.map { |m| Struct.new(:wire, :name).new(m.to_s, m) })
         end
 
         # Fill CLI-specific defaults (cli_default:) for args the operator did not
@@ -117,14 +75,6 @@ module Textus
 
             h[a.name] = a.cli_default
           end
-        end
-
-        # Shape the use-case result for the CLI wire via the verb's :cli view
-        # (falling back to the default view). The view is called uniformly as
-        # (result, inputs); an inputs-aware view echoes an input such as the key
-        # (ADR 0067).
-        def shape(spec, result, inputs)
-          Textus::Contract::View.render(spec, :cli, result, inputs)
         end
 
         # The default the CLI flag is generated against — `cli_default:` when the
@@ -224,7 +174,7 @@ module Textus
           non_positional.each { |a| klass.option a.name, Runner.flagspec_for(a) }
 
           # Anchor the anonymous class to a constant so descendants discovery is
-          # stable. Name it after the verb under a Generated namespace.
+          # stable. Name it under a Generated namespace.
           const_name = spec.verb.to_s.split("_").map(&:capitalize).join
           gen = "Gen#{const_name}"
           Verb.const_set(gen, klass) unless Verb.const_defined?(gen, false)

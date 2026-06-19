@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Contract::Around do
+RSpec.describe Textus::Dispatch::Around do
   it "wraps a call, letting a resource adjust inputs and post-process the result" do
     resource = Class.new do
       def wrap(scope:, inputs:, session:) # rubocop:disable Lint/UnusedMethodArgument

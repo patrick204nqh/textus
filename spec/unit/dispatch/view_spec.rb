@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Contract::View do
+RSpec.describe Textus::Dispatch::View do
   let(:spec) do
     Class.new do
       extend Textus::Contract::DSL
