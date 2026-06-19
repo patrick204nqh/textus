@@ -52,16 +52,19 @@ module Textus
         ts = now.iso8601
         structured = build_structured(ts, container, now, content_hash)
 
-        index = Textus::Ports::RawIndex.new(root: container.root)
+        store = Textus::Ports::Store.new(root: container.root).setup!
+        index = Textus::Index::Lookup.new(store: store)
         duplicate_key = find_duplicate(index, content_hash)
 
         if duplicate_key && duplicate_key != key
-          supersede_entry(duplicate_key, key, structured, container, call, index)
+          supersede_entry(duplicate_key, key, structured, container, call, store: store)
         else
           env = write_raw_entry(key, structured, mentry, writer)
-          index.upsert(content_hash: content_hash, url: @url, key: key)
+          rebuild_index(container, store)
           env
         end
+      ensure
+        store&.close
       end
 
       private
@@ -135,7 +138,11 @@ module Textus
         index.find_by_url(@url)
       end
 
-      def supersede_entry(old_key, new_key, structured, container, call, index)
+      def rebuild_index(container, store)
+        Textus::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+      end
+
+      def supersede_entry(old_key, new_key, structured, container, call, store:)
         old_mentry = container.manifest.resolver.resolve(old_key).entry
         writer = Textus::Envelope::Writer.from(container: container, call: call)
 
@@ -160,7 +167,7 @@ module Textus
 
         move_asset_file(container, old_content["asset"]) if @kind == "asset" && old_content["asset"]
 
-        index.upsert(content_hash: structured["content_hash"], url: @url, key: new_key)
+        rebuild_index(container, store)
         env
       end
 
