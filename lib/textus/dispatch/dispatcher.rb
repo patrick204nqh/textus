@@ -14,7 +14,7 @@ module Textus
     module Dispatcher
       module_function
 
-      def dispatch(spec, inputs, store:, role:, session: nil, scope: nil, correlation_id: nil)
+      def dispatch(spec, inputs, store:, role:, session: nil, scope: nil, correlation_id: nil) # rubocop:disable Metrics/ParameterLists
         invoke = lambda do |effective_inputs|
           resolved = Binder.bind(spec, effective_inputs, session: session)
           cmd = CommandBuilder.build(spec, resolved, role: role)
