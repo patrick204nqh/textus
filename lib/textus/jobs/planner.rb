@@ -72,9 +72,7 @@ module Textus
         actions = ACTIONS_BY_TRIGGER.fetch(type, [])
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
-        if actions.include?("index")
-          jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role)
-        end
+        jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role) if actions.include?("index")
         if actions.include?("sweep")
           jobs << Textus::Jobs::Queue::Job.new(
             type: "sweep", args: { "scope" => {} }, role: role,

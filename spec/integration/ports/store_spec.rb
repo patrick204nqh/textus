@@ -5,7 +5,7 @@ require "spec_helper"
 RSpec.describe Textus::Ports::Store do
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
 
-  after { FileUtils.remove_entry(File.dirname(root)) if File.exist?(File.dirname(root)) }
+  after { FileUtils.rm_rf(File.dirname(root)) }
 
   it "uses Layout.store_db as its path" do
     store = described_class.new(root: root)

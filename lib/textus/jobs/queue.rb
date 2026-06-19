@@ -58,7 +58,7 @@ module Textus
       def lease(worker_id:, lease_ttl:)
         now = Time.now.utc
         expires_at = now + lease_ttl
-        lease = JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601 })
+        JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601 })
         token = SecureRandom.hex(8)
         marked_lease = JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601, "token" => token })
 
@@ -74,8 +74,6 @@ module Textus
         return nil unless row
 
         Leased.new(job_from_row(row))
-      ensure
-        lease
       end
 
       def ack(leased)

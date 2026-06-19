@@ -3,13 +3,14 @@
 require "spec_helper"
 
 RSpec.describe Textus::Jobs::Queue do
+  subject(:queue) { described_class.new(store: store) }
+
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
   let(:store) { Textus::Ports::Store.new(root: root).setup! }
-  subject(:queue) { described_class.new(store: store) }
 
   after do
     store.close
-    FileUtils.remove_entry(File.dirname(root)) if File.exist?(File.dirname(root))
+    FileUtils.rm_rf(File.dirname(root))
   end
 
   def job(type: "materialize", args: { "key" => "x" }, role: "automation", **rest)

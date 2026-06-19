@@ -93,11 +93,6 @@ RSpec.describe Textus::Boot do
     expect(weird).not_to have_key("purpose")
   end
 
-  it "omits index_key when artifacts.index does not exist" do
-    env = described_class.build(container: store.container)
-    expect(env).not_to have_key("index_key")
-  end
-
   it "never includes index_key (system index removed)" do
     env = described_class.build(container: store.container)
     expect(env).not_to have_key("index_key")

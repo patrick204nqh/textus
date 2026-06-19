@@ -23,6 +23,7 @@ RSpec.describe Textus::Jobs::Planner do
 
   let(:store_port) { Textus::Ports::Store.new(root: store.root).setup! }
   let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+
   after { store_port.close }
 
   describe ".seed" do

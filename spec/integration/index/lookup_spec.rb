@@ -3,19 +3,21 @@
 require "spec_helper"
 
 RSpec.describe Textus::Index::Lookup do
+  subject(:lookup) { described_class.new(store: store) }
+
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
   let(:store) { Textus::Ports::Store.new(root: root).setup! }
-  subject(:lookup) { described_class.new(store: store) }
 
   after do
     store.close
-    FileUtils.remove_entry(File.dirname(root)) if File.exist?(File.dirname(root))
+    FileUtils.rm_rf(File.dirname(root))
   end
 
   before do
     store.connection.execute(
       "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      ["raw.2026.06.19.url-example", "raw", "yaml", "etag", "needle phrase", JSON.dump("content_hash" => "sha256:abc", "url" => "https://example.com"), Time.now.utc.iso8601],
+      ["raw.2026.06.19.url-example", "raw", "yaml", "etag", "needle phrase",
+       JSON.dump("content_hash" => "sha256:abc", "url" => "https://example.com"), Time.now.utc.iso8601],
     )
     store.connection.execute(
       "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",

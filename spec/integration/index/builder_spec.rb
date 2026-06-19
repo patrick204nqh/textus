@@ -60,9 +60,9 @@ RSpec.describe Textus::Index::Builder do
   it "keeps the old index when rebuild fails mid-transaction" do
     described_class.new(store: store_port).rebuild!(resolver: store.container.manifest.resolver)
     existing = store.container.manifest.resolver.enumerate.first[:path]
-    bad_resolver = double("resolver", enumerate: [
-      { key: "bad.key", path: existing, manifest_entry: nil },
-    ])
+    bad_resolver = instance_double(Textus::Manifest::Resolver, enumerate: [
+                                     { key: "bad.key", path: existing, manifest_entry: nil },
+                                   ])
 
     expect do
       described_class.new(store: store_port).rebuild!(resolver: bad_resolver)

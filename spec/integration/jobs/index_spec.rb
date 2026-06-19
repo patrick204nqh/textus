@@ -5,8 +5,10 @@ require "spec_helper"
 RSpec.describe Textus::Jobs::Index do
   include_context "textus_store_fixture"
 
+  let(:files) { { "data/knowledge/a.md" => "---\ntitle: A\n---\nsearch body\n" } }
+
   let(:store) do
-    store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML, files: { "data/knowledge/a.md" => "---\ntitle: A\n---\nsearch body\n" })
+    store_from_manifest(root, lanes: %w[knowledge], manifest: <<~YAML, files: files)
       version: textus/4
       lanes:
         - { name: knowledge, kind: canon }
