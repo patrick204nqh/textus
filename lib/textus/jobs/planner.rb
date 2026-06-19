@@ -4,7 +4,7 @@ module Textus
   module Jobs
     class Planner
       ACTIONS_BY_TRIGGER = {
-        "convergence" => %w[materialize sweep],
+        "convergence" => %w[materialize sweep index],
         "entry.written" => %w[materialize],
         "entry.deleted" => %w[materialize],
         "entry.moved" => %w[materialize],
@@ -52,7 +52,9 @@ module Textus
           .each do |block|
             do_action = block.react.raw["do"]
             Array(do_action).each do |action|
-              if action == "sweep"
+              if action == "index"
+                jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role)
+              elsif action == "sweep"
                 jobs << Textus::Jobs::Queue::Job.new(
                   type: "sweep", args: { "scope" => {} }, role: role,
                 )
@@ -70,6 +72,9 @@ module Textus
         actions = ACTIONS_BY_TRIGGER.fetch(type, [])
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
+        if actions.include?("index")
+          jobs << Textus::Jobs::Queue::Job.new(type: "index", args: {}, role: role)
+        end
         if actions.include?("sweep")
           jobs << Textus::Jobs::Queue::Job.new(
             type: "sweep", args: { "scope" => {} }, role: role,
