@@ -47,13 +47,13 @@ module Textus
         )
 
         content_hash = compute_content_hash
-        writer = Textus::Envelope::Writer.from(container: container, call: call)
+        writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
         mentry = container.manifest.resolver.resolve(key).entry
         ts = now.iso8601
         structured = build_structured(ts, container, now, content_hash)
 
-        Textus::Ports::Store.open(container.root) do |store|
-          index = Textus::Index::Lookup.new(store: store)
+        Textus::Port::Store.open(container.root) do |store|
+          index = Textus::Store::Index::Lookup.new(store: store)
           duplicate_key = find_duplicate(index, content_hash)
 
           if duplicate_key && duplicate_key != key
@@ -123,7 +123,7 @@ module Textus
 
       def write_raw_entry(key, structured, mentry, writer)
         writer.put(key, mentry: mentry,
-                        payload: Textus::Envelope::Writer::Payload.new(
+                        payload: Textus::Store::Envelope::Writer::Payload.new(
                           meta: nil, body: nil, content: structured,
                         ))
       end
@@ -138,14 +138,14 @@ module Textus
       end
 
       def rebuild_index(container, store)
-        Textus::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+        Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
       end
 
       def supersede_entry(old_key, new_key, structured, container, call, store:)
         old_mentry = container.manifest.resolver.resolve(old_key).entry
-        writer = Textus::Envelope::Writer.from(container: container, call: call)
+        writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
 
-        reader = Textus::Envelope::Reader.from(container: container)
+        reader = Textus::Store::Envelope::Reader.from(container: container)
         old_env = reader.read(old_key)
         old_content = old_env&.content || {}
         tombstone = {}
@@ -157,7 +157,7 @@ module Textus
         tombstone["superseded_by"] = new_key
 
         writer.put(old_key, mentry: old_mentry,
-                            payload: Textus::Envelope::Writer::Payload.new(
+                            payload: Textus::Store::Envelope::Writer::Payload.new(
                               meta: nil, body: nil, content: tombstone,
                             ))
 

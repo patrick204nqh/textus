@@ -6,8 +6,8 @@ end
 
 module TextusSpecHelpers
   # Layout-aware paths for specs that assert on runtime artifacts. ADR 0038.
-  def audit_log_path(root) = Textus::Layout.audit_log(root)
-  def audit_dir_path(root) = Textus::Layout.audit_dir(root)
+  def audit_log_path(root) = Textus::Store::Geometry.new(root).audit_log_path
+  def audit_dir_path(root) = Textus::Store::Geometry.new(root).audit_dir_path
 
   # Writes a manifest (+ optional zone dirs, schema files, and seed files)
   # into `textus_dir` and returns the Store. Pair with the
@@ -110,24 +110,24 @@ module TextusSpecHelpers
     )
   end
 
-  # Builds a Textus::Call value for tests. Callers pass the role (and
+  # Builds a Textus::Value::Call value for tests. Callers pass the role (and
   # optionally correlation_id, dry_run) — collaborators come from the
   # Store/Container, not from Call.
   def test_ctx(role: "human", correlation_id: nil, dry_run: false)
-    Textus::Call.build(
+    Textus::Value::Call.build(
       role: role, correlation_id: correlation_id, dry_run: dry_run,
     )
   end
 
   def build_envelope_reader(store)
-    Textus::Envelope::Reader.new(
+    Textus::Store::Envelope::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
-    Textus::Envelope::Writer.new(
+    Textus::Store::Envelope::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
@@ -144,11 +144,11 @@ module TextusSpecHelpers
 
   # Seed convergence jobs for the given scope and then burn the queue through
   # Maintenance::Drain (which is queue-burn only).
-  def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
-    Textus::Ports::Store.open(store.root) do |store_port|
-      queue = Textus::Jobs::Queue.new(store: store_port)
-      Textus::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
-      Textus::Jobs::Worker.for(container: store.container, queue: queue).drain
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
+    Textus::Port::Store.open(store.root) do |store_port|
+      queue = Textus::Store::Jobs::Queue.new(store: store_port)
+      Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
+      Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
     end
   end
 end

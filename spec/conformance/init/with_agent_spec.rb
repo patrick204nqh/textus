@@ -96,7 +96,7 @@ RSpec.describe "Textus::Init with_agent profile" do
   it "drives the agent profile from the CLI --with-agent flag" do
     Dir.mktmpdir do |dir|
       out = StringIO.new
-      verb = Textus::Surfaces::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
+      verb = Textus::Surface::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
       verb.parse(["--with-agent"])
       exit_code = verb.call(nil)
       expect(exit_code).to eq(0)
@@ -110,7 +110,7 @@ RSpec.describe "Textus::Init with_agent profile" do
   it "defaults to the neutral profile without the flag" do
     Dir.mktmpdir do |dir|
       out = StringIO.new
-      verb = Textus::Surfaces::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
+      verb = Textus::Surface::CLI::Verb::Init.new(stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: dir)
       verb.parse([])
       verb.call(nil)
       expect(File.exist?(File.join(dir, ".textus", "templates", "orientation.erb"))).to be false

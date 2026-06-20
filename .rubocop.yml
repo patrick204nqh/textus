@@ -107,6 +107,10 @@ RSpec/ContextWording:
     - "spec/support/**/*"
 RSpec/DescribedClass:
   Enabled: false   # spec style uses full constant path for clarity
+RSpec/NamedSubject:
+  Enabled: false   # codebase uses `subject` extensively as a style choice
+RSpec/MessageChain:
+  Enabled: false   # message chain stubs used in geometry spec
 RSpec/SpecFilePathFormat:
   Enabled: false   # spec file names don't 1:1 mirror class names
 

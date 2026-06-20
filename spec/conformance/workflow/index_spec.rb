@@ -17,7 +17,7 @@ RSpec.describe "artifacts.system.index workflow" do
                                   path = row[:path]
                                   next unless path && File.exist?(path)
                                   mentry = row[:manifest_entry]
-                                  etag   = Textus::Etag.for_file(path)
+                                  etag   = Textus::Value::Etag.for_file(path)
                                   {
                                     "key"    => row[:key],
                                     "lane"   => mentry.lane,
@@ -63,7 +63,7 @@ RSpec.describe "artifacts.system.index workflow" do
   it "drain produces artifacts.system.index with an entries array" do
     Textus::Produce::Engine.converge(
       container: store.container,
-      call: Textus::Call.build(role: "automation"),
+      call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.system.index"],
     )
     env = store.as("human").get("artifacts.system.index")
@@ -75,7 +75,7 @@ RSpec.describe "artifacts.system.index workflow" do
   it "each index entry has key, lane, format, etag" do
     Textus::Produce::Engine.converge(
       container: store.container,
-      call: Textus::Call.build(role: "automation"),
+      call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.system.index"],
     )
     env = store.as("human").get("artifacts.system.index")

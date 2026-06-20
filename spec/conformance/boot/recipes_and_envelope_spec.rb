@@ -102,14 +102,14 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
     let(:recipes) { boot["agent_protocol"]["recipes"] }
 
     it "advertises only verbs the agent can actually call over MCP" do
-      expect(Textus::Surfaces::MCP::Catalog.names).to include(*read_verbs)
+      expect(Textus::Surface::MCP::Catalog.names).to include(*read_verbs)
     end
 
     # ADR 0057: write_verbs derives from the catalog too — bare verb names, never
     # CLI strings. The guard fails the build if a `--as`/`--stdin` invocation
     # creeps back into the agent's write surface.
     it "advertises write_verbs as MCP-callable verbs, never CLI strings" do
-      expect(Textus::Surfaces::MCP::Catalog.names).to include(*write_verbs)
+      expect(Textus::Surface::MCP::Catalog.names).to include(*write_verbs)
       expect(write_verbs).to include("put", "propose")
       expect(write_verbs).to all(match(/\A\w+\z/))
     end
@@ -132,7 +132,7 @@ RSpec.describe "Boot recipes & envelope — agent-facing protocol surface" do
                           .filter_map { |s| s[/\A(\w+)/, 1] }
                           .select { |tok| known.include?(tok) }
       expect(referenced).not_to be_empty
-      expect(Textus::Surfaces::MCP::Catalog.names).to include(*referenced)
+      expect(Textus::Surface::MCP::Catalog.names).to include(*referenced)
     end
   end
 

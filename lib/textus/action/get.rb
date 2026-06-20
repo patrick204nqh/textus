@@ -15,26 +15,12 @@ module Textus
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       view { |v, _i| v.to_h_for_wire }
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
-
-      def call(container:, call:, file_stat: Textus::Ports::Storage::FileStat.new)
+      def call(container:, call:, file_stat: Textus::Port::Storage::FileStat.new)
         @container = container
         @call = call
         @manifest = container.manifest
-        @file_store = container.file_store
         @file_stat = file_stat
         annotated_envelope(@key)
-      end
-
-      def self.new(*args, **kwargs)
-        return super(**kwargs) unless args.any?
-
-        positional = instance_method(:initialize).parameters.slice(:keyreq, :key).map(&:last)
-        mapped = positional.zip(args).to_h
-        super(**mapped.merge(kwargs))
       end
 
       private
@@ -56,22 +42,7 @@ module Textus
       end
 
       def read_raw_envelope(key)
-        res = @manifest.resolver.resolve(key)
-        mentry = res.entry
-        path = res.path
-        return nil unless @file_store.exists?(path)
-
-        raw = @file_store.read(path)
-        parsed = Textus::Format.for(mentry.format).parse(raw, path: path)
-        Textus::Envelope.build(
-          key: key,
-          mentry: mentry,
-          path: path,
-          meta: parsed["_meta"],
-          body: parsed["body"],
-          etag: Textus::Etag.for_bytes(raw),
-          content: parsed["content"],
-        )
+        Textus::Store::Envelope::Reader.from(container: @container).read(key)
       end
     end
   end

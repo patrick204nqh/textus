@@ -36,7 +36,7 @@ module Textus
         entry = @container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
 
-        reader     = Textus::Envelope::Reader.from(container: @container)
+        reader     = Textus::Store::Envelope::Reader.from(container: @container)
         entry_path = @container.manifest.resolver.resolve(key).path
         return unless entry.publish_tree || File.exist?(entry_path)
 

@@ -32,15 +32,15 @@ RSpec.describe Textus::Action::Drain do
 
     expect(result["ok"]).to be true
     expect(result["completed"]).to be >= 0
-    store_port = Textus::Ports::Store.new(root: root).setup!
-    expect(Textus::Jobs::Queue.new(store: store_port).ready_ids).to be_empty
+    store_port = Textus::Port::Store.new(root: root).setup!
+    expect(Textus::Store::Jobs::Queue.new(store: store_port).ready_ids).to be_empty
     store_port.close
   end
 
   it "reports not-ok when a job dead-letters" do
-    store_port = Textus::Ports::Store.new(root: root).setup!
-    queue = Textus::Jobs::Queue.new(store: store_port)
-    job = Textus::Jobs::Queue::Job.new(type: "unknown", args: {}, role: "human", max_attempts: 1)
+    store_port = Textus::Port::Store.new(root: root).setup!
+    queue = Textus::Store::Jobs::Queue.new(store: store_port)
+    job = Textus::Store::Jobs::Queue::Job.new(type: "unknown", args: {}, role: "human", max_attempts: 1)
     queue.enqueue(job)
     store_port.close
 

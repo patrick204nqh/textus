@@ -12,8 +12,8 @@ RSpec.describe Textus::Action::Enqueue do
         - { key: knowledge.a, path: knowledge/a.md, lane: knowledge, kind: leaf }
     YAML
   end
-  let(:store_port) { Textus::Ports::Store.new(root: root).setup! }
-  let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+  let(:store_port) { Textus::Port::Store.new(root: root).setup! }
+  let(:queue) { Textus::Store::Jobs::Queue.new(store: store_port) }
 
   after { store_port.close }
 

@@ -1,6 +1,6 @@
 require "stringio"
 
-# The StringIO-triple + `Textus::Surfaces::CLI.run` invocation that every CLI spec
+# The StringIO-triple + `Textus::Surface::CLI.run` invocation that every CLI spec
 # re-creates. Include it and call `run(argv)`; read `stdout`/`stderr` or the
 # parsed `json_out`. Pass extra kwargs (e.g. `cwd:`) straight through:
 #
@@ -17,7 +17,7 @@ RSpec.shared_context "cli invocation" do
   # `cwd` defaults to the store fixture's `tmp` (the dominant pattern); pass
   # `cwd:` to override, or any other CLI.run kwarg through `**opts`.
   def run(argv, cwd: tmp, **opts)
-    Textus::Surfaces::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd, **opts)
+    Textus::Surface::CLI.run(argv, stdin: stdin, stdout: stdout, stderr: stderr, cwd: cwd, **opts)
   end
 
   def json_out = JSON.parse(stdout.string)

@@ -35,31 +35,24 @@ module Textus
 
       def call(container:, **)
         @manifest = container.manifest
-        @root = container.root
-        @log_path = Textus::Layout.audit_log(container.root)
         @audit_log = container.audit_log
 
         query = @query
         check_cursor_expiry!(query.seq_since)
 
-        files = all_log_files
-        return [] if files.empty?
+        @audit_log.scan(
+          seq_since: query.seq_since,
+          key: query.key,
+          role: query.role,
+          verb: query.verb,
+          correlation_id: query.correlation_id,
+          limit: query.limit,
+        ).select do |row|
+          next false if query.lane && !key_in_lane?(row["key"], query.lane)
+          next false if query.since && (row["ts"].nil? || Time.parse(row["ts"]) < query.since)
 
-        rows = []
-        files.each do |file|
-          File.foreach(file) do |line|
-            parsed = parse_row(line.chomp)
-            next unless parsed
-            next unless query.matches?(parsed)
-            next if query.lane && !key_in_lane?(parsed["key"], query.lane)
-
-            rows << parsed
-            break if limit_reached?(rows, query)
-          end
-          break if limit_reached?(rows, query)
+          true
         end
-
-        rows
       end
 
       def self.parse_since(str, now: Time.now.utc)
@@ -93,31 +86,12 @@ module Textus
 
       private
 
-      def limit_reached?(rows, query) = query.limit && rows.length >= query.limit
-
       def check_cursor_expiry!(seq_since)
         return unless seq_since
 
-        log = @audit_log || Textus::Ports::AuditLog.new(@root)
+        log = @audit_log || Textus::Port::AuditLog.new(@root)
         min = log.min_available_seq
         raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
-      end
-
-      def all_log_files
-        rotated = Dir.glob(File.join(Textus::Layout.audit_dir(@root), "audit.log.*"))
-                     .reject { |path| path.end_with?(".meta.json") }
-                     .sort_by { |path| -path.scan(/\d+$/).first.to_i }
-        active = File.exist?(@log_path) ? [@log_path] : []
-        rotated + active
-      end
-
-      def parse_row(line)
-        return nil if line.empty?
-        return nil unless line.start_with?("{")
-
-        JSON.parse(line)
-      rescue JSON::ParserError
-        nil
       end
 
       def key_in_lane?(key, lane)

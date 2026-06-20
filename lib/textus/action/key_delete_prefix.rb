@@ -31,7 +31,7 @@ module Textus
         warnings = leaves.empty? ? ["no keys under #{@prefix}"] : []
         steps = leaves.map { |key| { "op" => "delete", "key" => key } }
 
-        plan = Textus::Jobs::Plan.new(steps: steps, warnings: warnings)
+        plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
         return plan if @dry_run
 
         steps.each do |step|

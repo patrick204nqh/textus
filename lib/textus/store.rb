@@ -7,7 +7,7 @@ module Textus
     # Readers are derived from the Container's schema, so the field set lives
     # in exactly one place (Container). A new capability added there is
     # automatically exposed on the Store.
-    Textus::Container.attribute_names.each do |field|
+    Textus::Store::Container.attribute_names.each do |field|
       define_method(field) { @container.public_send(field) }
     end
 
@@ -49,11 +49,11 @@ module Textus
     # Build an agent Session oriented at the current cursor/manifest — the
     # Ruby equivalent of an MCP `initialize`. ADR 0036.
     def session(role:)
-      Textus::Session.new(
+      Textus::Store::Session.new(
         role: role.to_s,
         cursor: audit_log.latest_seq,
         propose_lane: manifest.policy.propose_lane_for(role),
-        contract_etag: Textus::Etag.for_contract(root),
+        contract_etag: Textus::Value::Etag.for_contract(root),
       )
     end
 
@@ -62,7 +62,7 @@ module Textus
     end
 
     def as(role, dry_run: false, correlation_id: nil)
-      Textus::Surfaces::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
+      Textus::Surface::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end
 
     private
@@ -73,8 +73,8 @@ module Textus
         root: root,
         manifest: manifest,
         schemas: Schemas.new(File.join(root, "schemas")),
-        file_store: Ports::Storage::FileStore.new,
-        audit_log: Ports::AuditLog.new(
+        file_store: Port::Storage::FileStore.new,
+        audit_log: Port::AuditLog.new(
           root,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],

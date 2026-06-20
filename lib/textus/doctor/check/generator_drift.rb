@@ -10,8 +10,8 @@ module Textus
         def call
           gen = Textus::Core::Freshness::Evaluator.new(
             manifest: manifest,
-            file_stat: Textus::Ports::Storage::FileStat.new,
-            clock: Textus::Ports::Clock.new,
+            file_stat: Textus::Port::Storage::FileStat.new,
+            clock: Textus::Port::Clock.new,
           )
           manifest.data.entries.flat_map { |m| gen.drift_rows(m) }.map do |row|
             {

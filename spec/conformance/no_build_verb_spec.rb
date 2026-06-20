@@ -6,11 +6,11 @@ RSpec.describe "build verb removed (ADR 0087)" do
   end
 
   it "is absent from the MCP catalog names" do
-    expect(Textus::Surfaces::MCP::Catalog.names).not_to include("build")
+    expect(Textus::Surface::MCP::Catalog.names).not_to include("build")
   end
 
   it "is absent from the MCP catalog write_verbs" do
-    expect(Textus::Surfaces::MCP::Catalog.write_verbs).not_to include("build")
+    expect(Textus::Surface::MCP::Catalog.write_verbs).not_to include("build")
   end
 
   it "exposes drain in the dispatcher" do

@@ -20,12 +20,12 @@ ETAG_SPEC_LIB_GLOB = File.expand_path("../../../lib/textus/**/*.rb", __dir__)
 ETAG_SPEC_HELPER = File.expand_path("../../../lib/textus/etag.rb", __dir__)
 # SentinelStore stores a raw sha256 for target-file integrity comparison (not
 # an etag), predates this guard, and is exempt.
-ETAG_SPEC_SENTINEL_STORE = File.expand_path("../../../lib/textus/ports/sentinel_store.rb", __dir__)
+ETAG_SPEC_SENTINEL_STORE = File.expand_path("../../../lib/textus/port/sentinel_store.rb", __dir__)
 ETAG_SPEC_EXEMPT_FILES = [ETAG_SPEC_HELPER, ETAG_SPEC_SENTINEL_STORE].freeze
 # Matches a SHA256 digest taken directly over a freshly-read file.
 ETAG_SPEC_HANDROLLED = /Digest::SHA256\.hexdigest\(\s*File\.(?:read|binread)/
 
-RSpec.describe "Textus::Etag.for_contract" do
+RSpec.describe "Textus::Value::Etag.for_contract" do
   let(:tmp)  { Dir.mktmpdir }
   let(:root) { File.join(tmp, ".textus") }
 
@@ -39,11 +39,11 @@ RSpec.describe "Textus::Etag.for_contract" do
 
   after { FileUtils.remove_entry(tmp) }
 
-  def etag = Textus::Etag.for_contract(root)
+  def etag = Textus::Value::Etag.for_contract(root)
 
   it "produces a stable sha256-prefixed digest" do
     expect(etag).to start_with("sha256:")
-    expect(etag).to eq(Textus::Etag.for_contract(root))
+    expect(etag).to eq(Textus::Value::Etag.for_contract(root))
   end
 
   it "changes when the manifest changes" do

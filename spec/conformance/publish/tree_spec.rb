@@ -72,8 +72,8 @@ RSpec.describe "publish_tree (ADR 0047)" do
       expect(File.read(File.join(repo_root, "skills/my-skill/references/foo.md"))).to eq("foo reference\n")
       expect(File.read(File.join(repo_root, "skills/my-skill/scripts/build.py"))).to eq("print('hi')\n")
 
-      expect(File.exist?(File.join(root, ".state/sentinels/skills/my-skill/commands.md.textus-managed.json"))).to be true
-      expect(File.exist?(File.join(root, ".state/sentinels/skills/my-skill/scripts/build.py.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(root, ".state/tracking/sentinels/skills/my-skill/commands.md.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(root, ".state/tracking/sentinels/skills/my-skill/scripts/build.py.textus-managed.json"))).to be true
     end
 
     it "mirrors every leaf file under the published tree on disk" do
@@ -152,7 +152,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       materialize(store)
 
       expect(File.exist?(File.join(repo_root, "skills/my-skill/references/foo.md"))).to be false
-      expect(File.exist?(File.join(root, ".state/sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
+      expect(File.exist?(File.join(root, ".state/tracking/sentinels/skills/my-skill/references/foo.md.textus-managed.json"))).to be false
     end
 
     it "never deletes an unmanaged file a human placed in the target tree" do
@@ -173,7 +173,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       target = File.join(repo_root, rel)
       FileUtils.mkdir_p(File.dirname(target))
       File.write(target, body)
-      Textus::Ports::SentinelStore.new.write!(target: target, source: target, store_root: root)
+      Textus::Port::SentinelStore.new.write!(target: target, source: target, store_root: root)
       target
     end
 

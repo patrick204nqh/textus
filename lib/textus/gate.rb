@@ -2,68 +2,36 @@
 
 module Textus
   class Gate
-    VERB_COMMAND = {
-      get: Textus::Command::Get,
-      put: Textus::Command::Put,
-      propose: Textus::Command::Propose,
-      key_delete: Textus::Command::KeyDelete,
-      key_mv: Textus::Command::KeyMv,
-      accept: Textus::Command::Accept,
-      reject: Textus::Command::Reject,
-      enqueue: Textus::Command::Enqueue,
-      list: Textus::Command::List,
-      where: Textus::Command::Where,
-      uid: Textus::Command::Uid,
-      blame: Textus::Command::Blame,
-      audit: Textus::Command::Audit,
-      deps: Textus::Command::Deps,
-      rdeps: Textus::Command::Rdeps,
-      pulse: Textus::Command::Pulse,
-      rule_explain: Textus::Command::RuleExplain,
-      rule_list: Textus::Command::RuleList,
-      rule_lint: Textus::Command::RuleLint,
-      published: Textus::Command::Published,
-      schema_show: Textus::Command::SchemaShow,
-      doctor: Textus::Command::Doctor,
-      boot: Textus::Command::Boot,
-      jobs: Textus::Command::Jobs,
-      data_mv: Textus::Command::DataMv,
-      key_mv_prefix: Textus::Command::KeyMvPrefix,
-      key_delete_prefix: Textus::Command::KeyDeletePrefix,
-      drain: Textus::Command::Drain,
-      ingest: Textus::Command::Ingest,
-    }.freeze
-
-    ROUTES = {
-      Command::Get => [Textus::Action::Get],
-      Command::Put => [Textus::Action::Put],
-      Command::Propose => [Textus::Action::Propose],
-      Command::KeyDelete => [Textus::Action::KeyDelete],
-      Command::KeyMv => [Textus::Action::KeyMv],
-      Command::Accept => [Textus::Action::Accept],
-      Command::Reject => [Textus::Action::Reject],
-      Command::Enqueue => [Textus::Action::Enqueue],
-      Command::List => [Textus::Action::List],
-      Command::Where => [Textus::Action::Where],
-      Command::Uid => [Textus::Action::Uid],
-      Command::Blame => [Textus::Action::Blame],
-      Command::Audit => [Textus::Action::Audit],
-      Command::Deps => [Textus::Action::Deps],
-      Command::Rdeps => [Textus::Action::Rdeps],
-      Command::Pulse => [Textus::Action::Pulse],
-      Command::RuleExplain => [Textus::Action::RuleExplain],
-      Command::RuleList => [Textus::Action::RuleList],
-      Command::RuleLint => [Textus::Action::RuleLint],
-      Command::Published => [Textus::Action::Published],
-      Command::SchemaShow => [Textus::Action::SchemaEnvelope],
-      Command::Doctor => [Textus::Action::Doctor],
-      Command::Boot => [Textus::Action::Boot],
-      Command::Jobs => [Textus::Action::Jobs],
-      Command::DataMv => [Textus::Action::DataMv],
-      Command::KeyMvPrefix => [Textus::Action::KeyMvPrefix],
-      Command::KeyDeletePrefix => [Textus::Action::KeyDeletePrefix],
-      Command::Drain => [Textus::Action::Drain],
-      Command::Ingest => [Textus::Action::Ingest],
+    VERB_ACTIONS = {
+      get: [Textus::Action::Get],
+      put: [Textus::Action::Put],
+      propose: [Textus::Action::Propose],
+      key_delete: [Textus::Action::KeyDelete],
+      key_mv: [Textus::Action::KeyMv],
+      accept: [Textus::Action::Accept],
+      reject: [Textus::Action::Reject],
+      enqueue: [Textus::Action::Enqueue],
+      list: [Textus::Action::List],
+      where: [Textus::Action::Where],
+      uid: [Textus::Action::Uid],
+      blame: [Textus::Action::Blame],
+      audit: [Textus::Action::Audit],
+      deps: [Textus::Action::Deps],
+      rdeps: [Textus::Action::Rdeps],
+      pulse: [Textus::Action::Pulse],
+      rule_explain: [Textus::Action::RuleExplain],
+      rule_list: [Textus::Action::RuleList],
+      rule_lint: [Textus::Action::RuleLint],
+      published: [Textus::Action::Published],
+      schema_show: [Textus::Action::SchemaEnvelope],
+      doctor: [Textus::Action::Doctor],
+      boot: [Textus::Action::Boot],
+      jobs: [Textus::Action::Jobs],
+      data_mv: [Textus::Action::DataMv],
+      key_mv_prefix: [Textus::Action::KeyMvPrefix],
+      key_delete_prefix: [Textus::Action::KeyDeletePrefix],
+      drain: [Textus::Action::Drain],
+      ingest: [Textus::Action::Ingest],
     }.freeze
 
     def initialize(container)
@@ -71,9 +39,9 @@ module Textus
     end
 
     def dispatch(cmd, correlation_id: nil)
-      cmd = normalize_propose_key(cmd, @container) if cmd.is_a?(Command::Propose)
-      action_classes = ROUTES.fetch(cmd.class) do
-        raise Textus::UsageError.new("unknown command: #{cmd.class}")
+      cmd = normalize_propose_key(cmd, @container) if cmd.verb == :propose
+      action_classes = VERB_ACTIONS.fetch(cmd.verb) do
+        raise Textus::UsageError.new("unknown command verb: #{cmd.verb}")
       end
 
       Gate::Auth.new(@container).check!(cmd)
@@ -88,7 +56,8 @@ module Textus
       return cmd if cmd.pending_key
 
       zone = container.manifest.policy.propose_lane_for(cmd.role.to_s)
-      cmd.with(pending_key: zone ? "#{zone}.#{cmd.key}" : nil)
+      key = zone ? "#{zone}.#{cmd.key}" : nil
+      cmd.with(params: cmd.params.merge(pending_key: key))
     end
 
     def run_action(klass, cmd, container, call_obj)
@@ -100,17 +69,16 @@ module Textus
       params = klass.instance_method(:initialize).parameters
       accepts_keyrest = params.any? { |t, _| t == :keyrest }
       param_set = params.to_set { |_t, n| n }
-      cmd.members.each_with_object({}) do |m, h|
+      cmd.params.each_with_object({}) do |(m, val), h|
         next unless accepts_keyrest || param_set.include?(m)
 
-        val = cmd.public_send(m)
         h[m] = val unless val.nil?
       end
     end
 
     def build_call(cmd, correlation_id: nil)
-      dry_run = cmd.respond_to?(:dry_run) ? !cmd.dry_run.nil? : false
-      Textus::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
+      dry_run = cmd.params.key?(:dry_run) ? !cmd.params[:dry_run].nil? : false
+      Textus::Value::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
     end
   end
 end

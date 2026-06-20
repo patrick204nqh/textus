@@ -4,18 +4,18 @@ require "spec_helper"
 # doorway and must all share the same single shape: an instantiable class. The
 # earlier ADR 0108 permitted either a stateless module or an instantiable class;
 # ADR 0109 unifies to one shape so every port is constructed, injected, and
-# tested the same way. This guard enforces that every port in lib/textus/ports/
+# tested the same way. This guard enforces that every port in lib/textus/port/
 # is declared as a class (not a bare module) and carries a doc comment.
 RSpec.describe "port shape convention (ADR 0109)" do
   def port_files
-    Dir[File.expand_path("../../../lib/textus/ports/**/*.rb", __dir__)]
+    Dir[File.expand_path("../../../lib/textus/port/**/*.rb", __dir__)]
   end
 
   # The port's own declaration is the deepest `class`/`module` opener whose name
   # is not a namespace (Ports/Storage). Returns [line_index, lines].
   def port_declaration(file)
     lines = File.readlines(file)
-    idx = lines.rindex { |l| l =~ /^\s+(class|module)\s+(?!Ports\b|Storage\b)[A-Z]\w*/ }
+    idx = lines.rindex { |l| l =~ /^\s+(class|module)\s+(?!Port\b|Storage\b)[A-Z]\w*/ }
     [idx, lines]
   end
 

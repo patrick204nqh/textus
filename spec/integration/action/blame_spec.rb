@@ -27,8 +27,8 @@ RSpec.describe Textus::Action::Blame do
   end
 
   def write_audit(store, row)
-    FileUtils.mkdir_p(Textus::Layout.audit_dir(store.root))
-    File.open(Textus::Layout.audit_log(store.root), "a") { |f| f.puts JSON.generate(row) }
+    FileUtils.mkdir_p(Textus::Store::Geometry.new(store.root).audit_dir_path)
+    File.open(Textus::Store::Geometry.new(store.root).audit_log_path, "a") { |f| f.puts JSON.generate(row) }
   end
 
   def git(*args, chdir:)

@@ -7,7 +7,7 @@ RSpec.describe "textus/4 conformance — Fixture A: resolve and read" do
 
   describe "Fixture A — resolve and read" do
     it "returns the canonical envelope with a matching sha256 etag" do
-      env = store.as(Textus::Role::DEFAULT).get("knowledge.network.org.jane")
+      env = store.as(Textus::Value::Role::DEFAULT).get("knowledge.network.org.jane")
 
       aggregate_failures do
         expect(env.protocol).to eq("textus/4")

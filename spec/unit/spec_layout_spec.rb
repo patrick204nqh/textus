@@ -9,8 +9,8 @@ require "pathname"
 RSpec.describe SpecLayout do
   describe ".described_constant" do
     it "extracts a Textus constant from a class-described spec" do
-      src = "RSpec.describe Textus::Ports::BuildLock do\nend\n"
-      expect(described_class.described_constant(src)).to eq("Textus::Ports::BuildLock")
+      src = "RSpec.describe Textus::Port::BuildLock do\nend\n"
+      expect(described_class.described_constant(src)).to eq("Textus::Port::BuildLock")
     end
 
     it "returns the leading constant when describe has extra arguments" do
@@ -39,11 +39,11 @@ RSpec.describe SpecLayout do
 
   describe ".placement_error" do
     it "passes a nested unit spec sitting in its namespace dir" do
-      expect(described_class.placement_error("Textus::Ports::BuildLock", ["ports"])).to be_nil
+      expect(described_class.placement_error("Textus::Port::BuildLock", ["port"])).to be_nil
     end
 
     it "flags a nested unit spec sitting flat at the spec root" do
-      expect(described_class.placement_error("Textus::Ports::BuildLock", [])).not_to be_nil
+      expect(described_class.placement_error("Textus::Port::BuildLock", [])).not_to be_nil
     end
 
     it "passes a module-grouping spec living in its own dir" do
@@ -78,7 +78,7 @@ RSpec.describe SpecLayout do
   # lib/-mirror. The sweep below uses this.
   describe ".categorized_placement_error" do
     it "passes a unit spec mirrored below its category" do
-      expect(described_class.categorized_placement_error("Textus::Ports::BuildLock", %w[unit ports])).to be_nil
+      expect(described_class.categorized_placement_error("Textus::Port::BuildLock", %w[unit port])).to be_nil
     end
 
     it "passes an integration spec mirrored below its category" do
@@ -95,7 +95,7 @@ RSpec.describe SpecLayout do
     end
 
     it "flags a misfiled spec under the wrong mirror dir within a category" do
-      expect(described_class.categorized_placement_error("Textus::Ports::BuildLock", %w[unit read])).not_to be_nil
+      expect(described_class.categorized_placement_error("Textus::Port::BuildLock", %w[unit read])).not_to be_nil
     end
   end
 

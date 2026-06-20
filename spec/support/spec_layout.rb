@@ -12,7 +12,7 @@ module SpecLayout
   module_function
 
   # The constant named by the FIRST top-level `RSpec.describe`, if it is a
-  # Textus:: constant. Returns e.g. "Textus::Ports::BuildLock", or nil when the
+  # Textus:: constant. Returns e.g. "Textus::Port::BuildLock", or nil when the
   # spec describes a string or a non-Textus constant (both exempt). Stops at the
   # first whitespace/comma/`do`, so `describe Textus::Store, ".discover"` yields
   # "Textus::Store".
@@ -37,35 +37,17 @@ module SpecLayout
   # the enclosing namespace (i.e. be missing at most the leaf class). That makes
   # a module-grouping spec (`describe Textus::Manifest` in spec/manifest/) legal,
   # and the same spec at the spec root legal too, while a nested unit spec
-  # (`describe Textus::Ports::BuildLock`) MUST sit under spec/ports/.
+  # (`describe Textus::Port::BuildLock`) MUST sit under spec/ports/.
   def placement_error(constant, dir_segments)
     full = constant.split("::")[1..].map { |s| normalize(s) } # drop "Textus"
     dir  = dir_segments.map { |s| normalize(s) }
 
     return nil if dir == full[0, dir.length] && dir.length >= full.length - 1
-    return nil if legacy_match?(full, dir)
 
     namespace = full[0, full.length - 1]
     expected  = namespace.empty? ? "the spec root" : "spec/#{namespace.join("/")}/"
     actual    = dir.empty? ? "the spec root" : "spec/#{dir.join("/")}/"
     "#{constant} should live under #{expected} (or spec/#{full.join("/")}/), not #{actual}"
-  end
-
-  def legacy_match?(full, dir)
-    aliases = []
-
-    if full[0, 2] == %w[surfaces cli]
-      aliases << ["cli", *full[2..]]
-    elsif full[0, 2] == %w[surfaces mcp]
-      aliases << ["mcp", *full[2..]]
-    elsif full == %w[surfaces rolescope]
-      aliases << []
-    end
-
-    aliases << ["domain", *full[1..]] if full.first == "core"
-    aliases << ["domain", "policy", *full[2..]] if full[0, 2] == %w[manifest policy]
-
-    aliases.any? { |alt| dir == alt[0, dir.length] && dir.length >= alt.length - 1 }
   end
 
   # ── Category-aware mirror (the post-Phase-1 rule) ─────────────────────────

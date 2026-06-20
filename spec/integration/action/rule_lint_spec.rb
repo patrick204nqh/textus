@@ -22,7 +22,7 @@ RSpec.describe Textus::Action::RuleLint do
   let(:ctx) { test_ctx(role: "human") }
 
   def build_rule_lint
-    call_value = Textus::Call.new(
+    call_value = Textus::Value::Call.new(
       role: ctx.role, correlation_id: ctx.correlation_id,
       now: ctx.now, dry_run: ctx.dry_run
     )

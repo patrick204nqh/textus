@@ -20,7 +20,7 @@ RSpec.describe "session contract" do
     after { FileUtils.remove_entry(tmp) }
 
     def observed(store)
-      Textus::Etag.for_contract(store.root)
+      Textus::Value::Etag.for_contract(store.root)
     end
 
     it "raises ContractDrift when a hook file changes mid-session" do

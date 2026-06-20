@@ -8,7 +8,7 @@ module Textus
             manifest: @container.manifest,
             audit_log: @container.audit_log,
             schema_for: ->(name) { @container.schemas.fetch_or_nil(name) },
-          ).call(container: @container, call: Textus::Call.build(role: Textus::Role::DEFAULT))
+          ).call(container: @container, call: Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT))
 
           result["violations"].map do |v|
             fix = v["expected"] &&

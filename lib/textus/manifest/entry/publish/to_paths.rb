@@ -9,7 +9,7 @@ module Textus
         # ADR 0094: iterates publish_targets (to-targets), rendering through a
         # template when the target declares one, or copying verbatim otherwise.
         class ToPaths < Mode
-          def initialize(entry, publisher: Textus::Ports::Publisher.new)
+          def initialize(entry, publisher: Textus::Port::Publisher.new)
             super(entry)
             @publisher = publisher
           end
