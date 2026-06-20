@@ -8,7 +8,7 @@ module Textus
     # SQLite-backed runtime store for textus state. Owns the connection,
     # schema setup, WAL mode, and transaction boundary for the index and queue.
     class Store
-      attr_reader :path, :connection
+      attr_reader :path
 
       def initialize(root:)
         @root = root
@@ -18,9 +18,13 @@ module Textus
         @connection.results_as_hash = true
       end
 
+      def execute(sql, params = [])
+        @connection.execute(sql, params)
+      end
+
       def setup!
-        connection.execute("PRAGMA journal_mode=WAL")
-        connection.execute("PRAGMA foreign_keys=ON")
+        execute("PRAGMA journal_mode=WAL")
+        execute("PRAGMA foreign_keys=ON")
         connection.execute_batch(<<~SQL)
           CREATE TABLE IF NOT EXISTS entries (
             key        TEXT PRIMARY KEY,
@@ -69,6 +73,8 @@ module Textus
       def close
         connection.close unless connection.closed?
       end
+
+      private :connection
 
       def self.open(root)
         store = new(root: root)

@@ -40,7 +40,7 @@ module Textus
 
         def initialize(store:)
           @store = store
-          @db = store.connection
+          @db = store
         end
 
         def enqueue(job)
@@ -70,7 +70,7 @@ module Textus
             )",
             [marked_lease, now.iso8601],
           )
-          row = @db.get_first_row("SELECT * FROM jobs WHERE state = 'leased' AND lease = ? LIMIT 1", [marked_lease])
+          row = @db.execute("SELECT * FROM jobs WHERE state = 'leased' AND lease = ? LIMIT 1", [marked_lease]).first
           return nil unless row
 
           Leased.new(job_from_row(row))
