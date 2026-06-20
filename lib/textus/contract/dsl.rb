@@ -82,7 +82,21 @@ module Textus
           views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
           cli_stdin: @__cli_stdin,
-        )
+        ).tap { generate_initialize_from_contract }
+      end
+
+      def generate_initialize_from_contract
+        return unless is_a?(Class) && self < Textus::Action::Base
+        return unless instance_method(:initialize).owner == Textus::Action::Base
+
+        args = @__args || []
+        params = args.map { |a| a.required ? "#{a.name}:" : "#{a.name}: nil" }.join(", ")
+        assignments = args.map { |a| "@#{a.name} = #{a.name}" }.join("; ")
+        class_eval <<-RUBY, __FILE__, __LINE__ + 1
+          def initialize(#{params})
+            #{assignments}
+          end
+        RUBY
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName
     end

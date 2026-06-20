@@ -15,25 +15,12 @@ module Textus
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       view { |v, _i| v.to_h_for_wire }
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
-
       def call(container:, call:, file_stat: Textus::Port::Storage::FileStat.new)
         @container = container
         @call = call
         @manifest = container.manifest
         @file_stat = file_stat
         annotated_envelope(@key)
-      end
-
-      def self.new(*args, **kwargs)
-        return super(**kwargs) unless args.any?
-
-        positional = instance_method(:initialize).parameters.slice(:keyreq, :key).map(&:last)
-        mapped = positional.zip(args).to_h
-        super(**mapped.merge(kwargs))
       end
 
       private
