@@ -12,7 +12,7 @@ module Textus
             raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
             payload = JSON.parse(@stdin.read)
-            cmd = Textus::Command.new(
+            cmd = Textus::Value::Command.new(
               verb: :put,
               params: { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                         content: nil, if_etag: payload["if_etag"] },

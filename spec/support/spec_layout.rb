@@ -54,7 +54,9 @@ module SpecLayout
   def legacy_match?(full, dir)
     aliases = []
 
-    if full.first == "port"
+    if full.first == "value"
+      aliases << []
+    elsif full.first == "port"
       aliases << ["ports", *full[1..]]
     elsif full[0, 2] == %w[surface cli]
       aliases << ["cli", *full[2..]]

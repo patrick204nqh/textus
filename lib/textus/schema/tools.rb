@@ -6,7 +6,7 @@ module Textus
     module Tools
       # textus schema init NAME --from=KEY  → infer YAML schema from an entry's frontmatter
       def self.init(store, name:, from:)
-        env = pure_get(store, Textus::Role::DEFAULT, from)
+        env = pure_get(store, Textus::Value::Role::DEFAULT, from)
         meta = env.meta
         schema = {
           "name" => name,
@@ -25,7 +25,7 @@ module Textus
         schema = load_schema(store, name)
         drift = []
         store.manifest.resolver.enumerate.each do |row|
-          env = pure_get(store, Textus::Role::DEFAULT, row[:key])
+          env = pure_get(store, Textus::Value::Role::DEFAULT, row[:key])
           begin
             schema.validate!(env.meta)
           rescue SchemaViolation => e
@@ -87,7 +87,7 @@ module Textus
         scope = store.as(role)
         Textus::Action::Get.new(key: key).call(
           container: scope.container,
-          call: Textus::Call.build(role: role),
+          call: Textus::Value::Call.build(role: role),
         )
       end
 

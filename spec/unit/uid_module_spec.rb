@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Uid do
+RSpec.describe Textus::Value::Uid do
   describe ".mint" do
     it "returns a 16-char lowercase hex string" do
       uid = described_class.mint

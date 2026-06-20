@@ -1,7 +1,7 @@
 require "fileutils"
 
 module Textus
-  class Envelope
+  module Envelope
     # Owns the write pipeline (validate, serialize, etag-check, write, audit).
     # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
     # Reader for the existing-uid lookup.
@@ -75,11 +75,11 @@ module Textus
         prune_empty_parents(from_path)
         basename = to_key.split(".").last
         Format.for(new_mentry.format).rewrite_name(to_path, basename)
-        etag_after = Etag.for_file(to_path)
+        etag_after = Value::Etag.for_file(to_path)
 
         raw = @file_store.read(to_path)
         parsed = Format.for(new_mentry.format).parse(raw, path: to_path)
-        envelope = Textus::Envelope.build(
+        envelope = Textus::Value::Envelope.build(
           key: to_key, mentry: new_mentry, path: to_path,
           meta: parsed["_meta"], body: parsed["body"],
           etag: etag_after, content: parsed["content"]
@@ -188,10 +188,10 @@ module Textus
       end
 
       def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content)
-        Textus::Envelope.build(
+        Textus::Value::Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: eff_meta, body: eff_body,
-          etag: Etag.for_bytes(@file_store.read(path)),
+          etag: Value::Etag.for_bytes(@file_store.read(path)),
           content: eff_content
         )
       end

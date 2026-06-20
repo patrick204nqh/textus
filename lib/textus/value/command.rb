@@ -1,5 +1,6 @@
 module Textus
-  Command = Data.define(:verb, :params, :role) do
+  module Value
+    Command = Data.define(:verb, :params, :role) do
     def initialize(verb:, params:, role:)
       super
       params.freeze
@@ -10,5 +11,6 @@ module Textus
     def key        = params[:key]
     def pending_key = params[:pending_key]
     def dry_run    = params[:dry_run]
+  end
   end
 end

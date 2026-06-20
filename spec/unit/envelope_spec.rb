@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Envelope do
+RSpec.describe Textus::Value::Envelope do
   let(:mentry) do
     instance_double(
       Textus::Manifest::Entry::Base,
@@ -28,7 +28,7 @@ RSpec.describe Textus::Envelope do
       )
 
       aggregate_failures do
-        expect(env).to be_a(Textus::Envelope)
+        expect(env).to be_a(Textus::Value::Envelope)
         expect(env.protocol).to eq(Textus::PROTOCOL)
         expect(env.key).to eq("working.foo")
         expect(env.lane).to eq("working")

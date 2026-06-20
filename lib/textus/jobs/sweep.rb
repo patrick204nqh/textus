@@ -1,7 +1,7 @@
 module Textus
   module Jobs
     class Sweep < Base
-      REQUIRED_ROLE = Textus::Role::AUTOMATION
+      REQUIRED_ROLE = Textus::Value::Role::AUTOMATION
       TYPE = "sweep"
 
       def initialize(scope: nil, key: nil)

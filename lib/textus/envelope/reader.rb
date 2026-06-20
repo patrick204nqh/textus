@@ -1,5 +1,5 @@
 module Textus
-  class Envelope
+  module Envelope
     # Read-only counterpart to EnvelopeWriter. Resolves a key, reads the
     # bytes, parses them via the format strategy, and hands back an
     # Envelope. Used by Mv (pre-move inspection) and by EnvelopeWriter
@@ -24,10 +24,10 @@ module Textus
         mentry = res.entry
         raw = @file_store.read(path)
         parsed = Format.for(mentry.format).parse(raw, path: path)
-        Textus::Envelope.build(
+        Textus::Value::Envelope.build(
           key: key, mentry: mentry, path: path,
           meta: parsed["_meta"], body: parsed["body"],
-          etag: Etag.for_bytes(raw), content: parsed["content"]
+          etag: Value::Etag.for_bytes(raw), content: parsed["content"]
         )
       end
 

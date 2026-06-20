@@ -72,7 +72,7 @@ RSpec.describe "Schema evolution" do
 
       expect(res["migrated"]).to include("knowledge.note")
 
-      env = store.as(Textus::Role::DEFAULT).get("knowledge.note")
+      env = store.as(Textus::Value::Role::DEFAULT).get("knowledge.note")
       expect(env.meta).to have_key("title")
       expect(env.meta).not_to have_key("headline")
 

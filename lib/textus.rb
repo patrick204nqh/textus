@@ -64,7 +64,7 @@ Textus::Boot::CLI_VERBS = Textus::Boot.build_cli_verbs.freeze
 
 # Dynamic verb methods on Store (deferred after VERBS is defined).
 Textus::Action::VERBS.each_key do |verb|
-  Textus::Store.define_method(verb) do |*args, role: Textus::Role::DEFAULT, **kwargs|
+  Textus::Store.define_method(verb) do |*args, role: Textus::Value::Role::DEFAULT, **kwargs|
     as(role).public_send(verb, *args, **kwargs)
   end
 

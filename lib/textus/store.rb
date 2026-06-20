@@ -53,7 +53,7 @@ module Textus
         role: role.to_s,
         cursor: audit_log.latest_seq,
         propose_lane: manifest.policy.propose_lane_for(role),
-        contract_etag: Textus::Etag.for_contract(root),
+        contract_etag: Textus::Value::Etag.for_contract(root),
       )
     end
 

@@ -30,7 +30,7 @@ module Textus
 
     module_function
 
-    def build(container:, checks: nil, role: Textus::Role::DEFAULT)
+    def build(container:, checks: nil, role: Textus::Value::Role::DEFAULT)
       selected_keys = checks ? Array(checks).map(&:to_s) : ALL_CHECKS
       unknown = selected_keys - ALL_CHECKS
       unless unknown.empty?

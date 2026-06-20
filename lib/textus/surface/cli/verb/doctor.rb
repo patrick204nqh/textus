@@ -7,7 +7,7 @@ module Textus
           option :checks, "--check=NAME"
 
           def call(store)
-            cmd = Textus::Command.new(
+            cmd = Textus::Value::Command.new(
               verb: :doctor,
               params: { checks: checks&.split(",")&.map(&:strip) },
               role: resolved_role(store),

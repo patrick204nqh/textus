@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Call do
+RSpec.describe Textus::Value::Call do
   it "builds with defaults" do
     call = described_class.build(role: "human")
     expect(call.role).to eq("human")

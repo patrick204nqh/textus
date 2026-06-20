@@ -1,5 +1,6 @@
 module Textus
-  module Role
+  module Value
+    module Role
     # The three role archetypes, each string sourced exactly once: human curates
     # canon, agent proposes, automation converges the machine-maintained lanes
     # (refresh + materialize) (explanation/concepts.md).
@@ -32,5 +33,6 @@ module Textus
 
       File.read(path).strip.then { |s| s.empty? ? nil : s }
     end
+  end
   end
 end

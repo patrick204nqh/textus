@@ -63,13 +63,13 @@ module Textus
 
         raw = @file_store.read(path)
         parsed = Textus::Format.for(mentry.format).parse(raw, path: path)
-        Textus::Envelope.build(
+        Textus::Value::Envelope.build(
           key: key,
           mentry: mentry,
           path: path,
           meta: parsed["_meta"],
           body: parsed["body"],
-          etag: Textus::Etag.for_bytes(raw),
+          etag: Textus::Value::Etag.for_bytes(raw),
           content: parsed["content"],
         )
       end

@@ -26,7 +26,7 @@ RSpec.describe "default role vocabulary: fallback stays consistent with the scaf
 
   it "keeps every default role name within the closed Role::NAMES set" do
     expect(Textus::Manifest::Capabilities::DEFAULT_MAPPING.keys)
-      .to all(satisfy { |n| Textus::Role::NAMES.include?(n) })
-    expect(Textus::Role::NAMES).to include(Textus::Role::DEFAULT, Textus::Role::AGENT)
+      .to all(satisfy { |n| Textus::Value::Role::NAMES.include?(n) })
+    expect(Textus::Value::Role::NAMES).to include(Textus::Value::Role::DEFAULT, Textus::Value::Role::AGENT)
   end
 end

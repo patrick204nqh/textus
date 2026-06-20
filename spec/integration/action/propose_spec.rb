@@ -41,7 +41,7 @@ RSpec.describe Textus::Action::Propose do
     expect(described_class.contract.verb).to eq(:propose)
     expect(described_class.contract.mcp?).to be(true)
     wire = { "uid" => "u", "etag" => "e", "key" => "proposals.x", "lane" => "proposals" }
-    env = instance_double(Textus::Envelope, to_h_for_wire: wire)
+    env = instance_double(Textus::Value::Envelope, to_h_for_wire: wire)
     shaped = described_class.contract.view(:default).call(env, {})
     expect(shaped).to eq(wire)
   end

@@ -17,7 +17,7 @@ RSpec.describe "Pulse contract_etag" do
   end
 
   let(:store) { Textus::Store.new(root) }
-  let(:expected_etag) { Textus::Etag.for_contract(store.root) }
+  let(:expected_etag) { Textus::Value::Etag.for_contract(store.root) }
 
   it "includes contract_etag in the pulse envelope" do
     result = store.as("human").pulse(since: 0)

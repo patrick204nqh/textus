@@ -33,7 +33,7 @@ RSpec.describe Textus::Jobs::Planner do
     it "enqueues materialize for entry.written trigger matching a rule" do
       jobs = planner.plan(
         trigger: { "type" => "entry.written", "target" => "artifacts.derived.test" },
-        role: Textus::Role::AUTOMATION,
+        role: Textus::Value::Role::AUTOMATION,
       )
       expect(jobs.map(&:type)).to include("materialize")
     end
@@ -41,7 +41,7 @@ RSpec.describe Textus::Jobs::Planner do
     it "returns empty array when trigger matches no rule" do
       jobs = planner.plan(
         trigger: { "type" => "unknown.trigger", "target" => "knowledge.foo" },
-        role: Textus::Role::AUTOMATION,
+        role: Textus::Value::Role::AUTOMATION,
       )
       expect(jobs).to be_empty
     end
@@ -49,7 +49,7 @@ RSpec.describe Textus::Jobs::Planner do
     it "prefers rules over ACTIONS_BY_TRIGGER when react rules exist" do
       jobs = planner.plan(
         trigger: { "type" => "entry.written", "target" => "artifacts.derived.test" },
-        role: Textus::Role::AUTOMATION,
+        role: Textus::Value::Role::AUTOMATION,
       )
       expect(jobs).not_to be_empty
       expect(jobs.first).to be_a(Textus::Jobs::Queue::Job)

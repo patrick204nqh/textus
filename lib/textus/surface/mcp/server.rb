@@ -10,7 +10,7 @@ module Textus
       # textus Session lifecycle (built lazily on first tool call) and delegates
       # execution to Catalog.
       class Server
-        def initialize(store:, role: Textus::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
+        def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
           @store  = store
           @role   = role
           @stdin  = stdin
@@ -93,7 +93,7 @@ module Textus
           raise_handler_error("resource read failed: #{e.message}", -32_603)
         end
 
-        def contract_etag_now = Textus::Etag.for_contract(@store.root)
+        def contract_etag_now = Textus::Value::Etag.for_contract(@store.root)
 
         # The SDK parses JSON with symbolize_names:true, making all nested hash keys symbols.
         # Recursively stringify so Catalog.call receives string-keyed hashes throughout.

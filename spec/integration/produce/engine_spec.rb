@@ -25,7 +25,7 @@ RSpec.describe Textus::Produce::Engine do
   it "completes as a no-op when no workflow matches and entry has no publish targets" do
     result = described_class.converge(
       container: store.container,
-      call: Textus::Call.build(role: "automation"),
+      call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.feeds.github.repos"],
     )
     expect(result[:completed]).to include("artifacts.feeds.github.repos")
@@ -44,7 +44,7 @@ RSpec.describe Textus::Produce::Engine do
 
     result = described_class.converge(
       container: store.container,
-      call: Textus::Call.build(role: "automation"),
+      call: Textus::Value::Call.build(role: "automation"),
       keys: ["artifacts.feeds.github.repos"],
     )
     expect(result[:completed]).to include("artifacts.feeds.github.repos")

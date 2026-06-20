@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Command do
+RSpec.describe Textus::Value::Command do
   it "carries verb, params, and role" do
     cmd = described_class.new(verb: :get, params: { key: "knowledge.note" }, role: "human")
     expect(cmd.verb).to eq(:get)

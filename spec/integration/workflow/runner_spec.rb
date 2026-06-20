@@ -16,7 +16,7 @@ RSpec.describe Textus::Workflow::Runner do
           source: { from: external, command: "true", sources: [] }
     YAML
   end
-  let(:call) { Textus::Call.build(role: "automation") }
+  let(:call) { Textus::Value::Call.build(role: "automation") }
 
   def build_definition(pattern: "artifacts.**", &block)
     Textus::Workflow::DSL::Definition.new("test").tap do |d|

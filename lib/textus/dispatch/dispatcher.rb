@@ -5,7 +5,7 @@ module Textus
 
       def dispatch(spec, inputs, store:, role:, session: nil, scope: nil, correlation_id: nil) # rubocop:disable Metrics/ParameterLists
         resolved = Binder.bind(spec, inputs, session: session)
-        cmd = Textus::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
+        cmd = Textus::Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
 
         if spec.verb == :pulse && !session && scope
           cursor_store = Textus::CursorStore.new(root: scope.container.root, role: scope.role)

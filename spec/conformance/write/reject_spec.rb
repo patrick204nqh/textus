@@ -63,7 +63,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     result = store.as("human").reject("proposals.draft")
     expect(result["rejected"]).to eq("proposals.draft")
     expect(result["target_key"]).to eq("identity.target")
-    expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
+    expect(store.as(Textus::Value::Role::DEFAULT).get("proposals.draft")).to be_nil
   end
 
   it "refuses to reject a non-proposals entry" do
@@ -155,7 +155,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       result = store.as("human").reject("proposals.draft")
       expect(result["rejected"]).to eq("proposals.draft")
       expect(result["target_key"]).to eq("identity.target")
-      expect(store.as(Textus::Role::DEFAULT).get("proposals.draft")).to be_nil
+      expect(store.as(Textus::Value::Role::DEFAULT).get("proposals.draft")).to be_nil
     end
 
     it "refuses: a zone declaring kind: canon is not a proposal zone (even if named 'pending')" do

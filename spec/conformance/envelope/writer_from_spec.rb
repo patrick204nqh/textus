@@ -27,7 +27,7 @@ RSpec.describe "Textus::Envelope::Writer.from" do
       payload: Textus::Envelope::Writer::Payload.new(meta: {}, body: "hello", content: nil),
     )
 
-    expect(env).to be_a(Textus::Envelope)
+    expect(env).to be_a(Textus::Value::Envelope)
     path = File.join(root, "data", "knowledge", "foo.md")
     expect(File.binread(path)).to include("hello")
 

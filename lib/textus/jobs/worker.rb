@@ -52,8 +52,8 @@ module Textus
                  else
                    klass.new
                  end
-        call   = Textus::Call.build(
-          role: job.role || Textus::Role::AUTOMATION,
+        call   = Textus::Value::Call.build(
+          role: job.role || Textus::Value::Role::AUTOMATION,
           correlation_id: SecureRandom.uuid,
         )
         action.call(container: @container, call: call)

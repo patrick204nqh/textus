@@ -43,7 +43,7 @@ module Textus
           key: key,
           lane: entry.lane,
           format: entry.format.to_s,
-          etag: Textus::Etag.for_bytes(raw),
+          etag: Textus::Value::Etag.for_bytes(raw),
           content: content_text(parsed),
           extra: extra_json(parsed),
         }

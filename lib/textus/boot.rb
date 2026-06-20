@@ -150,7 +150,7 @@ module Textus
 
     def self.build(container:)
       manifest = container.manifest
-      etag = Textus::Etag.for_contract(container.root)
+      etag = Textus::Value::Etag.for_contract(container.root)
 
       {
         "protocol" => PROTOCOL_ID,
@@ -168,7 +168,7 @@ module Textus
       res = container.manifest.resolver.resolve(key)
       return nil unless res.path && File.exist?(res.path)
 
-      call = Textus::Call.build(role: Textus::Role::DEFAULT)
+      call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
       env  = Textus::Action::Get.new(key: key).call(container: container, call: call)
       env&.content
     rescue Textus::Error
@@ -179,7 +179,7 @@ module Textus
       res = container.manifest.resolver.resolve("knowledge.boot")
       return nil unless res.path && File.exist?(res.path)
 
-      call = Textus::Call.build(role: Textus::Role::DEFAULT)
+      call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
       env  = Textus::Action::Get.new(key: "knowledge.boot").call(container: container, call: call)
       body = env&.body&.strip
       body.nil? || body.empty? ? nil : body

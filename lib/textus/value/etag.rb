@@ -1,7 +1,8 @@
 require "digest"
 
 module Textus
-  module Etag
+  module Value
+    module Etag
     def self.for_bytes(bytes)
       "sha256:#{Digest::SHA256.hexdigest(bytes)}"
     end
@@ -32,5 +33,6 @@ module Textus
         *Dir.glob(File.join(root, "schemas", "**", "*")).select { |f| File.file?(f) },
       ]
     end
+  end
   end
 end

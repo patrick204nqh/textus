@@ -13,7 +13,7 @@ module Textus
           option :as_flag, "--as=ROLE"
 
           def call(store)
-            role = resolved_role(store, default: Textus::Role::AGENT)
+            role = resolved_role(store, default: Textus::Value::Role::AGENT)
             Textus::Surface::MCP::Server.new(store: store, stdin: @stdin, stdout: @stdout, role: role).run
             0
           end

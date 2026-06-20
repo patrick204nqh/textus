@@ -77,7 +77,7 @@ module Textus
 
     def build_call(cmd, correlation_id: nil)
       dry_run = cmd.params.key?(:dry_run) ? !cmd.params[:dry_run].nil? : false
-      Textus::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
+      Textus::Value::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
     end
   end
 end

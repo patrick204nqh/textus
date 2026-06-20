@@ -4,7 +4,8 @@ module Textus
   # Immutable per-invocation value. Carries who is acting (role), the
   # request correlation id, the wall clock, and the dry_run flag — the
   # bits Use Cases need that are not part of the Container.
-  Call = Data.define(:role, :correlation_id, :now, :dry_run) do
+  module Value
+    Call = Data.define(:role, :correlation_id, :now, :dry_run) do
     def self.build(role:, correlation_id: nil, now: nil, dry_run: false)
       new(
         role: role.to_s,
@@ -24,5 +25,6 @@ module Textus
         dry_run: dry_run,
       )
     end
+  end
   end
 end

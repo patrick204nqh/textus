@@ -26,9 +26,9 @@ module Textus
           roles.each_with_index do |r, i|
             path = "$.roles[#{i}]"
             name = r["name"]
-            unless Textus::Role::NAMES.include?(name)
+            unless Textus::Value::Role::NAMES.include?(name)
               raise BadManifest.new(
-                "unknown role name '#{name}' at '#{path}' (allowed: #{Textus::Role::NAMES.join(", ")})",
+                "unknown role name '#{name}' at '#{path}' (allowed: #{Textus::Value::Role::NAMES.join(", ")})",
               )
             end
             Array(r["can"]).each do |verb|
@@ -149,7 +149,7 @@ module Textus
 
           raise BadManifest.new(
             "invalid owner '#{owner}' at '#{path}' " \
-            "(expected <archetype> or <archetype>:<subject>, archetype one of: #{Textus::Role::NAMES.join(", ")})",
+            "(expected <archetype> or <archetype>:<subject>, archetype one of: #{Textus::Value::Role::NAMES.join(", ")})",
           )
         end
 
@@ -157,7 +157,7 @@ module Textus
           return false unless token.is_a?(String) && !token.empty?
 
           archetype, subject = token.split(":", 2)
-          return false unless Textus::Role::NAMES.include?(archetype)
+          return false unless Textus::Value::Role::NAMES.include?(archetype)
           return true if subject.nil?
 
           OWNER_SUBJECT_PATTERN.match?(subject)

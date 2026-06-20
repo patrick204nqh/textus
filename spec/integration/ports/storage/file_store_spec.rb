@@ -65,7 +65,7 @@ RSpec.describe Textus::Port::Storage::FileStore do
 
     it "matches Etag.for_file" do
       store.write(path, "abc")
-      expect(store.etag(path)).to eq(Textus::Etag.for_file(path))
+      expect(store.etag(path)).to eq(Textus::Value::Etag.for_file(path))
     end
   end
 end

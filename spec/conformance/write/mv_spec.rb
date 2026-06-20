@@ -34,7 +34,7 @@ RSpec.describe "textus mv" do
     expect(res["uid"]).to eq(uid)
     expect(File.exist?(File.join(root, "data/knowledge/notes/alpha.md"))).to be false
     expect(File.exist?(File.join(root, "data/knowledge/notes/beta.md"))).to be true
-    expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(uid)
+    expect(store.as(Textus::Value::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(uid)
   end
 
   it "writes an audit row with verb=mv and top-level structural fields" do
@@ -75,11 +75,11 @@ RSpec.describe "textus mv" do
   it "mints a uid if the source had none, so the audit row carries it" do
     src = File.join(root, "data/knowledge/notes/alpha.md")
     File.write(src, "---\nname: alpha\n---\nbody\n")
-    expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.alpha").uid).to be_nil
+    expect(store.as(Textus::Value::Role::DEFAULT).get("knowledge.notes.alpha").uid).to be_nil
 
     res = store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
     expect(res["uid"]).to match(/\A[a-f0-9]{12,}\z/)
-    expect(store.as(Textus::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(res["uid"])
+    expect(store.as(Textus::Value::Role::DEFAULT).get("knowledge.notes.beta").uid).to eq(res["uid"])
 
     parsed = last_audit_row(store)
     expect(parsed["uid"]).to eq(res["uid"])

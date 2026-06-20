@@ -8,13 +8,13 @@ module Textus
   # (see Store#initialize); Store delegates its readers to this record,
   # so this struct is the single source of truth for the field set.
   class Container < Dry::Struct
-    attribute :manifest,   Types::Any
-    attribute :file_store, Types::Any
-    attribute :schemas,    Types::Any
-    attribute :root,       Types::String
-    attribute :audit_log,  Types::Any
-    attribute :workflows,  Types::Any
-    attribute :gate,       Types::Any
+    attribute :manifest,   Value::Types::Any
+    attribute :file_store, Value::Types::Any
+    attribute :schemas,    Value::Types::Any
+    attribute :root,       Value::Types::String
+    attribute :audit_log,  Value::Types::Any
+    attribute :workflows,  Value::Types::Any
+    attribute :gate,       Value::Types::Any
 
     def with(**attrs) = self.class.new(to_h.merge(attrs))
 

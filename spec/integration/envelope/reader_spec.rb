@@ -34,7 +34,7 @@ RSpec.describe Textus::Envelope::Reader do
 
       writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "hello"))
       env = reader.read("knowledge.foo")
-      expect(env).to be_a(Textus::Envelope)
+      expect(env).to be_a(Textus::Value::Envelope)
       expect(env.body).to include("hello")
     end
   end

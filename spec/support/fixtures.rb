@@ -110,11 +110,11 @@ module TextusSpecHelpers
     )
   end
 
-  # Builds a Textus::Call value for tests. Callers pass the role (and
+  # Builds a Textus::Value::Call value for tests. Callers pass the role (and
   # optionally correlation_id, dry_run) — collaborators come from the
   # Store/Container, not from Call.
   def test_ctx(role: "human", correlation_id: nil, dry_run: false)
-    Textus::Call.build(
+    Textus::Value::Call.build(
       role: role, correlation_id: correlation_id, dry_run: dry_run,
     )
   end
@@ -144,7 +144,7 @@ module TextusSpecHelpers
 
   # Seed convergence jobs for the given scope and then burn the queue through
   # Maintenance::Drain (which is queue-burn only).
-  def converge_now(store, prefix: nil, lane: nil, role: Textus::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
+  def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
     Textus::Port::Store.open(store.root) do |store_port|
       queue = Textus::Jobs::Queue.new(store: store_port)
       Textus::Jobs::Planner.seed(container: store.container, queue: queue, role: role)

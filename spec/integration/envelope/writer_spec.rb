@@ -25,7 +25,7 @@ RSpec.describe Textus::Envelope::Writer do
       mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
       env = writer.put("knowledge.foo", mentry: mentry, payload: payload(body: "hi"))
-      expect(env).to be_a(Textus::Envelope)
+      expect(env).to be_a(Textus::Value::Envelope)
       path = File.join(root, "data", "knowledge", "foo.md")
       expect(File.binread(path)).to include("hi")
 

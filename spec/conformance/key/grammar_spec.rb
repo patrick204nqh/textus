@@ -76,7 +76,7 @@ RSpec.describe "Key grammar enforcement" do
       end
       store = Textus::Store.new(root)
       begin
-        store.as(Textus::Role::DEFAULT).get("workng.notes.alpha")
+        store.as(Textus::Value::Role::DEFAULT).get("workng.notes.alpha")
         raise "expected UnknownKey"
       rescue Textus::UnknownKey => e
         expect(e.suggestions).to include("working.notes.alpha")

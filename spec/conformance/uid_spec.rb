@@ -34,16 +34,16 @@ RSpec.describe "Textus UID" do
     uid = e1.uid
     e2 = ops.put("knowledge.md", meta: { "name" => "md" }, body: "again")
     expect(e2.uid).to eq(uid)
-    e3 = store.as(Textus::Role::DEFAULT).get("knowledge.md")
+    e3 = store.as(Textus::Value::Role::DEFAULT).get("knowledge.md")
     expect(e3.uid).to eq(uid)
   end
 
   it "shows nil uid for existing files that have none, then mints on put" do
     path = File.join(root, "data/knowledge/md.md")
     File.write(path, "---\nname: md\n---\nhand-rolled\n")
-    expect(store.as(Textus::Role::DEFAULT).get("knowledge.md").uid).to be_nil
+    expect(store.as(Textus::Value::Role::DEFAULT).get("knowledge.md").uid).to be_nil
 
-    existing = store.as(Textus::Role::DEFAULT).get("knowledge.md")
+    existing = store.as(Textus::Value::Role::DEFAULT).get("knowledge.md")
     env = store.as("human").put(
       "knowledge.md",
       meta: existing.meta,
@@ -71,6 +71,6 @@ RSpec.describe "Textus UID" do
 
   it "Store#uid returns the uid for a key" do
     env = store.as("human").put("knowledge.md", meta: { "name" => "md" }, body: "hi")
-    expect(store.as(Textus::Role::DEFAULT).uid("knowledge.md")).to eq(env.uid)
+    expect(store.as(Textus::Value::Role::DEFAULT).uid("knowledge.md")).to eq(env.uid)
   end
 end

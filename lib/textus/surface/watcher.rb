@@ -15,7 +15,7 @@ module Textus
           Textus::Jobs::Planner.seed(
             container: @container,
             queue: queue,
-            role: Textus::Role::AUTOMATION,
+            role: Textus::Value::Role::AUTOMATION,
           )
           queue.reclaim(now: Textus::Port::Clock.new.now)
           Textus::Jobs::Worker.for(container: @container, queue: queue).drain

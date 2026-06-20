@@ -19,7 +19,7 @@ module Textus
 
         def exists?(path) = File.exist?(path)
 
-        def etag(path) = Etag.for_file(path)
+        def etag(path) = Value::Etag.for_file(path)
       end
     end
   end

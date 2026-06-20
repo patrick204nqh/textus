@@ -29,7 +29,7 @@ module Textus
           "cursor" => @audit_log.latest_seq,
           "changed" => Textus::Action::Audit.new(seq_since: @since).call(container: container),
           "pending_review" => review_keys,
-          "contract_etag" => Textus::Etag.for_contract(@root),
+          "contract_etag" => Textus::Value::Etag.for_contract(@root),
           "index_etag" => index_etag(container),
         }
       end

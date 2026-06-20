@@ -8,10 +8,10 @@ module Textus
   # propose_lane captured at boot. Immutable Dry::Struct::Value; advance_cursor
   # and with return new instances. ADR 0036; contract_etag widened in ADR 0074.
   class Session < Dry::Struct
-    attribute :role,          Types::RoleName
-    attribute :cursor,        Types::Cursor
-    attribute :propose_lane,  Types::String.optional
-    attribute :contract_etag, Types::String
+    attribute :role,          Value::Types::RoleName
+    attribute :cursor,        Value::Types::Cursor
+    attribute :propose_lane,  Value::Types::String.optional
+    attribute :contract_etag, Value::Types::String
 
     def with(**attrs) = self.class.new(to_h.merge(attrs))
 

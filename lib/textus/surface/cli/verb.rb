@@ -93,9 +93,9 @@ module Textus
         # Resolves the active role for this invocation. Honors the verb's
         # `--as` flag if declared, then TEXTUS_ROLE, then the project default.
         # Pass `default:` to override the fallback (e.g. MCPServe uses AGENT).
-        def resolved_role(store, default: Role::DEFAULT)
+        def resolved_role(store, default: Value::Role::DEFAULT)
           flag = respond_to?(:as_flag) ? as_flag : nil
-          Role.resolve(flag: flag, env: ENV, root: store.root, default: default)
+          Value::Role.resolve(flag: flag, env: ENV, root: store.root, default: default)
         end
 
         # Builds a Command from spec + inputs and dispatches through Gate.
