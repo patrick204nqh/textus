@@ -13,6 +13,7 @@ module Textus
       attribute :format,     Types::FormatName
       attribute :etag,       Types::String
       attribute :uid,        Types::String.optional
+      attribute :sources,    Types::Array.of(Types::Hash).optional
       attribute :schema_ref, Types::String.optional
       attribute :meta,       Types::Hash.default({}.freeze)
       attribute :body,       Types::String.optional
@@ -30,6 +31,7 @@ module Textus
           path: path,
           format: mentry.format,
           uid: extract_uid(meta),
+          sources: extract_sources(meta),
           etag: etag,
           schema_ref: mentry.schema,
           meta: meta,
@@ -42,6 +44,11 @@ module Textus
       def self.extract_uid(meta)
         v = meta.is_a?(Hash) ? meta["uid"] : nil
         v.is_a?(String) ? v : nil
+      end
+
+      def self.extract_sources(meta)
+        v = meta.is_a?(Hash) ? meta["sources"] : nil
+        v.is_a?(Array) && !v.empty? ? v : nil
       end
 
       def with(**attrs) = self.class.new(to_h.merge(attrs))
@@ -60,6 +67,7 @@ module Textus
           "schema_ref" => schema_ref,
           "uid" => uid,
         }
+        h["sources"] = sources if sources
         h["content"] = content unless content.nil?
         freshness&.to_h_for_wire&.each { |k, v| h[k] = v }
         h
