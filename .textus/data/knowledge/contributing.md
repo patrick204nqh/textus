@@ -1,4 +1,4 @@
-<!-- Generated from .textus/zones/knowledge/contributing.md — edit there, then run `textus drain`. Do not hand-edit CONTRIBUTING.md. -->
+<!-- Generated from .textus/data/knowledge/contributing.md — edit there, then run `textus drain`. Do not hand-edit CONTRIBUTING.md. -->
 
 # Contributing
 

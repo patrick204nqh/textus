@@ -1,4 +1,4 @@
-<!-- Generated from .textus/zones/knowledge/security.md — edit there, then run `textus drain`. Do not hand-edit SECURITY.md. -->
+<!-- Generated from .textus/data/knowledge/security.md — edit there, then run `textus drain`. Do not hand-edit SECURITY.md. -->
 
 # Security
 

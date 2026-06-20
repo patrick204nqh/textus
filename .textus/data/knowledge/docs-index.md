@@ -1,11 +1,11 @@
 # textus documentation
 
 > **Explanation** · for everyone · **read when** you're not sure which doc you need
-> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-05 (v0.38)
+> **SSoT for** the docs map + documentation conventions · **reviewed** 2026-06 (v0.54)
 
 The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides live here.
 
-> **These files are generated.** The source of truth is `.textus/zones/knowledge/`.
+> **These files are generated.** The source of truth is `.textus/data/knowledge/`.
 > Edit there and run `textus drain`; do not hand-edit files under `docs/`.
 
 ## Start here

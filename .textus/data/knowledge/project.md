@@ -11,7 +11,7 @@ commands:
   drain: bundle exec exe/textus drain --as=automation
 ---
 
-textus is a Ruby gem (≥ 3.3) implementing the `textus/3` wire protocol: a
+textus is a Ruby gem (≥ 3.3) implementing the `textus/4` wire protocol: a
 durable, multi-writer context store where three actors — humans, agents, and
 automation — each write into their own zone, and low-trust input climbs to
 canon only by passing a guarded transition (an agent's `propose` needs a human
