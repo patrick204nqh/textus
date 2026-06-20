@@ -24,7 +24,6 @@ module Textus
         @container = container
         @call = call
         @manifest = container.manifest
-        @file_store = container.file_store
         @file_stat = file_stat
         annotated_envelope(@key)
       end
@@ -56,22 +55,7 @@ module Textus
       end
 
       def read_raw_envelope(key)
-        res = @manifest.resolver.resolve(key)
-        mentry = res.entry
-        path = res.path
-        return nil unless @file_store.exists?(path)
-
-        raw = @file_store.read(path)
-        parsed = Textus::Format.for(mentry.format).parse(raw, path: path)
-        Textus::Value::Envelope.build(
-          key: key,
-          mentry: mentry,
-          path: path,
-          meta: parsed["_meta"],
-          body: parsed["body"],
-          etag: Textus::Value::Etag.for_bytes(raw),
-          content: parsed["content"],
-        )
+        Textus::Store::Envelope::Reader.from(container: @container).read(key)
       end
     end
   end
