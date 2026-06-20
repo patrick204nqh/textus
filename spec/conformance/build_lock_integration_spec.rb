@@ -50,7 +50,7 @@ RSpec.describe "textus drain concurrency (build lock)" do
     stdout = StringIO.new
     stderr = StringIO.new
     exit_code = Textus::Surface::CLI.run(["--root=#{root}", "drain"],
-                                          stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
+                                         stdin: StringIO.new(""), stdout: stdout, stderr: stderr)
 
     expect(exit_code).to eq(0)
     envelope = JSON.parse(stdout.string.lines.last)

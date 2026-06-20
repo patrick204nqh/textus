@@ -6,15 +6,15 @@ module Textus
   # single store.
   module Value
     module Uid
-    module_function
+      module_function
 
-    def mint
-      SecureRandom.hex(8)
-    end
+      def mint
+        SecureRandom.hex(8)
+      end
 
-    def valid?(str)
-      str.is_a?(String) && str.match?(/\A[0-9a-f]{16}\z/)
+      def valid?(str)
+        str.is_a?(String) && str.match?(/\A[0-9a-f]{16}\z/)
+      end
     end
-  end
   end
 end

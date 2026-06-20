@@ -169,7 +169,7 @@ RSpec.describe Textus::Boot do
     out = StringIO.new
     err = StringIO.new
     code = Textus::Surface::CLI.run(["boot", "--output=json"],
-                                     stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
+                                    stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)
     expect(parsed["protocol"]).to eq("textus/4")

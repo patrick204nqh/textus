@@ -143,7 +143,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Gate::VERB_ACTIONS.each do |verb, action_classes|
+          Textus::Gate::VERB_ACTIONS.each_value do |action_classes|
             action_class = action_classes.first
             next unless action_class.respond_to?(:contract?) && action_class.contract?
 

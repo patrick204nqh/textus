@@ -25,7 +25,7 @@ SOURCES = [
   { name: "stop-slop",             url: "https://github.com/hardikpandya/stop-slop.git" },
   { name: "mattpocock-skills",     url: "https://github.com/mattpocock/skills.git" },
   { name: "ecc",                   url: "https://github.com/affaan-m/ecc.git" },
-  { name: "ponytail",             url: "https://github.com/DietrichGebert/ponytail.git" },
+  { name: "ponytail", url: "https://github.com/DietrichGebert/ponytail.git" },
 ].freeze
 
 # ── Sync targets (relative to repo root) ─────────────────────────────────────

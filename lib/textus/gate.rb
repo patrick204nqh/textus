@@ -3,35 +3,35 @@
 module Textus
   class Gate
     VERB_ACTIONS = {
-      get:              [Textus::Action::Get],
-      put:              [Textus::Action::Put],
-      propose:          [Textus::Action::Propose],
-      key_delete:       [Textus::Action::KeyDelete],
-      key_mv:           [Textus::Action::KeyMv],
-      accept:           [Textus::Action::Accept],
-      reject:           [Textus::Action::Reject],
-      enqueue:          [Textus::Action::Enqueue],
-      list:             [Textus::Action::List],
-      where:            [Textus::Action::Where],
-      uid:              [Textus::Action::Uid],
-      blame:            [Textus::Action::Blame],
-      audit:            [Textus::Action::Audit],
-      deps:             [Textus::Action::Deps],
-      rdeps:            [Textus::Action::Rdeps],
-      pulse:            [Textus::Action::Pulse],
-      rule_explain:     [Textus::Action::RuleExplain],
-      rule_list:        [Textus::Action::RuleList],
-      rule_lint:        [Textus::Action::RuleLint],
-      published:        [Textus::Action::Published],
-      schema_show:      [Textus::Action::SchemaEnvelope],
-      doctor:           [Textus::Action::Doctor],
-      boot:             [Textus::Action::Boot],
-      jobs:             [Textus::Action::Jobs],
-      data_mv:          [Textus::Action::DataMv],
-      key_mv_prefix:    [Textus::Action::KeyMvPrefix],
-      key_delete_prefix:[Textus::Action::KeyDeletePrefix],
-      drain:            [Textus::Action::Drain],
-      ingest:           [Textus::Action::Ingest],
+      get: [Textus::Action::Get],
+      put: [Textus::Action::Put],
+      propose: [Textus::Action::Propose],
+      key_delete: [Textus::Action::KeyDelete],
+      key_mv: [Textus::Action::KeyMv],
+      accept: [Textus::Action::Accept],
+      reject: [Textus::Action::Reject],
+      enqueue: [Textus::Action::Enqueue],
+      list: [Textus::Action::List],
+      where: [Textus::Action::Where],
+      uid: [Textus::Action::Uid],
+      blame: [Textus::Action::Blame],
+      audit: [Textus::Action::Audit],
+      deps: [Textus::Action::Deps],
+      rdeps: [Textus::Action::Rdeps],
+      pulse: [Textus::Action::Pulse],
+      rule_explain: [Textus::Action::RuleExplain],
+      rule_list: [Textus::Action::RuleList],
+      rule_lint: [Textus::Action::RuleLint],
+      published: [Textus::Action::Published],
+      schema_show: [Textus::Action::SchemaEnvelope],
+      doctor: [Textus::Action::Doctor],
+      boot: [Textus::Action::Boot],
+      jobs: [Textus::Action::Jobs],
+      data_mv: [Textus::Action::DataMv],
+      key_mv_prefix: [Textus::Action::KeyMvPrefix],
+      key_delete_prefix: [Textus::Action::KeyDeletePrefix],
+      drain: [Textus::Action::Drain],
+      ingest: [Textus::Action::Ingest],
     }.freeze
 
     def initialize(container)
@@ -71,6 +71,7 @@ module Textus
       param_set = params.to_set { |_t, n| n }
       cmd.params.each_with_object({}) do |(m, val), h|
         next unless accepts_keyrest || param_set.include?(m)
+
         h[m] = val unless val.nil?
       end
     end

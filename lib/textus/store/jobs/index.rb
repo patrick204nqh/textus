@@ -3,17 +3,17 @@
 module Textus
   class Store
     module Jobs
-    class Index < Base
-      TYPE = "index"
+      class Index < Base
+        TYPE = "index"
 
-      def args = {}
+        def args = {}
 
-      def call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
-        Textus::Port::Store.open(container.root) do |store|
-          Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+        def call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
+          Textus::Port::Store.open(container.root) do |store|
+            Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+          end
         end
       end
     end
-  end
   end
 end

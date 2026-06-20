@@ -3,20 +3,20 @@
 module Textus
   class Store
     module Jobs
-    class Materialize < Base
-      TYPE = "materialize"
+      class Materialize < Base
+        TYPE = "materialize"
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
+        def initialize(key:)
+          super()
+          @key = key
+        end
 
-      def args = { key: @key }
+        def args = { key: @key }
 
-      def call(container:, call:)
-        Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
+        def call(container:, call:)
+          Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
+        end
       end
     end
-  end
   end
 end

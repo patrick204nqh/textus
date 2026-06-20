@@ -1,8 +1,9 @@
 require "spec_helper"
 
 RSpec.describe Textus::Store::Geometry do
-  let(:root) { "/tmp/store/.textus" }
   subject    { described_class.new(root) }
+
+  let(:root) { "/tmp/store/.textus" }
 
   it "nests runtime paths under .state/" do
     expect(subject.run_root).to eq("/tmp/store/.textus/.state")

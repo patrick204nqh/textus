@@ -9,29 +9,29 @@ module Textus
   # and with return new instances. ADR 0036; contract_etag widened in ADR 0074.
   class Store
     class Session < Dry::Struct
-    attribute :role,          Value::Types::RoleName
-    attribute :cursor,        Value::Types::Cursor
-    attribute :propose_lane,  Value::Types::String.optional
-    attribute :contract_etag, Value::Types::String
+      attribute :role,          Value::Types::RoleName
+      attribute :cursor,        Value::Types::Cursor
+      attribute :propose_lane,  Value::Types::String.optional
+      attribute :contract_etag, Value::Types::String
 
-    def with(**attrs) = self.class.new(to_h.merge(attrs))
+      def with(**attrs) = self.class.new(to_h.merge(attrs))
 
-    def advance_cursor(new_cursor) = with(cursor: new_cursor)
+      def advance_cursor(new_cursor) = with(cursor: new_cursor)
 
-    def check_etag!(observed_etag)
-      return if observed_etag == contract_etag
+      def check_etag!(observed_etag)
+        return if observed_etag == contract_etag
 
-      raise Textus::ContractDrift.new(
-        "contract changed (manifest/hooks/schemas were #{short_etag(contract_etag)}, " \
-        "now #{short_etag(observed_etag)}); re-run boot",
-      )
+        raise Textus::ContractDrift.new(
+          "contract changed (manifest/hooks/schemas were #{short_etag(contract_etag)}, " \
+          "now #{short_etag(observed_etag)}); re-run boot",
+        )
+      end
+
+      private
+
+      # First 8 hex chars after the "sha256:" prefix — a stable short id for
+      # the drift diagnostic.
+      def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
     end
-
-    private
-
-    # First 8 hex chars after the "sha256:" prefix — a stable short id for
-    # the drift diagnostic.
-    def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
-  end
   end
 end

@@ -13,17 +13,17 @@ RSpec.describe Textus::Store::Geometry do
     end
 
     it "resolves an entry path with extension" do
-      mentry = instance_double("Textus::Manifest::Entry::Base",
-        path: "knowledge/note",
-        format: "markdown")
+      mentry = instance_double(Textus::Manifest::Entry::Base,
+                               path: "knowledge/note",
+                               format: "markdown")
       allow(Textus::Format).to receive_message_chain(:for, :extensions).and_return([".md"])
       expect(sg.entry_path(mentry)).to eq("/tmp/store/.textus/data/knowledge/note.md")
     end
 
     it "resolves an entry path with existing extension" do
-      mentry = instance_double("Textus::Manifest::Entry::Base",
-        path: "data/knowledge/note.md",
-        format: "markdown")
+      mentry = instance_double(Textus::Manifest::Entry::Base,
+                               path: "data/knowledge/note.md",
+                               format: "markdown")
       expect(sg.entry_path(mentry)).to eq("/tmp/store/.textus/data/knowledge/note.md")
     end
   end

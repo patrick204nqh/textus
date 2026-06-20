@@ -50,7 +50,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
       out = StringIO.new
       err = StringIO.new
       rc = Textus::Surface::CLI.run(["validate-all", "--output=json"],
-                                     stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
+                                    stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
       expect(rc).not_to eq(0)
       expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")
     end
