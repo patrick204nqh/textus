@@ -1,5 +1,6 @@
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Base
       def self.inherited(subclass)
         super
@@ -19,5 +20,6 @@ module Textus
 
       def args = {}
     end
+  end
   end
 end

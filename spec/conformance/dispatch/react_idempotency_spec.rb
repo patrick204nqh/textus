@@ -29,7 +29,7 @@ RSpec.describe "jobs react idempotency" do
   end
 
   it "coalesces duplicate entry.written triggers into one effective job set" do
-    planner = Textus::Jobs::Planner.new(container: store.container)
+    planner = Textus::Store::Jobs::Planner.new(container: store.container)
     jobs = planner.plan(
       trigger: { "type" => "entry.written" },
       role: "automation",

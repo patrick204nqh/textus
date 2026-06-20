@@ -43,7 +43,7 @@ module Textus
           { "op" => "mv", "from" => key, "to" => "#{@to}#{key[@from.length..]}" }
         end
 
-        plan = Textus::Jobs::Plan.new(steps: steps, warnings: [])
+        plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
         return plan if @dry_run
 
         rewrite_manifest!(root)

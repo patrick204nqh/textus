@@ -13,7 +13,7 @@ RSpec.describe Textus::Action::Enqueue do
     YAML
   end
   let(:store_port) { Textus::Port::Store.new(root: root).setup! }
-  let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+  let(:queue) { Textus::Store::Jobs::Queue.new(store: store_port) }
 
   after { store_port.close }
 

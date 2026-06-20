@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Planner do
+RSpec.describe Textus::Store::Jobs::Planner do
   it "does not include refresh in the convergence trigger actions" do
     expect(described_class::ACTIONS_BY_TRIGGER["convergence"]).not_to include("refresh")
   end

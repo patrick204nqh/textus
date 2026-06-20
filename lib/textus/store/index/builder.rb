@@ -4,7 +4,8 @@ require "json"
 require "time"
 
 module Textus
-  module Index
+  class Store
+    module Index
     class Builder
       def initialize(store:)
         @store = store
@@ -68,6 +69,7 @@ module Textus
         end
         JSON.dump(extra)
       end
+    end
     end
   end
 end

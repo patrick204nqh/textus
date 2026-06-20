@@ -5,11 +5,11 @@ require "spec_helper"
 RSpec.describe Textus::Jobs do
   it "resolves materialize by type string" do
     # Trigger Zeitwerk to load the subclass before fetching.
-    expect(described_class.fetch("materialize")).to eq(Textus::Jobs::Materialize)
+    expect(described_class.fetch("materialize")).to eq(Textus::Store::Jobs::Materialize)
   end
 
   it "resolves sweep by type string" do
-    expect(described_class.fetch("sweep")).to eq(Textus::Jobs::Sweep)
+    expect(described_class.fetch("sweep")).to eq(Textus::Store::Jobs::Sweep)
   end
 
   it "raises UsageError for an unknown type" do

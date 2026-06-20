@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Queue do
+RSpec.describe Textus::Store::Jobs::Queue do
   subject(:queue) { described_class.new(store: store) }
 
   let(:root) { File.join(Dir.mktmpdir, ".textus") }

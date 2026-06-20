@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Index::Lookup do
+RSpec.describe Textus::Store::Index::Lookup do
   subject(:lookup) { described_class.new(store: store) }
 
   let(:root) { File.join(Dir.mktmpdir, ".textus") }

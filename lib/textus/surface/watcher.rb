@@ -11,14 +11,14 @@ module Textus
 
       def tick
         Textus::Port::Store.open(@container.root) do |store|
-          queue = Textus::Jobs::Queue.new(store: store)
-          Textus::Jobs::Planner.seed(
+          queue = Textus::Store::Jobs::Queue.new(store: store)
+          Textus::Store::Jobs::Planner.seed(
             container: @container,
             queue: queue,
             role: Textus::Value::Role::AUTOMATION,
           )
           queue.reclaim(now: Textus::Port::Clock.new.now)
-          Textus::Jobs::Worker.for(container: @container, queue: queue).drain
+          Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
         end
       end
 

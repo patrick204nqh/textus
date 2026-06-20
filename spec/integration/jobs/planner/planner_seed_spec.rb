@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Planner do
+RSpec.describe Textus::Store::Jobs::Planner do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -22,7 +22,7 @@ RSpec.describe Textus::Jobs::Planner do
   end
 
   let(:store_port) { Textus::Port::Store.new(root: store.root).setup! }
-  let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
+  let(:queue) { Textus::Store::Jobs::Queue.new(store: store_port) }
 
   after { store_port.close }
 

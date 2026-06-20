@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Planner
       ACTIONS_BY_TRIGGER = {
         "convergence" => %w[materialize sweep index],
@@ -58,7 +59,7 @@ module Textus
             do_action = block.react.raw["do"]
             Array(do_action).each do |action|
               if (global_args = GLOBAL_ACTIONS[action])
-                jobs << Textus::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
+                jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: global_args, role: role)
               else
                 resolver = SCOPE_RESOLVERS.fetch(action, :producible_keys)
                 keys = send(resolver, nil)
@@ -74,7 +75,7 @@ module Textus
         jobs = []
         producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
         GLOBAL_ACTIONS.each do |action, args|
-          jobs << Textus::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
+          jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
         end
         jobs
       end
@@ -85,7 +86,7 @@ module Textus
       end
 
       def job(type, key, role)
-        Textus::Jobs::Queue::Job.new(type: type, args: { "key" => key }, role: role)
+        Textus::Store::Jobs::Queue::Job.new(type: type, args: { "key" => key }, role: role)
       end
 
       def producible_keys(_target)
@@ -98,5 +99,6 @@ module Textus
         @manifest.data.entries.map(&:key)
       end
     end
+  end
   end
 end

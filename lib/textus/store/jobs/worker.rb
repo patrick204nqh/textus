@@ -1,5 +1,6 @@
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Worker
       Summary = Struct.new(:completed, :failed, keyword_init: true)
 
@@ -63,5 +64,6 @@ module Textus
         @queue.fail(leased, error: e.message)
       end
     end
+  end
   end
 end

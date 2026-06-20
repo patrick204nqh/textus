@@ -1,4 +1,4 @@
-RSpec.describe Textus::Jobs::Planner do
+RSpec.describe Textus::Store::Jobs::Planner do
   subject(:planner) { described_class.new(container: store.container) }
 
   include_context "textus_store_fixture"
@@ -52,7 +52,7 @@ RSpec.describe Textus::Jobs::Planner do
         role: Textus::Value::Role::AUTOMATION,
       )
       expect(jobs).not_to be_empty
-      expect(jobs.first).to be_a(Textus::Jobs::Queue::Job)
+      expect(jobs.first).to be_a(Textus::Store::Jobs::Queue::Job)
       expect(jobs.map(&:role)).to all(eq("automation").or(eq("human")).or(eq("agent")))
     end
   end

@@ -1,5 +1,6 @@
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Sweep < Base
       REQUIRED_ROLE = Textus::Value::Role::AUTOMATION
       TYPE = "sweep"
@@ -20,8 +21,9 @@ module Textus
           file_stat: Textus::Port::Storage::FileStat.new,
           clock: Textus::Port::Clock.new,
         ).call(prefix: prefix, lane: lane)
-        Textus::Jobs::Retention.new(container: container, call: call).call(rows)
+        Textus::Store::Jobs::Retention.new(container: container, call: call).call(rows)
       end
     end
+  end
   end
 end

@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Materialize < Base
       TYPE = "materialize"
 
@@ -16,5 +17,6 @@ module Textus
         Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
       end
     end
+  end
   end
 end

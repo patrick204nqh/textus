@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Index::Builder do
+RSpec.describe Textus::Store::Index::Builder do
   include_context "textus_store_fixture"
 
   let(:store) do

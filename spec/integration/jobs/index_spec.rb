@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Jobs::Index do
+RSpec.describe Textus::Store::Jobs::Index do
   include_context "textus_store_fixture"
 
   let(:files) { { "data/knowledge/a.md" => "---\ntitle: A\n---\nsearch body\n" } }

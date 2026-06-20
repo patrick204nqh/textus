@@ -174,7 +174,7 @@ RSpec.describe Textus::Action::Ingest do
       hash = first_env.content["content_hash"]
 
       store_port = Textus::Port::Store.new(root: root).setup!
-      lookup = Textus::Index::Lookup.new(store: store_port)
+      lookup = Textus::Store::Index::Lookup.new(store: store_port)
       expect(lookup.find_by_hash(hash)).to eq("raw.#{date}.url-index-a")
       expect(lookup.find_by_url(unique_url)).to eq("raw.#{date}.url-index-a")
       store_port.close
@@ -182,7 +182,7 @@ RSpec.describe Textus::Action::Ingest do
       store.as("agent").ingest(kind: "url", slug: "index-b", url: unique_url)
 
       store_port = Textus::Port::Store.new(root: root).setup!
-      lookup = Textus::Index::Lookup.new(store: store_port)
+      lookup = Textus::Store::Index::Lookup.new(store: store_port)
       expect(lookup.find_by_hash(hash)).to eq("raw.#{date}.url-index-b")
       expect(lookup.find_by_url(unique_url)).to eq("raw.#{date}.url-index-b")
       store_port.close

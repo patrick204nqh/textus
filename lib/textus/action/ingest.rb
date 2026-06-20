@@ -53,7 +53,7 @@ module Textus
         structured = build_structured(ts, container, now, content_hash)
 
         Textus::Port::Store.open(container.root) do |store|
-          index = Textus::Index::Lookup.new(store: store)
+          index = Textus::Store::Index::Lookup.new(store: store)
           duplicate_key = find_duplicate(index, content_hash)
 
           if duplicate_key && duplicate_key != key
@@ -138,7 +138,7 @@ module Textus
       end
 
       def rebuild_index(container, store)
-        Textus::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
+        Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
       end
 
       def supersede_entry(old_key, new_key, structured, container, call, store:)

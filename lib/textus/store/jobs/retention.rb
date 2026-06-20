@@ -1,7 +1,8 @@
 require "fileutils"
 
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Retention
       def initialize(container:, call:)
         @container = container
@@ -44,5 +45,6 @@ module Textus
         Textus::Action::KeyDelete.new(key: key).call(container: @container, call: @call)
       end
     end
+  end
   end
 end

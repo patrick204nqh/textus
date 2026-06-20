@@ -6,7 +6,8 @@ require "securerandom"
 require "time"
 
 module Textus
-  module Jobs
+  class Store
+    module Jobs
     class Queue
       VALID_STATES = %w[ready leased done failed].freeze
 
@@ -149,5 +150,6 @@ module Textus
         Time.now.utc.iso8601
       end
     end
+  end
   end
 end

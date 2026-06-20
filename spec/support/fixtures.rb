@@ -146,9 +146,9 @@ module TextusSpecHelpers
   # Maintenance::Drain (which is queue-burn only).
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
     Textus::Port::Store.open(store.root) do |store_port|
-      queue = Textus::Jobs::Queue.new(store: store_port)
-      Textus::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
-      Textus::Jobs::Worker.for(container: store.container, queue: queue).drain
+      queue = Textus::Store::Jobs::Queue.new(store: store_port)
+      Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
+      Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
     end
   end
 end

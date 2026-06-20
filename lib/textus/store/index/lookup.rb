@@ -3,7 +3,8 @@
 require "json"
 
 module Textus
-  module Index
+  class Store
+    module Index
     class Lookup
       def initialize(store:)
         @store = store
@@ -54,6 +55,7 @@ module Textus
       rescue SQLite3::SQLException
         nil
       end
+    end
     end
   end
 end

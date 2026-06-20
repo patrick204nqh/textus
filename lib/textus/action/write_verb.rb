@@ -29,7 +29,7 @@ module Textus
         return if producible.empty?
 
         producible.each do |dep_key|
-          Textus::Jobs::Materialize.new(key: dep_key).call(container:, call:)
+          Textus::Store::Jobs::Materialize.new(key: dep_key).call(container:, call:)
         end
       end
 
