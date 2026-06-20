@@ -182,7 +182,7 @@ module Textus
           @file_store.write(path, bytes)
         end
 
-        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil)
+        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil) # rubocop:disable Metrics/ParameterLists
           raw = bytes || @file_store.read(path)
           Textus::Value::Envelope.build(
             key: key, mentry: mentry, path: path,
