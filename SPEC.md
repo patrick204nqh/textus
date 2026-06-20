@@ -438,6 +438,22 @@ textus ingest url agentskills-io-brainstorming \
 
 A `get` on a raw entry is a pure read — it returns the entry as stored and never re-fetches (ADR 0089).
 
+**Raw entry shape.** Every raw-lane entry has a set of required fields
+enforced by the format layer on write:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `ingested_at` | yes | ISO-8601 timestamp of ingestion |
+| `content_hash` | yes | `sha256:<hex>` of the source content |
+| `source.kind` | yes | One of `url`, `file`, `asset` |
+| `source.url` | conditional | Required when `kind=url` |
+| `source.label` | no | Human-readable label |
+| `body` | no | Present only for `kind=file` |
+| `asset` | no | Present only for `kind=asset` |
+
+Tombstone entries (carrying `superseded_by:`) are exempt from shape
+validation — they are stripped-down records pointing to the live entry.
+
 ### 5.5 Pending / accept workflow
 
 Proposal entries are full patches authored into the `proposals` queue lane (writable by `propose`-holders: `agent` and `human` by default) — `proposals` in the default scaffold (Setup-1) — typically by agents. The entry's frontmatter describes the patch it proposes against another lane:
@@ -646,6 +662,14 @@ The frontmatter `name:` field, when present, must match the file's basename (wit
 - Existing files without a uid continue to work. The envelope shows `"uid": null` until a put mints one.
 - `text` entries have no metadata channel and therefore no uid; their envelope always shows `"uid": null`.
 
+**`sources:` (Source references).** Entries MAY carry a `sources` array in
+their frontmatter to declare external provenance. Each element is an object
+with a required `raw` field (a raw-lane key, starting with `raw.`) and
+optional `url` and `label` fields. The array is preserved on write —
+existing sources carry forward if no new `sources` are provided. The
+envelope returns `sources` as a top-level array when non-empty; omitted
+when absent.
+
 Entries in a `produced` lane SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build tooling can extend the metadata without breaking conformance.
 
 ## 8. Envelope (the wire format)
@@ -665,6 +689,9 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "etag": "sha256:8f3c…",
   "schema_ref": "person",
   "uid": "a1b2c3d4e5f60718",
+  "sources": [
+    { "raw": "raw.2026.06.20.url-mcp-spec", "label": "MCP Specification" }
+  ],
   "stale": false,
   "stale_reason": null,
   "fetching": false
@@ -682,6 +709,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
+- `sources` is an array of source-reference objects. Present only when non-empty. Each object carries `raw` (string, the raw-lane key, starting with `raw.`), optionally `url` (string) and `label` (string).
 - `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-materialised; `false` otherwise. Only populated for produced entries with a declared `ttl`; always `false` for other entries.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a background re-pull is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
