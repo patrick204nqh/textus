@@ -6,15 +6,15 @@ RSpec.describe Textus::Store::Geometry do
 
   it "nests runtime paths under .state/" do
     expect(subject.run_root).to eq("/tmp/store/.textus/.state")
-    expect(subject.cursor_path("agent")).to eq("/tmp/store/.textus/.state/cursors/agent")
-    expect(subject.lock_path("build")).to eq("/tmp/store/.textus/.state/locks/build.lock")
-    expect(subject.lock_path("watcher")).to eq("/tmp/store/.textus/.state/locks/watcher.lock")
+    expect(subject.cursor_path("agent")).to eq("/tmp/store/.textus/.state/ephemeral/cursors/agent")
+    expect(subject.lock_path("build")).to eq("/tmp/store/.textus/.state/ephemeral/locks/build.lock")
+    expect(subject.lock_path("watcher")).to eq("/tmp/store/.textus/.state/ephemeral/locks/watcher.lock")
     expect(subject.audit_dir_path).to eq("/tmp/store/.textus/.state/audit")
     expect(subject.audit_log_path).to eq("/tmp/store/.textus/.state/audit/audit.log")
   end
 
-  it "exposes sentinel paths under .state/" do
-    expect(subject.sentinels_root).to eq("/tmp/store/.textus/.state/sentinels")
+  it "exposes sentinel paths under .state/tracking/" do
+    expect(subject.sentinels_root).to eq("/tmp/store/.textus/.state/tracking/sentinels")
   end
 
   it "exposes data paths under .textus/data" do

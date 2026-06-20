@@ -31,10 +31,10 @@ RSpec.describe Textus::Store::Geometry do
   describe "runtime paths" do
     it "nests under .state/" do
       expect(sg.run_root).to eq("/tmp/store/.textus/.state")
-      expect(sg.cursor_path("agent")).to eq("/tmp/store/.textus/.state/cursors/agent")
-      expect(sg.lock_path("build")).to eq("/tmp/store/.textus/.state/locks/build.lock")
+      expect(sg.cursor_path("agent")).to eq("/tmp/store/.textus/.state/ephemeral/cursors/agent")
+      expect(sg.lock_path("build")).to eq("/tmp/store/.textus/.state/ephemeral/locks/build.lock")
       expect(sg.audit_log_path).to eq("/tmp/store/.textus/.state/audit/audit.log")
-      expect(sg.sentinels_root).to eq("/tmp/store/.textus/.state/sentinels")
+      expect(sg.sentinels_root).to eq("/tmp/store/.textus/.state/tracking/sentinels")
       expect(sg.store_db_path).to eq("/tmp/store/.textus/.state/store.db")
     end
   end

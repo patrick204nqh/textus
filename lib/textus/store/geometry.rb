@@ -28,11 +28,11 @@ module Textus
 
     # -- runtime paths --
     def run_root           = File.join(@root, RUN)
-    def cursor_path(role)  = File.join(run_root, "cursors", role.to_s)
-    def lock_path(name)    = File.join(run_root, "locks", "#{name}.lock")
+    def cursor_path(role)  = File.join(run_root, "ephemeral", "cursors", role.to_s)
+    def lock_path(name)    = File.join(run_root, "ephemeral", "locks", "#{name}.lock")
     def audit_dir_path     = File.join(run_root, "audit")
     def audit_log_path     = File.join(audit_dir_path, "audit.log")
-    def sentinels_root = File.join(run_root, "sentinels")
+    def sentinels_root = File.join(run_root, "tracking", "sentinels")
     def store_db_path      = File.join(run_root, "store.db")
 
     # -- asset paths --

@@ -10,7 +10,7 @@ RSpec.describe Textus::Port::SentinelStore do
   let(:src_abs)    { File.join(store_root, "data", "output", "out.md") }
   let(:dst_abs)    { File.join(tmp, "dst.md") }
   let(:sentinel_path) do
-    File.join(store_root, ".state", "sentinels", "dst.md.textus-managed.json")
+    File.join(store_root, ".state", "tracking", "sentinels", "dst.md.textus-managed.json")
   end
 
   before do
@@ -37,7 +37,7 @@ RSpec.describe Textus::Port::SentinelStore do
       FileUtils.mkdir_p(File.dirname(nested))
       File.binwrite(nested, "x")
       store.write!(target: nested, source: src_abs, store_root: store_root)
-      expect(File.exist?(File.join(store_root, ".state", "sentinels", "a", "b", "nested.md.textus-managed.json"))).to be true
+      expect(File.exist?(File.join(store_root, ".state", "tracking", "sentinels", "a", "b", "nested.md.textus-managed.json"))).to be true
     end
   end
 
@@ -76,9 +76,9 @@ RSpec.describe Textus::Port::SentinelStore do
   end
 
   describe "#sentinel_path" do
-    it "places sentinel under <store_root>/.state/sentinels/ mirroring repo-relative target" do
+    it "places sentinel under <store_root>/.state/tracking/sentinels/ mirroring repo-relative target" do
       expect(store.sentinel_path(dst_abs, store_root))
-        .to eq(File.join(store_root, ".state", "sentinels", "dst.md.textus-managed.json"))
+        .to eq(File.join(store_root, ".state", "tracking", "sentinels", "dst.md.textus-managed.json"))
     end
   end
 end
