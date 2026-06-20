@@ -81,7 +81,7 @@ module Textus
           inputs = Textus::Dispatch::Binder.inputs_from_wire(spec, args)
 
           result = Textus::Dispatch::Dispatcher.dispatch(spec, inputs, store:, role: session.role, session:, scope: store.as(session.role))
-          Textus::Dispatch::View.render(spec, :default, result, inputs)
+          spec.view(:default).call(result, inputs)
         rescue Textus::Dispatch::MissingArgs => e
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, CursorExpired

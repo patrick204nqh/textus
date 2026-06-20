@@ -96,7 +96,7 @@ RSpec.describe Textus::Surface::CLI::Runner do
         views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
         cli: nil, cli_stdin: nil
       )
-      result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
+      result = spec.view(:cli).call("raw_value", {})
       expect(result).to eq({ "cli_shaped" => "raw_value" })
     end
 
@@ -107,23 +107,23 @@ RSpec.describe Textus::Surface::CLI::Runner do
         views: { default: ->(v, _i) { { "from_default" => v } } },
         cli: nil, cli_stdin: nil
       )
-      result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
+      result = spec.view(:cli).call("raw_value", {})
       expect(result).to eq({ "from_default" => "raw_value" })
     end
 
     it "passes the result to a one-parameter :cli view (inputs ignored)" do
       spec = spec_with(cli: ->(r, _i) { { "wrapped" => r } })
-      expect(Textus::Dispatch::View.render(spec, :cli, "X", {})).to eq("wrapped" => "X")
+      expect(spec.view(:cli).call("X", {})).to eq("wrapped" => "X")
     end
 
     it "passes (result, inputs) to a two-parameter :cli view, keyed by arg name" do
       spec = spec_with(cli: ->(r, inputs) { { "key" => inputs[:key], "v" => r } }, args: [key_arg])
-      expect(Textus::Dispatch::View.render(spec, :cli, "uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
+      expect(spec.view(:cli).call("uidval", { key: "k1" })).to eq("key" => "k1", "v" => "uidval")
     end
 
     it "falls back to the default view when there is no :cli view" do
       spec = spec_with(cli: nil)
-      expect(Textus::Dispatch::View.render(spec, :cli, "X", {})).to eq("X")
+      expect(spec.view(:cli).call("X", {})).to eq("X")
     end
   end
 

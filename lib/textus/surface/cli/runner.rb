@@ -59,7 +59,7 @@ module Textus
           role = verb_instance.resolved_role(store)
 
           result = Textus::Dispatch::Dispatcher.dispatch(spec, inputs, store:, role:, scope: store.as(role))
-          verb_instance.emit(Textus::Dispatch::View.render(spec, :cli, result, inputs))
+          verb_instance.emit(spec.view(:cli).call(result, inputs))
         rescue Textus::Dispatch::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
