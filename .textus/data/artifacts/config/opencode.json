@@ -1,42 +1,20 @@
 {
   "_meta": {
-    "uid": "b1b80a3216d929a9"
-  },
-  "$schema": "https://opencode.ai/config.json",
-  "lsp": {
-    "ruby": {
-      "type": "local",
-      "command": [
-        "bundle",
-        "exec",
-        "ruby-lsp"
-      ],
-      "enabled": true,
-      "extensions": [
-        ".rb",
-        ".rake",
-        ".gemspec",
-        ".ru"
-      ]
+    "uid": "b1b80a3216d929a9",
+    "generated": {
+      "at": "2026-06-20T07:30:00Z",
+      "by": "textus",
+      "workflow": "opencode_config",
+      "step": "build"
     }
   },
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "textus": {
       "type": "local",
-      "command": [
-        "bundle",
-        "exec",
-        "exe/textus",
-        "mcp",
-        "serve"
-      ],
+      "command": ["bundle", "exec", "exe/textus", "mcp", "serve"],
       "enabled": true
     }
   },
-  "plugin": [
-    "textus@git+https://github.com/patrick204nqh/textus.git"
-  ],
-  "instructions": [
-    "AGENTS.md"
-  ]
+  "instructions": ["AGENTS.md"]
 }
