@@ -72,6 +72,32 @@ module Textus
         end
       end
 
+      # Scan log files with optional filters. Returns parsed row hashes.
+      # Lane and timestamp filters are left to the caller (they need manifest
+      # resolution and Time parsing the port shouldn't know about).
+      def scan(seq_since: nil, key: nil, role: nil, verb: nil,
+               correlation_id: nil, limit: nil)
+        files = all_log_files
+        return [] if files.empty?
+
+        rows = []
+        files.each do |file|
+          File.foreach(file) do |line|
+            parsed = parse_row(line.chomp)
+            next unless parsed
+            next if seq_since && parsed["seq"] <= seq_since
+            next if key && parsed["key"] != key
+            next if role && parsed["role"] != role
+            next if verb && parsed["verb"] != verb
+            next if correlation_id && parsed.dig("extras", "correlation_id") != correlation_id
+            rows << parsed
+            break if limit && rows.length >= limit
+          end
+          break if limit && rows.length >= limit
+        end
+        rows
+      end
+
       # Returns an array of integrity-violation descriptors for the on-disk log.
       # Each entry is { "lineno" => Integer, "reason" => String, "detail" => String }.
       # Empty array means the log is well-formed (or doesn't exist yet).
@@ -213,6 +239,14 @@ module Textus
         JSON.parse(line)
       rescue JSON::ParserError
         nil
+      end
+
+      def all_log_files
+        rotated = Dir.glob(File.join(Textus::Store::Geometry.new(@root).audit_dir_path, "audit.log.*"))
+                     .reject { |path| path.end_with?(".meta.json") }
+                     .sort_by { |path| -path.scan(/\d+$/).first.to_i }
+        active_log = File.exist?(@path) ? [@path] : []
+        rotated + active_log
       end
 
       def check_line(stripped, lineno)
