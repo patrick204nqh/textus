@@ -10,12 +10,6 @@ module Textus
     class Store
       attr_reader :path
 
-      private
-
-      attr_reader :connection
-
-      public
-
       def initialize(root:)
         @root = root
         @path = Textus::Store::Geometry.new(root).store_db_path
@@ -84,7 +78,9 @@ module Textus
         connection.close unless connection.closed?
       end
 
-      private :connection
+      private
+
+      attr_reader :connection
 
       def self.open(root)
         store = new(root: root)
