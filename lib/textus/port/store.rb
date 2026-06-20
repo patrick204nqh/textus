@@ -10,6 +10,12 @@ module Textus
     class Store
       attr_reader :path
 
+      private
+
+      attr_reader :connection
+
+      public
+
       def initialize(root:)
         @root = root
         @path = Textus::Store::Geometry.new(root).store_db_path
@@ -20,6 +26,10 @@ module Textus
 
       def execute(sql, params = [])
         @connection.execute(sql, params)
+      end
+
+      def query_value(sql, params = [])
+        @connection.get_first_value(sql, params)
       end
 
       def setup!

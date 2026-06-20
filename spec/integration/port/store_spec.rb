@@ -17,7 +17,7 @@ RSpec.describe Textus::Port::Store do
     store = described_class.new(root: root)
     store.setup!
 
-    tables = store.connection.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')").map { |r| r["name"] }
+    tables = store.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')").map { |r| r["name"] }
     expect(tables).to include("entries", "entries_fts", "jobs", "idx_jobs_state", "idx_entries_lane")
 
     store.close
@@ -27,7 +27,7 @@ RSpec.describe Textus::Port::Store do
     store = described_class.new(root: root)
     store.setup!
 
-    mode = store.connection.get_first_value("PRAGMA journal_mode")
+    mode = store.query_value("PRAGMA journal_mode")
     expect(mode).to eq("wal")
 
     store.close
@@ -38,6 +38,6 @@ RSpec.describe Textus::Port::Store do
     store.setup!
     store.close
 
-    expect { store.connection.execute("SELECT 1") }.to raise_error(ArgumentError)
+    expect { store.execute("SELECT 1") }.to raise_error(ArgumentError)
   end
 end

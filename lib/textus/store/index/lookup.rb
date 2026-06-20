@@ -8,7 +8,7 @@ module Textus
       class Lookup
         def initialize(store:)
           @store = store
-          @db = store.connection
+          @db = store
         end
 
         def search(query, lane: nil)

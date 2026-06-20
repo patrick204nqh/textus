@@ -47,13 +47,13 @@ RSpec.describe Textus::Store::Index::Builder do
     result = described_class.new(store: store_port).rebuild!(resolver: store.container.manifest.resolver)
 
     expect(result).to eq({ indexed: 2 })
-    rows = store_port.connection.execute("SELECT key, lane, format, extra FROM entries ORDER BY key")
+    rows = store_port.execute("SELECT key, lane, format, extra FROM entries ORDER BY key")
     expect(rows.map { |row| row["key"] }).to eq(["knowledge.a", "raw.2026.06.19.url-example"])
     expect(rows.first["lane"]).to eq("knowledge")
     raw_extra = JSON.parse(rows.last["extra"])
     expect(raw_extra).to include("content_hash" => "sha256:abc", "url" => "https://example.com")
 
-    matches = store_port.connection.execute("SELECT key FROM entries_fts WHERE entries_fts MATCH 'alpha'")
+    matches = store_port.execute("SELECT key FROM entries_fts WHERE entries_fts MATCH 'alpha'")
     expect(matches.map { |row| row["key"] }).to eq(["knowledge.a"])
   end
 
@@ -68,7 +68,7 @@ RSpec.describe Textus::Store::Index::Builder do
       described_class.new(store: store_port).rebuild!(resolver: bad_resolver)
     end.to raise_error(NoMethodError)
 
-    keys = store_port.connection.execute("SELECT key FROM entries ORDER BY key").map { |row| row["key"] }
+    keys = store_port.execute("SELECT key FROM entries ORDER BY key").map { |row| row["key"] }
     expect(keys).to eq(["knowledge.a", "raw.2026.06.19.url-example"])
   end
 end

@@ -14,16 +14,16 @@ RSpec.describe Textus::Store::Index::Lookup do
   end
 
   before do
-    store.connection.execute(
+    store.execute(
       "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       ["raw.2026.06.19.url-example", "raw", "yaml", "etag", "needle phrase",
        JSON.dump("content_hash" => "sha256:abc", "url" => "https://example.com"), Time.now.utc.iso8601],
     )
-    store.connection.execute(
+    store.execute(
       "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       ["knowledge.note", "knowledge", "markdown", "etag2", "needle other", JSON.dump({}), Time.now.utc.iso8601],
     )
-    store.connection.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
+    store.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
   end
 
   it "finds by content hash" do
@@ -43,7 +43,7 @@ RSpec.describe Textus::Store::Index::Lookup do
   end
 
   it "returns empty results when entries are missing" do
-    store.connection.execute("DELETE FROM entries")
+    store.execute("DELETE FROM entries")
     expect(lookup.search("needle")).to eq([])
     expect(lookup.find_by_hash("sha256:abc")).to be_nil
     expect(lookup.find_by_url("https://example.com")).to be_nil

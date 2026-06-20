@@ -9,7 +9,7 @@ module Textus
       class Builder
         def initialize(store:)
           @store = store
-          @db = store.connection
+          @db = store
         end
 
         def rebuild!(resolver:)
