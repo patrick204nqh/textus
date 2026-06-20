@@ -19,47 +19,47 @@ RSpec.describe "Sources integration" do
 
   it "returns sources in envelope after put with _meta.sources" do
     result = store.as(:human).put("knowledge.notes.test",
-      meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-test" }] },
-      body: "test content\n")
+                                  meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-test" }] },
+                                  body: "test content\n")
     expect(result.sources).to eq([{ "raw" => "raw.2026.06.20.url-test" }])
   end
 
   it "preserves sources across writes" do
     store.as(:human).put("knowledge.notes.test",
-      meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-a" }] },
-      body: "version 1\n")
+                         meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-a" }] },
+                         body: "version 1\n")
     result = store.as(:human).put("knowledge.notes.test",
-      meta: {}, body: "version 2\n")
+                                  meta: {}, body: "version 2\n")
     expect(result.sources).to eq([{ "raw" => "raw.2026.06.20.url-a" }])
   end
 
   it "replaces sources on explicit write" do
     store.as(:human).put("knowledge.notes.test",
-      meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-old" }] },
-      body: "old\n")
+                         meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-old" }] },
+                         body: "old\n")
     result = store.as(:human).put("knowledge.notes.test",
-      meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-new" }] },
-      body: "new\n")
+                                  meta: { "sources" => [{ "raw" => "raw.2026.06.20.url-new" }] },
+                                  body: "new\n")
     expect(result.sources).to eq([{ "raw" => "raw.2026.06.20.url-new" }])
   end
 
   it "omits sources from envelope when absent" do
     result = store.as(:human).put("knowledge.notes.test",
-      meta: {}, body: "no sources\n")
+                                  meta: {}, body: "no sources\n")
     expect(result.sources).to be_nil
   end
 
   it "supports sources with url and label" do
     src = { "raw" => "raw.2026.06.20.url-test", "url" => "https://x.com", "label" => "X" }
     result = store.as(:human).put("knowledge.notes.test",
-      meta: { "sources" => [src] }, body: "test\n")
+                                  meta: { "sources" => [src] }, body: "test\n")
     expect(result.sources).to eq([src])
   end
 
   it "rejects put with invalid sources" do
-    expect {
+    expect do
       store.as(:human).put("knowledge.notes.test",
-        meta: { "sources" => "bad" }, body: "test\n")
-    }.to raise_error(Textus::BadContent)
+                           meta: { "sources" => "bad" }, body: "test\n")
+    end.to raise_error(Textus::BadContent)
   end
 end

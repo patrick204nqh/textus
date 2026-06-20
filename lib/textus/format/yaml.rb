@@ -46,11 +46,8 @@ module Textus
         content = parsed["content"] || {}
         return if content["superseded_by"]
 
-
         missing = RAW_REQUIRED.reject { |f| content[f] }
-        if missing.any?
-          raise Textus::BadContent.new(nil, "raw entry missing required field(s): #{missing.join(", ")}")
-        end
+        raise Textus::BadContent.new(nil, "raw entry missing required field(s): #{missing.join(", ")}") if missing.any?
 
         source = content["source"] || {}
         kind = source["kind"]
@@ -60,9 +57,9 @@ module Textus
           )
         end
 
-        if kind == "url" && !source["url"]
-          raise Textus::BadContent.new(nil, "raw entry with source.kind=url must have source.url")
-        end
+        return unless kind == "url" && !source["url"]
+
+        raise Textus::BadContent.new(nil, "raw entry with source.kind=url must have source.url")
       end
 
       def self.extensions = [".yaml", ".yml"]

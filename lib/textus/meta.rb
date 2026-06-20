@@ -9,24 +9,21 @@ module Textus
 
     FIELDS = {
       "uid" => {
-        inject: ->(meta, content, existing_meta) {
+        inject: lambda { |meta, content, existing_meta|
           m = meta.is_a?(Hash) ? meta.dup : {}
           existing = existing_meta.is_a?(Hash) ? existing_meta["uid"] : nil
-          unless m["uid"].is_a?(String) && !m["uid"].empty?
-            m["uid"] = existing || Textus::Value::Uid.mint
-          end
+          m["uid"] = existing || Textus::Value::Uid.mint unless m["uid"].is_a?(String) && !m["uid"].empty?
           [m, content]
         },
       },
       "sources" => {
-        inject: ->(meta, content, existing_meta) {
+        inject: lambda { |meta, content, existing_meta|
           m = meta.is_a?(Hash) ? meta.dup : {}
           existing = existing_meta.is_a?(Hash) ? existing_meta["sources"] : nil
 
           if m.key?("sources")
-            unless m["sources"].is_a?(Array)
-              raise Textus::BadContent.new(nil, "_meta.sources must be an array")
-            end
+            raise Textus::BadContent.new(nil, "_meta.sources must be an array") unless m["sources"].is_a?(Array)
+
             m["sources"] = m["sources"].map { |s| validate_source_shape!(s) }
           elsif existing.is_a?(Array) && !existing.empty?
             m["sources"] = existing
@@ -49,12 +46,15 @@ module Textus
 
     def self.validate_source_shape!(src)
       raise Textus::BadContent.new(nil, "each source must be a hash") unless src.is_a?(Hash)
+
       raw = src["raw"]
       unless raw.is_a?(String) && raw.match?(/\Araw\./)
         raise Textus::BadContent.new(nil, "source.raw must be a string starting with 'raw.'")
       end
+
       extra = src.keys - SOURCE_FIELDS
       raise Textus::BadContent.new(nil, "unknown source key(s): #{extra.join(", ")}") if extra.any?
+
       src
     end
   end
