@@ -8,7 +8,6 @@ module Textus
       class Lookup
         def initialize(store:)
           @store = store
-          @db = store
         end
 
         def search(query, lane: nil)
@@ -21,7 +20,7 @@ module Textus
             params << lane
           end
           conditions = "WHERE #{clauses.join(" AND ")}"
-          @db.execute(
+          @store.execute(
             "SELECT entries.key, entries.lane, entries.format, entries.etag, bm25(entries_fts) AS rank
              FROM entries_fts JOIN entries ON entries_fts.rowid = entries.rowid
            #{conditions}
@@ -47,7 +46,7 @@ module Textus
         private
 
         def find_extra(name, value)
-          @db.execute("SELECT key, extra FROM entries ORDER BY indexed_at DESC").each do |row|
+          @store.execute("SELECT key, extra FROM entries ORDER BY indexed_at DESC").each do |row|
             extra = JSON.parse(row["extra"] || "{}")
             return row["key"] if extra[name] == value
           end

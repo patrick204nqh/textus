@@ -9,7 +9,6 @@ module Textus
       class Builder
         def initialize(store:)
           @store = store
-          @db = store
         end
 
         def rebuild!(resolver:)
@@ -17,15 +16,15 @@ module Textus
           now_iso = Time.now.utc.iso8601
 
           @store.transaction do
-            @db.execute("DELETE FROM entries")
+            @store.execute("DELETE FROM entries")
             rows.each do |data|
-              @db.execute(
+              @store.execute(
                 "INSERT INTO entries (key, lane, format, etag, content, extra, indexed_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [data[:key], data[:lane], data[:format], data[:etag], data[:content], data[:extra], now_iso],
               )
             end
-            @db.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
+            @store.execute("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
           end
           { indexed: rows.size }
         end

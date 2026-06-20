@@ -40,12 +40,11 @@ module Textus
 
         def initialize(store:)
           @store = store
-          @db = store
         end
 
         def enqueue(job)
           now = iso_now
-          @db.execute(
+          @store.execute(
             "INSERT OR IGNORE INTO jobs (id, type, args, state, role, attempts, max_attempts, errors, lease, created_at, updated_at)
            VALUES (?, ?, ?, 'ready', ?, ?, ?, ?, NULL, ?, ?)",
             [job.id, job.type, JSON.dump(job.args), job.role, job.attempts, job.max_attempts, JSON.dump(job.errors), now, now],
@@ -62,7 +61,7 @@ module Textus
           token = SecureRandom.hex(8)
           marked_lease = JSON.dump({ "worker_id" => worker_id, "expires_at" => expires_at.iso8601, "token" => token })
 
-          @db.execute(
+          @store.execute(
             "UPDATE jobs
               SET state = 'leased', lease = ?, updated_at = ?
             WHERE id = (
@@ -70,14 +69,14 @@ module Textus
             )",
             [marked_lease, now.iso8601],
           )
-          row = @db.execute("SELECT * FROM jobs WHERE state = 'leased' AND lease = ? LIMIT 1", [marked_lease]).first
+          row = @store.execute("SELECT * FROM jobs WHERE state = 'leased' AND lease = ? LIMIT 1", [marked_lease]).first
           return nil unless row
 
           Leased.new(job_from_row(row))
         end
 
         def ack(leased)
-          @db.execute(
+          @store.execute(
             "UPDATE jobs SET state = 'done', lease = NULL, updated_at = ? WHERE id = ? AND state = 'leased'",
             [iso_now, leased.job.id],
           )
@@ -89,7 +88,7 @@ module Textus
           errors = job.errors + [{ "attempt" => attempts, "error" => error, "at" => iso_now }]
           dead = attempts >= job.max_attempts
           state = dead ? "failed" : "ready"
-          @db.execute(
+          @store.execute(
             "UPDATE jobs SET state = ?, attempts = ?, errors = ?, lease = NULL, updated_at = ? WHERE id = ?",
             [state, attempts, JSON.dump(errors), iso_now, job.id],
           )
@@ -97,14 +96,14 @@ module Textus
         end
 
         def reclaim(now:)
-          rows = @db.execute("SELECT id, lease FROM jobs WHERE state = 'leased'")
+          rows = @store.execute("SELECT id, lease FROM jobs WHERE state = 'leased'")
           expired = rows.select do |row|
             lease = JSON.parse(row["lease"] || "{}")
             expires_at = lease["expires_at"]
             expires_at.nil? || Time.parse(expires_at) <= now
           end
           expired.each do |row|
-            @db.execute(
+            @store.execute(
               "UPDATE jobs SET state = 'ready', lease = NULL, updated_at = ? WHERE id = ?",
               [now.utc.iso8601, row["id"]],
             )
@@ -116,11 +115,11 @@ module Textus
           state = state.to_s
           raise Textus::UsageError.new("unknown job state: #{state}") unless VALID_STATES.include?(state)
 
-          @db.execute("SELECT id FROM jobs WHERE state = ? ORDER BY created_at, id", [state]).map { |row| row["id"] }
+          @store.execute("SELECT id FROM jobs WHERE state = ? ORDER BY created_at, id", [state]).map { |row| row["id"] }
         end
 
         def retry_failed(job_id)
-          @db.execute(
+          @store.execute(
             "UPDATE jobs SET state = 'ready', attempts = 0, errors = ?, lease = NULL, updated_at = ? WHERE id = ? AND state = 'failed'",
             [JSON.dump([]), iso_now, job_id],
           )
@@ -130,7 +129,7 @@ module Textus
           state = state.to_s
           raise Textus::UsageError.new("unknown job state: #{state}") unless VALID_STATES.include?(state)
 
-          @db.execute("DELETE FROM jobs WHERE state = ?", [state])
+          @store.execute("DELETE FROM jobs WHERE state = ?", [state])
         end
 
         private
