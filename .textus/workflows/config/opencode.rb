@@ -3,18 +3,10 @@ Textus.workflow "opencode_config" do
 
   step :build do |_, ctx|
     { "content" => {
-        "$schema" => "https://opencode.ai/config.json",
-        "lsp"     => {
-          "ruby" => {
-            "type" => "local", "command" => %w[bundle exec ruby-lsp],
-            "enabled" => true, "extensions" => [".rb", ".rake", ".gemspec", ".ru"],
-          },
-        },
-        "mcp"          => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },
-        "plugin"       => ["textus@git+https://github.com/patrick204nqh/textus.git"],
-        "instructions" => ["AGENTS.md"],
-      }
-    }
+      "$schema" => "https://opencode.ai/config.json",
+      "mcp" => { "textus" => { "type" => "local", "command" => %w[bundle exec exe/textus mcp serve], "enabled" => true } },
+      "instructions" => ["AGENTS.md"],
+    } }
   end
 
   publish

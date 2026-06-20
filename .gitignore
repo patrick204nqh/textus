@@ -5,6 +5,8 @@
 opencode.local.json
 .agents/skills/
 .opencode/skills/
+.opencode/command/
+.opencode/plugins
 .cache/
 
 # Ruby

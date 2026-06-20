@@ -5,7 +5,8 @@
 #
 # Clones or updates skill source repos into .cache/skills/, then symlinks
 # discovered skills into .claude/skills/, .agents/skills/, .opencode/skills/.
-# All three target dirs and the cache are gitignored.
+# Also symlinks OpenCode plugins and commands from plugin sources.
+# All target dirs and the cache are gitignored.
 
 require "fileutils"
 
@@ -24,6 +25,7 @@ SOURCES = [
   { name: "stop-slop",             url: "https://github.com/hardikpandya/stop-slop.git" },
   { name: "mattpocock-skills",     url: "https://github.com/mattpocock/skills.git" },
   { name: "ecc",                   url: "https://github.com/affaan-m/ecc.git" },
+  { name: "ponytail",             url: "https://github.com/DietrichGebert/ponytail.git" },
 ].freeze
 
 # ── Sync targets (relative to repo root) ─────────────────────────────────────
@@ -115,6 +117,46 @@ def link_skill(src:, dest:)
   ok(File.basename(dest))
 end
 
+def link_file(src:, dest:)
+  if DRY_RUN
+    puts "      [dry-run] #{dest} → #{src}"
+    return
+  end
+  unless File.exist?(src)
+    err("source not found: #{src}")
+    return
+  end
+  FileUtils.mkdir_p(File.dirname(dest))
+  if File.symlink?(dest)
+    if File.readlink(dest) == src
+      skip(File.basename(dest))
+      return
+    end
+    File.delete(dest)
+  elsif File.exist?(dest)
+    err("exists (not a symlink), skipping: #{dest}")
+    return
+  end
+  File.symlink(src, dest)
+  ok(File.basename(dest))
+end
+
+# ── OpenCode registrations ──────────────────────────────────────────────────
+# Sources that provide .opencode/ plugins and/or commands.
+PLUGIN_SOURCES = %w[ponytail].freeze
+
+def sync_opencode_artifacts(repo_dir)
+  %w[plugins command].each do |sub|
+    src_dir = File.join(repo_dir, ".opencode", sub)
+    next unless Dir.exist?(src_dir)
+
+    Dir.glob(File.join(src_dir, "*")).each do |file|
+      dest = File.join(REPO_ROOT, ".opencode", sub, File.basename(file))
+      link_file(src: file, dest:)
+    end
+  end
+end
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 FileUtils.mkdir_p(CACHE_DIR)
 
@@ -139,4 +181,13 @@ SOURCES.each do |source|
   puts
 end
 
+puts "  [opencode artifacts]"
+PLUGIN_SOURCES.each do |name|
+  repo_dir = File.join(CACHE_DIR, name)
+  next unless Dir.exist?(repo_dir)
+
+  sync_opencode_artifacts(repo_dir)
+end
+
+puts
 puts "Done."
