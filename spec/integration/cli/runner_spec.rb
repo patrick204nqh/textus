@@ -77,7 +77,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
       views[:cli] = cli if cli
       Textus::Contract::Spec.new(
         verb: :demo, summary: "d", args: args, surfaces: [:cli],
-        views: views, cli: nil, around: nil, cli_stdin: nil
+        views: views, cli: nil, cli_stdin: nil
       )
     end
 
@@ -94,7 +94,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
         verb: :where, summary: nil, args: [],
         surfaces: %i[cli],
         views: { default: ->(_v, _i) { "from_default" }, cli: ->(v, _i) { { "cli_shaped" => v } } },
-        cli: nil, around: nil, cli_stdin: nil
+        cli: nil, cli_stdin: nil
       )
       result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
       expect(result).to eq({ "cli_shaped" => "raw_value" })
@@ -105,7 +105,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
         verb: :where, summary: nil, args: [],
         surfaces: %i[cli],
         views: { default: ->(v, _i) { { "from_default" => v } } },
-        cli: nil, around: nil, cli_stdin: nil
+        cli: nil, cli_stdin: nil
       )
       result = Textus::Dispatch::View.render(spec, :cli, "raw_value", {})
       expect(result).to eq({ "from_default" => "raw_value" })

@@ -34,7 +34,7 @@ module Textus
         spec = klass.contract if klass.respond_to?(:contract?) && klass.contract?
         inputs = spec ? Textus::Dispatch::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
         resolved = spec ? Textus::Dispatch::Binder.bind(spec, inputs) : inputs
-        cmd = Textus::Dispatch::CommandBuilder.build(spec, resolved, role: @role)
+        cmd = Textus::Command.new(verb: spec.verb, params: resolved.freeze, role: @role)
         @container.gate.dispatch(cmd)
       end
     end

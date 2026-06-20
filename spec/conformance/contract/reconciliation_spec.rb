@@ -69,21 +69,14 @@ RSpec.describe "contract reconciliation" do
   end
 
   # Guard (ADR 0068): the declarative facets that replaced escape-hatch classes
-  # must stay resolvable. Every around: names a registered resource; every
-  # cli_stdin mode is supported; every default view tolerates the uniform
-  # (result, inputs) call. Drift becomes a red test, not a runtime surprise.
+  # must stay resolvable. Every cli_stdin mode is supported; every default view
+  # tolerates the uniform (result, inputs) call. Drift becomes a red test, not
+  # a runtime surprise.
   describe "facets (ADR 0068)" do
     let(:specs) do
       Textus::Action::VERBS.values
                            .select { |k| k.respond_to?(:contract?) && k.contract? }
                            .map(&:contract)
-    end
-
-    it "every around: names a registered resource" do
-      specs.select(&:around).each do |s|
-        expect { Textus::Dispatch::Around.fetch(s.around) }
-          .not_to(raise_error, "verb #{s.verb} around #{s.around.inspect}")
-      end
     end
 
     it "every cli_stdin mode is supported" do

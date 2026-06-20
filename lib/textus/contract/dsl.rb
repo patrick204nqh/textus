@@ -41,14 +41,6 @@ module Textus
         end
       end
 
-      def around(name = nil)
-        return @__around unless name
-
-        raise "contract already built; declare around before reading .contract" if defined?(@__contract) && @__contract
-
-        @__around = name
-      end
-
       def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil, source: nil, coerce: nil, cli_default: :__unset) # rubocop:disable Metrics/ParameterLists,Layout/LineLength
         raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
 
@@ -89,7 +81,6 @@ module Textus
           surfaces: (@__surfaces || []).freeze,
           views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
-          around: @__around,
           cli_stdin: @__cli_stdin,
         )
       end

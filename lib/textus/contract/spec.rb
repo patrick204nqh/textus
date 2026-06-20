@@ -1,6 +1,6 @@
 module Textus
   module Contract
-    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :around, :cli_stdin) do
+    Spec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
 
