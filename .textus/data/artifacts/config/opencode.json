@@ -8,13 +8,15 @@
       "step": "build"
     }
   },
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "textus": {
-      "type": "local",
-      "command": ["bundle", "exec", "exe/textus", "mcp", "serve"],
-      "enabled": true
-    }
-  },
-  "instructions": ["AGENTS.md"]
+  "content": {
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+      "textus": {
+        "type": "local",
+        "command": ["bundle", "exec", "exe/textus", "mcp", "serve"],
+        "enabled": true
+      }
+    },
+    "instructions": ["AGENTS.md"]
+  }
 }
