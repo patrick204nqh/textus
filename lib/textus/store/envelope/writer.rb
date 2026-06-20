@@ -41,6 +41,10 @@ module Textus
           bytes, eff_meta, eff_body, eff_content = serialize_entry(mentry, path, meta, payload, content)
           enforce_name_match!(path, eff_meta, mentry.format)
           validate_schema(mentry, eff_meta, eff_content)
+          Textus::Format::Yaml.validate_raw_entry!(
+            { "_meta" => eff_meta, "content" => eff_content },
+            mentry.lane,
+          )
           etag_before = check_etag!(path, key, if_etag)
           write_bytes(path, bytes)
           envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes)

@@ -37,6 +37,34 @@ module Textus
         schema.validate!(parsed["content"] || {})
       end
 
+      RAW_REQUIRED = %w[ingested_at content_hash].freeze
+      RAW_SOURCE_KINDS = %w[url file asset].freeze
+
+      def self.validate_raw_entry!(parsed, lane)
+        return unless lane == "raw"
+
+        content = parsed["content"] || {}
+        return if content["superseded_by"]
+
+
+        missing = RAW_REQUIRED.reject { |f| content[f] }
+        if missing.any?
+          raise Textus::BadContent.new(nil, "raw entry missing required field(s): #{missing.join(", ")}")
+        end
+
+        source = content["source"] || {}
+        kind = source["kind"]
+        unless RAW_SOURCE_KINDS.include?(kind)
+          raise Textus::BadContent.new(
+            nil, "raw entry source.kind must be #{RAW_SOURCE_KINDS.join("|")}, got #{kind.inspect}"
+          )
+        end
+
+        if kind == "url" && !source["url"]
+          raise Textus::BadContent.new(nil, "raw entry with source.kind=url must have source.url")
+        end
+      end
+
       def self.extensions = [".yaml", ".yml"]
 
       def self.nested_glob = "**/*.{yaml,yml}"
