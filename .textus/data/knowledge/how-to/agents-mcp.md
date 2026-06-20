@@ -1,13 +1,8 @@
 ---
-name: agents-mcp
 sources:
 - raw: raw.2026.06.20.url-mcp-specification
   url: https://modelcontextprotocol.io
   label: Model Context Protocol specification
-uid: e83bf3140722f215
----
----
-source: raw.2026.06.20.url-mcp-specification
 uid: e83bf3140722f215
 ---
 # Agents & MCP — wiring an agent to a store
@@ -28,7 +23,6 @@ For the MCP tool catalog, error codes, transports, and plugin wiring, see [`../r
 3. [Recommended agent loop](#recommended-agent-loop)
 
 ---
-
 ## Quickstart: Claude Code (~5 minutes)
 
 If you want Claude Code (or any MCP-aware agent) to read and write
