@@ -20,10 +20,6 @@ module Textus
 
       def self.nested_glob = "**/*.txt"
 
-      def self.inject_uid(meta, content, _existing_uid)
-        [meta, content]
-      end
-
       def self.enforce_name_match!(_path, _meta); end
 
       def self.serialize_for_put(meta:, body:, content:, path:)

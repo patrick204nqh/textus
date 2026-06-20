@@ -4,7 +4,7 @@ module Textus
       # Read-only counterpart to EnvelopeWriter. Resolves a key, reads the
       # bytes, parses them via the format strategy, and hands back an
       # Envelope. Used by Mv (pre-move inspection) and by EnvelopeWriter
-      # (existing-uid lookup for the uid-preservation step in #put).
+      # (existing-meta lookup for the uid/sources preservation step in #put).
       #
       # No audit, no events, no permission checks — those live one layer up.
       class Reader
@@ -30,13 +30,6 @@ module Textus
             meta: parsed["_meta"], body: parsed["body"],
             etag: Value::Etag.for_bytes(raw), content: parsed["content"]
           )
-        end
-
-        def existing_uid(key)
-          env = read(key)
-          env&.uid
-        rescue StandardError
-          nil
         end
 
         def exists?(key)

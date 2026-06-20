@@ -33,7 +33,11 @@ module Textus
 
         def put(key, mentry:, payload:, if_etag: nil)
           path = resolve_path(key)
-          meta, content = prepare_uid(mentry, payload, key)
+          meta = payload.meta || {}
+          content = payload.content
+          existing_env = @reader.read(key)
+          existing_meta = existing_env ? existing_env.meta : {}
+          meta, content = Textus::Meta.inject_all(meta, content, existing_meta, format: mentry.format)
           bytes, eff_meta, eff_body, eff_content = serialize_entry(mentry, path, meta, payload, content)
           enforce_name_match!(path, eff_meta, mentry.format)
           validate_schema(mentry, eff_meta, eff_content)
@@ -130,10 +134,6 @@ module Textus
           zone_seg && File.join(zones_root, zone_seg)
         end
 
-        def ensure_uid(format, meta, content, existing_uid)
-          Textus::Format.for(format).inject_uid(meta, content, existing_uid)
-        end
-
         def enforce_name_match!(path, meta, format)
           Textus::Format.for(format).enforce_name_match!(path, meta)
         end
@@ -146,12 +146,6 @@ module Textus
 
         def resolve_path(key)
           @manifest.resolver.resolve(key).path
-        end
-
-        def prepare_uid(mentry, payload, key)
-          meta = payload.meta || {}
-          existing_uid = @reader.existing_uid(key)
-          ensure_uid(mentry.format, meta, payload.content, existing_uid)
         end
 
         def serialize_entry(mentry, path, meta, payload, content)

@@ -29,10 +29,6 @@ module Textus
         raise NotImplementedError.new("#{name}.validate_path_extension not implemented")
       end
 
-      def self.inject_uid(_meta, _content, _existing_uid)
-        raise NotImplementedError.new("#{name}.inject_uid not implemented")
-      end
-
       def self.enforce_name_match!(_path, _meta)
         raise NotImplementedError.new("#{name}.enforce_name_match! not implemented")
       end
