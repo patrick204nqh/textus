@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Ports::Storage::FileStore do
+RSpec.describe Textus::Port::Storage::FileStore do
   subject(:store) { described_class.new }
 
   let(:tmp)  { Dir.mktmpdir("textus-file-store") }

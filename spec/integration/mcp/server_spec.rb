@@ -1,7 +1,7 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::Surfaces::MCP::Server do
+RSpec.describe Textus::Surface::MCP::Server do
   include_context "textus_store_fixture"
 
   before do

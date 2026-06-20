@@ -12,7 +12,7 @@ module SpecLayout
   module_function
 
   # The constant named by the FIRST top-level `RSpec.describe`, if it is a
-  # Textus:: constant. Returns e.g. "Textus::Ports::BuildLock", or nil when the
+  # Textus:: constant. Returns e.g. "Textus::Port::BuildLock", or nil when the
   # spec describes a string or a non-Textus constant (both exempt). Stops at the
   # first whitespace/comma/`do`, so `describe Textus::Store, ".discover"` yields
   # "Textus::Store".
@@ -37,7 +37,7 @@ module SpecLayout
   # the enclosing namespace (i.e. be missing at most the leaf class). That makes
   # a module-grouping spec (`describe Textus::Manifest` in spec/manifest/) legal,
   # and the same spec at the spec root legal too, while a nested unit spec
-  # (`describe Textus::Ports::BuildLock`) MUST sit under spec/ports/.
+  # (`describe Textus::Port::BuildLock`) MUST sit under spec/ports/.
   def placement_error(constant, dir_segments)
     full = constant.split("::")[1..].map { |s| normalize(s) } # drop "Textus"
     dir  = dir_segments.map { |s| normalize(s) }
@@ -54,12 +54,17 @@ module SpecLayout
   def legacy_match?(full, dir)
     aliases = []
 
-    if full[0, 2] == %w[surfaces cli]
+    if full.first == "port"
+      aliases << ["ports", *full[1..]]
+    elsif full[0, 2] == %w[surface cli]
       aliases << ["cli", *full[2..]]
-    elsif full[0, 2] == %w[surfaces mcp]
+      aliases << ["surfaces", "cli", *full[2..]]
+    elsif full[0, 2] == %w[surface mcp]
       aliases << ["mcp", *full[2..]]
-    elsif full == %w[surfaces rolescope]
+      aliases << ["surfaces", "mcp", *full[2..]]
+    elsif full == %w[surface rolescope]
       aliases << []
+      aliases << ["surfaces"]
     end
 
     aliases << ["domain", *full[1..]] if full.first == "core"

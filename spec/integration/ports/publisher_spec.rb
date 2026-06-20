@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::Ports::Publisher do
+RSpec.describe Textus::Port::Publisher do
   let(:publisher) { described_class.new }
   let(:tmp) { Dir.mktmpdir }
   let(:store_root) { File.join(tmp, ".textus") }
@@ -95,7 +95,7 @@ RSpec.describe Textus::Ports::Publisher do
 
         publisher.unpublish(target: target, store_root: store_root)
         expect(File.exist?(target)).to be false
-        expect(File.exist?(Textus::Ports::SentinelStore.new.sentinel_path(target, store_root))).to be false
+        expect(File.exist?(Textus::Port::SentinelStore.new.sentinel_path(target, store_root))).to be false
       end
     end
 

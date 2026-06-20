@@ -52,7 +52,7 @@ module Textus
         ts = now.iso8601
         structured = build_structured(ts, container, now, content_hash)
 
-        Textus::Ports::Store.open(container.root) do |store|
+        Textus::Port::Store.open(container.root) do |store|
           index = Textus::Index::Lookup.new(store: store)
           duplicate_key = find_duplicate(index, content_hash)
 

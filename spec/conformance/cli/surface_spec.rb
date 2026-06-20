@@ -8,7 +8,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
   describe "CLI" do
     it "emits a textus/4 envelope for `get`" do
       out = StringIO.new
-      rc = Textus::Surfaces::CLI.run(
+      rc = Textus::Surface::CLI.run(
         ["get", "knowledge.network.org.jane", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
@@ -20,7 +20,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
 
     it "returns etag_mismatch when if_etag is stale" do
       out = StringIO.new
-      rc = Textus::Surfaces::CLI.run(
+      rc = Textus::Surface::CLI.run(
         ["put", "knowledge.network.org.jane", "--stdin", "--output=json"],
         stdin: StringIO.new(JSON.generate(
                               "_meta" => { "name" => "jane", "relationship" => "peer", "org" => "acme" },
@@ -38,7 +38,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
   describe "CLI delete" do
     it "deletes via CLI with --as=human" do
       out = StringIO.new
-      rc = Textus::Surfaces::CLI.run(
+      rc = Textus::Surface::CLI.run(
         ["key", "delete", "knowledge.network.org.jane", "--as=human", "--output=json"],
         stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp,
       )
@@ -49,7 +49,7 @@ RSpec.describe "textus/4 conformance — CLI surface" do
     it "validate-all verb is removed in v0.5; doctor --check=schema_violations replaces it" do
       out = StringIO.new
       err = StringIO.new
-      rc = Textus::Surfaces::CLI.run(["validate-all", "--output=json"],
+      rc = Textus::Surface::CLI.run(["validate-all", "--output=json"],
                                      stdin: StringIO.new, stdout: out, stderr: err, cwd: tmp)
       expect(rc).not_to eq(0)
       expect(JSON.parse(out.string.lines.last)["code"]).to eq("usage")

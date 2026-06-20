@@ -12,7 +12,7 @@ RSpec.describe "CLI default format" do
 
   def run_cli(argv)
     out = StringIO.new
-    rc = Textus::Surfaces::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp)
+    rc = Textus::Surface::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: StringIO.new, cwd: tmp)
     [rc, out.string]
   end
 

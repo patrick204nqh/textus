@@ -17,8 +17,8 @@ module Textus
         lane   = @scope.is_a?(Hash) ? @scope["lane"] : nil
         rows = Textus::Core::Retention::Sweep.new(
           manifest: container.manifest,
-          file_stat: Textus::Ports::Storage::FileStat.new,
-          clock: Textus::Ports::Clock.new,
+          file_stat: Textus::Port::Storage::FileStat.new,
+          clock: Textus::Port::Clock.new,
         ).call(prefix: prefix, lane: lane)
         Textus::Jobs::Retention.new(container: container, call: call).call(rows)
       end

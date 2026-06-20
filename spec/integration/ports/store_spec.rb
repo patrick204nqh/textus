@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Textus::Ports::Store do
+RSpec.describe Textus::Port::Store do
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
 
   after { FileUtils.rm_rf(File.dirname(root)) }

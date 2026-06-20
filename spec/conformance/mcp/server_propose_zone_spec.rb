@@ -8,7 +8,7 @@ RSpec.describe "MCP session propose_lane derives from the connection role (ADR 0
 
   def session_after_initialize(role)
     request = JSON.dump("jsonrpc" => "2.0", "id" => 1, "method" => "initialize", "params" => {}) + "\n"
-    server = Textus::Surfaces::MCP::Server.new(
+    server = Textus::Surface::MCP::Server.new(
       store: store, stdin: StringIO.new(request), stdout: StringIO.new, role: role,
     )
     server.run

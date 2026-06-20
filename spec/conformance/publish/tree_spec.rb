@@ -173,7 +173,7 @@ RSpec.describe "publish_tree (ADR 0047)" do
       target = File.join(repo_root, rel)
       FileUtils.mkdir_p(File.dirname(target))
       File.write(target, body)
-      Textus::Ports::SentinelStore.new.write!(target: target, source: target, store_root: root)
+      Textus::Port::SentinelStore.new.write!(target: target, source: target, store_root: root)
       target
     end
 

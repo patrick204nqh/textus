@@ -4,7 +4,7 @@ module Textus
       class AuditLog < Check
         def call
           path = StoreGeometry.new(root).audit_log_path
-          Textus::Ports::AuditLog.new(root).verify_integrity.map do |v|
+          Textus::Port::AuditLog.new(root).verify_integrity.map do |v|
             {
               "code" => "audit.parse_error",
               "level" => "warning",

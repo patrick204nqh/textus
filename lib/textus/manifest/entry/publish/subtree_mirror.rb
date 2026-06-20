@@ -9,7 +9,7 @@ module Textus
         # shared shape — Tree always walks at `base` and honors `ignore` in the
         # prune (ADR 0047 D4, so a derived index in the mirrored dir survives).
         class SubtreeMirror
-          def initialize(entry, pctx, publisher: Textus::Ports::Publisher.new)
+          def initialize(entry, pctx, publisher: Textus::Port::Publisher.new)
             @entry     = entry
             @pctx      = pctx
             @publisher = publisher
@@ -52,7 +52,7 @@ module Textus
           # targets_under can't reach another leaf's sentinels.
           def prune(target_dir, written, honor_ignore)
             kept = written.map { |w| File.expand_path(w["target"]) }
-            store = Textus::Ports::SentinelStore.new
+            store = Textus::Port::SentinelStore.new
             store.targets_under(target_dir, @pctx.root).filter_map do |managed|
               abs = File.expand_path(managed)
               next nil if kept.include?(abs)

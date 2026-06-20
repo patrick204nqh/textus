@@ -67,17 +67,17 @@ RSpec.describe "Boot::CLI_VERBS — the agent-facing command catalog" do
 
   # Guard (ADR 0037): Boot::CLI_VERBS is a curated, hand-written agent-facing
   # catalog — summaries stay editorial, but the SET OF NAMES must stay reconciled
-  # with the real top-level command registry Textus::Surfaces::CLI.verbs. Adding a top-level
+  # with the real top-level command registry Textus::Surface::CLI.verbs. Adding a top-level
   # verb forces a choice: surface it in CLI_VERBS, or list it as intentionally
   # omitted. Either way, drift becomes a red test, not a silent stale catalog.
   describe "reconciles with the CLI registry (ADR 0037)" do
-    let(:registry_names) { Textus::Surfaces::CLI.verbs.keys.sort }
+    let(:registry_names) { Textus::Surface::CLI.verbs.keys.sort }
     let(:catalog_names)  { Textus::Boot::CLI_VERBS.map { |v| v["name"] }.sort }
 
     it "every catalog verb is a real registered command" do
       ghosts = catalog_names - registry_names
       expect(ghosts).to be_empty,
-                        "CLI_VERBS lists names with no Textus::Surfaces::CLI.verbs entry: #{ghosts.inspect}"
+                        "CLI_VERBS lists names with no Textus::Surface::CLI.verbs entry: #{ghosts.inspect}"
     end
 
     it "every registered command is either in the catalog or explicitly omitted" do

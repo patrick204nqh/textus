@@ -21,7 +21,7 @@ RSpec.describe Textus::Jobs::Planner do
     YAML
   end
 
-  let(:store_port) { Textus::Ports::Store.new(root: store.root).setup! }
+  let(:store_port) { Textus::Port::Store.new(root: store.root).setup! }
   let(:queue) { Textus::Jobs::Queue.new(store: store_port) }
 
   after { store_port.close }

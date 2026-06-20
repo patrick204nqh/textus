@@ -14,7 +14,7 @@ RSpec.describe "textus put KEY --stdin (ADR 0089 — verb owns stdin)" do
   before { minimal_store(root) }
 
   def run(argv, stdin_body: "")
-    Textus::Surfaces::CLI.run(
+    Textus::Surface::CLI.run(
       argv,
       stdin: StringIO.new(stdin_body),
       stdout: stdout,

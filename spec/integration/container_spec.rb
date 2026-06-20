@@ -18,7 +18,7 @@ RSpec.describe Textus::Container do
 
   it "is built once per Store and backs the Store's delegated readers", :aggregate_failures do
     Dir.mktmpdir do |tmp|
-      Textus::Surfaces::CLI.run(
+      Textus::Surface::CLI.run(
         ["--root=#{tmp}/.textus", "init"],
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )

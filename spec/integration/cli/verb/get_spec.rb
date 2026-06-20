@@ -1,14 +1,14 @@
 require "spec_helper"
 require "stringio"
 
-RSpec.describe Textus::Surfaces::CLI::Verb::Get do
+RSpec.describe Textus::Surface::CLI::Verb::Get do
   include_context "textus_store_fixture"
 
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
   def run(argv)
-    Textus::Surfaces::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
+    Textus::Surface::CLI.run(["--root=#{root}"] + argv, stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: tmp)
   end
 
   # A stale intake entry whose source carries a short ttl. Since ADR 0089 `get`

@@ -21,7 +21,7 @@ RSpec.describe "textus pulse CLI" do
   def run_cli(argv, cwd:)
     out = StringIO.new
     err = StringIO.new
-    code = Textus::Surfaces::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
+    code = Textus::Surface::CLI.run(argv, stdin: StringIO.new, stdout: out, stderr: err, cwd: cwd)
     [code, out.string, err.string]
   end
 
@@ -39,7 +39,7 @@ RSpec.describe "textus pulse CLI" do
       _code, out1 = run_cli(%w[pulse --since=0], cwd: root)
       c1 = JSON.parse(out1)["cursor"]
 
-      Textus::Ports::AuditLog.new(textus).append(
+      Textus::Port::AuditLog.new(textus).append(
         role: "human",
         verb: "put",
         key: "a",
@@ -66,7 +66,7 @@ RSpec.describe "textus pulse CLI" do
       _code, out1 = run_cli(%w[pulse --as=agent], cwd: root)
       first_cursor = JSON.parse(out1)["cursor"]
 
-      Textus::Ports::AuditLog.new(textus).append(
+      Textus::Port::AuditLog.new(textus).append(
         role: "human",
         verb: "put",
         key: "knowledge.note",

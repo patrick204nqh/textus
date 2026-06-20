@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Ports::BuildLock do
+RSpec.describe Textus::Port::BuildLock do
   include_context "textus_store_fixture"
 
   before { FileUtils.mkdir_p(root) }

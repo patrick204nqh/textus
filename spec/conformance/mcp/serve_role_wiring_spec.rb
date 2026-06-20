@@ -8,14 +8,14 @@ RSpec.describe "MCP serve role wiring (ADR 0040)" do
   let(:store) { Textus::Store.new(File.expand_path("../../../.textus", __dir__)) }
 
   def role_handed_to_server(argv)
-    verb = Textus::Surfaces::CLI::Verb::MCPServe.new(
+    verb = Textus::Surface::CLI::Verb::MCPServe.new(
       stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
     )
     verb.parse(argv)
 
     captured = nil
-    fake = instance_double(Textus::Surfaces::MCP::Server, run: nil)
-    allow(Textus::Surfaces::MCP::Server).to receive(:new) do |**kw|
+    fake = instance_double(Textus::Surface::MCP::Server, run: nil)
+    allow(Textus::Surface::MCP::Server).to receive(:new) do |**kw|
       captured = kw[:role]
       fake
     end

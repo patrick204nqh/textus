@@ -20,7 +20,7 @@ module Textus
         @key = key
       end
 
-      def call(container:, call:, file_stat: Textus::Ports::Storage::FileStat.new)
+      def call(container:, call:, file_stat: Textus::Port::Storage::FileStat.new)
         @container = container
         @call = call
         @manifest = container.manifest

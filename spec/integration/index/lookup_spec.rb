@@ -6,7 +6,7 @@ RSpec.describe Textus::Index::Lookup do
   subject(:lookup) { described_class.new(store: store) }
 
   let(:root) { File.join(Dir.mktmpdir, ".textus") }
-  let(:store) { Textus::Ports::Store.new(root: root).setup! }
+  let(:store) { Textus::Port::Store.new(root: root).setup! }
 
   after do
     store.close

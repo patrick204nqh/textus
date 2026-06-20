@@ -39,7 +39,7 @@ RSpec.describe Textus::Index::Builder do
     }
   end
 
-  let(:store_port) { Textus::Ports::Store.new(root: root).setup! }
+  let(:store_port) { Textus::Port::Store.new(root: root).setup! }
 
   after { store_port.close }
 

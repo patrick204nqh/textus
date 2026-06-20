@@ -6,7 +6,7 @@ require "digest"
 # fixture that catalog_spec's read-only example project does not exercise.
 # (Was tools_spec.rb; MCP::Tools — a pure pass-through to Catalog — was deleted
 # in ADR 0101, so this suite now describes Catalog directly.)
-RSpec.describe Textus::Surfaces::MCP::Catalog do
+RSpec.describe Textus::Surface::MCP::Catalog do
   include_context "textus_store_fixture"
 
   let(:manifest_yaml) do
@@ -61,7 +61,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
     it "raises ToolError for an unknown key" do
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError)
+      end.to raise_error(Textus::Surface::MCP::ToolError)
     end
   end
 
@@ -128,7 +128,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
     end
 
     it "accept is exposed in the derived catalog" do
-      expect(Textus::Surfaces::MCP::Catalog.names).to include("accept", "reject")
+      expect(Textus::Surface::MCP::Catalog.names).to include("accept", "reject")
     end
 
     it "refuses accept for a default agent connection (lacks author)" do
@@ -136,7 +136,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
       expect do
         described_class.call("accept", session: session, store: store,
                                        args: { "pending_key" => pending_key })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /author/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /author/)
     end
 
     it "allows accept for a human-role connection" do
@@ -152,7 +152,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
       expect do
         described_class.call("reject", session: session, store: store,
                                        args: { "pending_key" => pending_key })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /author/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /author/)
     end
 
     it "allows reject for a human-role connection" do
@@ -167,13 +167,13 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
     it "raises ToolError when the required key arg is missing" do
       expect do
         described_class.call("schema_show", session: session, store: store, args: {})
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /missing.*key/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for an unknown key" do
       expect do
         described_class.call("schema_show", session: session, store: store, args: { "key" => "no.such.key" })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError)
+      end.to raise_error(Textus::Surface::MCP::ToolError)
     end
   end
 
@@ -239,7 +239,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
     it "raises ToolError" do
       expect do
         described_class.call("nope", session: session, store: store, args: {})
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /unknown tool/)
     end
   end
 end

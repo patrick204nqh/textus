@@ -62,7 +62,7 @@ module Textus
     end
 
     def as(role, dry_run: false, correlation_id: nil)
-      Textus::Surfaces::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
+      Textus::Surface::RoleScope.new(container: container, role: role, dry_run: dry_run, correlation_id: correlation_id)
     end
 
     private
@@ -73,8 +73,8 @@ module Textus
         root: root,
         manifest: manifest,
         schemas: Schemas.new(File.join(root, "schemas")),
-        file_store: Ports::Storage::FileStore.new,
-        audit_log: Ports::AuditLog.new(
+        file_store: Port::Storage::FileStore.new,
+        audit_log: Port::AuditLog.new(
           root,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],

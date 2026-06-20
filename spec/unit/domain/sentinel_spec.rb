@@ -1,11 +1,11 @@
 RSpec.describe Textus::Core::Sentinel do
   let(:present_stat) do
-    instance_double(Textus::Ports::Storage::FileStat,
+    instance_double(Textus::Port::Storage::FileStat,
                     exists?: true, read: Digest::SHA256.hexdigest("content") && "content")
   end
-  let(:absent_stat)  { instance_double(Textus::Ports::Storage::FileStat, exists?: false) }
+  let(:absent_stat)  { instance_double(Textus::Port::Storage::FileStat, exists?: false) }
   let(:changed_stat) do
-    instance_double(Textus::Ports::Storage::FileStat, exists?: true, read: "different content")
+    instance_double(Textus::Port::Storage::FileStat, exists?: true, read: "different content")
   end
 
   let(:sha256) { Digest::SHA256.hexdigest("content") }
@@ -37,7 +37,7 @@ RSpec.describe Textus::Core::Sentinel do
     end
 
     it "is false when the on-disk sha256 matches the recorded sha256" do
-      stat = instance_double(Textus::Ports::Storage::FileStat, exists?: true, read: "content")
+      stat = instance_double(Textus::Port::Storage::FileStat, exists?: true, read: "content")
       expect(sentinel.drift?(stat)).to be false
     end
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Ports::Storage::FileStat do
+RSpec.describe Textus::Port::Storage::FileStat do
   subject(:stat) { described_class.new }
 
   let(:tmp) { Dir.mktmpdir("textus-file-stat") }

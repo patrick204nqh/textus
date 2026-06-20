@@ -33,7 +33,7 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
   let(:stderr) { StringIO.new }
 
   def run(argv, stdin_body: "")
-    Textus::Surfaces::CLI.run(
+    Textus::Surface::CLI.run(
       argv,
       stdin: StringIO.new(stdin_body),
       stdout: stdout,

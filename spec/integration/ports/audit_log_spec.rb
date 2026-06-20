@@ -1,10 +1,10 @@
 require "spec_helper"
 require "time"
 
-RSpec.describe Textus::Ports::AuditLog do
+RSpec.describe Textus::Port::AuditLog do
   let(:tmp)  { Dir.mktmpdir("textus-audit") }
   let(:root) { File.join(tmp, ".textus") }
-  let(:log)  { Textus::Ports::AuditLog.new(root) }
+  let(:log)  { Textus::Port::AuditLog.new(root) }
 
   before { FileUtils.mkdir_p(root) }
   after  { FileUtils.remove_entry(tmp) if File.directory?(tmp) }

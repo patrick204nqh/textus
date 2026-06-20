@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Surfaces::MCP::Catalog do
+RSpec.describe Textus::Surface::MCP::Catalog do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -27,13 +27,13 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
   describe ".build_tools" do
     it "returns an MCP::Tool for each MCP-surfaced verb" do
-      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      tools = described_class.build_tools(instance_double(Textus::Surface::MCP::Server, dispatch: nil))
       names = tools.map(&:tool_name)
       expect(names).to include("get", "put", "list", "pulse", "boot")
     end
 
     it "each tool has a description and input_schema" do
-      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      tools = described_class.build_tools(instance_double(Textus::Surface::MCP::Server, dispatch: nil))
       get_tool = tools.find { |t| t.tool_name == "get" }
       expect(get_tool.description).to be_a(String).and(satisfy { |s| !s.empty? })
       schema = get_tool.input_schema.to_h
@@ -42,7 +42,7 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
 
     # ADR 0057: put's _meta wire property
     it "exposes put's _meta in the input_schema properties" do
-      tools = described_class.build_tools(instance_double(Textus::Surfaces::MCP::Server, dispatch: nil))
+      tools = described_class.build_tools(instance_double(Textus::Surface::MCP::Server, dispatch: nil))
       put_tool = tools.find { |t| t.tool_name == "put" }
       schema = put_tool.input_schema.to_h
       props = schema[:properties]
@@ -87,31 +87,31 @@ RSpec.describe Textus::Surfaces::MCP::Catalog do
           "put", session: session, store: store,
                  args: { "key" => "knowledge.project", "_meta" => { "name" => 123, "description" => "d" }, "body" => "x\n" }
         )
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /name/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /name/)
     end
 
     it "raises ToolError for an unknown tool" do
       expect do
         described_class.call("nope", session: session, store: store, args: {})
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /unknown tool/)
     end
 
     it "raises ToolError for a missing required arg" do
       expect do
         described_class.call("get", session: session, store: store, args: {})
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /missing.*key/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for a dispatcher verb that is not MCP-surfaced (e.g. audit)" do
       expect do
         described_class.call("audit", session: session, store: store, args: { "key" => "knowledge.project" })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError, /unknown tool/)
+      end.to raise_error(Textus::Surface::MCP::ToolError, /unknown tool/)
     end
 
     it "wraps gateway errors in ToolError" do
       expect do
         described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
-      end.to raise_error(Textus::Surfaces::MCP::ToolError)
+      end.to raise_error(Textus::Surface::MCP::ToolError)
     end
   end
 

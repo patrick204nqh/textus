@@ -112,7 +112,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
       )
       stdout = StringIO.new
       stderr = StringIO.new
-      exit_code = Textus::Surfaces::CLI.run(
+      exit_code = Textus::Surface::CLI.run(
         ["--root=#{cli_root}", "reject", "proposals.d", "--as=human"],
         stdin: StringIO.new(""), stdout: stdout, stderr: stderr, cwd: cli_dir,
       )

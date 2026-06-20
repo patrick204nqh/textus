@@ -168,7 +168,7 @@ RSpec.describe Textus::Boot do
   it "is callable through the CLI as JSON" do
     out = StringIO.new
     err = StringIO.new
-    code = Textus::Surfaces::CLI.run(["boot", "--output=json"],
+    code = Textus::Surface::CLI.run(["boot", "--output=json"],
                                      stdin: StringIO.new(""), stdout: out, stderr: err, cwd: tmp)
     expect(code).to eq(0)
     parsed = JSON.parse(out.string)

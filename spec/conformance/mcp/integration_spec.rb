@@ -29,7 +29,7 @@ RSpec.describe "MCP end-to-end" do
     store = Textus::Store.new(root)
     payload = requests_arr.map { |r| JSON.dump(r.merge(jsonrpc: "2.0")) }.join("\n") + "\n"
     out = StringIO.new
-    Textus::Surfaces::MCP::Server.new(store: store, stdin: StringIO.new(payload), stdout: out).run
+    Textus::Surface::MCP::Server.new(store: store, stdin: StringIO.new(payload), stdout: out).run
     out.string.lines.map { |l| JSON.parse(l) }
   end
 
@@ -58,7 +58,7 @@ RSpec.describe "MCP end-to-end" do
                                   "deps", "rdeps", "where")
     expect(tool_names).not_to include("tick", "find", "read", "write", "fetch_stale", "rules")
     # Self-updating: must equal the catalog's authoritative name list
-    expect(tool_names.sort).to eq(Textus::Surfaces::MCP::Catalog.names.sort)
+    expect(tool_names.sort).to eq(Textus::Surface::MCP::Catalog.names.sort)
   end
 
   it "pulse cursor advances: no-since pulse after put returns only the new entry; second no-since pulse returns empty changed" do

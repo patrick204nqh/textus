@@ -19,14 +19,14 @@ module Textus
       end
 
       def call(container:, call:)
-        Textus::Ports::Store.open(container.root) do |store|
+        Textus::Port::Store.open(container.root) do |store|
           queue = Textus::Jobs::Queue.new(store: store)
           Textus::Jobs::Planner.seed(
             container: container,
             queue: queue,
             role: call.role,
           )
-          queue.reclaim(now: Textus::Ports::Clock.new.now)
+          queue.reclaim(now: Textus::Port::Clock.new.now)
           summary = Textus::Jobs::Worker.for(container:, queue:).drain
           {
             "protocol" => Textus::PROTOCOL,

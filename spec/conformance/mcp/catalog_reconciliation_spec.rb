@@ -26,7 +26,7 @@ MCP_CATALOG_INTENTIONALLY_OMITTED = %w[
 
 RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   let(:dispatcher) { Textus::Action::VERBS.keys.map(&:to_s).sort }
-  let(:exposed)    { Textus::Surfaces::MCP::Catalog.names.sort }
+  let(:exposed)    { Textus::Surface::MCP::Catalog.names.sort }
 
   it "every exposed tool is a dispatcher verb or an explicit composed tool" do
     stray = exposed - dispatcher - MCP_CATALOG_COMPOSED
@@ -57,9 +57,9 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   # proves it. A tool you can call but not discover (or discover but not call)
   # would require a bug in Catalog itself; this makes such a bug a red build.
   describe "dispatch and build_tools name the same tools" do
-    let(:catalog_names) { Textus::Surfaces::MCP::Catalog.names.sort }
+    let(:catalog_names) { Textus::Surface::MCP::Catalog.names.sort }
     # build_tools derives from the same source as names — both from VERBS + mcp_surfaced?
-    let(:schema_names)  { Textus::Surfaces::MCP::Catalog.names.sort }
+    let(:schema_names)  { Textus::Surface::MCP::Catalog.names.sort }
 
     it "advertised schemas match the derived dispatch set" do
       expect(schema_names).to eq(catalog_names),
@@ -75,10 +75,10 @@ RSpec.describe "MCP catalog reconciles with Dispatcher::VERBS (ADR 0039)" do
   # to the dispatcher with no contract cannot be reached by MCP, but this guard
   # also stops a half-declared contract (surfaces :mcp but unusable) from shipping.
   describe "MCP-surfaced verbs are completely declared" do
-    let(:mcp_specs) { Textus::Surfaces::MCP::Catalog.specs }
+    let(:mcp_specs) { Textus::Surface::MCP::Catalog.specs }
 
     it "exposes at least the core read/write verbs" do
-      expect(Textus::Surfaces::MCP::Catalog.names).to include("boot", "pulse", "list", "get", "put", "propose")
+      expect(Textus::Surface::MCP::Catalog.names).to include("boot", "pulse", "list", "get", "put", "propose")
     end
 
     it "every MCP spec has a non-empty summary" do

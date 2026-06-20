@@ -98,7 +98,7 @@ module Textus
       def check_cursor_expiry!(seq_since)
         return unless seq_since
 
-        log = @audit_log || Textus::Ports::AuditLog.new(@root)
+        log = @audit_log || Textus::Port::AuditLog.new(@root)
         min = log.min_available_seq
         raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
       end

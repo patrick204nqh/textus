@@ -1,7 +1,7 @@
 require "spec_helper"
 require "digest"
 
-RSpec.describe Textus::Ports::SentinelStore do
+RSpec.describe Textus::Port::SentinelStore do
   subject(:store) { described_class.new }
 
   let(:tmp)        { Dir.mktmpdir("textus-sentinel-store") }

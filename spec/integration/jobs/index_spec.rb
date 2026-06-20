@@ -21,7 +21,7 @@ RSpec.describe Textus::Jobs::Index do
     result = described_class.new.call(container: store.container, call: test_ctx(role: "automation"))
 
     expect(result).to eq({ indexed: 1 })
-    store_port = Textus::Ports::Store.new(root: root).setup!
+    store_port = Textus::Port::Store.new(root: root).setup!
     keys = store_port.connection.execute("SELECT key FROM entries").map { |row| row["key"] }
     expect(keys).to eq(["knowledge.a"])
     store_port.close

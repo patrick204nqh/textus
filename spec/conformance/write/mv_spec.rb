@@ -89,7 +89,7 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.alpha")
     out = StringIO.new
     err = StringIO.new
-    code = Textus::Surfaces::CLI.run(
+    code = Textus::Surface::CLI.run(
       ["key", "mv", "knowledge.notes.alpha", "knowledge.notes.beta", "--as=human", "--output=json"],
       stdin: StringIO.new, stdout: out, stderr: err, cwd: File.dirname(root),
     )

@@ -12,8 +12,8 @@ module Textus
           return [] unless File.directory?(sdir)
 
           repo_root = File.dirname(root)
-          store = Textus::Ports::SentinelStore.new
-          glob = File.join(sdir, "**", "*#{Textus::Ports::SentinelStore::SUFFIX}")
+          store = Textus::Port::SentinelStore.new
+          glob = File.join(sdir, "**", "*#{Textus::Port::SentinelStore::SUFFIX}")
           Dir.glob(glob).filter_map do |spath|
             sentinel = store.load(spath, repo_root)
             next nil if sentinel.nil? || sentinel.source.nil?

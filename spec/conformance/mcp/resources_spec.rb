@@ -28,7 +28,7 @@ RSpec.describe "MCP resources surface" do
     req_id = 1
     stdin  = StringIO.new
     stdout = StringIO.new
-    server = Textus::Surfaces::MCP::Server.new(store: store, stdin: stdin, stdout: stdout, role: "agent")
+    server = Textus::Surface::MCP::Server.new(store: store, stdin: stdin, stdout: stdout, role: "agent")
 
     init_msg = JSON.dump({ "jsonrpc" => "2.0", "id" => 0, "method" => "initialize", "params" => {} })
     stdin.string = init_msg + "\n" + JSON.dump({ "jsonrpc" => "2.0", "id" => req_id, "method" => method, "params" => params }) + "\n"

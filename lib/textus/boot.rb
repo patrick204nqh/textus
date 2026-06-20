@@ -90,8 +90,8 @@ module Textus
       propose_lane = manifest.policy.propose_lane_for(agent_role)
 
       {
-        "read_verbs" => Textus::Surfaces::MCP::Catalog.read_verbs,
-        "write_verbs" => agent_role ? Textus::Surfaces::MCP::Catalog.write_verbs : [],
+        "read_verbs" => Textus::Surface::MCP::Catalog.read_verbs,
+        "write_verbs" => agent_role ? Textus::Surface::MCP::Catalog.write_verbs : [],
         "writable_lanes" => writable_lanes,
         "propose_lane" => propose_lane,
         "latest_seq" => audit_log.latest_seq,

@@ -3,13 +3,13 @@ module Textus
     class Check
       class Sentinels < Check
         def call
-          store      = Textus::Ports::SentinelStore.new
-          file_stat  = Textus::Ports::Storage::FileStat.new
+          store      = Textus::Port::SentinelStore.new
+          file_stat  = Textus::Port::Storage::FileStat.new
           dir        = StoreGeometry.new(root).sentinels_root
           return [] unless file_stat.directory?(dir)
 
           repo_root = File.dirname(root)
-          file_stat.glob(File.join(dir, "**", "*#{Textus::Ports::SentinelStore::SUFFIX}")).flat_map do |sentinel_path|
+          file_stat.glob(File.join(dir, "**", "*#{Textus::Port::SentinelStore::SUFFIX}")).flat_map do |sentinel_path|
             inspect_sentinel(sentinel_path, repo_root, store, file_stat)
           end
         end

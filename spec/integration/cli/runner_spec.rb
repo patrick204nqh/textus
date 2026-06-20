@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Surfaces::CLI::Runner do
+RSpec.describe Textus::Surface::CLI::Runner do
   include_context "textus_store_fixture"
   include_context "cli invocation"
 
@@ -17,16 +17,16 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
   end
 
   it "generates a top-level Verb subclass for the where contract" do
-    klass = Textus::Surfaces::CLI.verbs["where"]
-    expect(klass).to be < Textus::Surfaces::CLI::Verb
+    klass = Textus::Surface::CLI.verbs["where"]
+    expect(klass).to be < Textus::Surface::CLI::Verb
     expect(klass.command_name).to eq("where")
     expect(klass.parent_group).to be_nil
   end
 
   it "is idempotent — repeated CLI.verbs calls do not create duplicate where commands" do
-    Textus::Surfaces::CLI.verbs
-    Textus::Surfaces::CLI.verbs
-    wheres = Textus::Surfaces::CLI::Verb.descendants.select do |k|
+    Textus::Surface::CLI.verbs
+    Textus::Surface::CLI.verbs
+    wheres = Textus::Surface::CLI::Verb.descendants.select do |k|
       k.command_name == "where" && k.parent_group.nil?
     end
     expect(wheres.size).to eq(1)
@@ -52,19 +52,19 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
 
   describe "command_name derivation (ADR 0064)" do
     it "derives command_name from the contract cli_leaf when not set explicitly" do
-      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
+      klass = Class.new(Textus::Surface::CLI::Runner::Base)
       klass.spec = Textus::Action::Get.contract # cli_path "get"
       expect(klass.command_name).to eq("get")
     end
 
     it "derives the leaf for a grouped verb" do
-      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
+      klass = Class.new(Textus::Surface::CLI::Runner::Base)
       klass.spec = Textus::Action::Uid.contract # cli "key uid"
       expect(klass.command_name).to eq("uid")
     end
 
     it "still honors an explicit command_name" do
-      klass = Class.new(Textus::Surfaces::CLI::Runner::Base)
+      klass = Class.new(Textus::Surface::CLI::Runner::Base)
       klass.spec = Textus::Action::Get.contract
       klass.command_name "custom"
       expect(klass.command_name).to eq("custom")
@@ -136,7 +136,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
     end
 
     it "no longer keeps a hand-authored uid class" do
-      expect(Textus::Surfaces::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
+      expect(Textus::Surface::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:uid)
     end
   end
 
@@ -151,7 +151,7 @@ RSpec.describe Textus::Surfaces::CLI::Runner do
     end
 
     it "no longer keeps a hand-authored blame class" do
-      expect(Textus::Surfaces::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
+      expect(Textus::Surface::CLI::Runner::HAND_AUTHORED_VERBS).not_to include(:blame)
     end
   end
 end

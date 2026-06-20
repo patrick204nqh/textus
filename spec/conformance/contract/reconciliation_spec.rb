@@ -1,6 +1,6 @@
 require "spec_helper"
 
-Textus::Surfaces::CLI.verbs # trigger Runner.install! so Gen* exist
+Textus::Surface::CLI.verbs # trigger Runner.install! so Gen* exist
 
 # Verbs whose #call signature is intentionally a superset of the wire args
 # (extra params with no MCP exposure). Keep empty unless justified.
@@ -109,7 +109,7 @@ RSpec.describe "contract reconciliation" do
     end
 
     def registered_paths
-      Textus::Surfaces::CLI::Verb.descendants.select(&:command_name).map { |k| path_of(k) }
+      Textus::Surface::CLI::Verb.descendants.select(&:command_name).map { |k| path_of(k) }
     end
 
     it "every :cli contract has a registered command at its declared path" do
@@ -120,7 +120,7 @@ RSpec.describe "contract reconciliation" do
     end
 
     it "every contract-projected/escape-hatch command dispatches the verb its own contract names" do
-      offenders = Textus::Surfaces::CLI::Verb.descendants.select do |k|
+      offenders = Textus::Surface::CLI::Verb.descendants.select do |k|
         # Anonymous (name.nil?) subclasses are throwaway fixtures other specs
         # build with Class.new(Verb); they leak into .descendants and would
         # offend this seed-sensitively. Real commands are always named constants.
@@ -137,8 +137,8 @@ RSpec.describe "contract reconciliation" do
       # A Runner::Base subclass derives its name/dispatch from `spec`; one that
       # forgot `self.spec = …` would silently escape the dispatch check above.
       # Fail loudly instead — drift must be unrepresentable, not merely unchecked.
-      nil_spec = Textus::Surfaces::CLI::Verb.descendants.select do |k|
-        k.command_name && k < Textus::Surfaces::CLI::Runner::Base && k.spec.nil?
+      nil_spec = Textus::Surface::CLI::Verb.descendants.select do |k|
+        k.command_name && k < Textus::Surface::CLI::Runner::Base && k.spec.nil?
       end
       expect(nil_spec.map(&:name)).to be_empty,
                                       "Runner::Base commands missing self.spec: #{nil_spec.map(&:name).join(", ")}"

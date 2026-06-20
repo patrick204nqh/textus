@@ -3,7 +3,7 @@ require "spec_helper"
 RSpec.describe Textus::Action::KeyMv do
   it "moves an entry and returns the renamed keys" do
     Dir.mktmpdir do |tmp|
-      Textus::Surfaces::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
+      Textus::Surface::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
                                                                    cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
       ops = store.as("human")
@@ -20,7 +20,7 @@ RSpec.describe Textus::Action::KeyMv do
 
   it "supports dry_run without writing to disk" do
     Dir.mktmpdir do |tmp|
-      Textus::Surfaces::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
+      Textus::Surface::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
                                                                    cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
       ops = store.as("human")
@@ -36,7 +36,7 @@ RSpec.describe Textus::Action::KeyMv do
 
   it "propagates correlation_id from ctx into the audit row" do
     Dir.mktmpdir do |tmp|
-      Textus::Surfaces::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
+      Textus::Surface::CLI.run(["--root=#{tmp}/.textus", "init"], stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new,
                                                                    cwd: tmp)
       store = Textus::Store.new(File.join(tmp, ".textus"))
       store.as("human").put("knowledge.notes.alpha", meta: { "name" => "alpha" }, body: "hi")
