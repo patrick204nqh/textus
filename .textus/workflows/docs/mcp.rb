@@ -2,7 +2,7 @@ Textus.workflow "mcp" do
   match "artifacts.docs.mcp"
 
   step :build do |_, _ctx|
-    maintenance_names = Textus::Surfaces::MCP::Catalog::MAINTENANCE_VERBS.to_set(&:to_s)
+    maintenance_names = Textus::Surface::MCP::Catalog::MAINTENANCE_VERBS.to_set(&:to_s)
 
     fmt_args = lambda do |spec|
       parts = spec.args.map do |a|
@@ -12,7 +12,7 @@ Textus.workflow "mcp" do
       parts.empty? ? "none" : parts.join(", ")
     end
 
-    all_specs = Textus::Surfaces::MCP::Catalog.specs
+    all_specs = Textus::Surface::MCP::Catalog.specs
 
     tools = all_specs.reject { |s| maintenance_names.include?(s.verb.to_s) }
                      .sort_by { |s| s.verb.to_s }

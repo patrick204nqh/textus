@@ -1,4 +1,5 @@
-<!-- Generated from .textus/data/knowledge/readme.md — edit there, then run `textus drain`. Do not hand-edit README.md (it is clobbered on drain and flagged by doctor). ADR 0103. -->
+<!-- Generated from knowledge.readme.* fragments by the artifacts.docs.readme workflow. Edit the fragments under .textus/data/knowledge/readme/ and run `textus drain`. -->
+<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/branding/wordmark-dark.png">
@@ -18,6 +19,8 @@
 
 *textus* is Latin for "the fabric a text is woven from" — same root as *context*, from *con-texere*, "to weave together."
 
+
+<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 ## The idea
 
 Three actors write to your repo today:
@@ -90,6 +93,8 @@ An agent that tries to write directly into `knowledge/` gets `write_forbidden`. 
 
 That's the load-bearing claim: **coordination is a protocol invariant, not a library convenience.**
 
+
+<!-- This is a fragment of the README. Edit here; the README is composed from fragments by a workflow. -->
 ## See it in four commands
 
 ```sh
@@ -316,3 +321,5 @@ Lefthook hooks (`brew bundle install` then `lefthook install`) run rubocop on `p
 ## License
 
 [MIT](LICENSE)
+
+

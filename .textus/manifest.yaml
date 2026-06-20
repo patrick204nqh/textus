@@ -52,7 +52,11 @@ entries:
     publish: [{ tree: docs/architecture/decisions }]
   - { key: knowledge.docs-index,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
   - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
-  - { key: knowledge.readme,       lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: README.md }] }
+  - key: knowledge.readme
+    lane: knowledge
+    owner: human:self
+    nested: true
+    kind: nested
   - { key: knowledge.contributing, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: CONTRIBUTING.md }] }
   - { key: knowledge.security,     lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: SECURITY.md }] }
   - key: knowledge.specs
@@ -137,6 +141,12 @@ entries:
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/mcp.md, template: docs/mcp.erb }]
+  - key: artifacts.docs.readme
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish: [{ to: README.md, template: docs/readme.erb }]
   # System — internal machinery
   - key: artifacts.system.index
     lane: artifacts
