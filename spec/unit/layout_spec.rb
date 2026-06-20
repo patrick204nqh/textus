@@ -1,34 +1,32 @@
 require "spec_helper"
 
-RSpec.describe Textus::Layout do
+RSpec.describe Textus::StoreGeometry do
   let(:root) { "/tmp/store/.textus" }
+  subject    { described_class.new(root) }
 
-  it "nests every runtime path under .state/" do
-    expect(described_class.run(root)).to eq("/tmp/store/.textus/.state")
-    expect(described_class.cursors(root)).to eq("/tmp/store/.textus/.state/cursors")
-    expect(described_class.cursor(root, "agent")).to eq("/tmp/store/.textus/.state/cursors/agent")
-    expect(described_class.locks(root)).to eq("/tmp/store/.textus/.state/locks")
-    expect(described_class.build_lock(root)).to eq("/tmp/store/.textus/.state/build.lock")
-    expect(described_class.watcher_lock(root)).to eq("/tmp/store/.textus/.state/watcher.lock")
-    expect(described_class.audit_dir(root)).to eq("/tmp/store/.textus/.state/audit")
-    expect(described_class.audit_log(root)).to eq("/tmp/store/.textus/.state/audit/audit.log")
+  it "nests runtime paths under .state/" do
+    expect(subject.run_root).to eq("/tmp/store/.textus/.state")
+    expect(subject.cursor_path("agent")).to eq("/tmp/store/.textus/.state/cursors/agent")
+    expect(subject.lock_path("build")).to eq("/tmp/store/.textus/.state/locks/build.lock")
+    expect(subject.lock_path("watcher")).to eq("/tmp/store/.textus/.state/locks/watcher.lock")
+    expect(subject.audit_dir_path).to eq("/tmp/store/.textus/.state/audit")
+    expect(subject.audit_log_path).to eq("/tmp/store/.textus/.state/audit/audit.log")
   end
 
   it "exposes sentinel paths under .state/" do
-    expect(described_class.sentinels(root)).to eq("/tmp/store/.textus/.state/sentinels")
+    expect(subject.sentinels_root).to eq("/tmp/store/.textus/.state/sentinels")
   end
 
   it "exposes data paths under .textus/data" do
-    expect(described_class.data(root)).to eq("/tmp/store/.textus/data")
-    expect(described_class.data_lane(root, "knowledge")).to eq("/tmp/store/.textus/data/knowledge")
+    expect(subject.data_root).to eq("/tmp/store/.textus/data")
+    expect(subject.lane_path("knowledge")).to eq("/tmp/store/.textus/data/knowledge")
   end
 
   it "stores the SQLite database under the runtime subtree" do
-    expect(described_class.store_db("/tmp/store/.textus")).to eq("/tmp/store/.textus/.state/store.db")
+    expect(described_class.new("/tmp/store/.textus").store_db_path).to eq("/tmp/store/.textus/.state/store.db")
   end
 
   it "exposes a .gitignore body that ignores the state subtree" do
-    expect(described_class::GITIGNORE).to include(".state/\n")
-    expect(described_class.gitignore_body).to include(".state/\n")
+    expect(subject.gitignore_body).to include(".state/\n")
   end
 end

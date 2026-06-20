@@ -16,7 +16,7 @@ RSpec.describe Textus::Ports::WatcherLock do
   end
 
   it "lock path is under .state/" do
-    expect(Textus::Layout.watcher_lock(root)).to include(".state")
-    expect(Textus::Layout.watcher_lock(root)).to end_with("watcher.lock")
+    expect(Textus::StoreGeometry.new(root).lock_path("watcher")).to include(".state")
+    expect(Textus::StoreGeometry.new(root).lock_path("watcher")).to end_with("watcher.lock")
   end
 end

@@ -6,8 +6,8 @@ end
 
 module TextusSpecHelpers
   # Layout-aware paths for specs that assert on runtime artifacts. ADR 0038.
-  def audit_log_path(root) = Textus::Layout.audit_log(root)
-  def audit_dir_path(root) = Textus::Layout.audit_dir(root)
+  def audit_log_path(root) = Textus::StoreGeometry.new(root).audit_log_path
+  def audit_dir_path(root) = Textus::StoreGeometry.new(root).audit_dir_path
 
   # Writes a manifest (+ optional zone dirs, schema files, and seed files)
   # into `textus_dir` and returns the Store. Pair with the

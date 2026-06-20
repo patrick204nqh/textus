@@ -8,7 +8,7 @@ RSpec.describe Textus::Ports::AuditLog do
 
   it "writes one valid JSON object per line" do
     log.append(role: "human", verb: "put", key: "working.x", etag_before: nil, etag_after: "sha256:abc")
-    raw = File.read(Textus::Layout.audit_log(tmp))
+    raw = File.read(Textus::StoreGeometry.new(tmp).audit_log_path)
     expect(raw.lines.length).to eq(1)
     parsed = JSON.parse(raw.lines.first)
     expect(parsed).to include(
@@ -25,13 +25,13 @@ RSpec.describe Textus::Ports::AuditLog do
       etag_before: nil, etag_after: nil,
       extras: { "event" => "put", "hook" => "h", "error" => "boom" }
     )
-    parsed = JSON.parse(File.read(Textus::Layout.audit_log(tmp)).lines.first)
+    parsed = JSON.parse(File.read(Textus::StoreGeometry.new(tmp).audit_log_path).lines.first)
     expect(parsed["extras"]).to eq("event" => "put", "hook" => "h", "error" => "boom")
   end
 
   it "omits extras when empty hash is passed" do
     log.append(role: "human", verb: "put", key: "x", etag_before: nil, etag_after: nil, extras: {})
-    parsed = JSON.parse(File.read(Textus::Layout.audit_log(tmp)).lines.first)
+    parsed = JSON.parse(File.read(Textus::StoreGeometry.new(tmp).audit_log_path).lines.first)
     expect(parsed).not_to have_key("extras")
   end
 
@@ -45,7 +45,7 @@ RSpec.describe Textus::Ports::AuditLog do
         "uid" => "abc123"
       }
     )
-    parsed = JSON.parse(File.read(Textus::Layout.audit_log(tmp)).lines.first)
+    parsed = JSON.parse(File.read(Textus::StoreGeometry.new(tmp).audit_log_path).lines.first)
     expect(parsed["from_key"]).to eq("working.notes.alpha")
     expect(parsed["to_key"]).to eq("working.notes.beta")
     expect(parsed["uid"]).to eq("abc123")

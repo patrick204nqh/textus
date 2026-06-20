@@ -43,7 +43,7 @@ RSpec.describe Textus::Action::KeyMv do
 
       store.as("human", correlation_id: "cid-test").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
 
-      log_path = Textus::Layout.audit_log(File.join(tmp, ".textus"))
+      log_path = Textus::StoreGeometry.new(File.join(tmp, ".textus")).audit_log_path
       rows = File.readlines(log_path, chomp: true).map { |l| JSON.parse(l) }
       mv_row = rows.find { |r| r["verb"] == "key_mv" }
       expect(mv_row.dig("extras", "correlation_id")).to eq("cid-test")

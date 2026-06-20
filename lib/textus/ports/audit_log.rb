@@ -16,7 +16,7 @@ module Textus
 
       def initialize(root, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
         @root     = root
-        @path     = Textus::Layout.audit_log(root)
+        @path     = StoreGeometry.new(root).audit_log_path
         @max_size = max_size
         @keep     = keep
       end
@@ -115,11 +115,11 @@ module Textus
       end
 
       def rotated(n)
-        File.join(Textus::Layout.audit_dir(@root), "audit.log.#{n}")
+        File.join(StoreGeometry.new(@root).audit_dir_path, "audit.log.#{n}")
       end
 
       def rotated_meta(n)
-        File.join(Textus::Layout.audit_dir(@root), "audit.log.#{n}.meta.json")
+        File.join(StoreGeometry.new(@root).audit_dir_path, "audit.log.#{n}.meta.json")
       end
 
       # Caller holds the flock. Returns the highest seq across the active log,

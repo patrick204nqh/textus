@@ -92,7 +92,7 @@ module Textus
     end
 
     def self.setup_state_dirs(target_root)
-      FileUtils.mkdir_p(Textus::Layout.audit_dir(target_root))
+      FileUtils.mkdir_p(StoreGeometry.new(target_root).audit_dir_path)
     end
 
     def self.write_gitignore(target_root)
@@ -151,7 +151,7 @@ module Textus
           Pathname.new(Textus::Key::Path.resolve(manifest.data, e)).relative_path_from(root).to_s
         end
       end
-      Textus::Layout.gitignore_body(untracked_paths: untracked)
+      StoreGeometry.new(target_root).gitignore_body(untracked_entries: untracked)
     end
   end
 end
