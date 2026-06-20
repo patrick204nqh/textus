@@ -37,6 +37,31 @@ module Textus
         schema.validate!(parsed["content"] || {})
       end
 
+      RAW_REQUIRED = %w[ingested_at content_hash].freeze
+      RAW_SOURCE_KINDS = %w[url file asset].freeze
+
+      def self.validate_raw_entry!(parsed, lane)
+        return unless lane == "raw"
+
+        content = parsed["content"] || {}
+        return if content["superseded_by"]
+
+        missing = RAW_REQUIRED.reject { |f| content[f] }
+        raise Textus::BadContent.new(nil, "raw entry missing required field(s): #{missing.join(", ")}") if missing.any?
+
+        source = content["source"] || {}
+        kind = source["kind"]
+        unless RAW_SOURCE_KINDS.include?(kind)
+          raise Textus::BadContent.new(
+            nil, "raw entry source.kind must be #{RAW_SOURCE_KINDS.join("|")}, got #{kind.inspect}"
+          )
+        end
+
+        return unless kind == "url" && !source["url"]
+
+        raise Textus::BadContent.new(nil, "raw entry with source.kind=url must have source.url")
+      end
+
       def self.extensions = [".yaml", ".yml"]
 
       def self.nested_glob = "**/*.{yaml,yml}"
@@ -76,12 +101,6 @@ module Textus
         return if meta["name"] == basename
 
         raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
-      end
-
-      def self.inject_uid(meta, content, existing_uid)
-        m = meta.is_a?(Hash) ? meta.dup : {}
-        m["uid"] = existing_uid || Textus::Value::Uid.mint unless m["uid"].is_a?(String) && !m["uid"].empty?
-        [m, content]
       end
 
       def self.validate_path_extension(path, nested)

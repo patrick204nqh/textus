@@ -1,0 +1,9 @@
+_meta:
+  uid: a91ca90af76b77cb
+ingested_at: '2026-06-20T15:33:16Z'
+content_hash: sha256:ceb6346b4150b57902c5c8881f7583473784720623fc566d4215bf87742138ca
+source:
+  kind: url
+  url: https://modelcontextprotocol.io
+  label: Model Context Protocol specification
+body:

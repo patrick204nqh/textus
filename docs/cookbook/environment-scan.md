@@ -145,7 +145,7 @@ textus get artifacts.feeds.machines.laptop   --as=automation     # one host (ref
 textus get artifacts.feeds.machines.prod-web --as=automation
 
 textus pulse --output=json                                        # `stale` lists expired hosts; `next_due_at` is the soonest deadline
-git check-ignore .textus/zones/artifacts/feeds/machines/prod-web.yaml   # …yet gitignored
+git check-ignore .textus/data/artifacts/feeds/machines/prod-web.yaml   # …yet gitignored
 ```
 
 Each `drain` refresh honours the `ttl` rule, so on a long-running control node

@@ -1,29 +1,28 @@
 require "spec_helper"
 
 RSpec.describe "Entry strategy: inject_uid" do
-  describe "Markdown" do
+  describe "Markdown (via Meta.inject_all)" do
     it "adds uid when none exists" do
-      meta, content = Textus::Format::Markdown.inject_uid({}, nil, "abc123def4561234")
+      meta, = Textus::Meta.inject_all({}, {}, { "uid" => "abc123def4561234" })
       expect(meta["uid"]).to eq("abc123def4561234")
-      expect(content).to be_nil
     end
 
     it "preserves existing uid in meta" do
-      meta, = Textus::Format::Markdown.inject_uid({ "uid" => "existing" }, nil, "newone")
+      meta, = Textus::Meta.inject_all({ "uid" => "existing" }, {}, { "uid" => "newone" })
       expect(meta["uid"]).to eq("existing")
     end
 
-    it "mints a fresh uid when existing_uid is nil and meta has no uid" do
-      meta, = Textus::Format::Markdown.inject_uid({}, nil, nil)
+    it "mints a fresh uid when existing_meta has no uid and meta has no uid" do
+      meta, = Textus::Meta.inject_all({}, {}, {})
       expect(meta["uid"]).to match(/\A[0-9a-f]{16}\z/)
     end
   end
 
-  describe "Text" do
+  describe "Text (no metadata channel)" do
     it "is a no-op (text has no _meta home for uid)" do
-      meta, content = Textus::Format::Text.inject_uid(nil, "body", "uid123")
-      expect(meta).to be_nil
-      expect(content).to eq("body")
+      meta, content = Textus::Meta.inject_all({}, { body: "body" }, { "uid" => "uid123" }, format: "text")
+      expect(meta["uid"]).to be_nil
+      expect(content).to eq(body: "body")
     end
   end
 end

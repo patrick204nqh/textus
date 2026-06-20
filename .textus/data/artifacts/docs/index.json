@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "uid": "placeholder"
+  },
+  "how_to": [
+    {
+      "title": "Agents & MCP — wiring an agent to a store",
+      "desc": "· for agent authors & integrators · **read when** you're wiring an AI agent to a store",
+      "link": "how-to/agents-mcp.md"
+    },
+    {
+      "title": "Configuring lanes",
+      "desc": "· for integrators · **read when** you're declaring lanes, wiring workflows, or setting up produced entries",
+      "link": "how-to/configuring-lanes.md"
+    },
+    {
+      "title": "Scheduling `drain` — unattended upkeep",
+      "desc": "· for operators · **read when** you're setting up automated drain runs",
+      "link": "how-to/drain-scheduling.md"
+    },
+    {
+      "title": "Migrations",
+      "desc": "· for operators · **read when** you need to restructure a store safely",
+      "link": "how-to/migrations.md"
+    }
+  ],
+  "reference": [
+    {
+      "title": "Contributor Conventions",
+      "desc": "",
+      "link": "reference/contributor-conventions.md"
+    },
+    {
+      "title": "Conventions",
+      "desc": "· for integrators · **read when** you're shaping a `.textus/` tree and want the idiomatic choices",
+      "link": "reference/conventions.md"
+    },
+    {
+      "title": "Lanes — reference",
+      "desc": "· for integrators · **read when** you need the exact lane, role, and entry semantics",
+      "link": "reference/lanes.md"
+    },
+    {
+      "title": "Testing Strategy",
+      "desc": "· for contributors and AI agents · **read when** writing or reviewing specs",
+      "link": "reference/testing.md"
+    }
+  ],
+  "explanation": [
+    {
+      "title": "Concepts — how textus thinks",
+      "desc": "· for everyone · **read when** you want the mental model before the reference",
+      "link": "explanation/concepts.md"
+    }
+  ],
+  "cookbook": [
+    {
+      "title": "Environment scan across machines",
+      "desc": "· for integrators · **read when** you want a fleet's environments (laptop, cloud servers, …) as protocol-readable, gitignored feed data",
+      "link": "cookbook/environment-scan.md"
+    }
+  ]
+}

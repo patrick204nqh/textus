@@ -12,7 +12,6 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 | If you want to… | Read |
 |---|---|
-| Learn by doing | [`tutorials/`](tutorials/README.md) → [`../.textus/`](../.textus/) |
 | Understand the mental model | [`explanation/concepts.md`](explanation/concepts.md) |
 | Wire an agent via MCP | [`how-to/agents-mcp.md`](how-to/agents-mcp.md) |
 
@@ -20,35 +19,40 @@ The protocol contract lives in [`../SPEC.md`](../SPEC.md). The friendly guides l
 
 | Doc | What it does |
 |---|---|
-| [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | Wire an agent: quickstart, context store, boot → pulse loop |
-| [`how-to/configuring-lanes.md`](how-to/configuring-lanes.md) | Declare lanes, wire workflows, set up produced entries |
-| [`how-to/drain-scheduling.md`](how-to/drain-scheduling.md) | Schedule `drain` for unattended upkeep |
-| [`how-to/migrations.md`](how-to/migrations.md) | Restructure a store safely |
+| [`how-to/agents-mcp.md`](how-to/agents-mcp.md) | · for agent authors & integrators · **read when** you're wiring an AI agent to a store |
+| [`how-to/configuring-lanes.md`](how-to/configuring-lanes.md) | · for integrators · **read when** you're declaring lanes, wiring workflows, or setting up produced entries |
+| [`how-to/drain-scheduling.md`](how-to/drain-scheduling.md) | · for operators · **read when** you're setting up automated drain runs |
+| [`how-to/migrations.md`](how-to/migrations.md) | · for operators · **read when** you need to restructure a store safely |
 
 ## Reference
 
 | Doc | What it documents |
 |---|---|
 | [`../SPEC.md`](../SPEC.md) | The `textus/4` wire protocol — normative |
-| [`reference/lanes.md`](reference/lanes.md) | Lane, role/capability, and entry semantics |
-| [`reference/authority.md`](reference/authority.md) | **Generated.** Who may write what — the projected lane/role tables |
-| [`reference/events.md`](reference/events.md) | Event catalog + per-verb lifecycle timelines |
-| [`reference/mcp.md`](reference/mcp.md) | MCP tool catalog, errors, transports, plugin wiring |
-| [`reference/conventions.md`](reference/conventions.md) | Idiomatic `.textus/` tree shaping (integrator-facing) |
+| [`reference/contributor-conventions.md`](reference/contributor-conventions.md) |  |
+| [`reference/conventions.md`](reference/conventions.md) | · for integrators · **read when** you're shaping a `.textus/` tree and want the idiomatic choices |
+| [`reference/lanes.md`](reference/lanes.md) | · for integrators · **read when** you need the exact lane, role, and entry semantics |
+| [`reference/testing.md`](reference/testing.md) | · for contributors and AI agents · **read when** writing or reviewing specs |
 
 ## Explanation
 
 | Doc | What it explains |
 |---|---|
-| [`explanation/concepts.md`](explanation/concepts.md) | The textus mental model |
+| [`explanation/concepts.md`](explanation/concepts.md) | · for everyone · **read when** you want the mental model before the reference |
 | [`architecture/README.md`](architecture/README.md) | How the Ruby implementation is laid out |
 | [`architecture/decisions/`](architecture/decisions/) | ADRs — why each load-bearing decision was made |
+
+## Cookbook
+
+| Recipe | What it does |
+|---|---|
+| [`cookbook/environment-scan.md`](cookbook/environment-scan.md) | · for integrators · **read when** you want a fleet's environments (laptop, cloud servers, …) as protocol-readable, gitignored feed data |
 
 ## Doc conventions
 
 These rules keep the docs consistent and cheap to maintain. Follow them when adding or editing docs.
 
-1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide; new facts land in a reference doc; new rationale lands in an ADR. Docs live under `docs/<genre>/` (`tutorials/ how-to/ reference/ explanation/`); the folder *is* the genre tag. **Exception:** the ADR sub-tree stays at `docs/architecture/` rather than `docs/explanation/architecture/` — it is self-contained Explanation with dense internal cross-links, and relocating it buys nothing.
+1. **One genre per file (Diátaxis).** Every doc is exactly one of: **Tutorial** (teach by doing), **How-to** (help me do X), **Reference** (the facts), **Explanation** (the why). Don't mix genres in one file — split instead. New how-to lands in a guide; new facts land in a reference doc; new rationale lands in an ADR. Docs live under `docs/<genre>/` (`how-to/ reference/ explanation/`); the folder *is* the genre tag. **Exception:** the ADR sub-tree stays at `docs/architecture/` rather than `docs/explanation/architecture/` — it is self-contained Explanation with dense internal cross-links, and relocating it buys nothing.
 2. **Header contract.** Every doc starts with its H1 followed by two header lines:
    ```markdown
    > **<Genre>** · for <audience> · **read when** <trigger>
