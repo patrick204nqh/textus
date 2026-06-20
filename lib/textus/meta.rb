@@ -4,7 +4,6 @@ require "securerandom"
 
 module Textus
   module Meta
-    SOURCE_FIELDS = %w[raw].freeze
     NO_META_FORMATS = %w[text].freeze
 
     FIELDS = {
@@ -45,15 +44,9 @@ module Textus
     end
 
     def self.validate_source_shape!(src)
-      raise Textus::BadContent.new(nil, "each source must be a hash") unless src.is_a?(Hash)
+      raise Textus::BadContent.new(nil, "each source must be a string") unless src.is_a?(String)
 
-      raw = src["raw"]
-      unless raw.is_a?(String) && raw.match?(/\Araw\./)
-        raise Textus::BadContent.new(nil, "source.raw must be a string starting with 'raw.'")
-      end
-
-      extra = src.keys - SOURCE_FIELDS
-      raise Textus::BadContent.new(nil, "unknown source key(s): #{extra.join(", ")}") if extra.any?
+      raise Textus::BadContent.new(nil, "each source must start with 'raw.', got #{src.inspect}") unless src.match?(/\Araw\./)
 
       src
     end

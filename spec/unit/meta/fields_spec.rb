@@ -27,22 +27,21 @@ RSpec.describe Textus::Meta do
     end
 
     it "preserves sources from payload meta" do
-      payload = { "sources" => [{ "raw" => "raw.2026.06.20.url-foo" }] }
-      meta, = described_class.inject_all(payload, {})
-      expect(meta["sources"]).to eq([{ "raw" => "raw.2026.06.20.url-foo" }])
+      meta, = described_class.inject_all({ "sources" => ["raw.2026.06.20.url-foo"] }, {})
+      expect(meta["sources"]).to eq(["raw.2026.06.20.url-foo"])
     end
 
     it "preserves sources from existing_meta when payload has none" do
-      existing = { "sources" => [{ "raw" => "raw.2026.06.20.url-foo" }] }
+      existing = { "sources" => ["raw.2026.06.20.url-foo"] }
       meta, = described_class.inject_all({}, {}, existing)
-      expect(meta["sources"]).to eq([{ "raw" => "raw.2026.06.20.url-foo" }])
+      expect(meta["sources"]).to eq(["raw.2026.06.20.url-foo"])
     end
 
     it "allows new sources to replace existing" do
-      existing = { "sources" => [{ "raw" => "raw.2026.06.20.url-old" }] }
-      payload = { "sources" => [{ "raw" => "raw.2026.06.20.url-new" }] }
+      existing = { "sources" => ["raw.2026.06.20.url-old"] }
+      payload = { "sources" => ["raw.2026.06.20.url-new"] }
       meta, = described_class.inject_all(payload, {}, existing)
-      expect(meta["sources"]).to eq([{ "raw" => "raw.2026.06.20.url-new" }])
+      expect(meta["sources"]).to eq(["raw.2026.06.20.url-new"])
     end
 
     it "rejects non-array sources" do
@@ -51,22 +50,16 @@ RSpec.describe Textus::Meta do
       end.to raise_error(Textus::BadContent, /sources must be an array/)
     end
 
-    it "rejects source without raw" do
+    it "rejects non-string source elements" do
       expect do
-        described_class.inject_all({ "sources" => [{ "url" => "https://example.com" }] }, {})
+        described_class.inject_all({ "sources" => [42] }, {})
       end.to raise_error(Textus::BadContent, /must be a string/)
     end
 
     it "rejects source with bad raw prefix" do
       expect do
-        described_class.inject_all({ "sources" => [{ "raw" => "knowledge.something" }] }, {})
-      end.to raise_error(Textus::BadContent, /starting with 'raw\.'/)
-    end
-
-    it "rejects source with unknown keys" do
-      expect do
-        described_class.inject_all({ "sources" => [{ "raw" => "raw.x", "foo" => "bar" }] }, {})
-      end.to raise_error(Textus::BadContent, /unknown source key/)
+        described_class.inject_all({ "sources" => ["knowledge.something"] }, {})
+      end.to raise_error(Textus::BadContent, /must start with 'raw\.'/)
     end
   end
 end

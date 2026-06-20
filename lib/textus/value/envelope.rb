@@ -13,7 +13,7 @@ module Textus
       attribute :format,     Types::FormatName
       attribute :etag,       Types::String
       attribute :uid,        Types::String.optional
-      attribute :sources,    Types::Array.of(Types::Hash).optional
+      attribute :sources,    Types::Array.of(Types::String).optional
       attribute :schema_ref, Types::String.optional
       attribute :meta,       Types::Hash.default({}.freeze)
       attribute :body,       Types::String.optional
