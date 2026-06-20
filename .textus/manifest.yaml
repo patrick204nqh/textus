@@ -38,19 +38,19 @@ entries:
     nested: true
     kind: nested
     publish: [{ tree: docs/cookbook }]
-  - key: knowledge.tutorials
-    lane: knowledge
-    owner: human:self
-    nested: true
-    kind: nested
-    publish: [{ tree: docs/tutorials }]
   - key: knowledge.decisions
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
     publish: [{ tree: docs/architecture/decisions }]
-  - { key: knowledge.docs-index,         lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/README.md }] }
+  - key: artifacts.docs.index
+    lane: artifacts
+    kind: produced
+    format: json
+    source: { from: external, command: "true", sources: [] }
+    publish:
+      - { to: docs/README.md, template: docs/docs-index.erb }
   - { key: knowledge.architecture-index, lane: knowledge, owner: human:self, kind: leaf, publish: [{ to: docs/architecture/README.md }] }
   - key: knowledge.readme
     lane: knowledge
@@ -85,7 +85,7 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish:
       - { to: CLAUDE.md,  template: docs/orientation.erb, inject_boot: true }
-      - { to: AGENTS.md,  template: docs/orientation.erb }
+      - { to: AGENTS.md,  template: docs/orientation.erb, inject_boot: true }
   - key: artifacts.config.opencode
     lane: artifacts
     kind: produced
