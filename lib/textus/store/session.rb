@@ -7,7 +7,8 @@ module Textus
   # (Ruby) orientation state — the audit cursor plus the contract etag and
   # propose_lane captured at boot. Immutable Dry::Struct::Value; advance_cursor
   # and with return new instances. ADR 0036; contract_etag widened in ADR 0074.
-  class Session < Dry::Struct
+  class Store
+    class Session < Dry::Struct
     attribute :role,          Value::Types::RoleName
     attribute :cursor,        Value::Types::Cursor
     attribute :propose_lane,  Value::Types::String.optional
@@ -31,5 +32,6 @@ module Textus
     # First 8 hex chars after the "sha256:" prefix — a stable short id for
     # the drift diagnostic.
     def short_etag(etag) = etag.to_s.delete_prefix("sha256:")[0, 8]
+  end
   end
 end

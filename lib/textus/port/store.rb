@@ -12,7 +12,7 @@ module Textus
 
       def initialize(root:)
         @root = root
-        @path = StoreGeometry.new(root).store_db_path
+        @path = Textus::Store::Geometry.new(root).store_db_path
         FileUtils.mkdir_p(File.dirname(@path))
         @connection = SQLite3::Database.new(@path)
         @connection.results_as_hash = true

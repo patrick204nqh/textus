@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Container do
+RSpec.describe Textus::Store::Container do
   it "is a Data class bundling collaborators" do
     container = described_class.new(
       manifest: :m, file_store: :fs, schemas: :s, root: "/r",
@@ -25,7 +25,7 @@ RSpec.describe Textus::Container do
       store = Textus::Store.new(File.join(tmp, ".textus"))
       container = store.container
 
-      expect(container).to be_a(Textus::Container)
+      expect(container).to be_a(Textus::Store::Container)
       expect(store.container).to be(container) # one Container per Store
       expect(store.manifest).to be(container.manifest)
       expect(store.file_store).to be(container.file_store)

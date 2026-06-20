@@ -5,7 +5,7 @@ module Textus
         def call
           store      = Textus::Port::SentinelStore.new
           file_stat  = Textus::Port::Storage::FileStat.new
-          dir        = StoreGeometry.new(root).sentinels_root
+          dir        = Textus::Store::Geometry.new(root).sentinels_root
           return [] unless file_stat.directory?(dir)
 
           repo_root = File.dirname(root)

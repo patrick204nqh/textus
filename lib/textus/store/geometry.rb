@@ -1,5 +1,6 @@
 module Textus
-  class StoreGeometry
+  class Store
+    class Geometry
     RUN    = ".state"
     DATA   = "data"
     ASSETS = "assets"
@@ -73,5 +74,6 @@ module Textus
 
       File.join("data", path)
     end
+  end
   end
 end

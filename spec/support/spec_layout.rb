@@ -54,7 +54,7 @@ module SpecLayout
   def legacy_match?(full, dir)
     aliases = []
 
-    if full.first == "value"
+    if full.first == "value" || full.first == "store"
       aliases << []
     elsif full.first == "port"
       aliases << ["ports", *full[1..]]

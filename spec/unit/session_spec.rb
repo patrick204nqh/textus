@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Session do
+RSpec.describe Textus::Store::Session do
   subject(:session) do
     described_class.new(role: "agent", cursor: 10, propose_lane: "proposals",
                         contract_etag: "sha256:aaaa")

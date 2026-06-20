@@ -8,7 +8,7 @@ module Textus
         cmd = Textus::Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
 
         if spec.verb == :pulse && !session && scope
-          cursor_store = Textus::CursorStore.new(root: scope.container.root, role: scope.role)
+          cursor_store = Textus::Store::Cursor.new(root: scope.container.root, role: scope.role)
           cmd = cmd.with(params: cmd.params.merge(since: cursor_store.read)) unless cmd.params.key?(:since)
           result = store.gate.dispatch(cmd, correlation_id: correlation_id)
           cursor_store.write(result["cursor"]) if result.is_a?(Hash) && result["cursor"]

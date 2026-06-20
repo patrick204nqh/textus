@@ -9,7 +9,7 @@ RSpec.describe Textus::Port::Store do
 
   it "uses Layout.store_db as its path" do
     store = described_class.new(root: root)
-    expect(store.path).to eq(Textus::StoreGeometry.new(root).store_db_path)
+    expect(store.path).to eq(Textus::Store::Geometry.new(root).store_db_path)
     store.close
   end
 

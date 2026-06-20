@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::StoreGeometry do
+RSpec.describe Textus::Store::Geometry do
   let(:root) { "/tmp/store/.textus" }
   subject    { described_class.new(root) }
 

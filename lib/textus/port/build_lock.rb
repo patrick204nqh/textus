@@ -18,7 +18,7 @@ module Textus
       end
 
       def initialize(root:)
-        @path = StoreGeometry.new(root).lock_path("build")
+        @path = Textus::Store::Geometry.new(root).lock_path("build")
         @file = nil
       end
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::StoreGeometry do
+RSpec.describe Textus::Store::Geometry do
   subject(:sg) { described_class.new("/tmp/store/.textus") }
 
   describe "data paths" do

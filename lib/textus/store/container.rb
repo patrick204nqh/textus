@@ -7,7 +7,8 @@ module Textus
   # ReadCaps/WriteCaps/HookCaps trio from 0.26.x. Built once per Store
   # (see Store#initialize); Store delegates its readers to this record,
   # so this struct is the single source of truth for the field set.
-  class Container < Dry::Struct
+  class Store
+    class Container < Dry::Struct
     attribute :manifest,   Value::Types::Any
     attribute :file_store, Value::Types::Any
     attribute :schemas,    Value::Types::Any
@@ -22,5 +23,6 @@ module Textus
       super
       freeze
     end
+  end
   end
 end

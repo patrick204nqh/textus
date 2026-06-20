@@ -1,7 +1,7 @@
 require "spec_helper"
 require "tmpdir"
 
-RSpec.describe Textus::CursorStore do
+RSpec.describe Textus::Store::Cursor do
   subject(:cursor) { described_class.new(root: root, role: :agent) }
 
   let(:tmp) { Dir.mktmpdir }
@@ -25,6 +25,6 @@ RSpec.describe Textus::CursorStore do
 
   it "writes the cursor under .state/cursors" do
     described_class.new(root: root, role: "agent").write(42)
-    expect(File.read(Textus::StoreGeometry.new(root).cursor_path("agent"))).to eq("42")
+    expect(File.read(Textus::Store::Geometry.new(root).cursor_path("agent"))).to eq("42")
   end
 end

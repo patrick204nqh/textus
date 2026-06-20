@@ -17,7 +17,7 @@ module Textus
           @stdout = stdout
           # Session built eagerly so the contract_etag is captured at server start.
           # Changes to manifest/hooks/schemas after this point are detected as drift.
-          @session = Textus::Session.new(
+          @session = Textus::Store::Session.new(
             role: @role,
             cursor: @store.audit_log.latest_seq,
             propose_lane: @store.manifest.policy.propose_lane_for(@role),

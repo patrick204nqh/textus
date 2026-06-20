@@ -38,7 +38,7 @@ RSpec.describe "textus drain concurrency (build lock)" do
   # ADR 0087 §5) rather than crashing. A concurrent drain degrades gracefully —
   # it exits 0, never hard-fails with build_in_progress.
   it "soft-misses gracefully (exit 0) when the build lock is already held" do
-    lock_path = Textus::StoreGeometry.new(root).lock_path("build")
+    lock_path = Textus::Store::Geometry.new(root).lock_path("build")
     FileUtils.mkdir_p(File.dirname(lock_path))
     # rubocop:disable Style/FileOpen
     lock_fd = File.open(lock_path, File::RDWR | File::CREAT, 0o644)

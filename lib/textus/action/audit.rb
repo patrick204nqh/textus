@@ -36,7 +36,7 @@ module Textus
       def call(container:, **)
         @manifest = container.manifest
         @root = container.root
-        @log_path = StoreGeometry.new(container.root).audit_log_path
+        @log_path = Textus::Store::Geometry.new(container.root).audit_log_path
         @audit_log = container.audit_log
 
         query = @query
@@ -104,7 +104,7 @@ module Textus
       end
 
       def all_log_files
-        rotated = Dir.glob(File.join(StoreGeometry.new(@root).audit_dir_path, "audit.log.*"))
+        rotated = Dir.glob(File.join(Textus::Store::Geometry.new(@root).audit_dir_path, "audit.log.*"))
                      .reject { |path| path.end_with?(".meta.json") }
                      .sort_by { |path| -path.scan(/\d+$/).first.to_i }
         active = File.exist?(@log_path) ? [@log_path] : []

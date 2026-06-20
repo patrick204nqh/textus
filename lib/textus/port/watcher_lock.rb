@@ -8,13 +8,13 @@ module Textus
     # Process death releases the flock automatically.
     class WatcherLock
       def initialize(root)
-        @path = StoreGeometry.new(root).lock_path("watcher")
+        @path = Textus::Store::Geometry.new(root).lock_path("watcher")
         @file = nil
         FileUtils.mkdir_p(File.dirname(@path))
       end
 
       def self.running?(root)
-        path = StoreGeometry.new(root).lock_path("watcher")
+        path = Textus::Store::Geometry.new(root).lock_path("watcher")
         return false unless File.exist?(path)
 
         File.open(path, "r+") do |file|
