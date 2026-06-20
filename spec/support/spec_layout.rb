@@ -43,6 +43,7 @@ module SpecLayout
     dir  = dir_segments.map { |s| normalize(s) }
 
     return nil if dir == full[0, dir.length] && dir.length >= full.length - 1
+
     namespace = full[0, full.length - 1]
     expected  = namespace.empty? ? "the spec root" : "spec/#{namespace.join("/")}/"
     actual    = dir.empty? ? "the spec root" : "spec/#{dir.join("/")}/"

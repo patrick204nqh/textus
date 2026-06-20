@@ -47,12 +47,12 @@ module Textus
           verb: query.verb,
           correlation_id: query.correlation_id,
           limit: query.limit,
-        ).select { |row|
+        ).select do |row|
           next false if query.lane && !key_in_lane?(row["key"], query.lane)
           next false if query.since && (row["ts"].nil? || Time.parse(row["ts"]) < query.since)
 
           true
-        }
+        end
       end
 
       def self.parse_since(str, now: Time.now.utc)

@@ -8,7 +8,7 @@ module Textus
     # SQLite-backed runtime store for textus state. Owns the connection,
     # schema setup, WAL mode, and transaction boundary for the index and queue.
     class Store
-      attr_reader :path
+      attr_reader :path, :connection
 
       def initialize(root:)
         @root = root
@@ -78,10 +78,6 @@ module Textus
         connection.close unless connection.closed?
       end
 
-      private
-
-      attr_reader :connection
-
       def self.open(root)
         store = new(root: root)
         store.setup!
@@ -91,6 +87,7 @@ module Textus
       ensure
         store&.close
       end
+      private :connection
     end
   end
 end

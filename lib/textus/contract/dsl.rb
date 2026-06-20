@@ -92,11 +92,14 @@ module Textus
         args = @__args || []
         params = args.map { |a| a.required ? "#{a.name}:" : "#{a.name}: nil" }.join(", ")
         assignments = args.map { |a| "@#{a.name} = #{a.name}" }.join("; ")
+        # Interpolates to: def initialize(key:, lane: nil) ; @key = key; @lane = lane ; end
+        # rubocop:disable Style/DocumentDynamicEvalDefinition
         class_eval <<-RUBY, __FILE__, __LINE__ + 1
           def initialize(#{params})
             #{assignments}
           end
         RUBY
+        # rubocop:enable Style/DocumentDynamicEvalDefinition
       end
       # rubocop:enable Naming/MemoizedInstanceVariableName
     end

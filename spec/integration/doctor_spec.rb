@@ -79,11 +79,11 @@ RSpec.describe Textus::Doctor do
   it "reports sentinel.orphan when a sentinel's target is missing" do
     FileUtils.mkdir_p(File.join(root, ".state", "tracking", "sentinels"))
     File.write(File.join(root, ".state/tracking/sentinels/missing.md.textus-managed.json"), JSON.generate(
-                                                                                     "source" => "x",
-                                                                                     "target" => File.join(tmp, "missing.md"),
-                                                                                     "sha256" => "deadbeef",
-                                                                                     "mode" => "copy",
-                                                                                   ))
+                                                                                              "source" => "x",
+                                                                                              "target" => File.join(tmp, "missing.md"),
+                                                                                              "sha256" => "deadbeef",
+                                                                                              "mode" => "copy",
+                                                                                            ))
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "sentinel.orphan" }
     expect(issue).not_to be_nil
@@ -97,11 +97,11 @@ RSpec.describe Textus::Doctor do
     sha = Digest::SHA256.hexdigest("original\n")
     FileUtils.mkdir_p(File.join(root, ".state", "tracking", "sentinels"))
     File.write(File.join(root, ".state/tracking/sentinels/CLAUDE.md.textus-managed.json"), JSON.generate(
-                                                                                    "source" => "x",
-                                                                                    "target" => target,
-                                                                                    "sha256" => sha,
-                                                                                    "mode" => "copy",
-                                                                                  ))
+                                                                                             "source" => "x",
+                                                                                             "target" => target,
+                                                                                             "sha256" => sha,
+                                                                                             "mode" => "copy",
+                                                                                           ))
     File.write(target, "tampered\n") # drift!
     res = doctor
     issue = res["issues"].find { |i| i["code"] == "sentinel.drift" }

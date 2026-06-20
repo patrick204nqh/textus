@@ -84,12 +84,8 @@ module Textus
         files.each do |file|
           File.foreach(file) do |line|
             parsed = parse_row(line.chomp)
-            next unless parsed
-            next if seq_since && parsed["seq"] <= seq_since
-            next if key && parsed["key"] != key
-            next if role && parsed["role"] != role
-            next if verb && parsed["verb"] != verb
-            next if correlation_id && parsed.dig("extras", "correlation_id") != correlation_id
+            next unless parsed && matches?(parsed, seq_since:, key:, role:, verb:, correlation_id:)
+
             rows << parsed
             break if limit && rows.length >= limit
           end
@@ -239,6 +235,16 @@ module Textus
         JSON.parse(line)
       rescue JSON::ParserError
         nil
+      end
+
+      def matches?(row, seq_since: nil, key: nil, role: nil, verb: nil, correlation_id: nil)
+        return false if seq_since && row["seq"] <= seq_since
+        return false if key && row["key"] != key
+        return false if role && row["role"] != role
+        return false if verb && row["verb"] != verb
+        return false if correlation_id && row.dig("extras", "correlation_id") != correlation_id
+
+        true
       end
 
       def all_log_files
