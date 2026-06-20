@@ -39,7 +39,7 @@ module Textus
           validate_schema(mentry, eff_meta, eff_content)
           etag_before = check_etag!(path, key, if_etag)
           write_bytes(path, bytes)
-          envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content)
+          envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes)
           audit_put(key, etag_before, envelope.etag)
           envelope
         end
@@ -78,13 +78,7 @@ module Textus
           Format.for(new_mentry.format).rewrite_name(to_path, basename)
           etag_after = Value::Etag.for_file(to_path)
 
-          raw = @file_store.read(to_path)
-          parsed = Format.for(new_mentry.format).parse(raw, path: to_path)
-          envelope = Textus::Value::Envelope.build(
-            key: to_key, mentry: new_mentry, path: to_path,
-            meta: parsed["_meta"], body: parsed["body"],
-            etag: etag_after, content: parsed["content"]
-          )
+          envelope = @reader.read(to_key)
 
           extras = {
             "from_key" => from_key, "to_key" => to_key,
@@ -188,11 +182,12 @@ module Textus
           @file_store.write(path, bytes)
         end
 
-        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content)
+        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil)
+          raw = bytes || @file_store.read(path)
           Textus::Value::Envelope.build(
             key: key, mentry: mentry, path: path,
             meta: eff_meta, body: eff_body,
-            etag: Value::Etag.for_bytes(@file_store.read(path)),
+            etag: Value::Etag.for_bytes(raw),
             content: eff_content
           )
         end
