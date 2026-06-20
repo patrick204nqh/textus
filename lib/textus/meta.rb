@@ -4,7 +4,7 @@ require "securerandom"
 
 module Textus
   module Meta
-    SOURCE_FIELDS = %w[raw url label].freeze
+    SOURCE_FIELDS = %w[raw].freeze
     NO_META_FORMATS = %w[text].freeze
 
     FIELDS = {

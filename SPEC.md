@@ -664,11 +664,12 @@ The frontmatter `name:` field, when present, must match the file's basename (wit
 
 **`sources:` (Source references).** Entries MAY carry a `sources` array in
 their frontmatter to declare external provenance. Each element is an object
-with a required `raw` field (a raw-lane key, starting with `raw.`) —
-`url` and `label` are OPTIONAL for inline convenience but redundant with
-the raw entry's own content. The array is preserved on write — existing
-sources carry forward if no new `sources` are provided. The envelope
-returns `sources` as a top-level array when non-empty; omitted when absent.
+with a required `raw` field (a raw-lane key, starting with `raw.`). No
+other keys are permitted — the raw entry is the authoritative source for
+URL, label, and other metadata. The array is preserved on write —
+existing sources carry forward if no new `sources` are provided. The
+envelope returns `sources` as a top-level array when non-empty; omitted
+when absent.
 
 Entries in a `produced` lane SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build tooling can extend the metadata without breaking conformance.
 
@@ -690,7 +691,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "schema_ref": "person",
   "uid": "a1b2c3d4e5f60718",
   "sources": [
-    { "raw": "raw.2026.06.20.url-mcp-spec", "label": "MCP Specification" }
+    { "raw": "raw.2026.06.20.url-mcp-spec" }
   ],
   "stale": false,
   "stale_reason": null,
@@ -709,7 +710,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `sources` is an array of source-reference objects. Present only when non-empty. Each object carries `raw` (string, the raw-lane key, starting with `raw.`), optionally `url` (string) and `label` (string).
+- `sources` is an array of source-reference objects. Present only when non-empty. Each object carries `raw` (string, the raw-lane key, starting with `raw.`); no other keys are permitted.
 - `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-materialised; `false` otherwise. Only populated for produced entries with a declared `ttl`; always `false` for other entries.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a background re-pull is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.
