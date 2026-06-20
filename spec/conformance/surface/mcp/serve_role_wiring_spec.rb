@@ -5,7 +5,7 @@ require "spec_helper"
 # authority. A --as override still works. If the wiring regresses (server built
 # without the resolved role, or the default flips back to human), this fails.
 RSpec.describe "MCP serve role wiring (ADR 0040)" do
-  let(:store) { Textus::Store.new(File.expand_path("../../../.textus", __dir__)) }
+  let(:store) { Textus::Store.new(File.expand_path("../../../../.textus", __dir__)) }
 
   def role_handed_to_server(argv)
     verb = Textus::Surface::CLI::Verb::MCPServe.new(

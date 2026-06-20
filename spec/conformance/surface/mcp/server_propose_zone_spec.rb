@@ -4,7 +4,7 @@ require "spec_helper"
 # role, not a manifest-wide proposer_role fallback. White-box on @session is
 # intentional — the field is server-internal session state.
 RSpec.describe "MCP session propose_lane derives from the connection role (ADR 0040)" do
-  let(:store) { Textus::Store.new(File.expand_path("../../../.textus", __dir__)) }
+  let(:store) { Textus::Store.new(File.expand_path("../../../../.textus", __dir__)) }
 
   def session_after_initialize(role)
     request = JSON.dump("jsonrpc" => "2.0", "id" => 1, "method" => "initialize", "params" => {}) + "\n"

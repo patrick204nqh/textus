@@ -14,8 +14,8 @@ RSpec.describe "textus --root" do
     File.write(File.join(custom, "manifest.yaml"),
                "version: textus/4\nlanes:\n  - { name: knowledge, kind: canon }\nentries: []\n")
 
-    exe = File.expand_path("../../../exe/textus", __dir__)
-    stdout, _stderr, status = Open3.capture3("ruby", "-I", File.expand_path("../../../lib", __dir__), exe, "--root=#{custom}", "list",
+    exe = File.expand_path("../../../../exe/textus", __dir__)
+    stdout, _stderr, status = Open3.capture3("ruby", "-I", File.expand_path("../../../../lib", __dir__), exe, "--root=#{custom}", "list",
                                              "--output=json")
     expect(status.exitstatus).to eq(0)
     payload = JSON.parse(stdout)
@@ -34,8 +34,8 @@ RSpec.describe "textus --root" do
   end
 
   def run_cli(*argv)
-    exe = File.expand_path("../../../exe/textus", __dir__)
-    Open3.capture3("ruby", "-I", File.expand_path("../../../lib", __dir__), exe, *argv)
+    exe = File.expand_path("../../../../exe/textus", __dir__)
+    Open3.capture3("ruby", "-I", File.expand_path("../../../../lib", __dir__), exe, *argv)
   end
 
   it "accepts --root after the verb (textus list --root=PATH)" do
@@ -71,8 +71,8 @@ RSpec.describe "textus --root" do
   it "exits non-zero when --root has no manifest" do
     bogus = File.join(tmp, "no-manifest")
     FileUtils.mkdir_p(bogus)
-    exe = File.expand_path("../../../exe/textus", __dir__)
-    _stdout, stderr, status = Open3.capture3("ruby", "-I", File.expand_path("../../../lib", __dir__), exe, "--root=#{bogus}", "list",
+    exe = File.expand_path("../../../../exe/textus", __dir__)
+    _stdout, stderr, status = Open3.capture3("ruby", "-I", File.expand_path("../../../../lib", __dir__), exe, "--root=#{bogus}", "list",
                                              "--output=json")
     expect(status.exitstatus).not_to eq(0)
     expect(stderr).to match(/no textus store/i)
