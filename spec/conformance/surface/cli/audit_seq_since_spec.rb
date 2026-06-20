@@ -43,7 +43,8 @@ RSpec.describe "textus audit --seq-since" do
       FileUtils.mkdir_p(Textus::Store::Geometry.new(textus).audit_dir_path)
       File.write(File.join(Textus::Store::Geometry.new(textus).audit_dir_path, "audit.log.1.meta.json"),
                  JSON.generate({ "min_seq" => 11, "max_seq" => 20, "rotated_at" => Time.now.utc.iso8601 }))
-      File.write(File.join(Textus::Store::Geometry.new(textus).audit_dir_path, "audit.log.1"), "") # rotated file exists (content not needed for this test)
+      path = Textus::Store::Geometry.new(textus).audit_dir_path
+      File.write(File.join(path, "audit.log.1"), "") # rotated file exists (content not needed for this test)
       log = Textus::Port::AuditLog.new(textus)
       # Append one fresh row so latest_seq > 20
       log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
