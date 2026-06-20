@@ -1,8 +1,6 @@
 ---
 sources:
 - raw: raw.2026.06.20.url-mcp-specification
-  url: https://modelcontextprotocol.io
-  label: Model Context Protocol specification
 uid: e83bf3140722f215
 ---
 # Agents & MCP — wiring an agent to a store

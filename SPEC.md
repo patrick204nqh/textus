@@ -664,11 +664,11 @@ The frontmatter `name:` field, when present, must match the file's basename (wit
 
 **`sources:` (Source references).** Entries MAY carry a `sources` array in
 their frontmatter to declare external provenance. Each element is an object
-with a required `raw` field (a raw-lane key, starting with `raw.`) and
-optional `url` and `label` fields. The array is preserved on write —
-existing sources carry forward if no new `sources` are provided. The
-envelope returns `sources` as a top-level array when non-empty; omitted
-when absent.
+with a required `raw` field (a raw-lane key, starting with `raw.`) —
+`url` and `label` are OPTIONAL for inline convenience but redundant with
+the raw entry's own content. The array is preserved on write — existing
+sources carry forward if no new `sources` are provided. The envelope
+returns `sources` as a top-level array when non-empty; omitted when absent.
 
 Entries in a `produced` lane SHOULD additionally carry the `generated:` block defined in §5.2. Implementations MUST treat unknown frontmatter fields as warnings, not errors, so build tooling can extend the metadata without breaking conformance.
 

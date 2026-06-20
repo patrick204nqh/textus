@@ -107,7 +107,7 @@ entries:
 | `nested` | no | If `true`, the key prefix-matches subdirectories. |
 | `format` | no | `markdown` \| `json` \| `yaml` \| `text`. Inferred from extension if omitted. |
 | `source:` | no | How the entry acquires its **data** — `from: external` + a `Textus.workflow` block. Acquire-only: rendering is a publish concern. See [`../how-to/configuring-lanes.md`](../how-to/configuring-lanes.md). |
-| `sources` (in `_meta`) | no | Provenance references to raw-lane entries. An array of objects, each with `raw` (required, a raw-lane key) and optional `url`/`label`. Recognized at the protocol level — no per-family schema required. See [`../architecture/decisions/0118-sources-first-class-envelope-field.md`](../architecture/decisions/0118-sources-first-class-envelope-field.md). |
+| `sources` (in `_meta`) | no | Provenance references to raw-lane entries. An array of objects, each with `raw` (required, a raw-lane key). `url`/`label` are optional for inline context but redundant with the raw entry's own content. Recognized at the protocol level — no per-family schema required. See [`../architecture/decisions/0118-sources-first-class-envelope-field.md`](../architecture/decisions/0118-sources-first-class-envelope-field.md). |
 | `publish:` | no | A **list** of publish targets. A to-target `{ to:, template?:, inject_boot?: }` emits the entry's data to a repo path. A tree-target `{ tree: "dir" }` mirrors an entire nested subtree. |
 | `ignore:` | no | For `nested:` entries — gitignore-style globs. Matching paths are excluded from enumeration and doctor checks. |
 
