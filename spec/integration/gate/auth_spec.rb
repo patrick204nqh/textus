@@ -19,13 +19,6 @@ RSpec.describe Textus::Gate::Auth do
     YAML
   end
 
-  it "raises UsageError for an unmapped command class" do
-    unknown = Class.new(Struct.new(:role, :key)) { def self.name = "Textus::Command::Ghost" }
-    cmd = unknown.new("human", "knowledge.doc")
-    auth = Textus::Gate::Auth.new(store.container)
-    expect { auth.check!(cmd) }.to raise_error(Textus::UsageError, /unmapped command/)
-  end
-
   describe "AUTOMATION role" do
     it "is blocked from writing to a canon lane" do
       expect { store.as("automation").put("knowledge.doc", meta: {}, body: "x") }

@@ -21,21 +21,20 @@ RSpec.describe Textus::Gate do
   let(:gate)      { Textus::Gate.new(container) }
 
   it "dispatches Get and returns the envelope" do
-    cmd = Textus::Command::Get.new(key: "knowledge.note", role: "human")
+    cmd = Textus::Command.new(verb: :get, params: { key: "knowledge.note" }, role: "human")
     result = gate.dispatch(cmd)
     expect(result).not_to be_nil
     expect(result.to_h_for_wire["key"]).to eq("knowledge.note")
   end
 
   it "dispatches List" do
-    cmd = Textus::Command::List.new(prefix: nil, lane: nil, role: "human")
+    cmd = Textus::Command.new(verb: :list, params: { prefix: nil, lane: nil }, role: "human")
     result = gate.dispatch(cmd)
     expect(result).to be_an(Array)
   end
 
-  it "raises UsageError for unknown command class" do
-    unknown = Class.new(Data.define(:role))
-    cmd = unknown.new(role: "human")
-    expect { gate.dispatch(cmd) }.to raise_error(Textus::UsageError, /unknown command/)
+  it "raises UsageError for unknown verb" do
+    cmd = Textus::Command.new(verb: :nonexistent, params: {}, role: "human")
+    expect { gate.dispatch(cmd) }.to raise_error(Textus::UsageError, /unknown command verb/)
   end
 end

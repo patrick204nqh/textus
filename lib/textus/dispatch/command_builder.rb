@@ -7,15 +7,7 @@ module Textus
       module_function
 
       def build(spec, inputs, role:)
-        cmd_class = Textus::Gate::VERB_COMMAND.fetch(spec.verb) do
-          raise Textus::UsageError.new("no Command for verb: #{spec.verb}")
-        end
-
-        inputs = inputs.dup
-        inputs[:role] = role if cmd_class.members.include?(:role) && !inputs.key?(:role)
-
-        filled = cmd_class.members.to_h { |m| [m, inputs.key?(m) ? inputs[m] : nil] }
-        cmd_class.new(**filled)
+        Textus::Command.new(verb: spec.verb, params: inputs.freeze, role: role)
       end
     end
   end

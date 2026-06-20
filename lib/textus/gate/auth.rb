@@ -27,13 +27,12 @@ module Textus
         @schemas = container.schemas
       end
 
-      # Command-based check (new Gate path).
       def check!(cmd)
         key = extract_key(cmd)
         return unless key
 
         evaluate_predicates(
-          action: command_to_action(cmd),
+          action: cmd.verb,
           actor: cmd.role.to_s,
           key: key,
           envelope: nil,
@@ -52,17 +51,7 @@ module Textus
         )
       end
 
-      def self.command_to_verb
-        @command_to_verb ||= Textus::Gate::VERB_COMMAND.invert.freeze
-      end
-
       private
-
-      def command_to_action(cmd)
-        self.class.command_to_verb.fetch(cmd.class) do
-          raise Textus::UsageError.new("unmapped command: #{cmd.class}")
-        end
-      end
 
       def evaluate_predicates(action:, actor:, key:, envelope:, extra:)
         mentry = @manifest.resolver.resolve(key).entry
@@ -89,11 +78,7 @@ module Textus
       end
 
       def extract_key(cmd)
-        if cmd.respond_to?(:pending_key)
-          cmd.pending_key
-        elsif cmd.respond_to?(:key)
-          cmd.key
-        end
+        cmd.params.key?(:pending_key) ? cmd.pending_key : cmd.key
       end
 
       def rule_declared_predicates(action, key)

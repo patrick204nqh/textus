@@ -1,41 +1,14 @@
 module Textus
-  module Command
-    Get             = Data.define(:key, :role)
-    Put             = Data.define(:key, :meta, :body, :content, :if_etag, :role)
-    Propose         = Data.define(:key, :meta, :body, :content, :role, :pending_key) do
-      def initialize(key:, role:, meta: nil, body: nil, content: nil, pending_key: nil)
-        super
-      end
+  Command = Data.define(:verb, :params, :role) do
+    def initialize(verb:, params:, role:)
+      super
+      params.freeze
+      freeze
     end
-    KeyDelete       = Data.define(:key, :if_etag, :role)
-    KeyMv           = Data.define(:old_key, :new_key, :dry_run, :role)
-    Accept          = Data.define(:pending_key, :role)
-    Reject          = Data.define(:pending_key, :role)
-    Enqueue         = Data.define(:type, :args, :role)
-    Ingest          = Data.define(:kind, :slug, :url, :path, :zone, :label, :role) do
-      def initialize(kind:, slug:, role:, url: nil, path: nil, zone: nil, label: nil)
-        super
-      end
-    end
-    List            = Data.define(:prefix, :lane, :role)
-    Where           = Data.define(:key, :role)
-    Uid             = Data.define(:key, :role)
-    Blame           = Data.define(:key, :limit, :role)
-    Audit           = Data.define(:key, :lane, :verb, :since, :seq_since, :correlation_id, :limit, :role)
-    Deps            = Data.define(:key, :role)
-    Rdeps           = Data.define(:key, :role)
-    Pulse           = Data.define(:since, :role)
-    RuleExplain     = Data.define(:key, :detail, :role)
-    RuleList        = Data.define(:role)
-    RuleLint        = Data.define(:candidate_yaml, :role)
-    Published       = Data.define(:role)
-    SchemaShow      = Data.define(:key, :role)
-    Doctor          = Data.define(:checks, :role)
-    Boot            = Data.define(:role)
-    Jobs            = Data.define(:state, :action, :job_id, :role)
-    DataMv          = Data.define(:from, :to, :dry_run, :role)
-    KeyMvPrefix     = Data.define(:from_prefix, :to_prefix, :dry_run, :role)
-    KeyDeletePrefix = Data.define(:prefix, :dry_run, :role)
-    Drain           = Data.define(:prefix, :lane, :role)
+
+    def [](key)    = params[key]
+    def key        = params[:key]
+    def pending_key = params[:pending_key]
+    def dry_run    = params[:dry_run]
   end
 end
