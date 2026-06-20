@@ -8,9 +8,11 @@ Textus.workflow "docs-index" do
     extract = ->(entry) {
       env = Textus::Action::Get.new(key: entry[:key])
               .call(container: ctx.container, call: call)
-      title = env.body.to_s.lines.first&.sub(/\A#\s+/, "")&.strip || entry[:key]
+      body = env.body.to_s
+      body = body.sub(/\A---\s*\n.*?^---\s*\n/m, "")
+      title = body.lines.first&.sub(/\A#\s+/, "")&.strip || entry[:key]
       desc = ""
-      env.body.to_s.each_line do |line|
+      body.each_line do |line|
         if line.match?(/\A> \*\*./)
           desc = line.sub(/\A> \*\*[^*]+\*\*\s*/, "").strip
           break

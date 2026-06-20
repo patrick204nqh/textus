@@ -1,3 +1,15 @@
+---
+name: agents-mcp
+sources:
+- raw: raw.2026.06.20.url-mcp-specification
+  url: https://modelcontextprotocol.io
+  label: Model Context Protocol specification
+uid: e83bf3140722f215
+---
+---
+source: raw.2026.06.20.url-mcp-specification
+uid: e83bf3140722f215
+---
 # Agents & MCP — wiring an agent to a store
 
 > **How-to** · for agent authors & integrators · **read when** you're wiring an AI agent to a store

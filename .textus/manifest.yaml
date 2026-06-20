@@ -37,12 +37,14 @@ entries:
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/README.md"]
     publish: [{ tree: docs/cookbook }]
   - key: knowledge.decisions
     lane: knowledge
     owner: human:self
     nested: true
     kind: nested
+    ignore: ["**/README.md"]
     publish: [{ tree: docs/architecture/decisions }]
   - key: artifacts.docs.index
     lane: artifacts

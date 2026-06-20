@@ -15,6 +15,9 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "etag": "sha256:8f3c…",
   "schema_ref": "person",
   "uid": "a1b2c3d4e5f60718",
+  "sources": [
+    { "raw": "raw.2026.06.20.url-mcp-spec", "label": "MCP Specification" }
+  ],
   "stale": false,
   "stale_reason": null,
   "fetching": false
@@ -32,6 +35,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
+- `sources` is an array of source-reference objects. Present only when non-empty. Each object carries `raw` (string, the raw-lane key, starting with `raw.`), optionally `url` (string) and `label` (string).
 - `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-materialised; `false` otherwise. Only populated for produced entries with a declared `ttl`; always `false` for other entries.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a background re-pull is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.

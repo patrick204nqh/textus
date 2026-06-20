@@ -218,6 +218,22 @@ textus ingest url agentskills-io-brainstorming \
 
 A `get` on a raw entry is a pure read — it returns the entry as stored and never re-fetches (ADR 0089).
 
+**Raw entry shape.** Every raw-lane entry has a set of required fields
+enforced by the format layer on write:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `ingested_at` | yes | ISO-8601 timestamp of ingestion |
+| `content_hash` | yes | `sha256:<hex>` of the source content |
+| `source.kind` | yes | One of `url`, `file`, `asset` |
+| `source.url` | conditional | Required when `kind=url` |
+| `source.label` | no | Human-readable label |
+| `body` | no | Present only for `kind=file` |
+| `asset` | no | Present only for `kind=asset` |
+
+Tombstone entries (carrying `superseded_by:`) are exempt from shape
+validation — they are stripped-down records pointing to the live entry.
+
 ### 5.5 Pending / accept workflow
 
 Proposal entries are full patches authored into the `proposals` queue lane (writable by `propose`-holders: `agent` and `human` by default) — `proposals` in the default scaffold (Setup-1) — typically by agents. The entry's frontmatter describes the patch it proposes against another lane:
