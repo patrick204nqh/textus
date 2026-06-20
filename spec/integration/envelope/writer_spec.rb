@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Envelope::Writer do
+RSpec.describe Textus::Store::Envelope::Writer do
   include_context "textus_store_fixture"
 
   let(:store) do

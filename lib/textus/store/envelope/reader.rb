@@ -1,5 +1,6 @@
 module Textus
-  module Envelope
+  class Store
+    module Envelope
     # Read-only counterpart to EnvelopeWriter. Resolves a key, reads the
     # bytes, parses them via the format strategy, and hands back an
     # Envelope. Used by Mv (pre-move inspection) and by EnvelopeWriter
@@ -42,5 +43,6 @@ module Textus
         @file_store.exists?(@manifest.resolver.resolve(key).path)
       end
     end
+  end
   end
 end

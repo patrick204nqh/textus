@@ -10,11 +10,11 @@ module Textus
       end
 
       def writer(container, call)
-        Textus::Envelope::Writer.from(container: container, call: call)
+        Textus::Store::Envelope::Writer.from(container: container, call: call)
       end
 
       def reader(container)
-        Textus::Envelope::Reader.from(container: container)
+        Textus::Store::Envelope::Reader.from(container: container)
       end
 
       def run_with_cascade(target_key, container:, call:)

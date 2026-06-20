@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe "Textus::Envelope::Reader.from" do
+RSpec.describe "Textus::Store::Envelope::Reader.from" do
   include_context "textus_store_fixture"
 
   let(:store) do
@@ -15,8 +15,8 @@ RSpec.describe "Textus::Envelope::Reader.from" do
   end
 
   it "builds a Reader wired from the container" do
-    reader = Textus::Envelope::Reader.from(container: fresh_container(store))
-    expect(reader).to be_a(Textus::Envelope::Reader)
+    reader = Textus::Store::Envelope::Reader.from(container: fresh_container(store))
+    expect(reader).to be_a(Textus::Store::Envelope::Reader)
   end
 
   it "reads an existing entry equivalently to a hand-wired .new" do
@@ -24,14 +24,14 @@ RSpec.describe "Textus::Envelope::Reader.from" do
     call = test_ctx(role: "automation")
     mentry = store.manifest.resolver.resolve("knowledge.foo").entry
 
-    writer = Textus::Envelope::Writer.from(container: container, call: call)
+    writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
     env = writer.put(
       "knowledge.foo",
       mentry: mentry,
-      payload: Textus::Envelope::Writer::Payload.new(meta: {}, body: "hello", content: nil),
+      payload: Textus::Store::Envelope::Writer::Payload.new(meta: {}, body: "hello", content: nil),
     )
 
-    from_reader = Textus::Envelope::Reader.from(container: container)
+    from_reader = Textus::Store::Envelope::Reader.from(container: container)
     hand_reader = build_envelope_reader(store)
 
     expect(from_reader.read("knowledge.foo").body).to include("hello")
@@ -41,7 +41,7 @@ RSpec.describe "Textus::Envelope::Reader.from" do
   end
 
   it "returns nil for a missing entry" do
-    reader = Textus::Envelope::Reader.from(container: fresh_container(store))
+    reader = Textus::Store::Envelope::Reader.from(container: fresh_container(store))
     expect(reader.read("knowledge.missing")).to be_nil
   end
 end

@@ -60,6 +60,8 @@ module SpecLayout
       aliases << ["index"] if full[1] == "index"
       aliases << ["jobs"] if full[1] == "jobs"
       aliases << ["jobs", full[2]] if full[1] == "jobs" && full[2]
+      aliases << ["envelope"] if full[1] == "envelope"
+      aliases << ["envelope", full[2]] if full[1] == "envelope" && full[2]
       aliases << []
     elsif full.first == "port"
       aliases << ["ports", *full[1..]]

@@ -1,7 +1,8 @@
 require "fileutils"
 
 module Textus
-  module Envelope
+  class Store
+    module Envelope
     # Owns the write pipeline (validate, serialize, etag-check, write, audit).
     # Talks to ports (FileStore, Schemas, AuditLog, Manifest) and an
     # Reader for the existing-uid lookup.
@@ -205,5 +206,6 @@ module Textus
         )
       end
     end
+  end
   end
 end
