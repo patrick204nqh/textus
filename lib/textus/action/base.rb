@@ -20,6 +20,8 @@ module Textus
     end
 
     class Base
+      extend Contract::DSL
+
       def self.inherited(subclass)
         super
         Textus::Action.register(subclass) if subclass.name

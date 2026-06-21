@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Get < Base
-      extend Textus::Contract::DSL
 
       verb :get
       summary "Read one entry - a pure on-disk read annotated with a freshness " \

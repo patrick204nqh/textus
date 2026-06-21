@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Reject < Base
-      extend Textus::Contract::DSL
 
       verb :reject
       summary "discard a queued proposal without applying it"

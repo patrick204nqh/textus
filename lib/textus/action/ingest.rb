@@ -7,7 +7,6 @@ require "digest"
 module Textus
   module Action
     class Ingest < Base
-      extend Textus::Contract::DSL
 
       verb :ingest
       summary "Capture external source material into the raw lane. Write-once, agent-owned."

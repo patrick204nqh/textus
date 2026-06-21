@@ -3,7 +3,6 @@
 module Textus
   module Action
     class KeyDelete < Base
-      extend Textus::Contract::DSL
 
       verb :key_delete
       summary "Delete one entry by key. Single-key, lower blast radius than key_delete_prefix; " \

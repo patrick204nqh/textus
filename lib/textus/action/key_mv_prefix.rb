@@ -3,7 +3,6 @@
 module Textus
   module Action
     class KeyMvPrefix < Base
-      extend Textus::Contract::DSL
 
       verb :key_mv_prefix
       summary "Bulk-rename every leaf key under from_prefix to to_prefix. Dry-run returns a Plan; apply with dry_run: false."

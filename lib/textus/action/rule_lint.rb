@@ -5,7 +5,6 @@ require "yaml"
 module Textus
   module Action
     class RuleLint < Base
-      extend Textus::Contract::DSL
 
       verb :rule_lint
       summary "Diff candidate manifest YAML's rules against the live manifest. No writes."

@@ -5,7 +5,6 @@ require "time"
 module Textus
   module Action
     class Pulse < Base
-      extend Textus::Contract::DSL
 
       verb :pulse
       summary "Delta since cursor — changed entries, pending proposals, index freshness."

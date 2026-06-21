@@ -3,7 +3,6 @@
 module Textus
   module Action
     class KeyDeletePrefix < Base
-      extend Textus::Contract::DSL
 
       verb :key_delete_prefix
       summary "Bulk-delete every leaf key under prefix."
