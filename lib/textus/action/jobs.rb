@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Jobs < Base
-
       verb :jobs
       summary "List queued jobs by state; retry a dead-lettered job or purge a state."
       surfaces :cli, :mcp

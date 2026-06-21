@@ -19,11 +19,11 @@ module Textus
             file_store: container.file_store, manifest: container.manifest,
             schemas: container.schemas, audit_log: container.audit_log,
             call: call, reader: Reader.from(container: container),
-            geometry: container.geometry,
+            geometry: container.geometry
           )
         end
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:)
+        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:) # rubocop:disable Metrics/ParameterLists
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas

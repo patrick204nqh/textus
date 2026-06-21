@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Accept < Base
-
       verb :accept
       summary "apply a queued proposal to its target zone; requires the author capability"
       surfaces :cli, :mcp

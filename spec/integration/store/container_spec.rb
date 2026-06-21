@@ -11,7 +11,7 @@ RSpec.describe Textus::Store::Container do
     described_class.new(
       manifest: manifest, file_store: file_store, schemas: schemas, root: root,
       audit_log: audit_log, workflows: workflows, job_store: job_store,
-      gate: nil, compositor: nil, geometry: nil,
+      gate: nil, compositor: nil, geometry: nil
     )
   end
 

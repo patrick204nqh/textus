@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Uid < Base
-
       verb :uid
       summary "Return the stable UID of an entry without reading its body."
       surfaces :cli

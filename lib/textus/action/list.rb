@@ -3,7 +3,6 @@
 module Textus
   module Action
     class List < Base
-
       verb :list
       summary "List keys filtered by lane and/or prefix."
       surfaces :cli, :mcp

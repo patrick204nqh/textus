@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Doctor < Base
-
       verb :doctor
       summary "Run health checks on the textus store and report any issues."
       surfaces :cli

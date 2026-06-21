@@ -6,7 +6,6 @@ require "time"
 module Textus
   module Action
     class Audit < Base
-
       verb :audit
       summary "Query the audit log with optional filters."
       surfaces :cli

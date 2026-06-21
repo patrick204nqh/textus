@@ -5,7 +5,6 @@ require "open3"
 module Textus
   module Action
     class Blame < Base
-
       verb :blame
       summary "Annotate audit rows for a key with the git commit that introduced each file state."
       surfaces :cli

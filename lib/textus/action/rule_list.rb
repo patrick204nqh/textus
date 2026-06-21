@@ -3,7 +3,6 @@
 module Textus
   module Action
     class RuleList < Base
-
       verb :rule_list
       summary "List every rule block in the manifest."
       surfaces :cli

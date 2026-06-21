@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Deps < Base
-
       verb :deps
       summary "List the keys a derived entry depends on (its projection/external sources)."
       surfaces :cli, :mcp

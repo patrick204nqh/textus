@@ -3,7 +3,6 @@
 module Textus
   module Action
     class RuleExplain < Base
-
       verb :rule_explain
       summary "Effective rules for a key. Lean {lifecycle, guard} by default; detail: true adds matched blocks + guard predicates."
       surfaces :cli, :mcp

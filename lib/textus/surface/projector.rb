@@ -7,9 +7,9 @@ module Textus
       end
 
       def verbs(action_verbs = Textus::Action::VERBS)
-        action_verbs.select { |_verb, klass|
+        action_verbs.select do |_verb, klass|
           klass.respond_to?(:contract?) && klass.contract?
-        }
+        end
       end
 
       def names(action_verbs = Textus::Action::VERBS)

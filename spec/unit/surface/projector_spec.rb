@@ -43,9 +43,9 @@ RSpec.describe Textus::Surface::Projector do
 
     it "raises KeyError for unknown verbs" do
       store = instance_double(Textus::Store)
-      expect {
+      expect do
         projector.dispatch("nope", inputs: {}, store:, role: "human")
-      }.to raise_error(KeyError)
+      end.to raise_error(KeyError)
     end
   end
 end

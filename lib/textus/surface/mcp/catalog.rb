@@ -44,7 +44,7 @@ module Textus
 
         def names
           PROJECTOR.names(
-            Textus::Action::VERBS.select { |_, klass| mcp_surfaced?(klass) }
+            Textus::Action::VERBS.select { |_, klass| mcp_surfaced?(klass) },
           )
         end
 

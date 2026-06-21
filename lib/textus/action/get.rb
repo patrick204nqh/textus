@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Get < Base
-
       verb :get
       summary "Read one entry - a pure on-disk read annotated with a freshness " \
               "verdict; never ingests (quarantine freshness is drain + hook " \

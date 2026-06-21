@@ -12,8 +12,8 @@ module Textus
 
     private
 
-    def method_missing(name, *args, **kwargs, &block)
-      resolve.public_send(name, *args, **kwargs, &block)
+    def method_missing(name, ...)
+      resolve.public_send(name, ...)
     end
 
     def resolve

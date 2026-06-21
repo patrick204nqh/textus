@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Rdeps < Base
-
       verb :rdeps
       summary "List the derived entries that depend on a key (reverse deps / impact set)."
       surfaces :cli, :mcp

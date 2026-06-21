@@ -3,7 +3,6 @@
 module Textus
   module Action
     class KeyMv < Base
-
       verb :key_mv
       summary "Rename one entry (same zone + format). Refuses if the target exists. Single-key, lower blast radius than key_mv_prefix."
       surfaces :cli, :mcp

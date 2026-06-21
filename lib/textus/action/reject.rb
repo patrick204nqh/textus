@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Reject < Base
-
       verb :reject
       summary "discard a queued proposal without applying it"
       surfaces :cli, :mcp

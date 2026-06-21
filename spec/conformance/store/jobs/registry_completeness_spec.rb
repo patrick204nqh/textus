@@ -8,7 +8,7 @@ RSpec.describe "Jobs registry — every Job subclass is registered" do
     subclasses = all_job_classes
     unregistered = subclasses - registered
     expect(unregistered).to be_empty,
-      "Unregistered job subclasses: #{unregistered.map(&:name).join(', ')}"
+                            "Unregistered job subclasses: #{unregistered.map(&:name).join(", ")}"
   end
 
   it "every registry entry is a valid Job subclass" do

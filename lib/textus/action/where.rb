@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Where < Base
-
       verb :where
       summary "Resolve a key to its zone, owner, and path without reading the body."
       surfaces :cli, :mcp

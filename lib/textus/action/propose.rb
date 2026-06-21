@@ -3,7 +3,6 @@
 module Textus
   module Action
     class Propose < Base
-
       verb :propose
       summary "Write a proposal to the role's propose_lane. Auto-prefixes the key."
       surfaces :cli, :mcp
