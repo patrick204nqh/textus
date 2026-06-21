@@ -3,7 +3,7 @@ module Textus
     module DSL
       def verb(name = nil)
         if name
-          raise "contract already built; declare verb before reading .contract" if defined?(@__contract) && @__contract
+          raise "contract already built; declare verb before reading .contract" if defined?(@contract) && @contract
 
           @__verb = name
         else
@@ -13,7 +13,7 @@ module Textus
 
       def summary(text = nil)
         if text
-          raise "contract already built; declare summary before reading .contract" if defined?(@__contract) && @__contract
+          raise "contract already built; declare summary before reading .contract" if defined?(@contract) && @contract
 
           @__summary = text
         else
@@ -25,7 +25,7 @@ module Textus
         if list.empty?
           @__surfaces ||= []
         else
-          raise "contract already built; declare surfaces before reading .contract" if defined?(@__contract) && @__contract
+          raise "contract already built; declare surfaces before reading .contract" if defined?(@contract) && @contract
 
           @__surfaces = list
         end
@@ -33,7 +33,7 @@ module Textus
 
       def cli(path = nil)
         if path
-          raise "contract already built; declare cli before reading .contract" if defined?(@__contract) && @__contract
+          raise "contract already built; declare cli before reading .contract" if defined?(@contract) && @contract
 
           @__cli = path.to_s
         else
@@ -42,7 +42,7 @@ module Textus
       end
 
       def arg(name, type, required: false, positional: false, session_default: nil, description: nil, wire_name: nil, default: nil, source: nil, coerce: nil, cli_default: :__unset) # rubocop:disable Metrics/ParameterLists,Layout/LineLength
-        raise "contract already built; declare args before reading .contract" if defined?(@__contract) && @__contract
+        raise "contract already built; declare args before reading .contract" if defined?(@contract) && @contract
 
         (@__args ||= []) << Arg.new(
           name: name, type: type, required: required,
@@ -55,7 +55,7 @@ module Textus
       def cli_stdin(mode = :__read)
         return @__cli_stdin if mode == :__read
 
-        raise "contract already built; declare cli_stdin before reading .contract" if defined?(@__contract) && @__contract
+        raise "contract already built; declare cli_stdin before reading .contract" if defined?(@contract) && @contract
 
         @__cli_stdin = mode
       end
@@ -63,7 +63,7 @@ module Textus
       def view(surface = :default, &blk)
         return (@__views ||= {})[surface] unless blk
 
-        raise "contract already built; declare view before reading .contract" if defined?(@__contract) && @__contract
+        raise "contract already built; declare view before reading .contract" if defined?(@contract) && @contract
 
         (@__views ||= {})[surface] = blk
       end
@@ -72,9 +72,8 @@ module Textus
         !@__verb.nil?
       end
 
-      # rubocop:disable Naming/MemoizedInstanceVariableName
       def contract
-        @__contract ||= Spec.new(
+        @contract ||= Spec.new(
           verb: @__verb,
           summary: @__summary,
           args: (@__args || []).freeze,
@@ -82,26 +81,8 @@ module Textus
           views: ((@__views ||= {})[:default] ||= ->(v, _i) { v }) && @__views,
           cli: @__cli,
           cli_stdin: @__cli_stdin,
-        ).tap { generate_initialize_from_contract }
+        )
       end
-
-      def generate_initialize_from_contract
-        return unless is_a?(Class) && self < Textus::Action::Base
-        return unless instance_method(:initialize).owner == Textus::Action::Base
-
-        args = @__args || []
-        params = args.map { |a| a.required ? "#{a.name}:" : "#{a.name}: nil" }.join(", ")
-        assignments = args.map { |a| "@#{a.name} = #{a.name}" }.join("; ")
-        # Interpolates to: def initialize(key:, lane: nil) ; @key = key; @lane = lane ; end
-        # rubocop:disable Style/DocumentDynamicEvalDefinition
-        class_eval <<-RUBY, __FILE__, __LINE__ + 1
-          def initialize(#{params})
-            #{assignments}
-          end
-        RUBY
-        # rubocop:enable Style/DocumentDynamicEvalDefinition
-      end
-      # rubocop:enable Naming/MemoizedInstanceVariableName
     end
   end
 end

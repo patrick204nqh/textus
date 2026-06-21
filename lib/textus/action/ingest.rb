@@ -26,122 +26,112 @@ module Textus
       CONTENT_HASH_ALGO = "sha256"
       TOMBSTONE_RETAIN = %w[ingested_at].freeze
 
-      def initialize(kind:, slug:, url: nil, path: nil, zone: nil, label: nil)
-        super()
-        @kind  = kind
-        @slug  = slug
-        @url   = url
-        @path  = path
-        @zone  = zone
-        @label = label
-      end
-
-      def call(container:, call:)
-        validate_inputs!
+      def self.call(container:, call:, kind:, slug:, url: nil, path: nil, zone: nil, label: nil, **) # rubocop:disable Metrics/ParameterLists
+        validate_inputs!(kind:, url:, path:, zone:)
 
         now = Time.now.utc
-        key = derive_key(now)
+        key = derive_key(now, kind:, slug:)
 
-        Textus::Gate::Auth.new(container).check_action!(
-          action: :ingest, actor: call.role, key: key,
-        )
-
-        content_hash = compute_content_hash
+        content_hash = compute_content_hash(kind:, url:, path:)
         writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
         mentry = container.manifest.resolver.resolve(key).entry
         ts = now.iso8601
-        structured = build_structured(ts, container, now, content_hash)
+        structured = build_structured(ts, container, now, content_hash, kind:, url:, path:, label:, zone:)
 
-        Textus::Port::Store.open(container.root) do |store|
-          index = Textus::Store::Index::Lookup.new(store: store)
-          duplicate_key = find_duplicate(index, content_hash)
+        store = container.job_store
+        index = Textus::Store::Index::Lookup.new(store: store)
+        duplicate_key = find_duplicate(index, content_hash, kind:, url:)
 
-          if duplicate_key && duplicate_key != key
-            supersede_entry(duplicate_key, key, structured, container, call, store: store)
-          else
-            env = write_raw_entry(key, structured, mentry, writer)
-            rebuild_index(container, store)
-            env
-          end
+        if duplicate_key && duplicate_key != key
+          supersede_entry(duplicate_key, key, structured, container, call, store: store, kind:, zone:)
+        else
+          env = write_raw_entry(key, structured, mentry, writer)
+          rebuild_index(container, store)
+          env
         end
       end
 
-      private
-
-      def validate_inputs!
-        unless SOURCE_KINDS.include?(@kind)
+      def self.validate_inputs!(kind:, url:, path:, zone:)
+        unless SOURCE_KINDS.include?(kind)
           raise Textus::UsageError.new(
-            "ingest kind must be one of #{SOURCE_KINDS.join("|")}, got #{@kind.inspect}",
+            "ingest kind must be one of #{SOURCE_KINDS.join("|")}, got #{kind.inspect}",
           )
         end
-        case @kind
+        case kind
         when "url"
-          raise Textus::UsageError.new("ingest url requires --url") unless @url
+          raise Textus::UsageError.new("ingest url requires --url") unless url
         when "file"
-          raise Textus::UsageError.new("ingest file requires --path") unless @path
+          raise Textus::UsageError.new("ingest file requires --path") unless path
         when "asset"
-          raise Textus::UsageError.new("ingest asset requires --path") unless @path
-          raise Textus::UsageError.new("ingest asset requires --zone") unless @zone
+          raise Textus::UsageError.new("ingest asset requires --path") unless path
+          raise Textus::UsageError.new("ingest asset requires --zone") unless zone
         end
       end
 
-      def derive_key(now)
-        date = now.strftime("%Y.%m.%d")
-        "raw.#{date}.#{@kind}-#{@slug}"
+      # Key derivation for Gate pre-dispatch auth. Must match the runtime
+      # derivation in #call so the same key is checked by auth and used by
+      # the action body.
+      def self.dispatch_key(kind:, slug:, **)
+        derive_key(Time.now.utc, kind:, slug:)
       end
 
-      def compute_content_hash
+      def self.derive_key(now, kind:, slug:)
+        date = now.strftime("%Y.%m.%d")
+        "raw.#{date}.#{kind}-#{slug}"
+      end
+
+      def self.compute_content_hash(kind:, url:, path:)
         digest = Digest::SHA256.new
-        case @kind
+        case kind
         when "url"
-          digest.update(@url)
+          digest.update(url)
         when "file", "asset"
-          digest.file(@path)
+          digest.file(path)
         end
         "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
       end
 
-      def build_structured(timestamp, container, now, content_hash)
+      def self.build_structured(timestamp, container, now, content_hash, kind:, url:, path:, label:, zone:) # rubocop:disable Metrics/ParameterLists
         base = { "ingested_at" => timestamp, "content_hash" => content_hash }
-        case @kind
+        case kind
         when "url"
-          base.merge("source" => { "kind" => "url", "url" => @url, "label" => @label || @url },
+          base.merge("source" => { "kind" => "url", "url" => url, "label" => label || url },
                      "body" => nil)
         when "file"
-          body_content = File.read(@path)
-          base.merge("source" => { "kind" => "file", "path" => @path,
-                                   "label" => @label || File.basename(@path) },
+          body_content = File.read(path)
+          base.merge("source" => { "kind" => "file", "path" => path,
+                                   "label" => label || File.basename(path) },
                      "body" => body_content)
         when "asset"
-          asset_rel = copy_asset_file(container, now)
+          asset_rel = copy_asset_file(container, now, path:, zone:)
           base.merge("source" => { "kind" => "asset",
-                                   "label" => @label || File.basename(@path) },
+                                   "label" => label || File.basename(path) },
                      "asset" => asset_rel,
                      "body" => nil)
         end
       end
 
-      def write_raw_entry(key, structured, mentry, writer)
+      def self.write_raw_entry(key, structured, mentry, writer)
         writer.put(key, mentry: mentry,
                         payload: Textus::Store::Envelope::Writer::Payload.new(
                           meta: nil, body: nil, content: structured,
                         ))
       end
 
-      def find_duplicate(index, content_hash)
+      def self.find_duplicate(index, content_hash, kind:, url:)
         dup = index.find_by_hash(content_hash)
         return dup if dup
 
-        return unless @kind == "url"
+        return unless kind == "url"
 
-        index.find_by_url(@url)
+        index.find_by_url(url)
       end
 
-      def rebuild_index(container, store)
+      def self.rebuild_index(container, store)
         Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
       end
 
-      def supersede_entry(old_key, new_key, structured, container, call, store:)
+      def self.supersede_entry(old_key, new_key, structured, container, call, store:, kind:, zone:) # rubocop:disable Metrics/ParameterLists
         old_mentry = container.manifest.resolver.resolve(old_key).entry
         writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
 
@@ -164,20 +154,20 @@ module Textus
         structured["supersedes"] = old_key
         env = write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
 
-        move_asset_file(container, old_content["asset"]) if @kind == "asset" && old_content["asset"]
+        move_asset_file(container, old_content["asset"], zone:) if kind == "asset" && old_content["asset"]
 
         rebuild_index(container, store)
         env
       end
 
-      def move_asset_file(container, old_asset_rel)
+      def self.move_asset_file(container, old_asset_rel, zone:)
         old_path = File.join(container.root, "assets", old_asset_rel)
         return unless File.exist?(old_path)
 
         now = Time.now.utc
         date_path = now.strftime("%Y/%m/%d")
         filename = File.basename(old_path)
-        new_dir = File.join(container.root, "assets", "raw", date_path, @zone)
+        new_dir = File.join(container.root, "assets", "raw", date_path, zone)
         new_path = File.join(new_dir, filename)
 
         return if old_path == new_path
@@ -188,17 +178,17 @@ module Textus
         warn "[textus ingest] could not move asset #{old_asset_rel}: #{e.message}"
       end
 
-      def copy_asset_file(container, now)
+      def self.copy_asset_file(container, now, path:, zone:)
         date_path = now.strftime("%Y/%m/%d")
-        filename  = File.basename(@path)
-        assets_dir = File.join(container.root, "assets", "raw", date_path, @zone)
+        filename  = File.basename(path)
+        assets_dir = File.join(container.root, "assets", "raw", date_path, zone)
         FileUtils.mkdir_p(assets_dir)
-        FileUtils.cp(@path, File.join(assets_dir, filename))
+        FileUtils.cp(path, File.join(assets_dir, filename))
         create_gitignore_sentinel(container)
-        "raw/#{date_path}/#{@zone}/#{filename}"
+        "raw/#{date_path}/#{zone}/#{filename}"
       end
 
-      def create_gitignore_sentinel(container)
+      def self.create_gitignore_sentinel(container)
         assets_root = File.join(container.root, "assets")
         FileUtils.mkdir_p(assets_root)
         sentinel = File.join(assets_root, ".gitignore")

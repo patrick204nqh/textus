@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Dispatch::Binder do
+RSpec.describe Textus::Gate::Binder do
   describe "validation is unconditional" do
     let(:spec) do
       Class.new do
@@ -12,7 +12,7 @@ RSpec.describe Textus::Dispatch::Binder do
     end
 
     it "raises MissingArgs when a required arg is absent (no opt-out)" do
-      expect { described_class.bind(spec, {}) }.to raise_error(Textus::Dispatch::MissingArgs)
+      expect { described_class.bind(spec, {}) }.to raise_error(Textus::Gate::MissingArgs)
     end
 
     it "does not accept a validate: keyword anymore" do

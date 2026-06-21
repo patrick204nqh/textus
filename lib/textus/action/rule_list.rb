@@ -11,11 +11,11 @@ module Textus
       cli "rule list"
       view(:cli) { |policies| { "verb" => "rule_list", "policies" => policies } }
 
-      def call(container:, **)
+      def self.call(container:, call:, **_options) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         manifest.rules.blocks.map do |block|
           row = { "match" => block.match }
-          self.class::LIST_FIELDS.each do |field|
+          LIST_FIELDS.each do |field|
             value = block.public_send(field)
             row[field.to_s] = serialize(field, value) unless value.nil?
           end
@@ -25,9 +25,7 @@ module Textus
 
       LIST_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_rule_list] }.keys.freeze
 
-      private
-
-      def serialize(field, value)
+      def self.serialize(field, value)
         case field
         when :retention
           { "ttl_seconds" => value.ttl_seconds, "action" => value.action.to_s }

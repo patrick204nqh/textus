@@ -7,6 +7,20 @@
 #   let(:perform) { -> { store.as("automation").put("feeds.foo", meta: {}, body: "x") } }
 #
 #   it_behaves_like "an audited write", "put"
+# Asserts the action is refused for a canon-zone write when the role lacks the
+# `author` capability. Host defines:
+#   let(:store) { ... }
+#   let(:canon_forbidden_action) { -> { store.as("automation").put("knowledge.bar", …) } }
+RSpec.shared_examples "a canon-write refused" do
+  it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
+    expect { canon_forbidden_action.call }
+      .to raise_error(
+        Textus::WriteForbidden,
+        /needs capability 'author'/,
+      )
+  end
+end
+
 RSpec.shared_examples "an audited write" do |verb|
   it "records a #{verb.inspect} row in the audit log" do
     perform.call
@@ -23,15 +37,5 @@ RSpec.shared_examples "a correlated write" do |verb|
   it "carries the correlation id onto the #{verb.inspect} audit row" do
     perform_with_correlation.call
     expect(store).to have_audit_verb(verb).with_correlation("corr-1")
-  end
-end
-
-# Asserts the action is refused by the unified guard, naming the unmet
-# predicate(s). Host defines `forbidden_action` (a lambda):
-#
-#   it_behaves_like "a guarded action", "author_held"
-RSpec.shared_examples "a guarded action" do |*predicates|
-  it "fails the guard naming #{predicates.inspect}" do
-    expect { forbidden_action.call }.to fail_guard_with(*predicates)
   end
 end

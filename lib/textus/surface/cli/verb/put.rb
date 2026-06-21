@@ -12,13 +12,10 @@ module Textus
             raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
             payload = JSON.parse(@stdin.read)
-            cmd = Textus::Value::Command.new(
-              verb: :put,
-              params: { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
-                        content: nil, if_etag: payload["if_etag"] },
-              role: resolved_role(store),
-            )
-            result = store.gate.dispatch(cmd)
+            spec = Textus::Action::Put.contract
+            inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
+                       content: nil, if_etag: payload["if_etag"] }
+            result = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
             emit(result.to_h_for_wire)
           end
         end

@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class KeyMv < WriteVerb
+    class KeyMv < Base
       extend Textus::Contract::DSL
 
       verb :key_mv
@@ -18,48 +18,34 @@ module Textus
                        "defaults to false, so omitting it applies the move immediately " \
                        "(unlike the bulk key_mv_prefix, which defaults to a dry-run plan)"
 
-      def initialize(old_key:, new_key:, dry_run: false)
-        super()
-        @old_key = old_key
-        @new_key = new_key
-        @dry_run = dry_run
+      def self.call(container:, call:, old_key:, new_key:, dry_run: false)
+        execute_move(container: container, call: call, old_key: old_key, new_key: new_key, dry_run: dry_run)
       end
 
-      def call(container:, call:)
-        run_with_cascade(cascade_target_key, container:, call:) do
-          execute_move(container, call)
-        end
+      def self.execute_move(container:, call:, old_key:, new_key:, dry_run:)
+        old_res, new_res = prepare(container: container, old_key: old_key, new_key: new_key)
+        return dry_run_result(container: container, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res) if dry_run
+
+        envelope = apply_move(container: container, call: call, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res)
+        success_result(old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res, envelope: envelope)
       end
 
-      private
-
-      def cascade_target_key
-        @dry_run ? nil : @new_key
-      end
-
-      def execute_move(container, call)
-        old_res, new_res = prepare(container, call)
-        return dry_run_result(container, old_res, new_res) if @dry_run
-
-        envelope = apply_move(container, call, old_res, new_res)
-        success_result(old_res, new_res, envelope)
-      end
-
-      def apply_move(container, call, old_res, new_res)
-        ensure_uid!(container, call, old_res.entry)
-        writer(container, call).move(
-          from_key: @old_key,
-          to_key: @new_key,
+      def self.apply_move(container:, call:, old_key:, new_key:, old_res:, new_res:)
+        ensure_uid!(container: container, call: call, old_key: old_key, old_mentry: old_res.entry)
+        container.compositor.move(
+          from_key: old_key,
+          to_key: new_key,
           new_mentry: new_res.entry,
+          call: call,
         )
       end
 
-      def success_result(old_res, new_res, envelope)
+      def self.success_result(old_key:, new_key:, old_res:, new_res:, envelope:)
         {
-          "protocol" => PROTOCOL,
+          "protocol" => Textus::PROTOCOL,
           "ok" => true,
-          "from_key" => @old_key,
-          "to_key" => @new_key,
+          "from_key" => old_key,
+          "to_key" => new_key,
           "from_path" => old_res.path,
           "to_path" => new_res.path,
           "uid" => envelope.uid,
@@ -67,24 +53,22 @@ module Textus
         }
       end
 
-      def prepare(container, call)
-        Textus::Manifest::Data.validate_key!(@old_key)
-        Textus::Manifest::Data.validate_key!(@new_key)
-        raise UsageError.new("mv: old and new keys are identical") if @old_key == @new_key
+      def self.prepare(container:, old_key:, new_key:)
+        Textus::Manifest::Data.validate_key!(old_key)
+        Textus::Manifest::Data.validate_key!(new_key)
+        raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
 
-        old_res = container.manifest.resolver.resolve(@old_key)
-        new_res = container.manifest.resolver.resolve(@new_key)
-        raise UnknownKey.new(@old_key) unless reader(container).exists?(@old_key)
+        old_res = container.manifest.resolver.resolve(old_key)
+        new_res = container.manifest.resolver.resolve(new_key)
+        raise UnknownKey.new(old_key) unless container.compositor.exists?(old_key)
 
-        validate_zone_and_format!(old_res.entry, new_res.entry)
-        auth(container).check_action!(action: :key_mv, actor: call.role, key: @old_key)
-        auth(container).check_action!(action: :key_mv, actor: call.role, key: @new_key)
-        raise UsageError.new("mv: target '#{@new_key}' already exists at #{new_res.path}") if reader(container).exists?(@new_key)
+        validate_zone_and_format!(old_mentry: old_res.entry, new_mentry: new_res.entry)
+        raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if container.compositor.exists?(new_key)
 
         [old_res, new_res]
       end
 
-      def validate_zone_and_format!(old_mentry, new_mentry)
+      def self.validate_zone_and_format!(old_mentry:, new_mentry:)
         if old_mentry.lane != new_mentry.lane
           raise UsageError.new(
             "mv: cross-zone move refused (#{old_mentry.lane} -> #{new_mentry.lane}). " \
@@ -96,29 +80,30 @@ module Textus
         raise UsageError.new("mv: format mismatch (#{old_mentry.format} -> #{new_mentry.format}); refusing.")
       end
 
-      def ensure_uid!(container, call, old_mentry)
-        pre_env = reader(container).read(@old_key)
+      def self.ensure_uid!(container:, call:, old_key:, old_mentry:)
+        pre_env = container.compositor.read(old_key)
         return if pre_env.uid
 
-        writer(container, call).put(
-          @old_key,
+        container.compositor.write(
+          old_key,
           mentry: old_mentry,
           payload: Textus::Store::Envelope::Writer::Payload.new(
             meta: pre_env.meta,
             body: pre_env.body,
             content: pre_env.content,
           ),
+          call: call,
         )
       end
 
-      def dry_run_result(container, old_res, new_res)
-        pre_env = reader(container).read(@old_key)
+      def self.dry_run_result(container:, old_key:, new_key:, old_res:, new_res:)
+        pre_env = container.compositor.read(old_key)
         {
-          "protocol" => PROTOCOL,
+          "protocol" => Textus::PROTOCOL,
           "ok" => true,
           "dry_run" => true,
-          "from_key" => @old_key,
-          "to_key" => @new_key,
+          "from_key" => old_key,
+          "to_key" => new_key,
           "from_path" => old_res.path,
           "to_path" => new_res.path,
           "uid" => pre_env.uid,

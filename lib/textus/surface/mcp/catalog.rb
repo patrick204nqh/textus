@@ -78,11 +78,11 @@ module Textus
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
           spec = klass.contract
-          inputs = Textus::Dispatch::Binder.inputs_from_wire(spec, args)
+          inputs = Textus::Gate::Binder.inputs_from_wire(spec, args)
 
-          result = Textus::Dispatch::Dispatcher.dispatch(spec, inputs, store:, role: session.role, session:, scope: store.as(session.role))
+          result = store.gate.dispatch(spec:, inputs:, role: session.role, session:)
           spec.view(:default).call(result, inputs)
-        rescue Textus::Dispatch::MissingArgs => e
+        rescue Textus::Gate::MissingArgs => e
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, CursorExpired
           raise

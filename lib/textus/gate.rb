@@ -38,47 +38,84 @@ module Textus
       @container = container
     end
 
-    def dispatch(cmd, correlation_id: nil)
-      cmd = normalize_propose_key(cmd, @container) if cmd.verb == :propose
+    def dispatch(spec:, inputs:, role:, correlation_id: nil, session: nil)
+      resolved = Binder.bind(spec, inputs, session: session)
+      cmd = Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
+
+      cmd = normalize_propose_key(cmd) if cmd.verb == :propose
       action_classes = VERB_ACTIONS.fetch(cmd.verb) do
         raise Textus::UsageError.new("unknown command verb: #{cmd.verb}")
       end
 
-      Gate::Auth.new(@container).check!(cmd)
+      auth = Gate::Auth.new(@container)
+      auth.check!(cmd)
+      check_dispatch_auth(cmd, resolved, auth)
       call_obj = build_call(cmd, correlation_id: correlation_id)
-      results = action_classes.map { |klass| run_action(klass, cmd, @container, call_obj) }
-      results.length == 1 ? results.first : results
+      results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
+      result = results.length == 1 ? results.first : results
+      cascade(cmd, result, call_obj) if CASCADE_VERBS.include?(cmd.verb) && !call_obj.dry_run
+      result
     end
+
+    CASCADE_VERBS = %i[put propose accept reject key_mv key_delete].freeze
+
+    AUTH_KEYS = {
+      key_mv: ->(params) { [params[:old_key], params[:new_key]] },
+      ingest: ->(params) { Textus::Action::Ingest.dispatch_key(**params) },
+    }.freeze
 
     private
 
-    def normalize_propose_key(cmd, container)
+    def check_dispatch_auth(cmd, resolved, auth)
+      return unless (resolver = AUTH_KEYS[cmd.verb])
+
+      keys = Array(resolver.call(resolved))
+      keys.each { |k| auth.check_action!(action: cmd.verb, actor: cmd.role, key: k) }
+    end
+
+    def normalize_propose_key(cmd)
       return cmd if cmd.pending_key
 
-      zone = container.manifest.policy.propose_lane_for(cmd.role.to_s)
+      zone = @container.manifest.policy.propose_lane_for(cmd.role.to_s)
       key = zone ? "#{zone}.#{cmd.key}" : nil
       cmd.with(params: cmd.params.merge(pending_key: key))
     end
 
-    def run_action(klass, cmd, container, call_obj)
-      action = klass.new(**extract_kwargs(klass, cmd))
-      action.call(container:, call: call_obj)
-    end
-
-    def extract_kwargs(klass, cmd)
-      params = klass.instance_method(:initialize).parameters
-      accepts_keyrest = params.any? { |t, _| t == :keyrest }
-      param_set = params.to_set { |_t, n| n }
-      cmd.params.each_with_object({}) do |(m, val), h|
-        next unless accepts_keyrest || param_set.include?(m)
-
-        h[m] = val unless val.nil?
-      end
+    def run_action(klass, params, call_obj)
+      klass.call(container: @container, call: call_obj, **params)
     end
 
     def build_call(cmd, correlation_id: nil)
       dry_run = cmd.params.key?(:dry_run) ? !cmd.params[:dry_run].nil? : false
       Textus::Value::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
+    end
+
+    def cascade(cmd, result, call)
+      key = result.is_a?(Hash) ? result["cascade_key"] : nil
+      key ||= cascade_key_from_params(cmd)
+      return unless key
+
+      rdeps = Textus::Action::Rdeps.call(container: @container, call: call, key: key).fetch("rdeps", [])
+      producible = rdeps.select { |dep_key| producible?(dep_key) }
+      producible.each do |dep_key|
+        Textus::Store::Jobs::Materialize.call(container: @container, call: call, key: dep_key)
+      end
+    end
+
+    def cascade_key_from_params(cmd)
+      case cmd.verb
+      when :put, :key_delete then cmd.params[:key]
+      when :key_mv           then cmd.params[:new_key]
+      when :propose, :reject then cmd.params[:pending_key]
+      when :accept           then nil
+      end
+    end
+
+    def producible?(key)
+      entry = @container.manifest.resolver.resolve(key).entry
+      !entry.publish_tree.nil?
+    rescue Textus::Error
+      false
     end
   end
 end

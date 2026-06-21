@@ -12,21 +12,8 @@ module Textus
       arg :key, String, required: true, positional: true, description: "entry key"
       view(:cli) { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
-
-      def call(container:, call:)
-        Textus::Action::Get.new(key: @key).call(container: container, call: call).uid
-      end
-
-      def self.new(*args, **kwargs)
-        return super(**kwargs) unless args.any?
-
-        positional = instance_method(:initialize).parameters.slice(:keyreq, :key).map(&:last)
-        mapped = positional.zip(args).to_h
-        super(**mapped.merge(kwargs))
+      def self.call(container:, call:, key:)
+        Textus::Action::Get.call(container: container, call: call, key: key).uid
       end
     end
   end

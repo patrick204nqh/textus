@@ -29,8 +29,8 @@ RSpec.describe Textus::Action::KeyMvPrefix do
       now: ctx.now, dry_run: ctx.dry_run
     )
     lambda do |from_prefix, to_prefix, dry_run: false|
-      described_class.new(from_prefix: from_prefix, to_prefix: to_prefix, dry_run: dry_run)
-                     .call(container: store.container, call: call_value)
+      described_class.call(container: store.container, call: call_value,
+                           from_prefix: from_prefix, to_prefix: to_prefix, dry_run: dry_run)
     end
   end
 

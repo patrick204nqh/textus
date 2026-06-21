@@ -145,11 +145,9 @@ module TextusSpecHelpers
   # Seed convergence jobs for the given scope and then burn the queue through
   # Maintenance::Drain (which is queue-burn only).
   def converge_now(store, prefix: nil, lane: nil, role: Textus::Value::Role::AUTOMATION) # rubocop:disable Lint/UnusedMethodArgument
-    Textus::Port::Store.open(store.root) do |store_port|
-      queue = Textus::Store::Jobs::Queue.new(store: store_port)
-      Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
-      Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
-    end
+    queue = Textus::Store::Jobs::Queue.new(store: store.job_store)
+    Textus::Store::Jobs::Planner.seed(container: store.container, queue: queue, role: role)
+    Textus::Store::Jobs::Worker.for(container: store.container, queue: queue).drain
   end
 end
 

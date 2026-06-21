@@ -15,34 +15,21 @@ module Textus
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
       view { |v, _i| v.to_h_for_wire }
 
-      def call(container:, call:, file_stat: Textus::Port::Storage::FileStat.new)
-        @container = container
-        @call = call
-        @manifest = container.manifest
-        @file_stat = file_stat
-        annotated_envelope(@key)
+      def self.call(container:, call:, key:)
+        envelope = container.compositor.read(key)
+        return nil unless envelope
+
+        entry = container.manifest.resolver.resolve(key).entry
+        file_stat = Textus::Port::Storage::FileStat.new
+        envelope.with(freshness: freshness_evaluator(container, call, file_stat).verdict(entry))
       end
 
-      private
-
-      def annotated_envelope(key)
-        envelope = read_raw_envelope(key)
-        return nil if envelope.nil?
-
-        entry = @manifest.resolver.resolve(key).entry
-        envelope.with(freshness: evaluator.verdict(entry))
-      end
-
-      def evaluator
-        @evaluator ||= Textus::Core::Freshness::Evaluator.new(
-          manifest: @manifest,
-          file_stat: @file_stat,
-          clock: @call,
+      def self.freshness_evaluator(container, call, file_stat)
+        Textus::Core::Freshness::Evaluator.new(
+          manifest: container.manifest,
+          file_stat: file_stat,
+          clock: call,
         )
-      end
-
-      def read_raw_envelope(key)
-        Textus::Store::Envelope::Reader.from(container: @container).read(key)
       end
     end
   end

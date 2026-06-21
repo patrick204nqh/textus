@@ -5,7 +5,7 @@ RSpec.describe Textus::Doctor::Validator do
 
   it "returns violations hash with ok and violations keys" do
     result = described_class.new(
-      reader: ->(key, ctnr, c) { Textus::Action::Get.new(key: key).call(container: ctnr, call: c) },
+      reader: ->(key, ctnr, c) { Textus::Action::Get.call(container: ctnr, call: c, key: key) },
       manifest: store.container.manifest,
       audit_log: store.container.audit_log,
       schema_for: ->(name) { store.container.schemas.fetch_or_nil(name) },

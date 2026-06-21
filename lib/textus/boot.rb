@@ -169,7 +169,7 @@ module Textus
       return nil unless res.path && File.exist?(res.path)
 
       call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
-      env  = Textus::Action::Get.new(key: key).call(container: container, call: call)
+      env  = Textus::Action::Get.call(container: container, call: call, key: key)
       env&.content
     rescue Textus::Error
       nil
@@ -180,7 +180,7 @@ module Textus
       return nil unless res.path && File.exist?(res.path)
 
       call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
-      env  = Textus::Action::Get.new(key: "knowledge.boot").call(container: container, call: call)
+      env  = Textus::Action::Get.call(container: container, call: call, key: "knowledge.boot")
       body = env&.body&.strip
       body.nil? || body.empty? ? nil : body
     rescue Textus::Error

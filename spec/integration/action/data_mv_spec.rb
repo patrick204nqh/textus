@@ -26,7 +26,7 @@ RSpec.describe Textus::Action::DataMv do
       now: ctx.now, dry_run: ctx.dry_run
     )
     lambda do |from, to, dry_run: false|
-      described_class.new(from: from, to: to, dry_run: dry_run).call(container: store.container, call: call_value)
+      described_class.call(container: store.container, call: call_value, from: from, to: to, dry_run: dry_run)
     end
   end
 

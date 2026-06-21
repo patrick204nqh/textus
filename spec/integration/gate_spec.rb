@@ -21,20 +21,22 @@ RSpec.describe Textus::Gate do
   let(:gate)      { Textus::Gate.new(container) }
 
   it "dispatches Get and returns the envelope" do
-    cmd = Textus::Value::Command.new(verb: :get, params: { key: "knowledge.note" }, role: "human")
-    result = gate.dispatch(cmd)
+    spec = Textus::Action::Get.contract
+    result = gate.dispatch(spec: spec, inputs: { key: "knowledge.note" }, role: "human")
     expect(result).not_to be_nil
     expect(result.to_h_for_wire["key"]).to eq("knowledge.note")
   end
 
   it "dispatches List" do
-    cmd = Textus::Value::Command.new(verb: :list, params: { prefix: nil, lane: nil }, role: "human")
-    result = gate.dispatch(cmd)
+    spec = Textus::Action::List.contract
+    result = gate.dispatch(spec: spec, inputs: { prefix: nil, lane: nil }, role: "human")
     expect(result).to be_an(Array)
   end
 
   it "raises UsageError for unknown verb" do
-    cmd = Textus::Value::Command.new(verb: :nonexistent, params: {}, role: "human")
-    expect { gate.dispatch(cmd) }.to raise_error(Textus::UsageError, /unknown command verb/)
+    bad_spec = Textus::Contract::Spec.new(verb: :nonexistent, args: [], surfaces: [], views: { default: lambda { |v, _|
+      v
+    } }, cli: nil, cli_stdin: nil, summary: nil)
+    expect { gate.dispatch(spec: bad_spec, inputs: {}, role: "human") }.to raise_error(Textus::UsageError, /unknown command verb/)
   end
 end

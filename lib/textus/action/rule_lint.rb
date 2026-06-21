@@ -15,15 +15,10 @@ module Textus
                                    description: "path to candidate manifest YAML; its `rules:` block is diffed against the live manifest"
       view { |v, _i| v.to_h }
 
-      def initialize(candidate_yaml:)
-        super()
-        @candidate_yaml = candidate_yaml
-      end
-
-      def call(container:, **)
+      def self.call(container:, call:, candidate_yaml:) # rubocop:disable Lint/UnusedMethodArgument
         root = container.root
         live_rules = current_rules(root)
-        candidate_rules = parse_candidate(@candidate_yaml)
+        candidate_rules = parse_candidate(candidate_yaml)
 
         live_by_match = live_rules.to_h { |rule| [rule["match"], rule] }
         candidate_by_match = candidate_rules.to_h { |rule| [rule["match"], rule] }
@@ -48,14 +43,12 @@ module Textus
         Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
       end
 
-      private
-
-      def current_rules(root)
+      def self.current_rules(root)
         raw = YAML.safe_load_file(File.join(root, "manifest.yaml"), permitted_classes: [Symbol], aliases: false)
         Array(raw["rules"])
       end
 
-      def parse_candidate(yaml_text)
+      def self.parse_candidate(yaml_text)
         raw = YAML.safe_load(yaml_text, permitted_classes: [Symbol], aliases: false)
         raise UsageError.new("candidate is not a YAML mapping") unless raw.is_a?(Hash)
 

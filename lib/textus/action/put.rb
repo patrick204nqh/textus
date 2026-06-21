@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Put < WriteVerb
+    class Put < Base
       extend Textus::Contract::DSL
 
       verb :put
@@ -20,32 +20,20 @@ module Textus
           description: "optimistic-concurrency guard: the etag you last read; the write is rejected if the entry changed since"
       view { |env| { "uid" => env.uid, "etag" => env.etag } }
 
-      def initialize(key:, meta: nil, body: nil, content: nil, if_etag: nil)
-        super()
-        @key = key
-        @meta = meta
-        @body = body
-        @content = content
-        @if_etag = if_etag
-      end
-
-      def call(container:, call:)
-        run_with_cascade(@key, container:, call:) do
-          Textus::Manifest::Data.validate_key!(@key)
-          mentry = container.manifest.resolver.resolve(@key).entry
-          envelope = writer(container, call).put(
-            @key,
-            mentry: mentry,
-            payload: Textus::Store::Envelope::Writer::Payload.new(
-              meta: @meta,
-              body: @body,
-              content: @content,
-            ),
-            if_etag: @if_etag,
-          )
-
-          envelope
-        end
+      def self.call(container:, call:, key:, meta: nil, body: nil, content: nil, if_etag: nil) # rubocop:disable Metrics/ParameterLists
+        Textus::Manifest::Data.validate_key!(key)
+        mentry = container.manifest.resolver.resolve(key).entry
+        container.compositor.write(
+          key,
+          mentry: mentry,
+          payload: Textus::Store::Envelope::Writer::Payload.new(
+            meta: meta,
+            body: body,
+            content: content,
+          ),
+          if_etag: if_etag,
+          call: call,
+        )
       end
     end
   end

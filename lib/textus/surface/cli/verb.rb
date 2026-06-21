@@ -98,11 +98,6 @@ module Textus
           Value::Role.resolve(flag: flag, env: ENV, root: store.root, default: default)
         end
 
-        # Builds a Command from spec + inputs and dispatches through Gate.
-        def gate_dispatch(cmd, store)
-          store.gate.dispatch(cmd)
-        end
-
         # The input stream — the source for a `cli_stdin` envelope (ADR 0068).
         attr_reader :stdin
       end

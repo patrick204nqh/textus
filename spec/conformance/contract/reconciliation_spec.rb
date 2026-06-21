@@ -16,7 +16,7 @@ CONTRACT_SIGNATURE_EXEMPT = %i[key_delete audit].freeze
 RSpec.describe "contract reconciliation" do
   def verb_signature_for(klass)
     if klass <= Textus::Action::Base
-      klass.instance_method(:initialize).parameters
+      klass.method(:call).parameters
     else
       klass.instance_method(:call).parameters
     end
@@ -45,12 +45,36 @@ RSpec.describe "contract reconciliation" do
 
       it "#{verb}: declared args == #call parameters" do
         params = verb_signature_for(klass)
-        call_names = params.map { |_kind, name| name }.compact.sort
-        declared   = klass.contract.args.map(&:name).sort
+        declared = klass.contract.args.map(&:name).sort
         next if CONTRACT_SIGNATURE_EXEMPT.include?(verb)
 
-        expect(declared).to eq(call_names),
-                            "#{verb}: contract args #{declared.inspect} != #call params #{call_names.inspect}"
+        call_names = params.map { |_kind, name| name }.compact.sort
+
+        if klass <= Textus::Action::Base
+          # `container` and `call` are infrastructure kwargs injected by
+          # Gate/Worker, not contract-level args.
+          call_names -= %i[container call]
+
+          # A keyrest param (`**` or `**options`) accepts any kwargs and its
+          # name isn't a real param — drop it from the name list.
+          keyrest_names = params.select { |kind,| kind == :keyrest }.map { |_, n| n }
+          call_names -= keyrest_names
+
+          if keyrest_names.any?
+            # With a catch-all, contract args are always valid at the type
+            # level.  If there are other named non-contract params besides
+            # container/call, that's a code smell.
+            non_contract_named = call_names - declared
+            expect(non_contract_named).to be_empty,
+                                          "#{verb}: unexpected params #{non_contract_named.inspect}"
+          else
+            expect(declared).to eq(call_names.sort),
+                                "#{verb}: contract args #{declared.inspect} != #call params #{call_names.inspect}"
+          end
+        else
+          expect(declared).to eq(call_names),
+                              "#{verb}: contract args #{declared.inspect} != #call params #{call_names.inspect}"
+        end
       end
 
       it "#{verb}: positional contract args are positional in #call" do

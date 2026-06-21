@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Propose < WriteVerb
+    class Propose < Base
       extend Textus::Contract::DSL
 
       verb :propose
@@ -19,15 +19,7 @@ module Textus
           description: "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries. Do not send both"
       view { |env, _i| env.to_h_for_wire }
 
-      def initialize(key:, meta: nil, body: nil, content: nil)
-        super()
-        @key = key
-        @meta = meta
-        @body = body
-        @content = content
-      end
-
-      def call(container:, call:)
+      def self.call(container:, call:, key:, meta: nil, body: nil, content: nil)
         zone = container.manifest.policy.propose_lane_for(call.role)
         unless zone
           raise Textus::Error.new(
@@ -38,14 +30,17 @@ module Textus
           )
         end
 
-        run_with_cascade("#{zone}.#{@key}", container:, call:) do
-          Textus::Action::Put.new(
-            key: "#{zone}.#{@key}",
-            meta: @meta || {},
-            body: @body,
-            content: @content,
-          ).call(container: container, call: call)
-        end
+        mentry = container.manifest.resolver.resolve("#{zone}.#{key}").entry
+        container.compositor.write(
+          "#{zone}.#{key}",
+          mentry: mentry,
+          payload: Textus::Store::Envelope::Writer::Payload.new(
+            meta: meta || {},
+            body: body,
+            content: content,
+          ),
+          call: call,
+        )
       end
     end
   end

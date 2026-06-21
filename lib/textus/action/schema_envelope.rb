@@ -12,17 +12,12 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "any key in the family whose schema you want; returns required/optional fields and their types"
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
-
-      def call(container:, **)
+      def self.call(container:, key:, **)
         manifest = container.manifest
         schemas = container.schemas
-        mentry = manifest.resolver.resolve(@key).entry
+        mentry = manifest.resolver.resolve(key).entry
         schema = schemas.fetch_or_nil(mentry.schema)
-        { "protocol" => PROTOCOL, "key" => @key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
+        { "protocol" => Textus::PROTOCOL, "key" => key, "schema_ref" => mentry.schema, "schema" => schema&.to_h }
       end
     end
   end

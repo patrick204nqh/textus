@@ -1,5 +1,5 @@
 module Textus
-  module Dispatch
+  class Gate
     # Raised when a required arg is absent from the bound input. Surface
     # adapters translate this to their native error (MCP ToolError, CLI
     # UsageError); a direct Ruby call lets it surface as-is.
@@ -19,12 +19,6 @@ module Textus
     module Binder
       module_function
 
-      # Validation is unconditional: a `required:` arg absent from `inputs` is a
-      # contract violation on every surface (ADR 0069). `required:` is now an
-      # honest contract invariant, not a surface policy — args the use-case
-      # treats as optional (e.g. `meta`, whose real requiredness lives in schema
-      # validation downstream) are declared `required: false`, so this check
-      # never fires spuriously and never needs an opt-out.
       def bind(spec, inputs, session: nil)
         missing = spec.required_args.reject { |a| inputs.key?(a.name) }
         raise MissingArgs.new(spec, missing) unless missing.empty?

@@ -69,6 +69,7 @@ module Textus
 
     def build_container(root)
       manifest = Manifest.load(root)
+      job_store = Port::Store.new(root: root).setup!
       container = Container.new(
         root: root,
         manifest: manifest,
@@ -81,9 +82,12 @@ module Textus
         ),
         workflows: Workflow::Loader.load_all(root),
         gate: nil,
+        job_store: job_store,
+        compositor: nil,
       )
       gate = Textus::Gate.new(container)
       container = container.with(gate: gate)
+      container = container.with(compositor: Store::Compositor.new(container))
       gate.instance_variable_set(:@container, container)
       container
     end

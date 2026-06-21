@@ -27,7 +27,7 @@ RSpec.describe Textus::Action::KeyDeletePrefix do
       now: ctx.now, dry_run: ctx.dry_run
     )
     lambda do |prefix, dry_run: false|
-      described_class.new(prefix: prefix, dry_run: dry_run).call(container: store.container, call: call_value)
+      described_class.call(container: store.container, call: call_value, prefix: prefix, dry_run: dry_run)
     end
   end
 

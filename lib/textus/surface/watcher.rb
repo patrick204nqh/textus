@@ -10,16 +10,14 @@ module Textus
       end
 
       def tick
-        Textus::Port::Store.open(@container.root) do |store|
-          queue = Textus::Store::Jobs::Queue.new(store: store)
-          Textus::Store::Jobs::Planner.seed(
-            container: @container,
-            queue: queue,
-            role: Textus::Value::Role::AUTOMATION,
-          )
-          queue.reclaim(now: Textus::Port::Clock.new.now)
-          Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
-        end
+        queue = Textus::Store::Jobs::Queue.new(store: @container.job_store)
+        Textus::Store::Jobs::Planner.seed(
+          container: @container,
+          queue: queue,
+          role: Textus::Value::Role::AUTOMATION,
+        )
+        queue.reclaim(now: Textus::Port::Clock.new.now)
+        Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
       end
 
       def run(poll: nil)

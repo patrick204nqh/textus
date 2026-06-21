@@ -12,29 +12,21 @@ module Textus
       arg :prefix, String, description: "restrict to keys under this dotted prefix"
       arg :lane,   String, description: "restrict to entries in this lane"
 
-      def initialize(prefix: nil, lane: nil)
-        super()
-        @prefix = prefix
-        @lane   = lane
-      end
-
-      def call(container:, call:)
-        Textus::Port::Store.open(container.root) do |store|
-          queue = Textus::Store::Jobs::Queue.new(store: store)
-          Textus::Store::Jobs::Planner.seed(
-            container: container,
-            queue: queue,
-            role: call.role,
-          )
-          queue.reclaim(now: Textus::Port::Clock.new.now)
-          summary = Textus::Store::Jobs::Worker.for(container:, queue:).drain
-          {
-            "protocol" => Textus::PROTOCOL,
-            "ok" => summary.failed.zero?,
-            "completed" => summary.completed,
-            "failed" => summary.failed,
-          }
-        end
+      def self.call(container:, call:, prefix: nil, lane: nil) # rubocop:disable Lint/UnusedMethodArgument
+        queue = Textus::Store::Jobs::Queue.new(store: container.job_store)
+        Textus::Store::Jobs::Planner.seed(
+          container: container,
+          queue: queue,
+          role: call.role,
+        )
+        queue.reclaim(now: Textus::Port::Clock.new.now)
+        summary = Textus::Store::Jobs::Worker.for(container:, queue:).drain
+        {
+          "protocol" => Textus::PROTOCOL,
+          "ok" => summary.failed.zero?,
+          "completed" => summary.completed,
+          "failed" => summary.failed,
+        }
       end
     end
   end

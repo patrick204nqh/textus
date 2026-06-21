@@ -16,26 +16,19 @@ module Textus
                                            "defaults to false, so omitting it deletes immediately"
       view { |v, _i| v.to_h }
 
-      def initialize(prefix:, dry_run: false)
-        super()
-        @prefix = prefix
-        @dry_run = dry_run
-      end
+      def self.call(container:, call:, prefix:, dry_run: false)
+        raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
-      def call(container:, call:)
-        raise UsageError.new("prefix required") if @prefix.nil? || @prefix.empty?
+        leaves = Textus::Action::List.leaf_keys(container: container, prefix: prefix)
 
-        leaves = Textus::Action::List.new(prefix: @prefix).call(container: container)
-                                     .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
-
-        warnings = leaves.empty? ? ["no keys under #{@prefix}"] : []
+        warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
         steps = leaves.map { |key| { "op" => "delete", "key" => key } }
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-        return plan if @dry_run
+        return plan if dry_run
 
         steps.each do |step|
-          Textus::Action::KeyDelete.new(key: step["key"]).call(container: container, call: call)
+          Textus::Action::KeyDelete.call(container: container, call: call, key: step["key"])
         end
         plan
       end

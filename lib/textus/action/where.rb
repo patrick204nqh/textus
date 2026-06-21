@@ -11,25 +11,12 @@ module Textus
       arg :key, String, required: true, positional: true,
                         description: "dotted key to locate (returns zone, owner, path; does not read content)"
 
-      def initialize(key:)
-        super()
-        @key = key
-      end
-
-      def call(container:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
+      def self.call(container:, key:, call: nil) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
-        res = manifest.resolver.resolve(@key)
+        res = manifest.resolver.resolve(key)
         mentry = res.entry
         path = res.path
-        { "protocol" => PROTOCOL, "key" => @key, "lane" => mentry.lane, "owner" => mentry.owner, "path" => path }
-      end
-
-      def self.new(*args, **kwargs)
-        return super(**kwargs) unless args.any?
-
-        positional = instance_method(:initialize).parameters.slice(:keyreq, :key).map(&:last)
-        mapped = positional.zip(args).to_h
-        super(**mapped.merge(kwargs))
+        { "protocol" => Textus::PROTOCOL, "key" => key, "lane" => mentry.lane, "owner" => mentry.owner, "path" => path }
       end
     end
   end

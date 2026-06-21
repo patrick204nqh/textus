@@ -12,6 +12,8 @@ RSpec.describe Textus::Action::Put do
     -> { store.as("automation", correlation_id: "corr-1").put("feeds.foo", meta: {}, body: "x") }
   end
 
+  let(:canon_forbidden_action) { -> { store.as("automation").put("knowledge.bar", meta: {}, body: "x") } }
+
   it "writes the envelope when role has permission" do
     envelope = store.as("automation").put(
       "feeds.foo", meta: { "key" => "feeds.foo" }, body: "hello"
@@ -20,18 +22,10 @@ RSpec.describe Textus::Action::Put do
     expect(File.exist?(File.join(root, "data/feeds/foo.md"))).to be(true)
   end
 
-  it "raises WriteForbidden when role lacks the capability the zone-kind requires" do
-    # knowledge is a canon zone (needs the 'author' capability); automation
-    # holds only [converge], so the write is genuinely refused.
-    expect { store.as("automation").put("knowledge.bar", meta: {}, body: "x") }
-      .to raise_error(
-        Textus::WriteForbidden,
-        /writing 'knowledge.bar' \(zone 'knowledge'\) needs capability 'author'/,
-      )
-  end
+  it_behaves_like "a canon-write refused"
 
   it "refuses a forbidden role with write_forbidden via the unified guard (zone_writable_by)" do
-    expect { store.as("automation").put("knowledge.bar", meta: {}, body: "x") }
+    expect { canon_forbidden_action.call }
       .to raise_error(Textus::WriteForbidden) { |e| expect(e.code).to eq("write_forbidden") }
   end
 
