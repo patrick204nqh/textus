@@ -32,10 +32,8 @@ module Textus
       def dispatch(verb, *args, **kwargs)
         klass = Textus::Action::VERBS[verb]
         spec = klass.contract if klass.respond_to?(:contract?) && klass.contract?
-        inputs = spec ? Textus::Dispatch::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
-        resolved = spec ? Textus::Dispatch::Binder.bind(spec, inputs) : inputs
-        cmd = Textus::Value::Command.new(verb: spec.verb, params: resolved.freeze, role: @role)
-        @container.gate.dispatch(cmd)
+        inputs = spec ? Textus::Gate::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
+        @container.gate.dispatch(spec:, inputs:, role: @role)
       end
     end
   end

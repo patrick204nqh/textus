@@ -71,7 +71,7 @@ Textus::Action::VERBS.each_key do |verb|
   Textus::Surface::RoleScope.define_method(verb) do |*args, **kwargs|
     klass     = Textus::Action::VERBS[verb]
     inputs    = if klass.respond_to?(:contract?) && klass.contract?
-                  Textus::Dispatch::Binder.inputs_from_ordered(klass.contract, args, kwargs)
+                  Textus::Gate::Binder.inputs_from_ordered(klass.contract, args, kwargs)
                 else
                   kwargs.transform_keys(&:to_sym)
                 end
@@ -83,7 +83,7 @@ Textus::Action::VERBS.each_key do |verb|
                    @role
                  end
 
-    Textus::Dispatch::Dispatcher.dispatch(klass.contract, inputs, store: @container, role: role_value, correlation_id: @correlation_id)
+    @container.gate.dispatch(spec: klass.contract, inputs: inputs, role: role_value, correlation_id: @correlation_id)
   end
 end
 

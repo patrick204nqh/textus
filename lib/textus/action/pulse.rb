@@ -24,14 +24,18 @@ module Textus
         @manifest = container.manifest
         @audit_log = container.audit_log
         @root = container.root
+        @since ||= Textus::Store::Cursor.new(root: @root, role: call.role).read
 
-        {
+        result = {
           "cursor" => @audit_log.latest_seq,
           "changed" => Textus::Action::Audit.new(seq_since: @since).call(container: container),
           "pending_review" => review_keys,
           "contract_etag" => Textus::Value::Etag.for_contract(@root),
           "index_etag" => index_etag(container),
         }
+
+        Textus::Store::Cursor.new(root: @root, role: call.role).write(result["cursor"])
+        result
       end
 
       private

@@ -38,42 +38,34 @@ module Textus
       @container = container
     end
 
-    def dispatch(cmd, correlation_id: nil)
-      cmd = normalize_propose_key(cmd, @container) if cmd.verb == :propose
+    def dispatch(spec:, inputs:, role:, correlation_id: nil, session: nil)
+      resolved = Binder.bind(spec, inputs, session: session)
+      cmd = Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
+
+      cmd = normalize_propose_key(cmd) if cmd.verb == :propose
       action_classes = VERB_ACTIONS.fetch(cmd.verb) do
         raise Textus::UsageError.new("unknown command verb: #{cmd.verb}")
       end
 
       Gate::Auth.new(@container).check!(cmd)
       call_obj = build_call(cmd, correlation_id: correlation_id)
-      results = action_classes.map { |klass| run_action(klass, cmd, @container, call_obj) }
+      results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
       results.length == 1 ? results.first : results
     end
 
     private
 
-    def normalize_propose_key(cmd, container)
+    def normalize_propose_key(cmd)
       return cmd if cmd.pending_key
 
-      zone = container.manifest.policy.propose_lane_for(cmd.role.to_s)
+      zone = @container.manifest.policy.propose_lane_for(cmd.role.to_s)
       key = zone ? "#{zone}.#{cmd.key}" : nil
       cmd.with(params: cmd.params.merge(pending_key: key))
     end
 
-    def run_action(klass, cmd, container, call_obj)
-      action = klass.new(**extract_kwargs(klass, cmd))
-      action.call(container:, call: call_obj)
-    end
-
-    def extract_kwargs(klass, cmd)
-      params = klass.instance_method(:initialize).parameters
-      accepts_keyrest = params.any? { |t, _| t == :keyrest }
-      param_set = params.to_set { |_t, n| n }
-      cmd.params.each_with_object({}) do |(m, val), h|
-        next unless accepts_keyrest || param_set.include?(m)
-
-        h[m] = val unless val.nil?
-      end
+    def run_action(klass, params, call_obj)
+      action = klass.new(**params)
+      action.call(container: @container, call: call_obj)
     end
 
     def build_call(cmd, correlation_id: nil)

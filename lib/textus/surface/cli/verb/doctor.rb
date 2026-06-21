@@ -7,12 +7,9 @@ module Textus
           option :checks, "--check=NAME"
 
           def call(store)
-            cmd = Textus::Value::Command.new(
-              verb: :doctor,
-              params: { checks: checks&.split(",")&.map(&:strip) },
-              role: resolved_role(store),
-            )
-            res = store.gate.dispatch(cmd)
+            spec = Textus::Action::Doctor.contract
+            inputs = { checks: checks&.split(",")&.map(&:strip) }
+            res = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end
