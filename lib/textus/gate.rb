@@ -38,7 +38,7 @@ module Textus
       @container = container
     end
 
-    def dispatch(spec:, inputs:, role:, correlation_id: nil, session: nil)
+    def dispatch(spec:, inputs:, role:, correlation_id: nil, session: nil, surface: nil)
       resolved = Binder.bind(spec, inputs, session: session)
       cmd = Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
 
@@ -54,7 +54,9 @@ module Textus
       results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
       result = results.length == 1 ? results.first : results
       cascade(cmd, result, call_obj) if CASCADE_VERBS.include?(cmd.verb) && !call_obj.dry_run
-      result
+      return result unless surface
+
+      spec.view(surface).call(result, resolved)
     end
 
     CASCADE_VERBS = %i[put propose accept reject key_mv key_delete].freeze

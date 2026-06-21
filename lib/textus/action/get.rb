@@ -12,7 +12,7 @@ module Textus
       surfaces :cli, :mcp
       arg :key, String, required: true, positional: true,
                         description: "dotted entry key to read, e.g. 'knowledge.project'"
-      view { |v, _i| v.to_h_for_wire }
+      view(:default) { |v, _i| v&.to_h_for_wire }
 
       def self.call(container:, call:, key:)
         envelope = container.compositor.read(key)

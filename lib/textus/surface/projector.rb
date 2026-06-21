@@ -20,9 +20,7 @@ module Textus
         klass = Textus::Action::VERBS.fetch(verb_name.to_sym)
         spec = klass.contract
         bound = Textus::Gate::Binder.public_send(@binder_method, spec, inputs)
-        store.gate.dispatch(spec:, inputs: bound, role:, session:).then { |r|
-          spec.view(@view_key).call(r, bound)
-        }
+        store.gate.dispatch(spec:, inputs: bound, role:, session:, surface: @view_key)
       end
     end
   end

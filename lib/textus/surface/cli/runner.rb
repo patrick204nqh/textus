@@ -58,8 +58,8 @@ module Textus
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
 
-          result = store.gate.dispatch(spec:, inputs:, role:)
-          verb_instance.emit(spec.view(:cli).call(result, inputs))
+          result = store.gate.dispatch(spec:, inputs:, role:, surface: :cli)
+          verb_instance.emit(result)
         rescue Textus::Gate::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
