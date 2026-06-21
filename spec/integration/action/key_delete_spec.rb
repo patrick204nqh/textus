@@ -4,6 +4,12 @@ RSpec.describe Textus::Action::KeyDelete do
   include_context "textus_store_fixture"
 
   let!(:store) { machine_store(root) }
+  let(:canon_forbidden_action) do
+    lambda {
+      File.write(File.join(root, "data", "knowledge", "bar.md"), "---\nkey: knowledge.bar\n---\nbody\n")
+      store.as("automation").key_delete("knowledge.bar")
+    }
+  end
   # Contract for the cross-cutting write behaviours (spec/support/examples).
   let(:perform) { -> { store.as("automation").key_delete("feeds.foo") } }
   let(:perform_with_correlation) { -> { store.as("automation", correlation_id: "corr-1").key_delete("feeds.foo") } }
@@ -16,13 +22,6 @@ RSpec.describe Textus::Action::KeyDelete do
 
   it "removes the entry file from disk" do
     expect { perform.call }.to change { File.exist?(File.join(root, "data", "feeds", "foo.md")) }.from(true).to(false)
-  end
-
-  let(:canon_forbidden_action) do
-    -> {
-      File.write(File.join(root, "data", "knowledge", "bar.md"), "---\nkey: knowledge.bar\n---\nbody\n")
-      store.as("automation").key_delete("knowledge.bar")
-    }
   end
 
   it_behaves_like "a canon-write refused"

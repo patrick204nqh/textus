@@ -45,7 +45,7 @@ RSpec.describe "contract reconciliation" do
 
       it "#{verb}: declared args == #call parameters" do
         params = verb_signature_for(klass)
-        declared   = klass.contract.args.map(&:name).sort
+        declared = klass.contract.args.map(&:name).sort
         next if CONTRACT_SIGNATURE_EXEMPT.include?(verb)
 
         call_names = params.map { |_kind, name| name }.compact.sort

@@ -39,5 +39,3 @@ RSpec.shared_examples "a correlated write" do |verb|
     expect(store).to have_audit_verb(verb).with_correlation("corr-1")
   end
 end
-
-

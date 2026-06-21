@@ -6,7 +6,7 @@ module Textus
       class Index < Base
         TYPE = "index"
 
-        def self.call(container:, call:)
+        def self.call(container:, call:) # rubocop:disable Lint/UnusedMethodArgument
           Textus::Store::Index::Builder.new(store: container.job_store).rebuild!(resolver: container.manifest.resolver)
         end
       end

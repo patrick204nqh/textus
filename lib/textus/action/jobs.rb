@@ -13,7 +13,7 @@ module Textus
       arg :action, String, default: nil, description: "retry|purge (optional)"
       arg :job_id, String, default: nil, description: "job id (required for action=retry)"
 
-      def self.call(container:, call:, state: "ready", action: nil, job_id: nil)
+      def self.call(container:, call:, state: "ready", action: nil, job_id: nil) # rubocop:disable Lint/UnusedMethodArgument
         queue = Textus::Store::Jobs::Queue.new(store: container.job_store)
         case action
         when "retry"

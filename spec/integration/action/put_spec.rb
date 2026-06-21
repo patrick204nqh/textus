@@ -12,6 +12,8 @@ RSpec.describe Textus::Action::Put do
     -> { store.as("automation", correlation_id: "corr-1").put("feeds.foo", meta: {}, body: "x") }
   end
 
+  let(:canon_forbidden_action) { -> { store.as("automation").put("knowledge.bar", meta: {}, body: "x") } }
+
   it "writes the envelope when role has permission" do
     envelope = store.as("automation").put(
       "feeds.foo", meta: { "key" => "feeds.foo" }, body: "hello"
@@ -19,8 +21,6 @@ RSpec.describe Textus::Action::Put do
     expect(envelope.body || envelope.content).to include("hello")
     expect(File.exist?(File.join(root, "data/feeds/foo.md"))).to be(true)
   end
-
-  let(:canon_forbidden_action) { -> { store.as("automation").put("knowledge.bar", meta: {}, body: "x") } }
 
   it_behaves_like "a canon-write refused"
 

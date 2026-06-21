@@ -15,7 +15,7 @@ module Textus
                                    description: "path to candidate manifest YAML; its `rules:` block is diffed against the live manifest"
       view { |v, _i| v.to_h }
 
-      def self.call(container:, call:, candidate_yaml:)
+      def self.call(container:, call:, candidate_yaml:) # rubocop:disable Lint/UnusedMethodArgument
         root = container.root
         live_rules = current_rules(root)
         candidate_rules = parse_candidate(candidate_yaml)

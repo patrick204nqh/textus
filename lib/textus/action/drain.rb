@@ -12,7 +12,7 @@ module Textus
       arg :prefix, String, description: "restrict to keys under this dotted prefix"
       arg :lane,   String, description: "restrict to entries in this lane"
 
-      def self.call(container:, call:, prefix: nil, lane: nil)
+      def self.call(container:, call:, prefix: nil, lane: nil) # rubocop:disable Lint/UnusedMethodArgument
         queue = Textus::Store::Jobs::Queue.new(store: container.job_store)
         Textus::Store::Jobs::Planner.seed(
           container: container,

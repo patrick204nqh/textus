@@ -80,7 +80,6 @@ module Textus
         )
         entry.publish_via(pctx)
       end
-
     end
   end
 end

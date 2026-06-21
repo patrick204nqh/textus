@@ -11,7 +11,7 @@ module Textus
       cli "rule list"
       view(:cli) { |policies| { "verb" => "rule_list", "policies" => policies } }
 
-      def self.call(container:, call:, **options)
+      def self.call(container:, call:, **_options) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         manifest.rules.blocks.map do |block|
           row = { "match" => block.match }

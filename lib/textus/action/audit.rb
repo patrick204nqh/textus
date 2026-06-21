@@ -24,7 +24,7 @@ module Textus
       arg :limit, Integer, required: false, description: "maximum number of rows to return"
       view(:cli) { |rows, _i| { "verb" => "audit", "rows" => rows } }
 
-      def self.call(container:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil, **)
+      def self.call(container:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil, **) # rubocop:disable Metrics/ParameterLists
         audit_log = container.audit_log
         manifest = container.manifest
 

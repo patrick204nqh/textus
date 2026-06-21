@@ -21,12 +21,14 @@ module Textus
 
       def self.call(container:, call:, key:, meta: nil, body: nil, content: nil)
         zone = container.manifest.policy.propose_lane_for(call.role)
-        raise Textus::Error.new(
-          "propose_forbidden",
-          "role '#{call.role}' has no writable propose_lane",
-          details: { "role" => call.role },
-          hint: "the manifest must define a queue zone and '#{call.role}' must hold the 'propose' capability",
-        ) unless zone
+        unless zone
+          raise Textus::Error.new(
+            "propose_forbidden",
+            "role '#{call.role}' has no writable propose_lane",
+            details: { "role" => call.role },
+            hint: "the manifest must define a queue zone and '#{call.role}' must hold the 'propose' capability",
+          )
+        end
 
         mentry = container.manifest.resolver.resolve("#{zone}.#{key}").entry
         container.compositor.write(

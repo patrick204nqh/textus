@@ -26,7 +26,7 @@ module Textus
       CONTENT_HASH_ALGO = "sha256"
       TOMBSTONE_RETAIN = %w[ingested_at].freeze
 
-      def self.call(container:, call:, kind:, slug:, url: nil, path: nil, zone: nil, label: nil, **)
+      def self.call(container:, call:, kind:, slug:, url: nil, path: nil, zone: nil, label: nil, **) # rubocop:disable Metrics/ParameterLists
         validate_inputs!(kind:, url:, path:, zone:)
 
         now = Time.now.utc
@@ -91,7 +91,7 @@ module Textus
         "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
       end
 
-      def self.build_structured(timestamp, container, now, content_hash, kind:, url:, path:, label:, zone:)
+      def self.build_structured(timestamp, container, now, content_hash, kind:, url:, path:, label:, zone:) # rubocop:disable Metrics/ParameterLists
         base = { "ingested_at" => timestamp, "content_hash" => content_hash }
         case kind
         when "url"
@@ -131,7 +131,7 @@ module Textus
         Textus::Store::Index::Builder.new(store: store).rebuild!(resolver: container.manifest.resolver)
       end
 
-      def self.supersede_entry(old_key, new_key, structured, container, call, store:, kind:, zone:)
+      def self.supersede_entry(old_key, new_key, structured, container, call, store:, kind:, zone:) # rubocop:disable Metrics/ParameterLists
         old_mentry = container.manifest.resolver.resolve(old_key).entry
         writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
 

@@ -34,7 +34,9 @@ RSpec.describe Textus::Gate do
   end
 
   it "raises UsageError for unknown verb" do
-    bad_spec = Textus::Contract::Spec.new(verb: :nonexistent, args: [], surfaces: [], views: { default: ->(v, _) { v } }, cli: nil, cli_stdin: nil, summary: nil)
+    bad_spec = Textus::Contract::Spec.new(verb: :nonexistent, args: [], surfaces: [], views: { default: lambda { |v, _|
+      v
+    } }, cli: nil, cli_stdin: nil, summary: nil)
     expect { gate.dispatch(spec: bad_spec, inputs: {}, role: "human") }.to raise_error(Textus::UsageError, /unknown command verb/)
   end
 end

@@ -23,7 +23,7 @@ module Textus
       end
 
       def self.execute_move(container:, call:, old_key:, new_key:, dry_run:)
-        old_res, new_res = prepare(container: container, call: call, old_key: old_key, new_key: new_key)
+        old_res, new_res = prepare(container: container, old_key: old_key, new_key: new_key)
         return dry_run_result(container: container, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res) if dry_run
 
         envelope = apply_move(container: container, call: call, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res)
@@ -53,7 +53,7 @@ module Textus
         }
       end
 
-      def self.prepare(container:, call:, old_key:, new_key:)
+      def self.prepare(container:, old_key:, new_key:)
         Textus::Manifest::Data.validate_key!(old_key)
         Textus::Manifest::Data.validate_key!(new_key)
         raise UsageError.new("mv: old and new keys are identical") if old_key == new_key

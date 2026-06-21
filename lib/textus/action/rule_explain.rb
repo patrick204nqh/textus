@@ -15,7 +15,7 @@ module Textus
           description: "defaults false: lean {lifecycle, guard}. detail: true adds matched blocks + guard predicates per transition."
       view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
-      def self.call(container:, call:, key:, detail: nil)
+      def self.call(container:, call:, key:, detail: nil) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         detail ? explain(manifest, key) : effective(manifest, key)
       end

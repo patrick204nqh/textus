@@ -19,7 +19,7 @@ module Textus
                                            "defaults to false, so omitting it applies the move immediately"
       view { |v, _i| v.to_h }
 
-      def self.call(container:, call:, from:, to:, dry_run: false, **)
+      def self.call(container:, call:, from:, to:, dry_run: false, **) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
         root = container.root
 
