@@ -18,37 +18,30 @@ module Textus
                                            "to false, so omitting it applies the rename immediately"
       view { |v, _i| v.to_h }
 
-      def initialize(from_prefix:, to_prefix:, dry_run: false)
-        super()
-        @from_prefix = from_prefix
-        @to_prefix = to_prefix
-        @dry_run = dry_run
-      end
+      def self.call(container:, call:, from_prefix:, to_prefix:, dry_run: false)
+        raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
-      def call(container:, call:)
-        raise UsageError.new("from_prefix and to_prefix required") if @from_prefix.nil? || @to_prefix.nil?
-
-        leaves = Textus::Action::List.new(prefix: @from_prefix).call(container: container)
+        leaves = Textus::Action::List.call(container: container, prefix: from_prefix)
                                      .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
 
-        if leaves.include?(@from_prefix)
-          raise UsageError.new("from_prefix '#{@from_prefix}' is itself a leaf — use `mv` to rename a single key")
+        if leaves.include?(from_prefix)
+          raise UsageError.new("from_prefix '#{from_prefix}' is itself a leaf — use `mv` to rename a single key")
         end
 
         warnings = []
-        warnings << "no keys under #{@from_prefix}" if leaves.empty?
+        warnings << "no keys under #{from_prefix}" if leaves.empty?
 
         steps = leaves.map do |old_key|
-          tail = old_key.delete_prefix("#{@from_prefix}.")
-          new_key = "#{@to_prefix}.#{tail}"
+          tail = old_key.delete_prefix("#{from_prefix}.")
+          new_key = "#{to_prefix}.#{tail}"
           { "op" => "mv", "from" => old_key, "to" => new_key }
         end
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-        return plan if @dry_run
+        return plan if dry_run
 
         steps.each do |step|
-          Textus::Action::KeyMv.new(old_key: step["from"], new_key: step["to"]).call(container: container, call: call)
+          Textus::Action::KeyMv.call(container: container, call: call, old_key: step["from"], new_key: step["to"])
         end
         plan
       end

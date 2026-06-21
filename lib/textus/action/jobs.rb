@@ -13,25 +13,16 @@ module Textus
       arg :action, String, default: nil, description: "retry|purge (optional)"
       arg :job_id, String, default: nil, description: "job id (required for action=retry)"
 
-      def initialize(state: "ready", action: nil, job_id: nil)
-        super()
-        @state = state
-        @action = action
-        @job_id = job_id
-      end
-
-      def call(container:, **)
-        Textus::Port::Store.open(container.root) do |store|
-          queue = Textus::Store::Jobs::Queue.new(store: store)
-          case @action
-          when "retry"
-            queue.retry_failed(@job_id)
-          when "purge"
-            queue.purge(@state)
-          end
-
-          { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => @state, "jobs" => queue.list(@state) }
+      def self.call(container:, call:, state: "ready", action: nil, job_id: nil)
+        queue = Textus::Store::Jobs::Queue.new(store: container.job_store)
+        case action
+        when "retry"
+          queue.retry_failed(job_id)
+        when "purge"
+          queue.purge(state)
         end
+
+        { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => state, "jobs" => queue.list(state) }
       end
     end
   end

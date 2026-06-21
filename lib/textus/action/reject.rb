@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Reject < WriteVerb
+    class Reject < Composite
       extend Textus::Contract::DSL
 
       verb :reject
@@ -11,26 +11,19 @@ module Textus
       cli "reject"
       arg :pending_key, String, required: true, positional: true, description: "the queued proposal's key"
 
-      def initialize(pending_key:)
-        super()
-        @pending_key = pending_key
-      end
-
-      def call(container:, call:)
-        run_with_cascade(@pending_key, container:, call:) do
-          mentry = container.manifest.resolver.resolve(@pending_key).entry
-          unless mentry.in_proposal_lane?(container.manifest.policy)
-            raise ProposalError.new("reject: '#{@pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
-          end
-
-          env = Textus::Action::Get.new(key: @pending_key).call(container: container, call: call)
-          proposal = env.meta&.dig("proposal") or raise ProposalError.new("entry has no proposal block: #{@pending_key}")
-          target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
-
-          writer(container, call).delete(@pending_key, mentry: mentry)
-
-          { "protocol" => PROTOCOL, "rejected" => @pending_key, "target_key" => target_key }
+      def self.call(container:, call:, pending_key:)
+        mentry = container.manifest.resolver.resolve(pending_key).entry
+        unless mentry.in_proposal_lane?(container.manifest.policy)
+          raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
         end
+
+        env = container.compositor.read(pending_key)
+        proposal = env.meta&.dig("proposal") or raise ProposalError.new("entry has no proposal block: #{pending_key}")
+        target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
+
+        mentry = container.manifest.resolver.resolve(pending_key).entry
+        container.compositor.delete(pending_key, mentry: mentry, call: call)
+        { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
       end
     end
   end

@@ -50,8 +50,12 @@ module Textus
       Gate::Auth.new(@container).check!(cmd)
       call_obj = build_call(cmd, correlation_id: correlation_id)
       results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
-      results.length == 1 ? results.first : results
+      result = results.length == 1 ? results.first : results
+      cascade(cmd, result, call_obj) if CASCADE_VERBS.include?(cmd.verb) && !call_obj.dry_run
+      result
     end
+
+    CASCADE_VERBS = %i[put propose accept reject key_mv key_delete].freeze
 
     private
 
@@ -64,13 +68,40 @@ module Textus
     end
 
     def run_action(klass, params, call_obj)
-      action = klass.new(**params)
-      action.call(container: @container, call: call_obj)
+      klass.call(container: @container, call: call_obj, **params)
     end
 
     def build_call(cmd, correlation_id: nil)
       dry_run = cmd.params.key?(:dry_run) ? !cmd.params[:dry_run].nil? : false
       Textus::Value::Call.build(role: cmd.role, dry_run:, correlation_id: correlation_id)
+    end
+
+    def cascade(cmd, result, call)
+      key = result.is_a?(Hash) ? result["cascade_key"] : nil
+      key ||= cascade_key_from_params(cmd)
+      return unless key
+
+      rdeps = Textus::Action::Rdeps.call(container: @container, call: call, key: key).fetch("rdeps", [])
+      producible = rdeps.select { |dep_key| producible?(dep_key) }
+      producible.each do |dep_key|
+        Textus::Store::Jobs::Materialize.call(container: @container, call: call, key: dep_key)
+      end
+    end
+
+    def cascade_key_from_params(cmd)
+      case cmd.verb
+      when :put, :key_delete then cmd.params[:key]
+      when :key_mv           then cmd.params[:new_key]
+      when :propose, :reject then cmd.params[:pending_key]
+      when :accept           then nil
+      end
+    end
+
+    def producible?(key)
+      entry = @container.manifest.resolver.resolve(key).entry
+      !entry.publish_tree.nil?
+    rescue Textus::Error
+      false
     end
   end
 end

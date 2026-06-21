@@ -27,7 +27,7 @@ RSpec.describe Textus::Action::RuleLint do
       now: ctx.now, dry_run: ctx.dry_run
     )
     lambda do |candidate_yaml:|
-      described_class.new(candidate_yaml: candidate_yaml).call(container: store.container, call: call_value)
+      described_class.call(container: store.container, call: call_value, candidate_yaml: candidate_yaml)
     end
   end
 

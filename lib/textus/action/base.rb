@@ -25,21 +25,8 @@ module Textus
         Textus::Action.register(subclass) if subclass.name
       end
 
-      def initialize(**kwargs)
-        kwargs.each { |k, v| instance_variable_set(:"@#{k}", v) }
-      end
-
-      def call(**)
-        raise NotImplementedError.new("#{self.class}#call")
-      end
-
-      def args
-        params = self.class.instance_method(:initialize).parameters
-        names = params.select { |t,| %i[key keyreq].include?(t) }.map(&:last)
-        names.each_with_object({}) do |name, h|
-          val = instance_variable_get(:"@#{name}")
-          h[name] = val unless val.nil?
-        end
+      def self.call(**)
+        raise NotImplementedError.new("#{name}.call")
       end
     end
   end

@@ -57,7 +57,7 @@ module Textus
       end
 
       def built_in_publish(key, data, ctx)
-        normalized = normalize(data, ctx.entry.format)
+        normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
         Gate::Auth.new(@container).check_action!(action: :converge, actor: @call.role, key: key)
         Textus::Store::Envelope::Writer.from(container: @container, call: @call).put(
           key,
@@ -81,19 +81,6 @@ module Textus
         entry.publish_via(pctx)
       end
 
-      def normalize(data, format)
-        return { meta: {}, body: "", content: nil } if data.nil?
-
-        data = data.transform_keys(&:to_s) if data.is_a?(Hash)
-        case format.to_s
-        when "markdown", "text"
-          { meta: data["_meta"] || {}, body: (data["body"] || "").to_s, content: nil }
-        when "json", "yaml"
-          { meta: data["_meta"] || {}, body: nil, content: data["content"] || data }
-        else
-          { meta: {}, body: data.to_s, content: nil }
-        end
-      end
     end
   end
 end

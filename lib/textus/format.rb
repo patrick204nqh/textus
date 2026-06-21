@@ -36,5 +36,11 @@ module Textus
     def self.serialize(meta: {}, body: "", content: nil, format: "markdown")
       Format.for(format).serialize(meta: meta, body: body, content: content)
     end
+
+    def self.data_to_payload(data, format)
+      return { meta: {}, body: "", content: nil } if data.nil?
+
+      Format.for(format).data_to_payload(data)
+    end
   end
 end

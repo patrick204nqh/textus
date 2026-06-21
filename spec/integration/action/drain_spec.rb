@@ -44,7 +44,7 @@ RSpec.describe Textus::Action::Drain do
     queue.enqueue(job)
     store_port.close
 
-    result = described_class.new.call(container: store.container, call: test_ctx(role: "human"))
+    result = described_class.call(container: store.container, call: test_ctx(role: "human"))
     expect(result["ok"]).to be false
     expect(result["failed"]).to eq(1)
   end

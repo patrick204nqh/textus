@@ -2,7 +2,7 @@ require "spec_helper"
 
 def build_validator(store)
   Textus::Doctor::Validator.new(
-    reader: ->(key, ctnr, c) { Textus::Action::Get.new(key: key).call(container: ctnr, call: c) },
+    reader: ->(key, ctnr, c) { Textus::Action::Get.call(container: ctnr, call: c, key: key) },
     manifest: store.container.manifest,
     audit_log: store.container.audit_log,
     schema_for: ->(name) { store.container.schemas.fetch_or_nil(name) },

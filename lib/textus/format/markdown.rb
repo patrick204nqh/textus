@@ -70,6 +70,11 @@ module Textus
 
         raise UsageError.new("markdown format requires '.md' path (got #{ext.inspect})")
       end
+
+      def self.data_to_payload(data)
+        data = data.transform_keys(&:to_s) if data.is_a?(Hash)
+        { meta: data["_meta"] || {}, body: (data["body"] || "").to_s, content: nil }
+      end
     end
   end
 end

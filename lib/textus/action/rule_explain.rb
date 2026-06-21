@@ -15,15 +15,9 @@ module Textus
           description: "defaults false: lean {lifecycle, guard}. detail: true adds matched blocks + guard predicates per transition."
       view(:cli) { |r| { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) }
 
-      def initialize(key:, detail: nil)
-        super()
-        @key = key
-        @detail = detail
-      end
-
-      def call(container:, **)
-        @manifest = container.manifest
-        @detail ? explain(@key) : effective(@key)
+      def self.call(container:, call:, key:, detail: nil)
+        manifest = container.manifest
+        detail ? explain(manifest, key) : effective(manifest, key)
       end
 
       REGISTRY = Textus::Manifest::Schema::FIELD_REGISTRY
@@ -31,17 +25,15 @@ module Textus
       DETAIL_FIELDS = REGISTRY.select { |_, m| m[:in_rule_explain].include?(:detail) }.keys.freeze
       EFFECTIVE_FIELDS = DETAIL_FIELDS.select { |f| REGISTRY[f][:policy_class] }.freeze
 
-      private
-
-      def effective(key)
-        set = @manifest.rules.for(key)
+      def self.effective(manifest, key)
+        set = manifest.rules.for(key)
         LEAN_FIELDS.each_with_object({}) do |field, out|
           value = set.public_send(field)
           out[field.to_s] = lean_value(field, value) unless value.nil?
         end
       end
 
-      def lean_value(field, value)
+      def self.lean_value(field, value)
         case field
         when :retention
           retention_hash(value, string_keys: true)
@@ -52,9 +44,9 @@ module Textus
         end
       end
 
-      def explain(key)
-        matching = @manifest.rules.explain(key)
-        winners = @manifest.rules.for(key)
+      def self.explain(manifest, key)
+        matching = manifest.rules.explain(key)
+        winners = manifest.rules.for(key)
         {
           key: key,
           matched_blocks: matching.map do |block|
@@ -63,13 +55,13 @@ module Textus
           effective: EFFECTIVE_FIELDS.to_h { |f| [f, effective_value(f, winners.public_send(f))] },
           guards: Textus::Gate::Auth::FLOOR.keys.to_h do |action|
             floor = Textus::Gate::Auth::FLOOR.fetch(action, [])
-            rule = Array(@manifest.rules.for(key).guard&.dig(action.to_s))
+            rule = Array(manifest.rules.for(key).guard&.dig(action.to_s))
             [action, { floor: floor, rule: rule }]
           end,
         }
       end
 
-      def effective_value(field, value)
+      def self.effective_value(field, value)
         return nil if value.nil?
 
         case field
@@ -82,7 +74,7 @@ module Textus
         end
       end
 
-      def retention_hash(retention, string_keys:)
+      def self.retention_hash(retention, string_keys:)
         h = { ttl_seconds: retention.ttl_seconds, action: retention.action }
         string_keys ? h.transform_keys(&:to_s) : h
       end

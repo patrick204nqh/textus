@@ -24,32 +24,22 @@ module Textus
       arg :limit, Integer, required: false, description: "maximum number of rows to return"
       view(:cli) { |rows, _i| { "verb" => "audit", "rows" => rows } }
 
-      def initialize(**kwargs)
-        super()
-        @query = Query.build(**kwargs.slice(:key, :lane, :role, :verb, :since, :seq_since, :correlation_id, :limit))
-      end
+      def self.call(container:, key: nil, lane: nil, role: nil, verb: nil, since: nil, seq_since: nil, correlation_id: nil, limit: nil, **)
+        audit_log = container.audit_log
+        manifest = container.manifest
 
-      def args
-        @query.to_h.compact
-      end
+        check_cursor_expiry!(seq_since, audit_log)
 
-      def call(container:, **)
-        @manifest = container.manifest
-        @audit_log = container.audit_log
-
-        query = @query
-        check_cursor_expiry!(query.seq_since)
-
-        @audit_log.scan(
-          seq_since: query.seq_since,
-          key: query.key,
-          role: query.role,
-          verb: query.verb,
-          correlation_id: query.correlation_id,
-          limit: query.limit,
+        audit_log.scan(
+          seq_since: seq_since,
+          key: key,
+          role: role,
+          verb: verb,
+          correlation_id: correlation_id,
+          limit: limit,
         ).select do |row|
-          next false if query.lane && !key_in_lane?(row["key"], query.lane)
-          next false if query.since && (row["ts"].nil? || Time.parse(row["ts"]) < query.since)
+          next false if lane && !key_in_lane?(row["key"], lane, manifest)
+          next false if since && (row["ts"].nil? || Time.parse(row["ts"]) < since)
 
           true
         end
@@ -84,18 +74,15 @@ module Textus
         end
       end
 
-      private
-
-      def check_cursor_expiry!(seq_since)
+      def self.check_cursor_expiry!(seq_since, audit_log)
         return unless seq_since
 
-        log = @audit_log || Textus::Port::AuditLog.new(@root)
-        min = log.min_available_seq
+        min = audit_log.min_available_seq
         raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
       end
 
-      def key_in_lane?(key, lane)
-        mentry = @manifest.resolver.resolve(key).entry
+      def self.key_in_lane?(key, lane, manifest)
+        mentry = manifest.resolver.resolve(key).entry
         mentry && mentry.lane == lane
       rescue Textus::Error
         false

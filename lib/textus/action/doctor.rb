@@ -11,13 +11,8 @@ module Textus
       cli "doctor"
       arg :checks, Array, required: false, description: "subset of check names to run (default: all)"
 
-      def initialize(checks: nil)
-        super()
-        @checks = checks
-      end
-
-      def call(container:, call:, **)
-        Textus::Doctor.build(container: container, checks: @checks, role: call.role)
+      def self.call(container:, call:, checks: nil, **)
+        Textus::Doctor.build(container: container, checks: checks, role: call.role)
       end
     end
   end

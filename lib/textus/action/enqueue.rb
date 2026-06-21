@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Enqueue < WriteVerb
+    class Enqueue < Unit
       extend Textus::Contract::DSL
 
       verb :enqueue
@@ -14,21 +14,11 @@ module Textus
       arg :args, Hash, default: {},
                        description: "type-specific arguments (e.g. { key: ... } or { scope: ... })"
 
-      def initialize(type:, args: {})
-        super()
-        @type = type
-        @job_args = args
-      end
-
-      def args
-        { type: @type, args: @job_args }
-      end
-
-      def call(container:, call:)
+      def self.call(container:, call:, type:, args: {})
         action_class = begin
-          Textus::Jobs.fetch(@type.to_s)
+          Textus::Jobs.fetch(type.to_s)
         rescue Textus::UsageError
-          raise Textus::UsageError.new("unregistered job type '#{@type}'")
+          raise Textus::UsageError.new("unregistered job type '#{type}'")
         end
         if action_class.const_defined?(:REQUIRED_ROLE) && call.role != action_class::REQUIRED_ROLE
           raise Textus::Error.new(
@@ -40,12 +30,12 @@ module Textus
         end
 
         job = Textus::Store::Jobs::Queue::Job.new(
-          type: @type,
-          args: @job_args,
+          type: type,
+          args: args,
           role: call.role,
           max_attempts: 3,
         )
-        Textus::Port::Store.open(container.root) { |store| Textus::Store::Jobs::Queue.new(store: store).enqueue(job) }
+        Textus::Store::Jobs::Queue.new(store: container.job_store).enqueue(job)
         { "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id }
       end
     end

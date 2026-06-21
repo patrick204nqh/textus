@@ -6,15 +6,8 @@ module Textus
       class Materialize < Base
         TYPE = "materialize"
 
-        def initialize(key:)
-          super()
-          @key = key
-        end
-
-        def args = { key: @key }
-
-        def call(container:, call:)
-          Textus::Produce::Engine.converge(container: container, call: call, keys: [@key])
+        def self.call(container:, call:, key:)
+          Textus::Produce::Engine.converge(container: container, call: call, keys: [key])
         end
       end
     end
