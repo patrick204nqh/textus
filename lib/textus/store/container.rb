@@ -14,6 +14,7 @@ module Textus
       attribute :job_store,  Value::Types.Instance(Port::Store)
       attribute :gate,       Value::Types.Instance(Gate).optional
       attribute :compositor, Value::Types.Instance(Store::Compositor).optional
+      attribute :geometry,   Value::Types.Instance(Store::Geometry).optional
 
       def with(**attrs) = self.class.new(to_h.merge(attrs))
 

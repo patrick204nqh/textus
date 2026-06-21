@@ -11,7 +11,7 @@ RSpec.describe Textus::Store::Container do
     described_class.new(
       manifest: manifest, file_store: file_store, schemas: schemas, root: root,
       audit_log: audit_log, workflows: workflows, job_store: job_store,
-      gate: nil, compositor: nil
+      gate: nil, compositor: nil, geometry: nil,
     )
   end
 
@@ -28,11 +28,12 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "defaults gate and compositor to nil and freezes" do
+  it "defaults optional attributes to nil and freezes" do
     Dir.mktmpdir do |tmp|
       container = build_container(File.join(tmp, ".textus"))
       expect(container.gate).to be_nil
       expect(container.compositor).to be_nil
+      expect(container.geometry).to be_nil
       expect(container).to be_frozen
     end
   end

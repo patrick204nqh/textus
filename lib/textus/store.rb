@@ -70,6 +70,7 @@ module Textus
     def build_container(root)
       manifest = Manifest.load(root)
       job_store = Port::Store.new(root: root).setup!
+      geometry = Store::Geometry.new(root)
       container = Container.new(
         root: root,
         manifest: manifest,
@@ -84,6 +85,7 @@ module Textus
         gate: nil,
         job_store: job_store,
         compositor: nil,
+        geometry: geometry,
       )
       gate = Textus::Gate.new(container)
       container = container.with(gate: gate)
