@@ -44,11 +44,6 @@ module Textus
       def self.rewrite_name(_path, _basename)
         raise NotImplementedError.new("#{name}.rewrite_name not implemented")
       end
-
-      def self.data_to_payload(data)
-        data = data.transform_keys(&:to_s) if data.is_a?(Hash)
-        { meta: data["_meta"] || {}, body: data.to_s, content: nil }
-      end
     end
   end
 end
