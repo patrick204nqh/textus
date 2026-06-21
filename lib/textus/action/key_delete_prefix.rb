@@ -19,8 +19,7 @@ module Textus
       def self.call(container:, call:, prefix:, dry_run: false)
         raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
 
-        leaves = Textus::Action::List.call(container: container, prefix: prefix)
-                                     .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
+        leaves = Textus::Action::List.leaf_keys(container: container, prefix: prefix)
 
         warnings = leaves.empty? ? ["no keys under #{prefix}"] : []
         steps = leaves.map { |key| { "op" => "delete", "key" => key } }

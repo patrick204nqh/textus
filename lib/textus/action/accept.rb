@@ -13,9 +13,9 @@ module Textus
 
       def self.call(container:, call:, pending_key:)
         env = container.compositor.read(pending_key)
-        proposal = env.meta["proposal"] or raise Textus::ProposalError.new("entry has no proposal block: #{pending_key}")
-        target = proposal["target_key"] or raise Textus::ProposalError.new("proposal missing target_key")
-        action = proposal["action"] || "put"
+        parsed = proposal_from(env, key: pending_key)
+        target = parsed[:target_key]
+        action = parsed[:proposal]["action"] || "put"
 
         case action
         when "put"

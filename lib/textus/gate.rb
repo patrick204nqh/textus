@@ -47,7 +47,9 @@ module Textus
         raise Textus::UsageError.new("unknown command verb: #{cmd.verb}")
       end
 
-      Gate::Auth.new(@container).check!(cmd)
+      auth = Gate::Auth.new(@container)
+      auth.check!(cmd)
+      check_dispatch_auth(cmd, resolved, auth)
       call_obj = build_call(cmd, correlation_id: correlation_id)
       results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
       result = results.length == 1 ? results.first : results
@@ -57,7 +59,19 @@ module Textus
 
     CASCADE_VERBS = %i[put propose accept reject key_mv key_delete].freeze
 
+    AUTH_KEYS = {
+      key_mv: ->(params) { [params[:old_key], params[:new_key]] },
+      ingest: ->(params) { Textus::Action::Ingest.dispatch_key(**params) },
+    }.freeze
+
     private
+
+    def check_dispatch_auth(cmd, resolved, auth)
+      return unless (resolver = AUTH_KEYS[cmd.verb])
+
+      keys = Array(resolver.call(resolved))
+      keys.each { |k| auth.check_action!(action: cmd.verb, actor: cmd.role, key: k) }
+    end
 
     def normalize_propose_key(cmd)
       return cmd if cmd.pending_key

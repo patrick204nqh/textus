@@ -20,6 +20,11 @@ module Textus
         rows = rows.select { |row| row[:manifest_entry].lane == lane } if lane
         rows.map { |row| { "key" => row[:key], "lane" => row[:manifest_entry].lane, "path" => row[:path] } }
       end
+
+      def self.leaf_keys(container:, prefix: nil, lane: nil)
+        call(container: container, prefix: prefix, lane: lane)
+          .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
+      end
     end
   end
 end

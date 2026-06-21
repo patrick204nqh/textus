@@ -42,7 +42,7 @@ module Textus
 
       def self.success_result(old_key:, new_key:, old_res:, new_res:, envelope:)
         {
-          "protocol" => PROTOCOL,
+          "protocol" => Textus::PROTOCOL,
           "ok" => true,
           "from_key" => old_key,
           "to_key" => new_key,
@@ -63,8 +63,6 @@ module Textus
         raise UnknownKey.new(old_key) unless container.compositor.exists?(old_key)
 
         validate_zone_and_format!(old_mentry: old_res.entry, new_mentry: new_res.entry)
-        Textus::Gate::Auth.new(container).check_action!(action: :key_mv, actor: call.role, key: old_key)
-        Textus::Gate::Auth.new(container).check_action!(action: :key_mv, actor: call.role, key: new_key)
         raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if container.compositor.exists?(new_key)
 
         [old_res, new_res]
@@ -101,7 +99,7 @@ module Textus
       def self.dry_run_result(container:, old_key:, new_key:, old_res:, new_res:)
         pre_env = container.compositor.read(old_key)
         {
-          "protocol" => PROTOCOL,
+          "protocol" => Textus::PROTOCOL,
           "ok" => true,
           "dry_run" => true,
           "from_key" => old_key,

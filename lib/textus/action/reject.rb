@@ -18,12 +18,12 @@ module Textus
         end
 
         env = container.compositor.read(pending_key)
-        proposal = env.meta&.dig("proposal") or raise ProposalError.new("entry has no proposal block: #{pending_key}")
-        target_key = proposal["target_key"] or raise ProposalError.new("proposal missing target_key")
+        parsed = proposal_from(env, key: pending_key)
+        target_key = parsed[:target_key]
 
         mentry = container.manifest.resolver.resolve(pending_key).entry
         container.compositor.delete(pending_key, mentry: mentry, call: call)
-        { "protocol" => PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
+        { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
       end
     end
   end

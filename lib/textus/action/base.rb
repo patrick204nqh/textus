@@ -28,6 +28,12 @@ module Textus
       def self.call(**)
         raise NotImplementedError.new("#{name}.call")
       end
+
+      def self.proposal_from(env, key:)
+        proposal = env.meta&.dig("proposal") or raise Textus::ProposalError.new("entry has no proposal block: #{key}")
+        target = proposal["target_key"] or raise Textus::ProposalError.new("proposal missing target_key")
+        { proposal:, target_key: target }
+      end
     end
   end
 end

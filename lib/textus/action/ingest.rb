@@ -32,10 +32,6 @@ module Textus
         now = Time.now.utc
         key = derive_key(now, kind:, slug:)
 
-        Textus::Gate::Auth.new(container).check_action!(
-          action: :ingest, actor: call.role, key: key,
-        )
-
         content_hash = compute_content_hash(kind:, url:, path:)
         writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
         mentry = container.manifest.resolver.resolve(key).entry
@@ -70,6 +66,13 @@ module Textus
           raise Textus::UsageError.new("ingest asset requires --path") unless path
           raise Textus::UsageError.new("ingest asset requires --zone") unless zone
         end
+      end
+
+      # Key derivation for Gate pre-dispatch auth. Must match the runtime
+      # derivation in #call so the same key is checked by auth and used by
+      # the action body.
+      def self.dispatch_key(kind:, slug:, **)
+        derive_key(Time.now.utc, kind:, slug:)
       end
 
       def self.derive_key(now, kind:, slug:)

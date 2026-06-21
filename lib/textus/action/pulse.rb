@@ -35,8 +35,7 @@ module Textus
         queue = manifest.policy.queue_lane
         return [] unless queue
 
-        rows = Textus::Action::List.call(container: container, lane: queue)
-        rows.map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
+        Textus::Action::List.leaf_keys(container: container, lane: queue)
       end
 
       def self.index_etag(container)

@@ -21,8 +21,7 @@ module Textus
       def self.call(container:, call:, from_prefix:, to_prefix:, dry_run: false)
         raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
-        leaves = Textus::Action::List.call(container: container, prefix: from_prefix)
-                                     .map { |row| row.is_a?(Hash) ? (row["key"] || row[:key]) : row }
+        leaves = Textus::Action::List.leaf_keys(container: container, prefix: from_prefix)
 
         if leaves.include?(from_prefix)
           raise UsageError.new("from_prefix '#{from_prefix}' is itself a leaf — use `mv` to rename a single key")
