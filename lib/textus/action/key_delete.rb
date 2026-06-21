@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class KeyDelete < Unit
+    class KeyDelete < Base
       extend Textus::Contract::DSL
 
       verb :key_delete

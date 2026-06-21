@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class KeyMv < Unit
+    class KeyMv < Base
       extend Textus::Contract::DSL
 
       verb :key_mv

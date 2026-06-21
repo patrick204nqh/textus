@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Accept < Composite
+    class Accept < Base
       extend Textus::Contract::DSL
 
       verb :accept

@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Get < Unit
+    class Get < Base
       extend Textus::Contract::DSL
 
       verb :get

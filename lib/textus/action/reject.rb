@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Reject < Composite
+    class Reject < Base
       extend Textus::Contract::DSL
 
       verb :reject

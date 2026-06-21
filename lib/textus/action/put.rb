@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Put < Unit
+    class Put < Base
       extend Textus::Contract::DSL
 
       verb :put

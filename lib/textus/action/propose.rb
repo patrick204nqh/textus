@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Propose < Composite
+    class Propose < Base
       extend Textus::Contract::DSL
 
       verb :propose

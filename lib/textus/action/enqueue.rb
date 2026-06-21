@@ -2,7 +2,7 @@
 
 module Textus
   module Action
-    class Enqueue < Unit
+    class Enqueue < Base
       extend Textus::Contract::DSL
 
       verb :enqueue
