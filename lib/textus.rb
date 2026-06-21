@@ -1,4 +1,5 @@
 require "zeitwerk"
+require "dry-monads"
 require_relative "textus/version"
 require_relative "textus/errors"
 require_relative "textus/surface/mcp"

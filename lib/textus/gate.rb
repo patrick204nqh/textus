@@ -82,7 +82,22 @@ module Textus
     end
 
     def run_action(klass, params, call_obj)
-      klass.call(container: @container, call: call_obj, **params)
+      result = klass.call(container: @container, call: call_obj, **params)
+      unwrap_result(result)
+    end
+
+    def unwrap_result(result)
+      case result
+      when Dry::Monads::Result::Success then result.value!
+      when Dry::Monads::Result::Failure
+        failure = result.failure
+        raise ActionError.new(
+          failure[:code] || :internal,
+          failure[:message] || "action failed",
+          details: failure[:details] || {},
+        )
+      else result
+      end
     end
 
     def build_call(cmd, correlation_id: nil)

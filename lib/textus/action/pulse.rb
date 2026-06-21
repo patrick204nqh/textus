@@ -27,7 +27,7 @@ module Textus
         }
 
         Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
-        result
+        Success(result)
       end
 
       def self.review_keys(manifest, container)

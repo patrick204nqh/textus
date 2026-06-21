@@ -21,6 +21,7 @@ module Textus
 
     class Base
       extend Contract::DSL
+      extend Dry::Monads[:result]
 
       def self.inherited(subclass)
         super
@@ -32,8 +33,8 @@ module Textus
       end
 
       def self.proposal_from(env, key:)
-        proposal = env.meta&.dig("proposal") or raise Textus::ProposalError.new("entry has no proposal block: #{key}")
-        target = proposal["target_key"] or raise Textus::ProposalError.new("proposal missing target_key")
+        proposal = env.meta&.dig("proposal") or return Failure(code: :proposal_error, message: "entry has no proposal block: #{key}")
+        target = proposal["target_key"] or return Failure(code: :proposal_error, message: "proposal missing target_key")
         { proposal:, target_key: target }
       end
     end

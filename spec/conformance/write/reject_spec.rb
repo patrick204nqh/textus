@@ -70,14 +70,14 @@ RSpec.describe ":proposal_rejected event and store.reject" do
     store = Textus::Store.new(root)
     store.as("human").put("identity.target", meta: { "name" => "target" }, body: "x")
     expect { store.as("human").reject("identity.target") }
-      .to raise_error(Textus::ProposalError, /not in a proposal zone/)
+      .to raise_error(Textus::ActionError, /not in a proposal zone/)
   end
 
   it "refuses to reject when entry has no proposal block" do
     store = Textus::Store.new(root)
     store.as("agent").put("proposals.draft", meta: { "name" => "draft" }, body: "x")
     expect { store.as("human").reject("proposals.draft") }
-      .to raise_error(Textus::ProposalError, /no proposal/)
+      .to raise_error(Textus::ActionError, /no proposal/)
   end
 
   context "when invoked via the CLI (textus reject)" do
@@ -182,7 +182,7 @@ RSpec.describe ":proposal_rejected event and store.reject" do
         body: "x",
       )
       expect { store.as("human").reject("pending.draft") }
-        .to raise_error(Textus::ProposalError, /not in a proposal zone/)
+        .to raise_error(Textus::ActionError, /not in a proposal zone/)
     end
   end
 end
