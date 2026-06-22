@@ -59,10 +59,11 @@ module Textus
       def built_in_publish(key, data, ctx)
         normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
         Gate::Auth.new(@container).check_action!(action: :converge, actor: @call.role, key: key)
-        Textus::Store::Envelope::Writer.from(container: @container, call: @call).put(
+        @container.compositor.write(
           key,
           mentry: ctx.entry,
-          payload: Textus::Store::Envelope::Writer::Payload.new(**normalized),
+          payload: Textus::Value::Payload.new(**normalized),
+          call: @call,
         )
         publish_external(key, ctx)
       end
@@ -74,9 +75,9 @@ module Textus
         entry_path = @container.manifest.resolver.resolve(key).path
         return unless entry.publish_tree || File.exist?(entry_path)
 
-        reader = Textus::Store::Envelope::Reader.from(container: @container)
         pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
-          container: @container, call: @call, reader: reader.method(:read),
+          container: @container, call: @call,
+          reader: @container.compositor.method(:read)
         )
         entry.publish_via(pctx)
       end

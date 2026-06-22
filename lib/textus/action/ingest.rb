@@ -32,7 +32,6 @@ module Textus
         key = derive_key(now, kind:, slug:)
 
         content_hash = compute_content_hash(kind:, url:, path:)
-        writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
         mentry = container.manifest.resolver.resolve(key).entry
         ts = now.iso8601
         structured = build_structured(ts, container, now, content_hash, kind:, url:, path:, label:, zone:)
@@ -44,7 +43,7 @@ module Textus
         result = if duplicate_key && duplicate_key != key
                    supersede_entry(duplicate_key, key, structured, container, call, store: store, kind:, zone:)
                  else
-                   env = write_raw_entry(key, structured, mentry, writer)
+                   env = write_raw_entry(key, structured, mentry, container, call)
                    rebuild_index(container, store)
                    env
                  end
@@ -111,11 +110,11 @@ module Textus
         end
       end
 
-      def self.write_raw_entry(key, structured, mentry, writer)
-        writer.put(key, mentry: mentry,
-                        payload: Textus::Store::Envelope::Writer::Payload.new(
-                          meta: nil, body: nil, content: structured,
-                        ))
+      def self.write_raw_entry(key, structured, mentry, container, call)
+        container.compositor.write(key, mentry: mentry,
+                                        payload: Textus::Value::Payload.new(
+                                          meta: nil, body: nil, content: structured,
+                                        ), call: call)
       end
 
       def self.find_duplicate(index, content_hash, kind:, url:)
@@ -133,10 +132,8 @@ module Textus
 
       def self.supersede_entry(old_key, new_key, structured, container, call, store:, kind:, zone:) # rubocop:disable Metrics/ParameterLists
         old_mentry = container.manifest.resolver.resolve(old_key).entry
-        writer = Textus::Store::Envelope::Writer.from(container: container, call: call)
 
-        reader = Textus::Store::Envelope::Reader.from(container: container)
-        old_env = reader.read(old_key)
+        old_env = container.compositor.read(old_key)
         old_content = old_env&.content || {}
         tombstone = {}
         TOMBSTONE_RETAIN.each do |k|
@@ -146,13 +143,13 @@ module Textus
         tombstone["source"] = { "kind" => source_kind } if source_kind
         tombstone["superseded_by"] = new_key
 
-        writer.put(old_key, mentry: old_mentry,
-                            payload: Textus::Store::Envelope::Writer::Payload.new(
-                              meta: nil, body: nil, content: tombstone,
-                            ))
+        container.compositor.write(old_key, mentry: old_mentry,
+                                            payload: Textus::Value::Payload.new(
+                                              meta: nil, body: nil, content: tombstone,
+                                            ), call: call)
 
         structured["supersedes"] = old_key
-        env = write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, writer)
+        env = write_raw_entry(new_key, structured, container.manifest.resolver.resolve(new_key).entry, container, call)
 
         move_asset_file(container, old_content["asset"], zone:) if kind == "asset" && old_content["asset"]
 

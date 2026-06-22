@@ -29,14 +29,20 @@ module Textus
         define_method(name) { @coord.public_send(name) }
       end
 
-      def wire_gate!(gate, compositor)
-        @coord = Coordination.new(
-          manifest: @coord.manifest,
-          workflows: @coord.workflows,
+      def self.build_full(infra, coord_seed)
+        temp = new(infra, coord_seed)
+        compositor = Store::Compositor.new(temp)
+        gate = Textus::Gate.new(temp)
+        coord = Coordination.new(
+          manifest: coord_seed.manifest,
+          workflows: coord_seed.workflows,
           gate:,
           compositor:,
         )
-        self
+        container = new(infra, coord)
+        compositor.instance_variable_set(:@container, container)
+        gate.instance_variable_set(:@container, container)
+        container
       end
     end
   end

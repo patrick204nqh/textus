@@ -12,8 +12,6 @@ module Textus
       # No permission check, no event firing — those belong to the caller
       # (Write::Put / ::Delete / ::Mv).
       class Writer
-        Payload = Data.define(:meta, :body, :content)
-
         def self.from(container:, call:)
           new(
             file_store: container.file_store, manifest: container.manifest,
@@ -34,21 +32,23 @@ module Textus
         end
 
         def put(key, mentry:, payload:, if_etag: nil)
-          path = resolve_path(key)
-          meta = payload.meta || {}
+          path  = resolve_path(key)
+          meta  = payload.meta || {}
           content = payload.content
-          existing_env = @reader.read(key)
-          existing_meta = existing_env ? existing_env.meta : {}
-          meta, content = Textus::Meta.inject_all(meta, content, existing_meta, format: mentry.format)
+
+          existing_env   = read_existing(key)
+          existing_meta  = existing_env ? existing_env.meta : {}
+          meta, content  = inject_meta(meta, content, existing_meta, mentry.format)
+
           bytes, eff_meta, eff_body, eff_content = serialize_entry(mentry, path, meta, payload, content)
+
           enforce_name_match!(path, eff_meta, mentry.format)
           validate_schema(mentry, eff_meta, eff_content)
-          Textus::Format::Yaml.validate_raw_entry!(
-            { "_meta" => eff_meta, "content" => eff_content },
-            mentry.lane,
-          )
+          validate_raw(eff_meta, eff_content, mentry.lane, mentry.format)
+
           etag_before = check_etag!(path, key, if_etag)
           write_bytes(path, bytes)
+
           envelope = build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes)
           audit_put(key, etag_before, envelope.etag)
           envelope
@@ -129,14 +129,12 @@ module Textus
           nil
         end
 
-        def enforce_name_match!(path, meta, format)
-          Textus::Format.for(format).enforce_name_match!(path, meta)
+        def read_existing(key)
+          @reader.read(key)
         end
 
-        def serialize_for_put(mentry:, path:, meta:, body:, content:)
-          Textus::Format.for(mentry.format).serialize_for_put(
-            meta: meta, body: body, content: content, path: path,
-          )
+        def inject_meta(meta, content, existing_meta, format)
+          Textus::Meta.inject_all(meta, content, existing_meta, format: format)
         end
 
         def resolve_path(key)
@@ -144,10 +142,13 @@ module Textus
         end
 
         def serialize_entry(mentry, path, meta, payload, content)
-          serialize_for_put(
-            mentry: mentry, path: path,
-            meta: meta, body: payload.body, content: content
+          Textus::Format.for(mentry.format).serialize_for_put(
+            meta: meta, body: payload.body, content: content, path: path,
           )
+        end
+
+        def enforce_name_match!(path, meta, format)
+          Textus::Format.for(format).enforce_name_match!(path, meta)
         end
 
         def validate_schema(mentry, eff_meta, eff_content)
@@ -157,6 +158,13 @@ module Textus
           Format.for(mentry.format).validate_against(
             schema,
             { "_meta" => eff_meta, "content" => eff_content },
+          )
+        end
+
+        def validate_raw(eff_meta, eff_content, lane, format)
+          Textus::Format.for(format).validate_raw_entry!(
+            { "_meta" => eff_meta, "content" => eff_content },
+            lane,
           )
         end
 

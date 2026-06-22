@@ -83,17 +83,14 @@ module Textus
         geometry:,
       )
 
-      coord = Container::Coordination.new(
+      coord_seed = Container::Coordination.new(
         manifest:,
         workflows: Workflow::Loader.load_all(root),
         gate: nil,
         compositor: nil,
       )
 
-      container = Container.new(infra, coord)
-      compositor = Store::Compositor.new(container)
-      gate = Textus::Gate.new(container)
-      container.wire_gate!(gate, compositor)
+      Container.build_full(infra, coord_seed)
     end
   end
 end
