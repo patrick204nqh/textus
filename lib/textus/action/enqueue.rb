@@ -13,11 +13,8 @@ module Textus
                        description: "type-specific arguments (e.g. { key: ... } or { scope: ... })"
 
       def self.call(container:, call:, type:, args: {})
-        action_class = begin
-          Textus::Jobs.fetch(type.to_s)
-        rescue Textus::UsageError
-          return Failure(code: :usage_error, message: "unregistered job type '#{type}'")
-        end
+        action_class = Textus::Jobs.fetch(type.to_s)
+
         if action_class.const_defined?(:REQUIRED_ROLE) && call.role != action_class::REQUIRED_ROLE
           return Failure(code: :forbidden,
                          message: "role '#{call.role}' is not authorized to enqueue this job type",
@@ -32,6 +29,8 @@ module Textus
         )
         Textus::Store::Jobs::Queue.new(store: container.job_store).enqueue(job)
         Success({ "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id })
+      rescue Textus::UsageError
+        Failure(code: :usage_error, message: "unregistered job type '#{type}'")
       end
     end
   end
