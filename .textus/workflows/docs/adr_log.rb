@@ -10,7 +10,7 @@ Textus.workflow "adr_log" do
 
     adrs = keys.filter_map do |k|
       get_spec = Textus::VerbRegistry.for(:get)
-      env = Textus::Bus.dispatch(container: ctx.container, spec: get_spec, inputs: { key: k }, role: ctx.call.role) rescue nil
+      env = Textus::Dispatch.dispatch(container: ctx.container, spec: get_spec, inputs: { key: k }, role: ctx.call.role) rescue nil
       next unless env
 
       slug = k.split(".").last
