@@ -11,7 +11,7 @@ RSpec.describe Textus::Store::Container do
     described_class.new(
       manifest: manifest, file_store: file_store, schemas: schemas, root: root,
       audit_log: audit_log, workflows: workflows, job_store: job_store,
-      gate: nil, compositor: nil
+      gate: nil, compositor: nil, geometry: nil
     )
   end
 
@@ -28,33 +28,50 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "defaults gate and compositor to nil and freezes" do
+  it "defaults optional attributes to nil and freezes" do
     Dir.mktmpdir do |tmp|
       container = build_container(File.join(tmp, ".textus"))
       expect(container.gate).to be_nil
       expect(container.compositor).to be_nil
+      expect(container.geometry).to be_nil
       expect(container).to be_frozen
     end
   end
 
-  it "is built once per Store and backs the Store's delegated readers", :aggregate_failures do
+  it "backs the Store's delegated readers via a LazyContainer", :aggregate_failures do
     Dir.mktmpdir do |tmp|
       Textus::Surface::CLI.run(
         ["--root=#{tmp}/.textus", "init"],
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(File.join(tmp, ".textus"))
-      container = store.container
+      proxy = store.container
 
-      expect(container).to be_a(Textus::Store::Container)
-      expect(store.container).to be(container) # one Container per Store
-      expect(store.manifest).to be(container.manifest)
-      expect(store.file_store).to be(container.file_store)
-      expect(store.schemas).to be(container.schemas)
-      expect(store.root).to eq(container.root)
-      expect(store.audit_log).to be(container.audit_log)
-      expect(store.workflows).to be(container.workflows)
-      expect(store.job_store).to be(container.job_store)
+      expect(proxy).to be_a(Textus::LazyContainer)
+      expect(store.container).to be(proxy)
+
+      resolved = proxy.__send__(:resolve)
+      expect(resolved).to be_a(Textus::Store::Container)
+      expect(proxy.manifest).to be(resolved.manifest)
+      expect(proxy.file_store).to be(resolved.file_store)
+      expect(proxy.schemas).to be(resolved.schemas)
+      expect(proxy.root).to eq(resolved.root)
+      expect(proxy.audit_log).to be(resolved.audit_log)
+      expect(proxy.workflows).to be(resolved.workflows)
+      expect(proxy.job_store).to be(resolved.job_store)
+    end
+  end
+
+  it "does not mutate Gate ivar after construction" do
+    Dir.mktmpdir do |tmp|
+      dir = File.join(tmp, ".textus")
+      Textus::Surface::CLI.run(
+        ["--root=#{dir}", "init"],
+        stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
+      )
+      store = Textus::Store.new(dir)
+      gate = store.gate
+      expect(gate.instance_variable_get(:@container)).to be_a(Textus::LazyContainer)
     end
   end
 end

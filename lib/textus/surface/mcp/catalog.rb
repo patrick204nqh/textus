@@ -6,6 +6,8 @@ module Textus
       # dispatch: map JSON args -> (positional, keyword) per the contract, invoke
       # the verb through the role scope, then shape the return value. No per-tool code.
       module Catalog
+        PROJECTOR = Projector.new(view_key: :default, binder_method: :inputs_from_wire).freeze
+
         module_function
 
         WRITE_VERBS = %i[
@@ -41,9 +43,9 @@ module Textus
         end
 
         def names
-          Textus::Action::VERBS
-            .select { |_, klass| mcp_surfaced?(klass) }
-            .keys.map(&:to_s)
+          PROJECTOR.names(
+            Textus::Action::VERBS.select { |_, klass| mcp_surfaced?(klass) },
+          )
         end
 
         # MCP-surfaced read verbs, by Dispatcher class namespace — the agent's
@@ -77,12 +79,9 @@ module Textus
           klass = Textus::Action::VERBS[name.to_sym]
           raise ToolError.new("unknown tool: #{name}") unless klass && mcp_surfaced?(klass)
 
-          spec = klass.contract
-          inputs = Textus::Gate::Binder.inputs_from_wire(spec, args)
-
-          result = store.gate.dispatch(spec:, inputs:, role: session.role, session:)
-          spec.view(:default).call(result, inputs)
+          PROJECTOR.dispatch(name, inputs: args, store:, role: session.role, session:)
         rescue Textus::Gate::MissingArgs => e
+          spec = klass.contract
           raise ToolError.new("#{spec.verb}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, CursorExpired
           raise

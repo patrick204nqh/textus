@@ -5,8 +5,6 @@ require "time"
 module Textus
   module Action
     class Pulse < Base
-      extend Textus::Contract::DSL
-
       verb :pulse
       summary "Delta since cursor — changed entries, pending proposals, index freshness."
       surfaces :cli, :mcp
@@ -28,7 +26,7 @@ module Textus
         }
 
         Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
-        result
+        Success(result)
       end
 
       def self.review_keys(manifest, container)

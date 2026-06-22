@@ -50,11 +50,11 @@ RSpec.describe Textus::Action::Accept do
       .to fail_guard_with("author_held")
   end
 
-  it "raises ProposalError when entry has no proposal block" do
+  it "raises ActionError when entry has no proposal block" do
     store.as("agent").put("proposals.noproposal", meta: { "name" => "noproposal" }, body: "no proposal here")
 
     expect { store.as("human").accept("proposals.noproposal") }
-      .to raise_error(Textus::ProposalError, /no proposal block/)
+      .to raise_error(Textus::ActionError, /no proposal block/)
   end
 
   describe "manifest with no role holding the author capability" do

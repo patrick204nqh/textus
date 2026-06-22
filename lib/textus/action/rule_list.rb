@@ -3,8 +3,6 @@
 module Textus
   module Action
     class RuleList < Base
-      extend Textus::Contract::DSL
-
       verb :rule_list
       summary "List every rule block in the manifest."
       surfaces :cli

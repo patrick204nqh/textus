@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Put < Base
-      extend Textus::Contract::DSL
-
       verb :put
       summary "Create or update an entry. Schema-validated. Returns {uid, etag}."
       surfaces :cli, :mcp

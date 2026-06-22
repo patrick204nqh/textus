@@ -36,6 +36,6 @@ RSpec.describe Textus::Action::Reject do
 
   it "rejects entries that are not in a proposal zone" do
     expect { store.as("human").reject("identity.target") }
-      .to raise_error(Textus::ProposalError, /not in a proposal zone/)
+      .to raise_error(Textus::ActionError, /not in a proposal zone/)
   end
 end

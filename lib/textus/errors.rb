@@ -225,6 +225,12 @@ module Textus
     end
   end
 
+  class ActionError < Error
+    def initialize(code, message, details: {})
+      super(code, message, details: details, exit_code: 1)
+    end
+  end
+
   class CursorExpired < Error
     attr_reader :requested, :min_available
 

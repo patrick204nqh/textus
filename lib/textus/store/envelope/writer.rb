@@ -18,17 +18,19 @@ module Textus
           new(
             file_store: container.file_store, manifest: container.manifest,
             schemas: container.schemas, audit_log: container.audit_log,
-            call: call, reader: Reader.from(container: container)
+            call: call, reader: Reader.from(container: container),
+            geometry: container.geometry
           )
         end
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:)
+        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:) # rubocop:disable Metrics/ParameterLists
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas
           @audit_log  = audit_log
           @call       = call
           @reader     = reader
+          @geometry   = geometry
         end
 
         def put(key, mentry:, payload:, if_etag: nil)
@@ -115,7 +117,7 @@ module Textus
         # `.gitkeep` or sibling entries survives. Best-effort: a lost race or a
         # non-empty dir is silently fine, never fatal to the write.
         def prune_empty_parents(path)
-          floor = zone_floor(path)
+          floor = @geometry.lane_floor(path)
           return unless floor
 
           dir = File.dirname(path)
@@ -125,17 +127,6 @@ module Textus
           end
         rescue SystemCallError
           nil
-        end
-
-        # The zone directory under which `path` lives (`<root>/zones/<zone>`),
-        # or nil if `path` is not under the store's zones tree.
-        def zone_floor(path)
-          zones_root = File.join(@manifest.data.root, "data")
-          prefix = "#{zones_root}/"
-          return nil unless path.start_with?(prefix)
-
-          zone_seg = path.delete_prefix(prefix).split("/").first
-          zone_seg && File.join(zones_root, zone_seg)
         end
 
         def enforce_name_match!(path, meta, format)

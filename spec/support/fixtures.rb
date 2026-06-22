@@ -123,17 +123,20 @@ module TextusSpecHelpers
     Textus::Store::Envelope::Reader.new(
       file_store: store.file_store,
       manifest: store.manifest,
+      geometry: store.geometry,
     )
   end
 
   def build_envelope_writer(store, call, reader: nil)
+    reader ||= build_envelope_reader(store)
     Textus::Store::Envelope::Writer.new(
       file_store: store.file_store,
       manifest: store.manifest,
       schemas: store.schemas,
       audit_log: store.audit_log,
       call: call,
-      reader: reader || build_envelope_reader(store),
+      reader: reader,
+      geometry: store.geometry,
     )
   end
 

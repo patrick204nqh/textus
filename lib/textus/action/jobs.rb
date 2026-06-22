@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Jobs < Base
-      extend Textus::Contract::DSL
-
       verb :jobs
       summary "List queued jobs by state; retry a dead-lettered job or purge a state."
       surfaces :cli, :mcp

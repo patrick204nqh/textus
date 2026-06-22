@@ -5,8 +5,6 @@ require "yaml"
 module Textus
   module Action
     class DataMv < Base
-      extend Textus::Contract::DSL
-
       verb :data_mv
       summary "Rename a data lane — manifest + files. Refuses if destination exists."
       surfaces :cli, :mcp

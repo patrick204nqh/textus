@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Published < Base
-      extend Textus::Contract::DSL
-
       verb :published
       summary "List all entries that declare a publish_to target."
       surfaces :cli

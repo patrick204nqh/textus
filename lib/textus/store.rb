@@ -70,7 +70,8 @@ module Textus
     def build_container(root)
       manifest = Manifest.load(root)
       job_store = Port::Store.new(root: root).setup!
-      container = Container.new(
+      geometry = Store::Geometry.new(root)
+      base = Container.new(
         root: root,
         manifest: manifest,
         schemas: Schemas.new(File.join(root, "schemas")),
@@ -84,12 +85,16 @@ module Textus
         gate: nil,
         job_store: job_store,
         compositor: nil,
+        geometry: geometry,
       )
-      gate = Textus::Gate.new(container)
-      container = container.with(gate: gate)
-      container = container.with(compositor: Store::Compositor.new(container))
-      gate.instance_variable_set(:@container, container)
-      container
+
+      gate = nil
+      lazy = LazyContainer.new do
+        compositor = Store::Compositor.new(base)
+        base.with(gate: gate, compositor: compositor)
+      end
+      gate = Textus::Gate.new(lazy)
+      lazy
     end
   end
 end

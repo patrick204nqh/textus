@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Reject < Base
-      extend Textus::Contract::DSL
-
       verb :reject
       summary "discard a queued proposal without applying it"
       surfaces :cli, :mcp
@@ -14,16 +12,16 @@ module Textus
       def self.call(container:, call:, pending_key:)
         mentry = container.manifest.resolver.resolve(pending_key).entry
         unless mentry.in_proposal_lane?(container.manifest.policy)
-          raise ProposalError.new("reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
+          return Failure(code: :proposal_error, message: "reject: '#{pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
         end
 
         env = container.compositor.read(pending_key)
         parsed = proposal_from(env, key: pending_key)
-        target_key = parsed[:target_key]
+        return parsed if parsed.is_a?(Dry::Monads::Result::Failure)
 
-        mentry = container.manifest.resolver.resolve(pending_key).entry
+        target_key = parsed[:target_key]
         container.compositor.delete(pending_key, mentry: mentry, call: call)
-        { "protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key }
+        Success("protocol" => Textus::PROTOCOL, "rejected" => pending_key, "target_key" => target_key)
       end
     end
   end

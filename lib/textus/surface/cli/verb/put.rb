@@ -15,8 +15,8 @@ module Textus
             spec = Textus::Action::Put.contract
             inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                        content: nil, if_etag: payload["if_etag"] }
-            result = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
-            emit(result.to_h_for_wire)
+            result = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store), surface: :cli)
+            emit(result)
           end
         end
       end

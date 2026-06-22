@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Deps < Base
-      extend Textus::Contract::DSL
-
       verb :deps
       summary "List the keys a derived entry depends on (its projection/external sources)."
       surfaces :cli, :mcp

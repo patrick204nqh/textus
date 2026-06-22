@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Drain < Base
-      extend Textus::Contract::DSL
-
       verb :drain
       summary "Seed materialize + sweep jobs then drain the queue to empty. " \
               "Identical to one Watcher tick. Use when no watcher is running."

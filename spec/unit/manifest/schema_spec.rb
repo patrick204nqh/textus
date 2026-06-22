@@ -257,7 +257,7 @@ RSpec.describe Textus::Manifest::Schema do
   end
 
   it "rejects the retired upkeep rule key with a retention/source hint (ADR 0093)" do
-    expect { Textus::Manifest::Schema::Semantics.check_rules!([{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
+    expect { Textus::Manifest::Schema::Semantics.check_migration!("rules" => [{ "match" => "x.**", "upkeep" => { "on" => "stale", "ttl" => "30m" } }]) }
       .to raise_error(Textus::BadManifest, /`upkeep:` was removed.*retention/m)
   end
 

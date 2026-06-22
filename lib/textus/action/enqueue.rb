@@ -3,8 +3,6 @@
 module Textus
   module Action
     class Enqueue < Base
-      extend Textus::Contract::DSL
-
       verb :enqueue
       summary "Push a registered job type onto the convergence queue, to be run by drain/serve."
       surfaces :cli, :mcp
