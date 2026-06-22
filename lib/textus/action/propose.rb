@@ -29,7 +29,7 @@ module Textus
         Success(container.compositor.write(
                   "#{zone}.#{key}",
                   mentry: mentry,
-                  payload: Textus::Store::Envelope::Writer::Payload.new(
+                  payload: Textus::Value::Payload.new(
                     meta: meta || {},
                     body: body,
                     content: content,

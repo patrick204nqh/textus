@@ -82,27 +82,6 @@ module Textus
         end
       end
 
-      def self.rewrite_name(path, basename) # rubocop:disable Naming/PredicateMethod
-        raw = File.binread(path)
-        parsed = parse(raw, path: path)
-        meta = parsed["_meta"]
-        return false unless meta.is_a?(Hash) && meta["name"].is_a?(String) && meta["name"] != basename
-
-        new_meta = meta.merge("name" => basename)
-        File.binwrite(path, serialize(meta: new_meta, body: "", content: parsed["content"]))
-        true
-      end
-
-      def self.enforce_name_match!(path, meta)
-        return unless meta.is_a?(Hash) && meta["name"]
-
-        ext = extensions.first
-        basename = File.basename(path, ext)
-        return if meta["name"] == basename
-
-        raise BadFrontmatter.new(path, "name '#{meta["name"]}' does not match basename '#{basename}'")
-      end
-
       def self.validate_path_extension(path, nested)
         ext = File.extname(path)
         if nested

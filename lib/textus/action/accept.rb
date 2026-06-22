@@ -23,7 +23,7 @@ module Textus
           container.compositor.write(
             target,
             mentry: mentry,
-            payload: Textus::Store::Envelope::Writer::Payload.new(
+            payload: Textus::Value::Payload.new(
               meta: env.meta["_meta"] || {},
               body: env.body,
               content: nil,

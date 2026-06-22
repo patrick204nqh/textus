@@ -95,7 +95,7 @@ module Textus
         container.compositor.write(
           old_key,
           mentry: old_mentry,
-          payload: Textus::Store::Envelope::Writer::Payload.new(
+          payload: Textus::Value::Payload.new(
             meta: pre_env.meta,
             body: pre_env.body,
             content: pre_env.content,
