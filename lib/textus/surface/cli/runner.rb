@@ -144,10 +144,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Action::VERBS.each_value do |action_class|
-            next unless action_class.respond_to?(:contract?) && action_class.contract?
-
-            spec = action_class.contract
+          Textus::VerbRegistry.registered.each do |spec|
             next unless spec.cli?
             next if hand_authored?(spec.verb)
             next if @installed[spec.verb]

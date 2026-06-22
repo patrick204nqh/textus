@@ -3,12 +3,12 @@ module Textus
     class CLI
       class Verb
         class Get < Runner::Base
-          self.spec = Textus::Action::Get.contract
+          self.spec = Textus::VerbRegistry.for(:get)
           option :as_flag, "--as=ROLE"
 
           def invoke(store)
             key = positional.shift or raise UsageError.new("get requires a key")
-            spec = Textus::Action::Get.contract
+            spec = Textus::VerbRegistry.for(:get)
             result = store.gate.dispatch(spec: spec, inputs: { key: key }, role: resolved_role(store), surface: :cli)
             raise Textus::UnknownKey.new(key, suggestions: store.manifest.resolver.suggestions_for(key)) if result.nil?
 

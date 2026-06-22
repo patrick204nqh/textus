@@ -42,7 +42,8 @@ module Textus
         end
 
         def delete(key)
-          Textus::Action::KeyDelete.call(container: @container, call: @call, key: key)
+          mentry = @container.manifest.resolver.resolve(key).entry
+          @container.compositor.delete(key, mentry: mentry, call: @call)
         end
       end
     end

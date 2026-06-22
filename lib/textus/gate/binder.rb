@@ -1,8 +1,5 @@
 module Textus
   class Gate
-    # Raised when a required arg is absent from the bound input. Surface
-    # adapters translate this to their native error (MCP ToolError, CLI
-    # UsageError); a direct Ruby call lets it surface as-is.
     class MissingArgs < Textus::Error
       attr_reader :spec, :missing
 
@@ -13,9 +10,6 @@ module Textus
       end
     end
 
-    # Validates and resolves a by-name inputs hash against a contract spec.
-    # Returns a flat hash with defaults and session_defaults filled in.
-    # Every caller receives the same shape — no positional/kwarg split.
     module Binder
       module_function
 

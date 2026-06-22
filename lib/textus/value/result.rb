@@ -1,11 +1,5 @@
-# frozen_string_literal: true
-
 module Textus
   module Value
-    # Unwraps Dry::Monads results at the Gate seam.
-    # Every action returns Success(value) or Failure(code:, message:, details:).
-    # This module converts Failure into an ActionError for surfaces (CLI, MCP)
-    # that expect exceptions.
     module Result
       def self.unwrap(result)
         case result

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Textus
   class Store
     class Compositor
@@ -28,6 +26,26 @@ module Textus
 
       def exists?(key)
         Textus::Store::Envelope::Reader.from(container: @container).exists?(key)
+      end
+
+      def manifest
+        @container.manifest
+      end
+
+      def geometry
+        @container.geometry
+      end
+
+      def schemas
+        @container.schemas
+      end
+
+      def audit_log
+        @container.audit_log
+      end
+
+      def file_store
+        @container.file_store
       end
     end
   end

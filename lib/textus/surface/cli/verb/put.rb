@@ -3,7 +3,7 @@ module Textus
     class CLI
       class Verb
         class Put < Runner::Base
-          self.spec = Textus::Action::Put.contract
+          self.spec = Textus::VerbRegistry.for(:put)
           option :as_flag, "--as=ROLE"
           option :use_stdin, "--stdin"
 
@@ -12,7 +12,7 @@ module Textus
             raise UsageError.new("put requires --stdin in v1") unless use_stdin
 
             payload = JSON.parse(@stdin.read)
-            spec = Textus::Action::Put.contract
+            spec = Textus::VerbRegistry.for(:put)
             inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                        content: nil, if_etag: payload["if_etag"] }
             result = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store), surface: :cli)

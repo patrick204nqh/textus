@@ -6,7 +6,7 @@ require "spec_helper"
 # Etag helper itself are the sanctioned homes; the envelope persist pipeline
 # (envelope/io/writer.rb) is adjacent to the port and out of this guard's scope.
 ETAG_SPEC_APP_GLOBS = [
-  File.expand_path("../../../lib/textus/action/**/*.rb", __dir__),
+  File.expand_path("../../../lib/textus/handlers/**/*.rb", __dir__),
 ].freeze
 ETAG_SPEC_DIRECT_CALL = /\bEtag\.for_file\b/
 

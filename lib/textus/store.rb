@@ -4,9 +4,6 @@ module Textus
   class Store
     attr_reader :container
 
-    # Readers are derived from the Container's schema, so the field set lives
-    # in exactly one place (Container). A new capability added there is
-    # automatically exposed on the Store.
     Textus::Store::Container.attribute_names.each do |field|
       define_method(field) { @container.public_send(field) }
     end
@@ -46,8 +43,14 @@ module Textus
       @container = build_container(File.expand_path(root))
     end
 
-    # Build an agent Session oriented at the current cursor/manifest — the
-    # Ruby equivalent of an MCP `initialize`. ADR 0036.
+    def query
+      @read_model ||= ReadModel.new(@container)
+    end
+
+    def command(role:, correlation_id: nil)
+      CommandModel.new(bus: @container.pipeline, role: role, correlation_id: correlation_id)
+    end
+
     def session(role:)
       Textus::Store::Session.new(
         role: role.to_s,
@@ -88,6 +91,7 @@ module Textus
         workflows: Workflow::Loader.load_all(root),
         gate: nil,
         compositor: nil,
+        pipeline: nil,
       )
 
       Container.build_full(infra, coord_seed)

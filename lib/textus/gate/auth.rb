@@ -1,4 +1,4 @@
-# frozen_string_literal: true
+require "set"
 
 module Textus
   class Gate
@@ -40,7 +40,6 @@ module Textus
         )
       end
 
-      # Backward-compatible check for inline action auth (accept, put, etc.).
       def check_action!(action:, actor:, key:, envelope: nil, extra: {})
         evaluate_predicates(
           action: action.to_sym,
@@ -179,11 +178,6 @@ module Textus
         ) }
       end
 
-      # Deletion authority: the lane's write capability OR the author capability.
-      # On raw-kind lanes only the author capability grants deletion (correction
-      # escape hatch); the lane's own verb (ingest) is write-only. On all other
-      # lane kinds the behaviour matches lane_writable_by — the lane's writer
-      # can delete as before.
       def evaluate_lane_deletable_by(ctx)
         is_raw = @manifest.policy.declared_kind(ctx.mentry.lane.to_s) == :raw
         pass = if is_raw

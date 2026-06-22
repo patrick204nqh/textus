@@ -17,6 +17,7 @@ RSpec.describe Textus::Store::Container do
       workflows: Textus::Workflow::Registry.new,
       gate: nil,
       compositor: nil,
+      pipeline: nil,
     )
   end
 

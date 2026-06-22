@@ -6,19 +6,10 @@ module Textus
         @binder_method = binder_method
       end
 
-      def verbs(action_verbs = Textus::Action::VERBS)
-        action_verbs.select do |_verb, klass|
-          klass.respond_to?(:contract?) && klass.contract?
-        end
-      end
-
-      def names(action_verbs = Textus::Action::VERBS)
-        verbs(action_verbs).keys.map(&:to_s)
-      end
-
       def dispatch(verb_name, inputs:, store:, role:, session: nil)
-        klass = Textus::Action::VERBS.fetch(verb_name.to_sym)
-        spec = klass.contract
+        spec = VerbRegistry.for(verb_name.to_sym)
+        raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
+
         bound = Textus::Gate::Binder.public_send(@binder_method, spec, inputs)
         store.gate.dispatch(spec:, inputs: bound, role:, session:, surface: @view_key)
       end
