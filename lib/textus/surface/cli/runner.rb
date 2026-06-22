@@ -101,6 +101,7 @@ module Textus
         def coerce(arg, raw)
           return effective_default(arg) != true if arg.type == :boolean
           return Integer(raw) if arg.type == Integer
+          return JSON.parse(raw) if arg.type == Hash
 
           raw
         end
