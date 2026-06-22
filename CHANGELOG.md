@@ -9,6 +9,12 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.55.1 — 2026-06-22 — CI fix: converge_now purges done jobs
+
+### Fixed
+
+- **publish_tree prune spec** — `converge_now` now purges "done" jobs before reseeding. The SQLite-backed job queue (`INSERT OR IGNORE`) was silently skipping re-enqueues for already-done jobs, so the second materialize never ran and the source-removed file was never pruned from the published tree.
+
 ## 0.55.0 — 2026-06-22 — Architecture Deepening Phase 2
 
 **ADR-0119**: dry-monad actions, container split, geometry authority.
