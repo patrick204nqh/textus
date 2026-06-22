@@ -7,6 +7,11 @@ module Textus
       def wire = wire_name || name
     end
 
+    TYPE_MAP = {
+      String => "string", Integer => "integer", Hash => "object",
+      Array => "array", :boolean => "boolean"
+    }.freeze
+
     VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
@@ -17,14 +22,9 @@ module Textus
       def cli_leaf  = cli_words.last
       def required_args = args.select(&:required)
 
-      TYPE_MAP = {
-        String => "string", Integer => "integer", Hash => "object",
-        Array => "array", :boolean => "boolean"
-      }.freeze
-
       def input_schema
         props = args.to_h do |a|
-          json_type = TYPE_MAP[a.type] || "string"
+          json_type = VerbRegistry::TYPE_MAP[a.type] || "string"
           h = { "type" => json_type }
           h["description"] = a.description if a.description
           [a.wire.to_s, h]
@@ -104,9 +104,9 @@ module Textus
       [ArgSpec[:key, String, true, true, nil,
                "dotted entry key, e.g. 'knowledge.project'; must resolve to a zone the role may write", nil, nil, nil, nil, :__unset],
        ArgSpec[:meta, Hash, false, false, nil,
-               "frontmatter; reads back as `_meta` from `get`. Schema-validated — call `schema KEY` first", :_meta, nil, nil, nil, :__unset],
+               "frontmatter; reads back as `_meta`. Schema-validated — call `schema KEY` first", :_meta, nil, nil, nil, :__unset],
        ArgSpec[:body, String, false, false, nil,
-               "markdown/text payload for markdown-format entries; omit (use `content`) for json/yaml entries", nil, nil, nil, nil, :__unset],
+               "markdown/text payload for md entries; use `content` for json/yaml", nil, nil, nil, nil, :__unset],
        ArgSpec[:content, Hash, false, false, nil,
                "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries", nil, nil, nil, nil, :__unset],
        ArgSpec[:if_etag, String, false, false, nil,
@@ -279,9 +279,10 @@ module Textus
                "dotted key whose effective rules you want", nil, nil, nil, nil, :__unset],
        ArgSpec[:detail, :boolean, false, false, nil,
                "detail: true adds matched blocks + guard predicates", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { cli: lambda { |r, _|
-                     { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s))
-                   }, default: identity }, "rule explain", nil
+      %i[cli mcp], {
+        cli: ->(r, _) { { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) },
+        default: identity,
+      }, "rule explain", nil
     )
 
     # ── rule_list ────────────────────────────────────────

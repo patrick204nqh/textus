@@ -15,13 +15,13 @@ module Textus
         Result.success(result)
       end
 
-      private
-
       LEAN_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY
                     .select { |_, m| m[:in_rule_explain].include?(:lean) }.keys.freeze
       DETAIL_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY
                       .select { |_, m| m[:in_rule_explain].include?(:detail) }.keys.freeze
       EFFECTIVE_FIELDS = DETAIL_FIELDS.select { |f| Textus::Manifest::Schema::FIELD_REGISTRY[f][:policy_class] }.freeze
+
+      private
 
       def effective(key)
         set = @manifest.rules.for(key)

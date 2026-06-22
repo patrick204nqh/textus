@@ -1,5 +1,6 @@
 module Textus
   module Value
+    # rubocop:disable Lint/ConstantDefinitionInBlock
     Result = Data.define(:ok, :value, :error) do
       def self.success(value) = new(ok: true, value: value, error: nil)
 
@@ -26,5 +27,6 @@ module Textus
         end
       end
     end
+    # rubocop:enable Lint/ConstantDefinitionInBlock
   end
 end

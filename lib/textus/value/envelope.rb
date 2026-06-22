@@ -20,9 +20,7 @@ module Textus
       attribute :content,    Types::Any.optional
       attribute :freshness,  Types::Any.optional
 
-      # rubocop:disable Metrics/ParameterLists
       def self.build(key:, mentry:, path:, meta:, body:, etag:, content: nil, freshness: nil)
-        # rubocop:enable Metrics/ParameterLists
         new(
           protocol: Textus::PROTOCOL,
           key: key,

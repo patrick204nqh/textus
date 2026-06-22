@@ -26,9 +26,10 @@ module Textus
 
         pre_env = @container.pipeline.read(command.old_key)
         unless pre_env.uid
-          @container.pipeline.write(command.old_key, mentry: old_res.entry,
-                                                     payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content),
-                                                     call: call)
+          @container.pipeline.write(
+            command.old_key, mentry: old_res.entry, call: call,
+                             payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content)
+          )
         end
 
         if command.dry_run
@@ -58,7 +59,7 @@ module Textus
       def validate_zone(old_mentry, new_mentry)
         if old_mentry.lane != new_mentry.lane
           return Result.failure(:usage_error,
-                                "mv: cross-zone move refused (#{old_mentry.lane} -> #{new_mentry.lane}). Use put+delete for cross-zone moves.")
+                                "mv: cross-zone refused (#{old_mentry.lane} -> #{new_mentry.lane}). Use put+delete.")
         end
         if old_mentry.format != new_mentry.format
           return Result.failure(:usage_error,

@@ -16,9 +16,10 @@ module Textus
         case action
         when "put"
           mentry = @container.manifest.resolver.resolve(target).entry
-          @container.pipeline.write(target, mentry: mentry,
-                                            payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil),
-                                            call: call)
+          @container.pipeline.write(
+            target, mentry: mentry, call: call,
+                    payload: Textus::Value::Payload.new(meta: env.meta["_meta"] || {}, body: env.body, content: nil)
+          )
         when "delete"
           @container.pipeline.delete(target, call: call)
         else

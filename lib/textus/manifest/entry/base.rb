@@ -4,7 +4,7 @@ module Textus
       class Base < Entry
         attr_reader :raw, :key, :path, :lane, :schema, :owner, :format, :publish_targets
 
-        # rubocop:disable Metrics/ParameterLists, Lint/MissingSuper
+        # rubocop:disable Lint/MissingSuper
         def initialize(raw:, key:, path:, lane:, schema:, owner:, format:, publish_targets: [])
           @raw = raw
           @key = key
@@ -15,7 +15,7 @@ module Textus
           @format = format
           @publish_targets = Array(publish_targets)
         end
-        # rubocop:enable Metrics/ParameterLists, Lint/MissingSuper
+        # rubocop:enable Lint/MissingSuper
 
         def lane_writers(policy)
           verb = policy.verb_for_lane(@lane)
