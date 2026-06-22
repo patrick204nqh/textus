@@ -140,8 +140,8 @@ module Textus
             { match: block.match }.merge(detail_fields.to_h { |f| [f, !block.public_send(f).nil?] })
           end,
           effective: effective_fields.to_h { |f| [f, effective_value(f, winners.public_send(f))] },
-          guards: Textus::Gate::Auth::FLOOR.keys.to_h do |action|
-            floor = Textus::Gate::Auth::FLOOR.fetch(action, [])
+          guards: Textus::Bus::Predicates::FLOOR.keys.to_h do |action|
+            floor = Textus::Bus::Predicates::FLOOR.fetch(action, [])
             rule = Array(manifest.rules.for(key).guard&.dig(action.to_s))
             [action, { floor: floor, rule: rule }]
           end,

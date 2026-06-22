@@ -50,7 +50,7 @@ module Textus
         module_function
 
         def dispatch(verb_instance, store, spec)
-          inputs = Textus::Gate::Binder.inputs_from_ordered(
+          inputs = Textus::Bus::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
           )
           inputs = inputs.merge(Surface::CLI::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
@@ -58,9 +58,9 @@ module Textus
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
 
-          result = store.gate.dispatch(spec:, inputs:, role:, surface: :cli)
+          result = store.dispatch(spec:, inputs:, role:, surface: :cli)
           verb_instance.emit(result)
-        rescue Textus::Gate::MissingArgs => e
+        rescue Textus::Bus::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
 

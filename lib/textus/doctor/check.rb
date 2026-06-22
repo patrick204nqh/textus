@@ -31,15 +31,13 @@ module Textus
 
       # Dispatch a verb through the Bus pipeline.
       def dispatch(verb, *args, **kwargs)
-        contract_class = Textus::Gate::VERB_TO_CONTRACT[verb]
+        contract_class = Textus::Bus::VERB_TO_CONTRACT[verb]
         members = contract_class.members
         command_kwargs = members.each_with_index.map { |m, i| [m, args[i] || kwargs[m]] }.to_h
         command = contract_class.new(**command_kwargs)
         call = Textus::Value::Call.build(role: @role)
         result = @container.pipeline.dispatch(command, call: call)
-        raise Textus::ActionError.new(:error, "dispatch failed") unless result.respond_to?(:success?) && result.success?
-
-        result.value
+        Textus::Bus.unwrap(result)
       end
     end
   end

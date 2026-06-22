@@ -10,8 +10,8 @@ module Textus
         spec = VerbRegistry.for(verb_name.to_sym)
         raise Textus::UsageError.new("unknown verb: #{verb_name}") unless spec
 
-        bound = Textus::Gate::Binder.public_send(@binder_method, spec, inputs)
-        store.gate.dispatch(spec:, inputs: bound, role:, session:, surface: @view_key)
+        bound = Textus::Bus::Binder.public_send(@binder_method, spec, inputs)
+        store.dispatch(spec:, inputs: bound, role:, session:, surface: @view_key)
       end
     end
   end

@@ -1,5 +1,5 @@
 module Textus
-  class Gate
+  module Bus
     class MissingArgs < Textus::Error
       attr_reader :spec, :missing
 

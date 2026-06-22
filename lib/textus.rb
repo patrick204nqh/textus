@@ -1,5 +1,4 @@
 require "zeitwerk"
-require "dry-monads"
 require_relative "textus/version"
 require_relative "textus/errors"
 require_relative "textus/surface/mcp"
@@ -36,7 +35,7 @@ Textus::VerbRegistry.registered.each do |spec|
     positional_names = Textus::VerbRegistry.positional_for(verb)
     inputs = positional_names.zip(args).to_h.compact.merge(kwargs)
     role_value = spec.args.any? { |a| a.name == :role } ? (inputs[:role] || @role) : @role
-    @container.gate.dispatch(spec: spec, inputs: inputs, role: role_value, correlation_id: @correlation_id)
+    Textus::Bus.dispatch(container: @container, spec: spec, inputs: inputs, role: role_value, correlation_id: @correlation_id)
   end
 end
 

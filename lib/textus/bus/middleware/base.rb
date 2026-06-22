@@ -17,7 +17,7 @@ module Textus
           end
         end
 
-        def call(command, call, next_handler)
+        def call(container:, command:, call:, next_handler:)
           raise NotImplementedError
         end
       end

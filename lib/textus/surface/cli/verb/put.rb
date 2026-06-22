@@ -15,7 +15,7 @@ module Textus
             spec = Textus::VerbRegistry.for(:put)
             inputs = { key: key, meta: payload["_meta"] || {}, body: payload["body"] || "",
                        content: nil, if_etag: payload["if_etag"] }
-            result = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store), surface: :cli)
+            result = store.dispatch(spec: spec, inputs: inputs, role: resolved_role(store), surface: :cli)
             emit(result)
           end
         end

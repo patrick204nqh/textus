@@ -15,7 +15,6 @@ RSpec.describe Textus::Store::Container do
     Textus::Store::Container::Coordination.new(
       manifest: manifest,
       workflows: Textus::Workflow::Registry.new,
-      gate: nil,
       compositor: nil,
       pipeline: nil,
     )
@@ -44,7 +43,6 @@ RSpec.describe Textus::Store::Container do
   it "defaults optional attributes to nil" do
     Dir.mktmpdir do |tmp|
       container = build_container(File.join(tmp, ".textus"))
-      expect(container.gate).to be_nil
       expect(container.compositor).to be_nil
     end
   end
@@ -66,7 +64,7 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "holds is_a? Gate after construction" do
+  it "dispatches through Bus" do
     Dir.mktmpdir do |tmp|
       dir = File.join(tmp, ".textus")
       Textus::Surface::CLI.run(
@@ -74,9 +72,9 @@ RSpec.describe Textus::Store::Container do
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(dir)
-      gate = store.gate
-      expect(gate).to be_a(Textus::Gate)
-      expect(gate.instance_variable_get(:@container)).to be_a(Textus::Store::Container)
+      spec = Textus::VerbRegistry.for(:list)
+      result = store.dispatch(spec:, inputs: { prefix: nil }, role: "admin")
+      expect(result).to be_an(Array)
     end
   end
 end

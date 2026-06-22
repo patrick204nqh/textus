@@ -9,7 +9,7 @@ module Textus
           def call(store)
             spec = Textus::VerbRegistry.for(:doctor)
             inputs = { checks: checks&.split(",")&.map(&:strip) }
-            res = store.gate.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
+            res = store.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end

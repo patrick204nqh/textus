@@ -4,8 +4,8 @@ module Textus
       class Binder < Base
         middleware_name :binder
 
-        def call(command, call, next_handler)
-          next_handler.call(command)
+        def call(container:, command:, call:, next_handler:)
+          next_handler.call(command, call)
         end
       end
     end

@@ -60,8 +60,8 @@ module Textus
       )
     end
 
-    def gate
-      @container.gate
+    def dispatch(spec:, inputs:, role:, correlation_id: nil, session: nil, surface: nil)
+      Bus.dispatch(container: @container, spec:, inputs:, role:, correlation_id:, session:, surface:)
     end
 
     def as(role, dry_run: false, correlation_id: nil)
@@ -89,7 +89,6 @@ module Textus
       coord_seed = Container::Coordination.new(
         manifest:,
         workflows: Workflow::Loader.load_all(root),
-        gate: nil,
         compositor: nil,
         pipeline: nil,
       )

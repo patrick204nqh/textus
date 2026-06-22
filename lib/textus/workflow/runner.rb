@@ -58,7 +58,13 @@ module Textus
 
       def built_in_publish(key, data, ctx)
         normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
-        Gate::Auth.new(@container).check_action!(action: :converge, actor: @call.role, key: key)
+        guard_map = @container.manifest.rules.for(key).guard
+        rule_preds = guard_map ? Array(guard_map["converge"]) : []
+        Textus::Bus::Predicates.evaluate(
+          manifest: @container.manifest, schemas: @container.schemas,
+          action: :converge, actor: @call.role, key: key,
+          rule_predicates: rule_preds,
+        )
         @container.compositor.write(
           key,
           mentry: ctx.entry,

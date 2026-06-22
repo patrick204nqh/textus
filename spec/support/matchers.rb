@@ -61,15 +61,15 @@ RSpec::Matchers.define :have_audit_verb do |verb|
   end
 end
 
-# Monadic result matchers for Dry::Monads Success/Failure.
-#   expect(action.call(...)).to be_success
-#   expect(action.call(...)).to be_failure
+# Result matchers for Textus::Result (was Dry::Monads, replaced by ADR 0119 migration).
+#   expect(handler.call(...)).to be_success
+#   expect(handler.call(...)).to be_failure
 RSpec::Matchers.define :be_success do
-  match { |actual| actual.is_a?(Dry::Monads::Result::Success) }
+  match { |actual| actual.is_a?(Textus::Result) && actual.success? }
 
   failure_message do |actual|
-    if actual.is_a?(Dry::Monads::Result::Failure)
-      "expected Success, got Failure(#{actual.failure.inspect})"
+    if actual.is_a?(Textus::Result)
+      "expected Success, got Failure(#{actual.error.inspect})"
     else
       "expected Success, got #{actual.class}"
     end
@@ -77,11 +77,11 @@ RSpec::Matchers.define :be_success do
 end
 
 RSpec::Matchers.define :be_failure do
-  match { |actual| actual.is_a?(Dry::Monads::Result::Failure) }
+  match { |actual| actual.is_a?(Textus::Result) && actual.failure? }
 
   failure_message do |actual|
-    if actual.is_a?(Dry::Monads::Result::Success)
-      "expected Failure, got Success(#{actual.value!.inspect})"
+    if actual.is_a?(Textus::Result)
+      "expected Failure, got Success(#{actual.value.inspect})"
     else
       "expected Failure, got #{actual.class}"
     end

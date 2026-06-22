@@ -2,27 +2,15 @@ module Textus
   module Bus
     module Predicates
       class TargetIsCanon
-        def initialize(manifest)
-          @manifest = manifest
-        end
+        def self.call(manifest:, schemas: nil, actor:, action:, key:, envelope: nil, extra: {})
+          return { pass: true } if key.nil?
 
-        def call(command, call)
-          key = command.respond_to?(:target_key) ? command.target_key : command.respond_to?(:key) ? command.key : nil
-          return unless key
-
-          mentry = resolve_entry(key)
-          kind = @manifest.policy.declared_kind(mentry.lane.to_s)
-          return if kind == :canon
-
-          raise Textus::ProposalError.new("target lane '#{mentry.lane}' is not canon (kind: #{kind})")
-        end
-
-        private
-
-        def resolve_entry(key)
-          @manifest.resolver.resolve(key).entry
+          mentry = manifest.resolver.resolve(key).entry
+          kind = manifest.policy.declared_kind(mentry.lane.to_s)
+          pass = kind == :canon
+          { pass:, reason: pass ? nil : "target lane '#{mentry.lane}' is not canon (kind: #{kind})" }
         rescue Textus::UnknownKey
-          nil
+          { pass: true }
         end
       end
     end

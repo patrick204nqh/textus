@@ -1,16 +1,17 @@
 module Textus
   module Bus
     class Pipeline
-      def initialize(registry:, middleware: [])
+      def initialize(registry:, container:, middleware: [])
         @registry = registry
         @middleware = middleware
+        @container = container
       end
 
       def dispatch(command, call:)
-        stack = @middleware.reverse.reduce(->(cmd) { execute(cmd, call) }) do |next_mw, mw|
-          ->(cmd) { mw.call(cmd, call, next_mw) }
+        stack = @middleware.reverse.reduce(->(cmd, c) { execute(cmd, c) }) do |next_mw, mw|
+          ->(cmd, c) { mw.call(container: @container, command: cmd, call: c, next_handler: next_mw) }
         end
-        stack.call(command)
+        stack.call(command, call)
       end
 
       private

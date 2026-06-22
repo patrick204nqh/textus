@@ -1,25 +1,20 @@
+require "set"
+
 module Textus
   module Bus
     module Predicates
       class AuthorHeld
-        def initialize(manifest)
-          @manifest = manifest
-        end
-
-        def call(command, call)
-          holders = @manifest.policy.roles_with_capability("author")
-          return if holders.include?(call.role.to_s)
-
-          if holders.empty?
-            raise Textus::GuardFailed.new([["author_held", "no role holds the 'author' capability"]])
-          end
-
-          raise Textus::WriteForbidden.new(
-            command.respond_to?(:key) ? command.key : "?",
-            "?",
-            verb: "author",
-            holders: holders,
-          )
+        def self.call(manifest:, schemas: nil, actor:, action:, key:, envelope: nil, extra: {})
+          holders = manifest.policy.roles_with_capability("author")
+          pass = holders.include?(actor.to_s)
+          reason = if pass
+                     nil
+                   elsif holders.empty?
+                     "no role holds the 'author' capability; #{action} is disabled"
+                   else
+                     "role '#{actor}' lacks the 'author' capability (held by: #{holders.join(", ")})"
+                   end
+          { pass:, reason: }
         end
       end
     end
