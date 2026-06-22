@@ -19,12 +19,12 @@ module Textus
         )
         queue.reclaim(now: Textus::Port::Clock.new.now)
         summary = Textus::Store::Jobs::Worker.for(container:, queue:).drain
-        {
-          "protocol" => Textus::PROTOCOL,
-          "ok" => summary.failed.zero?,
-          "completed" => summary.completed,
-          "failed" => summary.failed,
-        }
+        Success({
+                  "protocol" => Textus::PROTOCOL,
+                  "ok" => summary.failed.zero?,
+                  "completed" => summary.completed,
+                  "failed" => summary.failed,
+                })
       end
     end
   end

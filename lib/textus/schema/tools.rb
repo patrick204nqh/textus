@@ -14,8 +14,9 @@ module Textus
           "optional" => [],
           "fields" => meta.each_with_object({}) { |(k, v), h| h[k] = { "type" => infer_type(v) } },
         }
-        FileUtils.mkdir_p(File.join(store.root, "schemas"))
-        target = File.join(store.root, "schemas", "#{name}.yaml")
+        geom = Textus::Store::Geometry.new(store.root)
+        FileUtils.mkdir_p(geom.schemas_dir)
+        target = geom.schema_path(name)
         File.write(target, YAML.dump(schema))
         { "protocol" => PROTOCOL, "schema_name" => name, "path" => target }
       end
@@ -85,10 +86,12 @@ module Textus
       # while inspecting/migrating entries (ADR 0062).
       def self.pure_get(store, role, key)
         scope = store.as(role)
-        Textus::Action::Get.call(
-          container: scope.container,
-          call: Textus::Value::Call.build(role: role),
-          key: key,
+        Value::Result.unwrap(
+          Textus::Action::Get.call(
+            container: scope.container,
+            call: Textus::Value::Call.build(role: role),
+            key: key,
+          ),
         )
       end
 

@@ -42,7 +42,7 @@ module Textus
         end
 
         def find_asset_path(asset_rel)
-          File.join(root, "assets", asset_rel)
+          File.join(geometry.root, "assets", asset_rel)
         end
       end
     end

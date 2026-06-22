@@ -18,6 +18,7 @@ curated, annotated reading guide see
 
 | # | Title | Date | Status |
 |---|---|---|---|
+| [0119](../architecture/decisions/0119-architecture-deepening-phase-2.md) | architecture deepening phase 2 |  |  |
 | [0118](../architecture/decisions/0118-sources-first-class-envelope-field.md) | sources first class envelope field |  |  |
 | [0117](../architecture/decisions/0117-textus-4-protocol-version-bump.md) | textus 4 protocol version bump | 2026-06-17 | Accepted |
 | [0116](../architecture/decisions/0116-raw-lane-and-ingest-verb.md) | raw lane and ingest verb | 2026-06-16 | Accepted |

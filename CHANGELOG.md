@@ -9,6 +9,37 @@ The **gem version** (`0.x.y`) is distinct from the **protocol version**
 bump is a breaking change that requires a store migration; the gem version
 tracks both additive improvements and breaking protocol bumps independently.
 
+## 0.55.0 — 2026-06-22 — Architecture Deepening Phase 2
+
+**ADR-0119**: dry-monad actions, container split, geometry authority.
+
+### Added
+
+- **dry-monad Success/Failure actions** (PR #234): all 30 actions now return `Success(result)` or `Failure(code:, message:)` via `Dry::Monads`. `Value::Result.unwrap` converts Failure → `ActionError`. `be_success`/`be_failure` RSpec matchers replace `spec/unit/` tests.
+- **`Container::Infrastructure` / `Container::Coordination`** (PR #234): single `LazyContainer` replaced by two `Data.define` records — Infrastructure owns manifest, file_store, geometry; Coordination owns gate, compositor, workflows, audit_log. Wired at boot via `wire_gate!`.
+- **`Geometry` as sole path authority** (PR #234): `root`, `schemas_dir`, `hooks_dir`, `store_db_path` delegated to `Geometry`. Removed `root` from Infrastructure. High-value `File.join` callers converted (data_mv, ingest, base, loader, etag, schema/tools, 6 doctor checks).
+- **`bin/db` helper**: sqlite3 wrapper for `.textus/.state/store.db` — `bin/db "SELECT * FROM jobs"` or just `bin/db` for interactive shell.
+- **Centralized SQLite index** (PR #228, #233): `Store::Index::Builder` manages entries FTS index in `store.db`.
+
+### Changed
+
+- **Gate reads `Action::VERBS` directly** (PR #234): `Gate::VERB_ACTIONS` deleted. Gate dispatches via `Action::VERBS[cmd.verb]`.
+- **Composite actions** (PR #232): `Accept`, `Propose`, `Reject` separated as composite verbs with declarative `chain` steps, never instantiating sibling action classes directly.
+- **`knowledge.decisions` → keyless nested mode**: decision files no longer enumerate in `list`; accessible via `get` with full key.
+
+### Fixed
+
+- **CLI `--args` JSON parsing** (PR #233): `Runner.coerce` now `JSON.parse(raw)` for `Hash`-typed args — fixes `textus enqueue --args='{"key":"..."}'` which previously passed the raw JSON string to `Queue::Job`.
+- **adr-log workflow convention drift** (PR #233): `Get.new(key:).call(...)` → `Get.call(key: k, ...)` — the old pattern raised silently since actions became class-method-only.
+- **RuboCop `Lint/NoReturnInBeginEndBlocks`**: enqueue action restructured with method-level `rescue`.
+
+### Removed
+
+- `Gate::VERB_ACTIONS` constant (replaced by `Action::VERBS`)
+- `LazyContainer` (replaced by `Container::Infrastructure`/`Coordination`)
+- `spec/unit/` directory + `spec/support/spec_layout.rb` (378 examples removed)
+- Orphaned `.textus/.state/jobs.sqlite3` database file
+
 ## 0.54.2 — 2026-06-18 — ingest dedup, .run → .state rename
 
 ### Added

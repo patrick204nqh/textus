@@ -7,7 +7,7 @@ module Textus
           manifest.data.entries.each do |entry|
             next if entry.schema.nil?
 
-            sp = File.join(root, "schemas", "#{entry.schema}.yaml")
+            sp = geometry.schema_path(entry.schema)
             next if File.exist?(sp)
 
             out << {

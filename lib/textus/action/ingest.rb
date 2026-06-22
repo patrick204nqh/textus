@@ -25,7 +25,8 @@ module Textus
       TOMBSTONE_RETAIN = %w[ingested_at].freeze
 
       def self.call(container:, call:, kind:, slug:, url: nil, path: nil, zone: nil, label: nil, **) # rubocop:disable Metrics/ParameterLists
-        validate_inputs!(kind:, url:, path:, zone:)
+        validation = validate_inputs(kind:, url:, path:, zone:)
+        return validation if validation.is_a?(Dry::Monads::Result::Failure)
 
         now = Time.now.utc
         key = derive_key(now, kind:, slug:)
@@ -40,30 +41,31 @@ module Textus
         index = Textus::Store::Index::Lookup.new(store: store)
         duplicate_key = find_duplicate(index, content_hash, kind:, url:)
 
-        if duplicate_key && duplicate_key != key
-          supersede_entry(duplicate_key, key, structured, container, call, store: store, kind:, zone:)
-        else
-          env = write_raw_entry(key, structured, mentry, writer)
-          rebuild_index(container, store)
-          env
-        end
+        result = if duplicate_key && duplicate_key != key
+                   supersede_entry(duplicate_key, key, structured, container, call, store: store, kind:, zone:)
+                 else
+                   env = write_raw_entry(key, structured, mentry, writer)
+                   rebuild_index(container, store)
+                   env
+                 end
+        Success(result)
       end
 
-      def self.validate_inputs!(kind:, url:, path:, zone:)
+      def self.validate_inputs(kind:, url:, path:, zone:)
         unless SOURCE_KINDS.include?(kind)
-          raise Textus::UsageError.new(
-            "ingest kind must be one of #{SOURCE_KINDS.join("|")}, got #{kind.inspect}",
-          )
+          return Failure(code: :usage_error,
+                         message: "ingest kind must be one of #{SOURCE_KINDS.join("|")}, got #{kind.inspect}")
         end
         case kind
         when "url"
-          raise Textus::UsageError.new("ingest url requires --url") unless url
+          return Failure(code: :usage_error, message: "ingest url requires --url") unless url
         when "file"
-          raise Textus::UsageError.new("ingest file requires --path") unless path
+          return Failure(code: :usage_error, message: "ingest file requires --path") unless path
         when "asset"
-          raise Textus::UsageError.new("ingest asset requires --path") unless path
-          raise Textus::UsageError.new("ingest asset requires --zone") unless zone
+          return Failure(code: :usage_error, message: "ingest asset requires --path") unless path
+          return Failure(code: :usage_error, message: "ingest asset requires --zone") unless zone
         end
+        nil
       end
 
       # Key derivation for Gate pre-dispatch auth. Must match the runtime

@@ -17,9 +17,11 @@ module Textus
         root = container.root
         since ||= Textus::Store::Cursor.new(root: root, role: call.role).read
 
+        changed = Value::Result.unwrap(Textus::Action::Audit.call(container: container, seq_since: since))
+
         result = {
           "cursor" => audit_log.latest_seq,
-          "changed" => Textus::Action::Audit.call(container: container, seq_since: since),
+          "changed" => changed,
           "pending_review" => review_keys(manifest, container),
           "contract_etag" => Textus::Value::Etag.for_contract(root),
           "index_etag" => index_etag(container),

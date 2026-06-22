@@ -142,3 +142,13 @@ error: audit cursor expired: requested seq=1842 but oldest available is 5000;
 Handle by calling `boot` again and resuming from the new `latest_seq`. Skip the gap intentionally — those events are gone from local audit storage.
 
 For the 5-minute Claude Code setup and the operational agent loop, see [`../how-to/agents-mcp.md`](../how-to/agents-mcp.md). For the MCP tool catalog, error codes, transports, and retention facts, see [`../reference/mcp.md`](../reference/mcp.md). For the wire protocol, see [`../../SPEC.md`](../../SPEC.md).
+
+## Action architecture
+
+Internal architecture separating verb types:
+
+- **Compositor** — object on `Container` providing write/read/delete/move primitives. Owns serialize, audit, etag checks. Below the auth layer.
+- **Unit verb** — thin action class (`Put`, `Get`, `KeyDelete`, `KeyMv`) that delegates directly to the Compositor. Carries the contract DSL for surface projection.
+- **Composite verb** — action class (`Accept`, `Propose`, `Reject`) that orchestrates multiple Compositor calls. Declares a `chain` of steps for simple sequences; overrides `#call` for conditionals (e.g. Accept's put vs delete switch). Never instantiates sibling action classes.
+- **Chain** — declarative sequence of private methods on a Composite verb, run in order by `Composite#call`. Steps receive `(container:, call:)`.
+- **Primitives** — `compositor.write`, `compositor.read`, `compositor.delete`, `compositor.move`. The total interface of the Compositor.

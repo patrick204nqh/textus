@@ -71,30 +71,29 @@ module Textus
       manifest = Manifest.load(root)
       job_store = Port::Store.new(root: root).setup!
       geometry = Store::Geometry.new(root)
-      base = Container.new(
-        root: root,
-        manifest: manifest,
-        schemas: Schemas.new(File.join(root, "schemas")),
+      infra = Container::Infrastructure.new(
         file_store: Port::Storage::FileStore.new,
+        schemas: Schemas.new(geometry.schemas_dir),
         audit_log: Port::AuditLog.new(
           root,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         ),
-        workflows: Workflow::Loader.load_all(root),
-        gate: nil,
-        job_store: job_store,
-        compositor: nil,
-        geometry: geometry,
+        job_store:,
+        geometry:,
       )
 
-      gate = nil
-      lazy = LazyContainer.new do
-        compositor = Store::Compositor.new(base)
-        base.with(gate: gate, compositor: compositor)
-      end
-      gate = Textus::Gate.new(lazy)
-      lazy
+      coord = Container::Coordination.new(
+        manifest:,
+        workflows: Workflow::Loader.load_all(root),
+        gate: nil,
+        compositor: nil,
+      )
+
+      container = Container.new(infra, coord)
+      compositor = Store::Compositor.new(container)
+      gate = Textus::Gate.new(container)
+      container.wire_gate!(gate, compositor)
     end
   end
 end

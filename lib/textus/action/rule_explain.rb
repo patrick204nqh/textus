@@ -15,7 +15,7 @@ module Textus
 
       def self.call(container:, call:, key:, detail: nil) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
-        detail ? explain(manifest, key) : effective(manifest, key)
+        Success(detail ? explain(manifest, key) : effective(manifest, key))
       end
 
       REGISTRY = Textus::Manifest::Schema::FIELD_REGISTRY

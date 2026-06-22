@@ -12,7 +12,7 @@ module Textus
       def self.call(container:, key:, **)
         entry = container.manifest.data.entries.find { |e| e.key == key }
         deps = entry&.external? ? Array(entry.source&.sources).compact : []
-        { "key" => key, "deps" => deps.uniq }
+        Success({ "key" => key, "deps" => deps.uniq })
       end
     end
   end

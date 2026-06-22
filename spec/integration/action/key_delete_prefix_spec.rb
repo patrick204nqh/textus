@@ -32,9 +32,9 @@ RSpec.describe Textus::Action::KeyDeletePrefix do
   end
 
   it "previews keys to delete without touching files" do
-    plan = build_key_delete_prefix.call(
-      "working.notes", dry_run: true
-    )
+    plan = Textus::Value::Result.unwrap(build_key_delete_prefix.call(
+                                          "working.notes", dry_run: true
+                                        ))
     expect(plan.steps.map { |s| s["key"] }).to contain_exactly("working.notes.a", "working.notes.b")
     expect(File.exist?(File.join(root, "data/working/notes/a.md"))).to be(true)
   end

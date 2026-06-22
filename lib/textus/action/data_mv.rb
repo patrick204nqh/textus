@@ -19,13 +19,13 @@ module Textus
 
       def self.call(container:, call:, from:, to:, dry_run: false, **) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
-        root = container.root
+        geom = container.geometry
 
-        raise UsageError.new("from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
-        raise UsageError.new("data lane '#{from}' not declared") unless manifest.data.declared_lane_kinds.key?(from)
+        return Failure(code: :usage_error, message: "from and to required") if from.nil? || to.nil? || from.empty? || to.empty?
+        return Failure(code: :usage_error, message: "data lane '#{from}' not declared") unless manifest.data.declared_lane_kinds.key?(from)
 
-        dest_dir = File.join(root, "data", to)
-        raise UsageError.new("destination 'data/#{to}' already exists") if File.exist?(dest_dir)
+        dest_dir = geom.lane_path(to)
+        return Failure(code: :usage_error, message: "destination 'data/#{to}' already exists") if File.exist?(dest_dir)
 
         affected_keys = manifest.data.entries.select { |entry| entry.lane == from }.map(&:key)
 
@@ -35,15 +35,15 @@ module Textus
         end
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
-        return plan if dry_run
+        return Success(plan) if dry_run
 
-        rewrite_manifest!(root, from:, to:)
-        FileUtils.mv(File.join(root, "data", from), dest_dir)
-        plan
+        rewrite_manifest!(geom, from:, to:)
+        FileUtils.mv(geom.lane_path(from), dest_dir)
+        Success(plan)
       end
 
-      def self.rewrite_manifest!(root, from:, to:)
-        path = File.join(root, "manifest.yaml")
+      def self.rewrite_manifest!(geom, from:, to:)
+        path = geom.manifest_path
         raw = YAML.safe_load_file(path, permitted_classes: [Symbol], aliases: false)
         raw["lanes"].each { |lane| lane["name"] = to if lane["name"] == from }
         raw["entries"].each do |entry|

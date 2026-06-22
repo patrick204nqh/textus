@@ -32,9 +32,9 @@ RSpec.describe Textus::Action::RuleLint do
   end
 
   it "returns ok: true and zero diff lines when candidate is identical" do
-    result = build_rule_lint.call(
-      candidate_yaml: File.read(File.join(root, "manifest.yaml")),
-    )
+    result = Textus::Value::Result.unwrap(build_rule_lint.call(
+                                            candidate_yaml: File.read(File.join(root, "manifest.yaml")),
+                                          ))
     expect(result.steps).to eq([])
     expect(result.warnings).to eq([])
   end
@@ -42,14 +42,13 @@ RSpec.describe Textus::Action::RuleLint do
   it "reports an added rule" do
     candidate = File.read(File.join(root, "manifest.yaml")) +
                 %(  - { match: "intake.other", retention: { ttl: 60, action: drop } }\n)
-    result = build_rule_lint.call(candidate_yaml: candidate)
+    result = Textus::Value::Result.unwrap(build_rule_lint.call(candidate_yaml: candidate))
     adds = result.steps.select { |s| s["op"] == "add_rule" }
     expect(adds.size).to eq(1)
   end
 
   it "errors on an invalid candidate" do
-    expect do
-      build_rule_lint.call(candidate_yaml: "this is not yaml: : :")
-    end.to raise_error(Textus::Error)
+    result = build_rule_lint.call(candidate_yaml: "this is not yaml: : :")
+    expect(result).to be_a(Dry::Monads::Result::Failure)
   end
 end

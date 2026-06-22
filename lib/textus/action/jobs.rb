@@ -20,7 +20,7 @@ module Textus
           queue.purge(state)
         end
 
-        { "protocol" => Textus::PROTOCOL, "ok" => true, "state" => state, "jobs" => queue.list(state) }
+        Success({ "protocol" => Textus::PROTOCOL, "ok" => true, "state" => state, "jobs" => queue.list(state) })
       end
     end
   end

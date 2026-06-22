@@ -19,7 +19,7 @@ module Textus
 
         container.compositor.delete(key, mentry: mentry, if_etag: if_etag, call: call)
 
-        { "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true }
+        Success({ "protocol" => Textus::PROTOCOL, "ok" => true, "key" => key, "deleted" => true })
       end
     end
   end

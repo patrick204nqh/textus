@@ -15,11 +15,11 @@ module Textus
 
       def self.call(container:, call:, key:)
         envelope = container.compositor.read(key)
-        return nil unless envelope
+        return Failure(code: :not_found, message: "no entry at #{key}") unless envelope
 
         entry = container.manifest.resolver.resolve(key).entry
         file_stat = Textus::Port::Storage::FileStat.new
-        envelope.with(freshness: freshness_evaluator(container, call, file_stat).verdict(entry))
+        Success(envelope.with(freshness: freshness_evaluator(container, call, file_stat).verdict(entry)))
       end
 
       def self.freshness_evaluator(container, call, file_stat)

@@ -60,3 +60,30 @@ RSpec::Matchers.define :have_audit_verb do |verb|
     "expected last audit row to be #{target}, got #{@row.inspect}"
   end
 end
+
+# Monadic result matchers for Dry::Monads Success/Failure.
+#   expect(action.call(...)).to be_success
+#   expect(action.call(...)).to be_failure
+RSpec::Matchers.define :be_success do
+  match { |actual| actual.is_a?(Dry::Monads::Result::Success) }
+
+  failure_message do |actual|
+    if actual.is_a?(Dry::Monads::Result::Failure)
+      "expected Success, got Failure(#{actual.failure.inspect})"
+    else
+      "expected Success, got #{actual.class}"
+    end
+  end
+end
+
+RSpec::Matchers.define :be_failure do
+  match { |actual| actual.is_a?(Dry::Monads::Result::Failure) }
+
+  failure_message do |actual|
+    if actual.is_a?(Dry::Monads::Result::Success)
+      "expected Failure, got Success(#{actual.value!.inspect})"
+    else
+      "expected Failure, got #{actual.class}"
+    end
+  end
+end

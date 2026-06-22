@@ -101,6 +101,7 @@ module Textus
         def coerce(arg, raw)
           return effective_default(arg) != true if arg.type == :boolean
           return Integer(raw) if arg.type == Integer
+          return JSON.parse(raw) if arg.type == Hash
 
           raw
         end
@@ -143,8 +144,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Gate::VERB_ACTIONS.each_value do |action_classes|
-            action_class = action_classes.first
+          Textus::Action::VERBS.each_value do |action_class|
             next unless action_class.respond_to?(:contract?) && action_class.contract?
 
             spec = action_class.contract

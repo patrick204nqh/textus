@@ -2,38 +2,6 @@
 
 module Textus
   class Gate
-    VERB_ACTIONS = {
-      get: [Textus::Action::Get],
-      put: [Textus::Action::Put],
-      propose: [Textus::Action::Propose],
-      key_delete: [Textus::Action::KeyDelete],
-      key_mv: [Textus::Action::KeyMv],
-      accept: [Textus::Action::Accept],
-      reject: [Textus::Action::Reject],
-      enqueue: [Textus::Action::Enqueue],
-      list: [Textus::Action::List],
-      where: [Textus::Action::Where],
-      uid: [Textus::Action::Uid],
-      blame: [Textus::Action::Blame],
-      audit: [Textus::Action::Audit],
-      deps: [Textus::Action::Deps],
-      rdeps: [Textus::Action::Rdeps],
-      pulse: [Textus::Action::Pulse],
-      rule_explain: [Textus::Action::RuleExplain],
-      rule_list: [Textus::Action::RuleList],
-      rule_lint: [Textus::Action::RuleLint],
-      published: [Textus::Action::Published],
-      schema_show: [Textus::Action::SchemaEnvelope],
-      doctor: [Textus::Action::Doctor],
-      boot: [Textus::Action::Boot],
-      jobs: [Textus::Action::Jobs],
-      data_mv: [Textus::Action::DataMv],
-      key_mv_prefix: [Textus::Action::KeyMvPrefix],
-      key_delete_prefix: [Textus::Action::KeyDeletePrefix],
-      drain: [Textus::Action::Drain],
-      ingest: [Textus::Action::Ingest],
-    }.freeze
-
     def initialize(container)
       @container = container
     end
@@ -43,7 +11,7 @@ module Textus
       cmd = Value::Command.new(verb: spec.verb, params: resolved.freeze, role: role)
 
       cmd = normalize_propose_key(cmd) if cmd.verb == :propose
-      action_classes = VERB_ACTIONS.fetch(cmd.verb) do
+      action_class = Textus::Action::VERBS.fetch(cmd.verb) do
         raise Textus::UsageError.new("unknown command verb: #{cmd.verb}")
       end
 
@@ -51,8 +19,7 @@ module Textus
       auth.check!(cmd)
       check_dispatch_auth(cmd, resolved, auth)
       call_obj = build_call(cmd, correlation_id: correlation_id)
-      results = action_classes.map { |klass| run_action(klass, resolved, call_obj) }
-      result = results.length == 1 ? results.first : results
+      result = run_action(action_class, resolved, call_obj)
       cascade(cmd, result, call_obj) if CASCADE_VERBS.include?(cmd.verb) && !call_obj.dry_run
       return result unless surface
 
@@ -85,21 +52,7 @@ module Textus
 
     def run_action(klass, params, call_obj)
       result = klass.call(container: @container, call: call_obj, **params)
-      unwrap_result(result)
-    end
-
-    def unwrap_result(result)
-      case result
-      when Dry::Monads::Result::Success then result.value!
-      when Dry::Monads::Result::Failure
-        failure = result.failure
-        raise ActionError.new(
-          failure[:code] || :internal,
-          failure[:message] || "action failed",
-          details: failure[:details] || {},
-        )
-      else result
-      end
+      Value::Result.unwrap(result)
     end
 
     def build_call(cmd, correlation_id: nil)
@@ -112,7 +65,8 @@ module Textus
       key ||= cascade_key_from_params(cmd)
       return unless key
 
-      rdeps = Textus::Action::Rdeps.call(container: @container, call: call, key: key).fetch("rdeps", [])
+      rdeps_result = Textus::Action::Rdeps.call(container: @container, call: call, key: key)
+      rdeps = Value::Result.unwrap(rdeps_result).fetch("rdeps", [])
       producible = rdeps.select { |dep_key| producible?(dep_key) }
       producible.each do |dep_key|
         Textus::Store::Jobs::Materialize.call(container: @container, call: call, key: dep_key)

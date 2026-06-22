@@ -7,7 +7,7 @@ module Textus
       # leaving the operator with no signal that a schema is broken.
       class SchemaParseError < Check
         def call
-          dir = File.join(root, "schemas")
+          dir = geometry.schemas_dir
           return [] unless File.directory?(dir)
 
           Dir.glob(File.join(dir, "*.yaml")).each_with_object([]) do |path, out|

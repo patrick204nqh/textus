@@ -13,9 +13,9 @@ module Textus
       end
 
       def self.call(container:, **)
-        container.manifest.data.entries.reject { |entry| entry.publish_to.empty? }.map do |entry|
+        Success(container.manifest.data.entries.reject { |entry| entry.publish_to.empty? }.map do |entry|
           { "key" => entry.key, "publish_to" => entry.publish_to }
-        end
+        end)
       end
     end
   end

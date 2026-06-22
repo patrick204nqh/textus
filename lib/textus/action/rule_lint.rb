@@ -16,7 +16,10 @@ module Textus
       def self.call(container:, call:, candidate_yaml:) # rubocop:disable Lint/UnusedMethodArgument
         root = container.root
         live_rules = current_rules(root)
-        candidate_rules = parse_candidate(candidate_yaml)
+        candidate_result = parse_candidate(candidate_yaml)
+        return candidate_result if candidate_result.is_a?(Dry::Monads::Result::Failure)
+
+        candidate_rules = candidate_result
 
         live_by_match = live_rules.to_h { |rule| [rule["match"], rule] }
         candidate_by_match = candidate_rules.to_h { |rule| [rule["match"], rule] }
@@ -38,7 +41,7 @@ module Textus
           }
         end
 
-        Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
+        Success(Textus::Store::Jobs::Plan.new(steps: steps, warnings: []))
       end
 
       def self.current_rules(root)
@@ -48,11 +51,11 @@ module Textus
 
       def self.parse_candidate(yaml_text)
         raw = YAML.safe_load(yaml_text, permitted_classes: [Symbol], aliases: false)
-        raise UsageError.new("candidate is not a YAML mapping") unless raw.is_a?(Hash)
+        return Failure(code: :usage_error, message: "candidate is not a YAML mapping") unless raw.is_a?(Hash)
 
         Array(raw["rules"])
       rescue Psych::Exception => e
-        raise UsageError.new("candidate YAML parse error: #{e.message}")
+        Failure(code: :usage_error, message: "candidate YAML parse error: #{e.message}")
       end
     end
   end

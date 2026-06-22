@@ -9,7 +9,7 @@ Textus.workflow "adr_log" do
               .map { |row| row[:key] }
 
     adrs = keys.filter_map do |k|
-      env = Textus::Action::Get.new(key: k).call(container: ctx.container, call: ctx.call)
+      env = Textus::Value::Result.unwrap(Textus::Action::Get.call(container: ctx.container, call: ctx.call, key: k)) rescue nil
       next unless env
 
       slug = k.split(".").last

@@ -9,7 +9,7 @@ module Textus
               template = target.template
               next if template.nil?
 
-              tp = File.join(root, "templates", template)
+              tp = geometry.template_path(template)
               next if File.exist?(tp)
 
               out << {
