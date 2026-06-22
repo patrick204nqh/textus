@@ -1,8 +1,8 @@
 module Textus
   module Handlers
     class KeyDeletePrefix
-      def initialize(compositor:, manifest:)
-        @compositor = compositor
+      def initialize(container:, manifest:)
+        @container = container
         @manifest = manifest
       end
 
@@ -20,7 +20,7 @@ module Textus
 
         steps.each do |step|
           delete_cmd = Struct.new(:key, :if_etag, keyword_init: true).new(key: step["key"], if_etag: nil)
-          Handlers::DeleteKey.new(compositor: @compositor).call(delete_cmd, call)
+          Handlers::DeleteKey.new(container: @container).call(delete_cmd, call)
         end
         Result.success(plan)
       end

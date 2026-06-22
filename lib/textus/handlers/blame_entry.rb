@@ -42,8 +42,10 @@ module Textus
         dir = root
         loop do
           return true if File.directory?(File.join(dir, ".git"))
+
           parent = File.dirname(dir)
           return false if parent == dir
+
           dir = parent
         end
       end

@@ -8,12 +8,12 @@ module Textus
         def self.call(container:, call:, scope: {}, key: nil)
           prefix = key || (scope.is_a?(Hash) ? scope["prefix"] : nil)
           lane   = scope.is_a?(Hash) ? scope["lane"] : nil
-          rows = Textus::Core::Retention::Sweep.new(
+          rows = Retention::Sweep.new(
             manifest: container.manifest,
             file_stat: Textus::Port::Storage::FileStat.new,
             clock: Textus::Port::Clock.new,
           ).call(prefix: prefix, lane: lane)
-          Textus::Store::Jobs::Retention.new(container: container, call: call).call(rows)
+          Retention::Base.new(container: container, call: call).call(rows)
         end
       end
     end

@@ -1,8 +1,8 @@
 module Textus
   module Handlers
     class KeyMvPrefix
-      def initialize(compositor:, manifest:)
-        @compositor = compositor
+      def initialize(container:, manifest:)
+        @container = container
         @manifest = manifest
       end
 
@@ -29,8 +29,8 @@ module Textus
 
         steps.each do |step|
           move_cmd = Struct.new(:old_key, :new_key, :if_etag, :dry_run, keyword_init: true)
-            .new(old_key: step["from"], new_key: step["to"], if_etag: nil, dry_run: false)
-          Handlers::MoveKey.new(compositor: @compositor, manifest: @manifest).call(move_cmd, call)
+                           .new(old_key: step["from"], new_key: step["to"], if_etag: nil, dry_run: false)
+          Handlers::MoveKey.new(container: @container, manifest: @manifest).call(move_cmd, call)
         end
         Result.success(plan)
       end

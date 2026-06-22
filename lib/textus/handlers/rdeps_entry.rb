@@ -5,7 +5,7 @@ module Textus
         @manifest = manifest
       end
 
-      def call(command, call)
+      def call(command, _call)
         rdeps = @manifest.data.entries.each_with_object([]) do |entry, acc|
           next unless entry.external?
 

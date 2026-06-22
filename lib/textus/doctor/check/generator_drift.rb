@@ -8,7 +8,7 @@ module Textus
       # verb reported.
       class GeneratorDrift < Check
         def call
-          gen = Textus::Core::Freshness::Evaluator.new(
+          gen = Textus::Store::Freshness::Evaluator.new(
             manifest: manifest,
             file_stat: Textus::Port::Storage::FileStat.new,
             clock: Textus::Port::Clock.new,

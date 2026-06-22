@@ -134,7 +134,7 @@ module Textus
         end
 
         def inject_meta(meta, content, existing_meta, format)
-          Textus::Meta.inject_all(meta, content, existing_meta, format: format)
+          Meta.inject_all(meta, content, existing_meta, format: format)
         end
 
         def resolve_path(key)

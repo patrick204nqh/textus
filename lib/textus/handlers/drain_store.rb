@@ -6,7 +6,7 @@ module Textus
         @job_store = job_store
       end
 
-      def call(command, call)
+      def call(_command, call)
         queue = Textus::Store::Jobs::Queue.new(store: @job_store)
         Textus::Store::Jobs::Planner.seed(container: @container, queue: queue, role: call.role)
         queue.reclaim(now: Textus::Port::Clock.new.now)

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Textus::Schemas do
+RSpec.describe Textus::Schema::Store do
   let(:tmp) { Dir.mktmpdir("textus-schemas") }
   let(:agent_yaml) do
     <<~YAML

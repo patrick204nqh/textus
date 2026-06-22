@@ -1,15 +1,15 @@
 module Textus
   module Handlers
     class PutEntry
-      def initialize(compositor:)
-        @compositor = compositor
+      def initialize(container:)
+        @container = container
       end
 
       def call(command, call)
         Textus::Manifest::Data.validate_key!(command.key)
-        mentry = @compositor.manifest.resolver.resolve(command.key).entry
+        mentry = @container.manifest.resolver.resolve(command.key).entry
 
-        envelope = @compositor.write(
+        envelope = @container.pipeline.write(
           command.key,
           mentry: mentry,
           payload: Textus::Value::Payload.new(

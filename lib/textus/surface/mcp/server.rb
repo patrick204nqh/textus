@@ -11,18 +11,9 @@ module Textus
       # execution to Catalog.
       class Server
         def initialize(store:, role: Textus::Value::Role::DEFAULT, stdin: $stdin, stdout: $stdout)
-          @store  = store
-          @role   = role
+          @store  = store.with_role(role)
           @stdin  = stdin
           @stdout = stdout
-          # Session built eagerly so the contract_etag is captured at server start.
-          # Changes to manifest/hooks/schemas after this point are detected as drift.
-          @session = Textus::Store::Session.new(
-            role: @role,
-            cursor: @store.audit_log.latest_seq,
-            propose_lane: @store.manifest.policy.propose_lane_for(@role),
-            contract_etag: contract_etag_now,
-          )
 
           @sdk = ::MCP::Server.new(
             name: "textus",
@@ -34,7 +25,6 @@ module Textus
           @sdk.resources_read_handler { |params, server_context:| handle_resource_read(params[:uri].to_s, server_context) }
         end
 
-        # Runs the stdio line loop; delegates each JSON line to the SDK.
         def run
           @stdin.each_line do |line|
             line = line.strip
@@ -48,14 +38,12 @@ module Textus
           end
         end
 
-        # Called from every MCP::Tool handler block in Catalog.
-        # The SDK parses JSON with symbolize_names: true — all nested keys are symbols.
-        # Deep-stringify so Catalog.call receives the string-key format it expects.
         def dispatch(verb_name, args, _server_context)
           str_args = deep_stringify_keys(args)
-          @session.check_etag!(contract_etag_now) unless Catalog.read_verbs.include?(verb_name.to_s)
-          result = Catalog.call(verb_name.to_s, session: @session, store: @store, args: str_args)
-          update_session_for(verb_name.to_s)
+          @store.check_etag!(contract_etag_now) unless Catalog.read_verbs.include?(verb_name.to_s)
+          result = Catalog.call(verb_name.to_s, store: @store, args: str_args)
+          @store = @store.advance_cursor(@store.audit_log.latest_seq) if verb_name.to_s == "pulse"
+          @store = @store.with_role(@store.role) if verb_name.to_s == "boot"
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::ContractDrift => e
           raise_handler_error(e.message, Textus::ContractDrift::JSONRPC_CODE)
@@ -69,11 +57,6 @@ module Textus
 
         private
 
-        def update_session_for(verb_name)
-          @session = @session.advance_cursor(@store.audit_log.latest_seq) if verb_name == "pulse"
-          @session = @session.with(contract_etag: contract_etag_now)      if verb_name == "boot"
-        end
-
         def build_resources
           machine_lane = @store.manifest.policy.machine_lane
           return [] unless machine_lane
@@ -85,7 +68,7 @@ module Textus
 
         def handle_resource_read(uri, _server_context)
           key = uri.delete_prefix("textus://").tr("/", ".")
-          env  = @store.as(@role).get(key)
+          env  = @store.get(key:)
           text = env.content.is_a?(Hash) ? JSON.dump(env.content) : (env.body || "").to_s
           mime = mime_for_format(@store.manifest.resolver.resolve(key).entry.format)
           [{ uri: uri, mimeType: mime, text: text }]

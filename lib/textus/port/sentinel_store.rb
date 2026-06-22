@@ -26,7 +26,7 @@ module Textus
 
       def load(path, repo_root)
         raw = JSON.parse(File.read(path))
-        Textus::Core::Sentinel.new(
+        Textus::Port::Sentinel.new(
           target: absolutize(raw["target"], repo_root),
           source: absolutize(raw["source"], repo_root),
           sha256: raw["sha256"],

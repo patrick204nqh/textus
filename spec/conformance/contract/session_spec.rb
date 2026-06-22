@@ -25,7 +25,7 @@ RSpec.describe "session contract" do
 
     it "raises ContractDrift when a hook file changes mid-session" do
       store   = Textus::Store.new(root)
-      session = store.session(role: :agent)
+      session = store.with_role(:agent)
 
       File.write(File.join(root, "hooks/a.rb"), "Textus.hook { |reg| } # edited\n")
 
@@ -35,7 +35,7 @@ RSpec.describe "session contract" do
 
     it "does not raise when nothing changed" do
       store   = Textus::Store.new(root)
-      session = store.session(role: :agent)
+      session = store.with_role(:agent)
       expect { session.check_etag!(observed(store)) }.not_to raise_error
     end
   end

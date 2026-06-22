@@ -5,7 +5,7 @@ module Textus
         @manifest = manifest
       end
 
-      def call(command, call)
+      def call(command, _call)
         key = command.key
         result = if command.detail
                    explain(key)
@@ -18,9 +18,9 @@ module Textus
       private
 
       LEAN_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY
-        .select { |_, m| m[:in_rule_explain].include?(:lean) }.keys.freeze
+                    .select { |_, m| m[:in_rule_explain].include?(:lean) }.keys.freeze
       DETAIL_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY
-        .select { |_, m| m[:in_rule_explain].include?(:detail) }.keys.freeze
+                      .select { |_, m| m[:in_rule_explain].include?(:detail) }.keys.freeze
       EFFECTIVE_FIELDS = DETAIL_FIELDS.select { |f| Textus::Manifest::Schema::FIELD_REGISTRY[f][:policy_class] }.freeze
 
       def effective(key)
@@ -48,8 +48,8 @@ module Textus
             { match: block.match }.merge(DETAIL_FIELDS.to_h { |f| [f, !block.public_send(f).nil?] })
           end,
           effective: EFFECTIVE_FIELDS.to_h { |f| [f, effective_value(f, winners.public_send(f))] },
-          guards: Textus::Bus::Predicates::FLOOR.keys.to_h do |action|
-            floor = Textus::Bus::Predicates::FLOOR.fetch(action, [])
+          guards: Textus::Manifest::Policy::Predicates::FLOOR.keys.to_h do |action|
+            floor = Textus::Manifest::Policy::Predicates::FLOOR.fetch(action, [])
             rule = Array(@manifest.rules.for(key).guard&.dig(action.to_s))
             [action, { floor: floor, rule: rule }]
           end,
@@ -58,6 +58,7 @@ module Textus
 
       def effective_value(field, value)
         return nil if value.nil?
+
         case field
         when :retention then retention_hash(value, string_keys: false)
         when :react then value.to_h

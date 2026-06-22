@@ -5,7 +5,7 @@ module Textus
         @container = container
       end
 
-      def call(command, call)
+      def call(_command, _call)
         Result.success(Textus::Boot.build(container: @container))
       end
     end

@@ -9,7 +9,9 @@ module Textus
           def invoke(store)
             key = positional.shift or raise UsageError.new("get requires a key")
             spec = Textus::VerbRegistry.for(:get)
-            result = store.dispatch(spec: spec, inputs: { key: key }, role: resolved_role(store), surface: :cli)
+            s = store.with_role(resolved_role(store))
+            result = s.get(key: key)
+            result = spec.view(:cli).call(result, { key: key }) if spec.view(:cli)
             raise Textus::UnknownKey.new(key, suggestions: store.manifest.resolver.suggestions_for(key)) if result.nil?
 
             emit(result)

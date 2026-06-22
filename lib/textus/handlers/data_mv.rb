@@ -3,16 +3,19 @@ require "yaml"
 module Textus
   module Handlers
     class DataMv
-      def initialize(compositor:)
-        @compositor = compositor
+      def initialize(container:)
+        @container = container
       end
 
-      def call(command, call)
-        manifest = @compositor.manifest
-        geom = @compositor.geometry
+      def call(command, _call)
+        manifest = @container.manifest
+        geom = @container.geometry
 
         return Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
-        return Result.failure(:usage_error, "data lane '#{command.from}' not declared") unless manifest.data.declared_lane_kinds.key?(command.from)
+        unless manifest.data.declared_lane_kinds.key?(command.from)
+          return Result.failure(:usage_error,
+                                "data lane '#{command.from}' not declared")
+        end
 
         dest_dir = geom.lane_path(command.to)
         return Result.failure(:usage_error, "destination 'data/#{command.to}' already exists") if File.exist?(dest_dir)

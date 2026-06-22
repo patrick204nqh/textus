@@ -5,7 +5,7 @@ module Textus
         @manifest = manifest
       end
 
-      def call(command, call)
+      def call(command, _call)
         res = @manifest.resolver.resolve(command.key)
         mentry = res.entry
         Result.success("protocol" => Textus::PROTOCOL, "key" => command.key,

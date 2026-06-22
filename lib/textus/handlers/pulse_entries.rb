@@ -42,7 +42,7 @@ module Textus
         list_cmd = ListQuery.new(prefix: nil, lane: queue)
         list_handler = Handlers::ListKeys.new(manifest: @manifest)
         result = list_handler.call(list_cmd, call)
-        return [] unless result.is_a?(Textus::Result) && result.success?
+        return [] unless result.is_a?(Textus::Value::Result) && result.success?
 
         result.value.map { |r| r["key"] }
       end

@@ -5,7 +5,7 @@ module Textus
         @job_store = job_store
       end
 
-      def call(command, call)
+      def call(command, _call)
         queue = Textus::Store::Jobs::Queue.new(store: @job_store)
         case command.action
         when "retry" then queue.retry_failed(command.job_id)

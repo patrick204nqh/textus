@@ -23,10 +23,8 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     YAML
   end
   let(:store) { Textus::Store.new(root) }
-  let(:etag) { Digest::SHA256.hexdigest(File.read(File.join(root, "manifest.yaml"))) }
-  let(:session) do
-    Textus::Store::Session.new(role: "agent", cursor: 0, propose_lane: "proposals", contract_etag: etag)
-  end
+  let(:agent_store) { store.with_role("agent") }
+  let(:human_store) { store.with_role("human") }
 
   before do
     FileUtils.mkdir_p(File.join(root, "data/identity"))
@@ -43,7 +41,7 @@ RSpec.describe Textus::Surface::MCP::Catalog do
 
   describe ".call('boot', ...)" do
     it "returns the Boot.run envelope" do
-      result = described_class.call("boot", session: session, store: store, args: {})
+      result = described_class.call("boot", store: agent_store, args: {})
       expect(result).to include("lanes", "agent_quickstart")
       expect(result).not_to have_key("index_key")
       expect(result["protocol"]).to eq(Textus::PROTOCOL)
@@ -52,7 +50,7 @@ RSpec.describe Textus::Surface::MCP::Catalog do
 
   describe ".call('list', ...)" do
     it "lists keys filtered by zone" do
-      result = described_class.call("list", session: session, store: store, args: { "lane" => "knowledge" })
+      result = described_class.call("list", store: agent_store, args: { "lane" => "knowledge" })
       expect(result).to be_an(Array)
     end
   end
@@ -60,27 +58,24 @@ RSpec.describe Textus::Surface::MCP::Catalog do
   describe ".call('get', ...)" do
     it "raises ToolError for an unknown key" do
       expect do
-        described_class.call("get", session: session, store: store, args: { "key" => "no.such.key" })
+        described_class.call("get", store: agent_store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::Surface::MCP::ToolError)
     end
   end
 
   describe ".call('pulse', ...)" do
     it "returns pulse delta with cursor, changed, pending_review, contract_etag, index_etag" do
-      result = described_class.call("pulse", session: session, store: store, args: { "since" => 0 })
+      result = described_class.call("pulse", store: agent_store, args: { "since" => 0 })
       expect(result.keys).to include("cursor", "changed", "pending_review", "contract_etag", "index_etag")
     end
   end
 
   describe ".call('put', ...)" do
     it "writes an entry under a writable zone, returning uid + etag" do
-      human_session = Textus::Store::Session.new(
-        role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag,
-      )
       result = described_class.call(
         "put",
-        session: human_session, store: store,
-        args: { "key" => "knowledge.note", "_meta" => { "name" => "note" }, "body" => "hi\n" }
+        store: human_store,
+        args: { "key" => "knowledge.note", "_meta" => { "name" => "note" }, "body" => "hi\n" },
       )
       expect(result).to include("uid", "etag")
     end
@@ -92,11 +87,9 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     it "writes to the queue zone and returns the full wire envelope (incl. uid, etag, key)" do
       result = described_class.call(
         "propose",
-        session: session, store: store,
-        args: { "key" => "proposal.x", "_meta" => { "name" => "x" }, "body" => "draft\n" }
+        store: agent_store,
+        args: { "key" => "proposal.x", "_meta" => { "name" => "x" }, "body" => "draft\n" },
       )
-      # ADR 0069: propose self-shapes to the full wire envelope on every surface
-      # (superset of the old {uid, etag, key}).
       expect(result.keys).to include("uid", "etag", "key")
       expect(result["key"]).to eq("proposals.proposal.x")
     end
@@ -105,15 +98,10 @@ RSpec.describe Textus::Surface::MCP::Catalog do
   # ── accept/reject over MCP — gated by author_held, not by transport (ADR 0072) ──
 
   describe ".call('accept' / 'reject', ...) — capability-gated on MCP (ADR 0072 F7)" do
-    let(:human_session) do
-      Textus::Store::Session.new(role: "human", cursor: 0, propose_lane: "proposals", contract_etag: etag)
-    end
-
-    # Queue a proposal as the agent, returning its full key (proposals.proposal.<leaf>).
     def queue_proposal(leaf)
       described_class.call(
         "propose",
-        session: session, store: store,
+        store: agent_store,
         args: {
           "key" => "proposal.#{leaf}",
           "_meta" => {
@@ -122,7 +110,7 @@ RSpec.describe Textus::Surface::MCP::Catalog do
             "_meta" => { "name" => "note" },
           },
           "body" => "draft\n",
-        }
+        },
       )
       "proposals.proposal.#{leaf}"
     end
@@ -134,14 +122,14 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     it "refuses accept for a default agent connection (lacks author)" do
       pending_key = queue_proposal("a1")
       expect do
-        described_class.call("accept", session: session, store: store,
+        described_class.call("accept", store: agent_store,
                                        args: { "pending_key" => pending_key })
       end.to raise_error(Textus::Surface::MCP::ToolError, /author/)
     end
 
     it "allows accept for a human-role connection" do
       pending_key = queue_proposal("a2")
-      result = described_class.call("accept", session: human_session, store: store,
+      result = described_class.call("accept", store: human_store,
                                               args: { "pending_key" => pending_key })
       expect(result["accepted"]).to eq(pending_key)
       expect(result["target_key"]).to eq("knowledge.note")
@@ -150,14 +138,14 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     it "refuses reject for a default agent connection (lacks author)" do
       pending_key = queue_proposal("r1")
       expect do
-        described_class.call("reject", session: session, store: store,
+        described_class.call("reject", store: agent_store,
                                        args: { "pending_key" => pending_key })
       end.to raise_error(Textus::Surface::MCP::ToolError, /author/)
     end
 
     it "allows reject for a human-role connection" do
       pending_key = queue_proposal("r2")
-      result = described_class.call("reject", session: human_session, store: store,
+      result = described_class.call("reject", store: human_store,
                                               args: { "pending_key" => pending_key })
       expect(result["rejected"]).to eq(pending_key)
     end
@@ -166,26 +154,26 @@ RSpec.describe Textus::Surface::MCP::Catalog do
   describe ".call('schema_show', ...)" do
     it "raises ToolError when the required key arg is missing" do
       expect do
-        described_class.call("schema_show", session: session, store: store, args: {})
+        described_class.call("schema_show", store: agent_store, args: {})
       end.to raise_error(Textus::Surface::MCP::ToolError, /missing.*key/)
     end
 
     it "raises ToolError for an unknown key" do
       expect do
-        described_class.call("schema_show", session: session, store: store, args: { "key" => "no.such.key" })
+        described_class.call("schema_show", store: agent_store, args: { "key" => "no.such.key" })
       end.to raise_error(Textus::Surface::MCP::ToolError)
     end
   end
 
   describe ".call('rule_explain', ...)" do
     it "is lean by default: a Hash with at most fetch/guard keys" do
-      result = described_class.call("rule_explain", session: session, store: store, args: { "key" => "knowledge.note" })
+      result = described_class.call("rule_explain", store: agent_store, args: { "key" => "knowledge.note" })
       expect(result).to be_a(Hash)
       expect(result.keys - %w[fetch guard]).to be_empty
     end
 
     it "with detail: true returns the verbose explanation" do
-      result = described_class.call("rule_explain", session: session, store: store,
+      result = described_class.call("rule_explain", store: agent_store,
                                                     args: { "key" => "knowledge.note", "detail" => true })
       expect(result).to include(:key, :matched_blocks, :effective, :guards)
     end
@@ -193,10 +181,9 @@ RSpec.describe Textus::Surface::MCP::Catalog do
 
   describe ".call('data_mv', ...) — applies by default (#161 F6, reverses ADR 0060)" do
     it "applies the data lane move when dry_run is omitted" do
-      result = described_class.call("data_mv", session: session, store: store,
+      result = described_class.call("data_mv", store: agent_store,
                                                args: { "from" => "knowledge", "to" => "renamed" })
       expect(result).to include("steps", "warnings")
-      # F6: omitting dry_run now mutates — the manifest reflects the renamed lane.
       manifest = YAML.safe_load_file(File.join(root, "manifest.yaml"))
       lane_names = manifest.fetch("lanes").map { |z| z["name"] }
       expect(lane_names).to include("renamed")
@@ -204,7 +191,7 @@ RSpec.describe Textus::Surface::MCP::Catalog do
     end
 
     it "returns a Plan without mutating when dry_run: true is passed" do
-      result = described_class.call("data_mv", session: session, store: store,
+      result = described_class.call("data_mv", store: agent_store,
                                                args: { "from" => "knowledge", "to" => "renamed", "dry_run" => true })
       expect(result).to include("steps", "warnings")
       lane_names = YAML.safe_load_file(File.join(root, "manifest.yaml"))
@@ -216,29 +203,25 @@ RSpec.describe Textus::Surface::MCP::Catalog do
 
   describe ".call('where', ...) — graph-read now on MCP (ADR 0060)" do
     it "resolves a key's zone and path" do
-      result = described_class.call("where", session: session, store: store, args: { "key" => "knowledge.note" })
+      result = described_class.call("where", store: agent_store, args: { "key" => "knowledge.note" })
       expect(result["lane"]).to eq("knowledge")
     end
   end
 
-  # ── Maintenance verbs ────────────────────────────────────────────────────────
-
   describe ".call('key_mv_prefix', ..., dry_run: true)" do
     it "returns a plan without mutating files" do
       result = described_class.call(
-        "key_mv_prefix", session: session, store: store,
+        "key_mv_prefix", store: agent_store,
                          args: { "from_prefix" => "knowledge", "to_prefix" => "renamed", "dry_run" => true }
       )
       expect(result).to include("steps", "warnings")
     end
   end
 
-  # ── Error handling ───────────────────────────────────────────────────────────
-
   describe ".call with an unknown tool name" do
     it "raises ToolError" do
       expect do
-        described_class.call("nope", session: session, store: store, args: {})
+        described_class.call("nope", store: agent_store, args: {})
       end.to raise_error(Textus::Surface::MCP::ToolError, /unknown tool/)
     end
   end

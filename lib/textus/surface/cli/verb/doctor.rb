@@ -7,9 +7,10 @@ module Textus
           option :checks, "--check=NAME"
 
           def call(store)
-            spec = Textus::VerbRegistry.for(:doctor)
+            Textus::VerbRegistry.for(:doctor)
             inputs = { checks: checks&.split(",")&.map(&:strip) }
-            res = store.dispatch(spec: spec, inputs: inputs, role: resolved_role(store))
+            s = store.with_role(resolved_role(store))
+            res = s.doctor(**inputs)
             emit(res, exit_code: res["ok"] ? 0 : 1)
           end
         end

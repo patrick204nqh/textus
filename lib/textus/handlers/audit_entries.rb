@@ -6,14 +6,14 @@ module Textus
         @audit_log = audit_log
       end
 
-      def call(command, call)
+      def call(command, _call)
         cursor_check = check_cursor_expiry(command.seq_since)
         return cursor_check if cursor_check
 
         rows = @audit_log.scan(
           seq_since: command.seq_since,
           key: command.key, role: command.role, verb: command.verb,
-          correlation_id: command.correlation_id, limit: command.limit,
+          correlation_id: command.correlation_id, limit: command.limit
         ).select do |row|
           next false if command.lane && !key_in_lane?(row["key"], command.lane)
           next false if command.since && (row["ts"].nil? || Time.parse(row["ts"]) < command.since)

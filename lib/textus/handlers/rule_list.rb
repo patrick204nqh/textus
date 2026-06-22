@@ -5,7 +5,7 @@ module Textus
         @manifest = manifest
       end
 
-      def call(command, call)
+      def call(_command, _call)
         Result.success(@manifest.rules.blocks.map do |block|
           row = { "match" => block.match }
           LIST_FIELDS.each do |field|

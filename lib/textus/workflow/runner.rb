@@ -60,12 +60,12 @@ module Textus
         normalized = Textus::Format.data_to_payload(data, ctx.entry.format)
         guard_map = @container.manifest.rules.for(key).guard
         rule_preds = guard_map ? Array(guard_map["converge"]) : []
-        Textus::Bus::Predicates.evaluate(
+        Textus::Manifest::Policy::Predicates.evaluate(
           manifest: @container.manifest, schemas: @container.schemas,
           action: :converge, actor: @call.role, key: key,
-          rule_predicates: rule_preds,
+          rule_predicates: rule_preds
         )
-        @container.compositor.write(
+        @container.pipeline.write(
           key,
           mentry: ctx.entry,
           payload: Textus::Value::Payload.new(**normalized),
@@ -83,7 +83,7 @@ module Textus
 
         pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: @container.compositor.method(:read)
+          reader: @container.pipeline.method(:read)
         )
         entry.publish_via(pctx)
       end

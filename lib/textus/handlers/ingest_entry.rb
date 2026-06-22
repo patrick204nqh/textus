@@ -13,7 +13,10 @@ module Textus
       end
 
       def call(command, call)
-        return Result.failure(:usage_error, "ingest kind must be one of #{SOURCE_KINDS.join("|")}") unless SOURCE_KINDS.include?(command.kind)
+        unless SOURCE_KINDS.include?(command.kind)
+          return Result.failure(:usage_error,
+                                "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
+        end
 
         case command.kind
         when "url"   then return Result.failure(:usage_error, "ingest url requires url") unless command.url
@@ -55,7 +58,7 @@ module Textus
       def compute_content_hash(command)
         digest = Digest::SHA256.new
         case command.kind
-        when "url"  then digest.update(command.url)
+        when "url" then digest.update(command.url)
         when "file", "asset" then digest.file(command.path)
         end
         "#{CONTENT_HASH_ALGO}:#{digest.hexdigest}"
@@ -66,16 +69,16 @@ module Textus
         case command.kind
         when "url"
           base.merge("source" => { "kind" => "url", "url" => command.url,
-                                    "label" => command.label || command.url }, "body" => nil)
+                                   "label" => command.label || command.url }, "body" => nil)
         when "file"
           base.merge("source" => { "kind" => "file", "path" => command.path,
-                                    "label" => command.label || File.basename(command.path) },
-                      "body" => File.read(command.path))
+                                   "label" => command.label || File.basename(command.path) },
+                     "body" => File.read(command.path))
         when "asset"
           asset_rel = copy_asset(now, command.path, command.zone)
           base.merge("source" => { "kind" => "asset",
-                                    "label" => command.label || File.basename(command.path) },
-                      "asset" => asset_rel, "body" => nil)
+                                   "label" => command.label || File.basename(command.path) },
+                     "asset" => asset_rel, "body" => nil)
         end
       end
 
@@ -91,9 +94,9 @@ module Textus
       end
 
       def write_entry(key, structured, mentry, call)
-        @container.compositor.write(key, mentry: mentry,
-          payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured),
-          call: call)
+        @container.pipeline.write(key, mentry: mentry,
+                                       payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured),
+                                       call: call)
       end
 
       def find_duplicate(index, content_hash, command)
@@ -106,7 +109,7 @@ module Textus
 
       def supersede_entry(old_key, new_key, structured, call, store, command)
         old_mentry = @container.manifest.resolver.resolve(old_key).entry
-        old_env = @container.compositor.read(old_key)
+        old_env = @container.pipeline.read(old_key)
         old_content = old_env&.content || {}
         tombstone = {}
         %w[ingested_at].each { |k| tombstone[k] = old_content[k] if old_content.key?(k) }
@@ -114,17 +117,15 @@ module Textus
         tombstone["source"] = { "kind" => source_kind } if source_kind
         tombstone["superseded_by"] = new_key
 
-        @container.compositor.write(old_key, mentry: old_mentry,
-          payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone),
-          call: call)
+        @container.pipeline.write(old_key, mentry: old_mentry,
+                                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone),
+                                           call: call)
 
         structured["supersedes"] = old_key
         env = write_entry(new_key, structured,
-              @container.manifest.resolver.resolve(new_key).entry, call)
+                          @container.manifest.resolver.resolve(new_key).entry, call)
 
-        if command.kind == "asset" && old_content["asset"]
-          move_asset(old_content["asset"], command.zone)
-        end
+        move_asset(old_content["asset"], command.zone) if command.kind == "asset" && old_content["asset"]
 
         rebuild_index(store)
         env

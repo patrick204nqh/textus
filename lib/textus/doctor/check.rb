@@ -29,15 +29,14 @@ module Textus
       def geometry = @container.geometry
       def manifest = @container.manifest
 
-      # Dispatch a verb through the Bus pipeline.
       def dispatch(verb, *args, **kwargs)
-        contract_class = Textus::Bus::VERB_TO_CONTRACT[verb]
+        contract_class = Textus::VerbRegistry::VERB_TO_CONTRACT[verb]
         members = contract_class.members
-        command_kwargs = members.each_with_index.map { |m, i| [m, args[i] || kwargs[m]] }.to_h
+        command_kwargs = members.each_with_index.to_h { |m, i| [m, args[i] || kwargs[m]] }
         command = contract_class.new(**command_kwargs)
         call = Textus::Value::Call.build(role: @role)
         result = @container.pipeline.dispatch(command, call: call)
-        Textus::Bus.unwrap(result)
+        Textus::Dispatch.unwrap(result)
       end
     end
   end

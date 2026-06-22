@@ -38,23 +38,23 @@ module Textus
 
         def read_verbs
           VerbRegistry.registered
-            .reject { |s| WRITE_VERBS.include?(s.verb) || MAINTENANCE_VERBS.include?(s.verb) }
-            .select(&:mcp?)
-            .map { |s| s.verb.to_s }
+                      .reject { |s| WRITE_VERBS.include?(s.verb) || MAINTENANCE_VERBS.include?(s.verb) }
+                      .select(&:mcp?)
+                      .map { |s| s.verb.to_s }
         end
 
         def write_verbs
           VerbRegistry.registered
-            .select { |s| WRITE_VERBS.include?(s.verb) && s.mcp? }
-            .map { |s| s.verb.to_s }
+                      .select { |s| WRITE_VERBS.include?(s.verb) && s.mcp? }
+                      .map { |s| s.verb.to_s }
         end
 
-        def call(name, session:, store:, args:)
+        def call(name, store:, args:)
           spec = VerbRegistry.for(name.to_sym)
           raise ToolError.new("unknown tool: #{name}") unless spec&.mcp?
 
-          PROJECTOR.dispatch(name, inputs: args, store:, role: session.role, session:)
-        rescue Textus::Bus::MissingArgs => e
+          PROJECTOR.dispatch(name, inputs: args, store:)
+        rescue Textus::Dispatch::MissingArgs => e
           raise ToolError.new("#{name}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
         rescue Textus::ContractDrift, CursorExpired
           raise

@@ -4,7 +4,7 @@ module Textus
       class SchemaViolations < Check
         def call
           result = Textus::Doctor::Validator.new(
-            reader: ->(key, ctnr, c) { ctnr.compositor.read(key) },
+            reader: ->(key, ctnr, _c) { ctnr.pipeline.read(key) },
             manifest: @container.manifest,
             audit_log: @container.audit_log,
             schema_for: ->(name) { @container.schemas.fetch_or_nil(name) },

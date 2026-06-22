@@ -6,7 +6,7 @@ module Textus
         @schemas = schemas
       end
 
-      def call(command, call)
+      def call(command, _call)
         mentry = @manifest.resolver.resolve(command.key).entry
         schema = @schemas.fetch_or_nil(mentry.schema)
         Result.success("protocol" => Textus::PROTOCOL, "key" => command.key,

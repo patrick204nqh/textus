@@ -21,7 +21,7 @@ module Textus
           raise Textus::BadManifest.new("retention action must be one of #{ACTIONS.join("|")}, got #{raw["action"].inspect}")
         end
 
-        def ttl_seconds = Textus::Core::Duration.seconds(@ttl)
+        def ttl_seconds = Textus::Value::Duration.seconds(@ttl)
         def destructive? = true
       end
     end
