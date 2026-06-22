@@ -42,10 +42,12 @@ module Textus
 
       # -- config paths --
       def manifest_path = File.join(@root, "manifest.yaml")
-      def schema_path(name) = File.join(@root, "schemas", "#{name}.yaml")
+      def schemas_dir = File.join(@root, "schemas")
+      def schema_path(name) = File.join(schemas_dir, "#{name}.yaml")
       def template_path(name) = File.join(@root, "templates", name)
       def workflow_dir     = File.join(@root, "workflows")
-      def schemas_glob     = File.join(@root, "schemas", "**", "*")
+      def hooks_dir        = File.join(@root, "hooks")
+      def schemas_glob     = File.join(schemas_dir, "**", "*")
 
       # -- gitignore --
       def gitignore_body(untracked_entries: [])

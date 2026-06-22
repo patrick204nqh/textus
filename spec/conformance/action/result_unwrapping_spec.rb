@@ -1,19 +1,17 @@
 RSpec.describe "Action Result unwrapping" do
-  let(:gate) { Textus::Gate.new(nil) }
-
   it "unwraps Success results and returns the value" do
-    expect(gate.send(:unwrap_result, Dry::Monads::Success("ok"))).to eq("ok")
+    expect(Textus::Value::Result.unwrap(Dry::Monads::Success("ok"))).to eq("ok")
   end
 
   it "raises ActionError for Failure results" do
     failure = Dry::Monads::Failure(code: :not_found, message: "not here", details: { key: "x" })
-    expect { gate.send(:unwrap_result, failure) }
+    expect { Textus::Value::Result.unwrap(failure) }
       .to raise_error(Textus::ActionError, /not here/)
   end
 
   it "passes through non-Result return values unchanged" do
-    expect(gate.send(:unwrap_result, "plain string")).to eq("plain string")
-    expect(gate.send(:unwrap_result, { key: "value" })).to eq({ key: "value" })
+    expect(Textus::Value::Result.unwrap("plain string")).to eq("plain string")
+    expect(Textus::Value::Result.unwrap({ key: "value" })).to eq({ key: "value" })
   end
 
   context "with a real store" do

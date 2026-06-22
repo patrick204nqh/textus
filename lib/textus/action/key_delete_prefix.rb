@@ -15,7 +15,7 @@ module Textus
       view { |v, _i| v.to_h }
 
       def self.call(container:, call:, prefix:, dry_run: false)
-        raise UsageError.new("prefix required") if prefix.nil? || prefix.empty?
+        return Failure(code: :usage_error, message: "prefix required") if prefix.nil? || prefix.empty?
 
         leaves = Textus::Action::List.leaf_keys(container: container, prefix: prefix)
 
@@ -23,12 +23,12 @@ module Textus
         steps = leaves.map { |key| { "op" => "delete", "key" => key } }
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-        return plan if dry_run
+        return Success(plan) if dry_run
 
         steps.each do |step|
-          Textus::Action::KeyDelete.call(container: container, call: call, key: step["key"])
+          Value::Result.unwrap(Textus::Action::KeyDelete.call(container: container, call: call, key: step["key"]))
         end
-        plan
+        Success(plan)
       end
     end
   end

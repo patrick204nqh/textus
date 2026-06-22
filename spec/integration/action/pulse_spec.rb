@@ -70,6 +70,6 @@ RSpec.describe Textus::Action::Pulse do
     File.write(File.join(audit_dir_path(root), "audit.log.1"), "")
     store.audit_log.append(role: "human", verb: "put", key: "a", etag_before: nil, etag_after: "e1")
 
-    expect { ops.pulse(since: 10) }.to raise_error(Textus::CursorExpired)
+    expect { ops.pulse(since: 10) }.to raise_error(Textus::ActionError, /below minimum/)
   end
 end

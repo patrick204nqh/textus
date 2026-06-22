@@ -30,10 +30,8 @@ RSpec.configure do |c|
   Kernel.srand c.seed
 
   # Category tags are DERIVED from the spec's directory (single source: its
-  # location), so `rspec --tag unit` / `--tag integration` / `--tag conformance`
-  # partition the suite with no hand-maintained metadata. No-op until the
-  # Phase-1 move populates spec/{unit,integration,conformance}/.
-  c.define_derived_metadata(file_path: %r{/spec/unit/})        { |m| m[:unit]        = true }
+  # location), so `rspec --tag integration` / `--tag conformance`
+  # partition the suite with no hand-maintained metadata.
   c.define_derived_metadata(file_path: %r{/spec/integration/}) { |m| m[:integration] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/}) { |m| m[:conformance] = true }
 
@@ -49,9 +47,5 @@ RSpec.configure do |c|
   c.define_derived_metadata(file_path: %r{/spec/conformance/cli/(hook_verbs|action_verb|groups|contract|root_flag)_spec\.rb$}) do |m|
     m[:volatile] = true
   end
-  c.define_derived_metadata(file_path: %r{/spec/unit/produce/events_spec\.rb$}) { |m| m[:volatile] = true }
-  c.define_derived_metadata(file_path: %r{/spec/unit/spec_layout_spec\.rb$}) { |m| m[:volatile] = true }
   c.define_derived_metadata(file_path: %r{/spec/conformance/boot/cli_verbs_spec\.rb$}) { |m| m[:volatile] = true }
-
-  c.define_derived_metadata(file_path: %r{/spec/unit/surfaces/}) { |m| m[:volatile] = true }
 end

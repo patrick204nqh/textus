@@ -11,14 +11,14 @@ module Textus
 
       def self.call(container:, call:, **_options) # rubocop:disable Lint/UnusedMethodArgument
         manifest = container.manifest
-        manifest.rules.blocks.map do |block|
+        Success(manifest.rules.blocks.map do |block|
           row = { "match" => block.match }
           LIST_FIELDS.each do |field|
             value = block.public_send(field)
             row[field.to_s] = serialize(field, value) unless value.nil?
           end
           row
-        end
+        end)
       end
 
       LIST_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY.select { |_, m| m[:in_rule_list] }.keys.freeze

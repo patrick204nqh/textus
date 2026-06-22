@@ -26,9 +26,10 @@ module Textus
         audit_log = container.audit_log
         manifest = container.manifest
 
-        check_cursor_expiry!(seq_since, audit_log)
+        cursor_check = check_cursor_expiry(seq_since, audit_log)
+        return cursor_check if cursor_check.is_a?(Dry::Monads::Result::Failure)
 
-        audit_log.scan(
+        Success(audit_log.scan(
           seq_since: seq_since,
           key: key,
           role: role,
@@ -40,7 +41,7 @@ module Textus
           next false if since && (row["ts"].nil? || Time.parse(row["ts"]) < since)
 
           true
-        end
+        end)
       end
 
       def self.parse_since(str, now: Time.now.utc)
@@ -72,11 +73,14 @@ module Textus
         end
       end
 
-      def self.check_cursor_expiry!(seq_since, audit_log)
+      def self.check_cursor_expiry(seq_since, audit_log)
         return unless seq_since
 
         min = audit_log.min_available_seq
-        raise Textus::CursorExpired.new(requested: seq_since, min_available: min) if min && seq_since < min - 1
+        return unless min && seq_since < min - 1
+
+        Failure(code: :cursor_expired, message: "requested seq #{seq_since} is below minimum available #{min}",
+                details: { requested: seq_since, min_available: min })
       end
 
       def self.key_in_lane?(key, lane, manifest)

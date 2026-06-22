@@ -16,15 +16,12 @@ module Textus
         action_class = begin
           Textus::Jobs.fetch(type.to_s)
         rescue Textus::UsageError
-          raise Textus::UsageError.new("unregistered job type '#{type}'")
+          return Failure(code: :usage_error, message: "unregistered job type '#{type}'")
         end
         if action_class.const_defined?(:REQUIRED_ROLE) && call.role != action_class::REQUIRED_ROLE
-          raise Textus::Error.new(
-            "forbidden",
-            "role '#{call.role}' is not authorized to enqueue this job type (requires '#{action_class::REQUIRED_ROLE}')",
-            details: { "role" => call.role, "required_role" => action_class::REQUIRED_ROLE },
-            exit_code: 77,
-          )
+          return Failure(code: :forbidden,
+                         message: "role '#{call.role}' is not authorized to enqueue this job type",
+                         details: { "role" => call.role, "required_role" => action_class::REQUIRED_ROLE })
         end
 
         job = Textus::Store::Jobs::Queue::Job.new(
@@ -34,7 +31,7 @@ module Textus
           max_attempts: 3,
         )
         Textus::Store::Jobs::Queue.new(store: container.job_store).enqueue(job)
-        { "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id }
+        Success({ "protocol" => Textus::PROTOCOL, "ok" => true, "id" => job.id })
       end
     end
   end

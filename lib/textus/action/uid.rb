@@ -11,7 +11,8 @@ module Textus
       view(:cli) { |uid, inputs| { "key" => inputs[:key], "uid" => uid } }
 
       def self.call(container:, call:, key:)
-        Textus::Action::Get.call(container: container, call: call, key: key).uid
+        envelope = Value::Result.unwrap(Textus::Action::Get.call(container: container, call: call, key: key))
+        Success(envelope.uid)
       end
     end
   end

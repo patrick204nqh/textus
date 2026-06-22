@@ -21,11 +21,17 @@ module Textus
       end
 
       def self.execute_move(container:, call:, old_key:, new_key:, dry_run:)
-        old_res, new_res = prepare(container: container, old_key: old_key, new_key: new_key)
-        return dry_run_result(container: container, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res) if dry_run
+        prepared = prepare(container: container, old_key: old_key, new_key: new_key)
+        return prepared if prepared.is_a?(Dry::Monads::Result::Failure)
+
+        old_res, new_res = prepared
+        if dry_run
+          return Success(dry_run_result(container: container, old_key: old_key, new_key: new_key, old_res: old_res,
+                                        new_res: new_res))
+        end
 
         envelope = apply_move(container: container, call: call, old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res)
-        success_result(old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res, envelope: envelope)
+        Success(success_result(old_key: old_key, new_key: new_key, old_res: old_res, new_res: new_res, envelope: envelope))
       end
 
       def self.apply_move(container:, call:, old_key:, new_key:, old_res:, new_res:)
@@ -54,28 +60,32 @@ module Textus
       def self.prepare(container:, old_key:, new_key:)
         Textus::Manifest::Data.validate_key!(old_key)
         Textus::Manifest::Data.validate_key!(new_key)
-        raise UsageError.new("mv: old and new keys are identical") if old_key == new_key
+        return Failure(code: :usage_error, message: "mv: old and new keys are identical") if old_key == new_key
 
         old_res = container.manifest.resolver.resolve(old_key)
         new_res = container.manifest.resolver.resolve(new_key)
-        raise UnknownKey.new(old_key) unless container.compositor.exists?(old_key)
+        return Failure(code: :not_found, message: "source key '#{old_key}' not found") unless container.compositor.exists?(old_key)
 
-        validate_zone_and_format!(old_mentry: old_res.entry, new_mentry: new_res.entry)
-        raise UsageError.new("mv: target '#{new_key}' already exists at #{new_res.path}") if container.compositor.exists?(new_key)
+        zone_check = validate_zone_and_format(old_mentry: old_res.entry, new_mentry: new_res.entry)
+        return zone_check if zone_check.is_a?(Dry::Monads::Result::Failure)
+
+        if container.compositor.exists?(new_key)
+          return Failure(code: :usage_error, message: "mv: target '#{new_key}' already exists at #{new_res.path}")
+        end
 
         [old_res, new_res]
       end
 
-      def self.validate_zone_and_format!(old_mentry:, new_mentry:)
+      def self.validate_zone_and_format(old_mentry:, new_mentry:)
         if old_mentry.lane != new_mentry.lane
-          raise UsageError.new(
-            "mv: cross-zone move refused (#{old_mentry.lane} -> #{new_mentry.lane}). " \
-            "Use put+delete for cross-zone moves.",
-          )
+          return Failure(code: :usage_error,
+                         message: "mv: cross-zone move refused (#{old_mentry.lane} -> #{new_mentry.lane}). " \
+                                  "Use put+delete for cross-zone moves.")
         end
-        return if old_mentry.format == new_mentry.format
+        return unless old_mentry.format != new_mentry.format
 
-        raise UsageError.new("mv: format mismatch (#{old_mentry.format} -> #{new_mentry.format}); refusing.")
+        Failure(code: :usage_error,
+                message: "mv: format mismatch (#{old_mentry.format} -> #{new_mentry.format}); refusing.")
       end
 
       def self.ensure_uid!(container:, call:, old_key:, old_mentry:)

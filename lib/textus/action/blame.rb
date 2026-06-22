@@ -17,11 +17,12 @@ module Textus
         manifest = container.manifest
         root = container.root
 
-        audit_rows = Textus::Action::Audit.call(container: container, key: key, limit: limit)
+        audit_result = Textus::Action::Audit.call(container: container, key: key, limit: limit)
+        audit_rows = Value::Result.unwrap(audit_result)
         path = resolve_path(key, manifest: manifest)
-        return audit_rows.map { |row| row.merge("git" => nil) } unless git_tracked?(path, root: root)
+        return Success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
 
-        audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) }
+        Success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
       end
 
       def self.resolve_path(key, manifest:)

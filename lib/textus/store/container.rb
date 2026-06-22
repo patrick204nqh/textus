@@ -1,26 +1,42 @@
 # frozen_string_literal: true
 
-require "dry-struct"
-
 module Textus
   class Store
-    class Container < Dry::Struct
-      attribute :manifest,   Value::Types.Instance(Manifest)
-      attribute :file_store, Value::Types.Instance(Port::Storage::FileStore)
-      attribute :schemas,    Value::Types.Instance(Schemas)
-      attribute :root,       Value::Types::String
-      attribute :audit_log,  Value::Types.Instance(Port::AuditLog)
-      attribute :workflows,  Value::Types.Instance(Workflow::Registry)
-      attribute :job_store,  Value::Types.Instance(Port::Store)
-      attribute :gate,       Value::Types.Instance(Gate).optional
-      attribute :compositor, Value::Types.Instance(Store::Compositor).optional
-      attribute :geometry,   Value::Types.Instance(Store::Geometry).optional
+    class Container
+      Infrastructure = Data.define(:file_store, :schemas, :audit_log, :job_store, :geometry)
+      Coordination   = Data.define(:manifest, :workflows, :gate, :compositor)
 
-      def with(**attrs) = self.class.new(to_h.merge(attrs))
+      def self.attribute_names
+        @attribute_names ||= [:root] + Infrastructure.members + Coordination.members
+      end
 
-      def initialize(*)
-        super
-        freeze
+      def initialize(infra, coord)
+        @infra = infra
+        @coord = coord
+      end
+
+      attr_reader :infra, :coord
+
+      def root
+        @infra.geometry.root
+      end
+
+      Infrastructure.members.each do |name|
+        define_method(name) { @infra.public_send(name) }
+      end
+
+      Coordination.members.each do |name|
+        define_method(name) { @coord.public_send(name) }
+      end
+
+      def wire_gate!(gate, compositor)
+        @coord = Coordination.new(
+          manifest: @coord.manifest,
+          workflows: @coord.workflows,
+          gate:,
+          compositor:,
+        )
+        self
       end
     end
   end

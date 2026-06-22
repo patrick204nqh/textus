@@ -26,7 +26,8 @@ RSpec.describe Textus::Action::Reject do
     res = store.as("human").reject("proposals.draft")
 
     expect(res).to include("protocol" => Textus::PROTOCOL, "rejected" => "proposals.draft", "target_key" => "identity.target")
-    expect(store.as(Textus::Value::Role::DEFAULT).get("proposals.draft")).to be_nil
+    expect { store.as(Textus::Value::Role::DEFAULT).get("proposals.draft") }
+      .to raise_error(Textus::ActionError, /no entry at/)
   end
 
   it "rejects non-authority callers with guard_failed naming the predicate" do

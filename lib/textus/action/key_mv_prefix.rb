@@ -17,12 +17,13 @@ module Textus
       view { |v, _i| v.to_h }
 
       def self.call(container:, call:, from_prefix:, to_prefix:, dry_run: false)
-        raise UsageError.new("from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
+        return Failure(code: :usage_error, message: "from_prefix and to_prefix required") if from_prefix.nil? || to_prefix.nil?
 
         leaves = Textus::Action::List.leaf_keys(container: container, prefix: from_prefix)
 
         if leaves.include?(from_prefix)
-          raise UsageError.new("from_prefix '#{from_prefix}' is itself a leaf — use `mv` to rename a single key")
+          return Failure(code: :usage_error,
+                         message: "from_prefix '#{from_prefix}' is itself a leaf — use `mv` to rename a single key")
         end
 
         warnings = []
@@ -35,12 +36,12 @@ module Textus
         end
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-        return plan if dry_run
+        return Success(plan) if dry_run
 
         steps.each do |step|
-          Textus::Action::KeyMv.call(container: container, call: call, old_key: step["from"], new_key: step["to"])
+          Value::Result.unwrap(Textus::Action::KeyMv.call(container: container, call: call, old_key: step["from"], new_key: step["to"]))
         end
-        plan
+        Success(plan)
       end
     end
   end

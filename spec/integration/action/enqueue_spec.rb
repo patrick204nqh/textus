@@ -27,7 +27,7 @@ RSpec.describe Textus::Action::Enqueue do
 
   it "rejects an unregistered type (closed allow-list)" do
     expect { store.as("automation").enqueue("rm-rf", { "path" => "/" }) }
-      .to raise_error(Textus::UsageError, /unregistered job type/)
+      .to raise_error(Textus::ActionError, /unregistered job type/)
   end
 
   it "rejects a caller who does not hold the type's required role" do

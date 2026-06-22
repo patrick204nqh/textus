@@ -35,9 +35,9 @@ RSpec.describe Textus::Action::KeyMvPrefix do
   end
 
   it "previews a bulk rename without touching files when dry_run" do
-    plan = build_key_mv_prefix.call(
-      "working.old", "working.new", dry_run: true
-    )
+    plan = Textus::Value::Result.unwrap(build_key_mv_prefix.call(
+                                          "working.old", "working.new", dry_run: true
+                                        ))
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to all(eq("mv"))
     expect(plan.steps.map { |s| [s["from"], s["to"]] }).to contain_exactly(
@@ -62,8 +62,7 @@ RSpec.describe Textus::Action::KeyMvPrefix do
   end
 
   it "refuses when from_prefix is itself a leaf rather than building a malformed key" do
-    expect do
-      build_key_mv_prefix.call("working.old.a", "working.new.a", dry_run: true)
-    end.to raise_error(Textus::UsageError, /itself a leaf — use `mv`/)
+    result = build_key_mv_prefix.call("working.old.a", "working.new.a", dry_run: true)
+    expect(result).to be_a(Dry::Monads::Result::Failure)
   end
 end

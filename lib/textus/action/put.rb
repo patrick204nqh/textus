@@ -21,17 +21,17 @@ module Textus
       def self.call(container:, call:, key:, meta: nil, body: nil, content: nil, if_etag: nil) # rubocop:disable Metrics/ParameterLists
         Textus::Manifest::Data.validate_key!(key)
         mentry = container.manifest.resolver.resolve(key).entry
-        container.compositor.write(
-          key,
-          mentry: mentry,
-          payload: Textus::Store::Envelope::Writer::Payload.new(
-            meta: meta,
-            body: body,
-            content: content,
-          ),
-          if_etag: if_etag,
-          call: call,
-        )
+        Success(container.compositor.write(
+                  key,
+                  mentry: mentry,
+                  payload: Textus::Store::Envelope::Writer::Payload.new(
+                    meta: meta,
+                    body: body,
+                    content: content,
+                  ),
+                  if_etag: if_etag,
+                  call: call,
+                ))
       end
     end
   end

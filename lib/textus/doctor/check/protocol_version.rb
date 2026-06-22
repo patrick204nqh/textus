@@ -8,7 +8,7 @@ module Textus
       class ProtocolVersion < Check
         # Standalone interface: root is the project root (parent of .textus/).
         def self.run(root:)
-          path = File.join(root, ".textus/manifest.yaml")
+          path = File.join(root, ".textus", "manifest.yaml")
           return [] unless File.exist?(path)
 
           doc = YAML.safe_load_file(path, aliases: false) || {}
@@ -26,7 +26,7 @@ module Textus
         # Doctor check interface: root is the .textus/ directory itself,
         # so manifest.yaml lives directly inside it.
         def call
-          path = File.join(root, "manifest.yaml")
+          path = geometry.manifest_path
           return [] unless File.exist?(path)
 
           doc = YAML.safe_load_file(path, aliases: false) || {}

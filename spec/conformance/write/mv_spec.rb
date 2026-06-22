@@ -54,7 +54,7 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.alpha")
     expect do
       store.as("human").key_mv("knowledge.notes.alpha", "identity.notes.alpha")
-    end.to raise_error(Textus::UsageError, /cross-zone/)
+    end.to raise_error(Textus::ActionError, /cross-zone/)
   end
 
   it "refuses to clobber an existing target" do
@@ -62,7 +62,7 @@ RSpec.describe "textus mv" do
     put_md("knowledge.notes.beta")
     expect do
       store.as("human").key_mv("knowledge.notes.alpha", "knowledge.notes.beta")
-    end.to raise_error(Textus::UsageError, /already exists/)
+    end.to raise_error(Textus::ActionError, /already exists/)
   end
 
   it "refuses when the new key fails grammar" do

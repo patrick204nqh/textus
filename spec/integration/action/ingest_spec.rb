@@ -94,13 +94,13 @@ RSpec.describe Textus::Action::Ingest do
   it "raises UsageError for an unknown kind" do
     expect do
       store.as("agent").ingest(kind: "ftp", slug: "bad")
-    end.to raise_error(Textus::UsageError, /kind must be one of/)
+    end.to raise_error(Textus::ActionError, /kind must be one of/)
   end
 
   it "raises UsageError when url kind is missing --url" do
     expect do
       store.as("agent").ingest(kind: "url", slug: "no-url")
-    end.to raise_error(Textus::UsageError, /requires.*url/)
+    end.to raise_error(Textus::ActionError, /requires.*url/)
   end
 
   describe "dedup" do

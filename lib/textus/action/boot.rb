@@ -8,7 +8,7 @@ module Textus
       surfaces :cli, :mcp
 
       def self.call(container:, **)
-        Textus::Boot.build(container: container)
+        Success(Textus::Boot.build(container: container))
       end
     end
   end

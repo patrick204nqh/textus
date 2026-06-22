@@ -31,7 +31,7 @@ RSpec.describe Textus::Action::DataMv do
   end
 
   it "previews data-lane rename + key relocation + manifest rewrite" do
-    plan = build_data_mv.call("scratch", "sandbox", dry_run: true)
+    plan = Textus::Value::Result.unwrap(build_data_mv.call("scratch", "sandbox", dry_run: true))
     ops = plan.steps.map { |s| s["op"] }
     expect(ops).to include("rename_zone", "mv")
     expect(File.exist?(File.join(root, "data/scratch/note.md"))).to be(true)
@@ -40,9 +40,8 @@ RSpec.describe Textus::Action::DataMv do
   it "refuses rename if destination data lane already exists" do
     FileUtils.mkdir_p(File.join(root, "data/sandbox"))
     File.write(File.join(root, "data/sandbox/.keep"), "")
-    expect do
-      build_data_mv.call("scratch", "sandbox", dry_run: true)
-    end.to raise_error(Textus::UsageError, /already exists/)
+    result = build_data_mv.call("scratch", "sandbox", dry_run: true)
+    expect(result).to be_a(Dry::Monads::Result::Failure)
   end
 
   it "applies the rename and rewrites manifest" do

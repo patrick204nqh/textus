@@ -14,7 +14,7 @@ module Textus
         res = manifest.resolver.resolve(key)
         mentry = res.entry
         path = res.path
-        { "protocol" => Textus::PROTOCOL, "key" => key, "lane" => mentry.lane, "owner" => mentry.owner, "path" => path }
+        Success({ "protocol" => Textus::PROTOCOL, "key" => key, "lane" => mentry.lane, "owner" => mentry.owner, "path" => path })
       end
     end
   end

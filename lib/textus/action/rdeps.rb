@@ -17,7 +17,7 @@ module Textus
           sources = Array(entry.source&.sources).compact
           acc << entry.key if sources.any? { |source| source == key || key.start_with?("#{source}.") }
         end
-        { "key" => key, "rdeps" => rdeps }
+        Success({ "key" => key, "rdeps" => rdeps })
       end
     end
   end

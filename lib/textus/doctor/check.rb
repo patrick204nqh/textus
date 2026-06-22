@@ -26,6 +26,7 @@ module Textus
       protected
 
       def root     = @container.root
+      def geometry = @container.geometry
       def manifest = @container.manifest
 
       # Dispatch a verb through Gate.
