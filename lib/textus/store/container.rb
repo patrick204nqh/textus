@@ -44,8 +44,15 @@ module Textus
         container
       end
 
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.build_pipeline(container)
         registry = Dispatch::HandlerRegistry.new
+        orchestration = Handlers::Orchestration.new(
+          list_keys: Handlers::ListKeys.new(manifest: container.manifest),
+          move_key: Handlers::MoveKey.new(container: container, manifest: container.manifest),
+          delete_key: Handlers::DeleteKey.new(container: container),
+          audit_entries: Handlers::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
+        )
 
         registry.register(Dispatch::Contracts::GetEntry, Handlers::GetEntry.new(
                                                            container: container,
@@ -65,11 +72,14 @@ module Textus
                                                                manifest: container.manifest, audit_log: container.audit_log,
                                                              ))
         registry.register(Dispatch::Contracts::PulseEntries, Handlers::PulseEntries.new(
-                                                               container: container, manifest: container.manifest,
-                                                               audit_log: container.audit_log, file_store: container.file_store
+                                                               manifest: container.manifest,
+                                                               audit_log: container.audit_log,
+                                                               file_store: container.file_store,
+                                                               orchestration: orchestration,
                                                              ))
         registry.register(Dispatch::Contracts::BlameEntry, Handlers::BlameEntry.new(
-                                                             manifest: container.manifest, audit_log: container.audit_log,
+                                                             manifest: container.manifest,
+                                                             orchestration: orchestration,
                                                            ))
         registry.register(Dispatch::Contracts::WhereEntry, Handlers::WhereEntry.new(manifest: container.manifest))
         registry.register(Dispatch::Contracts::UidEntry, Handlers::UidEntry.new(container: container))
@@ -91,10 +101,10 @@ module Textus
         registry.register(Dispatch::Contracts::RuleLint, Handlers::RuleLint.new(manifest: container.manifest))
         registry.register(Dispatch::Contracts::DataMv, Handlers::DataMv.new(container: container))
         registry.register(Dispatch::Contracts::KeyMvPrefix, Handlers::KeyMvPrefix.new(
-                                                              container: container, manifest: container.manifest,
+                                                              orchestration: orchestration,
                                                             ))
         registry.register(Dispatch::Contracts::KeyDeletePrefix, Handlers::KeyDeletePrefix.new(
-                                                                  container: container, manifest: container.manifest,
+                                                                  orchestration: orchestration,
                                                                 ))
 
         Dispatch::Pipeline.new(
@@ -107,6 +117,7 @@ module Textus
           ],
         )
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       def self.freshness_evaluator(container)
         Store::Freshness::Evaluator.new(

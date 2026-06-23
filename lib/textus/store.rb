@@ -134,7 +134,7 @@ module Textus
         file_store: Port::Storage::FileStore.new,
         schemas: Schema::Store.new(geometry.schemas_dir),
         audit_log: Port::AuditLog.new(
-          root,
+          geometry: geometry,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         ),

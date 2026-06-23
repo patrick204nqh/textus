@@ -1,16 +1,17 @@
 module Textus
   module Handlers
     class KeyDeletePrefix
-      def initialize(container:, manifest:)
-        @container = container
-        @manifest = manifest
+      def initialize(orchestration:)
+        @orchestration = orchestration
       end
 
       def call(command, call)
         return Result.failure(:usage_error, "prefix required") if command.prefix.nil? || command.prefix.empty?
 
-        list_cmd = Struct.new(:prefix, :lane, keyword_init: true).new(prefix: command.prefix, lane: nil)
-        leaves = Handlers::ListKeys.new(manifest: @manifest).call(list_cmd, call).value
+        list = @orchestration.list_keys(prefix: command.prefix, lane: nil, call: call)
+        return list if list.failure?
+
+        leaves = list.value.fetch("rows")
 
         warnings = leaves.empty? ? ["no keys under #{command.prefix}"] : []
         steps = leaves.map { |row| { "op" => "delete", "key" => row["key"] } }
@@ -19,8 +20,8 @@ module Textus
         return Result.success(plan) if command.dry_run
 
         steps.each do |step|
-          delete_cmd = Struct.new(:key, :if_etag, keyword_init: true).new(key: step["key"], if_etag: nil)
-          Handlers::DeleteKey.new(container: @container).call(delete_cmd, call)
+          delete = @orchestration.delete_key(key: step["key"], call: call)
+          return delete if delete.failure?
         end
         Result.success(plan)
       end

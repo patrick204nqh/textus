@@ -1,16 +1,17 @@
 module Textus
   module Handlers
     class KeyMvPrefix
-      def initialize(container:, manifest:)
-        @container = container
-        @manifest = manifest
+      def initialize(orchestration:)
+        @orchestration = orchestration
       end
 
       def call(command, call)
         return Result.failure(:usage_error, "from_prefix and to_prefix required") if command.from_prefix.nil? || command.to_prefix.nil?
 
-        list_cmd = Struct.new(:prefix, :lane, keyword_init: true).new(prefix: command.from_prefix, lane: nil)
-        leaves = Handlers::ListKeys.new(manifest: @manifest).call(list_cmd, call).value
+        list = @orchestration.list_keys(prefix: command.from_prefix, lane: nil, call: call)
+        return list if list.failure?
+
+        leaves = list.value.fetch("rows")
 
         if leaves.any? { |r| r["key"] == command.from_prefix }
           return Result.failure(:usage_error, "from_prefix '#{command.from_prefix}' is itself a leaf — use `mv` to rename a single key")
@@ -28,9 +29,8 @@ module Textus
         return Result.success(plan) if command.dry_run
 
         steps.each do |step|
-          move_cmd = Struct.new(:old_key, :new_key, :if_etag, :dry_run, keyword_init: true)
-                           .new(old_key: step["from"], new_key: step["to"], if_etag: nil, dry_run: false)
-          Handlers::MoveKey.new(container: @container, manifest: @manifest).call(move_cmd, call)
+          move = @orchestration.move_key(old_key: step["from"], new_key: step["to"], call: call)
+          return move if move.failure?
         end
         Result.success(plan)
       end

@@ -11,7 +11,13 @@ module Textus
     end
 
     module Binder
+      Pending = Data.define(:spec, :inputs, :session)
+
       module_function
+
+      def command(spec, inputs, session: nil)
+        Pending.new(spec: spec, inputs: inputs, session: session)
+      end
 
       def bind(spec, inputs, session: nil)
         missing = spec.required_args.reject { |a| inputs.key?(a.name) }

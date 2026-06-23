@@ -32,12 +32,28 @@ module Textus
       def lock_path(name)    = File.join(run_root, "ephemeral", "locks", "#{name}.lock")
       def audit_dir_path     = File.join(run_root, "audit")
       def audit_log_path     = File.join(audit_dir_path, "audit.log")
+      def audit_rotated_log_path(n) = File.join(audit_dir_path, "audit.log.#{n}")
+      def audit_rotated_meta_path(n) = File.join(audit_dir_path, "audit.log.#{n}.meta.json")
+      def audit_log_glob = File.join(audit_dir_path, "audit.log.*")
       def sentinels_root = File.join(run_root, "tracking", "sentinels")
       def store_db_path = File.join(run_root, "store.db")
 
       # -- asset paths --
-      def asset_path(kind, date_str, zone, filename)
-        File.join(@root, ASSETS, kind, date_str, zone.to_s, filename)
+      def asset_raw_dir(date_path, zone)
+        File.join(@root, ASSETS, "raw", date_path, zone.to_s)
+      end
+
+      def asset_sentinel_path
+        File.join(@root, ASSETS, ".gitignore")
+      end
+
+      def asset_resolve(rel_path)
+        File.join(@root, ASSETS, rel_path)
+      end
+
+      def archive_path(source_path)
+        rel = source_path.delete_prefix("#{@root}/")
+        File.join(@root, "archive", rel)
       end
 
       # -- config paths --

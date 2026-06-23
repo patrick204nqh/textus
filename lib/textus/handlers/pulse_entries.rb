@@ -1,25 +1,21 @@
 module Textus
   module Handlers
     class PulseEntries
-      AuditQuery = Struct.new(:seq_since, :key, :lane, :role, :verb, :since, :correlation_id, :limit, keyword_init: true)
-      ListQuery = Struct.new(:prefix, :lane, keyword_init: true)
-
-      def initialize(container:, manifest:, audit_log:, file_store:)
-        @container = container
+      def initialize(manifest:, audit_log:, file_store:, orchestration:)
         @manifest = manifest
         @audit_log = audit_log
         @file_store = file_store
+        @orchestration = orchestration
       end
 
       def call(command, call)
         root = @manifest.data.root
         since = command.since || Textus::Store::Cursor.new(root: root, role: call.role).read
 
-        audit_handler = Handlers::AuditEntries.new(manifest: @manifest, audit_log: @audit_log)
-        audit_result = audit_handler.call(AuditQuery.new(seq_since: since), call)
-        return audit_result unless audit_result.success?
+        audit = @orchestration.audit_entries(seq_since: since, call: call)
+        return audit if audit.failure?
 
-        changed = audit_result.value
+        changed = audit.value.fetch("rows")
 
         result = {
           "cursor" => @audit_log.latest_seq,
@@ -39,12 +35,10 @@ module Textus
         queue = @manifest.policy.queue_lane
         return [] unless queue
 
-        list_cmd = ListQuery.new(prefix: nil, lane: queue)
-        list_handler = Handlers::ListKeys.new(manifest: @manifest)
-        result = list_handler.call(list_cmd, call)
-        return [] unless result.is_a?(Textus::Value::Result) && result.success?
+        result = @orchestration.list_keys(prefix: nil, lane: queue, call: call)
+        return [] unless result.success?
 
-        result.value.map { |r| r["key"] }
+        result.value.fetch("rows").map { |r| r["key"] }
       end
 
       def index_etag

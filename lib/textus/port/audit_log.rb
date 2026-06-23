@@ -14,9 +14,9 @@ module Textus
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 5
 
-      def initialize(root, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
-        @root     = root
-        @path     = Textus::Store::Geometry.new(root).audit_log_path
+      def initialize(root = nil, geometry: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
+        @geometry = geometry || Textus::Store::Geometry.new(root)
+        @path     = @geometry.audit_log_path
         @max_size = max_size
         @keep     = keep
       end
@@ -137,11 +137,11 @@ module Textus
       end
 
       def rotated(n)
-        File.join(Textus::Store::Geometry.new(@root).audit_dir_path, "audit.log.#{n}")
+        @geometry.audit_rotated_log_path(n)
       end
 
       def rotated_meta(n)
-        File.join(Textus::Store::Geometry.new(@root).audit_dir_path, "audit.log.#{n}.meta.json")
+        @geometry.audit_rotated_meta_path(n)
       end
 
       # Caller holds the flock. Returns the highest seq across the active log,
@@ -248,7 +248,7 @@ module Textus
       end
 
       def all_log_files
-        rotated = Dir.glob(File.join(Textus::Store::Geometry.new(@root).audit_dir_path, "audit.log.*"))
+        rotated = Dir.glob(@geometry.audit_log_glob)
                      .reject { |path| path.end_with?(".meta.json") }
                      .sort_by { |path| -path.scan(/\d+$/).first.to_i }
         active_log = File.exist?(@path) ? [@path] : []

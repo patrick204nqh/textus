@@ -1,17 +1,17 @@
 module Textus
   module Handlers
     class BlameEntry
-      def initialize(manifest:, audit_log:)
+      def initialize(manifest:, orchestration:)
         @manifest = manifest
-        @audit_log = audit_log
+        @orchestration = orchestration
       end
 
       def call(command, call)
         root = @manifest.data.root
-        audit_handler = Handlers::AuditEntries.new(manifest: @manifest, audit_log: @audit_log)
-        audit_q = Struct.new(:key, :limit, :seq_since, :lane, :role, :verb, :since, :correlation_id, keyword_init: true)
-        audit_result = audit_handler.call(audit_q.new(key: command.key, limit: command.limit), call)
-        audit_rows = audit_result.value || []
+        audit = @orchestration.audit_entries(key: command.key, limit: command.limit, call: call)
+        return audit if audit.failure?
+
+        audit_rows = audit.value.fetch("rows")
 
         path = resolve_path(command.key)
         return Result.success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)

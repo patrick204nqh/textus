@@ -35,9 +35,7 @@ module Textus
 
           def archive_leaf(row)
             src  = row["path"]
-            root = @container.root.to_s
-            rel  = src.delete_prefix("#{root}/")
-            dest = File.join(root, "archive", rel)
+            dest = @container.geometry.archive_path(src)
             FileUtils.mkdir_p(File.dirname(dest))
             FileUtils.cp(src, dest)
           end

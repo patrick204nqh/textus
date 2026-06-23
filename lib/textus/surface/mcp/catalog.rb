@@ -2,7 +2,7 @@ module Textus
   module Surface
     module MCP
       module Catalog
-        PROJECTOR = Projector.new(view_key: :default, binder_method: :inputs_from_wire).freeze
+        PROJECTOR = Projector.new(view_key: :default).freeze
 
         module_function
 

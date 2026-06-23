@@ -16,6 +16,14 @@ module Textus
         stack.call(command, call)
       end
 
+      def self.build_command(contract_class, inputs)
+        members = contract_class.members
+        kwargs = members.to_h do |member|
+          [member, inputs[member]]
+        end
+        contract_class.new(**kwargs)
+      end
+
       def write(key, mentry:, payload:, call:, if_etag: nil)
         Store::Envelope::Writer.from(container: @container, call: call)
                                .put(key, mentry: mentry, payload: payload, if_etag: if_etag)
