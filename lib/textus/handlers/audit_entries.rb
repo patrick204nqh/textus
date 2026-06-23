@@ -20,7 +20,7 @@ module Textus
 
           true
         end
-        Result.success(rows)
+        Value::Result.success(rows)
       end
 
       private
@@ -31,7 +31,7 @@ module Textus
         min = @audit_log.min_available_seq
         return unless min && seq_since < min - 1
 
-        Result.failure(:cursor_expired, "requested seq #{seq_since} is below minimum available #{min}",
+        Value::Result.failure(:cursor_expired, "requested seq #{seq_since} is below minimum available #{min}",
                        details: { requested: seq_since, min_available: min })
       end
 

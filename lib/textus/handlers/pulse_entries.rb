@@ -26,7 +26,7 @@ module Textus
         }
 
         Textus::Store::Cursor.new(root: root, role: call.role).write(result["cursor"])
-        Result.success(result)
+        Value::Result.success(result)
       end
 
       private

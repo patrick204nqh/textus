@@ -232,6 +232,8 @@ module Textus
   end
 
   class CursorExpired < Error
+    JSONRPC_CODE = -32_002
+
     attr_reader :requested, :min_available
 
     def initialize(requested:, min_available:)

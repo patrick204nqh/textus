@@ -8,7 +8,7 @@ module Textus
       def call(command, _call)
         rows = @manifest.resolver.enumerate(prefix: command.prefix)
         rows = rows.select { |row| row[:manifest_entry].lane == command.lane } if command.lane
-        Result.success(rows.map do |row|
+        Value::Result.success(rows.map do |row|
           { "key" => row[:key], "lane" => row[:manifest_entry].lane, "path" => row[:path] }
         end)
       end

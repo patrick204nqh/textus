@@ -24,8 +24,6 @@ loader.eager_load
 
 Textus::Boot::CLI_VERBS = Textus::Boot.build_cli_verbs.freeze
 
-Textus::Result = Textus::Value::Result
-
 module Textus
   def self.workflow(name, &)
     collector = Workflow::Collector.current

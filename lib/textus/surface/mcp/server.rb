@@ -47,8 +47,8 @@ module Textus
           ::MCP::Tool::Response.new([{ type: "text", text: JSON.dump(result) }])
         rescue Textus::ContractDrift => e
           raise_handler_error(e.message, Textus::ContractDrift::JSONRPC_CODE)
-        rescue CursorExpired => e
-          raise_handler_error(e.message, CursorExpired::JSONRPC_CODE)
+        rescue Textus::CursorExpired => e
+          raise_handler_error(e.message, Textus::CursorExpired::JSONRPC_CODE)
         rescue Textus::Surface::MCP::ToolError => e
           raise_handler_error(e.message, ToolError::JSONRPC_CODE)
         rescue StandardError => e

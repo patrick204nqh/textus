@@ -11,7 +11,7 @@ module Textus
         when "retry" then queue.retry_failed(command.job_id)
         when "purge" then queue.purge(command.state)
         end
-        Result.success("protocol" => Textus::PROTOCOL, "ok" => true,
+        Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => true,
                        "state" => command.state, "jobs" => queue.list(command.state))
       end
     end

@@ -6,6 +6,7 @@ module Textus
       # Pure filesystem I/O port. Wraps File/FileUtils/Etag with no knowledge
       # of envelopes, entries, schemas, or audit.
       class FileStore
+        include Interface
         def read(path) = File.binread(path)
 
         def write(path, bytes)
