@@ -14,7 +14,7 @@ module Textus
             @publisher = publisher
           end
 
-          def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument,Metrics/AbcSize
+          def publish(pctx, prefix: nil) # rubocop:disable Lint/UnusedMethodArgument
             targets = entry.publish_targets.select(&:to_target?)
 
             return nil if targets.empty?
