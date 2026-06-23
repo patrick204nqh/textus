@@ -45,7 +45,6 @@ module Textus
       @role = role.to_s
       @correlation_id = correlation_id || SecureRandom.uuid
       @dry_run = dry_run
-      @session_explicit = false
       build_session!
     end
 
@@ -62,7 +61,6 @@ module Textus
     def advance_cursor(new_cursor)
       dup.tap do |s|
         s.instance_variable_set(:@cursor, new_cursor)
-        s.instance_variable_set(:@session_explicit, true)
       end
     end
 
@@ -96,8 +94,7 @@ module Textus
       inputs = positional_inputs.merge(kwargs)
       Dispatch.dispatch(
         container: @container, spec:, inputs:,
-        role: @role, correlation_id: @correlation_id,
-        session: @session_explicit ? self : nil
+        role: @role, correlation_id: @correlation_id
       )
     end
 

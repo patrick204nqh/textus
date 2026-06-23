@@ -11,7 +11,7 @@ module Textus
           contract_class = VerbRegistry::VERB_TO_CONTRACT.fetch(spec.verb) do
             raise Textus::UsageError.new("unknown command verb: #{spec.verb}")
           end
-          resolved = Dispatch::Binder.bind(spec, command.inputs, session: command.session)
+          resolved = Dispatch::Binder.bind(spec, command.inputs)
           built = Dispatch::Pipeline.build_command(contract_class, resolved)
           next_handler.call(built, call)
         end

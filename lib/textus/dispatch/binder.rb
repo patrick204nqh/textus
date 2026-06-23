@@ -11,23 +11,21 @@ module Textus
     end
 
     module Binder
-      Pending = Data.define(:spec, :inputs, :session)
+      Pending = Data.define(:spec, :inputs)
 
       module_function
 
-      def command(spec, inputs, session: nil)
-        Pending.new(spec: spec, inputs: inputs, session: session)
+      def command(spec, inputs)
+        Pending.new(spec: spec, inputs: inputs)
       end
 
-      def bind(spec, inputs, session: nil)
+      def bind(spec, inputs)
         missing = spec.required_args.reject { |a| inputs.key?(a.name) }
         raise MissingArgs.new(spec, missing) unless missing.empty?
 
         spec.args.each_with_object({}) do |a, h|
           if inputs.key?(a.name)
             h[a.name] = inputs[a.name]
-          elsif a.session_default && session
-            h[a.name] = session.public_send(a.session_default)
           elsif !a.default.nil?
             h[a.name] = a.default
           end
