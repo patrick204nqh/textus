@@ -47,7 +47,9 @@ jobs:
       # i.e. someone changed a source without regenerating (ADR 0097).
       - name: drain must be a no-op
         run: |
-          bundle exec textus drain
+          # Run drain as the automation actor so generated frontmatter is
+          # stable across local runs and CI (avoids user-specific metadata).
+          bundle exec textus drain --as=automation
           if ! git diff --quiet; then
             echo "::error::generated files are stale — run 'textus drain' and commit the result"
             git --no-pager diff --stat
