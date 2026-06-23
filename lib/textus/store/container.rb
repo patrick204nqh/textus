@@ -33,7 +33,6 @@ module Textus
       # tests can swap a single instance.
       attr_reader :pipeline, :reader, :writer
 
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.build_full(infra, coord_seed)
         coord = Coordination.new(
           manifest: coord_seed.manifest,
@@ -46,75 +45,7 @@ module Textus
         # smaller, test-friendly place and keeps the Pipeline interface
         # deep (small public surface, complex implementation hidden).
         builder = Dispatch::Pipeline::Builder.new(container)
-        # Register handlers via factories so we preserve the previous
-        # construction semantics while moving composition into the
-        # builder. Create a few small local factory helpers to reduce
-        # repetition for common constructor shapes.
-        manifest_handler = ->(handler_class) { ->(c) { handler_class.new(manifest: c.manifest) } }
-        container_handler = ->(handler_class) { ->(c) { handler_class.new(container: c) } }
-        job_store_handler = ->(handler_class) { ->(c) { handler_class.new(job_store: c.job_store) } }
-
-        builder.register(Dispatch::Contracts::GetEntry, lambda { |c|
-          Handlers::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c))
-        })
-        builder.register(Dispatch::Contracts::PutEntry, container_handler.call(Handlers::PutEntry))
-        builder.register(Dispatch::Contracts::ListKeys, manifest_handler.call(Handlers::ListKeys))
-        builder.register(Dispatch::Contracts::DeleteKey, container_handler.call(Handlers::DeleteKey))
-        builder.register(Dispatch::Contracts::MoveKey, ->(c) { Handlers::MoveKey.new(container: c, manifest: c.manifest) })
-        builder.register(Dispatch::Contracts::ProposeEntry, container_handler.call(Handlers::ProposeEntry))
-        builder.register(Dispatch::Contracts::AcceptProposal, container_handler.call(Handlers::AcceptProposal))
-        builder.register(Dispatch::Contracts::RejectProposal, container_handler.call(Handlers::RejectProposal))
-        builder.register(Dispatch::Contracts::EnqueueJob, job_store_handler.call(Handlers::EnqueueJob))
-
-        # Reuse an orchestration factory to avoid repeating the same
-        # Handlers::Orchestration construction in multiple registrations.
-        orchestration_factory = lambda do |c|
-          Handlers::Orchestration.new(
-            list_keys: Handlers::ListKeys.new(manifest: c.manifest),
-            move_key: Handlers::MoveKey.new(container: c, manifest: c.manifest),
-            delete_key: Handlers::DeleteKey.new(container: c),
-            audit_entries: Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log),
-          )
-        end
-
-        # AuditEntries needs both manifest and audit_log
-        builder.register(Dispatch::Contracts::AuditEntries, lambda { |c|
-          Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log)
-        })
-        builder.register(Dispatch::Contracts::PulseEntries, lambda { |c|
-          Handlers::PulseEntries.new(
-            manifest: c.manifest,
-            audit_log: c.audit_log,
-            file_store: c.file_store,
-            orchestration: orchestration_factory.call(c),
-          )
-        })
-        builder.register(Dispatch::Contracts::BlameEntry, lambda { |c|
-          Handlers::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_factory.call(c))
-        })
-        builder.register(Dispatch::Contracts::WhereEntry, manifest_handler.call(Handlers::WhereEntry))
-        builder.register(Dispatch::Contracts::UidEntry, container_handler.call(Handlers::UidEntry))
-        builder.register(Dispatch::Contracts::DepsEntry, manifest_handler.call(Handlers::DepsEntry))
-        builder.register(Dispatch::Contracts::RdepsEntry, manifest_handler.call(Handlers::RdepsEntry))
-        builder.register(Dispatch::Contracts::BootStore, container_handler.call(Handlers::BootStore))
-        builder.register(Dispatch::Contracts::DoctorStore, container_handler.call(Handlers::DoctorStore))
-        builder.register(Dispatch::Contracts::PublishedEntries, manifest_handler.call(Handlers::PublishedEntries))
-        builder.register(Dispatch::Contracts::RuleExplain, manifest_handler.call(Handlers::RuleExplain))
-        builder.register(Dispatch::Contracts::RuleList, manifest_handler.call(Handlers::RuleList))
-        builder.register(Dispatch::Contracts::SchemaEnvelope, lambda { |c|
-          Handlers::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas)
-        })
-        builder.register(Dispatch::Contracts::DrainStore, ->(c) { Handlers::DrainStore.new(container: c, job_store: c.job_store) })
-        builder.register(Dispatch::Contracts::IngestEntry, container_handler.call(Handlers::IngestEntry))
-        builder.register(Dispatch::Contracts::JobsAction, job_store_handler.call(Handlers::JobsAction))
-        builder.register(Dispatch::Contracts::RuleLint, manifest_handler.call(Handlers::RuleLint))
-        builder.register(Dispatch::Contracts::DataMv, container_handler.call(Handlers::DataMv))
-        builder.register(Dispatch::Contracts::KeyMvPrefix, lambda { |c|
-          Handlers::KeyMvPrefix.new(orchestration: orchestration_factory.call(c))
-        })
-        builder.register(Dispatch::Contracts::KeyDeletePrefix, lambda { |c|
-          Handlers::KeyDeletePrefix.new(orchestration: orchestration_factory.call(c))
-        })
+        register_builder_handlers(builder)
 
         pipeline = builder.build(middleware: [
                                    Dispatch::Middleware::Binder.new,
@@ -143,7 +74,94 @@ module Textus
         # (avoid calling Writer.from here which would prefer container.writer
         # and cause recursion). Use the cached reader so the writer shares
         # the same reader instance.
-        writer_factory = lambda do |call|
+        writer_factory = create_writer_factory(container)
+        container.instance_variable_set(:@writer, writer_factory)
+        container
+      end
+
+      def self.register_builder_handlers(builder)
+        manifest_handler = ->(handler_class) { ->(c) { handler_class.new(manifest: c.manifest) } }
+        container_handler = ->(handler_class) { ->(c) { handler_class.new(container: c) } }
+        job_store_handler = ->(handler_class) { ->(c) { handler_class.new(job_store: c.job_store) } }
+
+        # Core registrations that don't require orchestration
+        builder.register(Dispatch::Contracts::GetEntry, lambda { |c|
+          Handlers::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c))
+        })
+
+        register_basic_handlers(builder, manifest_handler, container_handler, job_store_handler)
+
+        register_orchestration_handlers(builder)
+      end
+
+      def self.orchestration_for(container)
+        Handlers::Orchestration.new(
+          list_keys: Handlers::ListKeys.new(manifest: container.manifest),
+          move_key: Handlers::MoveKey.new(container: container, manifest: container.manifest),
+          delete_key: Handlers::DeleteKey.new(container: container),
+          audit_entries: Handlers::AuditEntries.new(manifest: container.manifest, audit_log: container.audit_log),
+        )
+      end
+
+      def self.register_basic_handlers(builder, manifest_hnd, container_hnd, job_store_hnd)
+        builder.register(Dispatch::Contracts::PutEntry, container_hnd.call(Handlers::PutEntry))
+        builder.register(Dispatch::Contracts::ListKeys, manifest_hnd.call(Handlers::ListKeys))
+        builder.register(Dispatch::Contracts::DeleteKey, container_hnd.call(Handlers::DeleteKey))
+        builder.register(Dispatch::Contracts::MoveKey, ->(c) { Handlers::MoveKey.new(container: c, manifest: c.manifest) })
+        builder.register(Dispatch::Contracts::ProposeEntry, container_hnd.call(Handlers::ProposeEntry))
+        builder.register(Dispatch::Contracts::AcceptProposal, container_hnd.call(Handlers::AcceptProposal))
+        builder.register(Dispatch::Contracts::RejectProposal, container_hnd.call(Handlers::RejectProposal))
+        builder.register(Dispatch::Contracts::EnqueueJob, job_store_hnd.call(Handlers::EnqueueJob))
+
+        builder.register(Dispatch::Contracts::WhereEntry, manifest_hnd.call(Handlers::WhereEntry))
+        builder.register(Dispatch::Contracts::UidEntry, container_hnd.call(Handlers::UidEntry))
+        builder.register(Dispatch::Contracts::DepsEntry, manifest_hnd.call(Handlers::DepsEntry))
+        builder.register(Dispatch::Contracts::RdepsEntry, manifest_hnd.call(Handlers::RdepsEntry))
+        builder.register(Dispatch::Contracts::BootStore, container_hnd.call(Handlers::BootStore))
+        builder.register(Dispatch::Contracts::DoctorStore, container_hnd.call(Handlers::DoctorStore))
+        builder.register(Dispatch::Contracts::PublishedEntries, manifest_hnd.call(Handlers::PublishedEntries))
+        builder.register(Dispatch::Contracts::RuleExplain, manifest_hnd.call(Handlers::RuleExplain))
+        builder.register(Dispatch::Contracts::RuleList, manifest_hnd.call(Handlers::RuleList))
+        builder.register(Dispatch::Contracts::SchemaEnvelope, lambda { |c|
+          Handlers::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas)
+        })
+        builder.register(Dispatch::Contracts::DrainStore, ->(c) { Handlers::DrainStore.new(container: c, job_store: c.job_store) })
+        builder.register(Dispatch::Contracts::IngestEntry, container_hnd.call(Handlers::IngestEntry))
+        builder.register(Dispatch::Contracts::JobsAction, job_store_hnd.call(Handlers::JobsAction))
+        builder.register(Dispatch::Contracts::RuleLint, manifest_hnd.call(Handlers::RuleLint))
+        builder.register(Dispatch::Contracts::DataMv, container_hnd.call(Handlers::DataMv))
+      end
+
+      def self.register_orchestration_handlers(builder)
+        # AuditEntries needs both manifest and audit_log
+        builder.register(Dispatch::Contracts::AuditEntries, lambda { |c|
+          Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log)
+        })
+
+        builder.register(Dispatch::Contracts::PulseEntries, lambda { |c|
+          Handlers::PulseEntries.new(
+            manifest: c.manifest,
+            audit_log: c.audit_log,
+            file_store: c.file_store,
+            orchestration: orchestration_for(c),
+          )
+        })
+
+        builder.register(Dispatch::Contracts::BlameEntry, lambda { |c|
+          Handlers::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_for(c))
+        })
+
+        builder.register(Dispatch::Contracts::KeyMvPrefix, lambda { |c|
+          Handlers::KeyMvPrefix.new(orchestration: orchestration_for(c))
+        })
+
+        builder.register(Dispatch::Contracts::KeyDeletePrefix, lambda { |c|
+          Handlers::KeyDeletePrefix.new(orchestration: orchestration_for(c))
+        })
+      end
+
+      def self.create_writer_factory(container)
+        lambda do |call|
           Textus::Store::Envelope::Writer.new(
             file_store: container.file_store,
             manifest: container.manifest,
@@ -154,10 +172,7 @@ module Textus
             geometry: container.geometry,
           )
         end
-        container.instance_variable_set(:@writer, writer_factory)
-        container
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.build_pipeline(container)
