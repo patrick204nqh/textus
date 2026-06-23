@@ -2,24 +2,31 @@
 
 module Textus
   module Dispatch
-    # A simple registry mapping contract classes to handler factory callables.
-    # The registry exposes Hash-like accessors so it can be passed around and
-    # interrogated by other composition code.
-    class HandlerFactoryRegistry
-      def initialize
-        @map = {}
-      end
+    class Pipeline
+      # A simple registry mapping contract classes to handler factory callables.
+      # The registry exposes Hash-like accessors so it can be passed around and
+      # interrogated by other composition code.
+      #
+      # This object replaces the prior Pipeline::Builder seam. Instead of
+      # inlining handler registrations into a builder, we register factory
+      # callables into this registry and adapt the registry into a live
+      # Dispatch::Pipeline via Textus::Dispatch::Pipeline::Adapter.
+      class HandlerFactoryRegistry
+        def initialize
+          @map = {}
+        end
 
-      def register(contract_class, factory)
-        @map[contract_class] = factory
-      end
+        def register(contract_class, factory)
+          @map[contract_class] = factory
+        end
 
-      def each(&)
-        @map.each
-      end
+        def each(&)
+          @map.each(&)
+        end
 
-      def [](contract_class)
-        @map[contract_class]
+        def [](contract_class)
+          @map[contract_class]
+        end
       end
     end
   end
