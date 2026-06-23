@@ -36,9 +36,16 @@ module Textus
         entry = @container.manifest.resolver.resolve(key).entry
         return unless entry.publish_tree || !Array(entry.publish_to).empty?
 
-        reader     = Textus::Store::Envelope::Reader.from(container: @container)
+        reader     = if @container.respond_to?(:reader) && @container.reader
+                       @container.reader
+                     else
+                       Textus::Store::Envelope::Reader.from(container: @container)
+                     end
         entry_path = @container.manifest.resolver.resolve(key).path
-        return unless entry.publish_tree || File.exist?(entry_path)
+        # Prefer the container's file_store for existence checks; this keeps
+        # filesystem semantics behind the port for tests.
+        exists = @container.file_store.exists?(entry_path)
+        return unless entry.publish_tree || exists
 
         pctx = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call, reader: reader.method(:read),

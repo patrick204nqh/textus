@@ -27,6 +27,12 @@ module Textus
         define_method(name) { @coord.public_send(name) }
       end
 
+      # Minor incremental injection points: allow the container to expose
+      # a pre-built pipeline, reader, and writer. We keep existing
+      # build_full behaviour but prefer these accessors when present so
+      # tests can swap a single instance.
+      attr_reader :pipeline, :reader, :writer
+
       def self.build_full(infra, coord_seed)
         coord = Coordination.new(
           manifest: coord_seed.manifest,
@@ -35,12 +41,22 @@ module Textus
         )
         container = new(infra, coord)
         pipeline = build_pipeline(container)
+        # set the pipeline into the coord and expose basic reader/writer
         coord_with_pipeline = Coordination.new(
           manifest: coord_seed.manifest,
           workflows: coord_seed.workflows,
           pipeline: pipeline,
         )
         container.instance_variable_set(:@coord, coord_with_pipeline)
+        # also create and cache a reader/writer for reuse; tests can
+        # override container.instance_variable_set(:@reader, ...) if
+        # they want to inject fakes.
+        container.instance_variable_set(:@reader, Textus::Store::Envelope::Reader.from(container: container))
+        # writer requires a call object; build a writer factory-like
+        # accessor via a lambda stored on the container so callers can
+        # request a writer for a call: container.writer_factory.call(call)
+        writer_factory = ->(call) { Textus::Store::Envelope::Writer.from(container: container, call: call) }
+        container.instance_variable_set(:@writer, writer_factory)
         container
       end
 
