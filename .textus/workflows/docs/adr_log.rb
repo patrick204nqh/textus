@@ -1,3 +1,4 @@
+# rubocop:disable Metrics/BlockLength
 Textus.workflow "adr_log" do
   match "artifacts.docs.adr-log"
 
@@ -43,13 +44,19 @@ Textus.workflow "adr_log" do
     adrs = build_adrs.call
 
     # Produce a deterministic _meta.uid derived from the content so repeated
-    # runs produce byte-for-byte identical generated artifacts. We take the
-    # first 16 hex chars of a SHA1 over the ADRs array which matches the
-    # 16-hex-char uid format used elsewhere in the project.
-    uid = Digest::SHA1.hexdigest(adrs.to_json)[0, 16]
+    # runs produce byte-for-byte identical generated artifacts. JSON
+    # serialization can vary across Ruby/JSON versions and platforms, which
+    # caused CI drift. Build a canonical ASCII string from each ADR's stable
+    # fields and hash that instead to ensure cross-platform determinism.
+    canonical = adrs.map do |a|
+      [a["number"], a["title"], a["date"], a["status"], a["slug"]].join("\u001F")
+    end.join("\n")
+
+    uid = Digest::SHA1.hexdigest(canonical)[0, 16]
 
     { "_meta" => { "uid" => uid }, "content" => { "adrs" => adrs } }
   end
 
   publish
 end
+# rubocop:enable Metrics/BlockLength
