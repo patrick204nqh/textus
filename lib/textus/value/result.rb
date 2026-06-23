@@ -1,26 +1,32 @@
-# frozen_string_literal: true
-
 module Textus
   module Value
-    # Unwraps Dry::Monads results at the Gate seam.
-    # Every action returns Success(value) or Failure(code:, message:, details:).
-    # This module converts Failure into an ActionError for surfaces (CLI, MCP)
-    # that expect exceptions.
-    module Result
-      def self.unwrap(result)
-        case result
-        when Dry::Monads::Result::Success then result.value!
-        when Dry::Monads::Result::Failure
-          failure = result.failure
-          raise ActionError.new(
-            failure[:code] || :internal,
-            failure[:message] || "action failed",
-            details: failure[:details] || {},
-          )
-        else
-          result
+    # rubocop:disable Lint/ConstantDefinitionInBlock
+    Result = Data.define(:ok, :value, :error) do
+      def self.success(value) = new(ok: true, value: value, error: nil)
+
+      def self.failure(code, message, details: {})
+        new(ok: false, value: nil, error: { code: code, message: message, details: details })
+      end
+
+      def success? = ok
+      def failure? = !ok
+
+      def unwrap
+        raise Result::UnwrapError.new(error[:code], error[:message], details: error[:details]) unless ok
+
+        value
+      end
+
+      class UnwrapError < StandardError
+        attr_reader :code, :details
+
+        def initialize(code, message, details: {})
+          super(message)
+          @code = code
+          @details = details
         end
       end
     end
+    # rubocop:enable Lint/ConstantDefinitionInBlock
   end
 end

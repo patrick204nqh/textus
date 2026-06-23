@@ -57,12 +57,8 @@ module Textus
       { "name" => "pulse" },
     ].freeze
 
-    # verb token => contract.summary, for every Dispatcher verb that carries a
-    # contract. The single source for a verb's one-line summary (ADR 0039).
     def self.contract_summaries
-      Textus::Action::VERBS.values
-                           .select { |k| k.respond_to?(:contract?) && k.contract? }
-                           .to_h { |k| [k.contract.verb.to_s, k.contract.summary] }
+      Textus::VerbRegistry.registered.to_h { |s| [s.verb.to_s, s.summary] }
     end
 
     # Build the CLI verb catalog: each summary is derived from its contract when
@@ -168,8 +164,7 @@ module Textus
       res = container.manifest.resolver.resolve(key)
       return nil unless res.path && File.exist?(res.path)
 
-      call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
-      env  = Textus::Action::Get.call(container: container, call: call, key: key)
+      env = container.pipeline.read(key)
       env&.content
     rescue Textus::Error
       nil
@@ -179,8 +174,7 @@ module Textus
       res = container.manifest.resolver.resolve("knowledge.boot")
       return nil unless res.path && File.exist?(res.path)
 
-      call = Textus::Value::Call.build(role: Textus::Value::Role::DEFAULT)
-      env  = Textus::Action::Get.call(container: container, call: call, key: "knowledge.boot")
+      env = container.pipeline.read("knowledge.boot")
       body = env&.body&.strip
       body.nil? || body.empty? ? nil : body
     rescue Textus::Error

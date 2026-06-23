@@ -29,12 +29,14 @@ module Textus
       def geometry = @container.geometry
       def manifest = @container.manifest
 
-      # Dispatch a verb through Gate.
       def dispatch(verb, *args, **kwargs)
-        klass = Textus::Action::VERBS[verb]
-        spec = klass.contract if klass.respond_to?(:contract?) && klass.contract?
-        inputs = spec ? Textus::Gate::Binder.inputs_from_ordered(spec, args, kwargs) : kwargs
-        @container.gate.dispatch(spec:, inputs:, role: @role)
+        contract_class = Textus::VerbRegistry::VERB_TO_CONTRACT[verb]
+        members = contract_class.members
+        command_kwargs = members.each_with_index.to_h { |m, i| [m, args[i] || kwargs[m]] }
+        command = contract_class.new(**command_kwargs)
+        call = Textus::Value::Call.build(role: @role)
+        result = @container.pipeline.dispatch(command, call: call)
+        Textus::Dispatch.unwrap(result)
       end
     end
   end

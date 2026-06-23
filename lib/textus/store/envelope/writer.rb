@@ -21,7 +21,7 @@ module Textus
           )
         end
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:) # rubocop:disable Metrics/ParameterLists
+        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:)
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas
@@ -134,7 +134,7 @@ module Textus
         end
 
         def inject_meta(meta, content, existing_meta, format)
-          Textus::Meta.inject_all(meta, content, existing_meta, format: format)
+          Meta.inject_all(meta, content, existing_meta, format: format)
         end
 
         def resolve_path(key)
@@ -179,7 +179,7 @@ module Textus
           @file_store.write(path, bytes)
         end
 
-        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil) # rubocop:disable Metrics/ParameterLists
+        def build_envelope(key, mentry, path, eff_meta, eff_body, eff_content, bytes = nil)
           raw = bytes || @file_store.read(path)
           Textus::Value::Envelope.build(
             key: key, mentry: mentry, path: path,

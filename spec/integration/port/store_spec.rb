@@ -8,8 +8,9 @@ RSpec.describe Textus::Port::Store do
   after { FileUtils.rm_rf(File.dirname(root)) }
 
   it "uses Layout.store_db as its path" do
+    geometry = Textus::Store::Geometry.new(root)
     store = described_class.new(root: root)
-    expect(store.path).to eq(Textus::Store::Geometry.new(root).store_db_path)
+    expect(store.path).to eq(geometry.store_db_path)
     store.close
   end
 

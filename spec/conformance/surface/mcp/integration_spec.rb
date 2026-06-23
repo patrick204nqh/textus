@@ -65,9 +65,9 @@ RSpec.describe "MCP end-to-end" do
     # Shape of the proof:
     #   1. initialize  → session cursor = audit_log.latest_seq at that instant (call it C0)
     #   2. put         → writes an audit row; audit_log.latest_seq becomes C1 > C0
-    #   3. pulse (no since) → session_default :cursor injects C0; changed must contain the
+    #   3. pulse (no since) → server resolves since from session cursor C0; changed must contain the
     #                          put row (seq > C0); server then advances session cursor to C1
-    #   4. pulse (no since) → session_default :cursor now injects C1; changed must be []
+    #   4. pulse (no since) → server resolves since from session cursor C1; changed must be []
     #
     # If the server were accidentally using since=0 for both calls, step 4 would still
     # return the put entry in changed (re-emitting from the beginning). The empty changed

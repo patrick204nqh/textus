@@ -24,7 +24,7 @@ RSpec.describe Textus::Store do
       store = described_class.new(root)
       expect(store.root).to eq(File.expand_path(root))
       expect(store.manifest).to be_a(Textus::Manifest)
-      expect(store.schemas).to be_a(Textus::Schemas)
+      expect(store.schemas).to be_a(Textus::Schema::Store)
       expect(store.file_store).to be_a(Textus::Port::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Port::AuditLog)
       expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
@@ -61,10 +61,10 @@ RSpec.describe Textus::Store do
   end
 
   describe "#session" do
-    it "returns a Textus::Store::Session oriented at the latest cursor and the role's propose_lane" do
+    it "returns a Store oriented at the latest cursor and the role's propose_lane" do
       store = described_class.new(root)
       s = store.session(role: "agent")
-      expect(s).to be_a(Textus::Store::Session)
+      expect(s).to be_a(Textus::Store)
       expect(s.role).to eq("agent")
       expect(s.cursor).to eq(store.audit_log.latest_seq)
       expect(s.propose_lane).to eq(store.manifest.policy.propose_lane_for("agent"))

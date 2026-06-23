@@ -2,12 +2,13 @@ require "spec_helper"
 
 RSpec.describe Textus::Store::Container do
   def build_infra(root)
+    geometry = Textus::Store::Geometry.new(root)
     Textus::Store::Container::Infrastructure.new(
       file_store: Textus::Port::Storage::FileStore.new,
-      schemas: Textus::Schemas.new(File.join(root, "schemas")),
-      audit_log: Textus::Port::AuditLog.new(root, max_size: 100, keep: 3),
+      schemas: Textus::Schema::Store.new(File.join(root, "schemas")),
+      audit_log: Textus::Port::AuditLog.new(geometry: geometry, max_size: 100, keep: 3),
       job_store: Textus::Port::Store.new(root: root).setup!,
-      geometry: Textus::Store::Geometry.new(root),
+      geometry: geometry,
     )
   end
 
@@ -15,8 +16,7 @@ RSpec.describe Textus::Store::Container do
     Textus::Store::Container::Coordination.new(
       manifest: manifest,
       workflows: Textus::Workflow::Registry.new,
-      gate: nil,
-      compositor: nil,
+      pipeline: nil,
     )
   end
 
@@ -32,7 +32,7 @@ RSpec.describe Textus::Store::Container do
       container = build_container(File.join(tmp, ".textus"))
       expect(container.manifest).to be_a(Textus::Manifest)
       expect(container.file_store).to be_a(Textus::Port::Storage::FileStore)
-      expect(container.schemas).to be_a(Textus::Schemas)
+      expect(container.schemas).to be_a(Textus::Schema::Store)
       expect(container.root).to match(/\.textus\z/)
       expect(container.audit_log).to be_a(Textus::Port::AuditLog)
       expect(container.workflows).to be_a(Textus::Workflow::Registry)
@@ -40,11 +40,10 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "defaults optional attributes to nil" do
+  it "defaults pipeline to nil" do
     Dir.mktmpdir do |tmp|
       container = build_container(File.join(tmp, ".textus"))
-      expect(container.gate).to be_nil
-      expect(container.compositor).to be_nil
+      expect(container.pipeline).to be_nil
     end
   end
 
@@ -65,7 +64,7 @@ RSpec.describe Textus::Store::Container do
     end
   end
 
-  it "holds is_a? Gate after construction" do
+  it "dispatches through Store" do
     Dir.mktmpdir do |tmp|
       dir = File.join(tmp, ".textus")
       Textus::Surface::CLI.run(
@@ -73,9 +72,8 @@ RSpec.describe Textus::Store::Container do
         stdin: StringIO.new(""), stdout: StringIO.new, stderr: StringIO.new, cwd: tmp,
       )
       store = Textus::Store.new(dir)
-      gate = store.gate
-      expect(gate).to be_a(Textus::Gate)
-      expect(gate.instance_variable_get(:@container)).to be_a(Textus::Store::Container)
+      result = store.list(prefix: nil)
+      expect(result).to be_an(Array)
     end
   end
 end

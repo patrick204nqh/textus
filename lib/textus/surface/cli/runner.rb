@@ -50,7 +50,7 @@ module Textus
         module_function
 
         def dispatch(verb_instance, store, spec)
-          inputs = Textus::Gate::Binder.inputs_from_ordered(
+          inputs = Textus::Dispatch::Binder.inputs_from_ordered(
             spec, verb_instance.positional, verb_instance.flag_values(spec)
           )
           inputs = inputs.merge(Surface::CLI::Sources.from_stdin(spec, verb_instance.stdin)) if spec.cli_stdin
@@ -58,9 +58,11 @@ module Textus
           inputs = apply_cli_defaults(spec, inputs)
           role = verb_instance.resolved_role(store)
 
-          result = store.gate.dispatch(spec:, inputs:, role:, surface: :cli)
+          s = store.with_role(role)
+          result = s.public_send(spec.verb, **inputs)
+          result = spec.view(:cli).call(result, inputs) if spec.view(:cli)
           verb_instance.emit(result)
-        rescue Textus::Gate::MissingArgs => e
+        rescue Textus::Dispatch::MissingArgs => e
           raise UsageError.new("#{spec.cli_path} requires #{e.missing.first.wire}")
         end
 
@@ -144,10 +146,7 @@ module Textus
 
         def install!
           @installed ||= {}
-          Textus::Action::VERBS.each_value do |action_class|
-            next unless action_class.respond_to?(:contract?) && action_class.contract?
-
-            spec = action_class.contract
+          Textus::VerbRegistry.registered.each do |spec|
             next unless spec.cli?
             next if hand_authored?(spec.verb)
             next if @installed[spec.verb]
