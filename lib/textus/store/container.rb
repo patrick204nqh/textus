@@ -33,6 +33,7 @@ module Textus
       # tests can swap a single instance.
       attr_reader :pipeline, :reader, :writer
 
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.build_full(infra, coord_seed)
         coord = Coordination.new(
           manifest: coord_seed.manifest,
@@ -156,6 +157,7 @@ module Textus
         container.instance_variable_set(:@writer, writer_factory)
         container
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def self.build_pipeline(container)
