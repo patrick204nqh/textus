@@ -17,7 +17,7 @@ module Textus
         end
 
         def call(contract, call)
-          handler = build_handler_for(contract)
+          # ensure pipeline is built and delegate to its dispatch
           pipeline.dispatch(contract: contract, call: call)
         end
 

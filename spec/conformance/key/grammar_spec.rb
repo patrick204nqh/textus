@@ -81,7 +81,7 @@ RSpec.describe "Key grammar enforcement" do
       rescue Textus::UnknownKey => e
         expect(e.suggestions).to include("working.notes.alpha")
         expect(e.suggestions.length).to be <= 5
-        expect(e.message).to match(/did you mean/)
+        expect(e.message).to include("did you mean")
         expect(e.to_envelope["details"]["suggestions"]).to include("working.notes.alpha")
       end
     end

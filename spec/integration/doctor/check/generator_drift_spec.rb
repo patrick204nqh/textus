@@ -48,7 +48,7 @@ RSpec.describe Textus::Doctor::Check::GeneratorDrift do
     issue = issues.find { |i| i["code"] == "generator_drift" && i["subject"] == "artifacts.catalog" }
     expect(issue).not_to be_nil
     expect(issue["level"]).to eq("warning")
-    expect(issue["message"]).to match(/knowledge\.src/)
+    expect(issue["message"]).to include("knowledge.src")
   end
 
   it "is silent when the derived entry is newer than its source" do

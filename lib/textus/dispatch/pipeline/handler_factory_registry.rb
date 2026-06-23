@@ -14,8 +14,8 @@ module Textus
         @map[contract_class] = factory
       end
 
-      def each(&blk)
-        @map.each(&blk)
+      def each(&)
+        @map.each
       end
 
       def [](contract_class)

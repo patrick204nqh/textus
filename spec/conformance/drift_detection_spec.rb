@@ -27,7 +27,7 @@ RSpec.describe "textus/4 conformance — Fixture D: generator drift detection" d
       expect(drift.length).to eq(1)
       row = drift.first
       expect(row["subject"]).to eq("artifacts.catalogs.skills")
-      expect(row["message"]).to match(/knowledge\.projects/)
+      expect(row["message"]).to include("knowledge.projects")
     end
   end
 end

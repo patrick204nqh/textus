@@ -5,9 +5,9 @@ RSpec.describe "Textus::Manifest grammar" do
     it "raises BadFrontmatter with the generic hint for any unsupported version" do
       yaml = "version: textus/2\nlanes: []\nentries: []\n"
       expect { Textus::Manifest.parse(yaml) }.to raise_error(Textus::BadFrontmatter) { |err|
-        expect(err.message).to match(%r{unsupported manifest version "textus/2"})
-        expect(err.hint).to match(/syntax errors/)
-        expect(err.hint).not_to match(/0\.11\.x/)
+        expect(err.message).to include('unsupported manifest version "textus/2"')
+        expect(err.hint).to include("syntax errors")
+        expect(err.hint).not_to include("0.11.x")
       }
     end
   end

@@ -53,7 +53,9 @@ module Textus
         container_handler = ->(handler_class) { ->(c) { handler_class.new(container: c) } }
         job_store_handler = ->(handler_class) { ->(c) { handler_class.new(job_store: c.job_store) } }
 
-        builder.register(Dispatch::Contracts::GetEntry, ->(c) { Handlers::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c)) })
+        builder.register(Dispatch::Contracts::GetEntry, lambda { |c|
+          Handlers::GetEntry.new(container: c, freshness_evaluator: freshness_evaluator(c))
+        })
         builder.register(Dispatch::Contracts::PutEntry, container_handler.call(Handlers::PutEntry))
         builder.register(Dispatch::Contracts::ListKeys, manifest_handler.call(Handlers::ListKeys))
         builder.register(Dispatch::Contracts::DeleteKey, container_handler.call(Handlers::DeleteKey))
@@ -75,9 +77,20 @@ module Textus
         end
 
         # AuditEntries needs both manifest and audit_log
-        builder.register(Dispatch::Contracts::AuditEntries, ->(c) { Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log) })
-        builder.register(Dispatch::Contracts::PulseEntries, ->(c) { Handlers::PulseEntries.new(manifest: c.manifest, audit_log: c.audit_log, file_store: c.file_store, orchestration: orchestration_factory.call(c)) })
-        builder.register(Dispatch::Contracts::BlameEntry, ->(c) { Handlers::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_factory.call(c)) })
+        builder.register(Dispatch::Contracts::AuditEntries, lambda { |c|
+          Handlers::AuditEntries.new(manifest: c.manifest, audit_log: c.audit_log)
+        })
+        builder.register(Dispatch::Contracts::PulseEntries, lambda { |c|
+          Handlers::PulseEntries.new(
+            manifest: c.manifest,
+            audit_log: c.audit_log,
+            file_store: c.file_store,
+            orchestration: orchestration_factory.call(c),
+          )
+        })
+        builder.register(Dispatch::Contracts::BlameEntry, lambda { |c|
+          Handlers::BlameEntry.new(manifest: c.manifest, orchestration: orchestration_factory.call(c))
+        })
         builder.register(Dispatch::Contracts::WhereEntry, manifest_handler.call(Handlers::WhereEntry))
         builder.register(Dispatch::Contracts::UidEntry, container_handler.call(Handlers::UidEntry))
         builder.register(Dispatch::Contracts::DepsEntry, manifest_handler.call(Handlers::DepsEntry))
@@ -87,20 +100,26 @@ module Textus
         builder.register(Dispatch::Contracts::PublishedEntries, manifest_handler.call(Handlers::PublishedEntries))
         builder.register(Dispatch::Contracts::RuleExplain, manifest_handler.call(Handlers::RuleExplain))
         builder.register(Dispatch::Contracts::RuleList, manifest_handler.call(Handlers::RuleList))
-        builder.register(Dispatch::Contracts::SchemaEnvelope, ->(c) { Handlers::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas) })
+        builder.register(Dispatch::Contracts::SchemaEnvelope, lambda { |c|
+          Handlers::SchemaEnvelope.new(manifest: c.manifest, schemas: c.schemas)
+        })
         builder.register(Dispatch::Contracts::DrainStore, ->(c) { Handlers::DrainStore.new(container: c, job_store: c.job_store) })
         builder.register(Dispatch::Contracts::IngestEntry, container_handler.call(Handlers::IngestEntry))
         builder.register(Dispatch::Contracts::JobsAction, job_store_handler.call(Handlers::JobsAction))
         builder.register(Dispatch::Contracts::RuleLint, manifest_handler.call(Handlers::RuleLint))
         builder.register(Dispatch::Contracts::DataMv, container_handler.call(Handlers::DataMv))
-        builder.register(Dispatch::Contracts::KeyMvPrefix, ->(c) { Handlers::KeyMvPrefix.new(orchestration: orchestration_factory.call(c)) })
-        builder.register(Dispatch::Contracts::KeyDeletePrefix, ->(c) { Handlers::KeyDeletePrefix.new(orchestration: orchestration_factory.call(c)) })
+        builder.register(Dispatch::Contracts::KeyMvPrefix, lambda { |c|
+          Handlers::KeyMvPrefix.new(orchestration: orchestration_factory.call(c))
+        })
+        builder.register(Dispatch::Contracts::KeyDeletePrefix, lambda { |c|
+          Handlers::KeyDeletePrefix.new(orchestration: orchestration_factory.call(c))
+        })
 
         pipeline = builder.build(middleware: [
-          Dispatch::Middleware::Binder.new,
-          Dispatch::Middleware::Auth.new,
-          Dispatch::Middleware::Cascade.new,
-        ])
+                                   Dispatch::Middleware::Binder.new,
+                                   Dispatch::Middleware::Auth.new,
+                                   Dispatch::Middleware::Cascade.new,
+                                 ])
 
         coord_with_pipeline = Coordination.new(
           manifest: coord_seed.manifest,
