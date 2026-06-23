@@ -25,26 +25,48 @@ module Textus
       end
 
       def write(key, mentry:, payload:, call:, if_etag: nil)
-        Store::Envelope::Writer.from(container: @container, call: call)
-                               .put(key, mentry: mentry, payload: payload, if_etag: if_etag)
+        writer = if container.respond_to?(:writer) && container.writer
+                   container.writer.call(call)
+                 else
+                   Store::Envelope::Writer.from(container: @container, call: call)
+                 end
+        writer.put(key, mentry: mentry, payload: payload, if_etag: if_etag)
       end
 
       def read(key)
-        Store::Envelope::Reader.from(container: @container).read(key)
+        reader = if container.respond_to?(:reader) && container.reader
+                   container.reader
+                 else
+                   Store::Envelope::Reader.from(container: @container)
+                 end
+        reader.read(key)
       end
 
       def delete(key, call:, mentry: nil, if_etag: nil)
-        Store::Envelope::Writer.from(container: @container, call: call)
-                               .delete(key, mentry: mentry, if_etag: if_etag)
+        writer = if container.respond_to?(:writer) && container.writer
+                   container.writer.call(call)
+                 else
+                   Store::Envelope::Writer.from(container: @container, call: call)
+                 end
+        writer.delete(key, mentry: mentry, if_etag: if_etag)
       end
 
       def move(from_key:, to_key:, new_mentry:, call:, if_etag: nil)
-        Store::Envelope::Writer.from(container: @container, call: call)
-                               .move(from_key: from_key, to_key: to_key, new_mentry: new_mentry, if_etag: if_etag)
+        writer = if container.respond_to?(:writer) && container.writer
+                   container.writer.call(call)
+                 else
+                   Store::Envelope::Writer.from(container: @container, call: call)
+                 end
+        writer.move(from_key: from_key, to_key: to_key, new_mentry: new_mentry, if_etag: if_etag)
       end
 
       def exists?(key)
-        Store::Envelope::Reader.from(container: @container).exists?(key)
+        reader = if container.respond_to?(:reader) && container.reader
+                   container.reader
+                 else
+                   Store::Envelope::Reader.from(container: @container)
+                 end
+        reader.exists?(key)
       end
 
       private

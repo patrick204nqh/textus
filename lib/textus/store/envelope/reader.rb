@@ -9,6 +9,10 @@ module Textus
       # No audit, no events, no permission checks — those live one layer up.
       class Reader
         def self.from(container:)
+          # Prefer a cached reader on the container (injection point) for
+          # tests and alternative runtimes. Fall back to constructing one.
+          return container.reader if container.respond_to?(:reader) && container.reader
+
           new(file_store: container.file_store, manifest: container.manifest,
               geometry: container.geometry)
         end

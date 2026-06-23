@@ -130,7 +130,7 @@ RSpec.describe Textus::Surface::MCP::Server do
                                         "meta" => { "owner" => "human:self" } })
     resp = lines.find { |r| r["id"] == 2 }
     expect(resp["error"]).not_to be_nil
-    expect(resp["error"]["message"]).to match(/contract changed/)
+    expect(resp["error"]["message"]).to include("contract changed")
   end
 
   it "allows a read verb (list) after contract drift without error" do
@@ -172,7 +172,7 @@ RSpec.describe Textus::Surface::MCP::Server do
     lines = run_with_drift(name: "drain", arguments: {})
     resp = lines.find { |r| r["id"] == 2 }
     expect(resp["error"]).not_to be_nil
-    expect(resp["error"]["message"]).to match(/contract changed/)
+    expect(resp["error"]["message"]).to include("contract changed")
   end
 
   it "returns method-not-found error for unknown methods" do

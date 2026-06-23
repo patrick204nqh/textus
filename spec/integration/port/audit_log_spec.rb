@@ -93,7 +93,7 @@ RSpec.describe Textus::Port::AuditLog do
       violations = log.verify_integrity
       expect(violations.length).to eq(1)
       expect(violations.first["reason"]).to eq("seq_gap")
-      expect(violations.first["detail"]).to match(/expected 2, got 3/)
+      expect(violations.first["detail"]).to include("expected 2, got 3")
     end
 
     it "detects a seq regression (row out of order or overwritten)" do
@@ -111,7 +111,7 @@ RSpec.describe Textus::Port::AuditLog do
       violations = log.verify_integrity
       expect(violations.length).to eq(1)
       expect(violations.first["reason"]).to eq("seq_gap")
-      expect(violations.first["detail"]).to match(/expected 3, got 1/)
+      expect(violations.first["detail"]).to include("expected 3, got 1")
     end
 
     it "skips empty lines silently" do

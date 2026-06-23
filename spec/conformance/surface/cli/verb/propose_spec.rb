@@ -91,6 +91,6 @@ RSpec.describe "textus propose (generated via cli_stdin :json, ADR 0068)" do
     )
     expect(rc).not_to eq(0)
     output = JSON.parse(stdout.string)
-    expect(output["message"]).to match(/propose_lane/)
+    expect(output["message"]).to include("propose_lane")
   end
 end

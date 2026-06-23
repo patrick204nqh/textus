@@ -9,6 +9,18 @@ module Textus
       "text" => -> { Format::Text },
     }.freeze
 
+    # Optional registry for injectable format strategies. Tests or app
+    # initializers can set Format.registry = { "custom" => -> { MyFormat }}
+    @registry = nil
+
+    def self.registry=(reg)
+      @registry = reg
+    end
+
+    def self.registry
+      @registry
+    end
+
     EXT_TO_FORMAT = {
       ".md" => "markdown",
       ".json" => "json",
@@ -18,7 +30,10 @@ module Textus
     }.freeze
 
     def self.for(format)
-      STRATEGIES.fetch(format.to_s) { raise Textus::UsageError.new("unknown entry format: #{format.inspect}") }.call
+      key = format.to_s
+      return registry.fetch(key).call if registry&.key?(key)
+
+      STRATEGIES.fetch(key) { raise Textus::UsageError.new("unknown entry format: #{format.inspect}") }.call
     end
 
     def self.infer_from_extension(ext)

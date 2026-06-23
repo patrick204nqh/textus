@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "uid": "5755239f7039ebeb"
+    "uid": "e697cdc7317dfe46"
   },
   "adrs": [
     {
@@ -23,6 +23,13 @@
       "date": "2026-06-17",
       "status": "Accepted",
       "slug": "0117-textus-4-protocol-version-bump"
+    },
+    {
+      "number": "0117",
+      "title": "adopt pipeline handler factory registry",
+      "date": null,
+      "status": "",
+      "slug": "0117-adopt-pipeline-handler-factory-registry"
     },
     {
       "number": "0116",

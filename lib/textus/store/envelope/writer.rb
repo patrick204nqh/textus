@@ -13,6 +13,10 @@ module Textus
       # (Write::Put / ::Delete / ::Mv).
       class Writer
         def self.from(container:, call:)
+          # If the container exposes a writer factory (in tests we set this),
+          # use it. Otherwise, construct a fresh Writer.
+          return container.writer.call(call) if container.respond_to?(:writer) && container.writer
+
           new(
             file_store: container.file_store, manifest: container.manifest,
             schemas: container.schemas, audit_log: container.audit_log,
@@ -81,8 +85,12 @@ module Textus
           etag_before = @file_store.etag(from_path)
           raise EtagMismatch.new(from_key, if_etag, etag_before) if if_etag && if_etag != etag_before
 
-          FileUtils.mkdir_p(File.dirname(to_path))
-          FileUtils.mv(from_path, to_path)
+          if @file_store.respond_to?(:mv)
+            @file_store.mv(from_path, to_path)
+          else
+            FileUtils.mkdir_p(File.dirname(to_path))
+            FileUtils.mv(from_path, to_path)
+          end
           prune_empty_parents(from_path)
           basename = to_key.split(".").last
           Format.for(new_mentry.format).rewrite_name(to_path, basename)
@@ -121,8 +129,15 @@ module Textus
           return unless floor
 
           dir = File.dirname(path)
-          while dir.start_with?("#{floor}/") && Dir.empty?(dir)
-            Dir.rmdir(dir)
+          while dir.start_with?("#{floor}/") && (
+              (@file_store.respond_to?(:dir_empty?) && @file_store.dir_empty?(dir)) ||
+              (!@file_store.respond_to?(:dir_empty?) && Dir.empty?(dir))
+            )
+            if @file_store.respond_to?(:rmdir)
+              @file_store.rmdir(dir)
+            else
+              Dir.rmdir(dir)
+            end
             dir = File.dirname(dir)
           end
         rescue SystemCallError
