@@ -77,10 +77,10 @@ def detect_skills(repo_dir, name)
     return found unless found.empty?
   end
 
-  # 4. skills/ subdir → each immediate child with SKILL.md is its own skill
+  # 4. skills/ subdir → each descendant dir with SKILL.md is its own skill
   skills_sub = "#{repo_dir}/skills"
   if Dir.exist?(skills_sub)
-    found = Dir.glob("#{skills_sub}/*/SKILL.md").map do |f|
+    found = Dir.glob("#{skills_sub}/**/SKILL.md").map do |f|
       { skill_name: File.basename(File.dirname(f)), skill_src: File.dirname(f) }
     end
     return found unless found.empty?
