@@ -40,18 +40,40 @@ module Textus
           pipeline: nil,
         )
         container = new(infra, coord)
-        # Build pipeline via the Builder to keep composition local to the
-        # Dispatch::Pipeline module. This concentrates handler wiring in a
-        # smaller, test-friendly place and keeps the Pipeline interface
-        # deep (small public surface, complex implementation hidden).
-        builder = Dispatch::Pipeline::Builder.new(container)
-        register_builder_handlers(builder)
+        # Two composition seams are available. By default we use the
+        # Pipeline::Builder (Design A) which registers factories and
+        # returns a Pipeline. Setting TEXTUS_PIPELINE_ADAPTER=1 will
+        # instead use the HandlerFactoryRegistry + Pipeline::Adapter
+        # (Design B) so we can compare both approaches at runtime.
+        if ENV["TEXTUS_PIPELINE_ADAPTER"] == "1"
+          factory_registry = Dispatch::Pipeline::HandlerFactoryRegistry.new
+          register_builder_handlers(factory_registry)
 
-        pipeline = builder.build(middleware: [
-                                   Dispatch::Middleware::Binder.new,
-                                   Dispatch::Middleware::Auth.new,
-                                   Dispatch::Middleware::Cascade.new,
-                                 ])
+          adapter = Dispatch::Pipeline::Adapter.new(
+            container: container,
+            factory_registry: factory_registry,
+            middleware: [
+              Dispatch::Middleware::Binder.new,
+              Dispatch::Middleware::Auth.new,
+              Dispatch::Middleware::Cascade.new,
+            ],
+          )
+
+          pipeline = adapter.pipeline
+        else
+          # Build pipeline via the Builder to keep composition local to the
+          # Dispatch::Pipeline module. This concentrates handler wiring in a
+          # smaller, test-friendly place and keeps the Pipeline interface
+          # deep (small public surface, complex implementation hidden).
+          builder = Dispatch::Pipeline::Builder.new(container)
+          register_builder_handlers(builder)
+
+          pipeline = builder.build(middleware: [
+                                     Dispatch::Middleware::Binder.new,
+                                     Dispatch::Middleware::Auth.new,
+                                     Dispatch::Middleware::Cascade.new,
+                                   ])
+        end
 
         coord_with_pipeline = Coordination.new(
           manifest: coord_seed.manifest,
