@@ -8,9 +8,9 @@ module Textus
       def call(command, call)
         zone = @container.manifest.policy.propose_lane_for(call.role)
         unless zone
-          return Result.failure(:propose_forbidden,
-                                "role '#{call.role}' has no writable propose_lane",
-                                details: { "role" => call.role })
+          return Value::Result.failure(:propose_forbidden,
+                                       "role '#{call.role}' has no writable propose_lane",
+                                       details: { "role" => call.role })
         end
 
         key = "#{zone}.#{command.key}"
@@ -19,7 +19,7 @@ module Textus
           key, mentry: mentry, call: call,
                payload: Textus::Value::Payload.new(meta: command.meta || {}, body: command.body, content: command.content)
         )
-        Result.success(envelope)
+        Value::Result.success(envelope)
       end
     end
   end

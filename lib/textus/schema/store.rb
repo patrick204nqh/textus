@@ -32,11 +32,9 @@ module Textus
 
         Dir.glob(File.join(@dir, "*.yaml")).each do |path|
           name = File.basename(path, ".yaml")
-          begin
-            @schemas[name] = Schema.load(path)
-          rescue StandardError
-            next
-          end
+          @schemas[name] = Schema.load(path)
+        rescue StandardError => e
+          warn "textus: failed to load schema '#{name}' at #{path}: #{e.message}"
         end
       end
     end

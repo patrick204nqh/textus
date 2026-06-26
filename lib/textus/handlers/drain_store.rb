@@ -11,8 +11,8 @@ module Textus
         Textus::Store::Jobs::Planner.seed(container: @container, queue: queue, role: call.role)
         queue.reclaim(now: Textus::Port::Clock.new.now)
         summary = Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
-        Result.success("protocol" => Textus::PROTOCOL, "ok" => summary.failed.zero?,
-                       "completed" => summary.completed, "failed" => summary.failed)
+        Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => summary.failed.zero?,
+                              "completed" => summary.completed, "failed" => summary.failed)
       end
     end
   end

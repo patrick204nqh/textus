@@ -1,6 +1,7 @@
 RSpec.describe "Port shape — every port is an instantiable class" do
   Dir["lib/textus/port/**/*.rb"].each do |file|
     next if file.end_with?("storage/file_stat.rb") # FileStat is a class — check below
+    next if file.end_with?("storage/interface.rb") # Interface is a module contract, not a port
 
     it "#{file.delete_prefix("lib/textus/")} defines a Class" do
       relative = file.delete_prefix("lib/textus/")

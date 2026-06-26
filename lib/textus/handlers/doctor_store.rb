@@ -6,7 +6,7 @@ module Textus
       end
 
       def call(command, call)
-        Result.success(Textus::Doctor.build(container: @container, checks: command.checks, role: call.role))
+        Value::Result.success(Textus::Doctor.build(container: @container, checks: command.checks, role: call.role))
       end
     end
   end

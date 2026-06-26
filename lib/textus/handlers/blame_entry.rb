@@ -14,9 +14,9 @@ module Textus
         audit_rows = audit.value.fetch("rows")
 
         path = resolve_path(command.key)
-        return Result.success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
+        return Value::Result.success(audit_rows.map { |row| row.merge("git" => nil) }) unless git_tracked?(path, root: root)
 
-        Result.success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
+        Value::Result.success(audit_rows.map { |row| row.merge("git" => git_commit_at(path, timestamp: row["ts"], root: root)) })
       end
 
       private

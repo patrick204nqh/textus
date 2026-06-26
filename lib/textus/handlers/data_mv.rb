@@ -11,14 +11,14 @@ module Textus
         manifest = @container.manifest
         geom = @container.geometry
 
-        return Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
+        return Value::Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
         unless manifest.data.declared_lane_kinds.key?(command.from)
-          return Result.failure(:usage_error,
-                                "data lane '#{command.from}' not declared")
+          return Value::Result.failure(:usage_error,
+                                       "data lane '#{command.from}' not declared")
         end
 
         dest_dir = geom.lane_path(command.to)
-        return Result.failure(:usage_error, "destination 'data/#{command.to}' already exists") if File.exist?(dest_dir)
+        return Value::Result.failure(:usage_error, "destination 'data/#{command.to}' already exists") if File.exist?(dest_dir)
 
         affected_keys = manifest.data.entries.select { |entry| entry.lane == command.from }.map(&:key)
 
@@ -28,11 +28,11 @@ module Textus
         end
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: [])
-        return Result.success(plan) if command.dry_run
+        return Value::Result.success(plan) if command.dry_run
 
         rewrite_manifest!(geom, from: command.from, to: command.to)
         FileUtils.mv(geom.lane_path(command.from), dest_dir)
-        Result.success(plan)
+        Value::Result.success(plan)
       end
 
       private

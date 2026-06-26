@@ -12,7 +12,7 @@ module Textus
                  else
                    effective(key)
                  end
-        Result.success(result)
+        Value::Result.success(result)
       end
 
       LEAN_FIELDS = Textus::Manifest::Schema::FIELD_REGISTRY

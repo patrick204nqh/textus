@@ -8,7 +8,7 @@ module Textus
       def call(command, _call)
         entry = @manifest.data.entries.find { |e| e.key == command.key }
         deps = entry&.external? ? Array(entry.source&.sources).compact : []
-        Result.success("key" => command.key, "deps" => deps.uniq)
+        Value::Result.success("key" => command.key, "deps" => deps.uniq)
       end
     end
   end

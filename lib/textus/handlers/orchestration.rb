@@ -47,10 +47,10 @@ module Textus
       private
 
       def normalize(result, key:)
-        return result unless result.is_a?(Result)
+        return result unless result.is_a?(Value::Result)
         return result if result.failure?
 
-        Result.success({ key => result.value })
+        Value::Result.success({ key => result.value })
       end
     end
   end

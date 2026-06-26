@@ -14,16 +14,16 @@ module Textus
 
       def call(command, call)
         unless SOURCE_KINDS.include?(command.kind)
-          return Result.failure(:usage_error,
-                                "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
+          return Value::Result.failure(:usage_error,
+                                       "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
         end
 
         case command.kind
-        when "url"   then return Result.failure(:usage_error, "ingest url requires url") unless command.url
-        when "file"  then return Result.failure(:usage_error, "ingest file requires path") unless command.path
+        when "url"   then return Value::Result.failure(:usage_error, "ingest url requires url") unless command.url
+        when "file"  then return Value::Result.failure(:usage_error, "ingest file requires path") unless command.path
         when "asset"
-          return Result.failure(:usage_error, "ingest asset requires path") unless command.path
-          return Result.failure(:usage_error, "ingest asset requires zone") unless command.zone
+          return Value::Result.failure(:usage_error, "ingest asset requires path") unless command.path
+          return Value::Result.failure(:usage_error, "ingest asset requires zone") unless command.zone
         end
 
         now = Time.now.utc
@@ -45,7 +45,7 @@ module Textus
               end
 
         rebuild_index(store)
-        Result.success(env)
+        Value::Result.success(env)
       end
 
       private

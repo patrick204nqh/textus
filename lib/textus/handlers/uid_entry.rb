@@ -7,9 +7,9 @@ module Textus
 
       def call(command, _call)
         envelope = @container.pipeline.read(command.key)
-        return Result.failure(:not_found, "no entry at #{command.key}") unless envelope
+        return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
 
-        Result.success(envelope.uid)
+        Value::Result.success(envelope.uid)
       end
     end
   end

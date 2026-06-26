@@ -12,7 +12,7 @@ module Textus
       Array => "array", :boolean => "boolean"
     }.freeze
 
-    VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin) do
+    VerbSpec = Data.define(:verb, :summary, :args, :surfaces, :views, :cli, :cli_stdin, :category) do
       def mcp? = surfaces.include?(:mcp)
       def cli? = surfaces.include?(:cli)
       def view(surface = :default) = views[surface] || views.fetch(:default)
@@ -21,6 +21,9 @@ module Textus
       def cli_group = cli_words.size > 1 ? cli_words.first : nil
       def cli_leaf  = cli_words.last
       def required_args = args.select(&:required)
+      def read? = category == :read
+      def write? = category == :write
+      def maintenance? = category == :maintenance
 
       def input_schema
         props = args.to_h do |a|
@@ -95,7 +98,7 @@ module Textus
       :get, "Read one entry — on-disk read with freshness verdict.",
       [ArgSpec[:key, String, true, true, nil,
                "dotted entry key to read, e.g. 'knowledge.project'", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(v, _i) { v&.to_h_for_wire } }, nil, nil
+      %i[cli mcp], { default: ->(v, _i) { v&.to_h_for_wire } }, nil, nil, :read
     )
 
     # ── put ──────────────────────────────────────────────
@@ -111,7 +114,7 @@ module Textus
                "structured payload for json/yaml-format entries; omit (use `body`) for markdown entries", nil, nil, nil, nil, :__unset],
        ArgSpec[:if_etag, String, false, false, nil,
                "optimistic-concurrency guard; write rejected if entry changed since", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(env, _) { { "uid" => env.uid, "etag" => env.etag } } }, nil, nil
+      %i[cli mcp], { default: ->(env, _) { { "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
     )
 
     # ── list ─────────────────────────────────────────────
@@ -121,7 +124,7 @@ module Textus
                "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'", nil, nil, nil, nil, :__unset],
        ArgSpec[:lane, String, false, false, nil,
                "restrict to one lane by name (see `boot` lanes)", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil
+      %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil, :read
     )
 
     # ── delete ───────────────────────────────────────────
@@ -131,7 +134,7 @@ module Textus
                "dotted entry key to delete", nil, nil, nil, nil, :__unset],
        ArgSpec[:if_etag, String, false, false, nil,
                "optimistic-concurrency guard: etag you last read", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "key delete", nil
+      %i[cli mcp], { default: identity }, "key delete", nil, :write
     )
 
     # ── move ─────────────────────────────────────────────
@@ -143,7 +146,7 @@ module Textus
                "new dotted key (same zone and format)", nil, nil, nil, nil, :__unset],
        ArgSpec[:dry_run, :boolean, false, false, nil,
                "when true, returns planned move without applying", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "key mv", nil
+      %i[cli mcp], { default: identity }, "key mv", nil, :write
     )
 
     # ── propose ──────────────────────────────────────────
@@ -157,7 +160,7 @@ module Textus
                "markdown/text payload for markdown-format entries", nil, nil, nil, nil, :__unset],
        ArgSpec[:content, Hash, false, false, nil,
                "structured payload for json/yaml-format entries", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(env, _) { env.to_h_for_wire } }, nil, :json
+      %i[cli mcp], { default: ->(env, _) { env.to_h_for_wire } }, nil, :json, :write
     )
 
     # ── accept ───────────────────────────────────────────
@@ -165,7 +168,7 @@ module Textus
       :accept, "Apply a queued proposal to its target zone; requires author.",
       [ArgSpec[:pending_key, String, true, true, nil,
                "the queued proposal's key", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "accept", nil
+      %i[cli mcp], { default: identity }, "accept", nil, :write
     )
 
     # ── reject ───────────────────────────────────────────
@@ -173,7 +176,7 @@ module Textus
       :reject, "Discard a queued proposal without applying it.",
       [ArgSpec[:pending_key, String, true, true, nil,
                "the queued proposal's key", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "reject", nil
+      %i[cli mcp], { default: identity }, "reject", nil, :write
     )
 
     # ── enqueue ──────────────────────────────────────────
@@ -183,7 +186,7 @@ module Textus
                "registered job type (e.g. materialize, re-pull, sweep)", nil, nil, nil, nil, :__unset],
        ArgSpec[:args, Hash, false, false, nil,
                "type-specific arguments (e.g. { key: ... })", nil, {}, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "enqueue", nil
+      %i[cli mcp], { default: identity }, "enqueue", nil, :write
     )
 
     # ── ingest ───────────────────────────────────────────
@@ -201,7 +204,7 @@ module Textus
                "asset group subdirectory (required when kind=asset)", nil, nil, nil, nil, :__unset],
        ArgSpec[:label, String, false, false, nil,
                "human label stored in source.label", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } }, nil, nil
+      %i[cli mcp], { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
     )
 
     # ── where ────────────────────────────────────────────
@@ -209,7 +212,7 @@ module Textus
       :where, "Resolve a key to its zone, owner, and path without reading the body.",
       [ArgSpec[:key, String, true, true, nil,
                "dotted key to locate", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, nil, nil
+      %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
     # ── uid ──────────────────────────────────────────────
@@ -217,7 +220,7 @@ module Textus
       :uid, "Return the stable UID of an entry without reading its body.",
       [ArgSpec[:key, String, true, true, nil,
                "entry key", nil, nil, nil, nil, :__unset]],
-      [:cli], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil
+      [:cli], { cli: ->(uid, inputs) { { "key" => inputs[:key], "uid" => uid } }, default: identity }, "key uid", nil, :read
     )
 
     # ── blame ────────────────────────────────────────────
@@ -227,7 +230,10 @@ module Textus
                "entry key to blame", nil, nil, nil, nil, :__unset],
        ArgSpec[:limit, Integer, false, false, nil,
                "maximum number of audit rows to return", nil, nil, nil, nil, :__unset]],
-      [:cli], { cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }, default: identity }, "blame", nil
+      [:cli], {
+        cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } },
+        default: identity,
+      }, "blame", nil, :read
     )
 
     # ── audit ────────────────────────────────────────────
@@ -245,7 +251,7 @@ module Textus
                "filter to rows with this correlation_id", nil, nil, nil, nil, :__unset],
        ArgSpec[:limit, Integer, false, false, nil,
                "maximum number of rows to return", nil, nil, nil, nil, :__unset]],
-      [:cli], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil
+      [:cli], { cli: ->(rows, _) { { "verb" => "audit", "rows" => rows } }, default: identity }, "audit", nil, :read
     )
 
     # ── deps ─────────────────────────────────────────────
@@ -253,7 +259,7 @@ module Textus
       :deps, "List the keys a derived entry depends on.",
       [ArgSpec[:key, String, true, true, nil,
                "dotted key of the derived entry whose source keys you want", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, nil, nil
+      %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
     # ── rdeps ────────────────────────────────────────────
@@ -261,7 +267,7 @@ module Textus
       :rdeps, "List the derived entries that depend on a key (reverse deps).",
       [ArgSpec[:key, String, true, true, nil,
                "dotted key whose dependents you want", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, nil, nil
+      %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
     # ── pulse ────────────────────────────────────────────
@@ -269,7 +275,7 @@ module Textus
       :pulse, "Delta since cursor — changed entries, pending proposals, index freshness.",
       [ArgSpec[:since, Integer, false, false, :cursor,
                "audit seq to diff from; defaults to the session cursor", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, nil, nil
+      %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
     # ── rule_explain ─────────────────────────────────────
@@ -282,19 +288,19 @@ module Textus
       %i[cli mcp], {
         cli: ->(r, _) { { "verb" => "rule_explain" }.merge(r.transform_keys(&:to_s)) },
         default: identity,
-      }, "rule explain", nil
+      }, "rule explain", nil, :read
     )
 
     # ── rule_list ────────────────────────────────────────
     register VerbSpec.new(
       :rule_list, "List every rule block in the manifest.",
-      [], [:cli], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil
+      [], [:cli], { cli: ->(p, _) { { "verb" => "rule_list", "policies" => p } }, default: identity }, "rule list", nil, :read
     )
 
     # ── published ────────────────────────────────────────
     register VerbSpec.new(
       :published, "List all entries that declare a publish target.",
-      [], [:cli], { default: identity }, "published", nil
+      [], [:cli], { default: identity }, "published", nil, :read
     )
 
     # ── schema_show ──────────────────────────────────────
@@ -302,7 +308,7 @@ module Textus
       :schema_show, "Return the schema (field shape) for an entry's family.",
       [ArgSpec[:key, String, true, true, nil,
                "any key in the family whose schema you want", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "schema show", nil
+      %i[cli mcp], { default: identity }, "schema show", nil, :read
     )
 
     # ── doctor ───────────────────────────────────────────
@@ -310,13 +316,13 @@ module Textus
       :doctor, "Run health checks on the textus store.",
       [ArgSpec[:checks, Array, false, false, nil,
                "subset of check names to run (default: all)", nil, nil, nil, nil, :__unset]],
-      [:cli], { default: identity }, "doctor", nil
+      [:cli], { default: identity }, "doctor", nil, :read
     )
 
     # ── boot ─────────────────────────────────────────────
     register VerbSpec.new(
       :boot, "Return the orientation contract: lanes, agent_quickstart, agent_protocol.",
-      [], %i[cli mcp], { default: identity }, nil, nil
+      [], %i[cli mcp], { default: identity }, nil, nil, :read
     )
 
     # ── jobs ─────────────────────────────────────────────
@@ -328,7 +334,7 @@ module Textus
                "retry|purge (optional)", nil, nil, nil, nil, :__unset],
        ArgSpec[:job_id, String, false, false, nil,
                "job id (required for action=retry)", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, "jobs", nil
+      %i[cli mcp], { default: identity }, "jobs", nil, :read
     )
 
     # ── data_mv ──────────────────────────────────────────
@@ -340,7 +346,7 @@ module Textus
                "new data lane name", nil, nil, nil, nil, :__unset],
        ArgSpec[:dry_run, :boolean, false, false, nil,
                "when true, returns planned zone move without applying", nil, false, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "data mv", nil
+      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "data mv", nil, :write
     )
 
     # ── key_mv_prefix ────────────────────────────────────
@@ -352,7 +358,7 @@ module Textus
                "dotted prefix the keys are renamed to", nil, nil, nil, nil, :__unset],
        ArgSpec[:dry_run, :boolean, false, false, nil,
                "when true, returns planned moves without applying", nil, false, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key mv-prefix", nil
+      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key mv-prefix", nil, :write
     )
 
     # ── key_delete_prefix ────────────────────────────────
@@ -362,7 +368,7 @@ module Textus
                "every leaf key under this dotted prefix is deleted", nil, nil, nil, nil, :__unset],
        ArgSpec[:dry_run, :boolean, false, false, nil,
                "when true, returns keys that would be deleted without deleting", nil, false, nil, nil, :__unset]],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key delete-prefix", nil
+      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "key delete-prefix", nil, :write
     )
 
     # ── drain ────────────────────────────────────────────
@@ -372,7 +378,7 @@ module Textus
                "restrict to keys under this dotted prefix", nil, nil, nil, nil, :__unset],
        ArgSpec[:lane, String, false, false, nil,
                "restrict to entries in this lane", nil, nil, nil, nil, :__unset]],
-      %i[cli mcp], { default: identity }, nil, nil
+      %i[cli mcp], { default: identity }, nil, nil, :maintenance
     )
 
     # ── rule_lint ────────────────────────────────────────
@@ -380,7 +386,7 @@ module Textus
       :rule_lint, "Diff candidate manifest rules against the live manifest.",
       [ArgSpec[:candidate_yaml, String, true, false, nil,
                "path to candidate manifest YAML", :against, nil, :file, nil, :__unset]],
-      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil
+      %i[cli mcp], { default: ->(v, _) { v.to_h } }, "rule lint", nil, :maintenance
     )
   end
 end

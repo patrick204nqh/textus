@@ -20,7 +20,7 @@ module Textus
           call: call,
           if_etag: command.if_etag,
         )
-        Result.success(envelope)
+        Value::Result.success(envelope)
       end
     end
   end

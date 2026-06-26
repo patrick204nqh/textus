@@ -6,7 +6,7 @@ module Textus
       end
 
       def call(_command, _call)
-        Result.success(@manifest.rules.blocks.map do |block|
+        Value::Result.success(@manifest.rules.blocks.map do |block|
           row = { "match" => block.match }
           LIST_FIELDS.each do |field|
             value = block.public_send(field)

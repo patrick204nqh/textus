@@ -3,10 +3,6 @@ module Textus
     module_function
 
     def dispatch(container:, spec:, inputs:, role:, correlation_id: nil)
-      VerbRegistry::VERB_TO_CONTRACT.fetch(spec.verb) do
-        raise Textus::UsageError.new("unknown command verb: #{spec.verb}")
-      end
-
       pending = Binder.command(spec, inputs)
       call = Value::Call.build(role: role.to_s, correlation_id: correlation_id || SecureRandom.uuid)
       result = container.pipeline.dispatch(pending, call: call)

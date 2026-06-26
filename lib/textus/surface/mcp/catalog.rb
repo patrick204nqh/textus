@@ -6,14 +6,6 @@ module Textus
 
         module_function
 
-        WRITE_VERBS = %i[
-          put propose key_delete key_mv accept reject enqueue
-        ].freeze
-
-        MAINTENANCE_VERBS = %i[
-          data_mv key_mv_prefix key_delete_prefix drain rule_lint
-        ].freeze
-
         def specs
           VerbRegistry.registered.select(&:mcp?)
         end
@@ -38,14 +30,13 @@ module Textus
 
         def read_verbs
           VerbRegistry.registered
-                      .reject { |s| WRITE_VERBS.include?(s.verb) || MAINTENANCE_VERBS.include?(s.verb) }
-                      .select(&:mcp?)
+                      .select { |s| s.read? && s.mcp? }
                       .map { |s| s.verb.to_s }
         end
 
         def write_verbs
           VerbRegistry.registered
-                      .select { |s| WRITE_VERBS.include?(s.verb) && s.mcp? }
+                      .select { |s| s.write? && s.mcp? }
                       .map { |s| s.verb.to_s }
         end
 
@@ -56,7 +47,7 @@ module Textus
           PROJECTOR.dispatch(name, inputs: args, store:)
         rescue Textus::Dispatch::MissingArgs => e
           raise ToolError.new("#{name}: missing #{e.missing.map { |a| a.wire.to_s }.join(", ")}")
-        rescue Textus::ContractDrift, CursorExpired
+        rescue Textus::ContractDrift, Textus::CursorExpired
           raise
         rescue Textus::Error => e
           raise ToolError.new("#{name}: #{e.message}")

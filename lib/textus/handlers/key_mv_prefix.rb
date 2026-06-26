@@ -6,7 +6,10 @@ module Textus
       end
 
       def call(command, call)
-        return Result.failure(:usage_error, "from_prefix and to_prefix required") if command.from_prefix.nil? || command.to_prefix.nil?
+        if command.from_prefix.nil? || command.to_prefix.nil?
+          return Value::Result.failure(:usage_error,
+                                       "from_prefix and to_prefix required")
+        end
 
         list = @orchestration.list_keys(prefix: command.from_prefix, lane: nil, call: call)
         return list if list.failure?
@@ -14,7 +17,8 @@ module Textus
         leaves = list.value.fetch("rows")
 
         if leaves.any? { |r| r["key"] == command.from_prefix }
-          return Result.failure(:usage_error, "from_prefix '#{command.from_prefix}' is itself a leaf — use `mv` to rename a single key")
+          return Value::Result.failure(:usage_error,
+                                       "from_prefix '#{command.from_prefix}' is itself a leaf — use `mv` to rename a single key")
         end
 
         warnings = leaves.empty? ? ["no keys under #{command.from_prefix}"] : []
@@ -26,13 +30,13 @@ module Textus
         end
 
         plan = Textus::Store::Jobs::Plan.new(steps: steps, warnings: warnings)
-        return Result.success(plan) if command.dry_run
+        return Value::Result.success(plan) if command.dry_run
 
         steps.each do |step|
           move = @orchestration.move_key(old_key: step["from"], new_key: step["to"], call: call)
           return move if move.failure?
         end
-        Result.success(plan)
+        Value::Result.success(plan)
       end
     end
   end
