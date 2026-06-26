@@ -12,7 +12,7 @@ module Textus
         queue.reclaim(now: Textus::Port::Clock.new.now)
         summary = Textus::Store::Jobs::Worker.for(container: @container, queue: queue).drain
         Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => summary.failed.zero?,
-                       "completed" => summary.completed, "failed" => summary.failed)
+                              "completed" => summary.completed, "failed" => summary.failed)
       end
     end
   end

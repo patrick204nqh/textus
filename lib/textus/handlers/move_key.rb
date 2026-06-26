@@ -15,7 +15,10 @@ module Textus
         old_res = @manifest.resolver.resolve(command.old_key)
         new_res = @manifest.resolver.resolve(command.new_key)
 
-        return Value::Result.failure(:not_found, "source key '#{command.old_key}' not found") unless @container.pipeline.exists?(command.old_key)
+        unless @container.pipeline.exists?(command.old_key)
+          return Value::Result.failure(:not_found,
+                                       "source key '#{command.old_key}' not found")
+        end
 
         zone_check = validate_zone(old_res.entry, new_res.entry)
         return zone_check if zone_check
@@ -34,11 +37,11 @@ module Textus
 
         if command.dry_run
           return Value::Result.success({
-                                  "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
-                                  "from_key" => command.old_key, "to_key" => command.new_key,
-                                  "from_path" => old_res.path, "to_path" => new_res.path,
-                                  "uid" => pre_env.uid
-                                })
+                                         "protocol" => Textus::PROTOCOL, "ok" => true, "dry_run" => true,
+                                         "from_key" => command.old_key, "to_key" => command.new_key,
+                                         "from_path" => old_res.path, "to_path" => new_res.path,
+                                         "uid" => pre_env.uid
+                                       })
         end
 
         envelope = @container.pipeline.move(
@@ -47,11 +50,11 @@ module Textus
         )
 
         Value::Result.success({
-                         "protocol" => Textus::PROTOCOL, "ok" => true,
-                         "from_key" => command.old_key, "to_key" => command.new_key,
-                         "from_path" => old_res.path, "to_path" => new_res.path,
-                         "uid" => envelope.uid, "envelope" => envelope.to_h_for_wire
-                       })
+                                "protocol" => Textus::PROTOCOL, "ok" => true,
+                                "from_key" => command.old_key, "to_key" => command.new_key,
+                                "from_path" => old_res.path, "to_path" => new_res.path,
+                                "uid" => envelope.uid, "envelope" => envelope.to_h_for_wire
+                              })
       end
 
       private
@@ -59,11 +62,11 @@ module Textus
       def validate_zone(old_mentry, new_mentry)
         if old_mentry.lane != new_mentry.lane
           return Value::Result.failure(:usage_error,
-                                "mv: cross-zone refused (#{old_mentry.lane} -> #{new_mentry.lane}). Use put+delete.")
+                                       "mv: cross-zone refused (#{old_mentry.lane} -> #{new_mentry.lane}). Use put+delete.")
         end
         if old_mentry.format != new_mentry.format
           return Value::Result.failure(:usage_error,
-                                "mv: format mismatch (#{old_mentry.format} -> #{new_mentry.format}); refusing.")
+                                       "mv: format mismatch (#{old_mentry.format} -> #{new_mentry.format}); refusing.")
         end
         nil
       end

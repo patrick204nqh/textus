@@ -14,7 +14,7 @@ module Textus
         return Value::Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
         unless manifest.data.declared_lane_kinds.key?(command.from)
           return Value::Result.failure(:usage_error,
-                                "data lane '#{command.from}' not declared")
+                                       "data lane '#{command.from}' not declared")
         end
 
         dest_dir = geom.lane_path(command.to)

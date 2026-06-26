@@ -10,7 +10,7 @@ module Textus
         mentry = @manifest.resolver.resolve(command.key).entry
         schema = @schemas.fetch_or_nil(mentry.schema)
         Value::Result.success("protocol" => Textus::PROTOCOL, "key" => command.key,
-                       "schema_ref" => mentry.schema, "schema" => schema&.to_h)
+                              "schema_ref" => mentry.schema, "schema" => schema&.to_h)
       end
     end
   end

@@ -122,7 +122,7 @@ module Textus
       :list, "List keys filtered by lane and/or prefix.",
       [ArgSpec[:prefix, String, false, false, nil,
                "restrict to keys starting with this dotted prefix, e.g. 'knowledge.runbooks'", nil, nil, nil, nil, :__unset],
-        ArgSpec[:lane, String, false, false, nil,
+       ArgSpec[:lane, String, false, false, nil,
                "restrict to one lane by name (see `boot` lanes)", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { cli: ->(rows, _) { { "entries" => rows } }, default: identity }, nil, nil, :read
     )
@@ -132,7 +132,7 @@ module Textus
       :key_delete, "Delete one entry by key. Returns {ok, key, deleted}.",
       [ArgSpec[:key, String, true, true, nil,
                "dotted entry key to delete", nil, nil, nil, nil, :__unset],
-        ArgSpec[:if_etag, String, false, false, nil,
+       ArgSpec[:if_etag, String, false, false, nil,
                "optimistic-concurrency guard: etag you last read", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { default: identity }, "key delete", nil, :write
     )
@@ -142,9 +142,9 @@ module Textus
       :key_mv, "Rename one entry (same zone + format). Refuses if target exists.",
       [ArgSpec[:old_key, String, true, true, nil,
                "current dotted key", nil, nil, nil, nil, :__unset],
-        ArgSpec[:new_key, String, true, true, nil,
+       ArgSpec[:new_key, String, true, true, nil,
                "new dotted key (same zone and format)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:dry_run, :boolean, false, false, nil,
+       ArgSpec[:dry_run, :boolean, false, false, nil,
                "when true, returns planned move without applying", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { default: identity }, "key mv", nil, :write
     )
@@ -154,11 +154,11 @@ module Textus
       :propose, "Write a proposal to the role's propose_lane. Auto-prefixes the key.",
       [ArgSpec[:key, String, true, true, nil,
                "key relative to propose_lane, e.g. 'decisions.feature-x'", nil, nil, nil, nil, :__unset],
-        ArgSpec[:meta, Hash, false, false, nil,
+       ArgSpec[:meta, Hash, false, false, nil,
                "frontmatter. Include a 'proposal:' block naming the target_key", :_meta, nil, nil, nil, :__unset],
-        ArgSpec[:body, String, false, false, nil,
+       ArgSpec[:body, String, false, false, nil,
                "markdown/text payload for markdown-format entries", nil, nil, nil, nil, :__unset],
-        ArgSpec[:content, Hash, false, false, nil,
+       ArgSpec[:content, Hash, false, false, nil,
                "structured payload for json/yaml-format entries", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { default: ->(env, _) { env.to_h_for_wire } }, nil, :json, :write
     )
@@ -184,7 +184,7 @@ module Textus
       :enqueue, "Push a registered job type onto the convergence queue.",
       [ArgSpec[:type, String, true, true, nil,
                "registered job type (e.g. materialize, re-pull, sweep)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:args, Hash, false, false, nil,
+       ArgSpec[:args, Hash, false, false, nil,
                "type-specific arguments (e.g. { key: ... })", nil, {}, nil, nil, :__unset]],
       %i[cli mcp], { default: identity }, "enqueue", nil, :write
     )
@@ -194,15 +194,15 @@ module Textus
       :ingest, "Capture external source material into the raw lane. Write-once.",
       [ArgSpec[:kind, String, true, true, nil,
                "source kind: url | file | asset", nil, nil, nil, nil, :__unset],
-        ArgSpec[:slug, String, true, false, nil,
+       ArgSpec[:slug, String, true, false, nil,
                "human slug for the key suffix (kebab-case)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:url, String, false, false, nil,
+       ArgSpec[:url, String, false, false, nil,
                "remote URL (required when kind=url)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:path, String, false, false, nil,
+       ArgSpec[:path, String, false, false, nil,
                "local file path (required when kind=file or kind=asset)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:zone, String, false, false, nil,
+       ArgSpec[:zone, String, false, false, nil,
                "asset group subdirectory (required when kind=asset)", nil, nil, nil, nil, :__unset],
-        ArgSpec[:label, String, false, false, nil,
+       ArgSpec[:label, String, false, false, nil,
                "human label stored in source.label", nil, nil, nil, nil, :__unset]],
       %i[cli mcp], { default: ->(env, _) { { "key" => env.key, "uid" => env.uid, "etag" => env.etag } } }, nil, nil, :write
     )
@@ -230,7 +230,10 @@ module Textus
                "entry key to blame", nil, nil, nil, nil, :__unset],
        ArgSpec[:limit, Integer, false, false, nil,
                "maximum number of audit rows to return", nil, nil, nil, nil, :__unset]],
-      [:cli], { cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } }, default: identity }, "blame", nil, :read
+      [:cli], {
+        cli: ->(rows, inputs) { { "verb" => "blame", "key" => inputs[:key], "rows" => rows } },
+        default: identity,
+      }, "blame", nil, :read
     )
 
     # ── audit ────────────────────────────────────────────

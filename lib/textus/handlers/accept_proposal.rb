@@ -28,7 +28,7 @@ module Textus
 
         @container.pipeline.delete(command.pending_key, call: call)
         Value::Result.success("protocol" => Textus::PROTOCOL, "accepted" => command.pending_key,
-                       "target_key" => target, "action" => action, "cascade_key" => target)
+                              "target_key" => target, "action" => action, "cascade_key" => target)
       end
     end
   end

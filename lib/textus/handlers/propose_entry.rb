@@ -9,8 +9,8 @@ module Textus
         zone = @container.manifest.policy.propose_lane_for(call.role)
         unless zone
           return Value::Result.failure(:propose_forbidden,
-                                "role '#{call.role}' has no writable propose_lane",
-                                details: { "role" => call.role })
+                                       "role '#{call.role}' has no writable propose_lane",
+                                       details: { "role" => call.role })
         end
 
         key = "#{zone}.#{command.key}"

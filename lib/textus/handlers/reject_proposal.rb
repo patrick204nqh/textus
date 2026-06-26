@@ -9,7 +9,7 @@ module Textus
         mentry = @container.manifest.resolver.resolve(command.pending_key).entry
         unless mentry.in_proposal_lane?(@container.manifest.policy)
           return Value::Result.failure(:proposal_error,
-                                "reject: '#{command.pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
+                                       "reject: '#{command.pending_key}' is not in a proposal zone (zone=#{mentry.lane})")
         end
 
         env = @container.pipeline.read(command.pending_key)

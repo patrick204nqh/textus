@@ -7,6 +7,7 @@ module Textus
       # of envelopes, entries, schemas, or audit.
       class FileStore
         include Interface
+
         def read(path) = File.binread(path)
 
         def write(path, bytes)

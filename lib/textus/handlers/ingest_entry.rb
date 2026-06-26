@@ -15,7 +15,7 @@ module Textus
       def call(command, call)
         unless SOURCE_KINDS.include?(command.kind)
           return Value::Result.failure(:usage_error,
-                                "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
+                                       "ingest kind must be one of #{SOURCE_KINDS.join("|")}")
         end
 
         case command.kind

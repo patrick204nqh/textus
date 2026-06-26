@@ -12,7 +12,7 @@ module Textus
         when "purge" then queue.purge(command.state)
         end
         Value::Result.success("protocol" => Textus::PROTOCOL, "ok" => true,
-                       "state" => command.state, "jobs" => queue.list(command.state))
+                              "state" => command.state, "jobs" => queue.list(command.state))
       end
     end
   end
