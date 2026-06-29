@@ -42,7 +42,8 @@ module Textus
 
           def delete(key)
             mentry = @container.manifest.resolver.resolve(key).entry
-            @container.pipeline.delete(key, mentry: mentry, call: @call)
+            writer = Textus::Store::Envelope::Writer.from(container: @container, call: @call)
+            writer.delete(key, mentry: mentry)
           end
         end
       end

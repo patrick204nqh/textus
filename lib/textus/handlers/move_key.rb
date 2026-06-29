@@ -15,7 +15,9 @@ module Textus
         old_res = @manifest.resolver.resolve(command.old_key)
         new_res = @manifest.resolver.resolve(command.new_key)
 
-        unless @container.pipeline.exists?(command.old_key)
+        reader = Store::Envelope::Reader.from(container: @container)
+
+        unless reader.exists?(command.old_key)
           return Value::Result.failure(:not_found,
                                        "source key '#{command.old_key}' not found")
         end
@@ -23,14 +25,15 @@ module Textus
         zone_check = validate_zone(old_res.entry, new_res.entry)
         return zone_check if zone_check
 
-        if @container.pipeline.exists?(command.new_key)
+        if reader.exists?(command.new_key)
           return Value::Result.failure(:usage_error, "mv: target '#{command.new_key}' already exists at #{new_res.path}")
         end
 
-        pre_env = @container.pipeline.read(command.old_key)
+        pre_env = reader.read(command.old_key)
+        writer = Store::Envelope::Writer.from(container: @container, call: call)
         unless pre_env.uid
-          @container.pipeline.write(
-            command.old_key, mentry: old_res.entry, call: call,
+          writer.put(
+            command.old_key, mentry: old_res.entry,
                              payload: Textus::Value::Payload.new(meta: pre_env.meta, body: pre_env.body, content: pre_env.content)
           )
         end
@@ -44,9 +47,9 @@ module Textus
                                        })
         end
 
-        envelope = @container.pipeline.move(
+        envelope = writer.move(
           from_key: command.old_key, to_key: command.new_key,
-          new_mentry: new_res.entry, call: call
+          new_mentry: new_res.entry
         )
 
         Value::Result.success({

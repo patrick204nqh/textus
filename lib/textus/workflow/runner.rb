@@ -65,11 +65,10 @@ module Textus
           action: :converge, actor: @call.role, key: key,
           rule_predicates: rule_preds
         )
-        @container.pipeline.write(
+        Textus::Store::Envelope::Writer.from(container: @container, call: @call).put(
           key,
           mentry: ctx.entry,
           payload: Textus::Value::Payload.new(**normalized),
-          call: @call,
         )
         publish_external(key, ctx)
       end
@@ -83,7 +82,7 @@ module Textus
 
         pctx   = Textus::Manifest::Entry::Base::PublishContext.new(
           container: @container, call: @call,
-          reader: @container.pipeline.method(:read)
+          reader: ->(key) { Textus::Store::Envelope::Reader.from(container: @container).read(key) }
         )
         entry.publish_via(pctx)
       end

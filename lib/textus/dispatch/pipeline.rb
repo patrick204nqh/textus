@@ -24,51 +24,6 @@ module Textus
         contract_class.new(**kwargs)
       end
 
-      def write(key, mentry:, payload:, call:, if_etag: nil)
-        writer = if container.respond_to?(:writer) && container.writer
-                   container.writer.call(call)
-                 else
-                   Store::Envelope::Writer.from(container: @container, call: call)
-                 end
-        writer.put(key, mentry: mentry, payload: payload, if_etag: if_etag)
-      end
-
-      def read(key)
-        reader = if container.respond_to?(:reader) && container.reader
-                   container.reader
-                 else
-                   Store::Envelope::Reader.from(container: @container)
-                 end
-        reader.read(key)
-      end
-
-      def delete(key, call:, mentry: nil, if_etag: nil)
-        writer = if container.respond_to?(:writer) && container.writer
-                   container.writer.call(call)
-                 else
-                   Store::Envelope::Writer.from(container: @container, call: call)
-                 end
-        writer.delete(key, mentry: mentry, if_etag: if_etag)
-      end
-
-      def move(from_key:, to_key:, new_mentry:, call:, if_etag: nil)
-        writer = if container.respond_to?(:writer) && container.writer
-                   container.writer.call(call)
-                 else
-                   Store::Envelope::Writer.from(container: @container, call: call)
-                 end
-        writer.move(from_key: from_key, to_key: to_key, new_mentry: new_mentry, if_etag: if_etag)
-      end
-
-      def exists?(key)
-        reader = if container.respond_to?(:reader) && container.reader
-                   container.reader
-                 else
-                   Store::Envelope::Reader.from(container: @container)
-                 end
-        reader.exists?(key)
-      end
-
       private
 
       def execute(command, call)

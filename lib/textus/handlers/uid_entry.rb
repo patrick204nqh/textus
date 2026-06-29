@@ -6,7 +6,7 @@ module Textus
       end
 
       def call(command, _call)
-        envelope = @container.pipeline.read(command.key)
+        envelope = Store::Envelope::Reader.from(container: @container).read(command.key)
         return Value::Result.failure(:not_found, "no entry at #{command.key}") unless envelope
 
         Value::Result.success(envelope.uid)

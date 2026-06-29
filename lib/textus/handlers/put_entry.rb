@@ -9,7 +9,8 @@ module Textus
         Textus::Manifest::Data.validate_key!(command.key)
         mentry = @container.manifest.resolver.resolve(command.key).entry
 
-        envelope = @container.pipeline.write(
+        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        envelope = writer.put(
           command.key,
           mentry: mentry,
           payload: Textus::Value::Payload.new(
@@ -17,7 +18,6 @@ module Textus
             body: command.body,
             content: command.content,
           ),
-          call: call,
           if_etag: command.if_etag,
         )
         Value::Result.success(envelope)

@@ -94,9 +94,9 @@ module Textus
       end
 
       def write_entry(key, structured, mentry, call)
-        @container.pipeline.write(key, mentry: mentry,
-                                       payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured),
-                                       call: call)
+        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer.put(key, mentry: mentry,
+                        payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
       end
 
       def find_duplicate(index, content_hash, command)
@@ -109,7 +109,8 @@ module Textus
 
       def supersede_entry(old_key, new_key, structured, call, store, command)
         old_mentry = @container.manifest.resolver.resolve(old_key).entry
-        old_env = @container.pipeline.read(old_key)
+        reader = Store::Envelope::Reader.from(container: @container)
+        old_env = reader.read(old_key)
         old_content = old_env&.content || {}
         tombstone = {}
         %w[ingested_at].each { |k| tombstone[k] = old_content[k] if old_content.key?(k) }
@@ -117,9 +118,9 @@ module Textus
         tombstone["source"] = { "kind" => source_kind } if source_kind
         tombstone["superseded_by"] = new_key
 
-        @container.pipeline.write(old_key, mentry: old_mentry,
-                                           payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone),
-                                           call: call)
+        writer = Store::Envelope::Writer.from(container: @container, call: call)
+        writer.put(old_key, mentry: old_mentry,
+                            payload: Textus::Value::Payload.new(meta: nil, body: nil, content: tombstone))
 
         structured["supersedes"] = old_key
         env = write_entry(new_key, structured,
