@@ -13,7 +13,7 @@ module Textus
       attribute :format,     Types::FormatName
       attribute :etag,       Types::String
       attribute :uid,        Types::String.optional
-      attribute :sources,    Types::Array.of(Types::String).optional
+      attribute :sources,    Types::Array.of(Types::Any).optional
       attribute :schema_ref, Types::String.optional
       attribute :meta,       Types::Hash.default({}.freeze)
       attribute :body,       Types::String.optional
@@ -46,7 +46,10 @@ module Textus
 
       def self.extract_sources(meta)
         v = meta.is_a?(Hash) ? meta["sources"] : nil
-        v.is_a?(Array) && !v.empty? ? v : nil
+        return nil unless v.is_a?(Array) && !v.empty?
+
+        valid = v.select { |s| s.is_a?(String) || (s.is_a?(Hash) && s["key"].is_a?(String)) }
+        valid.empty? ? nil : valid
       end
 
       def with(**attrs) = self.class.new(to_h.merge(attrs))

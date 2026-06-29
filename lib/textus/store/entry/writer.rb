@@ -137,7 +137,20 @@ module Textus
         end
 
         def inject_meta(meta, content, existing_meta, format)
-          Envelope::Meta.inject_all(meta, content, existing_meta, format: format)
+          Envelope::Meta.inject_all(
+            meta, content, existing_meta,
+            format: format,
+            etag_for: method(:resolve_source_etag)
+          )
+        end
+
+        def resolve_source_etag(key)
+          path = @manifest.resolver.resolve(key).path
+          return nil unless @file_store.exists?(path)
+
+          Value::Etag.for_file(path)
+        rescue Textus::Error
+          nil
         end
 
         def resolve_path(key)
