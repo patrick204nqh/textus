@@ -8,6 +8,22 @@ module Textus
         new(ok: false, value: nil, error: { code: code, message: message, details: details })
       end
 
+      def self.extract(result)
+        return result if result.is_a?(Hash) || result.is_a?(Array) || result.nil? || result == true || result == false
+
+        case result
+        when self
+          if result.success?
+            result.value
+          else
+            err = result.error
+            raise Textus::ActionError.new(err[:code] || :error, err[:message] || "action failed", details: err[:details] || {})
+          end
+        else
+          result
+        end
+      end
+
       def success? = ok
       def failure? = !ok
 

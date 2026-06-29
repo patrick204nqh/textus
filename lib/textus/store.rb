@@ -84,10 +84,10 @@ module Textus
 
       positional_inputs = positional_names.zip(args).to_h.compact
       inputs = positional_inputs.merge(kwargs)
-      Dispatch.dispatch(
-        container: @container, spec:, inputs:,
-        role: @role, correlation_id: @correlation_id
-      )
+      pending = Dispatch::Binder.command(spec, inputs)
+      call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
+      result  = @container.pipeline.dispatch(pending, call: call)
+      Value::Result.extract(result)
     end
 
     def respond_to_missing?(name, include_private = false)

@@ -36,7 +36,7 @@ module Textus
         command = contract_class.new(**command_kwargs)
         call = Textus::Value::Call.build(role: @role)
         result = @container.pipeline.dispatch(command, call: call)
-        Textus::Dispatch.unwrap(result)
+        Textus::Value::Result.extract(result)
       end
     end
   end
