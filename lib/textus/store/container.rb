@@ -85,7 +85,7 @@ module Textus
       end
 
       def self.orchestration_for(container)
-        Handlers::Orchestration.new(
+        Orchestration.new(
           list_keys: Handlers::ListKeys.new(manifest: container.manifest),
           move_key: Handlers::MoveKey.new(container: container, manifest: container.manifest),
           delete_key: Handlers::DeleteKey.new(container: container),
