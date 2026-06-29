@@ -9,8 +9,6 @@ module Textus
       end
 
       def self.extract(result)
-        return result if result.is_a?(Hash) || result.is_a?(Array) || result.nil? || result == true || result == false
-
         case result
         when self
           if result.success?

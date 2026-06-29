@@ -52,7 +52,7 @@ module Textus
         rescue Textus::Surface::MCP::ToolError => e
           raise_handler_error(e.message, ToolError::JSONRPC_CODE)
         rescue StandardError => e
-          raise_handler_error("internal: #{e.class}: #{e.message}", -32_603)
+          raise_handler_error("internal: #{e.message}", -32_603)
         end
 
         private
@@ -90,9 +90,10 @@ module Textus
 
         def mime_for_format(format)
           case format.to_s
-          when "json" then "application/json"
-          when "yaml" then "application/yaml"
-          else             "text/plain"
+          when "json"     then "application/json"
+          when "yaml"     then "application/yaml"
+          when "markdown" then "text/markdown"
+          else                 "text/plain"
           end
         end
 

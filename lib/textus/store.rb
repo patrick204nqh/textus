@@ -73,27 +73,6 @@ module Textus
       )
     end
 
-    def method_missing(name, *args, **kwargs)
-      spec = VerbRegistry.for(name)
-      return super unless spec
-
-      positional_names = VerbRegistry.positional_for(name)
-      if args.size > positional_names.size
-        raise ArgumentError.new("#{name} accepts #{positional_names.size} positional argument(s) (got #{args.size})")
-      end
-
-      positional_inputs = positional_names.zip(args).to_h.compact
-      inputs = positional_inputs.merge(kwargs)
-      pending = Dispatch::Binder.command(spec, inputs)
-      call    = Value::Call.build(role: @role, correlation_id: @correlation_id)
-      result  = @container.pipeline.dispatch(pending, call: call)
-      Value::Result.extract(result)
-    end
-
-    def respond_to_missing?(name, include_private = false)
-      VerbRegistry.for(name) || super
-    end
-
     private
 
     def _rebuild(role: @role, correlation_id: @correlation_id, dry_run: @dry_run)

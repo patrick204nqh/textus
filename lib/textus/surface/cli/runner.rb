@@ -73,7 +73,7 @@ module Textus
         # contract, not hidden in a hand class.
         def apply_cli_defaults(spec, inputs)
           spec.args.each_with_object(inputs.dup) do |a, h|
-            next if a.cli_default == :__unset || h.key?(a.name)
+            next if a.cli_default.nil? || h.key?(a.name)
 
             h[a.name] = a.cli_default
           end
@@ -85,7 +85,7 @@ module Textus
         # polarity so a verb that applies-by-default on the CLI but plans-by-default
         # for agents (migrate, data_mv) gets a `--dry-run` flag, not `--no-dry-run`.
         def effective_default(arg)
-          arg.cli_default == :__unset ? arg.default : arg.cli_default
+          arg.cli_default.nil? ? arg.default : arg.cli_default
         end
 
         def flagspec_for(arg)
