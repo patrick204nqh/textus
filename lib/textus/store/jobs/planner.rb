@@ -13,6 +13,11 @@ module Textus
           "proposal.rejected" => %w[materialize],
         }.freeze
 
+        ENTRY_LEVEL_TRIGGERS = %w[
+          entry.written entry.deleted entry.moved
+          proposal.accepted proposal.rejected
+        ].freeze
+
         SCOPE_RESOLVERS = {
           "materialize" => :producible_keys,
           "sweep" => :lane_keys,
@@ -37,21 +42,21 @@ module Textus
         end
 
         def plan(trigger:, role:)
-          type = trigger["type"] || trigger[:type]
-          trigger["target"] || trigger[:target]
+          type   = trigger["type"] || trigger[:type]
+          target = trigger["target"] || trigger[:target]
           return [] if type.nil?
 
           blocks_with_react = @manifest.rules.blocks.select(&:react)
           if blocks_with_react.any?
-            plan_from_rules(blocks_with_react, type, role)
+            plan_from_rules(blocks_with_react, type, role, target: target)
           else
-            plan_from_defaults(type, role)
+            plan_from_defaults(type, role, target: target)
           end
         end
 
         private
 
-        def plan_from_rules(blocks, type, role)
+        def plan_from_rules(blocks, type, role, target: nil) # rubocop:disable Lint/UnusedMethodArgument
           jobs = []
           blocks
             .select { |b| matches_trigger?(b.react, type) }
@@ -70,10 +75,13 @@ module Textus
           jobs
         end
 
-        def plan_from_defaults(type, role)
+        def plan_from_defaults(type, role, target: nil)
           actions = ACTIONS_BY_TRIGGER.fetch(type, [])
           jobs = []
-          producible_keys(nil).each { |k| jobs << job("materialize", k, role) } if actions.include?("materialize")
+          if actions.include?("materialize")
+            keys = target && ENTRY_LEVEL_TRIGGERS.include?(type) ? dependent_keys(target) : producible_keys(nil)
+            keys.each { |k| jobs << job("materialize", k, role) }
+          end
           GLOBAL_ACTIONS.each do |action, args|
             jobs << Textus::Store::Jobs::Queue::Job.new(type: action, args: args, role: role) if actions.include?(action)
           end
@@ -97,6 +105,18 @@ module Textus
 
         def lane_keys(_target)
           @manifest.data.entries.map(&:key)
+        end
+
+        def dependent_keys(target_key)
+          @manifest.data.entries
+                   .select(&:external?)
+                   .select do |e|
+                     Array(e.source&.sources).compact.any? do |s|
+                       target_key == s || target_key.start_with?("#{s}.")
+                     end
+                   end
+                   .select { |e| !e.publish_tree.nil? || !e.publish_to.empty? }
+                   .map(&:key)
         end
       end
     end

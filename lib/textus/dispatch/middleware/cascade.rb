@@ -6,6 +6,15 @@ module Textus
 
         CASCADE_VERBS = %i[put propose accept reject key_mv key_delete].freeze
 
+        TRIGGER_TYPE_MAP = {
+          Contracts::PutEntry => "entry.written",
+          Contracts::ProposeEntry => "entry.written",
+          Contracts::DeleteKey => "entry.deleted",
+          Contracts::MoveKey => "entry.moved",
+          Contracts::AcceptProposal => "proposal.accepted",
+          Contracts::RejectProposal => "proposal.rejected",
+        }.freeze
+
         def call(container:, command:, call:, next_handler:)
           result = next_handler.call(command, call)
           return result unless result.success? && cascadable?(command)
@@ -13,7 +22,13 @@ module Textus
           key = cascade_key(command)
           return result unless key
 
-          enqueue_dependents(key, call, container)
+          trigger_type = TRIGGER_TYPE_MAP[command.class]
+          jobs = Textus::Store::Jobs::Planner.new(container: container).plan(
+            trigger: { "type" => trigger_type, "target" => key },
+            role: call.role,
+          )
+          queue = Textus::Store::Jobs::Queue.new(store: container.job_store)
+          jobs.each { |j| queue.enqueue(j) }
           result
         end
 
@@ -26,32 +41,11 @@ module Textus
         def cascade_key(command)
           case command
           when Contracts::PutEntry, Contracts::DeleteKey then command.key
-          when Contracts::MoveKey then command.new_key
-          when Contracts::AcceptProposal, Contracts::RejectProposal then command.pending_key
-          when Contracts::ProposeEntry then command.key
+          when Contracts::MoveKey                        then command.new_key
+          when Contracts::AcceptProposal,
+               Contracts::RejectProposal                 then command.pending_key
+          when Contracts::ProposeEntry                   then command.key
           end
-        end
-
-        def enqueue_dependents(key, call, container)
-          manifest = container.manifest
-          entries = manifest.data.entries.select(&:external?)
-          rdeps = entries.each_with_object([]) do |entry, acc|
-            sources = Array(entry.source&.sources).compact
-            acc << entry.key if sources.any? { |source| source == key || key.start_with?("#{source}.") }
-          end
-          producible = rdeps.select { |dep_key| producible?(dep_key, manifest) }
-          producible.each do |dep_key|
-            Textus::Store::Jobs::Materialize.call(container: container, call: call, key: dep_key)
-          end
-        rescue StandardError
-          nil
-        end
-
-        def producible?(key, manifest)
-          entry = manifest.resolver.resolve(key).entry
-          !entry.publish_tree.nil?
-        rescue Textus::Error
-          false
         end
       end
     end
