@@ -1,6 +1,6 @@
 module Textus
   class Schema
-    class Store
+    class Registry
       def initialize(dir)
         @dir = dir
         @schemas = {}

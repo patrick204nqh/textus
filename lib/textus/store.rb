@@ -121,7 +121,7 @@ module Textus
       geometry = Store::Geometry.new(root)
       infra = Container::Infrastructure.new(
         file_store: Port::Storage::FileStore.new,
-        schemas: Schema::Store.new(geometry.schemas_dir),
+        schemas: Schema::Registry.new(geometry.schemas_dir),
         audit_log: Port::AuditLog.new(
           geometry: geometry,
           max_size: manifest.data.audit_config[:max_size],

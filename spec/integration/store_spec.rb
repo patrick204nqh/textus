@@ -24,7 +24,7 @@ RSpec.describe Textus::Store do
       store = described_class.new(root)
       expect(store.root).to eq(File.expand_path(root))
       expect(store.manifest).to be_a(Textus::Manifest)
-      expect(store.schemas).to be_a(Textus::Schema::Store)
+      expect(store.schemas).to be_a(Textus::Schema::Registry)
       expect(store.file_store).to be_a(Textus::Port::Storage::FileStore)
       expect(store.audit_log).to be_a(Textus::Port::AuditLog)
       expect(store.container.workflows).to be_a(Textus::Workflow::Registry)
