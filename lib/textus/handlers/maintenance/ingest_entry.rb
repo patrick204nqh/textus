@@ -97,7 +97,7 @@ module Textus
         def write_entry(key, structured, mentry, call)
           writer = Store::Entry::Writer.from(container: @container, call: call)
           writer.put(key, mentry: mentry,
-                         payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
+                          payload: Textus::Value::Payload.new(meta: nil, body: nil, content: structured))
         end
 
         def find_duplicate(index, content_hash, command)
