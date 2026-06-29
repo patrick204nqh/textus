@@ -129,8 +129,7 @@ Textus.workflow "orientation" do
   match "artifacts.orientation"
 
   step :build do |_, ctx|
-    project_env = Textus::Action::Get.new(key: "knowledge.project")
-                    .call(container: ctx.container, call: ctx.call)
+    project_env = ctx.container.reader.read("knowledge.project")
     project = project_env&.meta || {}
     { "content" => { "name" => project["name"] } }
   end
@@ -227,8 +226,7 @@ Textus.workflow "orientation" do
   match "artifacts.orientation"
 
   step :build do |_, ctx|
-    project_env = Textus::Action::Get.new(key: "knowledge.project")
-                    .call(container: ctx.container, call: ctx.call)
+    project_env = ctx.container.reader.read("knowledge.project")
     project = project_env&.meta || {}
     { "content" => { "name" => project["name"], "description" => project["description"] } }
   end
