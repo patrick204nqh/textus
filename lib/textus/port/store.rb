@@ -60,8 +60,34 @@ module Textus
 
           CREATE INDEX IF NOT EXISTS idx_jobs_state ON jobs(state);
           CREATE INDEX IF NOT EXISTS idx_entries_lane ON entries(lane);
+
+          CREATE TABLE IF NOT EXISTS audit_events (
+            seq          INTEGER PRIMARY KEY,
+            ts           TEXT NOT NULL,
+            role         TEXT NOT NULL,
+            verb         TEXT NOT NULL,
+            key          TEXT NOT NULL,
+            etag_before  TEXT,
+            etag_after   TEXT
+          ) STRICT;
+
+          CREATE INDEX IF NOT EXISTS idx_audit_events_seq ON audit_events(seq);
         SQL
         self
+      end
+
+      def insert_audit_event(seq:, ts:, role:, verb:, key:, etag_before:, etag_after:) # rubocop:disable Naming/MethodParameterName
+        execute(
+          "INSERT OR IGNORE INTO audit_events (seq, ts, role, verb, key, etag_before, etag_after) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [seq, ts, role, verb, key, etag_before, etag_after],
+        )
+      end
+
+      def audit_events_since(seq:)
+        execute(
+          "SELECT seq, ts, role, verb, key, etag_before, etag_after FROM audit_events WHERE seq > ? ORDER BY seq",
+          [seq],
+        )
       end
 
       def transaction

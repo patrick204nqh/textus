@@ -2,25 +2,23 @@ module Textus
   module Handlers
     module Read
       class PulseEntries
-        def initialize(manifest:, audit_log:, file_store:, orchestration:)
+        def initialize(manifest:, audit_log:, file_store:, orchestration:, job_store: nil)
           @manifest = manifest
           @audit_log = audit_log
           @file_store = file_store
           @orchestration = orchestration
+          @job_store = job_store
         end
 
         def call(command, call)
-          root = @manifest.data.root
+          root  = @manifest.data.root
           since = command.since || Textus::Store::Cursor.new(root: root, role: call.role).read
 
-          audit = @orchestration.audit_entries(seq_since: since, call: call)
-          return audit if audit.failure?
-
-          changed = audit.value.fetch("rows")
+          changed = changed_since(since, call)
 
           result = {
             "cursor" => @audit_log.latest_seq,
-            "changed" => changed || [],
+            "changed" => changed,
             "pending_review" => review_keys(call),
             "contract_etag" => Textus::Value::Etag.for_contract(root),
             "index_etag" => index_etag,
@@ -31,6 +29,20 @@ module Textus
         end
 
         private
+
+        def changed_since(since, call)
+          if @job_store
+            sqlite_rows = @job_store.audit_events_since(seq: since)
+            return sqlite_rows.map { |r| { "key" => r["key"], "verb" => r["verb"], "seq" => r["seq"] } } if sqlite_rows.any?
+          end
+
+          # Fall back to flat-log scan when SQLite index is empty for this window
+          # (writes that bypassed dispatch, fresh stores, or pre-migration entries).
+          audit = @orchestration.audit_entries(seq_since: since, call: call)
+          return [] if audit.failure?
+
+          audit.value.fetch("rows") || []
+        end
 
         def review_keys(call)
           queue = @manifest.policy.queue_lane

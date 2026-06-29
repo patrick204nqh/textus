@@ -121,6 +121,7 @@ module Textus
                             manifest: container.manifest,
                             audit_log: container.audit_log,
                             file_store: container.file_store,
+                            job_store: container.job_store,
                             orchestration: orch,
                           ))
         registry.register(Dispatch::Contracts::BlameEntry,
@@ -136,6 +137,10 @@ module Textus
           middleware: [
             Dispatch::Middleware::Binder.new,
             Dispatch::Middleware::Auth.new,
+            Dispatch::Middleware::AuditIndex.new(
+              job_store: container.job_store,
+              audit_log: container.audit_log,
+            ),
             Dispatch::Middleware::Cascade.new,
           ],
         )
