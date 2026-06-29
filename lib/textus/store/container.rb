@@ -157,7 +157,7 @@ module Textus
       end
 
       def self.freshness_evaluator(container)
-        Store::Freshness::Evaluator.new(
+        Store::Freshness::TtlEvaluator.new(
           manifest: container.manifest,
           file_stat: Textus::Port::Storage::FileStat.new,
           clock: Textus::Port::Clock.new,

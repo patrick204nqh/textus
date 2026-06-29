@@ -8,12 +8,12 @@ module Textus
       # verb reported.
       class GeneratorDrift < Check
         def call
-          gen = Textus::Store::Freshness::Evaluator.new(
+          detector = Textus::Store::Freshness::DriftDetector.new(
             manifest: manifest,
             file_stat: Textus::Port::Storage::FileStat.new,
             clock: Textus::Port::Clock.new,
           )
-          manifest.data.entries.flat_map { |m| gen.drift_rows(m) }.map do |row|
+          manifest.data.entries.flat_map { |m| detector.drift_rows(m) }.map do |row|
             {
               "code" => "generator_drift",
               "level" => "warning",
