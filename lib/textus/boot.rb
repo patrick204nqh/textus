@@ -72,69 +72,70 @@ module Textus
       end
     end
 
-    def self.agent_quickstart(manifest, audit_log)
-      agent_role = manifest.policy.proposer_role
+    def self.build(container:)
+      etag       = Textus::Value::Etag.for_contract(container.root)
+      latest_seq = container.audit_log.latest_seq
+      artifact   = read_artifact_content(container, "artifacts.boot")
+      context    = read_boot_context(container)
 
-      writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |lane_name, acc|
-        next unless agent_role
+      # Prefer pre-computed artifact (drain computes, boot reads).
+      # Fall back to inline manifest projection for stores that have not yet
+      # run drain (test fixtures, fresh inits).
+      stable = artifact || inline_boot_content(container.manifest, latest_seq)
 
-        verb = manifest.policy.verb_for_lane(lane_name)
-        writers = manifest.policy.roles_with_capability(verb)
-        acc << lane_name if writers.include?(agent_role)
+      if stable["agent_quickstart"]
+        stable = stable.merge(
+          "agent_quickstart" => stable["agent_quickstart"].merge("latest_seq" => latest_seq),
+        )
       end
 
-      propose_lane = manifest.policy.propose_lane_for(agent_role)
-
-      {
-        "read_verbs" => Textus::Surface::MCP::Catalog.read_verbs,
-        "write_verbs" => agent_role ? Textus::Surface::MCP::Catalog.write_verbs : [],
-        "writable_lanes" => writable_lanes,
-        "propose_lane" => propose_lane,
-        "latest_seq" => audit_log.latest_seq,
-      }
+      payload = {
+        "protocol" => PROTOCOL_ID,
+        "store_root" => container.root,
+        "contract_etag" => etag,
+      }.merge(stable)
+      payload["context"] = context if context
+      payload
     end
 
-    def self.recipes(manifest)
-      queue = manifest.policy.queue_lane
-      feeds = lane_label(manifest, :machine, "the machine lane")
+    def self.inline_boot_content(manifest, _latest_seq)
+      agent_role     = manifest.policy.proposer_role
+      writable_lanes = manifest.data.declared_lane_kinds.keys.each_with_object([]) do |ln, acc|
+        next unless agent_role
+
+        verb    = manifest.policy.verb_for_lane(ln)
+        writers = manifest.policy.roles_with_capability(verb)
+        acc << ln if writers.include?(agent_role)
+      end
+
       {
-        "read" => {
-          "purpose" => "find and read an entry",
-          "steps" => [
-            "list (lane:, prefix:) — discover keys without reading bodies",
-            "get KEY — returns the entry envelope",
-          ],
+        "lanes" => lanes_for(manifest),
+        "agent_quickstart" => {
+          "read_verbs" => Textus::Surface::MCP::Catalog.read_verbs,
+          "write_verbs" => agent_role ? Textus::Surface::MCP::Catalog.write_verbs : [],
+          "writable_lanes" => writable_lanes,
+          "propose_lane" => manifest.policy.propose_lane_for(agent_role),
         },
-        "write" => {
-          "purpose" => "create or update an entry",
-          "steps" => [
-            "schema KEY — learn the _meta field shape (required, optional, field types) before writing",
-            "assemble an envelope: { _meta: {…}, body: \"…\" }",
-            "put KEY — persist it (role-gated); pass if_etag to guard a concurrent edit",
-          ],
-        },
-        "propose" => {
-          "purpose" => "agent suggests a change for human review",
-          "agent_steps" => [
-            "propose KEY — writes the change into the #{queue} lane for review",
-          ],
-          "human_steps" => [
-            "accept #{queue}.KEY — promotes the proposal into its target lane",
-          ],
-        },
-        "drain" => {
-          "purpose" => "keep the machine-maintained lanes fresh — re-pull stale intake entries from their declared source",
-          "steps" => [
-            "pulse — its `stale` list names entries past their ttl",
-            "drain (lane: #{feeds}) — re-pull the stale entries",
-          ],
-        },
+        "agent_protocol" => agent_protocol(manifest),
       }
     end
 
     def self.agent_protocol(manifest)
+      queue = manifest.policy.queue_lane
+      feeds = lane_label(manifest, :machine, "the machine lane")
       AGENT_PROTOCOL_TEMPLATE.merge(
-        "recipes" => recipes(manifest),
+        "recipes" => {
+          "read" => { "purpose" => "find and read an entry",
+                      "steps" => ["list (lane:, prefix:) — discover keys", "get KEY — returns the entry envelope"] },
+          "write" => { "purpose" => "create or update an entry",
+                       "steps" => ["schema KEY — learn field shape", "put KEY — persist it (role-gated)"] },
+          "propose" => { "purpose" => "agent suggests a change for human review",
+                         "agent_steps" => ["propose KEY — writes to #{queue} lane"],
+                         "human_steps" => ["accept #{queue}.KEY — promotes to target lane"] },
+          "drain" => { "purpose" => "keep machine lanes fresh",
+                       "steps" => ["pulse — stale list names overdue entries",
+                                   "drain (lane: #{feeds}) — re-pull stale entries"] },
+        },
         "role_resolution" => {
           "summary" => "write role is resolved in order: --as flag, TEXTUS_ROLE env var, .textus/role file, " \
                        "then a transport default ('human' for CLI, 'agent' for MCP)",
@@ -144,20 +145,16 @@ module Textus
       )
     end
 
-    def self.build(container:)
-      manifest = container.manifest
-      etag = Textus::Value::Etag.for_contract(container.root)
-
-      {
-        "protocol" => PROTOCOL_ID,
-        "store_root" => container.root,
-        "contract_etag" => etag,
-        "lanes" => lanes_for(manifest),
-        "agent_quickstart" => agent_quickstart(manifest, container.audit_log),
-        "orientation" => read_artifact_content(container, "artifacts.config.orientation"),
-        "context" => read_boot_context(container),
-        "agent_protocol" => agent_protocol(manifest),
-      }.compact
+    def self.lanes_for(manifest)
+      manifest.data.declared_lane_kinds.keys.map do |name|
+        verb = manifest.policy.verb_for_lane(name)
+        row  = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
+        kind = manifest.policy.declared_kind(name)
+        row["kind"] = kind.to_s if kind
+        purpose = manifest.data.lane_descs[name]
+        row["purpose"] = purpose if purpose && !purpose.empty?
+        row
+      end
     end
 
     def self.read_artifact_content(container, key)
@@ -179,18 +176,6 @@ module Textus
       body.nil? || body.empty? ? nil : body
     rescue Textus::Error
       nil
-    end
-
-    def self.lanes_for(manifest)
-      manifest.data.declared_lane_kinds.keys.map do |name|
-        verb = manifest.policy.verb_for_lane(name)
-        row = { "name" => name, "writers" => manifest.policy.roles_with_capability(verb) }
-        kind = manifest.policy.declared_kind(name)
-        row["kind"] = kind.to_s if kind
-        purpose = manifest.data.lane_descs[name]
-        row["purpose"] = purpose if purpose && !purpose.empty?
-        row
-      end
     end
   end
 end

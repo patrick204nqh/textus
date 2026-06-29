@@ -1,0 +1,144 @@
+{
+  "_meta": {
+    "uid": "e64946ac4be8f8f1"
+  },
+  "project": {
+    "name": "textus",
+    "description": "A coordination space for humans, AI, and automation — durable, multi-writer repo memory that survives the session, the model, and the vendor.",
+    "commands": "- **test**: `bundle exec rspec`\n- **lint**: `bundle exec rubocop`\n- **lint-fix**: `bundle exec rubocop -A`\n- **setup**: `bundle install`\n- **help**: `bundle exec exe/textus --help`\n- **drain**: `bundle exec exe/textus drain --as=automation`",
+    "has_commands": true
+  },
+  "runbooks": [
+    {
+      "name": "adr",
+      "description": "Add an Architecture Decision Record for a load-bearing decision."
+    },
+    {
+      "name": "release",
+      "description": "Cut a textus release — bump the version, regenerate Gemfile.lock, then tag via PR."
+    }
+  ],
+  "lanes": [
+    {
+      "name": "knowledge",
+      "writers": [
+        "human"
+      ],
+      "kind": "canon",
+      "purpose": "the maintained source of truth about the repo"
+    },
+    {
+      "name": "notebook",
+      "writers": [
+        "agent"
+      ],
+      "kind": "workspace",
+      "purpose": "the agent's own durable working notes"
+    },
+    {
+      "name": "proposals",
+      "writers": [
+        "human",
+        "agent"
+      ],
+      "kind": "queue",
+      "purpose": "changes awaiting a human accept"
+    },
+    {
+      "name": "artifacts",
+      "writers": [
+        "automation"
+      ],
+      "kind": "machine",
+      "purpose": "machine-maintained computed outputs"
+    },
+    {
+      "name": "raw",
+      "writers": [
+        "human",
+        "agent",
+        "automation"
+      ],
+      "kind": "raw",
+      "purpose": "ingested external source material (write-once)"
+    }
+  ],
+  "agent_quickstart": {
+    "read_verbs": [
+      "get",
+      "list",
+      "where",
+      "deps",
+      "rdeps",
+      "pulse",
+      "rule_explain",
+      "schema_show",
+      "boot",
+      "jobs"
+    ],
+    "write_verbs": [
+      "put",
+      "key_delete",
+      "key_mv",
+      "propose",
+      "accept",
+      "reject",
+      "enqueue",
+      "ingest",
+      "data_mv",
+      "key_mv_prefix",
+      "key_delete_prefix"
+    ],
+    "writable_lanes": [
+      "notebook",
+      "proposals",
+      "raw"
+    ],
+    "propose_lane": "proposals"
+  },
+  "agent_protocol": {
+    "version": "textus/4",
+    "recipes": {
+      "read": {
+        "purpose": "find and read an entry",
+        "steps": [
+          "list (lane:, prefix:, q:, schema:) — discover keys",
+          "get KEY — returns the entry envelope"
+        ]
+      },
+      "write": {
+        "purpose": "create or update an entry",
+        "steps": [
+          "schema KEY — learn field shape",
+          "assemble envelope: { _meta: {…}, body: \"…\" }",
+          "put KEY — persist it (role-gated)"
+        ]
+      },
+      "propose": {
+        "purpose": "agent suggests a change for human review",
+        "agent_steps": [
+          "propose KEY — writes to proposals lane"
+        ],
+        "human_steps": [
+          "accept proposals.KEY — promotes to target lane"
+        ]
+      },
+      "drain": {
+        "purpose": "keep machine lanes fresh",
+        "steps": [
+          "pulse — stale list names overdue entries",
+          "drain (lane: artifacts) — re-pull stale entries"
+        ]
+      }
+    },
+    "role_resolution": {
+      "summary": "role resolved: --as flag → TEXTUS_ROLE env → .textus/role file → transport default",
+      "roles": [
+        "human",
+        "agent",
+        "automation"
+      ],
+      "ref": "SPEC.md §5"
+    }
+  }
+}

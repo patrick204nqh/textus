@@ -8,17 +8,22 @@ not edit by hand — edit the source under `.textus/data/` and run
 → Talk to it over MCP (`.mcp.json` wires the `textus` server; tools are `mcp__textus__*`) or the `textus` CLI.
 → Run `textus boot` for the catalog + write flows; `textus get artifacts.docs.index` for the docs map.
 → Write authority by zone:
+    - **knowledge** (human) — the maintained source of truth about the repo
+    - **notebook** (agent) — the agent's own durable working notes
+    - **proposals** (human agent) — changes awaiting a human accept
+    - **artifacts** (automation) — machine-maintained computed outputs
+    - **raw** (human agent automation) — ingested external source material (write-once)
 → Agent protocol (from `textus boot`):
    • **read** — find and read an entry
-     `list (lane:, prefix:) — discover keys without reading bodies`
+     `list (lane:, prefix:, q:, schema:) — discover keys`
      `get KEY — returns the entry envelope`
    • **write** — create or update an entry
-     `schema KEY — learn the _meta field shape (required, optional, field types) before writing`
-     `assemble an envelope: { _meta: {…}, body: "…" }`
-     `put KEY — persist it (role-gated); pass if_etag to guard a concurrent edit`
+     `schema KEY — learn field shape`
+     `assemble envelope: { _meta: {…}, body: "…" }`
+     `put KEY — persist it (role-gated)`
    • **propose** — agent suggests a change for human review
-     agent: `propose KEY — writes the change into the proposals lane for review`
-     human: `accept proposals.KEY — promotes the proposal into its target lane`
+     agent: `propose KEY — writes to proposals lane`
+     human: `accept proposals.KEY — promotes to target lane`
 -->
 
 
@@ -44,4 +49,4 @@ not edit by hand — edit the source under `.textus/data/` and run
 
 Full documentation is canon — authored under `.textus/data/knowledge/` and published to `docs/`. Read the map with `textus get artifacts.docs.index`; the ADR log index is `textus get knowledge.architecture-index`. Sections: how-to · reference · explanation · cookbook · decisions.
 
-Four reference docs are **generated**, not hand-authored: `docs/reference/verbs.md` and `docs/reference/schema.md` (projected from the live registry), `docs/reference/adr-log.md` (projected from the ADR files), and `docs/reference/authority.md` (the who-may-write-what tables, projected from the manifest + the `LANES` bijection). Do **not** edit these by hand — they are rebuilt by `textus drain` and a hand-edit is clobbered on the next run (and flagged by `textus doctor`). To change them, edit the source (the verb/schema code, the manifest roles/zones, or add an ADR under `.textus/data/knowledge/decisions/`) and run `textus drain`.
+The ADR log (`docs/reference/adr-log.md`) is generated — do not hand-edit it; edit the source ADR under `.textus/data/knowledge/decisions/` and run `textus drain`.

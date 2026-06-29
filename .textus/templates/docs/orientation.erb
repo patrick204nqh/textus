@@ -8,7 +8,7 @@ not edit by hand — edit the source under `.textus/data/` and run
 → Talk to it over MCP (`.mcp.json` wires the `textus` server; tools are `mcp__textus__*`) or the `textus` CLI.
 → Run `textus boot` for the catalog + write flows; `textus get artifacts.docs.index` for the docs map.
 → Write authority by zone:
-<% Array(boot["zones"]).each do |z| -%>    - **<%= z["name"] %>** (<%= Array(z["writers"]).join(" ") %>)<%= z["purpose"] ? " — #{z["purpose"]}" : "" %>
+<% Array(boot["lanes"]).each do |z| -%>    - **<%= z["name"] %>** (<%= Array(z["writers"]).join(" ") %>)<%= z["purpose"] ? " — #{z["purpose"]}" : "" %>
 <% end -%>
 → Agent protocol (from `textus boot`):
 <% if (r = boot.dig("agent_protocol", "recipes", "read")) -%>   • **read** — <%= r["purpose"] %>
@@ -41,4 +41,4 @@ not edit by hand — edit the source under `.textus/data/` and run
 
 Full documentation is canon — authored under `.textus/data/knowledge/` and published to `docs/`. Read the map with `textus get artifacts.docs.index`; the ADR log index is `textus get knowledge.architecture-index`. Sections: how-to · reference · explanation · cookbook · decisions.
 
-Four reference docs are **generated**, not hand-authored: `docs/reference/verbs.md` and `docs/reference/schema.md` (projected from the live registry), `docs/reference/adr-log.md` (projected from the ADR files), and `docs/reference/authority.md` (the who-may-write-what tables, projected from the manifest + the `LANES` bijection). Do **not** edit these by hand — they are rebuilt by `textus drain` and a hand-edit is clobbered on the next run (and flagged by `textus doctor`). To change them, edit the source (the verb/schema code, the manifest roles/zones, or add an ADR under `.textus/data/knowledge/decisions/`) and run `textus drain`.
+The ADR log (`docs/reference/adr-log.md`) is generated — do not hand-edit it; edit the source ADR under `.textus/data/knowledge/decisions/` and run `textus drain`.
