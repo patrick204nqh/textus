@@ -16,7 +16,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
   "schema_ref": "person",
   "uid": "a1b2c3d4e5f60718",
   "sources": [
-    "raw.2026.06.20.url-mcp-spec"
+    { "key": "raw.2026.06.20.url-mcp-spec", "etag": "sha256:1a2b…", "suspended": false }
   ],
   "stale": false,
   "stale_reason": null,
@@ -27,7 +27,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 **Field rules:**
 - `protocol` MUST be the exact string `textus/4`.
 - `key` MUST be the canonical resolved key.
-- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `scratchpad`, `feeds`, `proposals`, `artifacts` in the default Setup-1 scaffold).
+- `lane` MUST be one of the lanes declared in the manifest (`knowledge`, `scratchpad`, `proposals`, `artifacts`, `raw` in the default Setup-1 scaffold).
 - `path` MUST be an absolute filesystem path.
 - `format` MUST be one of `markdown`, `json`, `yaml`, `text` (§5.12). Absent envelopes are treated as `markdown` for back-compat.
 - `body` is the raw on-disk bytes as a UTF-8 string for every format.
@@ -35,7 +35,7 @@ Every successful CLI response (`--output=json`) is a single JSON envelope:
 - `etag` MUST be `sha256:<hex>` of the raw file bytes, computed identically for every format.
 - `schema_ref` MAY be `null` for entries in subtrees with `schema: null`.
 - `uid` is the stable Textus UID (§7) if the entry carries one, else `null`. Always present in the envelope.
-- `sources` is an array of raw-lane key strings. Present only when non-empty. Each string starts with `raw.`.
+- `sources` is an array of source objects. Each object has `key` (the referenced entry's key), `etag` (sha256 snapshot taken at write time, or absent when no snapshot exists), and `suspended` (`true` when the referenced entry's current on-disk etag differs from the stored snapshot — the source changed after this entry was last written). Present only when non-empty.
 - `stale` is `true` when the entry's `source.ttl` has elapsed and the entry has not yet been re-materialised; `false` otherwise. Only populated for produced entries with a declared `ttl`; always `false` for other entries.
 - `stale_reason` is a short human-readable string describing why the entry is stale (e.g. `"ttl_exceeded"`, `"never_fetched"`), or `null` when `stale` is `false`.
 - `fetching` is `true` when a background re-pull is in flight for this entry; `false` otherwise. Callers observing `stale: true, fetching: true` SHOULD retry after a short delay.

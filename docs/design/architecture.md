@@ -36,7 +36,7 @@ This keeps policy and behavior explicit while allowing multiple external surface
 1. Surfaces
    - CLI surface
    - MCP surface
-   - Role-scoped invocation facade (`Store#as(role)`)
+   - Role-scoped invocation facade (`Store#with_role(role)`)
 
 2. Contract/Dispatch
    - Verb contracts (args, summary, surface visibility, wrappers)

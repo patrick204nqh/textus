@@ -108,23 +108,18 @@ Returns a delta envelope. The agent advances the cursor each turn.
 ```json
 {
   "cursor":          1845,
-  "changed":         [ { "seq": 1843, "key": "knowledge.notes.x", "uid": "...", "verb": "put", "role": "human", "ts": "..." } ],
-  "stale":           [ "artifacts.marketplace" ],
+  "changed":         [ { "seq": 1843, "key": "knowledge.notes.x", "verb": "put", "seq": 1843 } ],
   "pending_review":  [ "proposals.proposal.123" ],
-  "doctor":          { "ok": true, "warn": 0, "fail": 0 },
   "contract_etag":   "sha256:abc123...",
-  "next_due_at":     "2026-05-28T12:34:56Z",
-  "hook_errors":     [ { "seq": 1844, "event": "entry_written", "hook": "audit_extra", "key": "knowledge.notes.x", "error_class": "RuntimeError", "error_message": "...", "at": "..." } ]
+  "index_etag":      "sha256:8f3c..."
 }
 ```
 
-`changed` is a thin aggregator over `audit --seq-since=N`. `stale` comes from the internal lifecycle scan (the former `freshness` verb, folded into `pulse` by ADR 0085). `pending_review` lists keys in the `proposals` queue lane. `doctor` is a count summary.
+`changed` is a thin aggregator over `audit --seq-since=N`. `pending_review` lists keys in the `proposals` queue lane. `contract_etag` signals contract drift — if it differs from the value at `boot`, agents should re-`boot` (the MCP server raises `ContractDrift` -32001 automatically). Staleness is a per-entry verdict on `get` responses, not a pulse field.
 
-#### Drift, scheduling, and hook-error signals
+#### Contract drift signal
 
 - **`contract_etag`** — composite sha256 of the contract: `manifest.yaml` plus the hooks and schemas (ADR 0074). If it differs from the value at boot, the contract has drifted; agents should re-`boot`. The MCP server raises `ContractDrift` (-32001) automatically; CLI consumers compare manually.
-- **`next_due_at`** — earliest `next_due_at` across all entries with a lifecycle policy, ISO-8601 UTC. Schedulers can sleep until this timestamp instead of polling.
-- **`hook_errors`** — list of recent hook failures since cursor: `{seq, event, hook, key, error_class, error_message, at}`. Bounded in-memory ring (256 most recent); older entries are evicted.
 
 Every audit row carries a `seq` integer — a monotonic counter stamped on each write. The `cursor` in pulse is always the `latest_seq` from the audit log; passing it back to the next `pulse --since=<cursor>` produces only rows written after that point.
 

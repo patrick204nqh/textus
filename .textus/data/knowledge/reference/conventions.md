@@ -95,8 +95,8 @@ Full contract in [`../../SPEC.md` §5.2](../../SPEC.md).
 A `get` is always a pure read (ADR 0089) — it never triggers a re-produce:
 
 ```sh
-textus pulse --output=json       # `stale` lists entries past their ttl
-textus drain --as=automation     # re-produces stale entries
+textus get artifacts.feeds.skills --output=json  # inspect stale/stale_reason per-entry
+textus drain --as=automation                     # re-produces stale entries
 ```
 
 See [`./lanes.md`](lanes.md) for lane semantics and [`../how-to/configuring-lanes.md`](../how-to/configuring-lanes.md) for setting up produced entries and workflows.
@@ -138,4 +138,4 @@ The user-facing CLI surface, the wire envelope shape, and the protocol version (
 
 - **MCP servers**: a thin server that exposes `textus get` and `textus put` as tools is the recommended way to give Claude/agents access. Don't bake MCP into this gem.
 - **Vector stores**: index `body` content into a vector store if you want fuzzy retrieval. `frontmatter` stays in textus as the source of truth for deterministic facts.
-- **CI**: run `textus doctor` (the `generator_drift` check) or `textus pulse` (the `stale` list) in CI to catch drift between derived entries and their sources.
+- **CI**: run `textus doctor` (the `generator_drift` check) in CI to catch drift between derived entries and their sources.

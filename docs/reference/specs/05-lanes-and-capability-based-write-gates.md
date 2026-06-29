@@ -64,7 +64,7 @@ Every successful write records the resolved role and a wall-clock timestamp in `
 
 #### 5.1.1 Capabilities
 
-Roles declare **capabilities** — verbs from a closed four-element set. A
+Roles declare **capabilities** — verbs from a closed five-element set. A
 manifest declares a `roles:` block mapping each role name to the capabilities
 it holds via `can:`:
 
@@ -76,7 +76,7 @@ roles:
   - { name: keeper,   can: [keep] }
 ```
 
-Capability allow-list: `propose`, `author`, `keep`, `converge`. The mapping from
+Capability allow-list: `propose`, `author`, `keep`, `converge`, `ingest`. The mapping from
 lane-kind to its required capability is a **bijection** (ADR 0091, which folded
 the former `quarantine` + `derived` kinds back into one `machine` kind — undoing
 the two-kind split of ADR 0090): each capability authorizes exactly one
@@ -88,8 +88,9 @@ lane-kind:
 | `keep` | `workspace` |
 | `propose` | `queue` |
 | `converge` | `machine` |
+| `ingest` | `raw` |
 
-A manifest naming a folded capability — `ingest` or `build`, or the pre-0088
+A manifest naming a folded capability — `build` or the pre-0088
 spelling `fetch` — in a `can:` list is rejected at load with a hint pointing to
 `converge` (ADR 0090, 0091, 0111).
 

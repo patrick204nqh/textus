@@ -41,7 +41,7 @@ surfaces/cli/     CLI command generation from contracts
   sources.rb      CLI-only input acquisition (stdin parsing, file sourcing, coercion)
 surfaces/mcp/     MCP server — stdio JSON-RPC 2.0, tools derived from contracts
 surfaces/role_scope.rb
-                  (Store#as(role)) — holds (container, role, dry_run, correlation_id);
+                  (Store#with_role(role)) — holds (container, role, dry_run, correlation_id);
                   all verb methods injected via define_method in textus.rb
 ```
 
@@ -214,7 +214,7 @@ Both are built from a `Container` via named constructors — `Writer.from(contai
 
 `Action::Get` is a **pure read** — it resolves the path, reads bytes, parses the envelope, and annotates a freshness verdict. It never ingests and never mutates.
 
-1. CLI/MCP surface calls `store.as(role).get(key)`.
+1. CLI/MCP surface calls `store.with_role(role).get(key)`.
 2. `Gate#dispatch` runs Auth → `Action::Get#call`.
 3. `Get` resolves path via `manifest.resolver`, reads bytes via `file_store`, parses the envelope, annotates `freshness` based on retention-rule TTL (if any).
 
@@ -222,7 +222,7 @@ Staleness is age-based (retention-rule TTL vs file mtime). A stale entry is retu
 
 ## Write path (`store.put(key, ...)`)
 
-1. CLI/MCP surface calls `store.as(role).put(key, meta:, body:)`.
+1. CLI/MCP surface calls `store.with_role(role).put(key, meta:, body:)`.
 2. `Gate#dispatch` runs Auth → `Action::Put#call`.
 3. `Put` validates, resolves manifest entry, delegates to `Envelope::Writer#put` (serialize → schema-validate → etag-check → FileStore#write → AuditLog#append).
 4. `WriteVerb#cascade_to_rdeps` enqueues `materialize` jobs for any entries with publish_tree that depend on the written key.
