@@ -3,7 +3,7 @@
 > **Reference** · for integrators · **read when** you need the exact lane, role, and entry semantics
 > **SSoT for** lane semantics, what each capability *means*, entry fields, and doctor enforcement · **reviewed** 2026-06 (v0.54)
 
-The *current-values* tables — the role→capability sets, the lane-kind↔capability bijection, and which roles write which lane-kinds — are projected from the live manifest into the generated [`authority.md`](authority.md) (ADR 0112). This doc owns their *meaning*; link there for the tables rather than restating them.
+The *current-values* tables — the role→capability sets, the lane-kind↔capability bijection, and which roles write which lane-kinds — are declared in `manifest.yaml` under `roles:` and `lanes:`. This doc owns their *meaning*.
 
 The exact semantics of textus lanes: the roles and capabilities that govern who may write, the five default lanes, the fields an entry declares, and what `textus doctor` enforces.
 
@@ -22,13 +22,13 @@ This is the configuration reference. For the wire protocol, see [`../../SPEC.md`
 
 ## Roles and capabilities — who is allowed to write
 
-A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed five-element set. Write authority is *derived*: a role may write a lane iff it holds the capability the lane's kind requires (see [The five default lanes](#the-five-default-lanes)). **The current roles, their `can:` sets, and which lane-kinds each may write are the projected [`authority.md`](authority.md) tables** (generated from this manifest; never hand-maintained). What each role represents:
+A role is a name in the manifest that holds a set of **capabilities** — verbs from a closed five-element set. Write authority is *derived*: a role may write a lane iff it holds the capability the lane's kind requires (see [The five default lanes](#the-five-default-lanes)). **The current roles, their `can:` sets, and which lane-kinds each may write are declared in `manifest.yaml` under `roles:`** (run `textus boot` to see the resolved set). What each role represents:
 
 - **`human`** — a person at a terminal; the single trust anchor.
 - **`agent`** — an autonomous agent: stages proposals, maintains its own `notebook` workspace, and can ingest external URLs.
 - **`automation`** — scheduled or one-shot scripts: produce computed outputs in the `artifacts` machine lane via `drain`.
 
-What each of the five capabilities **means** (the capability ↔ lane-kind mapping itself is the bijection projected into [`authority.md`](authority.md)):
+What each of the five capabilities **means** (the capability ↔ lane-kind mapping is declared in `manifest.yaml`):
 
 - **`author`** (writes `canon`) — authoring canonical truth; the **single trust anchor** (at most one role holds it).
 - **`keep`** (writes `workspace`) — writing to an agent's own durable lane (`notebook`); bytes never auto-promote.
@@ -71,7 +71,7 @@ lanes:
 
 `owner:` on a lane is **optional, informational** metadata. `desc:` is optional; the value surfaces as the `purpose` field in `textus boot` lane rows.
 
-Write authority is **derived** — there is no `write_policy:`. Each lane declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→capability mapping is a **bijection** — the projected table is [`authority.md`](authority.md). What each default lane is *for*:
+Write authority is **derived** — there is no `write_policy:`. Each lane declares only its `kind:`; the kind decides the required capability, and any role holding that capability may write. The kind→capability mapping is a **bijection** declared in `manifest.yaml`. What each default lane is *for*:
 
 - **`knowledge`** (`canon`, written by `human`) — authored truth: identity, voice, decisions. Long-lived.
 - **`notebook`** (`workspace`, written by `agent`) — the agent's own durable working memory. Bytes climb to `knowledge` only via propose→accept.

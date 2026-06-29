@@ -36,7 +36,7 @@ flowchart LR
 Two ideas do all the work:
 
 - **A lane is a write-authority partition.** Each lane declares its `kind:`; the kind decides which capability a writer must hold. Directory names are convention; the manifest is the source of truth.
-- **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `converge`, `ingest` — and may write a lane iff it holds the verb that lane's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→capability bijection are the projected [`../reference/authority.md`](../reference/authority.md); what each capability *means* lives in [`../reference/lanes.md`](../reference/lanes.md).
+- **A role is a bundle of capabilities.** A role holds verbs from a closed five-element set — `propose`, `author`, `keep`, `converge`, `ingest` — and may write a lane iff it holds the verb that lane's kind requires. Every `textus put` carries `--as=<role>`, and the writer is refused if that role lacks the required capability. The exact `can:` sets and the kind→capability bijection are declared in `manifest.yaml`; what each capability *means* lives in [`../reference/lanes.md`](../reference/lanes.md).
 
 Everything else — workflows, publishing, schemas — is layered on top of those two ideas.
 
@@ -141,7 +141,7 @@ error: audit cursor expired: requested seq=1842 but oldest available is 5000;
 
 Handle by calling `boot` again and resuming from the new `latest_seq`. Skip the gap intentionally — those events are gone from local audit storage.
 
-For the 5-minute Claude Code setup and the operational agent loop, see [`../how-to/agents-mcp.md`](../how-to/agents-mcp.md). For the MCP tool catalog, error codes, transports, and retention facts, see [`../reference/mcp.md`](../reference/mcp.md). For the wire protocol, see [`../../SPEC.md`](../../SPEC.md).
+For the 5-minute Claude Code setup and the operational agent loop, see [`../how-to/agents-mcp.md`](../how-to/agents-mcp.md). For the wire protocol, verb table, and retention facts, see [`../../SPEC.md`](../../SPEC.md).
 
 ## Action architecture
 

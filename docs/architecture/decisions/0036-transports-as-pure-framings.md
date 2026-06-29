@@ -8,7 +8,7 @@
 ## Context
 
 textus exposes three transports — CLI, Ruby API, MCP — over the same store
-([`docs/reference/mcp.md`](../../reference/mcp.md) §"Three transports"). The thesis of the
+([`docs/reference/mcp.md`](../../../SPEC.md) §"Three transports"). The thesis of the
 project is that **coordination is a protocol invariant** (README), so the three
 transports are supposed to be three ways of speaking *one* contract. Two leaks break
 that promise today.
@@ -33,7 +33,7 @@ The CLI and Ruby API use `pulse` / `list` / `get` / `put` / `fetch_all`; MCP use
 agent reads tool *descriptions* from `boot`, never the bare names, so the rename buys the
 agent nothing. What it costs is real and lands on humans:
 
-- [`docs/reference/mcp.md`](../../reference/mcp.md) carries a permanent translation
+- [`docs/reference/mcp.md`](../../../SPEC.md) carries a permanent translation
   parenthetical ("`tick` is the MCP name for `pulse`, `find` for `list`, `read` for
   `get`, `write` for `put`") and a separate MCP tool table — a maintained mapping that
   exists only because the two surfaces disagree.

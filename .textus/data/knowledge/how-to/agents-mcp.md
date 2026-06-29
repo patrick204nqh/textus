@@ -10,7 +10,7 @@ uid: e83bf3140722f215
 
 How an AI agent reads from and writes to a textus store — a 5-minute Claude Code setup, what you get, and the operational loop you run each turn.
 
-For the MCP tool catalog, error codes, transports, and plugin wiring, see [`../reference/mcp.md`](../reference/mcp.md). For the wire protocol, see [`../../SPEC.md`](../../SPEC.md).
+For the wire protocol and full verb table, see [`../../SPEC.md`](../../SPEC.md).
 
 > New here? Start with [Concepts](../explanation/concepts.md).
 
@@ -93,7 +93,7 @@ That's it. When Claude Code opens your project, it launches
 `schema`, `rules` (plus maintenance tools). The agent
 calls them as MCP tools — no shell strings, no parsing. The MCP tool
 names are the same as the CLI verbs (see [ADR 0036](../architecture/decisions/0036-transports-as-pure-framings.md)); the full
-catalog with arguments is in [the MCP tool reference](../reference/mcp.md#tools).
+catalog with arguments is in [`SPEC.md`](../../SPEC.md) §9.
 
 ### 4. Tell Claude how to use it
 
@@ -217,12 +217,12 @@ while session_active:
     run(f"textus put proposals.proposal.x --as=agent --stdin", input=envelope_json)
 ```
 
-For the conceptual framing of the two channels (boot vs pulse — what each is and why), see [Concepts](../explanation/concepts.md). For the exact transports, pulse fields, error codes, and lifecycle facts, see [`../reference/mcp.md`](../reference/mcp.md).
+For the conceptual framing of the two channels (boot vs pulse — what each is and why), see [Concepts](../explanation/concepts.md). For the exact transports, pulse fields, error codes, and lifecycle facts, see [`SPEC.md`](../../SPEC.md) §11.1.
 
 ## See also
 
 - [`../../SPEC.md`](../../SPEC.md) §8 envelope shape, §9 verb table, §11.1 agent integration
-- [`../reference/mcp.md`](../reference/mcp.md) — MCP tool catalog, error codes, transports, plugin wiring
+- [`SPEC.md`](../../SPEC.md) §9 — full verb table and wire protocol
 - [ADR 0015](../architecture/decisions/0015-agent-gate-mcp.md) — the agent-gate decision and roadmap
 - [`../../.textus/`](../../.textus/) — worked store: role gate, build/publish, schemas, hook
 - [`../../.mcp.json`](../../.mcp.json) + [`../../.textus/`](../../.textus/) — textus's own self-development wiring: the same setup, but `bundle exec exe/textus` drives the working tree instead of the released gem ([ADR 0041](../architecture/decisions/0041-dogfood-textus-in-its-own-repo.md))

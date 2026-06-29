@@ -25,7 +25,7 @@ textus stores data on the local filesystem and writes a single append-only audit
 
 - credential or token leakage through actions, hooks, or extensions,
 - audit-log tampering paths,
-- role-gate bypass on any of the gated write verbs (`put`, `key_delete`, `key_mv`, `zone_mv`, `accept`, `reject`, … — see [`docs/reference/verbs.md`](docs/reference/verbs.md) for the current contract),
+- role-gate bypass on any of the gated write verbs (`put`, `key_delete`, `key_mv`, `zone_mv`, `accept`, `reject`, … — see [`SPEC.md`](SPEC.md) §9 for the current verb table),
 - path traversal via `publish.to` or `publish.tree` targets,
 - arbitrary code execution through extension loading or template rendering.
 

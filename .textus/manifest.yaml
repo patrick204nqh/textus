@@ -113,42 +113,12 @@ entries:
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: .claude-plugin/plugin.json }]
   # Docs — generated reference documentation
-  - key: artifacts.docs.verbs
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/verbs.md, template: docs/verbs.erb }]
-  - key: artifacts.docs.schema
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/schema.md, template: docs/schema.erb }]
   - key: artifacts.docs.adr-log
     lane: artifacts
     kind: produced
     format: json
     source: { from: external, command: "true", sources: [] }
     publish: [{ to: docs/reference/adr-log.md, template: docs/adr-log.erb }]
-  - key: artifacts.docs.authority
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/authority.md, template: docs/authority.erb }]
-  - key: artifacts.docs.events
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/events.md, template: docs/events.erb }]
-  - key: artifacts.docs.mcp
-    lane: artifacts
-    kind: produced
-    format: json
-    source: { from: external, command: "true", sources: [] }
-    publish: [{ to: docs/reference/mcp.md, template: docs/mcp.erb }]
   - key: artifacts.docs.readme
     lane: artifacts
     kind: produced
