@@ -14,8 +14,8 @@ module Textus
       DEFAULT_MAX_SIZE = 10_485_760
       DEFAULT_KEEP = 5
 
-      def initialize(root = nil, geometry: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
-        @geometry = geometry || Textus::Store::Geometry.new(root)
+      def initialize(root = nil, layout: nil, max_size: DEFAULT_MAX_SIZE, keep: DEFAULT_KEEP)
+        @geometry = layout || Textus::Store::Layout.new(root)
         @path     = @geometry.audit_log_path
         @max_size = max_size
         @keep     = keep

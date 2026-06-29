@@ -2,13 +2,13 @@ require "spec_helper"
 
 RSpec.describe Textus::Store::Container do
   def build_infra(root)
-    geometry = Textus::Store::Geometry.new(root)
+    geometry = Textus::Store::Layout.new(root)
     Textus::Store::Container::Infrastructure.new(
       file_store: Textus::Port::Storage::FileStore.new,
       schemas: Textus::Schema::Registry.new(File.join(root, "schemas")),
-      audit_log: Textus::Port::AuditLog.new(geometry: geometry, max_size: 100, keep: 3),
+      audit_log: Textus::Port::AuditLog.new(layout: geometry, max_size: 100, keep: 3),
       job_store: Textus::Port::Store.new(root: root).setup!,
-      geometry: geometry,
+      layout: geometry,
     )
   end
 

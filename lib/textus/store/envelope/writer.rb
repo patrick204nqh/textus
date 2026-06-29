@@ -21,18 +21,18 @@ module Textus
             file_store: container.file_store, manifest: container.manifest,
             schemas: container.schemas, audit_log: container.audit_log,
             call: call, reader: Reader.from(container: container),
-            geometry: container.geometry
+            layout: container.layout
           )
         end
 
-        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, geometry:)
+        def initialize(file_store:, manifest:, schemas:, audit_log:, call:, reader:, layout:)
           @file_store = file_store
           @manifest   = manifest
           @schemas    = schemas
           @audit_log  = audit_log
           @call       = call
           @reader     = reader
-          @geometry   = geometry
+          @layout     = layout
         end
 
         def put(key, mentry:, payload:, if_etag: nil)
@@ -120,7 +120,7 @@ module Textus
         # `.gitkeep` or sibling entries survives. Best-effort: a lost race or a
         # non-empty dir is silently fine, never fatal to the write.
         def prune_empty_parents(path)
-          floor = @geometry.lane_floor(path)
+          floor = @layout.lane_floor(path)
           return unless floor
 
           dir = File.dirname(path)

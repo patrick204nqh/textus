@@ -118,17 +118,17 @@ module Textus
     def build_container(root)
       manifest = Manifest.load(root)
       job_store = Port::Store.new(root: root).setup!
-      geometry = Store::Geometry.new(root)
+      layout = Store::Layout.new(root)
       infra = Container::Infrastructure.new(
         file_store: Port::Storage::FileStore.new,
-        schemas: Schema::Registry.new(geometry.schemas_dir),
+        schemas: Schema::Registry.new(layout.schemas_dir),
         audit_log: Port::AuditLog.new(
-          geometry: geometry,
+          layout: layout,
           max_size: manifest.data.audit_config[:max_size],
           keep: manifest.data.audit_config[:keep],
         ),
         job_store:,
-        geometry:,
+        layout:,
       )
 
       coord_seed = Container::Coordination.new(

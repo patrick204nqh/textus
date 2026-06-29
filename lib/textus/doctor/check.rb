@@ -26,7 +26,7 @@ module Textus
       protected
 
       def root     = @container.root
-      def geometry = @container.geometry
+      def geometry = @container.layout
       def manifest = @container.manifest
 
       def dispatch(verb, *args, **kwargs)

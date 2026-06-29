@@ -1,6 +1,6 @@
 module Textus
   class Store
-    class Geometry
+    class Layout
       RUN    = ".state"
       DATA   = "data"
       ASSETS = "assets"

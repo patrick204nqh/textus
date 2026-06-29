@@ -27,7 +27,7 @@ module Textus
       # manifest.yaml, then every hook and schema file. Dir.glob already returns
       # sorted paths (Ruby 3.0+), keeping the digest independent of FS order.
       def self.contract_files(root)
-        geom = Textus::Store::Geometry.new(root)
+        geom = Textus::Store::Layout.new(root)
         [
           geom.manifest_path,
           *Dir.glob(File.join(geom.hooks_dir, "**", "*.rb")),

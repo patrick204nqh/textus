@@ -75,7 +75,7 @@ module Textus
           # Read a named template from the store's templates/ directory.
           # Raises TemplateError when the file doesn't exist.
           def read_template(name)
-            path = container.geometry.template_path(name)
+            path = container.layout.template_path(name)
             unless File.exist?(path)
               raise Textus::TemplateError.new(
                 "template '#{name}' not found",

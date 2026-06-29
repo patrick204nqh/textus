@@ -7,7 +7,7 @@ module Textus
     # losing it just re-emits recent deltas, never corrupts the store. ADR 0036/0038.
     class Cursor
       def initialize(root:, role:)
-        @path = Store::Geometry.new(root).cursor_path(role)
+        @path = Store::Layout.new(root).cursor_path(role)
       end
 
       def read

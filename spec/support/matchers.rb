@@ -30,7 +30,7 @@ end
 # Raises if the log is missing/empty — that's a real test failure, not a nil.
 module TextusAuditHelpers
   def last_audit_row(store)
-    log = Textus::Store::Geometry.new(store.root).audit_log_path
+    log = Textus::Store::Layout.new(store.root).audit_log_path
     JSON.parse(File.readlines(log).last)
   end
 end
@@ -45,7 +45,7 @@ RSpec::Matchers.define :have_audit_verb do |verb|
   chain(:with_correlation) { |cid| @cid = cid }
 
   match do |store|
-    log = Textus::Store::Geometry.new(store.root).audit_log_path
+    log = Textus::Store::Layout.new(store.root).audit_log_path
     next false unless File.exist?(log) && !File.empty?(log)
 
     @row = JSON.parse(File.readlines(log).last)

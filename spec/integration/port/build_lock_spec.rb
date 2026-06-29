@@ -14,7 +14,7 @@ RSpec.describe Textus::Port::BuildLock do
   it "writes pid/start/host diagnostic content while held" do
     captured = nil
     described_class.with(root: root) do
-      captured = File.read(Textus::Store::Geometry.new(root).lock_path("build"))
+      captured = File.read(Textus::Store::Layout.new(root).lock_path("build"))
     end
     expect(captured).to match(/pid=#{Process.pid}\b/)
     expect(captured).to match(/started=\d{4}-\d{2}-\d{2}T/)
@@ -82,7 +82,7 @@ RSpec.describe Textus::Port::BuildLock do
       # Intentionally leak the FD: the child sleeps until SIGKILL, and the
       # kernel releases the flock when the process dies. A block form would
       # close the FD (and release the lock) before SIGKILL arrives.
-      file = File.open(Textus::Store::Geometry.new(root).lock_path("build"), File::RDWR | File::CREAT, 0o644)
+      file = File.open(Textus::Store::Layout.new(root).lock_path("build"), File::RDWR | File::CREAT, 0o644)
       # rubocop:enable Style/FileOpen
       file.flock(File::LOCK_EX | File::LOCK_NB) or exit!(1)
       child_write.puts("locked")

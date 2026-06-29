@@ -14,7 +14,7 @@ module Textus
           "optional" => [],
           "fields" => meta.each_with_object({}) { |(k, v), h| h[k] = { "type" => infer_type(v) } },
         }
-        geom = Textus::Store::Geometry.new(store.root)
+        geom = Textus::Store::Layout.new(store.root)
         FileUtils.mkdir_p(geom.schemas_dir)
         target = geom.schema_path(name)
         File.write(target, YAML.dump(schema))

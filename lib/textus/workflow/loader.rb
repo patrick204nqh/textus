@@ -2,7 +2,7 @@ module Textus
   module Workflow
     class Loader
       def self.load_all(root)
-        geometry = Textus::Store::Geometry.new(root)
+        geometry = Textus::Store::Layout.new(root)
         registry = Registry.new
         return registry unless File.directory?(geometry.workflow_dir)
 

@@ -1,7 +1,7 @@
 module Textus
   class Store
     class Container
-      Infrastructure = Data.define(:file_store, :schemas, :audit_log, :job_store, :geometry)
+      Infrastructure = Data.define(:file_store, :schemas, :audit_log, :job_store, :layout)
       Coordination   = Data.define(:manifest, :workflows, :pipeline)
 
       def self.attribute_names
@@ -16,7 +16,7 @@ module Textus
       attr_reader :infra, :coord, :pipeline, :reader, :writer
 
       def root
-        @infra.geometry.root
+        @infra.layout.root
       end
 
       Infrastructure.members.each do |name|
@@ -159,7 +159,7 @@ module Textus
             audit_log: container.audit_log,
             call: call,
             reader: container.reader,
-            geometry: container.geometry,
+            layout: container.layout,
           )
         end
       end

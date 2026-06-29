@@ -35,7 +35,7 @@ module Textus
 
           def archive_leaf(row)
             src  = row["path"]
-            dest = @container.geometry.archive_path(src)
+            dest = @container.layout.archive_path(src)
             FileUtils.mkdir_p(File.dirname(dest))
             FileUtils.cp(src, dest)
           end

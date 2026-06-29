@@ -14,13 +14,13 @@ module Textus
           return container.reader if container.respond_to?(:reader) && container.reader
 
           new(file_store: container.file_store, manifest: container.manifest,
-              geometry: container.geometry)
+              layout: container.layout)
         end
 
-        def initialize(file_store:, manifest:, geometry:)
+        def initialize(file_store:, manifest:, layout:)
           @file_store = file_store
           @manifest   = manifest
-          @geometry   = geometry
+          @layout     = layout
         end
 
         def read(key)

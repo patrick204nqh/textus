@@ -81,8 +81,8 @@ RSpec.describe Textus::Port::AuditLog do
     end
 
     it "detects a seq gap (missing row)" do
-      FileUtils.mkdir_p(Textus::Store::Geometry.new(root).audit_dir_path)
-      path = Textus::Store::Geometry.new(root).audit_log_path
+      FileUtils.mkdir_p(Textus::Store::Layout.new(root).audit_dir_path)
+      path = Textus::Store::Layout.new(root).audit_log_path
       File.open(path, "a") do |f|
         row = { "seq" => 1, "ts" => "2026-01-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "k.x", "etag_before" => nil,
                 "etag_after" => "abc" }
@@ -97,8 +97,8 @@ RSpec.describe Textus::Port::AuditLog do
     end
 
     it "detects a seq regression (row out of order or overwritten)" do
-      FileUtils.mkdir_p(Textus::Store::Geometry.new(root).audit_dir_path)
-      path = Textus::Store::Geometry.new(root).audit_log_path
+      FileUtils.mkdir_p(Textus::Store::Layout.new(root).audit_dir_path)
+      path = Textus::Store::Layout.new(root).audit_log_path
       File.open(path, "a") do |f|
         row = { "seq" => 1, "ts" => "2026-01-01T00:00:00Z", "role" => "human", "verb" => "put", "key" => "k.x", "etag_before" => nil,
                 "etag_after" => "abc" }
@@ -115,13 +115,13 @@ RSpec.describe Textus::Port::AuditLog do
     end
 
     it "skips empty lines silently" do
-      FileUtils.mkdir_p(Textus::Store::Geometry.new(root).audit_dir_path)
+      FileUtils.mkdir_p(Textus::Store::Layout.new(root).audit_dir_path)
       File.write(audit_log_path(root), "\n\n")
       expect(log.verify_integrity).to eq([])
     end
 
     it "flags non-JSON lines as invalid_json" do
-      FileUtils.mkdir_p(Textus::Store::Geometry.new(root).audit_dir_path)
+      FileUtils.mkdir_p(Textus::Store::Layout.new(root).audit_dir_path)
       File.write(audit_log_path(root), "not json\n")
       issues = log.verify_integrity
       expect(issues).to contain_exactly(hash_including("lineno" => 1, "reason" => "invalid_json"))
@@ -141,9 +141,9 @@ RSpec.describe Textus::Port::AuditLog do
       # vocabulary rename. The reader returns them verbatim — anyone reading
       # historical rows is responsible for normalization. New writes always use
       # canonical roles.
-      FileUtils.mkdir_p(Textus::Store::Geometry.new(root).audit_dir_path)
+      FileUtils.mkdir_p(Textus::Store::Layout.new(root).audit_dir_path)
       File.write(
-        Textus::Store::Geometry.new(root).audit_log_path,
+        Textus::Store::Layout.new(root).audit_log_path,
         JSON.generate("ts" => "2026-01-01T00:00:00Z", "role" => "ai",
                       "verb" => "put", "key" => "working.x",
                       "etag_before" => nil, "etag_after" => "sha256:0") + "\n",

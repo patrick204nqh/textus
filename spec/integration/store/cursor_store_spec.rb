@@ -25,6 +25,6 @@ RSpec.describe Textus::Store::Cursor do
 
   it "writes the cursor under .state/cursors" do
     described_class.new(root: root, role: "agent").write(42)
-    expect(File.read(Textus::Store::Geometry.new(root).cursor_path("agent"))).to eq("42")
+    expect(File.read(Textus::Store::Layout.new(root).cursor_path("agent"))).to eq("42")
   end
 end

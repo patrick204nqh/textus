@@ -9,7 +9,7 @@ module Textus
 
       def call(command, _call)
         manifest = @container.manifest
-        geom = @container.geometry
+        geom = @container.layout
 
         return Value::Result.failure(:usage_error, "from and to required") if command.from.nil? || command.to.nil?
         unless manifest.data.declared_lane_kinds.key?(command.from)

@@ -85,10 +85,10 @@ module Textus
       def copy_asset(now, path, lane)
         date_path = now.strftime("%Y/%m/%d")
         filename  = File.basename(path)
-        assets_dir = @container.geometry.asset_raw_dir(date_path, lane)
+        assets_dir = @container.layout.asset_raw_dir(date_path, lane)
         FileUtils.mkdir_p(assets_dir)
         FileUtils.cp(path, File.join(assets_dir, filename))
-        sentinel = @container.geometry.asset_sentinel_path
+        sentinel = @container.layout.asset_sentinel_path
         File.write(sentinel, "*\n") unless File.exist?(sentinel)
         "raw/#{date_path}/#{lane}/#{filename}"
       end
@@ -133,13 +133,13 @@ module Textus
       end
 
       def move_asset(old_rel, lane)
-        old_path = @container.geometry.asset_resolve(old_rel)
+        old_path = @container.layout.asset_resolve(old_rel)
         return unless File.exist?(old_path)
 
         now = Time.now.utc
         date_path = now.strftime("%Y/%m/%d")
         filename = File.basename(old_path)
-        new_dir = @container.geometry.asset_raw_dir(date_path, lane)
+        new_dir = @container.layout.asset_raw_dir(date_path, lane)
         new_path = File.join(new_dir, filename)
         return if old_path == new_path
 
