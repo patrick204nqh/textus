@@ -48,6 +48,7 @@ module Textus
     def self.positional_for(verb) = POSITIONAL[verb] || []
     def self.summary_for(verb) = VERBS[verb]&.summary
     def self.registered = VERBS.values
+    def self.contract_class_for(verb) = VERB_TO_CONTRACT[verb]
 
     VERB_TO_CONTRACT = {
       get: Dispatch::Contracts::GetEntry,
@@ -82,6 +83,8 @@ module Textus
     }.freeze
 
     CONTRACT_TO_VERB = VERB_TO_CONTRACT.invert.freeze
+
+    private_constant :VERB_TO_CONTRACT, :CONTRACT_TO_VERB
 
     def self.contract_to_verb(klass)
       CONTRACT_TO_VERB[klass] || klass.name.split("::").last.gsub(/([a-z])([A-Z])/, '\1_\2').downcase

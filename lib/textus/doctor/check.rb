@@ -30,7 +30,7 @@ module Textus
       def manifest = @container.manifest
 
       def dispatch(verb, *args, **kwargs)
-        contract_class = Textus::VerbRegistry::VERB_TO_CONTRACT[verb]
+        contract_class = Textus::VerbRegistry.contract_class_for(verb)
         members = contract_class.members
         command_kwargs = members.each_with_index.to_h { |m, i| [m, args[i] || kwargs[m]] }
         command = contract_class.new(**command_kwargs)
